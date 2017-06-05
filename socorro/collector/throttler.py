@@ -13,14 +13,12 @@ from socorro.lib.ver_tools import normalize
 Compiled_Regular_Expression_Type = type(re.compile(''))
 
 
-#--------------------------------------------------------------------------
 ACCEPT = 0    # save and process
 DEFER = 1     # save but don't process
 DISCARD = 2   # tell client to go away and not come back
 IGNORE = 3    # ignore this submission entirely
 
 
-#==============================================================================
 class LegacyThrottler(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
@@ -61,7 +59,6 @@ class LegacyThrottler(RequiredConfig):
       from_string_converter=eval
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
         self.processed_throttle_conditions = \
@@ -69,28 +66,24 @@ class LegacyThrottler(RequiredConfig):
             config.throttle_conditions
           )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def regexp_handler_factory(regexp):
         def egexp_handler(x):
             return regexp.search(x)
         return egexp_handler
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def bool_handler_factory(a_bool):
         def bool_handler(dummy):
             return a_bool
         return bool_handler
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def generic_handler_factory(an_object):
         def generic_handler(x):
             return an_object == x
         return generic_handler
 
-    #--------------------------------------------------------------------------
     def preprocess_throttle_conditions(self, original_throttle_conditions):
         new_throttle_conditions = []
         for key, condition_str, percentage in original_throttle_conditions:
@@ -125,7 +118,6 @@ class LegacyThrottler(RequiredConfig):
             new_throttle_conditions.append((key, new_condition, percentage))
         return new_throttle_conditions
 
-    #--------------------------------------------------------------------------
     def understands_refusal(self, raw_crash):
         try:
             return normalize(raw_crash['Version']) >= normalize(
@@ -135,7 +127,6 @@ class LegacyThrottler(RequiredConfig):
         except KeyError:
             return False
 
-    #--------------------------------------------------------------------------
     def apply_throttle_conditions(self, raw_crash):
         """cycle through the throttle conditions until one matches or we fall
         off the end of the list.
@@ -168,7 +159,6 @@ class LegacyThrottler(RequiredConfig):
         # nothing matched, reject
         return True, 0
 
-    #--------------------------------------------------------------------------
     def throttle(self, raw_crash):
         throttle_result, percentage = self.apply_throttle_conditions(raw_crash)
         if throttle_result is None:

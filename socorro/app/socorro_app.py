@@ -48,7 +48,7 @@ from configman import (
 )
 from configman.converters import py_obj_to_str
 
-#------------------------------------------------------------------------------
+
 # every socorro app has a class method called 'get_application_defaults' from
 # which configman extracts the preferred configuration default values.
 #
@@ -79,16 +79,13 @@ type_handler_dispatch[ApplicationDefaultsProxy].append(
    socorro.app.for_application_defaults
 )
 
-#------------------------------------------------------------------------------
 # create the app default proxy object
 application_defaults_proxy = ApplicationDefaultsProxy()
 
-#------------------------------------------------------------------------------
 # for use with SIGHUP for apps that run as daemons
 restart = True
 
 
-#------------------------------------------------------------------------------
 def respond_to_SIGHUP(signal_number, frame, logger=None):
     """raise the KeyboardInterrupt which will cause the app to effectively
     shutdown, closing all it resources.  Then, because it sets 'restart' to
@@ -101,7 +98,6 @@ def respond_to_SIGHUP(signal_number, frame, logger=None):
     raise KeyboardInterrupt
 
 
-#--------------------------------------------------------------------------
 def klass_to_pypath(klass):
     """when a class is defined within the module that is being executed as
     main, the module name will be specified as '__main__' even though the
@@ -134,7 +130,6 @@ def klass_to_pypath(klass):
     return "%s.%s" % (module_name, klass.__name__)
 
 
-#==============================================================================
 class SocorroApp(RequiredConfig):
     """The base class for all Socorro applications"""
     app_name = 'SocorroAppBaseClass'
@@ -143,13 +138,11 @@ class SocorroApp(RequiredConfig):
 
     required_config = Namespace()
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
         # give a name to this running instance of the program.
         self.app_instance_name = self._app_instance_name()
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         """this method allows an app to inject defaults into the configuration
@@ -159,14 +152,12 @@ class SocorroApp(RequiredConfig):
         this method could be used to override that default"""
         return {}
 
-    #--------------------------------------------------------------------------
     def main(self):  # pragma: no cover
         """derived classes must override this function with business logic"""
         raise NotImplementedError(
             "A definition of 'main' in a derived class is required"
         )
 
-    #--------------------------------------------------------------------------
     def _app_instance_name(self):
         # originally, only the processors had instance names.  By putting this
         # call here, all the apps have instance names that can be used to
@@ -177,7 +168,6 @@ class SocorroApp(RequiredConfig):
             os.getpid()
         )
 
-    #--------------------------------------------------------------------------
     @classmethod
     def run(klass, config_path=None, values_source_list=None):
         global restart
@@ -192,7 +182,6 @@ class SocorroApp(RequiredConfig):
             )
         return app_exit_code
 
-    #--------------------------------------------------------------------------
     @classmethod
     def _do_run(klass, config_path=None, values_source_list=None):
         # while this method is defined here, only derived classes are allowed
@@ -290,37 +279,30 @@ class SocorroApp(RequiredConfig):
             return return_code
 
 
-#==============================================================================
 class LoggerWrapper(object):
     """This class wraps the standard logger object.  It changes the logged
     messages to display the 'executor_identity': the thread/greenlet/process
     that is currently running."""
 
-    #--------------------------------------------------------------------------
     def __init__(self, logger, config):
         self.config = config
         self.logger = logger
 
-    #--------------------------------------------------------------------------
     def executor_identity(self):
         try:
             return " - %s - " % self.config.executor_identity()
         except KeyError:
             return " - %s - " % threading.currentThread().getName()
 
-    #--------------------------------------------------------------------------
     def debug(self, message, *args, **kwargs):
         self.logger.debug(self.executor_identity() + message, *args, **kwargs)
 
-    #--------------------------------------------------------------------------
     def info(self, message, *args, **kwargs):
         self.logger.info(self.executor_identity() + message, *args, **kwargs)
 
-    #--------------------------------------------------------------------------
     def error(self, message, *args, **kwargs):
         self.logger.error(self.executor_identity() + message, *args, **kwargs)
 
-    #--------------------------------------------------------------------------
     def warning(self, message, *args, **kwargs):
         self.logger.warning(
             self.executor_identity() + message,
@@ -328,7 +310,6 @@ class LoggerWrapper(object):
             **kwargs
         )
 
-    #--------------------------------------------------------------------------
     def critical(self, message, *args, **kwargs):
         self.logger.critical(
             self.executor_identity() + message,
@@ -337,7 +318,6 @@ class LoggerWrapper(object):
         )
 
 
-#------------------------------------------------------------------------------
 def setup_logger(config, local_unused, args_unused):
     """This method is sets up and initializes the logger objects.  It is a
     function in the form appropriate for a configiman aggregation.  When given
@@ -382,7 +362,6 @@ def setup_logger(config, local_unused, args_unused):
     return wrapped_logger
 
 
-#==============================================================================
 class App(SocorroApp):
     """The base class from which Socorro apps are based"""
     required_config = Namespace()
@@ -442,7 +421,6 @@ class App(SocorroApp):
     )
 
 
-#==============================================================================
 class SocorroWelcomeApp(SocorroApp):
     required_config = Namespace()
     required_config.add_option(
@@ -464,7 +442,6 @@ class SocorroWelcomeApp(SocorroApp):
     app_version = "1.0"
     app_description = 'Welcome to Socorro'
 
-    #--------------------------------------------------------------------------
     def main(self):
         if (
             self.config.application
@@ -483,7 +460,6 @@ class SocorroWelcomeApp(SocorroApp):
             )
 
 
-#------------------------------------------------------------------------------
 def tear_down_logger(app_name):
     logger = logging.getLogger(app_name)
     # must have a copy of the handlers list since we cannot modify the original
@@ -493,13 +469,11 @@ def tear_down_logger(app_name):
         logger.removeHandler(x)
 
 
-#------------------------------------------------------------------------------
 def _convert_format_string(s):
     """return '%(foo)s %(bar)s' if the input is '{foo} {bar}'"""
     return re.sub('{(\w+)}', r'%(\1)s', s)
 
 
-#------------------------------------------------------------------------------
 def main(app_class, config_path=None, values_source_list=None):
     return app_class.run(
         config_path=config_path,

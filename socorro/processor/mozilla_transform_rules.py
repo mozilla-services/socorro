@@ -33,14 +33,11 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 
 
-#==============================================================================
 class ProductRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.product = raw_crash.get('ProductName', '')
@@ -59,14 +56,11 @@ class ProductRule(Rule):
         return True
 
 
-#==============================================================================
 class UserDataRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.url = raw_crash.get('URL', None)
@@ -78,14 +72,11 @@ class UserDataRule(Rule):
         return True
 
 
-#==============================================================================
 class EnvironmentRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.app_notes = raw_crash.get('Notes', '')
@@ -93,14 +84,11 @@ class EnvironmentRule(Rule):
         return True
 
 
-#==============================================================================
 class PluginRule(Rule):   # Hangs are here
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         try:
@@ -151,7 +139,6 @@ class PluginRule(Rule):   # Hangs are here
         return True
 
 
-#==============================================================================
 class AddonsRule(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -161,11 +148,19 @@ class AddonsRule(Rule):
         default=True,
     )
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
+    def _get_formatted_addon(self, addon):
+        """Return a properly formatted addon string.
+
+        Format is: addon_identifier:addon_version
+
+        This is used because some addons are missing a version. In order to
+        simplify subsequent queries, we make sure the format is consistent.
+        """
+        return addon if ':' in addon else addon + ':NO_VERSION'
+
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.addons_checked = None
@@ -200,7 +195,8 @@ class AddonsRule(Rule):
                         'AddonsRule: trying to split addons'
                     )
                 processed_crash.addons = [
-                    unquote_plus(x) for x in original_addon_str.split(',')
+                    unquote_plus(self._get_formatted_addon(x))
+                    for x in original_addon_str.split(',')
                 ]
             if self.config.chatty:
                 self.config.logger.debug(
@@ -211,14 +207,11 @@ class AddonsRule(Rule):
         return True
 
 
-#==============================================================================
 class DatesAndTimesRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _get_truncate_or_warn(
         a_mapping,
@@ -239,7 +232,6 @@ class DatesAndTimesRule(Rule):
             )
             return default
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processor_notes = processor_meta.processor_notes
@@ -318,14 +310,11 @@ class DatesAndTimesRule(Rule):
         return True
 
 
-#==============================================================================
 class JavaProcessRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.java_stack_trace = raw_crash.setdefault(
@@ -336,7 +325,6 @@ class JavaProcessRule(Rule):
         return True
 
 
-#==============================================================================
 class OutOfMemoryBinaryRule(Rule):
 
     required_config = Namespace()
@@ -350,15 +338,12 @@ class OutOfMemoryBinaryRule(Rule):
 
     )
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return 'memory_report' in raw_dumps
 
-    #--------------------------------------------------------------------------
     def _extract_memory_info(self, dump_pathname, processor_notes):
         """Extract and return the JSON data from the .json.gz memory report.
         file"""
@@ -390,7 +375,6 @@ class OutOfMemoryBinaryRule(Rule):
 
         return memory_info
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         pathname = raw_dumps['memory_report']
         with temp_file_context(pathname):
@@ -407,7 +391,6 @@ class OutOfMemoryBinaryRule(Rule):
         return True
 
 
-#--------------------------------------------------------------------------
 def setup_product_id_map(config, local_config, args_unused):
     database_connection = local_config.database_class(local_config)
     transaction = local_config.transaction_executor_class(
@@ -431,7 +414,6 @@ def setup_product_id_map(config, local_config, args_unused):
     return product_id_map
 
 
-#==============================================================================
 class ProductRewrite(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -456,7 +438,6 @@ class ProductRewrite(Rule):
         setup_product_id_map
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(ProductRewrite, self).__init__(config)
         self.product_id_map = setup_product_id_map(
@@ -465,11 +446,9 @@ class ProductRewrite(Rule):
             None
         )
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
             return raw_crash['ProductID'] in self.product_id_map
@@ -477,7 +456,6 @@ class ProductRewrite(Rule):
             # no ProductID
             return False
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             product_id = raw_crash['ProductID']
@@ -499,18 +477,14 @@ class ProductRewrite(Rule):
         return True
 
 
-#==============================================================================
 class ESRVersionRewrite(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '2.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return raw_crash.get('ReleaseChannel', '') == 'esr'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             raw_crash['Version'] += 'esr'
@@ -520,56 +494,44 @@ class ESRVersionRewrite(Rule):
             )
 
 
-#==============================================================================
 class PluginContentURL(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '2.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
             return bool(raw_crash['PluginContentURL'])
         except KeyError:
             return False
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         raw_crash['URL'] = raw_crash['PluginContentURL']
         return True
 
 
-#==============================================================================
 class PluginUserComment(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '2.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
             return bool(raw_crash['PluginUserComment'])
         except KeyError:
             return False
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         raw_crash['Comments'] = raw_crash['PluginUserComment']
         return True
 
 
-#==============================================================================
 class ExploitablityRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
         try:
             processed_crash.exploitability = (
                 processed_crash['json_dump']
@@ -583,7 +545,6 @@ class ExploitablityRule(Rule):
         return True
 
 
-#==============================================================================
 class FlashVersionRule(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -639,11 +600,9 @@ class FlashVersionRule(Rule):
         from_string_converter=re.compile
     )
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _get_flash_version(self, **kwargs):
         """If (we recognize this module as Flash and figure out a version):
         Returns version; else (None or '')"""
@@ -671,16 +630,17 @@ class FlashVersionRule(Rule):
             )
         return None
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.flash_version = ''
         flash_version = None
-        for index, a_module in enumerate(
-            processed_crash['json_dump']['modules']
-        ):
-            flash_version = self._get_flash_version(**a_module)
-            if flash_version:
-                break
+
+        modules = processed_crash['json_dump'].get('modules', [])
+        if isinstance(modules, (tuple, list)):
+            for index, a_module in enumerate(modules):
+                flash_version = self._get_flash_version(**a_module)
+                if flash_version:
+                    break
+
         if flash_version:
             processed_crash.flash_version = flash_version
         else:
@@ -688,19 +648,15 @@ class FlashVersionRule(Rule):
         return True
 
 
-#==============================================================================
 class Winsock_LSPRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
 
 
-#==============================================================================
 class TopMostFilesRule(Rule):
     """Origninating from Bug 519703, the topmost_filenames was specified as
     singular, there would be only one.  The original programmer, in the
@@ -715,11 +671,9 @@ class TopMostFilesRule(Rule):
     varible in the processed_crash is plural rather than singular is
     unfortunate."""
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.topmost_filenames = None
         try:
@@ -745,7 +699,6 @@ class TopMostFilesRule(Rule):
         return True
 
 
-#==============================================================================
 class MissingSymbolsRule(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -765,7 +718,6 @@ class MissingSymbolsRule(Rule):
         reference_value_from='resource.postgresql',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(MissingSymbolsRule, self).__init__(config)
         self.database = self.config.database_class(config)
@@ -779,11 +731,9 @@ class MissingSymbolsRule(Rule):
             " VALUES (%%s, %%s, %%s, %%s, %%s)"
         )
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             date = processed_crash['date_processed']
@@ -827,7 +777,6 @@ class MissingSymbolsRule(Rule):
         return True
 
 
-#==============================================================================
 class BetaVersionRule(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -847,7 +796,6 @@ class BetaVersionRule(Rule):
         reference_value_from='resource.postgresql',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
         database = config.database_class(config)
@@ -857,11 +805,9 @@ class BetaVersionRule(Rule):
         )
         self._versions_data_cache = {}
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _get_version_data(self, product, version, release_channel, build_id):
         key = '%s:%s:%s:%s' % (product, version, release_channel, build_id)
 
@@ -895,7 +841,6 @@ class BetaVersionRule(Rule):
 
         return self._versions_data_cache.get(key)
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
             # We apply this Rule only if the release channel is beta, because
@@ -906,7 +851,6 @@ class BetaVersionRule(Rule):
             # No release_channel.
             return False
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             # Sanitize the build id to avoid errors during the SQL query.
@@ -939,26 +883,21 @@ class BetaVersionRule(Rule):
         return True
 
 
-#==============================================================================
 class FennecBetaError20150430(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return raw_crash['ProductName'].startswith('Fennec') and \
             raw_crash['BuildID'] == '20150427090529' and \
             raw_crash['ReleaseChannel'] == 'release'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         raw_crash['ReleaseChannel'] = 'beta'
         return True
 
 
-#==============================================================================
 class OSPrettyVersionRule(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -978,7 +917,6 @@ class OSPrettyVersionRule(Rule):
         reference_value_from='resource.postgresql',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(OSPrettyVersionRule, self).__init__(config)
         database = config.database_class(config)
@@ -988,11 +926,9 @@ class OSPrettyVersionRule(Rule):
         )
         self._windows_versions = self._get_windows_versions()
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _get_windows_versions(self):
         sql = """
             SELECT windows_version_name, major_version, minor_version
@@ -1009,7 +945,6 @@ class OSPrettyVersionRule(Rule):
 
         return versions
 
-    #--------------------------------------------------------------------------
     def _get_pretty_os_version(self, processed_crash):
         try:
             pretty_name = processed_crash['os_name']
@@ -1055,7 +990,6 @@ class OSPrettyVersionRule(Rule):
 
         return pretty_name
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash['os_pretty_version'] = self._get_pretty_os_version(
             processed_crash
@@ -1063,7 +997,6 @@ class OSPrettyVersionRule(Rule):
         return True
 
 
-#==============================================================================
 class ThemePrettyNameRule(Rule):
     """The Firefox theme shows up commonly in crash reports referenced by its
     internal ID. The ID is not easy to change, and is referenced by id in other
@@ -1074,7 +1007,6 @@ class ThemePrettyNameRule(Rule):
 
     Must be run after the Addons Rule."""
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(ThemePrettyNameRule, self).__init__(config)
         self.conversions = {
@@ -1083,25 +1015,32 @@ class ThemePrettyNameRule(Rule):
                 "(default theme)",
         }
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        '''addons is a list of tuples containing (extension, version)'''
+        '''addons is expected to be a list of strings like 'extension:version',
+        but we are being overly cautious and consider the case where they
+        lack the ':version' part, because user inputs are never reliable.
+        '''
         addons = processed_crash.get('addons', [])
 
-        for extension, version in addons:
+        for addon in addons:
+            extension = addon.split(':')[0]
             if extension in self.conversions:
                 return True
         return False
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         addons = processed_crash.addons
 
-        for index, (extension, version) in enumerate(addons):
-            if extension in self.conversions:
-                addons[index] = (self.conversions[extension], version)
+        for index, addon in enumerate(addons):
+            if ':' in addon:
+                extension, version = addon.split(':', 1)
+                if extension in self.conversions:
+                    addons[index] = ':'.join(
+                        (self.conversions[extension], version)
+                    )
+            elif addon in self.conversions:
+                addons[index] = self.conversions[addon]
         return True

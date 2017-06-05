@@ -4,7 +4,7 @@ from configman import Namespace
 from socorro.processor.processor_2015 import Processor2015
 from socorro.lib.converters import change_default
 
-#------------------------------------------------------------------------------
+
 # these are the steps that define processing a crash at Mozilla.
 # they are used to define the default rule configuration for the Mozilla
 # crash processor based on Procesor2015
@@ -104,7 +104,6 @@ mozilla_processor_rule_sets = [
 ]
 
 
-#==============================================================================
 class MozillaProcessorAlgorithm2015(Processor2015):
     """this is the class that processor uses to transform """
 

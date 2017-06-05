@@ -4,7 +4,6 @@
 
 import datetime
 import json
-import time
 
 import requests_mock
 from nose.tools import assert_raises, eq_, ok_
@@ -33,6 +32,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()
+
+        # Wait until the cluster is yellow before proceeding.
+        self.health_check()
 
     def test_get_indices(self):
         now = datetime.datetime(2001, 1, 2, 0, 0)
@@ -1883,9 +1885,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
     @minimum_es_version('1.0')
     def test_get_with_zero(self):
-        # !FIXME Wait for Elasticsearch to be ready.
-        time.sleep(0.1)
-
         res = self.api.get(
             _results_number=0,
         )
@@ -1902,9 +1901,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
     @minimum_es_version('1.0')
     @requests_mock.Mocker(real_http=True)
     def test_get_with_failing_shards(self, mock_requests):
-        # !FIXME Wait for Elasticsearch to be ready.
-        time.sleep(0.1)
-
         # Test with one failing shard.
         es_results = {
             'hits': {
@@ -1930,8 +1926,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         mock_requests.get(
-            'http://localhost:9200/{}/crash_reports/_search'.format(
-                self.config.elasticsearch.elasticsearch_index
+            '{url}/{index}/crash_reports/_search'.format(
+                url=self.get_url(),
+                index=self.config.elasticsearch.elasticsearch_index
             ),
             text=json.dumps(es_results)
         )
@@ -1985,8 +1982,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         mock_requests.get(
-            'http://localhost:9200/{}/crash_reports/_search'.format(
-                self.config.elasticsearch.elasticsearch_index
+            '{url}/{index}/crash_reports/_search'.format(
+                url=self.get_url(),
+                index=self.config.elasticsearch.elasticsearch_index
             ),
             text=json.dumps(es_results)
         )

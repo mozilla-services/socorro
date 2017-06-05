@@ -15,7 +15,6 @@ logger = logging.getLogger("cachedIdAccess")
 
 
 # Retain the trailing $ needed to force a match on the full value
-#-----------------------------------------------------------------------------------------------------------------
 majorPattern = re.compile(r'(\d+\.)+\d+$')
 developmentPattern = re.compile(r'(\d+\.)+\d+[ab]\d*$')
 milestonePattern = re.compile(r'(\d+\.)+\d+([ab]\d*)?pre$')
@@ -33,7 +32,7 @@ def createProductRelease(version):
     return 'major'
   return None
 
-#-----------------------------------------------------------------------------------------------------------------
+
 def shrinkIdCache(cacheMap, cacheCount, oneKeyToSave=None):
   """
   Remove the least-used half of the cached data, retaining oneKeyToSave (most recently used) if provided
@@ -55,7 +54,7 @@ def shrinkIdCache(cacheMap, cacheCount, oneKeyToSave=None):
     idCount[oneKeyToSave] = 1
   return idCache,idCount
 
-#=================================================================================================================
+
 class IdCache:
   linuxLineRE = re.compile(r'0\.0\.0 [lL]inux.+[lL]inux$|[0-9.]+.+(i586|i686|sun4u|i86pc|x86_64)?')
   linuxVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)([0-9.]+[0-9]).*(i586|i686|sun4u|i86pc|x86_64).*')
@@ -70,7 +69,6 @@ class IdCache:
       self.truncateUrlLength = int(self.truncateUrlLength)
     self.cursor = databaseCursor
 
-  #---------------------------------------------------------------------------------------------------------------
   def assureAndGetId(self, key, table, getSql, putSql, cacheMap, countMap, dkey=None):
     """
     If possible, get the cached id associated with key and update the cache count.
@@ -121,7 +119,6 @@ class IdCache:
             logger.error("%s - Unable to SELECT %s.id for (%s). Giving up.",threading.currentThread().getName(),table,key)
     return id
 
-  #---------------------------------------------------------------------------------------------------------------
   # these 'knownProtocols' are here in case we ever want to use them. Not now consulted to see if a protocol is 'legal'
   knownProtocols = set([
     # from http://en.wikipedia.org/wiki/WYCIWYG and http://en.wikipedia.org/wiki/URI_scheme#Official_IANA-registered_schemes
@@ -142,7 +139,6 @@ class IdCache:
   URIstring = r'^(?P<uri>(?P<proto>\w+):(?P<lead>//)?(?P<domain>[^/]+)?(?P<tail>[^?&=;]*))(?P<query>.*)$'
   uriPattern = re.compile(URIstring)
 
-  #-----------------------------------------------------------------------------------------------------------------
   def getAppropriateOsVersion(self, name,origVersion):
     """
     If this is a linux os, chop out all the gubbish retaining only the actual version numbers

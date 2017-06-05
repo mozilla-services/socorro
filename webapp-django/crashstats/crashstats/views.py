@@ -974,6 +974,23 @@ def report_index(request, crash_id, default_context=None):
 
     context['BUG_PRODUCT_MAP'] = settings.BUG_PRODUCT_MAP
 
+    # report.addons used to be a list of lists.
+    # In https://bugzilla.mozilla.org/show_bug.cgi?id=1250132
+    # we changed it from a list of lists to a list of strings, using
+    # a ':' to split the name and version.
+    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1250132#c7
+    # Considering legacy, let's tackle both.
+    # In late 2017, this code is going to be useless and can be removed.
+    if (
+        context['report'].get('addons') and
+        isinstance(context['report']['addons'][0], (list, tuple))
+    ):
+        # This is the old legacy format. This crash hasn't been processed
+        # the new way.
+        context['report']['addons'] = [
+            ':'.join(x) for x in context['report']['addons']
+        ]
+
     return render(request, 'crashstats/report_index.html', context)
 
 

@@ -34,7 +34,6 @@ def responsify(func):
     return wrapper
 
 
-#==============================================================================
 class TestFTPScraper(TestCaseBase):
 
     def get_standard_config(self):

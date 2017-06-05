@@ -1001,3 +1001,34 @@ class TestJitCrashCategorizeRule(TestCase):
 
         ok_('classifications.jit.category' not in processed_crash)
         ok_('classifications.jit.category_return_code' not in processed_crash)
+
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_no_crashing_thread(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'Windows NT'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'EnterBaseline'
+        processed_crash['json_dump'] = {}  # note the empty json_dump
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        res = rule._predicate(
+            raw_crash, raw_dumps, processed_crash, processor_meta
+        )
+
+        # Simply verify that no exception is raised.
+        ok_(res)

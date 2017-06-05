@@ -1,0 +1,97 @@
+# docker-compose for Socorro development.
+#
+# Note: Requires docker-comopse 1.10+.
+version: "2"
+services:
+  # Socorro base image
+  base:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    image: local/socorro_base
+
+  # Processor app
+  processor:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.processor
+    image: local/socorro_processor
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/processor.env
+    depends_on:
+      # - statsd -- FIXME(willkg): broken for some reason
+      - localstack-s3
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+    volumes:
+      - .:/app
+
+  # Webapp app
+  webapp:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.webapp
+    image: local/socorro_webapp
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/webapp.env
+    depends_on:
+      # - statsd -- FIXME(willkg): broken for some reason
+      - localstack-s3
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+    command: ["/app/docker/run_webapp.sh", "--dev"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+
+  # -----------------------------
+  # External services
+  # -----------------------------
+
+  # https://hub.docker.com/r/kamon/grafana_graphite/
+  # username: admin, password: admin
+  statsd:
+    image: kamon/grafana_graphite
+    ports:
+      - "8080:3000"  # grafana port
+
+  # https://hub.docker.com/_/elasticsearch/
+  # Note: This image is deprecated, but the new one requires fiddling.
+  elasticsearch:
+    image: elasticsearch:1.4.5
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  # https://hub.docker.com/_/rabbitmq/
+  rabbitmq:
+    image: rabbitmq:3.6.9
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbituser
+      - RABBITMQ_DEFAULT_PASS=rabbitpwd
+      - RABBITMQ_DEFAULT_VHOST=rabbitvhost
+
+  # https://hub.docker.com/_/postgres/
+  postgresql:
+    image: postgres:9.4
+    environment:
+      # Create the superuser account
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=aPassword
+      - POSTGRES_DB=breakpad
+
+  # https://hub.docker.com/r/atlassianlabs/localstack/
+  # localstack running a fake S3
+  localstack-s3:
+    image: atlassianlabs/localstack:0.4.0
+    environment:
+      - SERVICES=s3:5000
+      - DEFAULT_REGION=us-east-1
+      - HOSTNAME=localstack-s3
+    ports:
+      - "5000:5000"

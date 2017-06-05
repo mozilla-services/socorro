@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+
 from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
 from mock import Mock
@@ -129,9 +131,9 @@ class TestIntegrationPostgresCrashData(TestCase):
             values_source_list=[{'database': {
                 'logger': mock_logging,
                 'database_name': 'socorro_integration_test',
-                'database_hostname': 'localhost',
-                'database_username': 'test',
-                'database_password': 'aPassword',
+                'database_hostname': os.environ['database_hostname'],
+                'database_username': os.environ['database_username'],
+                'database_password': os.environ['database_password'],
             }}]
         )
         return config_manager

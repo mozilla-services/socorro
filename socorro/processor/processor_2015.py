@@ -67,7 +67,6 @@ default_rule_set = [
 default_rules_set_str = ujson.dumps(default_rule_set)
 
 
-#------------------------------------------------------------------------------
 def rule_sets_from_string(rule_sets_as_string):
     """this configman converter takes a json file in the form of a string,
     and converts it into rules sets for use in the processor.  See the
@@ -128,7 +127,6 @@ def rule_sets_from_string(rule_sets_as_string):
     return ProcessorRuleSets
 
 
-#==============================================================================
 class Processor2015(RequiredConfig):
     """this class is a generalization of the Processor into a rule processing
     framework. This class is suitable for use in the 'processor_app'
@@ -143,7 +141,6 @@ class Processor2015(RequiredConfig):
         likely_to_be_changed=True,
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(Processor2015, self).__init__()
         self.config = config
@@ -176,7 +173,6 @@ class Processor2015(RequiredConfig):
                 )
             )
 
-    #--------------------------------------------------------------------------
     def process_crash(self, raw_crash, raw_dumps, processed_crash):
         """Take a raw_crash and its associated raw_dumps and return a
         processed_crash.
@@ -232,7 +228,7 @@ class Processor2015(RequiredConfig):
                     raw_crash,
                     raw_dumps,
                     processed_crash,
-                    processor_meta_data
+                    processor_meta_data,
                 )
                 self.quit_check()
 
@@ -240,15 +236,15 @@ class Processor2015(RequiredConfig):
             # raised, call it a success.
             processed_crash.success = True
 
-        except Exception, x:
+        except Exception as exception:
             self.config.logger.warning(
                 'Error while processing %s: %s',
                 crash_id,
-                str(x),
+                str(exception),
                 exc_info=True
             )
             processor_meta_data.processor_notes.append(
-                'unrecoverable processor error: %s' % x
+                'unrecoverable processor error: %s' % exception
             )
 
         # the processor notes are in the form of a list.  Join them all
@@ -268,17 +264,14 @@ class Processor2015(RequiredConfig):
         )
         return processed_crash
 
-    #--------------------------------------------------------------------------
     def reject_raw_crash(self, crash_id, reason):
         self._log_job_start(crash_id)
         self.config.logger.warning('%s rejected: %s', crash_id, reason)
         self._log_job_end(False, crash_id)
 
-    #--------------------------------------------------------------------------
     def _log_job_start(self, crash_id):
         self.config.logger.info("starting job: %s", crash_id)
 
-    #--------------------------------------------------------------------------
     def _log_job_end(self, success, crash_id):
         self.config.logger.info(
             "finishing %s job: %s",
@@ -286,7 +279,6 @@ class Processor2015(RequiredConfig):
             crash_id
         )
 
-    #--------------------------------------------------------------------------
     def close(self):
         for a_rule_set_name, a_rule_set in self.rule_system.iteritems():
             self.config.logger.debug('closing %s', a_rule_set_name)
@@ -296,4 +288,3 @@ class Processor2015(RequiredConfig):
                 # guess we don't need to close that rule
                 pass
         self.config.logger.debug('done closing rules')
-

@@ -11,7 +11,6 @@ import poster
 poster.streaminghttp.register_openers()
 
 
-#==============================================================================
 class BreakpadPOSTDestination(CrashStorageBase):
     """this a crashstorage derivative that just pushes a crash out to a
     Socorro collector waiting at a url"""
@@ -29,7 +28,6 @@ class BreakpadPOSTDestination(CrashStorageBase):
         default=False
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(BreakpadPOSTDestination, self).__init__(
             config,
@@ -37,7 +35,6 @@ class BreakpadPOSTDestination(CrashStorageBase):
         )
         self.hang_id_cache = dict()
 
-    #--------------------------------------------------------------------------
     def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
         try:
             for dump_name, dump_pathname in dumps.iteritems():

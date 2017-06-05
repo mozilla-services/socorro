@@ -6,7 +6,6 @@ from configman import RequiredConfig, Namespace, class_converter
 from datetime import datetime
 
 
-#------------------------------------------------------------------------------
 def str_to_list(string_list):
     item_list = []
     for x in string_list.split(','):
@@ -14,7 +13,6 @@ def str_to_list(string_list):
     return item_list
 
 
-#==============================================================================
 class StatsdEnabledBase(RequiredConfig):
     """This class is a duck typed crash storage class.  All it does is log
     the calls made to it to statsd.  It can use several different
@@ -55,7 +53,6 @@ class StatsdEnabledBase(RequiredConfig):
         reference_value_from='resource.statsd',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(StatsdEnabledBase, self).__init__()
         self.config = config
@@ -69,14 +66,12 @@ class StatsdEnabledBase(RequiredConfig):
             self.prefix
         )
 
-    #--------------------------------------------------------------------------
     def _make_name(self, *args):
         names = [self.prefix] if self.prefix else []
         names.extend(list(args))
         return '.'.join(x for x in names if x)
 
 
-#==============================================================================
 class StatsdCounter(StatsdEnabledBase):
     """This class is a duck typed crash storage class.  All it does is log
     the calls made to it to statsd.  It can use several different
@@ -85,11 +80,9 @@ class StatsdCounter(StatsdEnabledBase):
 
     required_config = Namespace()
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(StatsdCounter, self).__init__(config, quit_check_callback)
 
-    #--------------------------------------------------------------------------
     def _incr(self, name):
         if (
             self.config.statsd_host
@@ -98,17 +91,14 @@ class StatsdCounter(StatsdEnabledBase):
             counter_name = self._make_name(name)
             self.statsd.incr(counter_name)
 
-    #--------------------------------------------------------------------------
     def __getattr__(self, attr):
         self._incr(attr)
         return self._dummy_do_nothing_method
 
-    #--------------------------------------------------------------------------
     def _dummy_do_nothing_method(self, *args, **kwargs):
         pass
 
 
-#==============================================================================
 class StatsdBenchmarkingWrapper(StatsdEnabledBase):
     """a wrapper around crash stores that will benchmark the calls in the logs
     """
@@ -121,7 +111,6 @@ class StatsdBenchmarkingWrapper(StatsdEnabledBase):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(StatsdBenchmarkingWrapper, self).__init__(
             config,
@@ -134,12 +123,10 @@ class StatsdBenchmarkingWrapper(StatsdEnabledBase):
         self.end_timer = datetime.now
         self.prefixes = {}
 
-    #--------------------------------------------------------------------------
     def close(self):
         """some implementations may need explicit closing."""
         self.wrapped_object.close()
 
-    #--------------------------------------------------------------------------
     def __getattr__(self, attr):
         # allow any AttributeError to propagate outward
         wrapped_attr = getattr(self.wrapped_object, attr)

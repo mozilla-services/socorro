@@ -4,13 +4,18 @@ echo "this is test.sh"
 
 source scripts/defaults
 
-NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s"
+PYTEST="$VIRTUAL_ENV/bin/pytest"
 SETUPDB="$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py"
 JENKINS_CONF=jenkins.py.dist
 
 ENV=env
 
 PYTHONPATH=.
+
+FS_RESOURCES=""
+if [ -n "$fs_root" ]; then
+    FS_RESOURCES="$FS_RESOURCES resource.fs.fs_root=$fs_root"
+fi
 
 PG_RESOURCES=""
 if [ -n "$database_url" ]; then
@@ -95,7 +100,7 @@ PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini downgrad
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade heads
 
 # run tests
-$ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
+$ENV $FS_RESOURCES $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $PYTEST
 
 # test webapp
 pushd webapp-django

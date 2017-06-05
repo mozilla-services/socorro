@@ -8,7 +8,6 @@ FAIL = 1
 SUCCESS = 0
 
 
-#==============================================================================
 class PurgeRabbitMQQueueApp(App):
     app_name = 'test_rabbitmq'
     app_version = '1.0'
@@ -30,7 +29,6 @@ class PurgeRabbitMQQueueApp(App):
         default=''
     )
 
-    #--------------------------------------------------------------------------
     def main(self):
         if not self.config.queue_name:
             self.config.logger.critical('a queue name is required')

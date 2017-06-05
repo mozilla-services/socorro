@@ -1,5 +1,6 @@
 {
   "name": "socorro-webapp-django",
+  "version": "0.0.0",
   "description": "webapp for crash-stats",
   "repository": {
     "type": "git",

@@ -1,0 +1,14 @@
+FROM local/socorro_base
+
+# Install breakpad and stackwalk bits
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y pkg-config libcurl3 libcurl3-gnutls libcurl4-gnutls-dev
+COPY ./scripts/build-breakpad.sh /tmp
+COPY ./minidump-stackwalk/ /tmp/minidump-stackwalk/
+COPY ./docker/set_up_stackwalk.sh /tmp
+RUN /tmp/set_up_stackwalk.sh
+
+COPY . /app/
+
+USER app
+
+CMD ["/app/docker/run_processor.sh"]

@@ -19,9 +19,7 @@ from socorro.external.crashstorage_base import MemoryDumpsMapping
 from configman import RequiredConfig, Namespace, class_converter
 
 
-#==============================================================================
 class GenericCollectorBase(RequiredConfig):
-    #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
 
@@ -39,22 +37,18 @@ class GenericCollectorBase(RequiredConfig):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
         self.logger = self.config.logger
         self.checksum_method = self._get_checksum_method()
         self.accept_submitted_crash_id = self._get_accept_submitted_crash_id()
 
-    #--------------------------------------------------------------------------
     def _get_accept_submitted_crash_id(self):
         return self.config.accept_submitted_crash_id
 
-    #--------------------------------------------------------------------------
     def _get_checksum_method(self):
         return self.config.checksum_method
 
-    #--------------------------------------------------------------------------
     def _process_fieldstorage(self, fs):
         if isinstance(fs, list):
             return [self._process_fieldstorage(x) for x in fs]
@@ -63,15 +57,12 @@ class GenericCollectorBase(RequiredConfig):
         else:
             return fs
 
-    #--------------------------------------------------------------------------
     def _is_content_gzipped(self):
         return web.ctx.env.get('HTTP_CONTENT_ENCODING') == 'gzip'
 
-    #--------------------------------------------------------------------------
     def _get_content_length(self):
         return web.ctx.env.get('CONTENT_LENGTH', 0)
 
-    #--------------------------------------------------------------------------
     def _form_as_mapping(self):
         """this method returns the POST form mapping with any gzip
         decompression automatically handled"""
@@ -90,7 +81,6 @@ class GenericCollectorBase(RequiredConfig):
                 return form
         return web.webapi.rawinput()
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _no_x00_character(value):
         if isinstance(value, unicode) and u'\u0000' in value:
@@ -99,7 +89,6 @@ class GenericCollectorBase(RequiredConfig):
             return ''.join(c for c in value if c != '\x00')
         return value
 
-    #--------------------------------------------------------------------------
     def _get_raw_crash_from_form(self):
         """this method creates the raw_crash and the dumps mapping using the
         POST form"""
@@ -121,13 +110,11 @@ class GenericCollectorBase(RequiredConfig):
                 raw_crash[name] = value.value
         return raw_crash, dumps
 
-    #--------------------------------------------------------------------------
     def POST(self, *args):
         raise NotImplementedError()
 
-#==============================================================================
+
 class GenericCollector(GenericCollectorBase):
-    #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
 
@@ -136,10 +123,8 @@ class GenericCollector(GenericCollectorBase):
         doc='the prefix to return to the client in front of the crash_id',
         default='xx-'
     )
-    #--------------------------------------------------------------------------
     # storage namespace
     #     the namespace is for config parameters crash storage
-    #--------------------------------------------------------------------------
     required_config.namespace('storage')
     required_config.storage.add_option(
         'crashstorage_class',
@@ -149,7 +134,6 @@ class GenericCollector(GenericCollectorBase):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(GenericCollector, self).__init__(config)
         self.type_tag = self.config.type_tag
@@ -157,7 +141,6 @@ class GenericCollector(GenericCollectorBase):
             self.config.storage
         )
 
-    #--------------------------------------------------------------------------
     def POST(self, *args):
         raw_crash, dumps = self._get_raw_crash_from_form()
 

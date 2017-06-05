@@ -18,6 +18,7 @@ CERT_.*
 CFRelease
 _chkstk
 CleanupPerAppKey
+core::result::unwrap_failed<T>
 CrashInJS
 __delayLoadHelper2
 dlmalloc
@@ -75,10 +76,14 @@ mozalloc_handle_oom
 moz_free
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::.*
+mozilla::detail::nsStringRepr::First
+mozilla::detail::nsStringRepr::Last
 mozilla::ipc::LogicError
 mozilla::ipc::MessageChannel::AssertWorkerThread
 mozilla::ipc::MessageChannel::Call
+mozilla::ipc::MessageChannel::Clear
 mozilla::ipc::MessageChannel::CxxStackFrame::CxxStackFrame
+mozilla::ipc::MessageChannel::~MessageChannel
 mozilla::ipc::MessageChannel::Send
 mozilla::ipc::RPCChannel::Call
 mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame
@@ -114,6 +119,7 @@ nsThread::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::.*
+nsINode::Slots
 nsJSThingHashtable<.*>::.*
 nsObjCExceptionLogAbort
 nsRefPtr.*
@@ -139,6 +145,7 @@ PR_.*
 __psynch_cvwait
 _pthread_cond_wait
 pthread_mutex_lock
+__pthread_kill
 _purecall
 raise
 realloc

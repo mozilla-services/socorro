@@ -117,7 +117,6 @@ class SimpleDatePrefixKeyBuilder(KeyBuilderBase):
         return keys
 
 
-#==============================================================================
 class ConnectionContextBase(RequiredConfig):
 
     required_config = Namespace()
@@ -173,7 +172,6 @@ class ConnectionContextBase(RequiredConfig):
         boto.exception.StorageResponseError
     )
 
-    #--------------------------------------------------------------------------
     def is_operational_exception(self, x):
         if "not found, no value returned" in str(x):
             # the not found error needs to be re-tryable to compensate for
@@ -183,7 +181,6 @@ class ConnectionContextBase(RequiredConfig):
             return True
         return False
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         self.config = config
 
@@ -196,7 +193,6 @@ class ConnectionContextBase(RequiredConfig):
 
         self._bucket_cache = {}
 
-    #--------------------------------------------------------------------------
     def _connect(self):
         try:
             return self.connection
@@ -206,20 +202,17 @@ class ConnectionContextBase(RequiredConfig):
             )
             return self.connection
 
-    #--------------------------------------------------------------------------
     def _get_credentials(self):
         """each subclass must implement this method to provide the type
         of credentials required for the type of connection"""
         raise NotImplementedError
 
-    #--------------------------------------------------------------------------
     def build_keys(self, prefix, name_of_thing, id):
         """Builds an s3 pseudo-filename using the specified keybuilder class.
 
         """
         return self.keybuilder.build_keys(prefix, name_of_thing, id)
 
-    #--------------------------------------------------------------------------
     def _get_bucket(self, conn, bucket_name):
         try:
             return self._bucket_cache[bucket_name]
@@ -227,7 +220,6 @@ class ConnectionContextBase(RequiredConfig):
             self._bucket_cache[bucket_name] = conn.get_bucket(bucket_name)
             return self._bucket_cache[bucket_name]
 
-    #--------------------------------------------------------------------------
     def _get_or_create_bucket(self, conn, bucket_name):
         try:
             return self._get_bucket(conn, bucket_name)
@@ -235,7 +227,6 @@ class ConnectionContextBase(RequiredConfig):
             self._bucket_cache[bucket_name] = conn.create_bucket(bucket_name)
             return self._bucket_cache[bucket_name]
 
-    #--------------------------------------------------------------------------
     def submit(self, id, name_of_thing, thing):
         """submit something to boto.
         """
@@ -251,7 +242,6 @@ class ConnectionContextBase(RequiredConfig):
         key_object = bucket.new_key(key)
         key_object.set_contents_from_string(thing)
 
-    #--------------------------------------------------------------------------
     def fetch(self, id, name_of_thing):
         """retrieve something from boto.
         """
@@ -273,40 +263,32 @@ class ConnectionContextBase(RequiredConfig):
             )
         )
 
-    #--------------------------------------------------------------------------
     def _convert_mapping_to_string(self, a_mapping):
         return json.dumps(a_mapping, cls=JSONISOEncoder)
 
-    #--------------------------------------------------------------------------
     def _convert_list_to_string(self, a_list):
         return json.dumps(a_list)
 
-    #--------------------------------------------------------------------------
     def _convert_string_to_list(self, a_string):
         return json.loads(a_string)
 
-    #--------------------------------------------------------------------------
     def commit(self):
         """boto doesn't support transactions so this silently
         does nothing"""
 
-    #--------------------------------------------------------------------------
     def rollback(self):
         """boto doesn't support transactions so this silently
         does nothing"""
 
-    #--------------------------------------------------------------------------
     @contextlib.contextmanager
     def __call__(self):
         yield self
 
-    #--------------------------------------------------------------------------
     def in_transaction(self, dummy):
         """boto doesn't support transactions, so it is never in
         a transaction."""
         return False
 
-    #--------------------------------------------------------------------------
     def force_reconnect(self):
         try:
             del self.connection
@@ -315,7 +297,6 @@ class ConnectionContextBase(RequiredConfig):
             pass
 
 
-#==============================================================================
 class S3ConnectionContext(ConnectionContextBase):
     """This derived class includes the specifics for connection to S3"""
     required_config = Namespace()
@@ -328,14 +309,12 @@ class S3ConnectionContext(ConnectionContextBase):
         likely_to_be_changed=True,
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(S3ConnectionContext, self).__init__(config)
 
         self._connect_to_endpoint = boto.connect_s3
         self._calling_format = config.calling_format
 
-    #--------------------------------------------------------------------------
     def _get_credentials(self):
         return {
             'aws_access_key_id': self.config.access_key,
@@ -345,7 +324,6 @@ class S3ConnectionContext(ConnectionContextBase):
         }
 
 
-#==============================================================================
 class RegionalS3ConnectionContext(S3ConnectionContext):
     """This derviced class forces you to connect to a specific region
     which means we can use the OrdinaryCallingFormat as a calling format
@@ -364,13 +342,11 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
         'boto.s3.connection.OrdinaryCallingFormat'
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(RegionalS3ConnectionContext, self).__init__(config)
         self._region = config.region
         self._connect_to_endpoint = boto.s3.connect_to_region
 
-    #--------------------------------------------------------------------------
     def _connect(self):
         try:
             return self.connection
@@ -381,7 +357,6 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
             )
             return self.connection
 
-    #--------------------------------------------------------------------------
     def _get_or_create_bucket(self, conn, bucket_name):
         try:
             return self._get_bucket(conn, bucket_name)

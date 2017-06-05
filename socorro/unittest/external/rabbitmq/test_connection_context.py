@@ -19,11 +19,9 @@ from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 
-#==============================================================================
 class TestConnection(TestCase):
     """Test PostgreSQLBase class. """
 
-    #--------------------------------------------------------------------------
     def test_constructor(self):
         faked_connection_object = Mock()
         config = DotDict()
@@ -51,7 +49,6 @@ class TestConnection(TestCase):
             expected_queue_declare_call_args
         )
 
-    #--------------------------------------------------------------------------
     def test_close(self):
         faked_connection_object = Mock()
         config = DotDict()
@@ -63,11 +60,8 @@ class TestConnection(TestCase):
         faked_connection_object.close.assert_called_once_with()
 
 
-
-#==============================================================================
 class TestConnectionContext(TestCase):
 
-    #--------------------------------------------------------------------------
     def _setup_config(self):
         config = DotDict();
         config.host = 'localhost'
@@ -84,14 +78,12 @@ class TestConnectionContext(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     def test_constructor(self):
         conn_context_functor = ConnectionContext(self._setup_config)
         ok_(
             conn_context_functor.config is conn_context_functor.local_config
         )
 
-    #--------------------------------------------------------------------------
     def test_connection(self):
         config = self._setup_config()
         pika_string = 'socorro.external.rabbitmq.connection_context.pika'
@@ -129,7 +121,6 @@ class TestConnectionContext(TestCase):
             expected_queue_declare_call_args
         )
 
-    #--------------------------------------------------------------------------
     def test_call_and_close_connecton(self):
         config = self._setup_config()
         pika_string = 'socorro.external.rabbitmq.connection_context.pika'
@@ -139,10 +130,9 @@ class TestConnectionContext(TestCase):
                 ok_(isinstance(conn_context, Connection))
             conn_context.connection.close.assert_called_once_with()
 
-#==============================================================================
+
 class TestConnectionContextPooled(TestCase):
 
-    #--------------------------------------------------------------------------
     def _setup_config(self):
         config = DotDict();
         config.host = 'localhost'
@@ -160,7 +150,6 @@ class TestConnectionContextPooled(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     def test_constructor(self):
         conn_context_functor = ConnectionContextPooled(self._setup_config)
         ok_(
@@ -168,7 +157,6 @@ class TestConnectionContextPooled(TestCase):
         )
         eq_(len(conn_context_functor.pool), 0)
 
-    #--------------------------------------------------------------------------
     def test_connection(self):
         config = self._setup_config()
         pika_string = 'socorro.external.rabbitmq.connection_context.pika'
@@ -188,7 +176,6 @@ class TestConnectionContextPooled(TestCase):
                 conn is conn_context_functor.pool[currentThread().getName()]
             )
 
-    #--------------------------------------------------------------------------
     def test_close_connection(self):
         config = self._setup_config()
         pika_string = 'socorro.external.rabbitmq.connection_context.pika'
@@ -212,8 +199,6 @@ class TestConnectionContextPooled(TestCase):
             )
             eq_(len(conn_context_functor.pool), 0)
 
-
-    #--------------------------------------------------------------------------
     def test_close(self):
         config = self._setup_config()
         pika_string = 'socorro.external.rabbitmq.connection_context.pika'
@@ -225,7 +210,6 @@ class TestConnectionContextPooled(TestCase):
             conn_context_functor.close()
             eq_(len(conn_context_functor.pool), 0)
 
-    #--------------------------------------------------------------------------
     def test_force_reconnect(self):
         config = self._setup_config()
         pika_string = 'socorro.external.rabbitmq.connection_context.pika'

@@ -16,7 +16,6 @@ from socorro.external.crashstorage_base import (
 )
 
 
-#==============================================================================
 class CrashMoverApp(FetchTransformSaveApp):
     app_name = 'crashmover'
     app_version = '2.0'
@@ -25,7 +24,6 @@ class CrashMoverApp(FetchTransformSaveApp):
     required_config = Namespace()
 
 
-#==============================================================================
 class ProcessedCrashCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     app_name = 'processed_crash_copier'
     app_version = '1.0'
@@ -33,7 +31,6 @@ class ProcessedCrashCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
     required_config = Namespace()
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         """this method allows an app to inject defaults into the configuration
@@ -58,7 +55,6 @@ class ProcessedCrashCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 'socorro.processor.timemachine.PGQueryNewCrashSource'
         }
 
-    #--------------------------------------------------------------------------
     def _transform(self, crash_id):
         """this default transform function only transfers raw data from the
         source to the destination without changing the data.  While this may
@@ -86,14 +82,12 @@ class ProcessedCrashCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             )
 
 
-#==============================================================================
 class RawAndProcessedCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     """copy raw & processed crashes from a source to a destination"""
     app_name = 'raw_and_processed_crash_copier'
     app_version = '1.0'
     app_description = __doc__
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         return {
@@ -104,7 +98,6 @@ class RawAndProcessedCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 'ESCrashStorageNoStackwalkerOutput',
         }
 
-    #--------------------------------------------------------------------------
     def _transform(self, crash_id):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
@@ -144,6 +137,7 @@ class RawAndProcessedCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             crash_id
         )
         self.config.logger.info('saved - %s', crash_id)
+
 
 if __name__ == '__main__':
     main(CrashMoverApp)

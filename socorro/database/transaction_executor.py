@@ -7,7 +7,7 @@ import time
 from configman.config_manager import RequiredConfig
 from configman import Namespace
 
-#------------------------------------------------------------------------------
+
 def string_to_list_of_ints(a_string):
     a_string = a_string.replace('"', '')
     a_string = a_string.replace("'", "")
@@ -15,13 +15,11 @@ def string_to_list_of_ints(a_string):
     return [int(x) for x in ints_as_strings]
 
 
-#==============================================================================
 class TransactionExecutor(RequiredConfig):
     required_config = Namespace()
 
     is_infinite = False
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, db_conn_context_source,
                  quit_check_callback=None):
         self.config = config
@@ -29,12 +27,10 @@ class TransactionExecutor(RequiredConfig):
         self.quit_check = quit_check_callback or (lambda: False)
         self.do_quit_check = True
 
-    #--------------------------------------------------------------------------
     @property
     def connection_source_type(self):
         return self.db_conn_context_source.__module__
 
-    #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
         if self.do_quit_check:
@@ -61,7 +57,6 @@ class TransactionExecutor(RequiredConfig):
                 raise
 
 
-#==============================================================================
 class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     # back off times
     required_config = Namespace()
@@ -76,7 +71,6 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
 
     is_infinite = True
 
-    #--------------------------------------------------------------------------
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
         between retries.  It produces after exhausting the list, it repeats
@@ -87,7 +81,6 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
         while True:
             yield self.config.backoff_delays[-1]
 
-    #--------------------------------------------------------------------------
     def responsive_sleep(self, seconds, wait_reason=''):
         """Sleep for the specified number of seconds, logging every
         'wait_log_interval' seconds with progress info."""
@@ -100,7 +93,6 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
             self.quit_check()
             time.sleep(1.0)
 
-    #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
         for wait_in_seconds in self.backoff_generator():
@@ -123,11 +115,16 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                 # the test is for is a last ditch effort to see if
                 # we can retry
                 if not self.db_conn_context_source.is_operational_exception(x):
-                    self.config.logger.critical(
-                        'Unrecoverable %s transaction error',
-                        self.connection_source_type,
-                        exc_info=True
-                    )
+                    # If the logger exists, log the issue, otherwise print it
+                    # to stdout.
+                    if self.config.logger:
+                        self.config.logger.critical(
+                            'Unrecoverable %s transaction error',
+                            self.connection_source_type,
+                            exc_info=True
+                        )
+                    else:
+                        print('Unrecoverable %s transaction error' % self.connection_source_type)
                     raise
                 self.config.logger.critical(
                     '%s transaction error eligible for retry',
@@ -160,13 +157,11 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
         raise
 
 
-#==============================================================================
 class TransactionExecutorWithLimitedBackoff(
                                        TransactionExecutorWithInfiniteBackoff):
     # the `is_infinite` flag is informative for uses of this class
     is_infinite = False
 
-    #--------------------------------------------------------------------------
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
         between retries."""

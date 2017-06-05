@@ -29,7 +29,6 @@ def typeConversion(type_converters, values_to_convert):
     return (t(v) for t, v in zip(type_converters, values_to_convert))
 
 
-#==============================================================================
 class BadRequest(web.webapi.HTTPError):
     """The only reason to override this exception class here instead of using
     the one in web.webapi is so that we can pass a custom message into the
@@ -45,7 +44,6 @@ class BadRequest(web.webapi.HTTPError):
         super(BadRequest, self).__init__(status, headers, message)
 
 
-#==============================================================================
 class Timeout(web.webapi.HTTPError):
     """
     '408 Request Timeout' Error
@@ -61,7 +59,6 @@ class Timeout(web.webapi.HTTPError):
         super(Timeout, self).__init__(status, headers, message)
 
 
-#==============================================================================
 class NotFound(web.webapi.HTTPError):
     """Return a HTTPError with status code 404 and a description in JSON"""
     def __init__(self, message="Not found"):
@@ -74,7 +71,6 @@ class NotFound(web.webapi.HTTPError):
         super(NotFound, self).__init__(status, headers, message)
 
 
-#==============================================================================
 class JsonWebServiceBase(RequiredConfig):
 
     """
@@ -178,21 +174,18 @@ class JsonWebServiceBase(RequiredConfig):
         raise NotImplementedError("The PUT function has not been implemented.")
 
 
-#------------------------------------------------------------------------------
 # certain items in a URL path should NOT be split by `+`
 DONT_TERM_SPLIT = re.compile("""
   \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}
 """, re.VERBOSE)
 
 
-#==============================================================================
 class DataserviceWebServiceBase(JsonWebServiceBase):
     def __init__(self, config):
         namespace_name = self.__class__.__name__.split('.')[-1]
         self.config = config.services[namespace_name]
         #self.context = self.config
 
-    #--------------------------------------------------------------------------
     def GET(self, *args, **kwargs):
         params = self._get_query_string_params()
         params.update(kwargs)
@@ -253,7 +246,6 @@ class DataserviceWebServiceBase(JsonWebServiceBase):
         web.header('Content-Length', len(dumped))
         return dumped
 
-    #--------------------------------------------------------------------------
     def POST(self, *args, **kwargs):
         # this is necessary in case some other method (e.g PUT) overrides
         # this method.
@@ -306,16 +298,13 @@ class DataserviceWebServiceBase(JsonWebServiceBase):
         web.header('Content-Length', len(dumped))
         return dumped
 
-    #--------------------------------------------------------------------------
     def PUT(self, *args, **kwargs):
         return self.POST(*args, **kwargs)
 
-    #--------------------------------------------------------------------------
     def DELETE(self, *args, **kwargs):
         params = self._get_web_input_params()
         return self.delete(**params)
 
-    #--------------------------------------------------------------------------
     def _get_query_string_params(self):
         params = {}
         query_string = web.ctx.query[1:]
@@ -327,7 +316,6 @@ class DataserviceWebServiceBase(JsonWebServiceBase):
 
         return params
 
-    #--------------------------------------------------------------------------
     def _get_web_input_params(self, **extra):
         """Because of the stupidify of web.py we can't say that all just tell
         it to collect all POST or GET variables as arrays unless we explicitely
@@ -344,7 +332,6 @@ class DataserviceWebServiceBase(JsonWebServiceBase):
             defaults.update(extra)
         return web.input(**defaults)
 
-    #--------------------------------------------------------------------------
     def parse_url_path(self, path):
         """
         Take a string of parameters and return a dictionary of key, value.

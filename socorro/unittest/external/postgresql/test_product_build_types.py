@@ -10,7 +10,6 @@ from socorro.external.postgresql.product_build_types import ProductBuildTypes
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
     """Test socorro.external.postgresql.product_build_types.ProductBuildTypes
      class. """
@@ -69,7 +68,6 @@ class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
 
         cls.connection.commit()
 
-    #--------------------------------------------------------------------------
     @classmethod
     def tearDownClass(cls):
         """ Cleanup the database, delete tables and functions """
@@ -81,7 +79,6 @@ class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
         cls.connection.commit()
         super(IntegrationTestProductBuildTypes, cls).tearDownClass()
 
-    #--------------------------------------------------------------------------
     def test_get(self):
         product_build_types = ProductBuildTypes(config=self.config)
 

@@ -15,7 +15,6 @@ from socorro.processor.signature_utilities import (
 )
 
 
-#------------------------------------------------------------------------------
 # the following tuple of tuples is a structure for loading rules into the
 # TransformRules system. The tuples take the form:
 #   predicate_function, predicate_args, predicate_kwargs,

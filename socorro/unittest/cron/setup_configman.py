@@ -8,17 +8,14 @@ from collections import Sequence
 
 from socorro.cron.crontabber_app import CronTabber
 from socorro.lib.util import SilentFakeLogger
-from socorro.webapi.servers import WebServerBase
 
 from configman import (
     Namespace,
-    class_converter,
     ConfigurationManager,
     environment
 )
 
 
-#------------------------------------------------------------------------------
 def get_standard_config_manager(
     more_definitions=None,
     overrides=None,
@@ -73,7 +70,6 @@ def get_standard_config_manager(
     return config_manager
 
 
-#------------------------------------------------------------------------------
 def get_config_manager_for_crontabber(
     more_definitions=None,
     jobs=None,

@@ -1,0 +1,7 @@
+.git
+**/*.swp
+**/*.pyc
+__pycache__
+.vagrant
+Vagrantfile
+.cache

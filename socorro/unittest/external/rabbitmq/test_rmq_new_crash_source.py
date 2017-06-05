@@ -11,7 +11,6 @@ from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 
-#==============================================================================
 class FakeCrashStore(object):
 
     def __init__(self, config, quit_check):
@@ -26,24 +25,20 @@ class FakeCrashStore(object):
         return crash_id
 
 
-#==============================================================================
 class TestConnection(TestCase):
     """Test RMQNewCrashSource class. """
 
-    #--------------------------------------------------------------------------
     def _setup_config(self):
         config = DotDict();
         config.crashstorage_class = FakeCrashStore
         return config
 
-    #--------------------------------------------------------------------------
     def test_constructor(self):
         config = self._setup_config()
         ncs = RMQNewCrashSource(config, name="ignored_processor_name")
         ok_(isinstance(ncs.crash_store, FakeCrashStore))
         ok_(ncs.crash_store.config is config)
 
-    #--------------------------------------------------------------------------
     def test__iter__(self):
         config = self._setup_config()
         ncs = RMQNewCrashSource(config)

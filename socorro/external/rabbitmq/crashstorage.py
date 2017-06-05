@@ -23,7 +23,6 @@ from socorro.external.rabbitmq.connection_context import (
 from socorro.external.crashstorage_base import CrashStorageBase
 
 
-#==============================================================================
 class RabbitMQCrashStorage(CrashStorageBase):
     """This class is an implementation of a Socorro Crash Storage system.
     It is used as a crash queing methanism for raw crashes.  It implements
@@ -76,7 +75,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
         reference_value_from='resource.rabbitmq',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(RabbitMQCrashStorage, self).__init__(
             config,
@@ -109,7 +107,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 lambda: randint(1, 100) > config.throttle
             )
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         if self.dont_queue_this_crash():
             self.config.logger.info(
@@ -142,7 +139,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 'flag is %s', crash_id, raw_crash.legacy_processing
             )
 
-    #--------------------------------------------------------------------------
     def _save_raw_crash_transaction(self, connection, crash_id):
         connection.channel.basic_publish(
             exchange='',
@@ -151,14 +147,12 @@ class RabbitMQCrashStorage(CrashStorageBase):
             properties=self._basic_properties
         )
 
-    #--------------------------------------------------------------------------
     def _basic_get_transaction(self, conn, queue):
         """reorganize the the call to rabbitmq basic_get so that it can be
         used by the transaction retry wrapper."""
         things = conn.channel.basic_get(queue=queue)
         return things
 
-    #--------------------------------------------------------------------------
     def new_crashes(self):
         """This generator fetches crash_ids from RabbitMQ."""
 
@@ -200,11 +194,9 @@ class RabbitMQCrashStorage(CrashStorageBase):
             yield body
             queues.reverse()
 
-    #--------------------------------------------------------------------------
     def ack_crash(self, crash_id):
         self.acknowledgment_queue.put(crash_id)
 
-    #--------------------------------------------------------------------------
     def _suppress_duplicate_jobs(self, crash_id, acknowledgement_token):
         """if this crash is in the cache, then it is already in progress
         and this is a duplicate.  Acknowledge it, then return to True
@@ -224,7 +216,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
             return True
         return False
 
-    #--------------------------------------------------------------------------
     def _consume_acknowledgement_queue(self):
         """The acknowledgement of the processing of each crash_id yielded
         from the 'new_crashes' method must take place on the same connection
@@ -268,7 +259,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
         except Empty:
             pass  # nothing to do with an empty queue
 
-    #--------------------------------------------------------------------------
     def _transaction_ack_crash(
         self,
         connection,
@@ -285,7 +275,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
         )
 
 
-#==============================================================================
 class ReprocessingRabbitMQCrashStore(RabbitMQCrashStorage):
     required_config = Namespace()
     required_config.routing_key = change_default(
@@ -300,7 +289,6 @@ class ReprocessingRabbitMQCrashStore(RabbitMQCrashStorage):
     )
 
 
-#==============================================================================
 class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
     required_config = Namespace()
     required_config.rabbitmq_class = change_default(
@@ -328,7 +316,6 @@ class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
         return success
 
 
-#==============================================================================
 class PriorityjobRabbitMQCrashStore(RabbitMQCrashStorage):
     required_config = Namespace()
     required_config.rabbitmq_class = change_default(

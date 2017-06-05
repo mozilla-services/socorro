@@ -382,32 +382,3 @@ mock will be created and passed into the test method ::
      def test_something(self, MockClass):
 
         assert_true(package.module.ClassName is MockClass)
-
-
-Code readability
-^^^^^^^^^^^^^^^^
-
-Some comments using characters can be used to improve the code
-readability::
-
-  from socorro.unittest.testbase import TestCase
-
-  #=============================================================================
-  class TestClass(TestCase):
-      """A brief description about this class."""
-
-      #-------------------------------------------------------------------------
-      def setUp(self):
-          super(TestClass, self).setUp()
-          print "setup"
-
-      #-------------------------------------------------------------------------
-      def tearDown(self):
-          super(TestClass, self).tearDown()
-          print "teardown"
-
-      #-------------------------------------------------------------------------
-      def test_something(self):
-          """A brief description about this test."""
-
-          assert True

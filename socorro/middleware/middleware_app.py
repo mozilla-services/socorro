@@ -34,7 +34,7 @@ import raven
 from configman import Namespace
 from configman.converters import class_converter
 
-#------------------------------------------------------------------------------
+
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = ()
@@ -54,7 +54,6 @@ class ImplementationConfigurationError(Exception):
     pass
 
 
-#------------------------------------------------------------------------------
 def items_list_decode(values):
     """Return a list of 2-pair tuples like this:
         [('key', 'value'), ...]
@@ -81,7 +80,6 @@ def string_to_list(input_str):
     return [x.strip() for x in input_str.split(',') if x.strip()]
 
 
-#==============================================================================
 class MiddlewareApp(App):
     app_name = 'middleware'
     app_version = '3.1'
@@ -90,14 +88,11 @@ class MiddlewareApp(App):
     # make the global list a class attribute
     SERVICES_LIST = SERVICES_LIST
 
-    #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
 
-    #--------------------------------------------------------------------------
     # implementations namespace
     #     the namespace is for external implementations of the services
-    #-------------------------------------------------------------------------
     required_config.namespace('implementations')
     required_config.implementations.add_option(
         'implementation_list',
@@ -118,10 +113,8 @@ class MiddlewareApp(App):
         to_string_converter=items_list_encode
     )
 
-    #--------------------------------------------------------------------------
     # database namespace
     #     the namespace is for external implementations of the services
-    #-------------------------------------------------------------------------
     required_config.namespace('database')
     required_config.database.add_option(
         'crashstorage_class',
@@ -130,10 +123,8 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     # filesystem namespace
     #     the namespace is for external implementations of the services
-    #-------------------------------------------------------------------------
     required_config.namespace('filesystem')
     required_config.filesystem.add_option(
         'filesystem_class',
@@ -141,10 +132,8 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     # elasticsearch namespace
     #     the namespace is for external implementations of the services
-    #-------------------------------------------------------------------------
     required_config.namespace('elasticsearch')
     required_config.elasticsearch.add_option(
         'elasticsearch_class',
@@ -152,10 +141,8 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     # rabbitmq namespace
     #     the namespace is for external implementations of the services
-    #-------------------------------------------------------------------------
     required_config.namespace('rabbitmq')
     required_config.rabbitmq.add_option(
         'rabbitmq_class',
@@ -164,10 +151,8 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     # webapi namespace
     #     this is all config options that used to belong to webapiconfig.py
-    #-------------------------------------------------------------------------
     required_config.namespace('webapi')
     required_config.webapi.add_option(
         'elasticSearchHostname',
@@ -221,10 +206,8 @@ class MiddlewareApp(App):
         from_string_converter=string_to_list
     )
 
-    #--------------------------------------------------------------------------
     # web_server namespace
     #     the namespace is for config parameters the web server
-    #--------------------------------------------------------------------------
     required_config.namespace('web_server')
     required_config.web_server.add_option(
         'wsgi_server_class',
@@ -233,10 +216,8 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     # sentry namespace
     #     the namespace is for Sentry error capturing with Raven
-    #--------------------------------------------------------------------------
     required_config.namespace('sentry')
     required_config.sentry.add_option(
         'dsn',
@@ -245,10 +226,8 @@ class MiddlewareApp(App):
         reference_value_from='secrets.sentry',
     )
 
-    #--------------------------------------------------------------------------
     # introspection namespace
     #     the namespace for things related to running middleware
-    #--------------------------------------------------------------------------
     required_config.namespace('introspection')
     required_config.introspection.add_option(
         'implementation_class',
@@ -256,14 +235,12 @@ class MiddlewareApp(App):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         return {
             "web_server.port": 8883,
         }
 
-    #--------------------------------------------------------------------------
     def main(self):
         # modwsgi requires a module level name 'application'
         global application

@@ -13,7 +13,6 @@ from configman.converters import str_to_python_object
 from configman.dotdict import DotDict
 
 
-#==============================================================================
 class ApplicationDefaultsProxy(object):
     """a placeholder class that will induce configman to query the application
     object for the application's preferred defaults.  """
@@ -22,7 +21,6 @@ class ApplicationDefaultsProxy(object):
         self.application_defaults = DotDict()
         self.apps = self.find_all_the_apps()
 
-    #--------------------------------------------------------------------------
     def str_to_application_class(self, an_app_key):
         """a configman compatible str_to_* converter"""
         try:
@@ -38,14 +36,12 @@ class ApplicationDefaultsProxy(object):
             pass
         return app_class
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def find_all_the_apps():
         """in the future, re-implement this as an automatic discovery service
         """
         return {
             'collector': 'socorro.collector.collector_app.CollectorApp',
-            'collector2015': 'socorro.collector.collector_app.Collector2015App',
             'crashmover': 'socorro.collector.crashmover_app.CrashMoverApp',
             'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
             'submitter': 'socorro.collector.submitter_app.SubmitterApp',
@@ -70,7 +66,6 @@ can_handle = (
 )
 
 
-#==============================================================================
 class ValueSource(object):
     """This is meant to be used as both a value source and a from string
     converter.  An instance, as a value source, always returns an empty
@@ -85,11 +80,9 @@ class ValueSource(object):
     Configman.
     """
 
-    #--------------------------------------------------------------------------
     def __init__(self, source, the_config_manager=None):
         self.source = source
 
-    #--------------------------------------------------------------------------
     def get_values(self, config_manager, ignore_mismatches, obj_hook=DotDict):
         if isinstance(self.source.application_defaults, obj_hook):
             return self.source.application_defaults

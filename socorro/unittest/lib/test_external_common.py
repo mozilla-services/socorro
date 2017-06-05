@@ -11,11 +11,9 @@ from socorro.lib import BadArgumentError, external_common, util
 from socorro.unittest.testbase import TestCase
 
 
-#==============================================================================
 class TestExternalCommon(TestCase):
     """Test functions of the external_common module. """
 
-    #--------------------------------------------------------------------------
     def test_check_type(self):
         # Test 1: null
         param = None
@@ -23,7 +21,6 @@ class TestExternalCommon(TestCase):
         res = external_common.check_type(param, datatype)
         eq_(res, None)
 
-        # .....................................................................
         # Test 2: integer
         param = 12
         datatype = "int"
@@ -32,7 +29,6 @@ class TestExternalCommon(TestCase):
         ok_(isinstance(res, int))
         eq_(res, param)
 
-        # .....................................................................
         # Test 3: integer
         param = "12"
         datatype = "int"
@@ -41,7 +37,6 @@ class TestExternalCommon(TestCase):
         ok_(isinstance(res, int))
         eq_(res, 12)
 
-        # .....................................................................
         # Test 4: string
         param = datetime.datetime(2012, 01, 01)
         datatype = "str"
@@ -50,7 +45,6 @@ class TestExternalCommon(TestCase):
         ok_(isinstance(res, str))
         eq_(res, "2012-01-01 00:00:00")
 
-        # .....................................................................
         # Test 5: boolean
         param = 1
         datatype = "bool"
@@ -59,7 +53,6 @@ class TestExternalCommon(TestCase):
         ok_(isinstance(res, bool))
         eq_(res, True)
 
-        # .....................................................................
         # Test 6: boolean
         param = "T"
         datatype = "bool"
@@ -68,7 +61,6 @@ class TestExternalCommon(TestCase):
         ok_(isinstance(res, bool))
         eq_(res, True)
 
-        # .....................................................................
         # Test 7: boolean
         param = 14
         datatype = "bool"
@@ -77,7 +69,6 @@ class TestExternalCommon(TestCase):
         ok_(isinstance(res, bool))
         eq_(res, False)
 
-        # .....................................................................
         # Test 8: datetime
         param = "2012-01-01T00:00:00"
         datatype = "datetime"
@@ -88,7 +79,6 @@ class TestExternalCommon(TestCase):
         eq_(res.month, 1)
         eq_(res.hour, 0)
 
-        # .....................................................................
         # Test 9: timedelta
         param = "72"
         datatype = "timedelta"
@@ -107,7 +97,6 @@ class TestExternalCommon(TestCase):
         eq_(res.month, 1)
         eq_(res.day, 1)
 
-    #--------------------------------------------------------------------------
     def test_parse_arguments_old_way(self):
         """Test external_common.parse_arguments(). """
         filters = [
@@ -132,7 +121,6 @@ class TestExternalCommon(TestCase):
 
         eq_(params, params_exp)
 
-    #--------------------------------------------------------------------------
     def test_parse_arguments(self):
         """Test external_common.parse_arguments(). """
         filters = [
@@ -180,7 +168,6 @@ class TestExternalCommon(TestCase):
             ))
         eq_(params, params_exp)
 
-    #--------------------------------------------------------------------------
     def test_parse_arguments_with_class_validators(self):
 
         class NumberConverter(object):

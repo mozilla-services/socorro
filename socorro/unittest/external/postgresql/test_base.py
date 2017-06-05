@@ -14,11 +14,9 @@ from socorro.lib import util
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class TestPostgreSQLBase(TestCase):
     """Test PostgreSQLBase class. """
 
-    #--------------------------------------------------------------------------
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
         context = util.DotDict({
@@ -43,7 +41,6 @@ class TestPostgreSQLBase(TestCase):
         context.restricted_channels = ['beta']
         return context
 
-    #--------------------------------------------------------------------------
     def get_instance(self, config=None):
         """Return an instance of PostgreSQLBase with the config parameter as
         a context or the default one if config is None.
@@ -53,12 +50,10 @@ class TestPostgreSQLBase(TestCase):
         }
         return PostgreSQLBase(**args)
 
-    #--------------------------------------------------------------------------
     def test_parse_versions(self):
         """Test PostgreSQLBase.parse_versions()."""
         pgbase = self.get_instance()
 
-        # .....................................................................
         # Test 1: only product:version args
         versions_list = ["Firefox:9.0", "Fennec:12.1"]
         versions_list_exp = ["Firefox", "9.0", "Fennec", "12.1"]
@@ -69,7 +64,6 @@ class TestPostgreSQLBase(TestCase):
         eq_(versions, versions_list_exp)
         eq_(products, products_exp)
 
-        # .....................................................................
         # Test 2: product:version and product only args
         versions_list = ["Firefox:9.0", "Fennec"]
         versions_list_exp = ["Firefox", "9.0"]
@@ -80,7 +74,6 @@ class TestPostgreSQLBase(TestCase):
         eq_(versions, versions_list_exp)
         eq_(products, products_exp)
 
-        # .....................................................................
         # Test 3: product only args
         versions_list = ["Firefox", "Fennec"]
         versions_list_exp = []
@@ -92,10 +85,8 @@ class TestPostgreSQLBase(TestCase):
         eq_(products, products_exp)
 
 
-#==============================================================================
 class IntegrationTestBase(PostgreSQLTestCase):
 
-    #--------------------------------------------------------------------------
     def setUp(self):
         """Set up this test class by populating the reports table with fake
         data. """
@@ -129,7 +120,6 @@ class IntegrationTestBase(PostgreSQLTestCase):
 
         self.connection.commit()
 
-    #--------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
@@ -139,7 +129,6 @@ class IntegrationTestBase(PostgreSQLTestCase):
         self.connection.commit()
         super(IntegrationTestBase, self).tearDown()
 
-    #--------------------------------------------------------------------------
     def test_utc(self):
         base = PostgreSQLBase(config=self.config)
 
@@ -153,7 +142,6 @@ class IntegrationTestBase(PostgreSQLTestCase):
                the INSTALL instructions."""
         )
 
-    #--------------------------------------------------------------------------
     def test_query(self):
         base = PostgreSQLBase(config=self.config)
 
@@ -175,7 +163,6 @@ class IntegrationTestBase(PostgreSQLTestCase):
         sql = 'SELECT FROM reports LIMIT notanumber'
         assert_raises(DatabaseError, base.query, sql)
 
-    #--------------------------------------------------------------------------
     def test_count(self):
         base = PostgreSQLBase(config=self.config)
 

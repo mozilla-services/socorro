@@ -3,17 +3,14 @@ import ujson
 from configman import RequiredConfig, Namespace, class_converter
 
 
-#------------------------------------------------------------------------------
 def _default_list_splitter(class_list_str):
     return [x.strip() for x in class_list_str.split(',') if x.strip()]
 
 
-#------------------------------------------------------------------------------
 def _default_class_extractor(list_element):
     return list_element
 
 
-#------------------------------------------------------------------------------
 def str_to_classes_in_namespaces_converter(
         template_for_namespace="%(name)s",
         list_splitter_fn=_default_list_splitter,
@@ -36,7 +33,6 @@ def str_to_classes_in_namespaces_converter(
                           a classname from the result of the list_converter
     """
 
-    # -------------------------------------------------------------------------
     def class_list_converter(class_list_str):
         """This function becomes the actual converter used by configman to
         take a string and convert it into the nested sequence of Namespaces,
@@ -48,7 +44,6 @@ def str_to_classes_in_namespaces_converter(
         else:
             raise TypeError('must be derivative of a basestring')
 
-        # =====================================================================
         class InnerClassList(RequiredConfig):
             """This nested class is a proxy list for the classes.  It collects
             all the config requirements for the listed classes and places them
@@ -109,7 +104,6 @@ def str_to_classes_in_namespaces_converter(
     return class_list_converter  # result of classes_in_namespaces_converter
 
 
-#------------------------------------------------------------------------------
 def web_services_from_str(
     list_splitter_fn=ujson.loads,
 ):
@@ -119,7 +113,6 @@ def web_services_from_str(
             rerpesenting a list of mappings.
     """
 
-    # -------------------------------------------------------------------------
     def class_list_converter(collector_services_str):
         """This function becomes the actual converter used by configman to
         take a string and convert it into the nested sequence of Namespaces,
@@ -131,7 +124,6 @@ def web_services_from_str(
         else:
             raise TypeError('must be derivative of a basestring')
 
-        # =====================================================================
         class InnerClassList(RequiredConfig):
             """This nested class is a proxy list for the classes.  It collects
             all the config requirements for the listed classes and places them
@@ -198,7 +190,6 @@ def web_services_from_str(
     return class_list_converter  # result of classes_in_namespaces_converter
 
 
-#------------------------------------------------------------------------------
 def change_default(
     kls,
     key,
@@ -215,4 +206,3 @@ def change_default(
     if new_reference_value:
         an_option.reference_value_from = new_reference_value
     return an_option
-

@@ -2,8 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
+
 from nose.tools import eq_, ok_, assert_raises
-from mock import Mock
+from mock import Mock, MagicMock, patch
 
 from configman.dotdict import DotDict
 from configman import Namespace
@@ -16,19 +18,21 @@ def assert_expected(actual, expected):
     assert actual == expected, "expected:\n%s\nbut got:\n%s" % (str(expected),
                                                                 str(actual))
 
+
 def assert_expected_same(actual, expected):
     assert actual == expected, "expected:\n%s\nbut got:\n%s" % (expected,
                                                                 actual)
 
+
 def foo(s, d):
     pass
+
 
 def bar(s, d):
     pass
 
 
-#==============================================================================
-class TestRuleTestLaughable(transform_rules.Rule):
+class RuleTestLaughable(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('laughable', default='fred')
 
@@ -42,9 +46,7 @@ class TestRuleTestLaughable(transform_rules.Rule):
             self.close_counter = 1
 
 
-
-#==============================================================================
-class TestRuleTestDangerous(transform_rules.Rule):
+class RuleTestDangerous(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('dangerous', default='sally')
 
@@ -58,15 +60,13 @@ class TestRuleTestDangerous(transform_rules.Rule):
             self.close_counter = 1
 
 
-#==============================================================================
-class TestRuleTestNoCloseMethod(transform_rules.Rule):
+class RuleTestNoCloseMethod(transform_rules.Rule):
 
     def _action(self, *args, **kwargs):
         return True
 
 
-#==============================================================================
-class TestRuleTestBrokenCloseMethod(transform_rules.Rule):
+class RuleTestBrokenCloseMethod(transform_rules.Rule):
 
     def _action(self, *args, **kwargs):
         return true
@@ -76,7 +76,6 @@ class TestRuleTestBrokenCloseMethod(transform_rules.Rule):
         raise AttributeError("We're human")
 
 
-#==============================================================================
 class TestTransformRules(TestCase):
 
     def test_kw_str_parse(self):
@@ -587,31 +586,145 @@ class TestTransformRules(TestCase):
         ok_(fake_config.logger.debug.called)
         fake_config.logger.debug.reset_mock()
 
+    @patch('socorro.lib.transform_rules.raven')
+    def test_rule_exceptions_send_to_sentry(self, mock_raven):
+
+        captured_exceptions = []  # a global
+
+        def mock_capture_exception():
+            exc_info = sys.exc_info()
+            captured_exceptions.append(exc_info[1])
+            return 'someidentifier'
+
+        client = MagicMock()
+
+        def mock_Client(**config):
+            if config['dsn'] == 'Not a valid DSN but truish':
+                raise Exception('Bad DSN!')
+            client.config = config
+            client.captureException.side_effect = mock_capture_exception
+            return client
+
+        mock_raven.Client.side_effect = mock_Client
+
+        fake_config = DotDict()
+        fake_config.logger = Mock()
+        fake_config.chatty_rules = False
+        fake_config.chatty = False
+        fake_config.sentry = DotDict()
+
+        class SomeError(Exception):
+            pass
+
+        class BadPredicate(transform_rules.Rule):
+            def _predicate(self, *args, **kwargs):
+                raise SomeError("highwater")
+
+        eq_(BadPredicate(fake_config).predicate(), False)
+        fake_config.logger.warning.assert_called_with(
+            'Raven DSN is not configured and an exception happened'
+        )
+
+        fake_config.sentry.dsn = 'Not a valid DSN but truish'
+        eq_(BadPredicate(fake_config).predicate(), False)
+        # This happens because the DSN is not valid, so raven
+        # immediately rejects it.
+        fake_config.logger.error.assert_called_with(
+            'Unable to report error with Raven',
+            exc_info=True,
+        )
+
+        fake_config.sentry.dsn = (
+            'https://6e48583:e484@sentry.example.com/01'
+        )
+        eq_(BadPredicate(fake_config).predicate(), False)
+        fake_config.logger.info.assert_called_with(
+            'Error captured in Sentry! Reference: someidentifier'
+        )
+        assert len(captured_exceptions) == 1
+        exc = captured_exceptions[0]
+        ok_(isinstance(exc, SomeError))
+
+        class BadAction(transform_rules.Rule):
+            def _action(self, *args, **kwargs):
+                raise SomeError("highwater")
+
+        eq_(BadAction(fake_config).action(), False)
+        assert len(captured_exceptions) == 2
+        exc = captured_exceptions[1]
+        ok_(isinstance(exc, SomeError))
+
+    @patch('socorro.lib.transform_rules.raven')
+    def test_rule_exceptions_send_to_sentry_with_crash_id(self, mock_raven):
+
+        def mock_capture_exception():
+            return 'someidentifier'
+
+        client = MagicMock()
+        extras = []
+
+        def mock_context_merge(context):
+            extras.append(context['extra'])
+
+        def mock_Client(**config):
+            client.config = config
+            client.context.merge.side_effect = mock_context_merge
+            client.captureException.side_effect = mock_capture_exception
+            return client
+
+        mock_raven.Client.side_effect = mock_Client
+
+        fake_config = DotDict()
+        fake_config.logger = Mock()
+        fake_config.chatty_rules = False
+        fake_config.chatty = False
+        fake_config.sentry = DotDict()
+        fake_config.sentry.dsn = (
+            'https://6e48583:e484@sentry.example.com/01'
+        )
+
+        class BadPredicate(transform_rules.Rule):
+            def _predicate(self, *args, **kwargs):
+                raise NameError("highwater")
+
+        p = BadPredicate(fake_config)
+        raw_crash = {'uuid': 'ABC123'}
+        eq_(p.predicate(raw_crash), False)
+        fake_config.logger.info.assert_called_with(
+            'Error captured in Sentry! Reference: someidentifier'
+        )
+
+        # When the client was created and the extra context
+        # merged, we can expect that it included a tag and a crash_id
+        assert len(extras) == 1
+        eq_(extras[0]['tag'], 'predicate')
+        eq_(extras[0]['crash_id'], 'ABC123')
+
     def test_rules_in_config(self):
         config = DotDict()
         config.chatty_rules = False
         config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
-        config['TestRuleTestLaughable.laughable'] = 'wilma'
-        config['TestRuleTestDangerous.dangerous'] = 'dwight'
+        config['RuleTestLaughable.laughable'] = 'wilma'
+        config['RuleTestDangerous.dangerous'] = 'dwight'
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestLaughable',
-                TestRuleTestLaughable,
-                'TestRuleTestLaughable'
+                'RuleTestLaughable',
+                RuleTestLaughable,
+                'RuleTestLaughable'
             ),
             (
-                'TestRuleTestDangerous',
-                TestRuleTestDangerous,
-                'TestRuleTestDangerous'
+                'RuleTestDangerous',
+                RuleTestDangerous,
+                'RuleTestDangerous'
             )
         ]
         trs = transform_rules.TransformRuleSystem(config)
 
-        ok_(isinstance(trs.rules[0], TestRuleTestLaughable))
-        ok_(isinstance(trs.rules[1], TestRuleTestDangerous))
+        ok_(isinstance(trs.rules[0], RuleTestLaughable))
+        ok_(isinstance(trs.rules[1], RuleTestDangerous))
         ok_(trs.rules[0].predicate(None))
         ok_(trs.rules[1].action(None))
 
@@ -622,19 +735,19 @@ class TestTransformRules(TestCase):
         config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
-        config['TestRuleTestLaughable.laughable'] = 'wilma'
-        config['TestRuleTestDangerous.dangerous'] = 'dwight'
+        config['RuleTestLaughable.laughable'] = 'wilma'
+        config['RuleTestDangerous.dangerous'] = 'dwight'
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestLaughable',
-                TestRuleTestLaughable,
-                'TestRuleTestLaughable'
+                'RuleTestLaughable',
+                RuleTestLaughable,
+                'RuleTestLaughable'
             ),
             (
-                'TestRuleTestDangerous',
-                TestRuleTestDangerous,
-                'TestRuleTestDangerous'
+                'RuleTestDangerous',
+                RuleTestDangerous,
+                'RuleTestDangerous'
             )
         ]
         trs = transform_rules.TransformRuleSystem(config)
@@ -654,14 +767,14 @@ class TestTransformRules(TestCase):
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestNoCloseMethod',
-                TestRuleTestNoCloseMethod,
-                'TestRuleTestNoCloseMethod'
+                'RuleTestNoCloseMethod',
+                RuleTestNoCloseMethod,
+                'RuleTestNoCloseMethod'
             ),
             (
-                'TestRuleTestDangerous',
-                TestRuleTestDangerous,
-                'TestRuleTestDangerous'
+                'RuleTestDangerous',
+                RuleTestDangerous,
+                'RuleTestDangerous'
             )
         ]
         trs = transform_rules.TransformRuleSystem(config)
@@ -671,17 +784,17 @@ class TestTransformRules(TestCase):
         config.logger.debug.assert_any_call(
             'trying to close %s',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestNoCloseMethod'
+            'RuleTestNoCloseMethod'
         )
         config.logger.debug.assert_any_call(
             'trying to close %s',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestDangerous'
+            'RuleTestDangerous'
         )
         config.logger.debug.assert_any_call(
             '%s has no close',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestNoCloseMethod'
+            'RuleTestNoCloseMethod'
         )
 
     def test_rules_close_bubble_close_errors(self):
@@ -692,9 +805,9 @@ class TestTransformRules(TestCase):
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestBrokenCloseMethod',
-                TestRuleTestBrokenCloseMethod,
-                'TestRuleTestBrokenCloseMethod'
+                'RuleTestBrokenCloseMethod',
+                RuleTestBrokenCloseMethod,
+                'RuleTestBrokenCloseMethod'
             ),
         ]
         trs = transform_rules.TransformRuleSystem(config)
@@ -707,5 +820,5 @@ class TestTransformRules(TestCase):
         config.logger.debug.assert_any_call(
             'trying to close %s',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestBrokenCloseMethod'
+            'RuleTestBrokenCloseMethod'
         )

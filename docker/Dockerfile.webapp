@@ -1,0 +1,20 @@
+FROM local/socorro_base
+
+# Install nodejs and npm
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y npm nodejs nodejs-legacy
+
+ENV LESS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/lessc
+ENV UGLIFYJS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/uglifyjs
+ENV CSSMIN_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/cssmin
+
+COPY . /app/
+
+RUN cd /app/webapp-django/ && npm install -g
+
+# Run collectstatic in container which puts files in the default place for
+# static files.
+RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
+
+USER app
+
+CMD ["/app/docker/run_webapp.sh"]

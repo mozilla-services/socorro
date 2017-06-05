@@ -69,15 +69,12 @@ dump into a json format.
 from socorro.lib.util import DotDict
 
 
-#==============================================================================
 class DotDictWithPut(DotDict):
-    #--------------------------------------------------------------------------
     def put_if_not_none(self, key, value):
         if value is not None and value != '':
             self[key] = value
 
 
-#------------------------------------------------------------------------------
 def pipe_dump_to_json_dump(pipe_dump_iterable):
     """given a list (or any iterable) of strings representing a MDSW pipe dump,
     this function will convert it into a json format."""
@@ -117,7 +114,6 @@ def pipe_dump_to_json_dump(pipe_dump_iterable):
     return json_dump
 
 
-#------------------------------------------------------------------------------
 def _get(indexable_container, index, default):
     """like 'get' on a dict, but it works on lists, too"""
     try:
@@ -125,7 +121,7 @@ def _get(indexable_container, index, default):
     except (IndexError, KeyError):
         return default
 
-#------------------------------------------------------------------------------
+
 def _get_int(indexable_container, index, default):
     """try to get an int from an indexable container.  If that fails
     return the default"""
@@ -139,7 +135,7 @@ def _get_int(indexable_container, index, default):
         # conversion to integer has failed
         return default
 
-#------------------------------------------------------------------------------
+
 def _extract_OS_info(os_line, json_dump):
     """given a pipe dump OS line, extract the parts and put them in their
     proper location within the json_dump"""
@@ -151,7 +147,7 @@ def _extract_OS_info(os_line, json_dump):
     else:
         json_dump.system_info = system_info
 
-#------------------------------------------------------------------------------
+
 def _extract_CPU_info(cpu_line, json_dump):
     """given a pipe dump CPU line, extract the parts and put them in their
     proper location within the json_dump"""
@@ -164,7 +160,7 @@ def _extract_CPU_info(cpu_line, json_dump):
     else:
         json_dump.system_info = system_info
 
-#------------------------------------------------------------------------------
+
 def _extract_crash_info(crash_line, json_dump):
     """given a pipe dump CRASH line, extract the parts and put them in their
     proper location within the json_dump"""
@@ -176,7 +172,6 @@ def _extract_crash_info(crash_line, json_dump):
     return crash_info.get('crashing_thread', None)
 
 
-#------------------------------------------------------------------------------
 def _extract_module_info(module_line, json_dump, module_counter):
     """given a pipe dump Module line, extract the parts and put them in their
     proper location within the json_dump"""
@@ -194,7 +189,7 @@ def _extract_module_info(module_line, json_dump, module_counter):
         json_dump.modules = []
     json_dump.modules.append(module)
 
-#------------------------------------------------------------------------------
+
 def _extract_frame_info(frame_line, json_dump):
     """given a pipe dump Frame line, extract the parts and put them in their
     proper location within the json_dump"""
@@ -237,4 +232,3 @@ def _extract_frame_info(frame_line, json_dump):
     # save the frame info into the json
     json_dump.threads[thread_number].frames.append(frame)
     json_dump.threads[thread_number].frame_count += 1
-

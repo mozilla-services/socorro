@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from socorro.lib.util import FakeLogger
 
 
-#--------------------------------------------------------------------------
 @contextmanager
 def temp_file_context(raw_dump_path, logger=None):
     """this contextmanager implements conditionally deleting a pathname

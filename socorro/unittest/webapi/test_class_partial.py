@@ -13,10 +13,8 @@ from socorro.unittest.testbase import TestCase
 from socorro.webapi.class_partial import class_with_partial_init
 
 
-#==============================================================================
 class TestPartialForServiceClasses(TestCase):
 
-    #--------------------------------------------------------------------------
     def test_partial_1(self):
 
         local_config = DotDict()
@@ -30,8 +28,6 @@ class TestPartialForServiceClasses(TestCase):
         a = wrapped_class()
         eq_(wrapped_class.global_config, None)
 
-
-    #--------------------------------------------------------------------------
     def test_partial_2(self):
         local_config = DotDict()
         global_config = DotDict()
@@ -45,7 +41,6 @@ class TestPartialForServiceClasses(TestCase):
         a = wrapped_class()
         eq_(wrapped_class.global_config, global_config)
 
-    #--------------------------------------------------------------------------
     def test_partial_3(self):
 
         d = {
@@ -75,7 +70,6 @@ class TestPartialForServiceClasses(TestCase):
             # 'assertRaises' was not used because we're not testing a callable
             pass
 
-    #--------------------------------------------------------------------------
     def test_partial_4(self):
 
         d = {

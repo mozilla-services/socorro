@@ -27,7 +27,6 @@ SAMPLE_CSV = [
 ]
 
 
-#==============================================================================
 class IntegrationTestBugzilla(IntegrationTestBase):
 
     def tearDown(self):
