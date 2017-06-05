@@ -15,6 +15,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.processor
+    image: local/socorro_processor
     env_file:
       - docker/config/docker_common.env
       - docker/config/processor.env
