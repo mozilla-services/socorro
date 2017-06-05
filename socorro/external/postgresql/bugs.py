@@ -40,12 +40,11 @@ class Bugs(PostgreSQLBase):
             sql_params.append(tuple(params.signatures))
 
             sql = """/* socorro.external.postgresql.bugs.Bugs.get */
-                SELECT ba.signature, bugs.id
-                FROM bugs
-                    JOIN bug_associations AS ba ON bugs.id = ba.bug_id
+                SELECT signature, bug_id as id
+                FROM bug_associations
                 WHERE EXISTS(
-                    SELECT 1 FROM bug_associations
-                    WHERE bug_associations.bug_id = bugs.id
+                    SELECT 1 FROM bug_associations as ba
+                    WHERE ba.bug_id = bug_associations.bug_id
                     AND signature IN %s
                 )
             """
@@ -53,10 +52,9 @@ class Bugs(PostgreSQLBase):
             sql_params.append(tuple(params.bug_ids))
 
             sql = """/* socorro.external.postgresql.bugs.Bugs.get */
-                SELECT ba.signature, bugs.id
-                FROM bugs
-                    JOIN bug_associations AS ba ON bugs.id = ba.bug_id
-                WHERE bugs.id IN %s
+                SELECT signature, bug_id as id
+                FROM bug_associations
+                WHERE bug_id IN %s
             """
 
         error_message = "Failed to retrieve bug associations from PostgreSQL"
