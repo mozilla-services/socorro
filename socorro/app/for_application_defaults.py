@@ -41,19 +41,13 @@ class ApplicationDefaultsProxy(object):
         """in the future, re-implement this as an automatic discovery service
         """
         return {
-            'collector': 'socorro.collector.collector_app.CollectorApp',
-            'crashmover': 'socorro.collector.crashmover_app.CrashMoverApp',
             'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
-            'submitter': 'socorro.collector.submitter_app.SubmitterApp',
+            'submitter': 'socorro.submitter.submitter_app.SubmitterApp',
             # crontabber not yet supported in this environment
             #'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
             'middleware': 'socorro.middleware.middleware_app.MiddlewareApp',
             'processor': 'socorro.processor.processor_app.ProcessorApp',
             'fetch': 'socorro.external.fetch_app.FetchApp',
-            'copy_processed':
-                'socorro.collector.crashmover_app.ProcessedCrashCopierApp',
-            'copy_raw_and_processed':
-                'socorro.collector.crashmover_app.RawAndProcessedCopierApp',
             'reprocess_crashlist':
                 'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp',
             'purge_rmq':

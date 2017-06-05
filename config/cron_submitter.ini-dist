@@ -1,4 +1,4 @@
-# this ini file is for the app .../socorro/collector/submitter_app.py to get that app
+# this ini file is for the app .../socorro/submitter/submitter_app.py to get that app
 # to do the same thing that the cron_submitter.sh script used to do.
 
 # name: application
@@ -11,7 +11,7 @@
     # name: crashstorage_class
     # doc: the destination storage class
     # converter: configman.converters.class_converter
-    crashstorage_class='socorro.collector.submitter_app.SubmitterCrashStorageDestination'
+    crashstorage_class='socorro.submitter.submitter_app.SubmitterCrashStorageDestination'
 
     # name: url
     # doc: The url of the Socorro collector to submit to
@@ -82,7 +82,7 @@
     # name: crashstorage_class
     # doc: the source storage class
     # converter: configman.converters.class_converter
-    crashstorage_class='socorro.collector.submitter_app.SamplingCrashStorageSource'
+    crashstorage_class='socorro.submitter.submitter_app.SamplingCrashStorageSource'
 
     # name: database_class
     # doc: the class that connects to the database

@@ -11,7 +11,7 @@ import logging.handlers
 import config.submitterconfig as subconf
 
 import socorro.lib.ConfigurationManager as configurationManager
-import socorro.collector.submitter as sub
+import socorro.submitter.submitter as sub
 import socorro.lib.util as sutil
 
 import poster
