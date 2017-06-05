@@ -13,7 +13,6 @@ from crontabber.mixins import with_postgres_transactions
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.postgresql.dbapi2_util import (
-    single_row_sql,
     execute_query_fetchall,
     execute_no_results,
     SQLDidNotReturnSingleRow
