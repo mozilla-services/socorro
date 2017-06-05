@@ -12,8 +12,10 @@ poster.streaminghttp.register_openers()
 
 
 class BreakpadPOSTDestination(CrashStorageBase):
-    """this a crashstorage derivative that just pushes a crash out to a
-    Socorro collector waiting at a url"""
+    """This a crashstorage derivative that pushes a crash out to a
+    Socorro collector waiting at a url.
+
+    """
     required_config = Namespace()
     required_config.add_option(
         'url',
