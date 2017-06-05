@@ -83,8 +83,9 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         )
         associations = cursor.fetchall()
         # New signatures have correctly been inserted.
-        expected = [('legitimate(sig)',), ('another::legitimate(sig)',)]
-        assert associations == expected
+        assert len(associations) == 2
+        assert ('another::legitimate(sig)',) in associations
+        assert ('legitimate(sig)',) in associations
 
     def test_run_job_with_reports_with_existing_bugs_different(self):
         """Verify that an association to a signature that no longer is part
@@ -140,8 +141,9 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         )
         associations = cursor.fetchall()
         # New signatures have correctly been inserted.
-        expected = [('another::legitimate(sig)',), ('legitimate(sig)',)]
-        assert associations == expected
+        assert len(associations) == 2
+        assert ('another::legitimate(sig)',) in associations
+        assert ('legitimate(sig)',) in associations
 
     def test_run_job_based_on_last_success(self):
         """specifically setting 0 days back and no prior run
