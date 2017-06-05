@@ -4,7 +4,6 @@
 
 import datetime
 import os
-from nose.tools import eq_, ok_
 from dateutil import tz
 from crontabber.app import CronTabber
 from socorro.unittest.cron.setup_configman import (
@@ -32,7 +31,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
     def tearDown(self):
         self.conn.cursor().execute("""
         TRUNCATE
-            reports, bugs, bug_associations
+            bug_associations
         CASCADE
         """)
         self.conn.commit()
@@ -60,16 +59,10 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             }
         )
 
-    def test_basic_run_job_without_reports(self):
+    def test_basic_run_job(self):
         config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
-        cursor.execute('select count(*) from reports')
-        count, = cursor.fetchone()
-        assert count == 0, "reports table not cleaned"
-        cursor.execute('select count(*) from bugs')
-        count, = cursor.fetchone()
-        assert count == 0, "'bugs' table not cleaned"
         cursor.execute('select count(*) from bug_associations')
         count, = cursor.fetchone()
         assert count == 0, "'bug_associations' table not cleaned"
@@ -83,84 +76,21 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        # now, because there we no matching signatures in the reports table
-        # it means that all bugs are rejected
-        cursor.execute('select count(*) from bugs')
-        count, = cursor.fetchone()
-        ok_(not count)
-        cursor.execute('select count(*) from bug_associations')
-        count, = cursor.fetchone()
-        ok_(not count)
-
-    def test_basic_run_job_with_some_reports(self):
-        config_manager = self._setup_config_manager(3)
-
-        cursor = self.conn.cursor()
-        # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            tab = CronTabber(config)
-            tab.run_all()
-
-            information = self._load_structure()
-            assert information['bugzilla-associations']
-            assert not information['bugzilla-associations']['last_error']
-            assert information['bugzilla-associations']['last_success']
-
-        cursor.execute('select id from bugs order by id')
-        bugs = cursor.fetchall()
-        eq_(len(bugs), 2)
-        # the only bugs with matching those signatures are: 5 and 8
-        bug_ids = [x[0] for x in bugs]
-        eq_(bug_ids, [5, 8])
-
         cursor.execute('select bug_id from bug_associations order by bug_id')
         associations = cursor.fetchall()
-        eq_(len(associations), 2)
+        assert len(associations) == 8
         bug_ids = [x[0] for x in associations]
-        eq_(bug_ids, [5, 8])
+        assert 6 not in bug_ids
 
     def test_run_job_with_reports_with_existing_bugs_different(self):
         config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
-        cursor.execute('select count(*) from bugs')
-        count, = cursor.fetchone()
-        assert not count, count
         cursor.execute('select count(*) from bug_associations')
-        count, = cursor.fetchone()
-        assert not count, count
-        cursor.execute('select count(*) from reports')
         count, = cursor.fetchone()
         assert not count, count
 
         # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'Different');
-        """)
         cursor.execute("""insert into bug_associations
         (bug_id,signature)
         values
@@ -177,36 +107,17 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
-
         cursor.execute(
-          'select signature from bug_associations where bug_id = 8')
-        association = cursor.fetchone()
-        eq_(association[0], 'legitimate(sig)')
+            'select signature from bug_associations where bug_id = 8')
+        associations = cursor.fetchall()
+        assert ('legitimate(sig)',) in associations
+        assert ('another::legitimate(sig)',) in associations
 
     def test_run_job_with_reports_with_existing_bugs_same(self):
         config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
         # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
         cursor.execute("""insert into bug_associations
         (bug_id,signature)
         values
@@ -223,15 +134,11 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
-
         cursor.execute(
-          'select signature from bug_associations where bug_id = 8')
-        association = cursor.fetchone()
-        eq_(association[0], 'legitimate(sig)')
-        cursor.execute('select * from bug_associations')
+            'select signature from bug_associations where bug_id = 8')
+        associations = cursor.fetchall()
+        assert ('legitimate(sig)',) in associations
+        assert ('another::legitimate(sig)',) in associations
 
     def test_run_job_virgin_run(self):
         """specifically setting 0 days back and no priror run
@@ -240,22 +147,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
         cursor = self.conn.cursor()
         # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
         cursor.execute("""insert into bug_associations
         (bug_id,signature)
         values
@@ -271,10 +162,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
-
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
 
     def test_run_job_one_day_back(self):
         """specifically setting 0 days back and no priror run
@@ -283,22 +170,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
         cursor = self.conn.cursor()
         # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
         cursor.execute("""insert into bug_associations
         (bug_id,signature)
         values
@@ -315,10 +186,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
-
     def test_run_job_based_on_last_success(self):
         """specifically setting 0 days back and no priror run
         will pick it up from now's date"""
@@ -326,22 +193,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
         cursor = self.conn.cursor()
         # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
         cursor.execute("""insert into bug_associations
         (bug_id,signature)
         values
@@ -373,7 +224,3 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
-
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')

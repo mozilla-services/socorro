@@ -111,43 +111,19 @@ class BugzillaCronApp(BaseCronApp):
     ):
         self.config.logger.debug(
             "bug %s (%s, %s) %s: %s",
-            bug_id, status, resolution, short_desc, signature_set)
+            bug_id, status, resolution, short_desc, signature_set
+        )
         if not signature_set:
             execute_no_results(
                 connection,
-                "DELETE FROM bugs WHERE id = %s",
+                "DELETE FROM bug_associations WHERE bug_id = %s",
                 (bug_id,)
             )
             return
-        useful = False
-        insert_made = False
-        try:
-            status_db, resolution_db, short_desc_db = single_row_sql(
-                connection,
-                """SELECT status, resolution, short_desc
-                FROM bugs
-                WHERE id = %s""",
-                (bug_id,)
-            )
-            if (status_db != status
-                or resolution_db != resolution
-                or short_desc_db != short_desc):
-                execute_no_results(
-                    connection,
-                    """
-                    UPDATE bugs SET
-                        status = %s, resolution = %s, short_desc = %s
-                    WHERE id = %s""",
-                    (status, resolution, short_desc, bug_id)
-                )
-                self.config.logger.info(
-                    "bug status updated: %s - %s, %s",
-                    bug_id,
-                    status,
-                    resolution
-                )
-                useful = True
 
+        useful = False
+
+        try:
             signature_rows = execute_query_fetchall(
                 connection,
                 "SELECT signature FROM bug_associations WHERE bug_id = %s",
@@ -169,65 +145,25 @@ class BugzillaCronApp(BaseCronApp):
                         bug_id, signature)
                     useful = True
         except SQLDidNotReturnSingleRow:
-            execute_no_results(
-                connection,
-                """
-                INSERT INTO bugs
-                (id, status, resolution, short_desc)
-                VALUES (%s, %s, %s, %s)""",
-                (bug_id, status, resolution, short_desc)
-            )
-            insert_made = True
             signatures_db = []
 
         for signature in signature_set:
             if signature not in signatures_db:
-                if self._has_signature_report(signature, connection):
-                    execute_no_results(
-                        connection,
-                        """
-                        INSERT INTO bug_associations (signature, bug_id)
-                        VALUES (%s, %s)""",
-                        (signature, bug_id)
-                    )
-                    self.config.logger.info(
-                        'new association: %s - "%s"',
-                        bug_id,
-                        signature
-                    )
-                    useful = True
-                else:
-                    self.config.logger.info(
-                        'rejecting association (no reports with this '
-                        'signature): %s - "%s"',
-                        bug_id,
-                        signature
-                    )
+                execute_no_results(
+                    connection,
+                    """
+                    INSERT INTO bug_associations (signature, bug_id)
+                    VALUES (%s, %s)""",
+                    (signature, bug_id)
+                )
+                self.config.logger.info(
+                    'new association: %s - "%s"',
+                    bug_id,
+                    signature
+                )
+                useful = True
 
-        if useful:
-            if insert_made:
-                self.config.logger.info(
-                    'new bug: %s - %s, %s, "%s"',
-                    bug_id,
-                    status,
-                    resolution,
-                    short_desc
-                )
-        else:
-            if insert_made:
-                self.config.logger.info(
-                    'rejecting bug (no useful information): '
-                    '%s - %s, %s, "%s"',
-                    bug_id, status, resolution, short_desc)
-            else:
-                self.config.logger.info(
-                    'skipping bug (no new information): '
-                    '%s - %s, %s, "%s"',
-                    bug_id,
-                    status,
-                    resolution,
-                    short_desc
-                )
+        if not useful:
             raise NothingUsefulHappened('nothing useful done')
 
     def _iterator(self, query):
@@ -255,16 +191,3 @@ class BugzillaCronApp(BaseCronApp):
             # throw when index cannot match another sig, ignore
             pass
         return set_
-
-    def _has_signature_report(self, signature, connection):
-        try:
-            single_row_sql(
-                connection,
-                """
-                SELECT 1 FROM reports
-                WHERE signature = %s LIMIT 1""",
-                (signature,)
-            )
-            return True
-        except SQLDidNotReturnSingleRow:
-            return False
