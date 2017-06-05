@@ -30,8 +30,7 @@ _URL = (
     'tes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=reso'
     'lution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signatu'
     're&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-'
-    '0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_de'
-    'sc,cf_crash_signature&ctype=csv'
+    '0-0=noop&value0-0-0=&columnlist=bug_id,cf_crash_signature&ctype=csv'
 )
 
 
@@ -81,9 +80,6 @@ class BugzillaCronApp(BaseCronApp):
         query = self.config.query % last_run_formatted
         for (
             bug_id,
-            status,
-            resolution,
-            short_desc,
             signature_set
         ) in self._iterator(query):
             try:
@@ -91,9 +87,6 @@ class BugzillaCronApp(BaseCronApp):
                 self.database_transaction_executor(
                     self.inner_transaction,
                     bug_id,
-                    status,
-                    resolution,
-                    short_desc,
                     signature_set
                 )
             except NothingUsefulHappened:
@@ -103,14 +96,11 @@ class BugzillaCronApp(BaseCronApp):
         self,
         connection,
         bug_id,
-        status,
-        resolution,
-        short_desc,
         signature_set
     ):
         self.config.logger.debug(
-            "bug %s (%s, %s) %s: %s",
-            bug_id, status, resolution, short_desc, signature_set
+            "bug %s: %s",
+            bug_id, signature_set
         )
         if not signature_set:
             execute_no_results(
@@ -169,9 +159,6 @@ class BugzillaCronApp(BaseCronApp):
         for report in csv.DictReader(urllib2.urlopen(query)):
             yield (
                 int(report['bug_id']),
-                report['bug_status'],
-                report['resolution'],
-                report['short_desc'],
                 self._signatures_found(report['cf_crash_signature'])
             )
 

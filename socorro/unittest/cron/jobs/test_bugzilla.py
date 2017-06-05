@@ -14,15 +14,15 @@ from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
 SAMPLE_CSV = [
-    'bug_id,"bug_status","resolution","short_desc","cf_crash_signature"',
-    '1,"RESOLVED",,"this is a comment","This sig, while bogus, has a ] bracket"',
-    '2,"CLOSED","WONTFIX","comments are not too important","single [@ BogusClass::bogus_sig (const char**) ] signature"',
-    '3,"ASSIGNED",,"this is a comment. [@ nanojit::LIns::isTramp()]","[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]"',
-    '4,"CLOSED","RESOLVED","two sigs enter, one sig leaves","[@ layers::Push@0x123456] [@ layers::Push@0x123456]"',
-    '5,"ASSIGNED","INCOMPLETE",,"[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455"',
-    '6,"ASSIGNED",,"empty crash sigs should not throw errors",""',
-    '7,"CLOSED",,"gt 525355 gt","[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
-    '8,"CLOSED","RESOLVED","newlines in sigs","[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
+    'bug_id,"cf_crash_signature"',
+    '1,"This sig, while bogus, has a ] bracket"',
+    '2,"single [@ BogusClass::bogus_sig (const char**) ] signature"',
+    '3,"[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]"',
+    '4,"[@ layers::Push@0x123456] [@ layers::Push@0x123456]"',
+    '5,"[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455"',
+    '6,""',
+    '7,"[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
+    '8,"[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
 ]
 
 
