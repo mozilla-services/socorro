@@ -347,12 +347,16 @@ class OutOfMemoryBinaryRule(Rule):
     def _extract_memory_info(self, dump_pathname, processor_notes):
         """Extract and return the JSON data from the .json.gz memory report.
         file"""
+        def error_out(error_message):
+            processor_notes.append(error_message)
+            return {"ERROR": error_message}
+
         try:
             fd = gzip_open(dump_pathname, "rb")
         except IOError, x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
-            processor_notes.append(error_message)
-            return {"ERROR": error_message}
+            return error_out(error_message)
+
         try:
             memory_info_as_string = fd.read()
             if len(memory_info_as_string) > self.config.max_size_uncompressed:
@@ -362,14 +366,15 @@ class OutOfMemoryBinaryRule(Rule):
                         self.config.max_size_uncompressed,
                     )
                 )
-                processor_notes.append(error_message)
-                return {"ERROR": error_message}
+                return error_out(error_message)
 
             memory_info = json_loads(memory_info_as_string)
+        except IOError, x:
+            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+            return error_out(error_message)
         except ValueError, x:
             error_message = "error in json for %s: %r" % (dump_pathname, x)
-            processor_notes.append(error_message)
-            return {"ERROR": error_message}
+            return error_out(error_message)
         finally:
             fd.close()
 
