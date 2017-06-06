@@ -169,7 +169,7 @@ class AddonsRule(Rule):
             processed_crash.addons_checked = False
             if addons_checked_txt == 'true':
                 processed_crash.addons_checked = True
-        except KeyError, e:
+        except KeyError as e:
             if 'EMCheckCompatibility' not in str(e):
                 raise
             # it's okay to not have EMCheckCompatibility, other missing things
@@ -225,7 +225,7 @@ class DatesAndTimesRule(Rule):
         except (KeyError, AttributeError):
             notes_list.append("WARNING: raw_crash missing %s" % key)
             return default
-        except TypeError, x:
+        except TypeError as x:
             notes_list.append(
                 "WARNING: raw_crash[%s] contains unexpected value: %s; %s" %
                 (key, a_mapping[key], str(x))
@@ -353,7 +353,7 @@ class OutOfMemoryBinaryRule(Rule):
 
         try:
             fd = gzip_open(dump_pathname, "rb")
-        except IOError, x:
+        except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
 
@@ -369,10 +369,10 @@ class OutOfMemoryBinaryRule(Rule):
                 return error_out(error_message)
 
             memory_info = json_loads(memory_info_as_string)
-        except IOError, x:
+        except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
-        except ValueError, x:
+        except ValueError as x:
             error_message = "error in json for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
         finally:
@@ -688,7 +688,7 @@ class TopMostFilesRule(Rule):
             stack_frames = (
                 processed_crash.json_dump['threads'][crashing_thread]['frames']
             )
-        except KeyError, x:
+        except KeyError as x:
             # guess we don't have frames or crashing_thread or json_dump
             # we have to give up
             processor_meta.processor_notes.append(
