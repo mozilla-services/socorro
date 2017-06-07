@@ -169,7 +169,7 @@ class AddonsRule(Rule):
             processed_crash.addons_checked = False
             if addons_checked_txt == 'true':
                 processed_crash.addons_checked = True
-        except KeyError, e:
+        except KeyError as e:
             if 'EMCheckCompatibility' not in str(e):
                 raise
             # it's okay to not have EMCheckCompatibility, other missing things
@@ -225,7 +225,7 @@ class DatesAndTimesRule(Rule):
         except (KeyError, AttributeError):
             notes_list.append("WARNING: raw_crash missing %s" % key)
             return default
-        except TypeError, x:
+        except TypeError as x:
             notes_list.append(
                 "WARNING: raw_crash[%s] contains unexpected value: %s; %s" %
                 (key, a_mapping[key], str(x))
@@ -347,12 +347,16 @@ class OutOfMemoryBinaryRule(Rule):
     def _extract_memory_info(self, dump_pathname, processor_notes):
         """Extract and return the JSON data from the .json.gz memory report.
         file"""
-        try:
-            fd = gzip_open(dump_pathname, "rb")
-        except IOError, x:
-            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+        def error_out(error_message):
             processor_notes.append(error_message)
             return {"ERROR": error_message}
+
+        try:
+            fd = gzip_open(dump_pathname, "rb")
+        except IOError as x:
+            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+            return error_out(error_message)
+
         try:
             memory_info_as_string = fd.read()
             if len(memory_info_as_string) > self.config.max_size_uncompressed:
@@ -362,14 +366,15 @@ class OutOfMemoryBinaryRule(Rule):
                         self.config.max_size_uncompressed,
                     )
                 )
-                processor_notes.append(error_message)
-                return {"ERROR": error_message}
+                return error_out(error_message)
 
             memory_info = json_loads(memory_info_as_string)
-        except ValueError, x:
+        except IOError as x:
+            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+            return error_out(error_message)
+        except ValueError as x:
             error_message = "error in json for %s: %r" % (dump_pathname, x)
-            processor_notes.append(error_message)
-            return {"ERROR": error_message}
+            return error_out(error_message)
         finally:
             fd.close()
 
@@ -683,7 +688,7 @@ class TopMostFilesRule(Rule):
             stack_frames = (
                 processed_crash.json_dump['threads'][crashing_thread]['frames']
             )
-        except KeyError, x:
+        except KeyError as x:
             # guess we don't have frames or crashing_thread or json_dump
             # we have to give up
             processor_meta.processor_notes.append(
