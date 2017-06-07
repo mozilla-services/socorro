@@ -6,10 +6,11 @@ import datetime
 import os
 from dateutil import tz
 from crontabber.app import CronTabber
+
+from socorro.cron.jobs.bugzilla import find_signatures
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
-
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
@@ -183,3 +184,28 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
+
+    def test_find_signatures(self):
+        # Simple signature.
+        content = '[@ moz::signature]'
+        expected = set(['moz::signature'])
+        res = find_signatures(content)
+        assert res == expected
+
+        # 2 signatures and some junk
+        content = '@@3*&^!~[@ moz::signature][@   ns::old     ]'
+        expected = set(['moz::signature', 'ns::old'])
+        res = find_signatures(content)
+        assert res == expected
+
+        # A signature containing square brackets.
+        content = '[@ moz::signature] [@ sig_with[brackets]]'
+        expected = set(['moz::signature', 'sig_with[brackets]'])
+        res = find_signatures(content)
+        assert res == expected
+
+        # A bogus signature.
+        content = '[@ note there is no trailing bracket'
+        expected = set()
+        res = find_signatures(content)
+        assert res == expected

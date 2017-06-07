@@ -34,6 +34,31 @@ _URL = (
 )
 
 
+def find_signatures(content):
+    """Return a list of signatures found inside a string.
+
+    Signatures are found between `[@` and `]`. There can be any number of them
+    in the content.
+
+    Example:
+    >>> "some [@ signature] [@ another_one] and [@ even::this[] ]"
+    set(['signature', 'another_one', 'even::this[]'])
+    """
+    if not content:
+        return set()
+
+    signatures = set()
+    parts = content.split('[@')
+    for part in parts[1:]:
+        try:
+            last_bracket = part.rindex(']')
+            signature = part[:last_bracket].strip()
+            signatures.add(signature)
+        except ValueError:
+            pass
+    return signatures
+
+
 class NothingUsefulHappened(Exception):
     """an exception to be raised when a pass through the inner loop has
     done nothing useful and we wish to induce a transaction rollback"""
@@ -159,21 +184,5 @@ class BugzillaCronApp(BaseCronApp):
         for report in csv.DictReader(urllib2.urlopen(query)):
             yield (
                 int(report['bug_id']),
-                self._signatures_found(report['cf_crash_signature'])
+                find_signatures(report['cf_crash_signature'])
             )
-
-    def _signatures_found(self, signature):
-        if not signature:
-            return set()
-        set_ = set()
-        try:
-            start = 0
-            end = 0
-            while True:
-                start = signature.index("[@", end) + 2
-                end = signature.index("]", end + 1)
-                set_.add(signature[start:end].strip())
-        except ValueError:
-            # throw when index cannot match another sig, ignore
-            pass
-        return set_
