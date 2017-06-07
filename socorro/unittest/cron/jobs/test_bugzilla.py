@@ -4,6 +4,7 @@
 
 import datetime
 import os
+import pytest
 from dateutil import tz
 from crontabber.app import CronTabber
 
@@ -185,27 +186,24 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-    def test_find_signatures(self):
-        # Simple signature.
-        content = '[@ moz::signature]'
-        expected = set(['moz::signature'])
-        res = find_signatures(content)
-        assert res == expected
 
-        # 2 signatures and some junk
-        content = '@@3*&^!~[@ moz::signature][@   ns::old     ]'
-        expected = set(['moz::signature', 'ns::old'])
-        res = find_signatures(content)
-        assert res == expected
-
-        # A signature containing square brackets.
-        content = '[@ moz::signature] [@ sig_with[brackets]]'
-        expected = set(['moz::signature', 'sig_with[brackets]'])
-        res = find_signatures(content)
-        assert res == expected
-
-        # A bogus signature.
-        content = '[@ note there is no trailing bracket'
-        expected = set()
-        res = find_signatures(content)
-        assert res == expected
+@pytest.mark.parametrize('content, expected', [
+    # Simple signature
+    ('[@ moz::signature]', set(['moz::signature'])),
+    # Using unicode.
+    (u'[@ moz::signature]', set(['moz::signature'])),
+    # 2 signatures and some junk
+    (
+        '@@3*&^!~[@ moz::signature][@   ns::old     ]',
+        set(['moz::signature', 'ns::old'])
+    ),
+    # A signature containing square brackets.
+    (
+        '[@ moz::signature] [@ sig_with[brackets]]',
+        set(['moz::signature', 'sig_with[brackets]'])
+    ),
+    # A malformed signature.
+    ('[@ note there is no trailing bracket', set()),
+])
+def test_find_signatures(content, expected):
+    assert find_signatures(content) == expected

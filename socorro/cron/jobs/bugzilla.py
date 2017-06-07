@@ -41,20 +41,24 @@ def find_signatures(content):
     in the content.
 
     Example:
-    >>> "some [@ signature] [@ another_one] and [@ even::this[] ]"
-    set(['signature', 'another_one', 'even::this[]'])
+    >>> find_signatures("some [@ signature] [@ another] and [@ even::this[] ]")
+    set(['signature', 'another', 'even::this[]'])
     """
     if not content:
         return set()
 
     signatures = set()
     parts = content.split('[@')
+    # The first item of this list is always not interesting, as it cannot
+    # contain any signatures. We thus skip it.
     for part in parts[1:]:
         try:
             last_bracket = part.rindex(']')
             signature = part[:last_bracket].strip()
             signatures.add(signature)
         except ValueError:
+            # Raised if ']' is not found in the string. In that case, we
+            # simply ignore this malformed part.
             pass
     return signatures
 
