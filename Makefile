@@ -36,7 +36,7 @@ json_enhancements_pg_extension: bootstrap
 
 # Docker related rules
 
-.PHONY: dockerbuild dockersetup dockerclean dockertest dockerrun
+.PHONY: dockerbuild dockersetup dockerclean dockertest dockertestshell dockerrun
 
 DC := $(shell which docker-compose)
 
@@ -62,6 +62,9 @@ dockerclean:
 
 dockertest:
 	./docker/run_tests_in_docker.sh ${ARGS}
+
+dockertestshell:
+	./docker/run_tests_in_docker.sh --shell
 
 dockerrun:
 	${DC} up webapp processor
