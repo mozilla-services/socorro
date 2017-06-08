@@ -17,7 +17,6 @@ set -v -e -x
 PS4="+ (run_tests_in_docker.sh): "
 
 DC="$(which docker-compose)"
-DOCKER="$(which docker)"
 APP_UID="10001"
 APP_GID="10001"
 
@@ -35,8 +34,6 @@ ${DC} up -d rabbitmq
 # to /app.
 if [ "$1" == "--shell" ]; then
     echo "Running shell..."
-    DOCKER_COMMAND="/bin/bash"
-    DOCKER_ARGS="-t -i"
 
     docker run \
            --rm \
@@ -70,7 +67,7 @@ else
            --user root \
            --volumes-from socorro-repo \
            --workdir /app \
-           local/socorro_webapp rm -rf /app/*
+           local/socorro_webapp rm -rf "/app/*"
 
     # Copy the repo root into /app
     docker cp . socorro-repo:/app
