@@ -17,7 +17,6 @@ set -v -e -x
 PS4="+ (run_tests_in_docker.sh): "
 
 DC="$(which docker-compose)"
-DOCKER="$(which docker)"
 APP_UID="10001"
 APP_GID="10001"
 
@@ -35,8 +34,6 @@ ${DC} up -d rabbitmq
 # to /app.
 if [ "$1" == "--shell" ]; then
     echo "Running shell..."
-    DOCKER_COMMAND="/bin/bash"
-    DOCKER_ARGS="-t -i"
 
     docker run \
            --rm \
@@ -65,6 +62,14 @@ else
                ${BASEIMAGENAME} /bin/true
     fi
     echo "Copying contents..."
+    # Wipe whatever might be in there from past runs
+    docker run \
+           --user root \
+           --volumes-from socorro-repo \
+           --workdir /app \
+           local/socorro_webapp rm -rf "/app/*"
+
+    # Copy the repo root into /app
     docker cp . socorro-repo:/app
 
     # Fix permissions in data container
@@ -88,5 +93,6 @@ else
            --env-file ./docker/config/docker_common.env \
            --env-file ./docker/config/test.env \
            local/socorro_webapp /app/docker/run_tests.sh
+
     echo "Done!"
 fi
