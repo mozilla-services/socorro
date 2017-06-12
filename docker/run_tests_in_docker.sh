@@ -67,7 +67,14 @@ else
            --user root \
            --volumes-from socorro-repo \
            --workdir /app \
-           local/socorro_webapp rm -rf "/app/*"
+           local/socorro_webapp sh -c "rm -rf /app/*"
+
+    # Verify files are gone
+    docker run \
+           --user root \
+           --volumes-from socorro-repo \
+           --workdir /app \
+           local/socorro_webapp ls -l /app/
 
     # Copy the repo root into /app
     docker cp . socorro-repo:/app
