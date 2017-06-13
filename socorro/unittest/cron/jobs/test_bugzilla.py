@@ -4,12 +4,14 @@
 
 import datetime
 import os
+import pytest
 from dateutil import tz
 from crontabber.app import CronTabber
+
+from socorro.cron.jobs.bugzilla import find_signatures
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
-
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
@@ -183,3 +185,25 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
+
+
+@pytest.mark.parametrize('content, expected', [
+    # Simple signature
+    ('[@ moz::signature]', set(['moz::signature'])),
+    # Using unicode.
+    (u'[@ moz::signature]', set(['moz::signature'])),
+    # 2 signatures and some junk
+    (
+        '@@3*&^!~[@ moz::signature][@   ns::old     ]',
+        set(['moz::signature', 'ns::old'])
+    ),
+    # A signature containing square brackets.
+    (
+        '[@ moz::signature] [@ sig_with[brackets]]',
+        set(['moz::signature', 'sig_with[brackets]'])
+    ),
+    # A malformed signature.
+    ('[@ note there is no trailing bracket', set()),
+])
+def test_find_signatures(content, expected):
+    assert find_signatures(content) == expected
