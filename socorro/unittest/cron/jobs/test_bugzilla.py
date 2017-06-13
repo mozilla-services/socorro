@@ -2,32 +2,57 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
-import os
 import pytest
-from dateutil import tz
+import requests_mock
 from crontabber.app import CronTabber
 
 from socorro.cron.jobs.bugzilla import find_signatures
+from socorro.cron.jobs.bugzilla import BUGZILLA_BASE_URL
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
-SAMPLE_CSV = [
-    'bug_id,"cf_crash_signature"',
-    '1,"This sig, while bogus, has a ] bracket"',
-    '2,"single [@ BogusClass::bogus_sig (const char**) ] signature"',
-    '3,"[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]"',
-    '4,"[@ layers::Push@0x123456] [@ layers::Push@0x123456]"',
-    '5,"[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455"',
-    '6,""',
-    '7,"[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
-    '8,"[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
-]
+SAMPLE_BUGZILLA_RESULTS = {
+    'bugs': [
+        {
+            'id': '1',
+            'cf_crash_signature': 'This sig, while bogus, has a ] bracket',
+        },
+        {
+            'id': '2',
+            'cf_crash_signature': 'single [@ BogusClass::bogus_sig (const char**) ] signature',
+        },
+        {
+            'id': '3',
+            'cf_crash_signature': '[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]',
+        },
+        {
+            'id': '4',
+            'cf_crash_signature': '[@ layers::Push@0x123456] [@ layers::Push@0x123456]',
+        },
+        {
+            'id': '5',
+            'cf_crash_signature': '[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455',
+        },
+        {
+            'id': '6',
+            'cf_crash_signature': '',
+        },
+        {
+            'id': '7',
+            'cf_crash_signature': '[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]',
+        },
+        {
+            'id': '8',
+            'cf_crash_signature': '[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]',
+        },
+    ]
+}
 
 
+@requests_mock.Mocker()
 class IntegrationTestBugzilla(IntegrationTestBase):
 
     def tearDown(self):
@@ -36,28 +61,15 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
-        PST = tz.gettz('PST8PDT')
-        datestring = (
-            (
-                datetime.datetime.now(PST) -
-                datetime.timedelta(days=days_into_past)
-            ).astimezone(PST).strftime('%Y-%m-%d')
-        )
-        filename = os.path.join(self.tempdir, 'sample-%s.csv' % datestring)
-        with open(filename, 'w') as f:
-            f.write('\n'.join(SAMPLE_CSV))
-
-        query = 'file://' + filename.replace(datestring, '%s')
-
         return get_config_manager_for_crontabber(
             jobs='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
             overrides={
-                'crontabber.class-BugzillaCronApp.query': query,
                 'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
             }
         )
 
-    def test_basic_run_job(self):
+    def test_basic_run_job(self, mocker):
+        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
 
         with config_manager.context() as config:
@@ -89,7 +101,8 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         assert ('another::legitimate(sig)',) in associations
         assert ('legitimate(sig)',) in associations
 
-    def test_run_job_with_reports_with_existing_bugs_different(self):
+    def test_run_job_with_reports_with_existing_bugs_different(self, mocker):
+        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         """Verify that an association to a signature that no longer is part
         of the crash signatures list gets removed.
         """
@@ -119,7 +132,8 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         # crash signatures, is now missing.
         assert ('@different',) not in associations
 
-    def test_run_job_with_reports_with_existing_bugs_same(self):
+    def test_run_job_with_reports_with_existing_bugs_same(self, mocker):
+        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
         cursor = self.conn.cursor()
 
@@ -147,7 +161,8 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         assert ('another::legitimate(sig)',) in associations
         assert ('legitimate(sig)',) in associations
 
-    def test_run_job_based_on_last_success(self):
+    def test_run_job_based_on_last_success(self, mocker):
+        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         """specifically setting 0 days back and no prior run
         will pick it up from now's date"""
         config_manager = self._setup_config_manager(0)

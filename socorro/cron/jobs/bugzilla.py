@@ -3,9 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import urllib2
-import csv
 
+import requests
 from dateutil import tz
 from configman import Namespace
 from crontabber.base import BaseCronApp
@@ -19,19 +18,16 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 
 
-_URL = (
-    'https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_'
-    'desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&lo'
-    'ng_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteb'
-    'oard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&ke'
-    'ywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=subs'
-    'tring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1'
-    '&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&vo'
-    'tes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=reso'
-    'lution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signatu'
-    're&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-'
-    '0-0=noop&value0-0-0=&columnlist=bug_id,cf_crash_signature&ctype=csv'
-)
+# Query all bugs that changed since a given date, and that either where created
+# or had their crash_signature field change. Only return the two fields that
+# interest us, the id and the crash_signature text.
+BUGZILLA_PARAMS = {
+    'chfieldfrom': '%s',
+    'chfieldto': 'Now',
+    'chfield': ['[Bug creation]', 'cf_crash_signature'],
+    'include_fields': ['id', 'cf_crash_signature'],
+}
+BUGZILLA_BASE_URL = 'https://bugzilla.mozilla.org/rest/bug'
 
 
 def find_signatures(content):
@@ -77,11 +73,6 @@ class BugzillaCronApp(BaseCronApp):
 
     required_config = Namespace()
     required_config.add_option(
-        'query',
-        default=_URL,
-        doc='Explanation of the option')
-
-    required_config.add_option(
         'days_into_past',
         default=0,
         doc='number of days to look into the past for bugs (0 - use last '
@@ -106,11 +97,10 @@ class BugzillaCronApp(BaseCronApp):
         # bugzilla runs on PST, so we need to communicate in its time zone
         PST = tz.gettz('PST8PDT')
         last_run_formatted = last_run.astimezone(PST).strftime('%Y-%m-%d')
-        query = self.config.query % last_run_formatted
         for (
             bug_id,
             signature_set
-        ) in self._iterator(query):
+        ) in self._iterator(last_run_formatted):
             try:
                 # each run of this loop is a transaction
                 self.database_transaction_executor(
@@ -184,9 +174,13 @@ class BugzillaCronApp(BaseCronApp):
         if not useful:
             raise NothingUsefulHappened('nothing useful done')
 
-    def _iterator(self, query):
-        for report in csv.DictReader(urllib2.urlopen(query)):
+    def _iterator(self, from_date):
+        payload = BUGZILLA_PARAMS.copy()
+        payload['chfieldfrom'] = from_date
+        r = requests.get(BUGZILLA_BASE_URL, params=payload)
+        results = r.json()
+        for report in results['bugs']:
             yield (
-                int(report['bug_id']),
+                int(report['id']),
                 find_signatures(report['cf_crash_signature'])
             )
