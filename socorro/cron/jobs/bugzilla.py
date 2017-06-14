@@ -59,6 +59,12 @@ def find_signatures(content):
     return signatures
 
 
+class BugzillaConnectionError(Exception):
+    """Raised when an HTTP request to bugzilla did not return a 2XX status.
+    """
+    pass
+
+
 class NothingUsefulHappened(Exception):
     """an exception to be raised when a pass through the inner loop has
     done nothing useful and we wish to induce a transaction rollback"""
@@ -178,6 +184,8 @@ class BugzillaCronApp(BaseCronApp):
         payload = BUGZILLA_PARAMS.copy()
         payload['chfieldfrom'] = from_date
         r = requests.get(BUGZILLA_BASE_URL, params=payload)
+        if r.status_code < 200 or r.status_code >= 300:
+            raise BugzillaConnectionError()
         results = r.json()
         for report in results['bugs']:
             yield (

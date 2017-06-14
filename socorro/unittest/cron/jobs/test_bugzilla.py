@@ -68,8 +68,8 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             }
         )
 
-    def test_basic_run_job(self, mocker):
-        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+    def test_basic_run_job(self, requests_mocker):
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
 
         with config_manager.context() as config:
@@ -101,11 +101,11 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         assert ('another::legitimate(sig)',) in associations
         assert ('legitimate(sig)',) in associations
 
-    def test_run_job_with_reports_with_existing_bugs_different(self, mocker):
-        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+    def test_run_job_with_reports_with_existing_bugs_different(self, requests_mocker):
         """Verify that an association to a signature that no longer is part
         of the crash signatures list gets removed.
         """
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
         cursor = self.conn.cursor()
 
@@ -132,8 +132,8 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         # crash signatures, is now missing.
         assert ('@different',) not in associations
 
-    def test_run_job_with_reports_with_existing_bugs_same(self, mocker):
-        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+    def test_run_job_with_reports_with_existing_bugs_same(self, requests_mocker):
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
         cursor = self.conn.cursor()
 
@@ -161,10 +161,10 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         assert ('another::legitimate(sig)',) in associations
         assert ('legitimate(sig)',) in associations
 
-    def test_run_job_based_on_last_success(self, mocker):
-        mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+    def test_run_job_based_on_last_success(self, requests_mocker):
         """specifically setting 0 days back and no prior run
         will pick it up from now's date"""
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(0)
 
         cursor = self.conn.cursor()
@@ -200,6 +200,26 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
+
+    def test_with_bugzilla_failure(self, requests_mocker):
+        requests_mocker.get(
+            BUGZILLA_BASE_URL,
+            text='error loading content',
+            status_code=500
+        )
+        config_manager = self._setup_config_manager(3)
+
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            information = self._load_structure()
+            assert information['bugzilla-associations']
+            # There has been an error.
+            last_error = information['bugzilla-associations']['last_error']
+            assert last_error
+            assert 'BugzillaConnectionError' in last_error['type']
+            assert not information['bugzilla-associations']['last_success']
 
 
 @pytest.mark.parametrize('content, expected', [
