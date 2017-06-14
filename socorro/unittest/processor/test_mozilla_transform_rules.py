@@ -1910,6 +1910,34 @@ class TestBetaVersion(TestCase):
         eq_(processed_crash['version'], '3.0b0')
         eq_(len(processor_meta.processor_notes), 2)
 
+    def test_with_aurora_channel(self):
+        config = self.get_basic_config()
+        config.database_class = Mock()
+        config.transaction_executor_class = Mock()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processed_crash = DotDict()
+        processed_crash.date_processed = '2014-12-31'
+        processed_crash.product = 'WaterWolf'
+
+        processor_meta = self.get_basic_processor_meta()
+
+        transaction = Mock()
+        config.transaction_executor_class.return_value = transaction
+
+        rule = BetaVersionRule(config)
+
+        # A normal beta crash, with a know version.
+        transaction.return_value = (('3.0b1',),)
+        processed_crash.version = '3.0'
+        processed_crash.release_channel = 'aurora'
+        processed_crash.build = 20001001101010
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        eq_(processed_crash['version'], '3.0b1')
+        eq_(len(processor_meta.processor_notes), 0)
+
 
 class TestOsPrettyName(TestCase):
 
