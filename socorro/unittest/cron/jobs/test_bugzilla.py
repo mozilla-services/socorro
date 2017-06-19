@@ -218,7 +218,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             # There has been an error.
             last_error = information['bugzilla-associations']['last_error']
             assert last_error
-            assert 'BugzillaConnectionError' in last_error['type']
+            assert 'HTTPError' in last_error['type']
             assert not information['bugzilla-associations']['last_success']
 
 
