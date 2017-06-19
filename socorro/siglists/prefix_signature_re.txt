@@ -8,6 +8,7 @@
 Abort
 .*abort
 .*alloc_impl
+alloc::oom::default_oom_handler
 _alloca_probe.*
 __android_log_assert
 arena_.*
@@ -188,6 +189,8 @@ ssl_.*
 SSL_.*
 std::_Allocate.*
 std::list<.*>::.*
+std::panicking::begin_panic<.*>
+std::panicking::rust_panic_with_hook
 strcat
 strncmp
 ssl3_.*
