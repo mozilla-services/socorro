@@ -1911,6 +1911,9 @@ class TestBetaVersion(TestCase):
         eq_(len(processor_meta.processor_notes), 2)
 
     def test_with_aurora_channel(self):
+        """Verify the version change is applied to crash reports with a
+        release channel of "aurora".
+        """
         config = self.get_basic_config()
         config.database_class = Mock()
         config.transaction_executor_class = Mock()
@@ -1928,7 +1931,7 @@ class TestBetaVersion(TestCase):
 
         rule = BetaVersionRule(config)
 
-        # A normal beta crash, with a know version.
+        # A normal beta crash, with a known version.
         transaction.return_value = (('3.0b1',),)
         processed_crash.version = '3.0'
         processed_crash.release_channel = 'aurora'

@@ -814,6 +814,14 @@ class BetaVersionRule(Rule):
         return '1.0'
 
     def _get_version_data(self, product, version, build_id):
+        """Return the real version number of a specific product, version and
+        build.
+
+        For example, beta builds of Firefox declare their version
+        number as the major version (i.e. version 40.0b3 would say its version
+        is 43.0). This database call returns the actual version number of said
+        build (i.e. 43.0b3 for the previous example).
+        """
         key = '%s:%s:%s' % (product, version, build_id)
 
         if key in self._versions_data_cache:
@@ -851,8 +859,9 @@ class BetaVersionRule(Rule):
             # number in their data.
             # 2017-06-14: Ohai! This is not true anymore! With the removal of
             # the aurora channel, there is now a new type of build called
-            # "DevEdition", that is released on both the beta and the aurora
-            # channels. We thus want to apply the same logic to aurora builds
+            # "DevEdition", that is released on the aurora channel, but has
+            # the same version naming logic as builds on the beta channel.
+            # We thus want to apply the same logic to aurora builds
             # as well now. Note that older crash reports won't be affected,
             # because they have a "correct" version number, usually containing
             # the letter 'a' (like '50.0a2').
