@@ -198,6 +198,8 @@ strchr
 strcmp
 strcpy
 .*strdup
+StringBeginsWith
+StringEndsWith
 strlen
 strncpy
 strzcmp16
