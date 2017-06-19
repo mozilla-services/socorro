@@ -140,14 +140,6 @@ def get_api_whitelist(*args, **kwargs):
     return functools.partial(get_from_es, *args, **kwargs)
 
 
-class BadStatusCodeError(Exception):
-    def __init__(self, status, message="Bad status code"):
-        self.message = message
-        self.status = status
-        combined = '%d: %s' % (status, message)
-        super(BadStatusCodeError, self).__init__(combined)
-
-
 class RequiredParameterError(Exception):
     pass
 
