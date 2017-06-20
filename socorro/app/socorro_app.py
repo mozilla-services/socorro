@@ -483,13 +483,13 @@ class App(SocorroApp):
         'statsd_host',
         doc='host for statsd server',
         default='',
-        reference_value_from='resource.statsd_host'
+        reference_value_from='resource.statsd'
     )
     required_config.metricscfg.add_option(
         'statsd_port',
         doc='port for statsd server',
         default=8125,
-        reference_value_from='resource.statsd_port'
+        reference_value_from='resource.statsd'
     )
     required_config.add_aggregation(
         'metrics',
