@@ -818,9 +818,9 @@ class BetaVersionRule(Rule):
         build.
 
         For example, beta builds of Firefox declare their version
-        number as the major version (i.e. version 40.0b3 would say its version
-        is 43.0). This database call returns the actual version number of said
-        build (i.e. 43.0b3 for the previous example).
+        number as the major version (i.e. version 54.0b3 would say its version
+        is 54.0). This database call returns the actual version number of said
+        build (i.e. 54.0b3 for the previous example).
         """
         key = '%s:%s:%s' % (product, version, build_id)
 
