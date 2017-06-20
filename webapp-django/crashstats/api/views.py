@@ -292,40 +292,6 @@ def model_wrapper(request, model_name):
     if form.is_valid():
         try:
             result = function(**form.cleaned_data)
-        except models.BadStatusCodeError as e:
-            error_code = e.status
-            message = e.message
-            if error_code >= 400 and error_code < 500:
-                # if the error message looks like JSON,
-                # carry that forward in the response
-                try:
-                    json.loads(message)
-                    return http.HttpResponse(
-                        message,
-                        status=error_code,
-                        content_type='application/json; charset=UTF-8'
-                    )
-                except ValueError:
-                    # The error from the middleware was not a JSON error.
-                    # Not much more we can do.
-                    reason = REASON_PHRASES.get(
-                        error_code,
-                        'UNKNOWN STATUS CODE'
-                    )
-                    return http.HttpResponse(
-                        reason,
-                        status=error_code,
-                        content_type='text/plain; charset=UTF-8'
-                    )
-            if error_code >= 500:
-                # special case
-                reason = REASON_PHRASES[424]
-                return http.HttpResponse(
-                    reason,
-                    status=424,
-                    content_type='text/plain'
-                )
-            raise
         except ValueError as e:
             if (
                 # built in json module ValueError

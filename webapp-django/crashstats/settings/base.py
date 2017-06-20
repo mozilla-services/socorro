@@ -122,7 +122,6 @@ MIDDLEWARE_CLASSES = (
     'waffle.middleware.WaffleMiddleware',
     'ratelimit.middleware.RatelimitMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
-    '%s.crashstats.middleware.Propagate400Errors' % PROJECT_MODULE,
     '%s.crashstats.middleware.Pretty400Errors' % PROJECT_MODULE,
 )
 
@@ -345,10 +344,6 @@ RATELIMIT_VIEW = '%s.crashstats.views.ratelimit_blocked' % PROJECT_MODULE
 # When we pull platforms from the Platforms API we later decide which of
 # these to display at various points in the UI.
 DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
-
-# When this is true, every 400 Bad Request error we get from the middleware
-# is propagated onto the client who caused the request in the webapp.
-PROPAGATE_IMPLEMENTATION_400_ERRORS = True
 
 # We don't want to test the migrations when we run tests.
 # We trust that syncdb matches what you'd get if you install

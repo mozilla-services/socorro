@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.utils import timezone
 
-from crashstats.base.tests.testbase import DjangoTestCase, TestCase
+from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 
 
@@ -29,16 +29,6 @@ class Response(object):
 
     def json(self):
         return self.raw
-
-
-class TestExceptions(TestCase):
-
-    def test_BadStatusCodeError(self):
-        try:
-            raise models.BadStatusCodeError(500, 'some message')
-        except models.BadStatusCodeError as exp:
-            ok_('500: some message' in str(exp))
-            eq_(exp.status, 500)
 
 
 class TestModels(DjangoTestCase):

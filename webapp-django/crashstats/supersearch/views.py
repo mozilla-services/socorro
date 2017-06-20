@@ -328,12 +328,9 @@ def search_query(request):
         return http.HttpResponseBadRequest(form.errors)
 
     api = Query()
-    try:
-        results = api.get(
-            query=form.cleaned_data['query'],
-            indices=form.cleaned_data['indices']
-        )
-    except models.BadStatusCodeError as e:
-        return http.HttpResponseBadRequest(e.message)
+    results = api.get(
+        query=form.cleaned_data['query'],
+        indices=form.cleaned_data['indices']
+    )
 
     return results
