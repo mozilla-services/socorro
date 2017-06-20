@@ -800,14 +800,16 @@ class TestCaseWithConfig(TestCase):
             sources = [sources]
 
         mock_logging = mock.Mock()
+        mock_metrics = mock.Mock()
 
         config_definitions = []
         for source in sources:
             conf = source.get_required_config()
             conf.add_option('logger', default=mock_logging)
+            conf.add_option('metrics', default=mock_metrics)
             config_definitions.append(conf)
 
-        values_source = {'logger': mock_logging}
+        values_source = {'logger': mock_logging, 'metrics': mock_metrics}
         if extra_values:
             values_source.update(extra_values)
 
