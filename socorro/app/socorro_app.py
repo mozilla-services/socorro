@@ -317,6 +317,10 @@ class LoggerWrapper(object):
             **kwargs
         )
 
+    def exception(self, message, *args, **kwargs):
+        kwargs['exc_info'] = True
+        self.error(message, *args, **kwargs)
+
 
 def setup_logger(config, local_unused, args_unused):
     """This method is sets up and initializes the logger objects.  It is a
