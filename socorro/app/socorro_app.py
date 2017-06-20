@@ -383,8 +383,8 @@ def setup_metrics(config, local_unused, args_unused):
     # DogStatsd class. We should upgrade.
     try:
         from datadog.dogstatsd import statsd
-    except ImportError as ioe:
-        statsd is None
+    except ImportError:
+        statsd = None
 
     host = config.metricscfg.statsd_host
     port = config.metricscfg.statsd_port

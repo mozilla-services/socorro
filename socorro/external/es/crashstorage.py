@@ -128,7 +128,7 @@ class ESCrashStorage(CrashStorageBase):
                 'processor.es.raw_crash_size',
                 len(json.dumps(raw_crash, cls=JsonDTEncoder))
             )
-        except Exception as exc:
+        except Exception:
             # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
             # later.
             self.config.logger.exception('something went wrong when capturing raw_crash_size')
@@ -138,7 +138,7 @@ class ESCrashStorage(CrashStorageBase):
                 'processor.es.processed_crash_size',
                 len(json.dumps(processed_crash, cls=JsonDTEncoder))
             )
-        except Exception as exc:
+        except Exception:
             # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
             # later.
             self.config.logger.exception('something went wrong when capturing raw_crash_size')
