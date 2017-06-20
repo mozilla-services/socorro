@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import re
 from threading import Thread
 from Queue import Queue
@@ -13,7 +14,7 @@ from configman.converters import class_converter, list_converter
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.lib.converters import change_default
-from socorro.lib.datetimeutil import string_to_datetime
+from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
 from socorro.external.crashstorage_base import Redactor
 
 
@@ -118,6 +119,29 @@ class ESCrashStorage(CrashStorageBase):
             'processed_crash': processed_crash,
             'raw_crash': raw_crash
         }
+
+        # NOTE(willkg): this is a hard-coded keyname to match what the statsdbenchmarkingwrapper
+        # produces for processor crashstorage classes. This is only used in that context, so we're
+        # hard-coding this now rather than figuring out a better way to carry that name through.
+        try:
+            self.config.metrics.histogram(
+                'processor.es.raw_crash_size',
+                len(json.dumps(raw_crash, cls=JsonDTEncoder))
+            )
+        except Exception as exc:
+            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
+            # later.
+            self.config.logger.exception('something went wrong when capturing raw_crash_size')
+
+        try:
+            self.config.metrics.histogram(
+                'processor.es.processed_crash_size',
+                len(json.dumps(processed_crash, cls=JsonDTEncoder))
+            )
+        except Exception as exc:
+            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
+            # later.
+            self.config.logger.exception('something went wrong when capturing raw_crash_size')
 
         self.transaction(
             self._submit_crash_to_elasticsearch,
