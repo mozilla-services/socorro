@@ -64,6 +64,9 @@ def config_from_configman():
     definition_source.namespace('logging')
     definition_source.logging = socorro_app.App.required_config.logging
 
+    definition_source.namespace('metricscfg')
+    definition_source.metricscfg = socorro_app.App.required_config.metricscfg
+
     definition_source.namespace('elasticsearch')
     definition_source.elasticsearch.add_option(
         'elasticsearch_class',

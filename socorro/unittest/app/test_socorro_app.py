@@ -3,18 +3,17 @@ from nose.tools import eq_, ok_, assert_raises
 from socorro.unittest.testbase import TestCase
 
 from configman import (
-    class_converter,
     Namespace,
     command_line,
     ConfigFileFutureProxy,
 )
-from configman.dotdict import DotDict
+from configman.dotdict import DotDict, configman_keys
+import pytest
 
 from socorro.app.socorro_app import (
+    App,
     SocorroApp,
-    SocorroWelcomeApp,
     main,
-    klass_to_pypath,
 )
 from socorro.app.for_application_defaults import ApplicationDefaultsProxy
 
@@ -180,3 +179,50 @@ class TestSocorroApp(TestCase):
                 eq_(kwargs['values_source_list'][1], {"a": 1})
                 eq_(kwargs['values_source_list'][2], {"b": 2})
                 eq_(result, 17)
+
+
+class AppWithMetrics(App):
+    def main(self):
+        self.config.metrics.increment('increment_key')
+        self.config.metrics.gauge('gauge_key', value=10)
+        self.config.metrics.timing('timing_key', value=100)
+        self.config.metrics.histogram('histogram_key', value=1000)
+
+
+@pytest.mark.usefixtures('caplog')
+class TestSocorroAppMetrics(TestCase):
+    @pytest.fixture(autouse=True)
+    def setup_caplog(self, caplog):
+        """Adds caplog pytext fixture as an instance attribute for log analysis"""
+        self.caplog = caplog
+
+    def test_logging_metrics(self):
+        """Verify LoggingMetrics work"""
+        AppWithMetrics.run(values_source_list=[configman_keys({})])
+
+        assert 'increment: increment_key=1 tags=[]' in self.caplog.text
+        assert 'gauge: gauge_key=10 tags=[]' in self.caplog.text
+        assert 'timing: timing_key=100 tags=[]' in self.caplog.text
+        assert 'histogram: histogram_key=1000 tags=[]' in self.caplog.text
+
+    def test_statsd_metrics(self):
+        with mock.patch('datadog.dogstatsd.statsd') as mock_statsd:
+            vsl = configman_keys({
+                'metricscfg.statsd_host': 'localhost',
+                'metricscfg.statsd_port': '8125',
+            })
+            AppWithMetrics.run(values_source_list=[vsl])
+
+            # Verify these didn't get logged
+            assert 'increment: increment_key' not in self.caplog.text
+            assert 'gauge: gauge_key' not in self.caplog.text
+            assert 'timing: timing_key' not in self.caplog.text
+            assert 'histogram: histogram_key' not in self.caplog.text
+
+            # Verify they did get called on mock_statsd. Do this by converting the mock_calls call
+            # objects to strings so they're easy to verify.
+            mock_calls = [str(call) for call in mock_statsd.mock_calls]
+            assert 'call.increment(\'increment_key\')' in mock_calls
+            assert 'call.gauge(\'gauge_key\', value=10)' in mock_calls
+            assert 'call.timing(\'timing_key\', value=100)' in mock_calls
+            assert 'call.histogram(\'histogram_key\', value=1000)' in mock_calls
