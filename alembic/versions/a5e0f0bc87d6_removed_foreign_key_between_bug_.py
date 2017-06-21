@@ -15,7 +15,7 @@ from alembic import op
 
 def upgrade():
     op.drop_constraint(
-        'bug_associations_bug_id_fkey',
+        'bug_associations_bugs_fk',
         'bug_associations',
         type_='foreignkey'
     )
@@ -23,7 +23,7 @@ def upgrade():
 
 def downgrade():
     op.create_foreign_key(
-        'bug_associations_bug_id_fkey',
+        'bug_associations_bugs_fk',
         'bug_associations',
         'bugs',
         ['bug_id'],
