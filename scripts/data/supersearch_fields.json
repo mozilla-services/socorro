@@ -25,7 +25,7 @@
         "permissions_needed": [],
         "storage_mapping": {
             "type": "boolean",
-            "null_value": "false"
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
