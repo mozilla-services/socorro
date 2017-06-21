@@ -48,6 +48,9 @@ SAMPLE_BUGZILLA_RESULTS = {
             'id': '8',
             'cf_crash_signature': '[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]',
         },
+        {
+            'id': '42',
+        },
     ]
 }
 
