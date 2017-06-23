@@ -38,6 +38,7 @@ from crashstats.supersearch.tests.common import (
 from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchUnredacted,
+    SuperSearch,
 )
 from crashstats.crashstats.views import GRAPHICS_REPORT_HEADER
 from .test_models import Response
@@ -2534,31 +2535,35 @@ class TestViews(BaseTestViews):
 
     def test_graphics_report(self):
 
-        def mocked_get(**options):
-            assert options['product'] == settings.DEFAULT_PRODUCT
+        def mocked_supersearch_get(**params):
+            assert params['product'] == [settings.DEFAULT_PRODUCT]
             hits = [
                 {
                     'signature': 'my signature',
-                    'date_processed': '2015-10-08 23:22:21'
+                    'date': '2015-10-08T23:22:21.1234 +00:00',
+                    'cpu_name': 'arm',
+                    'cpu_info': 'ARMv7 ARM',
                 },
                 {
                     'signature': 'other signature',
-                    'date_processed': '2015-10-08 13:12:11'
+                    'date': '2015-10-08T13:12:11.1123 +00:00',
+                    'cpu_info': 'something',
+                    # note! no cpu_name
                 },
             ]
-            # value for each of these needs to be in there
-            # supplement missing ones from the fixtures we intend to return
+            # Value for each of these needs to be in there
+            # supplement missing ones from the fixtures we intend to return.
             for hit in hits:
                 for head in GRAPHICS_REPORT_HEADER:
                     if head not in hit:
                         hit[head] = None
             return {
                 'hits': hits,
-                'total': len(hits)
+                'total': 2
             }
 
-        models.GraphicsReport.implementation().get.side_effect = (
-            mocked_get
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
         )
 
         url = reverse('crashstats:graphics_report')
@@ -2606,7 +2611,7 @@ class TestViews(BaseTestViews):
         )
         eq_(
             first[GRAPHICS_REPORT_HEADER.index('date_processed')],
-            '2015-10-08 23:22:21'
+            '201510082322'
         )
 
         # now fetch it with gzip

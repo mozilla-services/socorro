@@ -1141,28 +1141,6 @@ class ProductBuildTypes(SocorroMiddleware):
     )
 
 
-class GraphicsReport(SocorroMiddleware):
-    """The legacy solution to supply the CSV reports that the Mozilla
-    Graphics Team needs."""
-
-    # This endpoint is protected in a django view with permission
-    # requirements. That means we don't have to worry about it being
-    # overly requested by rogue clients.
-    # Also, the response payload is usually very very large meaning
-    # it will cause strain having to store it in the cacheing server
-    # when it does get re-used much by repeated queries.
-    cache_seconds = 0
-
-    implementation = (
-        socorro.external.postgresql.graphics_report.GraphicsReport
-    )
-
-    required_params = (
-        'product',
-        ('date', datetime.date),
-    )
-
-
 class Reprocessing(SocorroMiddleware):
     """Return true if all supplied crash IDs
     were sucessfully submitted onto the reprocessing queue.
