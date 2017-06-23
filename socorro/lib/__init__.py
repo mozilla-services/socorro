@@ -5,11 +5,6 @@
 """common library code for socorro modules"""
 
 
-class InsertionError(Exception):
-    """When an insertion into a storage system failed. """
-    pass
-
-
 class DatabaseError(Exception):
     """When querying a storage system failed. """
     pass
@@ -60,9 +55,4 @@ class ResourceNotFound(Exception):
 class ResourceUnavailable(Exception):
     """When a resource could not be found in a storage system because it is
     not ready yet (but could be accessible later). """
-    pass
-
-
-class ServiceUnavailable(Exception):
-    """When a service is requested but cannot be found"""
     pass

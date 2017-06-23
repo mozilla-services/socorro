@@ -14,7 +14,7 @@ from socorro.lib import (
     datetimeutil,
 )
 
-from socorro.middleware.search_common import SearchBase
+from socorro.lib.search_common import SearchBase
 
 
 BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
