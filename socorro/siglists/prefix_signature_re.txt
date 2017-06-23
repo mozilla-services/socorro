@@ -77,6 +77,10 @@ mozalloc_handle_oom
 moz_free
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::.*
+mozilla::detail::ConditionVariableImpl::.*
+SleepConditionVariableSRW
+mozilla::TimeStamp::Now
+GetTickCount64
 mozilla::detail::nsStringRepr::First
 mozilla::detail::nsStringRepr::Last
 mozilla::ipc::LogicError
