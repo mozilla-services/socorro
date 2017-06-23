@@ -21,7 +21,6 @@ import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.crashes
 import socorro.external.postgresql.products
-import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
