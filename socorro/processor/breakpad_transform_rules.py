@@ -161,7 +161,7 @@ class BreakpadStackwalkerRule(Rule):
         with closing(subprocess_handle.stdout):
             try:
                 stackwalker_output = ujson.load(subprocess_handle.stdout)
-            except Exception, x:
+            except Exception as x:
                 processor_notes.append(
                     "MDSW output failed in json: %s" % x
                 )
@@ -335,7 +335,7 @@ class ExternalProcessRule(Rule):
     def _interpret_external_command_output(self, fp, processor_meta):
         try:
             return ujson.load(fp)
-        except Exception, x:
+        except Exception as x:
             processor_meta.processor_notes.append(
                 "%s output failed in json: %s" % (
                     self.config.command_pathname,
@@ -686,7 +686,7 @@ class JitCrashCategorizeRule(ExternalProcessRule):
     def _interpret_external_command_output(self, fp, processor_meta):
         try:
             result = fp.read()
-        except IOError, x:
+        except IOError as x:
             processor_meta.processor_notes.append(
                 "%s unable to read external command output: %s" % (
                     self.config.command_pathname,
@@ -696,6 +696,6 @@ class JitCrashCategorizeRule(ExternalProcessRule):
             return ''
         try:
             return result.strip()
-        except AttributeError, x:
+        except AttributeError as x:
             # there's no strip method
             return result

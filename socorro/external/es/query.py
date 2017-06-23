@@ -66,12 +66,12 @@ class Query(ElasticsearchBase):
                 body=json.dumps(params.query),
                 **search_args
             )
-        except elasticsearch.exceptions.NotFoundError, e:
+        except elasticsearch.exceptions.NotFoundError as e:
             missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
             raise ResourceNotFound(
                 "elasticsearch index '%s' does not exist" % missing_index
             )
-        except elasticsearch.exceptions.TransportError, e:
+        except elasticsearch.exceptions.TransportError as e:
             raise DatabaseError(e)
 
         return results

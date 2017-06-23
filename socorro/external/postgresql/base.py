@@ -127,7 +127,7 @@ class PostgreSQLBase(object):
             # logger.debug(connection.cursor().mogrify(sql, params))
             result = actor_function(connection, sql, params)
             connection.commit()
-        except psycopg2.Error, e:
+        except psycopg2.Error as e:
             error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
             if connection:

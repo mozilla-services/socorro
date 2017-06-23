@@ -188,7 +188,7 @@ class BotoCrashStorage(CrashStorageBase):
                 raw_crash_as_string,
                 object_hook=json_object_hook
             )
-        except boto_connection.ResponseError, x:
+        except boto_connection.ResponseError as x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -207,7 +207,7 @@ class BotoCrashStorage(CrashStorageBase):
                 name = 'dump'
             a_dump = boto_connection.fetch(crash_id, name)
             return a_dump
-        except boto_connection.ResponseError, x:
+        except boto_connection.ResponseError as x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -236,7 +236,7 @@ class BotoCrashStorage(CrashStorageBase):
                     dump_name
                 )
             return dumps
-        except boto_connection.ResponseError, x:
+        except boto_connection.ResponseError as x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -269,7 +269,7 @@ class BotoCrashStorage(CrashStorageBase):
                 processed_crash_as_string,
                 object_hook=json_object_hook,
             )
-        except boto_connection.ResponseError, x:
+        except boto_connection.ResponseError as x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )

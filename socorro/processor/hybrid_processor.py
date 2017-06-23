@@ -392,7 +392,7 @@ class HybridCrashProcessor(RequiredConfig):
                         processed_crash,
                         self
                     )
-            except Exception, x:
+            except Exception as x:
                 # let's catch any unexpected error here and not let them
                 # derail the rest of the processing.
                 self.config.logger.error(
@@ -409,7 +409,7 @@ class HybridCrashProcessor(RequiredConfig):
                     processed_crash,
                     self
                 )
-            except Exception, x:
+            except Exception as x:
                 # let's catch any unexpected error here and not let them
                 # derail the rest of the processing.
                 self.config.logger.error(
@@ -427,7 +427,7 @@ class HybridCrashProcessor(RequiredConfig):
                         processed_crash,
                         self
                     )
-            except Exception, x:
+            except Exception as x:
                 # let's catch any unexpected error here and not let them
                 # derail the rest of the processing.
                 self.config.logger.error(
@@ -439,7 +439,7 @@ class HybridCrashProcessor(RequiredConfig):
             # end of transforms
             # the rest of this method is just clean up
 
-        except Exception, x:
+        except Exception as x:
             self.config.logger.warning(
                 'Error while processing %s: %s',
                 crash_id,
@@ -889,13 +889,13 @@ class HybridCrashProcessor(RequiredConfig):
         file"""
         try:
             fd = gzip.open(dump_pathname, "rb")
-        except IOError, x:
+        except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             processor_notes.append(error_message)
             return {"ERROR": error_message}
         try:
             memory_info = json.load(fd)
-        except ValueError, x:
+        except ValueError as x:
             error_message = "error in json for %s: %r" % (dump_pathname, x)
             processor_notes.append(error_message)
             return {"ERROR": error_message}
@@ -976,7 +976,7 @@ class HybridCrashProcessor(RequiredConfig):
             json_dump_str = ''.join(json_dump_lines)
             try:
                 processed_crash_update.json_dump = json.loads(json_dump_str)
-            except ValueError, x:
+            except ValueError as x:
                 processed_crash_update.json_dump = {}
                 processor_notes.append("no json output found from MDSW")
 
@@ -1131,7 +1131,7 @@ class HybridCrashProcessor(RequiredConfig):
             return None
         try:
             m = self.flash_re.match(filename)
-        except TypeError, x:
+        except TypeError as x:
             self.config.logger.debug(
                 "bad module line %s, bad filename in second field (%s)",
                 moduleData,
@@ -1409,7 +1409,7 @@ class HybridCrashProcessor(RequiredConfig):
         except (KeyError, AttributeError):
             notes_list.append("WARNING: raw_crash missing %s" % key)
             return default
-        except TypeError, x:
+        except TypeError as x:
             notes_list.append(
                 "WARNING: raw_crash [%s] contains unexpected value: %s" %
                 (key, str(x))
