@@ -14,25 +14,25 @@ When generating a C signature, 5 steps are involved.
 
 The generated signature is a concatenation of all the accumulated signatures, separated with a pipe sign (`` | ``).
 
-## Signature Sentinels
+### Signature Sentinels
 
 File: [``signature_sentinels.txt``](./signature_sentinels.txt)
 
 Signature Sentinels are signatures (not regular expression) that should be used as the top of the stack if present. Everything before the first matching signature will be ignored.
 
-## Irrelevant Signatures
+### Irrelevant Signatures
 
 File: [``irrelevant_signature_re.txt``](./irrelevant_signature_re.txt)
 
 Irrelevant Signatures are regular expressions of signatures that will be ignored while going through the stack. Anything that matches this list will not be added to the overall signature.
 
-## Prefix Signatures
+### Prefix Signatures
 
 File: [``prefix_signature_re.txt``](./prefix_signature_re.txt)
 
 Prefix Signatures are regular expressions of signatures that will be combined with the following frame's signature. Signature generation stops at the first non-matching signature it finds.
 
-## Trim DLL Signatures
+### Trim DLL Signatures
 
 File: [``trim_dll_signature_re.txt``](./trim_dll_signature_re.txt)
 
@@ -46,7 +46,7 @@ myFavoriteSig()
 
 The generated signature will be: ``0x0 | foo32.dll | myFavoriteSig()``.
 
-## Signatures With Line Numbers
+### Signatures With Line Numbers
 
 File: [``signatures_with_line_numbers_re.txt``](./signatures_with_line_numbers_re.txt)
 
@@ -81,3 +81,13 @@ That's it! You have proposed a change, we have been notified about it. Someone f
 If you are interested in watching what's changing in this ``siglists`` folder, but don't care much about what happens in the rest of the Socorro repo, you can easily set a filter in your email client to do that. Here's an example filter you can use today:
 
 <pre>to:(socorro@noreply.github.com) ("A socorro/siglists/" OR "M socorro/siglists/" OR "D socorro/siglists")</pre>
+
+## How to review a siglist change
+
+The first step is to verify that there is no typo in the change (usually, the bug contains examples of crash reports that should be impacted, look at their frames). Note that we have a unit test that verifies there are no syntax errors in those files.
+
+Once you think the pull request looks good, merge it, then on stage, verify that new crash reports have the expected new signature. The easiest way to do that is to use Super Search and search for a signature. The most common change is an addition to the prefix list, in which case you want to search for the frame signature that was added, and verify that in recent signatures there is something following it.
+
+If you don't want to wait for new crash reports to arrive, you can find an existing one and send it to reprocessing. That can be done on the report/index page directly, or via the admin panel.
+
+Note that after a signature change has been pushed to production, you might want to [reprocess the affected signatures](https://github.com/adngdb/reprocess).
