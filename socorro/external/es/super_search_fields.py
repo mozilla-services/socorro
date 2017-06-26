@@ -311,7 +311,7 @@ class SuperSearchFields(ElasticsearchBase):
                 )
                 properties = mapping[index]['mappings'][doctype]['properties']
                 all_existing_fields.update(parse_mapping(properties, None))
-            except elasticsearch.exceptions.NotFoundError, e:
+            except elasticsearch.exceptions.NotFoundError as e:
                 # If an index does not exist, this should not fail
                 self.config.logger.warning(
                     'Missing index in elasticsearch while running '

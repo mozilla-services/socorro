@@ -496,7 +496,7 @@ class SignatureGenerationRule(Rule):
                 )
             else:
                 signature_list = []
-        except Exception, x:
+        except Exception as x:
             processor_meta.processor_notes.append(
                 'No crashing frames found because of %s' % x
             )
@@ -704,7 +704,7 @@ class SignatureShutdownTimeout(Rule):
                 parts.append(','.join(conditions))
             else:
                 parts.append("(none)")
-        except (ValueError, KeyError), e:
+        except (ValueError, KeyError) as e:
             parts.append("UNKNOWN")
             processor_meta['processor_notes'].append(
                 'Error parsing AsyncShutdownTimeout: {}'.format(e)

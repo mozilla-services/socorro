@@ -1,8 +1,8 @@
-import ujson
 from configman import Namespace
+import ujson
 
-from socorro.processor.processor_2015 import Processor2015
 from socorro.lib.converters import change_default
+from socorro.processor.processor_2015 import Processor2015
 
 
 # these are the steps that define processing a crash at Mozilla.
@@ -28,8 +28,7 @@ mozilla_processor_rule_sets = [
         "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.general_transform_rules.IdentifierRule, "
-        "socorro.processor.breakpad_transform_rules"
-        ".BreakpadStackwalkerRule2015, "
+        "socorro.processor.breakpad_transform_rules.BreakpadStackwalkerRule2015, "
         "socorro.processor.mozilla_transform_rules.ProductRule, "
         "socorro.processor.mozilla_transform_rules.UserDataRule, "
         "socorro.processor.mozilla_transform_rules.EnvironmentRule, "
@@ -55,8 +54,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.TopMostFilesRule, "
         "socorro.processor.mozilla_transform_rules.MissingSymbolsRule, "
         "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
-        "socorro.processor.rules.memory_report_extraction"
-        ".MemoryReportExtraction, "
+        "socorro.processor.rules.memory_report_extraction.MemoryReportExtraction, "
         "socorro.processor.signature_utilities.SignatureGenerationRule,"
         "socorro.processor.signature_utilities.StackwalkerErrorSignatureRule, "
         "socorro.processor.signature_utilities.OOMSignature, "

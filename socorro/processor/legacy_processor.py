@@ -337,7 +337,7 @@ class LegacyCrashProcessor(RequiredConfig):
                 except (KeyError, AttributeError):
                     processor_notes.append(
                         "Pipe dump missing from '%s'" % name)
-                except Exception, x:
+                except Exception as x:
                     error_message = (
                         "Conversion to json dump format has failed for '%s'" %
                         name
@@ -361,7 +361,7 @@ class LegacyCrashProcessor(RequiredConfig):
                     processed_crash,
                     self
                 )
-            except Exception, x:
+            except Exception as x:
                 # let's catch any unexpected error here and not let them
                 # derail the rest of the processing.
                 self.config.logger.error(
@@ -372,7 +372,7 @@ class LegacyCrashProcessor(RequiredConfig):
             #self.config.logger.debug('done with classifier rules')
 
 
-        except Exception, x:
+        except Exception as x:
             self.config.logger.warning(
                 'Error while processing %s: %s',
                 crash_id,
@@ -1227,7 +1227,7 @@ class LegacyCrashProcessor(RequiredConfig):
         except (KeyError, AttributeError):
             notes_list.append("WARNING: raw_crash missing %s" % key)
             return default
-        except TypeError, x:
+        except TypeError as x:
             notes_list.append(
                 "WARNING: raw_crash [%s] contains unexpected value: %s" %
                 (key, str(x))

@@ -104,7 +104,7 @@ def reportExceptionAndContinue(logger=FakeLogger(), loggingLevel=logging.ERROR, 
           logger.log(loggingLevel, aLine.strip())
     finally:
       loggingReportLock.release()
-  except Exception, x:
+  except Exception as x:
     print >>sys.stderr, x
 
 
