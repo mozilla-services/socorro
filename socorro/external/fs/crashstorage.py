@@ -50,6 +50,14 @@ class FSRadixTreeStorage(CrashStorageBase):
 
         root/yyyymmdd/name_branch_base/radix.../crash_id/<files>
 
+    The depth of directory is specified by the seventh directory from the right,
+    i.e. the first 0 in 2009 in the example. By default, if the value is 0, the
+    nesting is 4.
+
+    The leaf directory contains the raw crash information, exported as JSON,
+    and the various associated dump files -- or, if being used as processed
+    storage, contains the processed JSON file.
+
     The date is determined using the date suffix of the crash_id, and the
     name_branch_base is given in the configuration options. The radix is
     computed from the crash_id by substringing the UUID in octets to the depth
@@ -295,28 +303,59 @@ class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
                 self.config.logger.error("could not delete: %s", cand,
                                          exc_info=True)
 
-class FSDatedRadixTreeStorage(FSRadixTreeStorage):
-    """
-    This class implements dated radix tree storage -- it enables for traversing
-    a radix tree using an hour/minute prefix. It allows searching for new
-    crashes, but doesn't store processed crashes.
 
-    It supplements the basic radix tree storage with indexing by date. It takes
-    the current hour, minute and second and stores items in the following
-    scheme::
+class FSDatedRadixTreeStorage(FSRadixTreeStorage):
+    """This storage class extends ``FSRadixTreeStorage`` to include a date
+    branch. The date branch implements an indexing scheme so that the rough
+    order in which the crashes arrived is known. The directory structure
+    consists of the hour, the minute and the interval of seconds the crash
+    was received for processing -- for instance, if a crash was received at
+    3:30:12pm, the directory structure would look something like::
 
         root/yyyymmdd/date_branch_base/hour/minute_(minute_slice)/crash_id
 
-        minute_slice is computed by taking the second of the current timestamp
-        and floor dividing by minute_slice_interval, e.g. a minute slice of 4
-        provides slots from 0..14.
+    minute_slice is computed by taking the second of the current timestamp
+    and floor dividing by minute_slice_interval, e.g. a minute slice of 4
+    provides slots from 0..14.
+
+    For example::
+
+        .../20090514/date/15/30_03/38a4f01e...20090514
+
+    The 03 in 30_03 corresponds to an interval slice of 4: ``12 // 4 = 3``,
+
+    In the example, the date 20090514 corresponds to the date assigned by the
+    collector from the crash's ID, rather than the date the crash was received by
+    the processor.
+
+    The crash ID in the dated folder is a symbolic link to the same folder in the
+    radix tree, e.g. the directory given in the example would be linked to
+    ``.../20090514/name/38/a4/f0/1e/38a4f01e...20090514``. A corresponding link,
+    named ``date_root``, is created in the folder which is linked to
+    ``.../20090514/date/15/30_03``. This is so that jumps can be made between the
+    two directory hierarchies -- crash data can be obtained by visiting the dated
+    hierarchy, and a crash's location in the dated hierarchy can be found by
+    looking the crash up by its ID.
+
+    This dated directory structure enables efficient traversal of the folder
+    hierarchy for new crashes -- first, all the date directories in the root are
+    traversed to find all the symbolic links to the radix directories. When one is
+    found, it is unlinked from the filesystem and the ID yielded to the interested
+    caller. This proceeds until we exhaust all the directories to visit, by which
+    time all the crashes should be visited.
+
+    In order to prevent race conditions, the process will compute the current slot
+    and decline to enter any slots with a number greater than the current slot --
+    this is because a process may already be currently writing to it.
 
     This is a symlink to the items stored in the base radix tree storage.
     Additionally, a symlink is created in the base radix tree directory called
-    ``date_root` which links to the ``minute_(minute_slice)`` folder.
+    ``date_root` which links to the
+    ``minute_(minute_slice)`` folder.
 
     This storage class is suitable for use as raw crash storage, as it supports
     the ``new_crashes`` method.
+
     """
 
     required_config = Namespace()
