@@ -2,77 +2,78 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
-import os
-from nose.tools import eq_, ok_
-from dateutil import tz
+import pytest
+import requests_mock
 from crontabber.app import CronTabber
+
+from socorro.cron.jobs.bugzilla import find_signatures
+from socorro.cron.jobs.bugzilla import BUGZILLA_BASE_URL
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
-
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
-SAMPLE_CSV = [
-   'bug_id,"bug_status","resolution","short_desc","cf_crash_signature"',
-   '1,"RESOLVED",,"this is a comment","This sig, while bogus, has a ] bracket"',
-   '2,"CLOSED","WONTFIX","comments are not too important","single [@ BogusClass::bogus_sig (const char**) ] signature"',
-   '3,"ASSIGNED",,"this is a comment. [@ nanojit::LIns::isTramp()]","[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]"',
-   '4,"CLOSED","RESOLVED","two sigs enter, one sig leaves","[@ layers::Push@0x123456] [@ layers::Push@0x123456]"',
-   '5,"ASSIGNED","INCOMPLETE",,"[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455"',
-   '6,"ASSIGNED",,"empty crash sigs should not throw errors",""',
-   '7,"CLOSED",,"gt 525355 gt","[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
-   '8,"CLOSED","RESOLVED","newlines in sigs","[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
-]
+SAMPLE_BUGZILLA_RESULTS = {
+    'bugs': [
+        {
+            'id': '1',
+            'cf_crash_signature': 'This sig, while bogus, has a ] bracket',
+        },
+        {
+            'id': '2',
+            'cf_crash_signature': 'single [@ BogusClass::bogus_sig (const char**) ] signature',
+        },
+        {
+            'id': '3',
+            'cf_crash_signature': '[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]',
+        },
+        {
+            'id': '4',
+            'cf_crash_signature': '[@ layers::Push@0x123456] [@ layers::Push@0x123456]',
+        },
+        {
+            'id': '5',
+            'cf_crash_signature': '[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455',
+        },
+        {
+            'id': '6',
+            'cf_crash_signature': '',
+        },
+        {
+            'id': '7',
+            'cf_crash_signature': '[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]',
+        },
+        {
+            'id': '8',
+            'cf_crash_signature': '[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]',
+        },
+        {
+            'id': '42',
+        },
+    ]
+}
 
 
+@requests_mock.Mocker()
 class IntegrationTestBugzilla(IntegrationTestBase):
 
     def tearDown(self):
-        self.conn.cursor().execute("""
-        TRUNCATE
-            reports, bugs, bug_associations
-        CASCADE
-        """)
+        self.conn.cursor().execute("TRUNCATE bug_associations CASCADE")
         self.conn.commit()
         super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
-        PST = tz.gettz('PST8PDT')
-        datestring = (
-            (
-                datetime.datetime.now(PST) -
-                datetime.timedelta(days=days_into_past)
-            ).astimezone(PST).strftime('%Y-%m-%d')
-        )
-        filename = os.path.join(self.tempdir, 'sample-%s.csv' % datestring)
-        with open(filename, 'w') as f:
-            f.write('\n'.join(SAMPLE_CSV))
-
-        query = 'file://' + filename.replace(datestring, '%s')
-
         return get_config_manager_for_crontabber(
             jobs='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
             overrides={
-              'crontabber.class-BugzillaCronApp.query': query,
-              'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
+                'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
             }
         )
 
-    def test_basic_run_job_without_reports(self):
+    def test_basic_run_job(self, requests_mocker):
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
-
-        cursor = self.conn.cursor()
-        cursor.execute('select count(*) from reports')
-        count, = cursor.fetchone()
-        assert count == 0, "reports table not cleaned"
-        cursor.execute('select count(*) from bugs')
-        count, = cursor.fetchone()
-        assert count == 0, "'bugs' table not cleaned"
-        cursor.execute('select count(*) from bug_associations')
-        count, = cursor.fetchone()
-        assert count == 0, "'bug_associations' table not cleaned"
 
         with config_manager.context() as config:
             tab = CronTabber(config)
@@ -83,88 +84,37 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        # now, because there we no matching signatures in the reports table
-        # it means that all bugs are rejected
-        cursor.execute('select count(*) from bugs')
-        count, = cursor.fetchone()
-        ok_(not count)
-        cursor.execute('select count(*) from bug_associations')
-        count, = cursor.fetchone()
-        ok_(not count)
-
-    def test_basic_run_job_with_some_reports(self):
-        config_manager = self._setup_config_manager(3)
-
         cursor = self.conn.cursor()
-        # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            tab = CronTabber(config)
-            tab.run_all()
-
-            information = self._load_structure()
-            assert information['bugzilla-associations']
-            assert not information['bugzilla-associations']['last_error']
-            assert information['bugzilla-associations']['last_success']
-
-        cursor.execute('select id from bugs order by id')
-        bugs = cursor.fetchall()
-        eq_(len(bugs), 2)
-        # the only bugs with matching those signatures are: 5 and 8
-        bug_ids = [x[0] for x in bugs]
-        eq_(bug_ids, [5, 8])
-
         cursor.execute('select bug_id from bug_associations order by bug_id')
         associations = cursor.fetchall()
-        eq_(len(associations), 2)
+
+        # Verify we have the expected number of associations.
+        assert len(associations) == 8
         bug_ids = [x[0] for x in associations]
-        eq_(bug_ids, [5, 8])
 
-    def test_run_job_with_reports_with_existing_bugs_different(self):
+        # Verify bugs with no crash signatures are missing.
+        assert 6 not in bug_ids
+
+        cursor.execute(
+            'select signature from bug_associations where bug_id = 8'
+        )
+        associations = cursor.fetchall()
+        # New signatures have correctly been inserted.
+        assert len(associations) == 2
+        assert ('another::legitimate(sig)',) in associations
+        assert ('legitimate(sig)',) in associations
+
+    def test_run_job_with_reports_with_existing_bugs_different(self, requests_mocker):
+        """Verify that an association to a signature that no longer is part
+        of the crash signatures list gets removed.
+        """
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
-
         cursor = self.conn.cursor()
-        cursor.execute('select count(*) from bugs')
-        count, = cursor.fetchone()
-        assert not count, count
-        cursor.execute('select count(*) from bug_associations')
-        count, = cursor.fetchone()
-        assert not count, count
-        cursor.execute('select count(*) from reports')
-        count, = cursor.fetchone()
-        assert not count, count
 
-        # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'Different');
-        """)
-        cursor.execute("""insert into bug_associations
-        (bug_id,signature)
-        values
-        (8, '@different');
+        cursor.execute("""
+            insert into bug_associations (bug_id, signature)
+            values (8, '@different');
         """)
         self.conn.commit()
 
@@ -177,40 +127,22 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
-
         cursor.execute(
-          'select signature from bug_associations where bug_id = 8')
-        association = cursor.fetchone()
-        eq_(association[0], 'legitimate(sig)')
+            'select signature from bug_associations where bug_id = 8'
+        )
+        associations = cursor.fetchall()
+        # The previous association, to signature '@different' that is not in
+        # crash signatures, is now missing.
+        assert ('@different',) not in associations
 
-    def test_run_job_with_reports_with_existing_bugs_same(self):
+    def test_run_job_with_reports_with_existing_bugs_same(self, requests_mocker):
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
-
         cursor = self.conn.cursor()
-        # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
-        cursor.execute("""insert into bug_associations
-        (bug_id,signature)
-        values
-        (8, 'legitimate(sig)');
+
+        cursor.execute("""
+            insert into bug_associations (bug_id, signature)
+            values (8, 'legitimate(sig)');
         """)
         self.conn.commit()
 
@@ -223,125 +155,23 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
-
         cursor.execute(
-          'select signature from bug_associations where bug_id = 8')
-        association = cursor.fetchone()
-        eq_(association[0], 'legitimate(sig)')
-        cursor.execute('select * from bug_associations')
+            'select signature from bug_associations where bug_id = 8'
+        )
+        associations = cursor.fetchall()
+        # New signatures have correctly been inserted.
+        assert len(associations) == 2
+        assert ('another::legitimate(sig)',) in associations
+        assert ('legitimate(sig)',) in associations
 
-    def test_run_job_virgin_run(self):
-        """specifically setting 0 days back and no priror run
+    def test_run_job_based_on_last_success(self, requests_mocker):
+        """specifically setting 0 days back and no prior run
         will pick it up from now's date"""
+        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(0)
 
         cursor = self.conn.cursor()
         # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
-        cursor.execute("""insert into bug_associations
-        (bug_id,signature)
-        values
-        (8, 'legitimate(sig)');
-        """)
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            tab = CronTabber(config)
-            tab.run_all()
-
-            information = self._load_structure()
-            assert information['bugzilla-associations']
-            assert not information['bugzilla-associations']['last_error']
-            assert information['bugzilla-associations']['last_success']
-
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
-
-    def test_run_job_one_day_back(self):
-        """specifically setting 0 days back and no priror run
-        will pick it up from now's date"""
-        config_manager = self._setup_config_manager(1)
-
-        cursor = self.conn.cursor()
-        # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
-        cursor.execute("""insert into bug_associations
-        (bug_id,signature)
-        values
-        (8, 'legitimate(sig)');
-        """)
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            tab = CronTabber(config)
-            tab.run_all()
-
-            information = self._load_structure()
-            assert information['bugzilla-associations']
-            assert not information['bugzilla-associations']['last_error']
-            assert information['bugzilla-associations']['last_success']
-
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
-
-    def test_run_job_based_on_last_success(self):
-        """specifically setting 0 days back and no priror run
-        will pick it up from now's date"""
-        config_manager = self._setup_config_manager(0)
-
-        cursor = self.conn.cursor()
-        # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('123', 'legitimate(sig)');
-        """)
-        cursor.execute("""insert into reports
-        (uuid,signature)
-        values
-        ('456', 'MWSBAR.DLL@0x2589f');
-        """)
-        # exactly the same as the fixture
-        cursor.execute("""insert into bugs
-        (id,status,resolution,short_desc)
-        values
-        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
-        """)
         cursor.execute("""insert into bug_associations
         (bug_id,signature)
         values
@@ -374,6 +204,44 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute('select id, short_desc from bugs where id = 8')
-        bug = cursor.fetchone()
-        eq_(bug[1], 'newlines in sigs')
+    def test_with_bugzilla_failure(self, requests_mocker):
+        requests_mocker.get(
+            BUGZILLA_BASE_URL,
+            text='error loading content',
+            status_code=500
+        )
+        config_manager = self._setup_config_manager(3)
+
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            information = self._load_structure()
+            assert information['bugzilla-associations']
+            # There has been an error.
+            last_error = information['bugzilla-associations']['last_error']
+            assert last_error
+            assert 'HTTPError' in last_error['type']
+            assert not information['bugzilla-associations']['last_success']
+
+
+@pytest.mark.parametrize('content, expected', [
+    # Simple signature
+    ('[@ moz::signature]', set(['moz::signature'])),
+    # Using unicode.
+    (u'[@ moz::signature]', set(['moz::signature'])),
+    # 2 signatures and some junk
+    (
+        '@@3*&^!~[@ moz::signature][@   ns::old     ]',
+        set(['moz::signature', 'ns::old'])
+    ),
+    # A signature containing square brackets.
+    (
+        '[@ moz::signature] [@ sig_with[brackets]]',
+        set(['moz::signature', 'sig_with[brackets]'])
+    ),
+    # A malformed signature.
+    ('[@ note there is no trailing bracket', set()),
+])
+def test_find_signatures(content, expected):
+    assert find_signatures(content) == expected

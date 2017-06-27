@@ -249,7 +249,7 @@ class FetchTransformSaveApp(App):
             # RabbitMQ, this is what removes the job from the queue.
             try:
                 finished_func()
-            except Exception, x:
+            except Exception as x:
                 # when run in a thread, a failure here is not a problem, but if
                 # we're running all in the same thread, a failure here could
                 # derail the the whole processor. Best just log the problem

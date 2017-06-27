@@ -30,7 +30,7 @@ def cleanEmptySubdirectories(topLimit, leafPath, osModule=os):
             break
         try:
             osModule.rmdir(opath)
-        except OSError, e:
+        except OSError as e:
             if errno.ENOTEMPTY == e.errno:
                 break
             else:
@@ -89,7 +89,7 @@ def makedirs(name, mode=0777, osModule=os):
             return
     try:
         osModule.mkdir(name, mode)
-    except OSError, e:
+    except OSError as e:
         #be happy if someone already created the path
         if e.errno != errno.EEXIST:
             raise

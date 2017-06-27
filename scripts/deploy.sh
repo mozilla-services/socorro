@@ -165,7 +165,6 @@ fi
 ln -vsf "$system_localpy" "$socorro_localpy"
 error $? "could not symlink $system_localpy into install"
 
-# TODO optional support for crashmover
 for service in processor
 do
   cp /data/socorro/application/scripts/init.d/socorro-${service} /etc/init.d/
@@ -225,7 +224,6 @@ if [ ! -f /etc/cron.d/socorro ]; then
     error $? "could not copy socorro crontab"
 fi
 
-# TODO optional support for crashmover
 for service in socorro-processor httpd
 do
   if [ -f /etc/init.d/${service} ]

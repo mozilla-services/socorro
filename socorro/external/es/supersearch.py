@@ -14,7 +14,7 @@ from socorro.lib import (
     datetimeutil,
 )
 
-from socorro.middleware.search_common import SearchBase
+from socorro.lib.search_common import SearchBase
 
 
 BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
@@ -454,7 +454,7 @@ class SuperSearch(SearchBase):
                 shards = getattr(results, '_shards', {})
 
                 break  # Yay! Results!
-            except NotFoundError, e:
+            except NotFoundError as e:
                 missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
                 if missing_index in indices:
                     del indices[indices.index(missing_index)]

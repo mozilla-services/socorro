@@ -518,11 +518,8 @@ class BugAssociation(DeclarativeBase):
     __tablename__ = 'bug_associations'
 
     #column definitions
-    bug_id = Column(u'bug_id', INTEGER(), ForeignKey('bugs.id'), primary_key=True, nullable=False, index=True)
+    bug_id = Column(u'bug_id', INTEGER(), primary_key=True, nullable=False, index=True)
     signature = Column(u'signature', TEXT(), primary_key=True, nullable=False)
-
-    #relationship definitions
-    bugs = relationship('Bug', primaryjoin='BugAssociation.bug_id==Bug.id')
 
 
 class BuildAdu(DeclarativeBase):

@@ -3,21 +3,20 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import os
 
+from configman.dotdict import DotDict
 from mock import Mock
 from nose.tools import eq_, ok_
-from socorro.unittest.testbase import TestCase
-from socorro.unittest import skip_if
-
-from configman.dotdict import DotDict
+import pytest
 
 from socorro.processor.symbol_cache_manager import (
     EventHandler,
     from_string_to_parse_size,
 )
+from socorro.unittest.testbase import TestCase
 
 
 # =============================================================================
-@skip_if(os.uname()[0] != 'Linux', 'Only test this if on Linux')
+@pytest.mark.skipif(os.uname()[0] != 'Linux', reason='only run if on Linux')
 class TestEventHandler(TestCase):
 
     # -------------------------------------------------------------------------

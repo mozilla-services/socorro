@@ -169,7 +169,7 @@ class AddonsRule(Rule):
             processed_crash.addons_checked = False
             if addons_checked_txt == 'true':
                 processed_crash.addons_checked = True
-        except KeyError, e:
+        except KeyError as e:
             if 'EMCheckCompatibility' not in str(e):
                 raise
             # it's okay to not have EMCheckCompatibility, other missing things
@@ -225,7 +225,7 @@ class DatesAndTimesRule(Rule):
         except (KeyError, AttributeError):
             notes_list.append("WARNING: raw_crash missing %s" % key)
             return default
-        except TypeError, x:
+        except TypeError as x:
             notes_list.append(
                 "WARNING: raw_crash[%s] contains unexpected value: %s; %s" %
                 (key, a_mapping[key], str(x))
@@ -347,12 +347,16 @@ class OutOfMemoryBinaryRule(Rule):
     def _extract_memory_info(self, dump_pathname, processor_notes):
         """Extract and return the JSON data from the .json.gz memory report.
         file"""
-        try:
-            fd = gzip_open(dump_pathname, "rb")
-        except IOError, x:
-            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+        def error_out(error_message):
             processor_notes.append(error_message)
             return {"ERROR": error_message}
+
+        try:
+            fd = gzip_open(dump_pathname, "rb")
+        except IOError as x:
+            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+            return error_out(error_message)
+
         try:
             memory_info_as_string = fd.read()
             if len(memory_info_as_string) > self.config.max_size_uncompressed:
@@ -362,14 +366,15 @@ class OutOfMemoryBinaryRule(Rule):
                         self.config.max_size_uncompressed,
                     )
                 )
-                processor_notes.append(error_message)
-                return {"ERROR": error_message}
+                return error_out(error_message)
 
             memory_info = json_loads(memory_info_as_string)
-        except ValueError, x:
+        except IOError as x:
+            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+            return error_out(error_message)
+        except ValueError as x:
             error_message = "error in json for %s: %r" % (dump_pathname, x)
-            processor_notes.append(error_message)
-            return {"ERROR": error_message}
+            return error_out(error_message)
         finally:
             fd.close()
 
@@ -683,7 +688,7 @@ class TopMostFilesRule(Rule):
             stack_frames = (
                 processed_crash.json_dump['threads'][crashing_thread]['frames']
             )
-        except KeyError, x:
+        except KeyError as x:
             # guess we don't have frames or crashing_thread or json_dump
             # we have to give up
             processor_meta.processor_notes.append(
@@ -808,8 +813,16 @@ class BetaVersionRule(Rule):
     def version(self):
         return '1.0'
 
-    def _get_version_data(self, product, version, release_channel, build_id):
-        key = '%s:%s:%s:%s' % (product, version, release_channel, build_id)
+    def _get_version_data(self, product, version, build_id):
+        """Return the real version number of a specific product, version and
+        build.
+
+        For example, beta builds of Firefox declare their version
+        number as the major version (i.e. version 54.0b3 would say its version
+        is 54.0). This database call returns the actual version number of said
+        build (i.e. 54.0b3 for the previous example).
+        """
+        key = '%s:%s:%s' % (product, version, build_id)
 
         if key in self._versions_data_cache:
             return self._versions_data_cache[key]
@@ -822,13 +835,11 @@ class BetaVersionRule(Rule):
                     (pv.product_version_id = pvb.product_version_id)
             WHERE pv.product_name = %(product)s
             AND pv.release_version = %(version)s
-            AND pv.build_type ILIKE %(release_channel)s
             AND pvb.build_id = %(build_id)s
         """
         params = {
             'product': product,
             'version': version,
-            'release_channel': release_channel,
             'build_id': build_id,
         }
         results = self.transaction(
@@ -846,7 +857,15 @@ class BetaVersionRule(Rule):
             # We apply this Rule only if the release channel is beta, because
             # beta versions are the only ones sending an "incorrect" version
             # number in their data.
-            return processed_crash['release_channel'].lower() == 'beta'
+            # 2017-06-14: Ohai! This is not true anymore! With the removal of
+            # the aurora channel, there is now a new type of build called
+            # "DevEdition", that is released on the aurora channel, but has
+            # the same version naming logic as builds on the beta channel.
+            # We thus want to apply the same logic to aurora builds
+            # as well now. Note that older crash reports won't be affected,
+            # because they have a "correct" version number, usually containing
+            # the letter 'a' (like '50.0a2').
+            return processed_crash['release_channel'].lower() in ('beta', 'aurora')
         except KeyError:
             # No release_channel.
             return False
@@ -862,7 +881,6 @@ class BetaVersionRule(Rule):
             real_version = self._get_version_data(
                 processed_crash['product'],
                 processed_crash['version'],
-                processed_crash['release_channel'],
                 build_id,
             )
 
@@ -875,8 +893,10 @@ class BetaVersionRule(Rule):
                 # we can reprocess it later to give it the correct version.
                 processed_crash['version'] += 'b0'
                 processor_meta.processor_notes.append(
-                    'release channel is beta but no version data was found '
-                    '- added "b0" suffix to version number'
+                    'release channel is %s but no version data was found '
+                    '- added "b0" suffix to version number' % (
+                        processed_crash['release_channel'],
+                    )
                 )
         except KeyError:
             return False

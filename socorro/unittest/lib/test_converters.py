@@ -10,7 +10,6 @@ from configman.converters import to_str
 from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
     change_default,
-    web_services_from_str,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -232,31 +231,3 @@ class TestConverters(TestCase):
             Alpha.required_config.an_option.default,
             19
         )
-
-    def test_web_services_from_str(self):
-        some_services_as_string = """[
-            {
-                "name": "collector",
-                "uri": "/submit",
-                "service_implementation_class":
-                "socorro.unittest.lib.test_converters.Alpha"
-            },
-            {
-                "name": "generic",
-                "uri": "/some/other/uri",
-                "service_implementation_class":
-                "socorro.unittest.lib.test_converters.Beta"
-            }
-        ]"""
-        services_instance = web_services_from_str()(some_services_as_string)
-        service_list = services_instance.service_list
-        eq_(len(service_list), 2)
-        eq_(len(service_list[0]), 3)
-        eq_(len(service_list[1]), 3)
-        rc = services_instance.required_config
-        ok_('collector' in rc)
-        eq_(rc.collector.service_implementation_class.default, Alpha)
-        eq_(rc.collector.uri.default, "/submit")
-        ok_('generic' in rc)
-        eq_(rc.generic.service_implementation_class.default, Beta)
-        eq_(rc.generic.uri.default, "/some/other/uri")

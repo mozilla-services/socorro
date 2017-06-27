@@ -915,3 +915,22 @@ class TestESCrashStorage(ElasticsearchTestCase):
             processed_crash,
             crash_id
         )
+
+    def test_crash_size_capture(self):
+        """Verify we capture raw/processed crash sizes in ES crashstorage"""
+        es_storage = ESCrashStorage(config=self.config)
+
+        es_storage._submit_crash_to_elasticsearch = mock.Mock()
+
+        es_storage.save_raw_and_processed(
+            raw_crash=a_raw_crash,
+            dumps=None,
+            processed_crash=a_processed_crash,
+            crash_id=a_processed_crash['uuid']
+        )
+
+        mock_calls = [str(call) for call in self.config.metrics.mock_calls]
+        # NOTE(willkg): The sizes of these json documents depend on what's in them. If we changed
+        # a_processed_crash and a_raw_crash, then these numbers will change.
+        assert 'call.histogram(\'processor.es.raw_crash_size\', 27)' in mock_calls
+        assert 'call.histogram(\'processor.es.processed_crash_size\', 1785)' in mock_calls

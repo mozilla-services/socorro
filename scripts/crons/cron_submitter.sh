@@ -9,4 +9,4 @@
 . /etc/socorro/socorrorc
 export PGPASSWORD=$databasePassword
 
-$PYTHON /data/socorro/application/socorro/collector/submitter_app.py --admin.conf=/etc/socorro/cron_submitter.ini
+$PYTHON /data/socorro/application/socorro/submitter/submitter_app.py --admin.conf=/etc/socorro/cron_submitter.ini

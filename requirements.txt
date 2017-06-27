@@ -99,8 +99,6 @@ statsd==2.1.2 \
     --hash=sha256:45db168312a6820fd78697c7b6fd0196f3af922c8ebc88540edd0d6fafed554d
 thrift==0.8.0 \
     --hash=sha256:80b3c0c8649ce590bd25871550f6670eabe2e98a5d1ef5e40f92b88597d8081d
-web.py==0.36 \
-    --hash=sha256:c45ec5b5feaaba53bbae69dd971c281832f1332d5949cd6e5ca27747fe92256a
 wsgiref==0.1.2 \
     --hash=sha256:c7e610c800957046c04c8014aab8cce8f0b9f0495c8cd349e57c1f7cabf40e79
 ujson==1.35 \
@@ -326,3 +324,6 @@ pytest-wholenodeid==0.2 \
     --hash=sha256:bdcb4df88ca182a19752ef95150c0881deaafc2c593ef67c61515894e5309206
 pytest-env==0.6.0 \
     --hash=sha256:f4d61885b0befcb474e73e775597a798bd37808f8856ebb624b0822f054f6c0c
+pytest-catchlog==1.2.2 \
+    --hash=sha256:4be15dc5ac1750f83960897f591453040dff044b5966fe24a91c2f7d04ecfcf0 \
+    --hash=sha256:a692966da726b918197cabd20dc0ad4da5503fbdc99baaa192e62579c8a45773

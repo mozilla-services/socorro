@@ -43,7 +43,7 @@ class SupportClassificationRule(Rule):
         """
         try:
             return self._predicate(*args, **kwargs)
-        except Exception, x:
+        except Exception as x:
             if not self.config:
                 if 'processor' in kwargs:
                     self.config = kwargs['processor'].config
@@ -66,7 +66,7 @@ class SupportClassificationRule(Rule):
         classification system itself."""
         try:
             return self._action(*args, **kwargs)
-        except KeyError, x:
+        except KeyError as x:
             if not self.config:
                 if 'processor' in kwargs:
                     self.config = kwargs['processor'].config
@@ -77,7 +77,7 @@ class SupportClassificationRule(Rule):
                 to_str(self.__class__),
                 x,
             )
-        except Exception, x:
+        except Exception as x:
             if not self.config and 'processor' in kwargs:
                 self.config = kwargs['processor'].config
             if not self.config:

@@ -229,7 +229,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
                 plugin_filename = processed_crash['PluginFilename']
                 plugin_name = processed_crash['PluginName']
                 plugin_version = processed_crash['PluginVersion']
-            except KeyError, x:
+            except KeyError as x:
                 self.config.logger.error(
                     'the crash is missing a required field: %s', str(x)
                 )
@@ -319,7 +319,7 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
                     raw_crash_table_name
         try:
             return single_value_sql(connection, fetch_sql, (crash_id,))
-        except ProgrammingError, e:
+        except ProgrammingError as e:
             err = 'relation "%s" does not exist' % raw_crash_table_name
             if err in str(e):
                 raise CrashIDNotFound(crash_id)
@@ -345,7 +345,7 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
                     processed_crash_table_name
         try:
             return single_value_sql(connection, fetch_sql, (crash_id,))
-        except ProgrammingError, e:
+        except ProgrammingError as e:
             err = 'relation "%s" does not exist' % processed_crash_table_name
             if err in str(e):
                 raise CrashIDNotFound(crash_id)

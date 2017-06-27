@@ -7,11 +7,11 @@
 from collections import Sequence
 
 
-class SQLDidNotReturnSingleValue (Exception):
+class SQLDidNotReturnSingleValue(Exception):
     pass
 
 
-class SQLDidNotReturnSingleRow (Exception):
+class SQLDidNotReturnSingleRow(Exception):
     pass
 
 
@@ -63,7 +63,7 @@ def single_value_sql(connection, sql, parameters=None):
         result = a_cursor.fetchall()
         try:
             return result[0][0]
-        except Exception, x:
+        except Exception as x:
             raise SQLDidNotReturnSingleValue("%s: %s" % (str(x), sql))
 
 
@@ -73,7 +73,7 @@ def single_row_sql(connection, sql, parameters=None):
         result = a_cursor.fetchall()
         try:
             return result[0]
-        except Exception, x:
+        except Exception as x:
             raise SQLDidNotReturnSingleRow("%s: %s" % (str(x), sql))
 
 

@@ -83,13 +83,42 @@ To run the tests, do::
 That runs the ``/app/docker/run_test.sh`` script in the webapp container using
 test configuration.
 
-To run specific things, you'll want to do it manually in a shell::
+To run specific tests or specify arguments, you'll want to start a shell in the
+test container::
 
-  $ docker-compose run test /bin/bash
+  $ make dockertestshell
 
 
-Then do whatever parts of ``docker/run_test.sh`` you need to set up the
-environment and you should be good to go.
+Then you can run pytest or the webapp tests as you like.
+
+Running all the unittests::
+
+  app@...:/app$ pytest
+
+
+Running a directory of unittests::
+
+  app@...:/app$ pytest socorro/unittest/processor/
+
+
+Running a file of unittests::
+
+  app@...:/app$ pytest socorro/unittest/processor/test_processor_app.py
+
+
+Running webapp tests (make sure you run ``./manage.py collectstatic`` first)::
+
+  app@...:/app/webapp-django$ ./manage.py test
+
+
+Running a directory of webapp tests::
+
+  app@...:/app/webapp-django$ ./manage.py test crashstats/home/tests/
+
+
+Running a file of tests::
+
+  app@...:/app/webapp-django$ ./manage.py test crashstats/home/tests/test_views.py
 
 
 Running the processor

@@ -64,6 +64,9 @@ def config_from_configman():
     definition_source.namespace('logging')
     definition_source.logging = socorro_app.App.required_config.logging
 
+    definition_source.namespace('metricscfg')
+    definition_source.metricscfg = socorro_app.App.required_config.metricscfg
+
     definition_source.namespace('elasticsearch')
     definition_source.elasticsearch.add_option(
         'elasticsearch_class',
@@ -138,14 +141,6 @@ def get_api_whitelist(*args, **kwargs):
         return fields
 
     return functools.partial(get_from_es, *args, **kwargs)
-
-
-class BadStatusCodeError(Exception):
-    def __init__(self, status, message="Bad status code"):
-        self.message = message
-        self.status = status
-        combined = '%d: %s' % (status, message)
-        super(BadStatusCodeError, self).__init__(combined)
 
 
 class RequiredParameterError(Exception):

@@ -30,7 +30,7 @@ Testing
 -------
 
 Any features that are only available to admins should be tested to
-ensure that only non-admin users to not have access.
+ensure that only non-admin users do not have access.
 
 Before checking in changes to the socorro python code, be sure to run
 the unit tests.

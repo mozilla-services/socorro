@@ -221,7 +221,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     required_config = Namespace()
     required_config.add_option(
         'products',
-        default='firefox,mobile,thunderbird,seamonkey',
+        default='firefox,mobile,thunderbird,seamonkey,devedition',
         from_string_converter=lambda line: tuple(
             [x.strip() for x in line.split(',') if x.strip()]
         ),
@@ -333,7 +333,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         for directory in ('nightly', 'candidates'):
             try:
                 url, = self.get_links(prod_url, starts_with=directory)
-            except IndexError:
+            except (IndexError, ValueError):
                 logger.debug('Dir %s not found for %s',
                              directory, product_name)
                 continue
