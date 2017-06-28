@@ -812,7 +812,6 @@ def report_index(request, crash_id, default_context=None):
     context = default_context or {}
     context['crash_id'] = crash_id
 
-    # cache_seconds = 0 if request.GET.get('refresh') == 'cache' else None
     refresh_cache = request.GET.get('refresh') == 'cache'
 
     raw_api = models.RawCrash()
