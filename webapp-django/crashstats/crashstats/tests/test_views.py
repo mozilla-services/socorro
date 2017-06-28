@@ -1495,6 +1495,50 @@ class TestViews(BaseTestViews):
         # the client output.
         ok_(u'Prénom'.encode('utf-8') in response.content)
 
+    def test_report_index_with_refreshed_cache(self):
+
+        raw_crash_calls = []
+
+        def mocked_raw_crash_get(**params):
+            raw_crash_calls.append(params)
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        processed_crash_calls = []
+
+        def mocked_processed_crash_get(**params):
+            processed_crash_calls.append(params)
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return copy.deepcopy(_SAMPLE_UNREDACTED)
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        url = reverse('crashstats:report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(len(raw_crash_calls) == len(processed_crash_calls) == 1)
+
+        # Call it a second time and the cache should kick in
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(len(raw_crash_calls) == len(processed_crash_calls) == 1)  # same!
+
+        response = self.client.get(url, {'refresh': 'cache'})
+        eq_(response.status_code, 200)
+        ok_(len(raw_crash_calls) == len(processed_crash_calls) == 2)
+
     def test_report_index_with_remote_type_raw_crash(self):
         """If a processed crash has a 'process_type' value *and*
         if the raw crash has as 'RemoteType' then both of these

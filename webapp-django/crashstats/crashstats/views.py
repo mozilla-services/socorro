@@ -812,9 +812,15 @@ def report_index(request, crash_id, default_context=None):
     context = default_context or {}
     context['crash_id'] = crash_id
 
+    # cache_seconds = 0 if request.GET.get('refresh') == 'cache' else None
+    refresh_cache = request.GET.get('refresh') == 'cache'
+
     raw_api = models.RawCrash()
     try:
-        context['raw'] = raw_api.get(crash_id=crash_id)
+        context['raw'] = raw_api.get(
+            crash_id=crash_id,
+            refresh_cache=refresh_cache,
+        )
     except CrashIDNotFound:
         # If the raw crash can't be found, we can't do much.
         tmpl = 'crashstats/report_index_not_found.html'
@@ -827,7 +833,10 @@ def report_index(request, crash_id, default_context=None):
 
     api = models.UnredactedCrash()
     try:
-        context['report'] = api.get(crash_id=crash_id)
+        context['report'] = api.get(
+            crash_id=crash_id,
+            refresh_cache=refresh_cache,
+        )
     except CrashIDNotFound:
         # ...if we haven't already done so.
         cache_key = 'priority_job:{}'.format(crash_id)
