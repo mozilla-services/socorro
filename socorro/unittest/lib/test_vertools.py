@@ -5,7 +5,7 @@
 import socorro.lib.ver_tools as vtl
 
 phs = vtl._padding_high_string
-pl  = vtl._padding_list
+pl = vtl._padding_list
 
 tests = [('3',            [3, phs, 0, phs] + pl * 3, '3'),
          ('3.',           [3, phs, 0, phs] + pl * 3, '3'),
@@ -21,17 +21,20 @@ tests = [('3',            [3, phs, 0, phs] + pl * 3, '3'),
          ('3.6.4plugin3', [3, phs, 0, phs,
                            6, phs, 0, phs,
                            4, 'plugin', 3, phs] + pl, '3.6.4plugin3'),
-        ]
+         ]
+
 
 def testNormalize():
     for ver, expected, ver2 in tests:
         got = vtl.normalize(ver)
         assert got == expected, "expected %s, but got %s" % (expected, got)
 
+
 def testDenomalize():
     for ver, norm, expected in tests:
         got = vtl.denormalize(norm)
         assert got == expected, "expected %s, but got %s" % (expected, got)
+
 
 def testCompare():
     got = vtl.compare('3', '3.1')

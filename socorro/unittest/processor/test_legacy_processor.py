@@ -352,7 +352,8 @@ class TestLegacyProcessor(TestCase):
                     (
                         (
                             raw_crash.uuid, '/some/path/%s.dump' % raw_crash.uuid,
-                            0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                            0, None, datetime(
+                                2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                             [
                                 'testing_processor:2012',
                                 'LegacyCrashProcessor',
@@ -368,7 +369,8 @@ class TestLegacyProcessor(TestCase):
                         (
                             raw_crash.uuid,
                             '/some/path/aux_001.%s.dump' % raw_crash.uuid,
-                            0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                            0, None, datetime(
+                                2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                             [
                                 'testing_processor:2012',
                                 'LegacyCrashProcessor',
@@ -826,7 +828,7 @@ class TestLegacyProcessor(TestCase):
                 )
                 eq_(processor_notes, [])
 
-                #test plugin null case
+                # test plugin null case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
                 raw_crash.ProcessType = 'plugin'
                 processor_notes = []
@@ -844,7 +846,7 @@ class TestLegacyProcessor(TestCase):
                 )
                 eq_(processor_notes, [])
 
-                #test plugin case
+                # test plugin case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
                 raw_crash.ProcessType = 'plugin'
                 raw_crash.PluginFilename = 'myfile.dll'
