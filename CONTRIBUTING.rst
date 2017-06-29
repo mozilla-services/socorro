@@ -51,7 +51,9 @@ If you hit issues, use ``# noqa``.
 Javascript code conventions
 ===========================
 
-FIXME(willkg): What are our code conventions?
+4-space indentation.
+
+If in doubt, see https://github.com/mozilla-services/socorro/blob/master/.editorconfig
 
 
 Git conventions
