@@ -442,7 +442,8 @@ class TestJavaSignatureTool(BaseTestClass):
     def test_generate_signature_11_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
-        java_stack_trace = """java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
+        java_stack_trace = """
+java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
 \tat android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
 \tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
 \tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
@@ -459,7 +460,7 @@ class TestJavaSignatureTool(BaseTestClass):
 \tat java.lang.reflect.Method.invoke(Method.java:507)
 \tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
-\tat dalvik.system.NativeStart.main(Native Method)"""
+\tat dalvik.system.NativeStart.main(Native Method)""".lstrip()
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('java.lang.IllegalArgumentException: '
              'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
@@ -471,7 +472,8 @@ class TestJavaSignatureTool(BaseTestClass):
     def test_generate_signature_12_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
-        java_stack_trace = """java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
+        java_stack_trace = """
+java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
 \tat android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
 \tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
 \tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
@@ -488,7 +490,7 @@ class TestJavaSignatureTool(BaseTestClass):
 \tat java.lang.reflect.Method.invoke(Method.java:507)
 \tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
-\tat dalvik.system.NativeStart.main(Native Method)"""
+\tat dalvik.system.NativeStart.main(Native Method)""".lstrip()
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('java.lang.IllegalArgumentException: '
              'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
@@ -500,7 +502,8 @@ class TestJavaSignatureTool(BaseTestClass):
     def test_generate_signature_13_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
-        java_stack_trace = """java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoConnectivityReceiver@2c004bc8
+        java_stack_trace = """
+java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoConnectivityReceiver@2c004bc8
 \tat android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:628)
 \tat android.app.ContextImpl.unregisterReceiver(ContextImpl.java:1066)
 \tat android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:354)
@@ -521,7 +524,7 @@ class TestJavaSignatureTool(BaseTestClass):
 \tat java.lang.reflect.Method.invoke(Method.java:511)
 \tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:784)
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:551)
-\tat dalvik.system.NativeStart.main(Native Method)"""
+\tat dalvik.system.NativeStart.main(Native Method)""".lstrip()  # noqa
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('java.lang.IllegalArgumentException: '
              'Receiver not registered: '
@@ -535,7 +538,8 @@ class TestJavaSignatureTool(BaseTestClass):
     def test_generate_signature_14_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
-        java_stack_trace = """android.view.WindowManager$BadTokenException: Unable to add window -- token android.os.BinderProxy@406237c0 is not valid; is your activity running?
+        java_stack_trace = """
+android.view.WindowManager$BadTokenException: Unable to add window -- token android.os.BinderProxy@406237c0 is not valid; is your activity running?
 \tat android.view.ViewRoot.setView(ViewRoot.java:533)
 \tat android.view.WindowManagerImpl.addView(WindowManagerImpl.java:202)
 \tat android.view.WindowManagerImpl.addView(WindowManagerImpl.java:116)
@@ -552,7 +556,7 @@ class TestJavaSignatureTool(BaseTestClass):
 \tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:867)
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:625)
 \tat dalvik.system.NativeStart.main(Native Method)
-"""
+""".lstrip()  # noqa
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('android.view.WindowManager$BadTokenException: '
              'Unable to add window -- token android.os.BinderProxy@<addr> '
@@ -565,7 +569,8 @@ class TestJavaSignatureTool(BaseTestClass):
     def test_generate_signature_15_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
-        java_stack_trace = """java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoNetworkManager@405afea8
+        java_stack_trace = """
+java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoNetworkManager@405afea8
 \tat android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:610)
 \tat android.app.ContextImpl.unregisterReceiver(ContextImpl.java:883)
 \tat android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:331)
@@ -590,12 +595,14 @@ class TestJavaSignatureTool(BaseTestClass):
 \tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:907)
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:665)
 \tat dalvik.system.NativeStart.main(Native Method)
-"""
+""".lstrip()  # noqa
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = ('java.lang.IllegalArgumentException: '
-             'Receiver not registered: '
-             'org.mozilla.gecko.GeckoNetworkManager@<addr>: '
-             'at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java)')
+        e = (
+            'java.lang.IllegalArgumentException: '
+            'Receiver not registered: '
+            'org.mozilla.gecko.GeckoNetworkManager@<addr>: '
+            'at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java)'
+        )
         self.assert_equal_with_nicer_output(e, sig)
         e = []
         self.assert_equal_with_nicer_output(e, notes)
