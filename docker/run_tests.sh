@@ -77,7 +77,7 @@ $ALEMBIC -c "${alembic_config}" downgrade -1
 $ALEMBIC -c "${alembic_config}" upgrade heads
 
 # Run tests
-$PYTEST
+$PYTEST --flake8
 
 # Collect static and then test webapp
 pushd webapp-django

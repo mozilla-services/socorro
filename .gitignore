@@ -45,7 +45,7 @@ webapp-django/.env
 primaryCrashStore/
 processedCrashStore/
 /tags
-e2e-tests/.cache/
+.cache/
 
 # docker things
 .docker-build
