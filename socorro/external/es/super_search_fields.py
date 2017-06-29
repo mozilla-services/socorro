@@ -2,16 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
+import os
 import datetime
 import elasticsearch
 
-from socorro.lib import (
-    BadArgumentError,
-    MissingArgumentError,
-    ResourceNotFound,
-)
+from socorro.lib import BadArgumentError, datetimeutil
 from socorro.external.es.base import ElasticsearchBase
-from socorro.lib import datetimeutil, external_common
+
+
+SUPER_SEARCH_FIELDS_JSON_PATH = os.path.join(
+    os.path.dirname(__file__),
+    'super_search_fields.json'
+)
 
 
 class SuperSearchFields(ElasticsearchBase):
@@ -23,27 +26,11 @@ class SuperSearchFields(ElasticsearchBase):
     ]
 
     def get_fields(self):
-        """Return all the fields from our database, as a dict where field
-        names are the keys.
-
-        No parameters are accepted.
-        """
-        es_connection = self.get_connection()
-
-        total = es_connection.count(
-            index=self.config.elasticsearch.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-        )['count']
-        results = es_connection.search(
-            index=self.config.elasticsearch.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            size=total,
-        )
-
-        return dict(
-            (r['_source']['name'], r['_source'])
-            for r in results['hits']['hits']
-        )
+        """Return all the fields from our super_search_fields.json file."""
+        print("IN get_fields")
+        raise Exception#XXX
+        with open(SUPER_SEARCH_FIELDS_JSON_PATH) as f:
+            return json.load(f)
 
     # The reason for this alias is because this class gets used from
     # the webapp and it expects to be able to execute
@@ -55,218 +42,8 @@ class SuperSearchFields(ElasticsearchBase):
 
     get = get_fields
 
-    def create_field(self, **kwargs):
-        """Create a new field in the database, to be used by supersearch and
-        all Elasticsearch related services.
-        """
-        filters = [
-            ('name', None, 'str'),
-            ('data_validation_type', 'enum', 'str'),
-            ('default_value', None, 'str'),
-            ('description', None, 'str'),
-            ('form_field_choices', None, ['list', 'str']),
-            ('has_full_version', False, 'bool'),
-            ('in_database_name', None, 'str'),
-            ('is_exposed', False, 'bool'),
-            ('is_returned', False, 'bool'),
-            ('is_mandatory', False, 'bool'),
-            ('query_type', 'enum', 'str'),
-            ('namespace', None, 'str'),
-            ('permissions_needed', None, ['list', 'str']),
-            ('storage_mapping', None, 'json'),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        mandatory_params = ('name', 'in_database_name')
-        for param in mandatory_params:
-            if not params[param]:
-                raise MissingArgumentError(param)
-
-        # Before making the change, make sure it does not break indexing.
-        new_mapping = self.get_mapping(overwrite_mapping=params)
-
-        # Try the mapping. If there is an error, an exception will be raised.
-        # If an exception is raised, the new mapping will be rejected.
-        self.test_mapping(new_mapping)
-
-        es_connection = self.get_connection()
-
-        try:
-            es_connection.index(
-                index=self.config.elasticsearch.elasticsearch_default_index,
-                doc_type='supersearch_fields',
-                body=params,
-                id=params['name'],
-                op_type='create',
-                refresh=True,
-            )
-        except elasticsearch.exceptions.ConflictError:
-            # This field exists in the database, it thus cannot be created!
-            raise BadArgumentError(
-                'name',
-                msg='The field "%s" already exists in the database, '
-                    'impossible to create it. ' % params['name'],
-            )
-
-        if params.get('storage_mapping'):
-            # If we made a change to the storage_mapping, log that change.
-            self.config.logger.info(
-                'elasticsearch mapping changed for field "%s", '
-                'added new mapping "%s"',
-                params['name'],
-                params['storage_mapping'],
-            )
-
-        return True
-
-    def update_field(self, **kwargs):
-        """Update an existing field in the database.
-
-        If the field does not exist yet, a ResourceNotFound error is raised.
-
-        If you want to update only some keys, just do not pass the ones you
-        don't want to change.
-        """
-        filters = [
-            ('name', None, 'str'),
-            ('data_validation_type', None, 'str'),
-            ('default_value', None, 'str'),
-            ('description', None, 'str'),
-            ('form_field_choices', None, ['list', 'str']),
-            ('has_full_version', None, 'bool'),
-            ('in_database_name', None, 'str'),
-            ('is_exposed', None, 'bool'),
-            ('is_returned', None, 'bool'),
-            ('is_mandatory', None, 'bool'),
-            ('query_type', None, 'str'),
-            ('namespace', None, 'str'),
-            ('permissions_needed', None, ['list', 'str']),
-            ('storage_mapping', None, 'json'),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        if not params['name']:
-            raise MissingArgumentError('name')
-
-        # Remove all the parameters that were not explicitely passed.
-        for key in params.keys():
-            if key not in kwargs:
-                del params[key]
-
-        es_connection = self.get_connection()
-        es_index = self.config.elasticsearch.elasticsearch_default_index
-        es_doc_type = 'supersearch_fields'
-
-        # First verify that the field does exist.
-        try:
-            old_value = es_connection.get(
-                index=es_index,
-                doc_type=es_doc_type,
-                id=params['name'],
-            )['_source']  # Only the actual document is of interest.
-        except elasticsearch.exceptions.NotFoundError:
-            # This field does not exist yet, it thus cannot be updated!
-            raise ResourceNotFound(
-                'The field "%s" does not exist in the database, it needs to '
-                'be created before it can be updated. ' % params['name']
-            )
-
-        # Then, if necessary, verify the new mapping.
-        if (
-            (
-                'storage_mapping' in params and
-                params['storage_mapping'] != old_value['storage_mapping']
-            ) or (
-                'in_database_name' in params and
-                params['in_database_name'] != old_value['in_database_name']
-            )
-        ):
-            # This is a change that will have an impact on the Elasticsearch
-            # mapping, we first need to make sure it doesn't break.
-            new_mapping = self.get_mapping(overwrite_mapping=params)
-
-            # Try the mapping. If there is an error, an exception will be
-            # raised. If an exception is raised, the new mapping will be
-            # rejected.
-            self.test_mapping(new_mapping)
-
-        if (
-            'storage_mapping' in params and
-            params['storage_mapping'] != old_value['storage_mapping']
-        ):
-            # The storage mapping is an object, and thus is treated
-            # differently than other fields by Elasticsearch. If a user
-            # changes the object by removing a field from it, that field won't
-            # be removed as part of the update (which performs a merge of all
-            # objects in the back-end). We therefore want to perform the merge
-            # ourselves, and remove the field from the database before
-            # re-indexing it.
-            new_doc = old_value.copy()
-            new_doc.update(params)
-
-            es_connection.delete(
-                index=es_index,
-                doc_type=es_doc_type,
-                id=new_doc['name'],
-            )
-            es_connection.index(
-                index=es_index,
-                doc_type=es_doc_type,
-                body=new_doc,
-                id=new_doc['name'],
-                op_type='create',
-                refresh=True,
-            )
-
-            # If we made a change to the storage_mapping, log that change.
-            self.config.logger.info(
-                'Elasticsearch mapping changed for field "%s", '
-                'was "%s", now "%s"',
-                params['name'],
-                old_value['storage_mapping'],
-                new_doc['storage_mapping'],
-            )
-        else:
-            # Then update the new field in the database. Note that
-            # Elasticsearch takes care of merging the new document into the
-            # old one, so missing values won't be changed.
-            es_connection.update(
-                index=es_index,
-                doc_type=es_doc_type,
-                body={'doc': params},
-                id=params['name'],
-                refresh=True,
-            )
-
-        return True
-
-    def delete_field(self, **kwargs):
-        """Remove a field from the database.
-
-        Removing a field means that it won't be indexed in elasticsearch
-        anymore, nor will it be exposed or accessible via supersearch. It
-        doesn't delete the data from crash reports though, so it would be
-        possible to re-create the field and reindex some indices to get that
-        data back.
-        """
-        filters = [
-            ('name', None, 'str'),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        if not params['name']:
-            raise MissingArgumentError('name')
-
-        es_connection = self.get_connection()
-        es_connection.delete(
-            index=self.config.elasticsearch.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            id=params['name'],
-            refresh=True,
-        )
-
     def get_missing_fields(self):
-        """Return a list of all missing fields in our database.
+        """Return a list of all missing fields in our .json file.
 
         Take the list of all fields that were indexed in the last 3 weeks
         and do a diff with the list of known fields.

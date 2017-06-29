@@ -767,7 +767,9 @@ class SuperSearchWithFields(SuperSearch):
     This class does that automatically so we can just use `get()`. """
 
     def get(self, **kwargs):
-        kwargs['_fields'] = SuperSearchFields(config=self.config).get_fields()
+        api = SuperSearchFields(config=self.config)
+        api.get_fields = lambda: SUPERSEARCH_FIELDS
+        kwargs['_fields'] = api.get_fields()
         return super(SuperSearchWithFields, self).get(**kwargs)
 
 
@@ -824,14 +826,13 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         with es_context() as conn:
             self.connection = conn
 
-    def setUp(self):
-        # Create the supersearch fields.
+    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
+    def setUp(self, mock_ssf):
+        mock_ssf.get_fields.return_value = SUPERSEARCH_FIELDS
         self.index_super_search_fields()
-
         self.index_creator.create_socorro_index(
             self.config.elasticsearch.elasticsearch_index
         )
-
         super(ElasticsearchTestCase, self).setUp()
 
     def tearDown(self):
@@ -876,11 +877,13 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             extra_values=extra_values
         )
 
+    #XXX Delete
     def index_super_search_fields(self, fields=None):
         if fields is None:
             fields = SUPERSEARCH_FIELDS
 
         es_index = self.config.elasticsearch.elasticsearch_default_index
+        # print(es_index)
 
         actions = []
         for name, field in fields.iteritems():

@@ -26,22 +26,18 @@
             <thead>
                 <tr>
                     <th>Field</th>
-                    <th>Options</th>
                 </tr>
             </thead>
         {% for field in missing_fields %}
             <tr>
                 <td>{{ field }}</td>
-                <td>
-                    <a href="{{ url('manage:supersearch_field') }}?{{ make_query_string(
-                        full_name=field,
-                        ) }}">
-                        Create this field
-                    </a>
-                </td>
             </tr>
         {% else %}
-            <tr colspan="2">No fields are missing at the moment.</tr>
+            <tr>
+                <td>
+                    No fields are missing at the moment.
+                </td>
+            </tr>
         {% endfor %}
         </table>
     </div>

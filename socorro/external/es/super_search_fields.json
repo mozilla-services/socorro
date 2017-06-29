@@ -1,0 +1,3916 @@
+{
+"InstallTime": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "InstallTime", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "InstallTime", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"async_plugin_init": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "async_plugin_init", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean", 
+"null_value": "false"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "AsyncPluginInit", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "https://bugzilla.mozilla.org/show_bug.cgi?id=1155511"
+}, 
+"startedDateTime": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "date", 
+"format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "startedDateTime", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "startedDateTime"
+}, 
+"memory_ghost_windows": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_ghost_windows", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "ghost_windows", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'ghost-windows' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"co_marshal_interface_failure": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "co_marshal_interface_failure", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "CoMarshalInterfaceFailure", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Contains the hexadecimal value of the return code from Windows CoMarshalInterfaceFailure API when invoked by IPDL serialization and deserialization code."
+}, 
+"ipc_channel_error": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ipc_channel_error", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "ipc_channel_error", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The IPC channel error."
+}, 
+"Comments": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "Comments", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Comments", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"async_shutdown_timeout": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "async_shutdown_timeout", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}, 
+"AsyncShutdownTimeout": {
+"index": "analyzed", 
+"type": "string", 
+"analyzer": "standard"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "raw_crash", 
+"description": "", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "AsyncShutdownTimeout", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "StringField"
+}, 
+"product": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"product": {
+"index": "analyzed", 
+"type": "string"
+}, 
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "product", 
+"has_full_version": true, 
+"data_validation_type": "enum", 
+"in_database_name": "product", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Name of the software."
+}, 
+"content_sandbox_capable": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "", 
+"has_full_version": false, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean", 
+"null_value": false
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "ContentSandboxCapable", 
+"data_validation_type": "bool", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "content_sandbox_capable"
+}, 
+"install_age": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash", 
+"name": "install_age", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "install_age", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Length of time since this version was installed."
+}, 
+"b2g_os_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"name": "b2g_os_version", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "B2G_OS_Version", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"additional_minidumps": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "additional_minidumps", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "additional_minidumps", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"crash_type": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "crash_type", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.crash_info", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "type", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Type of the crash."
+}, 
+"build_id": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash", 
+"name": "build_id", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "build", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The unique build identifier of this version, which is a timestamp of the form YYYYMMDDHHMMSS."
+}, 
+"crashing_thread": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "crashing_thread", 
+"is_returned": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.crash_info", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "crashing_thread", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Index of the crashing thread."
+}, 
+"uuid": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "not_analyzed", 
+"type": "string"
+}, 
+"namespace": "processed_crash", 
+"name": "uuid", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "uuid", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Unique identifier of the report."
+}, 
+"plugin_cpu_usage": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "double"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "PluginCpuUsage", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "plugin_cpu_usage"
+}, 
+"hangid": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "hangid", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "hangid"
+}, 
+"bug836263-size": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "bug836263-size", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "bug836263-size", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"ipc_message_size": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ipc_message_size", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "IPCMessageSize", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"android_fingerprint": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_Fingerprint", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "android_fingerprint"
+}, 
+"FlashVersion": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "FlashVersion", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "FlashVersion", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"completeddatetime": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "date", 
+"format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "completeddatetime", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "completeddatetime"
+}, 
+"memory_measures": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_measures", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "memory_measures", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"platform": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}, 
+"os_name": {
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "platform", 
+"has_full_version": true, 
+"data_validation_type": "enum", 
+"in_database_name": "os_name", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Basic name of the operating system. Can be \"Windows NT\", \"Mac OS X\" or \"Linux\". Use `platform_pretty_version` for a more precise OS name including version."
+}, 
+"theme": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"name": "theme", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Theme", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The current theme."
+}, 
+"frame_poison_base": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "FramePoisonBase", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "frame_poison_base"
+}, 
+"moz_crash_reason": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "moz_crash_reason", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "MozCrashReason", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the accompanying description."
+}, 
+"CrashTime": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "CrashTime", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "CrashTime", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"contains_memory_report": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "contains_memory_report", 
+"is_returned": true, 
+"query_type": "flag", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "short"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "ContainsMemoryReport", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Has content for processed_crash.memory_report or not."
+}, 
+"total_virtual_memory": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"name": "total_virtual_memory", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "TotalVirtualMemory", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The size of the user-mode portion of the virtual address space of the calling process. This value depends on the type of process, the type of processor, and the configuration of the operating system. 32-bit processes usually have values in the range 2--4 GiB. 64-bit processes usually have *much* larger values."
+}, 
+"uptime_ts": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "TimeStamp based uptime.", 
+"has_full_version": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "double"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "UptimeTS", 
+"data_validation_type": "int", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "uptime_ts"
+}, 
+"threads_index": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "threads_index", 
+"is_returned": false, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.crashing_thread", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "threads_index", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Index of this thread in the list of threads?"
+}, 
+"graphics_critical_error": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "Log of graphics-related errors.", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "GraphicsCriticalError", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "graphics_critical_error"
+}, 
+"total_page_file": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "total_page_file", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"description": "", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "TotalPageFile", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "MultipleValueField"
+}, 
+"vendor": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Vendor", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "vendor"
+}, 
+"throttleable": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "BooleanField", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "Throttleable", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "throttleable"
+}, 
+"timestamp": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "double"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "timestamp", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "timestamp"
+}, 
+"Notes": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Notes", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "Notes"
+}, 
+"memory_private": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_private", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "private", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'private' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"android_display": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_Display", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "android_display"
+}, 
+"cpu_usage_flash_process1": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "double"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "CpuUsageFlashProcess1", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "cpu_usage_flash_process1"
+}, 
+"async_plugin_shutdown": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "async_plugin_shutdown", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "AsyncPluginShutdown", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"android_brand": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"name": "android_brand", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_Brand", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The Android device brand."
+}, 
+"adapter_vendor_id": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"name": "adapter_vendor_id", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "AdapterVendorID", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The graphics adapter vendor. This value is sometimes a name, and sometimes a hexidecimal identifier. Common identifiers include: 0x8086 (Intel), 0x1002 (AMD), 0x10de (NVIDIA)."
+}, 
+"submitted_from_infobar": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "submitted_from_infobar", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "SubmittedFromInfobar", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "True if the crash report was submitted after the crash happened, from an infobar in the UI."
+}, 
+"productid": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "productid", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "productid", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Identifier of the software."
+}, 
+"success": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "success", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "success"
+}, 
+"ipc_shutdown_state": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ipc_shutdown_state", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "IPCShutdownState", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Shows that a shutdown hang was after we have received RecvShutdown but never reach SendFinishShutdown or the hang happened before or after RecvShutdown. https://bugzilla.mozilla.org/show_bug.cgi?id=1301339"
+}, 
+"BuildID": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "BuildID", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "BuildID"
+}, 
+"android_model": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"Android_Model": {
+"type": "string"
+}, 
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "raw_crash", 
+"name": "android_model", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "Android_Model", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The Android device model name."
+}, 
+"is_garbage_collecting": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "BooleanField", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "IsGarbageCollecting", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "is_garbage_collecting"
+}, 
+"memory_heap_overhead": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_heap_overhead", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "heap_overhead", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'heap-overhead' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"email": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [
+"crashstats.view_pii"
+], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "email", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "email", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Users may opt in to providing their email address so that Mozilla may contact them about their crash report."
+}, 
+"memory_vsize": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_vsize", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "vsize", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'vsize' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"content_sandbox_enabled": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "", 
+"has_full_version": false, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean", 
+"null_value": false
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "ContentSandboxEnabled", 
+"data_validation_type": "bool", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "content_sandbox_enabled"
+}, 
+"memory_js_main_runtime": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_js_main_runtime", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "js_main_runtime", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'js-main-runtime' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"available_virtual_memory": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"name": "available_virtual_memory", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "AvailableVirtualMemory", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The amount of unreserved and uncommited (i.e. available) memory in the process's address space. Note that this memory may be fragmented into many separate segments, so an allocation attempt may fail even when this value is substantially greater than zero."
+}, 
+"graphics_startup_test": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "graphics_startup_test", 
+"is_returned": true, 
+"query_type": "flag", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "short"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "GraphicsStartupTest", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Whether the crash occured in the DriverCrashGuard."
+}, 
+"co_get_interface_and_release_stream_failure": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "co_get_interface_and_release_stream_failure", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "CoGetInterfaceAndReleaseStreamFailure", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Contains the hexadecimal value of the return code from Windows CoGetInterfaceAndReleaseStream API when invoked by IPDL serialization and deserialization code."
+}, 
+"plugin_hang": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "BooleanField", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "PluginHang", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "plugin_hang"
+}, 
+"dump_cpu_info": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "dump_cpu_info", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.system_info", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "cpu_info", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Extended name of the CPU."
+}, 
+"PluginFilename": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "PluginFilename", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "PluginFilename", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"startup_time": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "StartupTime", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "startup_time"
+}, 
+"dump": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": false, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "not_analyzed", 
+"type": "string"
+}, 
+"namespace": "processed_crash", 
+"name": "dump", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "dump", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"truncated": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "truncated", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "truncated"
+}, 
+"total_physical_memory": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "total_physical_memory", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"description": "The total amount of physical memory.", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "TotalPhysicalMemory", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "MultipleValueField"
+}, 
+"largest_free_vm_block": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "largest_free_vm_block", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "processed_crash.json_dump", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "largest_free_vm_block", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"Version": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "Version", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Version", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"memory_heap_allocated": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_heap_allocated", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "heap_allocated", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'heap-allocated' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"distributor": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "processed_crash", 
+"name": "distributor", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "distributor", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"upload_file_minidump_flash2": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "upload_file_minidump_flash2", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "upload_file_minidump_flash2", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"upload_file_minidump_browser": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "upload_file_minidump_browser", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "upload_file_minidump_browser", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"memory_gfx_textures": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_gfx_textures", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "gfx_textures", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'gfx-textures' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"adapter_device_id": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"name": "adapter_device_id", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "AdapterDeviceID", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The graphics adapter device identifier."
+}, 
+"build_date": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "date", 
+"format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "build_date", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "build_date"
+}, 
+"json_dump": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "json_dump", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "json_dump", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "The dump as a JSON object."
+}, 
+"release_channel": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "release_channel", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "release_channel", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The update channel that the user is on. Typically \"nightly\", \"aurora\", \"beta\", or \"release\", but this may also be other values like \"release-cck-partner\"."
+}, 
+"content_sandbox_level": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "", 
+"has_full_version": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "short"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "ContentSandboxLevel", 
+"data_validation_type": "int", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "content_sandbox_level"
+}, 
+"PluginUserComment": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "PluginUserComment", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "PluginUserComment", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"system_error": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "", 
+"has_full_version": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "SystemError", 
+"data_validation_type": "int", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "system_error"
+}, 
+"distributor_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "distributor_version", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "distributor_version", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"shutdown_progress": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "shutdown_progress", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "ShutdownProgress", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "See https://bugzilla.mozilla.org/show_bug.cgi?id=1038342"
+}, 
+"version": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "version", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "version", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The product version number. A value lacking any letters indicates a normal release; a value with a 'b' indicates a Beta release; a value with an 'a' indicates an Aurora (a.k.a. Developer Edition) release; a value with 'esr' indicates an Extended Service Release."
+}, 
+"memory_explicit": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_explicit", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "explicit", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'explicit' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"android_device": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"name": "android_device", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_Device", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The android device name."
+}, 
+"ReleaseChannel": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ReleaseChannel", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "ReleaseChannel", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"cpu_usage_flash_process2": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "double"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "CpuUsageFlashProcess2", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "cpu_usage_flash_process2"
+}, 
+"ipc_fatal_error_protocol": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "The protocol linked to an IPC fatal error.", 
+"has_full_version": false, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "IPCFatalErrorProtocol", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "ipc_fatal_error_protocol"
+}, 
+"plugin_hang_ui_duration": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "PluginHangUIDuration", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "plugin_hang_ui_duration"
+}, 
+"submitted_timestamp": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "submitted_timestamp", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "submitted_timestamp", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"bios_manufacturer": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"name": "bios_manufacturer", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "BIOS_Manufacturer", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The BIOS manufacturer."
+}, 
+"crash_address": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "crash_address", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.crash_info", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "crash_address", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Address of the crash."
+}, 
+"buildid": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "buildid", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "buildid"
+}, 
+"last_crash": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash", 
+"name": "last_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "last_crash", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Length of time between the previous crash submission and this one. Low values indicate repeated crashes."
+}, 
+"cpu_name": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "cpu_name", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "cpu_name", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Architecture of the processor. Deprecated, use cpu_arch instead."
+}, 
+"plugin_name": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"PluginName": {
+"index": "analyzed", 
+"type": "string"
+}, 
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "plugin_name", 
+"has_full_version": true, 
+"data_validation_type": "enum", 
+"in_database_name": "PluginName", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "When a plugin process crashes, this is the name of the plugin loaded into that process."
+}, 
+"content_sandbox_capabilities": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "", 
+"has_full_version": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "integer"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "ContentSandboxCapabilities", 
+"data_validation_type": "int", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "content_sandbox_capabilities"
+}, 
+"reason": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"reason": {
+"type": "string", 
+"analyzer": "standard"
+}, 
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "reason", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "reason", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The crash's exception kind. Different OSes have different exception kinds. Example values: 'EXCEPTION_ACCESS_VIOLATION_READ', 'EXCEPTION_BREAKPOINT', 'SIGSEGV'."
+}, 
+"safe_mode": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "safe_mode", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "SafeMode", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Was the browser running in Safe mode?"
+}, 
+"address": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "address", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "address", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The crashing address. This value is only meaningful for crashes involving bad memory accesses."
+}, 
+"write_combine_size": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "write_combine_size", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.json_dump", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "write_combine_size", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"ProcessType": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "ProcessType", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "ProcessType"
+}, 
+"memory_heap_unclassified": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_heap_unclassified", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "heap_unclassified", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'heap-unclassified' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"TextureUsage": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "TextureUsage", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "TextureUsage", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"Add-ons": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "Add-ons", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Add-ons", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"ipc_message_name": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ipc_message_name", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "IPCMessageName", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The name of the IPC message."
+}, 
+"ProductName": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ProductName", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "ProductName", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"android_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"name": "android_version", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "Android_Version", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The Android version."
+}, 
+"android_board": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"name": "android_board", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_Board", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The board used by the Android device."
+}, 
+"accessibility": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "BooleanField", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"name": "accessibility", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "Accessibility", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The presence of this field indicates that accessibility services were accessed."
+}, 
+"signature": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}, 
+"signature": {
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "signature", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "signature", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "This is the field most commonly used for aggregating individual crash reports into a group. It usually contains one or more stack frames from the crashing thread. The stack frames may also be augmented or replaced with other tokens such as 'OOM | small' or 'shutdownhang' that further identify the crash kind."
+}, 
+"memory_resident_unique": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_resident_unique", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "resident_unique", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'resident-unique' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"exploitability": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"has_full_version": true, 
+"query_type": "enum", 
+"permissions_needed": [
+"crashstats.view_exploitability"
+], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"description": "An automated estimate of how exploitable this crash is.", 
+"is_returned": true, 
+"in_database_name": "exploitability", 
+"data_validation_type": "enum", 
+"is_exposed": true, 
+"form_field_choices": [
+"high", 
+"normal", 
+"low", 
+"none", 
+"unknown", 
+"error"
+], 
+"name": "exploitability"
+}, 
+"os": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "os", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.system_info", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "os", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Operating System."
+}, 
+"os_ver": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "os_ver", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.system_info", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "os_ver", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Operating System Version."
+}, 
+"ProductID": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ProductID", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "ProductID", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"addons_should_have_blocked_e10s": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "addons_should_have_blocked_e10s", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "AddonsShouldHaveBlockedE10s", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"gmp_plugin": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "gmp_plugin", 
+"is_returned": true, 
+"query_type": "flag", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "short"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "GMPPlugin", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Whether it is a GMP plugin crash."
+}, 
+"memory_system_heap_allocated": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_system_heap_allocated", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "system_heap_allocated", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'system-heap-allocated' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"ipc_fatal_error_msg": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "The message linked to an IPC fatal error.", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "IPCFatalErrorMsg", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "ipc_fatal_error_msg"
+}, 
+"java_stack_trace": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"description": "When Java code crashes due to an unhandled exception, this is the Java Stack Trace. It is usually more useful than the system stack trace given for the crashing thread.", 
+"is_returned": true, 
+"in_database_name": "java_stack_trace", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "java_stack_trace"
+}, 
+"ipc_system_error": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ipc_system_error", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "integer"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "IPCSystemError", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "A replacement of `system_error`. https://bugzilla.mozilla.org/show_bug.cgi?id=1267222"
+}, 
+"platform_pretty_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "platform_pretty_version", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "os_pretty_version", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "A better platform name, including version for Windows and Mac OS X."
+}, 
+"cpu_info": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"cpu_info": {
+"index": "analyzed", 
+"type": "string", 
+"analyzer": "standard"
+}, 
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "cpu_info", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "cpu_info", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Detailed processor info. Usually contains information such as the family, model, and stepping number."
+}, 
+"PluginName": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "PluginName", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "PluginName", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"em_check_compatibility": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "BooleanField", 
+"is_returned": true, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "bool", 
+"in_database_name": "EMCheckCompatibility", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "em_check_compatibility"
+}, 
+"hang_type": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "short"
+}, 
+"namespace": "processed_crash", 
+"name": "hang_type", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "hang_type", 
+"is_exposed": true, 
+"form_field_choices": [
+"any", 
+"crash", 
+"hang", 
+"all"
+], 
+"description": "Tells if a report was caused by a crash or a hang. In the database, the value is `0` if the problem was a crash of the software, and `1` or `-1` if the problem was a hang of the software. \n\nNote: for querying, you should use `crash` or `hang`, since those are automatically transformed into the correct underlying values."
+}, 
+"jit_category": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "jit_category", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.classifications.jit", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "category", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "JIT classification."
+}, 
+"topmost_filenames": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"has_full_version": false, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "semicolon_keywords"
+}, 
+"namespace": "processed_crash", 
+"description": "Paths of the files at the top of the stack.", 
+"is_returned": true, 
+"in_database_name": "topmost_filenames", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "topmost_filenames"
+}, 
+"oom_allocation_size": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"name": "oom_allocation_size", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "OOMAllocationSize", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "A measure or estimate of the allocation request size that triggered an OOM crash. Note that allocators usually work with large (e.g. 1 MiB) chunks of memory, and a small request may have triggered a large chunk request, in which case the latter actually caused the OOM crash."
+}, 
+"android_hardware": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"name": "android_hardware", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_Hardware", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The android device hardware."
+}, 
+"dom_ipc_enabled": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "BooleanField", 
+"is_returned": true, 
+"query_type": "flag", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "short", 
+"null_value": 0
+}, 
+"namespace": "raw_crash", 
+"name": "dom_ipc_enabled", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "DOMIPCEnabled", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The value of the 'dom.ipc.enabled' preference (in other terms, whether e10s is enabled)."
+}, 
+"flash_process_dump": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "flash_process_dump", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"description": "", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "FlashProcessDump", 
+"is_exposed": true, 
+"form_field_choices": [
+"sandbox", 
+"broker", 
+"__null__"
+], 
+"form_field_type": "MultipleValueField"
+}, 
+"e10s_cohort": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "The e10s cohort. Values can be: \"test\", \"control\", \"unsupportedChannel\", \"optedIn\", \"optedOut\", \"disqualified\", \"unsupportedChannel\" or \"unknown\".", 
+"has_full_version": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "E10SCohort", 
+"data_validation_type": "enum", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "e10s_cohort"
+}, 
+"flash_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "flash_version", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "flash_version", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Version of the Flash Player plugin."
+}, 
+"memory_vsize_max_contiguous": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_vsize_max_contiguous", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "vsize_max_contiguous", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'vsize-max-contiguous' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"Hang": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Hang", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "Hang"
+}, 
+"PluginVersion": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "PluginVersion", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "PluginVersion", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"abort_message": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "The abort message.", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "AbortMessage", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "abort_message"
+}, 
+"support_classification": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "support_classification", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.classifications.support", 
+"description": "The support classification of this crash report, assigned by the processors.", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "classification", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "MultipleValueField"
+}, 
+"ipc_extra_system_error": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [
+"crashstats.view_pii"
+], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "IPCExtraSystemError", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "ipc_extra_system_error"
+}, 
+"adapter_subsys_id": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "adapter_subsys_id", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"description": "The graphics adapter subsystem identifier.", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "AdapterSubsysID", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "StringField"
+}, 
+"addons_checked": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "processed_crash", 
+"name": "addons_checked", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "addons_checked", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"memory_host_object_urls": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_host_object_urls", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "host_object_urls", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'host-object-urls' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"app_init_dlls": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "DLLs injected through the AppInit_DLLs registry key.", 
+"has_full_version": false, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "semicolon_keywords"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "AppInitDLLs", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "app_init_dlls"
+}, 
+"proto_signature": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "proto_signature", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "proto_signature", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "A concatenation of the signatures of all the frames of the crashing thread."
+}, 
+"system_memory_use_percentage": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"name": "system_memory_use_percentage", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "SystemMemoryUsePercentage", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The approximate percentage of physical memory that is in use."
+}, 
+"android_manufacturer": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"name": "android_manufacturer", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_Manufacturer", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The Android device manufacturer."
+}, 
+"remote_type": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "remote_type", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "RemoteType", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "'extension' if a WebExtension, 'web' or missing otherwise. This is only set for content crashes."
+}, 
+"memory_top_none_detached": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_top_none_detached", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "top_none_detached", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'top(none)/detached' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"classifications": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "object", 
+"dynamic": "true", 
+"properties": {
+"skunk_works": {
+"dynamic": "true", 
+"properties": {
+"classification_version": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"classification_data": {
+"type": "string"
+}, 
+"classification": {
+"type": "string"
+}
+}
+}, 
+"support": {
+"dynamic": "true", 
+"properties": {
+"classification_version": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"classification_data": {
+"type": "string"
+}, 
+"classification": {
+"type": "string"
+}
+}
+}
+}
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "classifications", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "classifications"
+}, 
+"plugin_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"PluginVersion": {
+"index": "analyzed", 
+"type": "string"
+}, 
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "plugin_version", 
+"has_full_version": true, 
+"data_validation_type": "enum", 
+"in_database_name": "PluginVersion", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "When a plugin process crashes, this is the version of the plugin loaded into that process."
+}, 
+"crashedThread": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "crashedThread", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "crashedThread"
+}, 
+"SecondsSinceLastCrash": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "SecondsSinceLastCrash", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "SecondsSinceLastCrash"
+}, 
+"number_of_processors": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"has_full_version": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.system_info", 
+"description": "Alias to `cpu_count`. Deprecated.", 
+"is_returned": true, 
+"in_database_name": "cpu_count", 
+"data_validation_type": "int", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "number_of_processors"
+}, 
+"legacy_processing": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "legacy_processing", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "legacy_processing"
+}, 
+"ActiveExperimentBranch": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ActiveExperimentBranch", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "ActiveExperimentBranch", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The experiment branch of the ActiveExperiment, if set."
+}, 
+"available_physical_memory": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"name": "available_physical_memory", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "AvailablePhysicalMemory", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The amount of physical memory currently available. This is the amount of physical memory that can be immediately reused without having to write its contents to disk first."
+}, 
+"memory_images": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_images", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "images", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'images' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"client_crash_date": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "date", 
+"format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "client_crash_date", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "client_crash_date"
+}, 
+"jit_category_return_code": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "jit_category_return_code", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.classifications.jit", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "category_return_code", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "JIT classification."
+}, 
+"winsock_lsp": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"description": "On Windows, a string of data from the Windows OS about the list of installed LSPs (Layered Service Provider).", 
+"is_returned": true, 
+"in_database_name": "Winsock_LSP", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "winsock_lsp"
+}, 
+"useragent_locale": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"has_full_version": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "semicolon_keywords"
+}, 
+"namespace": "raw_crash", 
+"description": "The locale of the software installation.", 
+"is_returned": true, 
+"in_database_name": "useragent_locale", 
+"data_validation_type": "enum", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "useragent_locale"
+}, 
+"thread_count": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "thread_count", 
+"is_returned": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "thread_count", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Number of threads."
+}, 
+"cpu_count": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "Number of processor units in the CPU.", 
+"has_full_version": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "short"
+}, 
+"namespace": "processed_crash.json_dump.system_info", 
+"is_returned": true, 
+"in_database_name": "cpu_count", 
+"data_validation_type": "int", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "cpu_count"
+}, 
+"crash_time": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "crash_time", 
+"is_exposed": false, 
+"form_field_choices": null, 
+"name": "crash_time"
+}, 
+"tiny_block_size": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "tiny_block_size", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.json_dump", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "tiny_block_size", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"main_module": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "main_module", 
+"is_returned": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "main_module", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Index into modules."
+}, 
+"processor_notes": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"description": "Notes of the Socorro processor, contains information about what changes were made to the report during processing.", 
+"is_returned": true, 
+"in_database_name": "processor_notes", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "processor_notes"
+}, 
+"uptime": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash", 
+"name": "uptime", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "uptime", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Length of time the process was running before it crashed. Small values (from 0 to 5 or so) usually indicate start-up crashes."
+}, 
+"install_time": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "install_time", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"description": "Epoch time of when this version was installed. Commonly used as a unique identifier for software installations (since it is unlikely that two instances are installed at the very same second).", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "InstallTime", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "IntegerField"
+}, 
+"throttle_rate": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "throttle_rate", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "throttle_rate"
+}, 
+"process_type": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "processed_crash", 
+"name": "process_type", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "process_type", 
+"is_exposed": true, 
+"form_field_choices": [
+"any", 
+"browser", 
+"plugin", 
+"content", 
+"gpu", 
+"all"
+], 
+"description": "What type of process the crash happened in. When the main process crashes, this will not be present. But when a plugin or content process crashes, this will be \"plugin\" or \"content\"."
+}, 
+"id": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "id", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "id", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"platform_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"description": "Version of the operating system.", 
+"is_returned": true, 
+"in_database_name": "os_version", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "platform_version"
+}, 
+"adapter_driver_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "adapter_driver_version", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"description": "The graphics adapter driver version.", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "AdapterDriverVersion", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "StringField"
+}, 
+"upload_file_minidump_flash1": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "upload_file_minidump_flash1", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "upload_file_minidump_flash1", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"status": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "status", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "status", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Status of the output of the stackwalker. Can be \"OK\", \"ERROR_*\" or \"SYMBOL_SUPPLIER_INTERRUPTED\"."
+}, 
+"app_notes": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"has_full_version": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "processed_crash", 
+"description": "Notes from the application that crashed. Mostly contains graphics-related annotations.", 
+"is_returned": true, 
+"in_database_name": "app_notes", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "app_notes"
+}, 
+"min_arm_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Min_ARM_Version", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "min_arm_version"
+}, 
+"cpu_arch": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "cpu_arch", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string"
+}, 
+"namespace": "processed_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "cpu_name", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The build architecture. Usually one of: 'x86', 'amd64' (a.k.a. x86-64), 'arm', 'arm64'.\n\nDuplicate of cpu_name, with a better name."
+}, 
+"user_comments": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}, 
+"user_comments": {
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "user_comments", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "user_comments", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Comments entered by the user when they crashed."
+}, 
+"plugin_filename": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}, 
+"PluginFilename": {
+"index": "analyzed", 
+"type": "string"
+}
+}, 
+"type": "multi_field"
+}, 
+"namespace": "processed_crash", 
+"name": "plugin_filename", 
+"has_full_version": true, 
+"data_validation_type": "enum", 
+"in_database_name": "PluginFilename", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "When a plugin process crashes, this is the name of the file of the plugin loaded into that process."
+}, 
+"dump_cpu_arch": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "dump_cpu_arch", 
+"is_returned": false, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.system_info", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "cpu_arch", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Architecture of the CPU."
+}, 
+"skunk_classification": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "skunk_classification", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.classifications.skunk_works", 
+"description": "The skunk classification of this crash report, assigned by the processors.", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "classification", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"form_field_type": "MultipleValueField"
+}, 
+"date": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "DateTimeField", 
+"is_returned": true, 
+"query_type": "date", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "date", 
+"format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ"
+}, 
+"namespace": "processed_crash", 
+"name": "date", 
+"has_full_version": false, 
+"data_validation_type": "datetime", 
+"in_database_name": "date_processed", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Date at which the crash report was received by Socorro."
+}, 
+"android_cpu_abi2": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"name": "android_cpu_abi2", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_CPU_ABI2", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The Android secondary CPU ABI being used."
+}, 
+"memory_resident": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "memory_resident", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "processed_crash.memory_measures", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "resident", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The 'resident' measurement from the memory report. See about:memory for a fuller description."
+}, 
+"cpu_microcode_version": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "cpu_microcode_version", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "CPUMicrocodeVersion", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "Microcode version of the CPU."
+}, 
+"async_plugin_shutdown_states": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "async_plugin_shutdown_states", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"index": "analyzed", 
+"type": "string", 
+"fields": {
+"full": {
+"index": "not_analyzed", 
+"type": "string"
+}
+}
+}, 
+"namespace": "raw_crash", 
+"has_full_version": true, 
+"data_validation_type": "str", 
+"in_database_name": "AsyncPluginShutdownStates", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": ""
+}, 
+"startup_crash": {
+"default_value": null, 
+"is_mandatory": false, 
+"description": "Annotation that tells whether the crash happened before the startup phase was finished or not.", 
+"has_full_version": false, 
+"query_type": "bool", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "boolean", 
+"null_value": "false"
+}, 
+"namespace": "raw_crash", 
+"is_returned": true, 
+"in_database_name": "StartupCrash", 
+"data_validation_type": "bool", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "startup_crash"
+}, 
+"addons": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": null, 
+"has_full_version": false, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"description": "A list of the addons currently enabled at the time of the crash. This takes the form of \"addonid:version,[addonid:version...]\". This value could be empty if the crash happens during startup before the addon manager is enabled, and on products/platforms which don't support addons.", 
+"is_returned": true, 
+"in_database_name": "addons", 
+"data_validation_type": "str", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"name": "addons"
+}, 
+"AdapterRendererIDs": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "AdapterRendererIDs", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "AdapterRendererIDs", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"android_cpu_abi": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "MultipleValueField", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"name": "android_cpu_abi", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Android_CPU_ABI", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The Android primary CPU ABI being used."
+}, 
+"Winsock_LSP": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "Winsock_LSP", 
+"is_returned": true, 
+"query_type": "enum", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "enum", 
+"in_database_name": "Winsock_LSP", 
+"is_exposed": false, 
+"form_field_choices": null
+}, 
+"url": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "StringField", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [
+"crashstats.view_pii"
+], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "processed_crash", 
+"name": "url", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "url", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The website which the user most recently visited in the browser before the crash. Users have the option of opting in or out of sending the current URL. This information may not always be valuable, because pages in other tabs or windows may be responsible for a particular crash."
+}, 
+"frame_poison_size": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "FramePoisonSize", 
+"is_exposed": true, 
+"form_field_choices": null, 
+"name": "frame_poison_size"
+}, 
+"available_page_file": {
+"default_value": null, 
+"is_mandatory": false, 
+"form_field_type": "IntegerField", 
+"is_returned": true, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "long"
+}, 
+"namespace": "raw_crash", 
+"name": "available_page_file", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "AvailablePageFile", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The maximum amount of memory the current process can commit. This value is equal to or smaller than the system-wide available commit value."
+}, 
+"total_frames": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "total_frames", 
+"is_returned": false, 
+"query_type": "number", 
+"permissions_needed": [], 
+"storage_mapping": null, 
+"namespace": "processed_crash.json_dump.crashing_thread", 
+"has_full_version": false, 
+"data_validation_type": "int", 
+"in_database_name": "total_frames", 
+"is_exposed": false, 
+"form_field_choices": [], 
+"description": "Total number of frames in the thread."
+}, 
+"ActiveExperiment": {
+"default_value": null, 
+"is_mandatory": false, 
+"name": "ActiveExperiment", 
+"is_returned": true, 
+"query_type": "string", 
+"permissions_needed": [], 
+"storage_mapping": {
+"type": "string", 
+"analyzer": "keyword"
+}, 
+"namespace": "raw_crash", 
+"has_full_version": false, 
+"data_validation_type": "str", 
+"in_database_name": "ActiveExperiment", 
+"is_exposed": true, 
+"form_field_choices": [], 
+"description": "The telemetry experiment active at the time of the crash, if any."
+}
+}

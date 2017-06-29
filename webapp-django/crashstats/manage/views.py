@@ -425,45 +425,6 @@ def supersearch_fields(request):
     return render(request, 'manage/supersearch_fields.html', context)
 
 
-@superuser_required
-def supersearch_field(request):
-    context = {}
-
-    field_name = request.GET.get('name')
-
-    if field_name:
-        all_fields = SuperSearchFields().get()
-        field_data = all_fields.get(field_name)
-
-        if not field_data:
-            return http.HttpResponseBadRequest(
-                'The field "%s" does not exist' % field_name
-            )
-    else:
-        full_name = request.GET.get('full_name')
-
-        if full_name:
-            if '.' not in full_name:
-                name = full_name
-                namespace = None
-            else:
-                namespace, name = full_name.rsplit('.', 1)
-            field_data = {
-                'in_database_name': name,
-                'namespace': namespace,
-            }
-        else:
-            field_data = {}
-
-    context['field'] = field_data
-    perms = Permission.objects.filter(content_type__model='').order_by('name')
-    context['all_permissions'] = [
-        'crashstats.' + x.codename for x in perms
-    ]
-
-    return render(request, 'manage/supersearch_field.html', context)
-
-
 def _get_supersearch_field_data(source):
     form = forms.SuperSearchFieldForm(source)
 
@@ -479,74 +440,6 @@ def _delete_supersearch_fields_api_cache(namespace=None):
     if namespace:
         cache.delete('api_supersearch_fields_{}'.format(namespace))
     cache.delete('api_supersearch_fields')
-
-
-@superuser_required
-@require_POST
-def supersearch_field_create(request):
-    field_data = _get_supersearch_field_data(request.POST)
-
-    if isinstance(field_data, basestring):
-        return http.HttpResponseBadRequest(field_data)
-
-    api = SuperSearchField()
-    api.create_field(**field_data)
-
-    _delete_supersearch_fields_api_cache(namespace=field_data['namespace'])
-
-    log(request.user, 'supersearch_field.post', field_data)
-
-    # Refresh the cache for the fields service.
-    SuperSearchFields().get(refresh_cache=True)
-    SuperSearch.clear_implementations_cache()
-
-    return redirect(reverse('manage:supersearch_fields'))
-
-
-@superuser_required
-@require_POST
-def supersearch_field_update(request):
-    field_data = _get_supersearch_field_data(request.POST)
-
-    if isinstance(field_data, basestring):
-        return http.HttpResponseBadRequest(field_data)
-
-    api = SuperSearchField()
-    api.update_field(**field_data)
-
-    _delete_supersearch_fields_api_cache(namespace=field_data['namespace'])
-
-    SuperSearch.clear_implementations_cache()
-
-    log(request.user, 'supersearch_field.put', field_data)
-
-    # Refresh the cache for the fields service.
-    SuperSearchFields().get(refresh_cache=True)
-
-    return redirect(reverse('manage:supersearch_fields'))
-
-
-@superuser_required
-def supersearch_field_delete(request):
-    field_name = request.GET.get('name')
-
-    if not field_name:
-        return http.HttpResponseBadRequest('A "name" is needed')
-
-    api = SuperSearchField()
-    api.delete_field(name=field_name)
-
-    _delete_supersearch_fields_api_cache()
-
-    SuperSearch.clear_implementations_cache()
-
-    log(request.user, 'supersearch_field.delete', {'name': field_name})
-
-    # Refresh the cache for the fields service.
-    SuperSearchFields().get(refresh_cache=True)
-
-    url = reverse('manage:supersearch_fields')
-    return redirect(url)
 
 
 @superuser_required

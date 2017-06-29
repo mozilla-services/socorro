@@ -188,21 +188,9 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
 
         super(IntegrationTestESCrashStorage, self).setUp()
 
-        self.index_super_search_fields()
-
     def tearDown(self):
         """Remove indices that may have been created by the test.
         """
-        try:
-            self.index_client.delete(
-                self.config.elasticsearch.elasticsearch_default_index
-            )
-
-        except elasticsearch.exceptions.NotFoundError:
-            # It's fine it's fine; 404 means the test didn't create any
-            # indices, therefore they can't be deleted.
-            pass
-
         try:
             self.index_client.delete(
                 self.config.elasticsearch.elasticsearch_index
