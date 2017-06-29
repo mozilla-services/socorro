@@ -252,14 +252,14 @@ exception while saving a broken processed crash::
       required_config.add_option('logger', default=mock_logging)
 
       config_manager = ConfigurationManager(
-        [required_config],
-        app_name='testapp',
-        app_version='1.0',
-        app_description='app description',
-        values_source_list=[{
-          'logger': mock_logging,
-          'database_class': mock_postgres
-        }]
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{
+              'logger': mock_logging,
+              'database_class': mock_postgres
+          }]
       )
 
       with config_manager.context() as config:
