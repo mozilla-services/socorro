@@ -9,7 +9,9 @@ All bugs are tracked in `<https://bugzilla.mozilla.org/>`_.
 
 Write up a new bug:
 
-FIXME(willkg): Link to write up a new bug.
+https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro
+
+There are multiple components to choose. If in doubt use ``General``.
 
 
 Docker
