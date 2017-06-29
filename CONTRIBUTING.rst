@@ -193,105 +193,13 @@ For webapp tests, put them in the ``tests/`` directory of the appropriate app in
 For other tests, put them in ``socorro/unittest/``.
 
 
-PostgresSQL tests
------------------
-
-When is a PostgreSQL test::
-
-  from unittestbase import PostgreSQLTestCase
-
-  # PostgreSQl adapter for Python
-  import psycopg2
-
-
 Mock usage
 ----------
 
 `Mock <http://www.voidspace.org.uk/python/mock/>`_ is a python library for mocks
 objects. This allows us to write isolated tests by simulating services beside
-using the real ones.
+using the real ones. Best examples is existing tests which admittedly do mocking
+different depending on the context.
 
-Once we used our mock object, we can make assertions about how it has been used,
-like assert if the something function was called one time with (10,20)
-parameters::
-
-  from mock import MagicMock
-  from socorro.unittest.testbase import TestCase
-
-  class TestClass(TestCase):
-
-      def method(self):
-          self.something(10, 20)
-
-      def test_something(self, a, b):
-          pass
-
-  mocked = TestClass()
-  mocked.test_something = MagicMock()
-  mocked.method()
-  mocked.test_something.assert_called_once_with(10, 20)
-
-The above example doesn't print anything because assert had passed, but if we
-call the function below, we will receive an error::
-
-  mocked.test_something.assert_called_once_with(10, 30)
-  > AssertionError: Expected call: mock(10, 30)
-  > Actual call: mock(10, 20)
-
-Some other similar functions are ``assert_any_call()``,
-``assert_called_once_with()``, ``assert_called_with()`` and
-``assert_has_calls()``.
-
-The following is a more complex example about using mocks, which simulates a
-database and can be found at Socorro's source code. It tests a ``KeyError``
-exception while saving a broken processed crash::
-
-  def test_basic_key_error_on_save_processed(self):
-
-      mock_logging = mock.Mock()
-      mock_postgres = mock.Mock()
-      required_config = PostgreSQLCrashStorage.required_config
-      required_config.add_option('logger', default=mock_logging)
-
-      config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-              'logger': mock_logging,
-              'database_class': mock_postgres
-          }]
-      )
-
-      with config_manager.context() as config:
-          crashstorage = PostgreSQLCrashStorage(config)
-          database = crashstorage.database.return_value = mock.MagicMock()
-          self.assertTrue(isinstance(database, mock.Mock))
-
-          broken_processed_crash = {
-              "product": "Peter",
-              "version": "1.0B3",
-              "ooid": "abc123",
-              "submitted_timestamp": time.time(),
-              "unknown_field": 'whatever'
-          }
-          assert_raises(
-              KeyError,
-              crashstorage.save_processed,
-              broken_processed_crash
-          )
-
-
-Mocking with decorators
------------------------
-
-We can use ``@patch`` if we want to patch with a Mock. This way the
-mock will be created and passed into the test method ::
-
-  class TestClass(unittest.TesCase):
-
-     @mock.patch('package.module.ClassName')
-     def test_something(self, MockClass):
-
-        assert_true(package.module.ClassName is MockClass)
+Tip! Try to mock in limited context so that individual tests don't affect other
+tests. Use context managers and instead of monkey patching imported modules.
