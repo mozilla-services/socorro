@@ -30,8 +30,4 @@ $(function() {
         });
     });
 
-    $('.reprocessing-success a', parent).on('click', function(event) {
-        event.preventDefault();
-        document.location.reload(true);
-    });
 });
