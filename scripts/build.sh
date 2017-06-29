@@ -17,3 +17,5 @@ echo "this is build.sh"
 ./scripts/install.sh
 
 ./scripts/package.sh
+
+./scripts/lint.sh || echo "Linting failed"
