@@ -11,8 +11,8 @@ from configman.dotdict import DotDict
 from nose.tools import eq_, ok_
 
 from socorro.processor.legacy_processor import (
-  LegacyCrashProcessor,
-  create_symbol_path_str
+    LegacyCrashProcessor,
+    create_symbol_path_str
 )
 from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
 from socorro.unittest.testbase import TestCase
@@ -25,7 +25,7 @@ def setup_config_with_mocks():
     config.logger = mock.Mock()
     config.transaction = mock.MagicMock()
     config.transaction_executor_class = mock.Mock(
-      return_value=config.transaction
+        return_value=config.transaction
     )
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
@@ -33,15 +33,15 @@ def setup_config_with_mocks():
     config.with_old_monitor = True
 
     config.stackwalk_command_line = (
-      '$minidump_stackwalk_pathname -m $dumpfilePathname '
-      '$processor_symbols_pathname_list 2>/dev/null'
+        '$minidump_stackwalk_pathname -m $dumpfilePathname '
+        '$processor_symbols_pathname_list 2>/dev/null'
     )
     config.minidump_stackwalk_pathname = '/bin/mdsw'
     config.symbol_cache_path = '/symbol/cache'
     config.processor_symbols_pathname_list = '"/a/a" "/b/b" "/c/c"'
 
     config.exploitability_tool_command_line = (
-      '$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
+        '$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
     )
     config.exploitability_tool_pathname = '/bin/explt'
 
@@ -55,6 +55,7 @@ def setup_config_with_mocks():
     config.save_mdsw_json = False
 
     return config
+
 
 canonical_standard_raw_crash = DotDict({
     "InstallTime": "1335439892",
@@ -249,10 +250,10 @@ class TestLegacyProcessor(TestCase):
             leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
             eq_(leg_proc.quit_check, config.mock_quit_fn)
             eq_(config.transaction, leg_proc.transaction)
-            eq_(config.database,  leg_proc.database)
+            eq_(config.database, leg_proc.database)
             eq_(
-              leg_proc.mdsw_command_line,
-              '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
+                leg_proc.mdsw_command_line,
+                '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
             )
             eq_(m_transform.call_count, 2)
 
@@ -272,16 +273,15 @@ class TestLegacyProcessor(TestCase):
                 raw_crash = DotDict()
                 raw_crash.uuid = '3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 raw_crash.submitted_timestamp = '2012-05-04T15:33:33'
-                raw_dump = {'upload_file_minidump':
-                                '/some/path/%s.dump' % raw_crash.uuid,
-                            'aux_dump_001':
-                            '/some/path/aux_001.%s.dump' % raw_crash.uuid,
-                            }
+                raw_dump = {
+                    'upload_file_minidump': '/some/path/%s.dump' % raw_crash.uuid,
+                    'aux_dump_001': '/some/path/aux_001.%s.dump' % raw_crash.uuid,
+                }
                 leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
 
                 started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
                 leg_proc._log_job_start = mock.Mock(
-                  return_value=started_timestamp
+                    return_value=started_timestamp
                 )
 
                 basic_processed_crash = DotDict()
@@ -289,25 +289,25 @@ class TestLegacyProcessor(TestCase):
                 basic_processed_crash.hang_type = 0
                 basic_processed_crash.java_stack_trace = None
                 leg_proc._create_basic_processed_crash = mock.Mock(
-                  return_value=basic_processed_crash)
+                    return_value=basic_processed_crash
+                )
 
                 leg_proc._log_job_end = mock.Mock()
 
                 processed_crash_update_dict = DotDict()
                 processed_crash_update_dict.success = True
                 leg_proc._do_breakpad_stack_dump_analysis = mock.Mock(
-                  return_value=processed_crash_update_dict
+                    return_value=processed_crash_update_dict
                 )
 
                 leg_proc._cleanup_temp_file = mock.Mock()
 
-                 # Here's the call being tested
-                processed_crash = \
-                    leg_proc.process_crash(
-                      raw_crash,
-                      raw_dump,
-                      {}
-                    )
+                # Here's the call being tested
+                processed_crash = leg_proc.process_crash(
+                    raw_crash,
+                    raw_dump,
+                    {}
+                )
 
                 # test the result
                 eq_(1, leg_proc._log_job_start.call_count)
@@ -326,57 +326,64 @@ class TestLegacyProcessor(TestCase):
                 )
 
                 eq_(
-                  1,
-                  leg_proc._create_basic_processed_crash.call_count
+                    1,
+                    leg_proc._create_basic_processed_crash.call_count
                 )
                 leg_proc._create_basic_processed_crash.assert_called_with(
-                  raw_crash.uuid,
-                  raw_crash,
-                  datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                  started_timestamp,
-                  [
-                      'testing_processor:2012',
-                      'LegacyCrashProcessor',
-                      "Pipe dump missing from 'upload_file_minidump'",
-                      "Pipe dump missing from 'aux_dump_001'"
-                  ]
+                    raw_crash.uuid,
+                    raw_crash,
+                    datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                    started_timestamp,
+                    [
+                        'testing_processor:2012',
+                        'LegacyCrashProcessor',
+                        "Pipe dump missing from 'upload_file_minidump'",
+                        "Pipe dump missing from 'aux_dump_001'"
+                    ]
                 )
 
                 eq_(
-                  2,
-                  leg_proc._do_breakpad_stack_dump_analysis.call_count
+                    2,
+                    leg_proc._do_breakpad_stack_dump_analysis.call_count
                 )
-                first_call, second_call = \
-                    leg_proc._do_breakpad_stack_dump_analysis.call_args_list
+                first_call, second_call = leg_proc._do_breakpad_stack_dump_analysis.call_args_list
                 eq_(
-                  first_call,
-                  ((raw_crash.uuid, '/some/path/%s.dump' % raw_crash.uuid,
-                   0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                   [
-                      'testing_processor:2012',
-                      'LegacyCrashProcessor',
-                      "Pipe dump missing from 'upload_file_minidump'",
-                      "Pipe dump missing from 'aux_dump_001'"
-                   ]),)
+                    first_call,
+                    (
+                        (
+                            raw_crash.uuid, '/some/path/%s.dump' % raw_crash.uuid,
+                            0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                            [
+                                'testing_processor:2012',
+                                'LegacyCrashProcessor',
+                                "Pipe dump missing from 'upload_file_minidump'",
+                                "Pipe dump missing from 'aux_dump_001'"
+                            ]
+                        ),
+                    )
                 )
                 eq_(
-                  second_call,
-                  ((raw_crash.uuid,
-                   '/some/path/aux_001.%s.dump' % raw_crash.uuid,
-                   0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                   [
-                      'testing_processor:2012',
-                      'LegacyCrashProcessor',
-                      "Pipe dump missing from 'upload_file_minidump'",
-                      "Pipe dump missing from 'aux_dump_001'"
-                   ]),)
+                    second_call,
+                    (
+                        (
+                            raw_crash.uuid,
+                            '/some/path/aux_001.%s.dump' % raw_crash.uuid,
+                            0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                            [
+                                'testing_processor:2012',
+                                'LegacyCrashProcessor',
+                                "Pipe dump missing from 'upload_file_minidump'",
+                                "Pipe dump missing from 'aux_dump_001'"
+                            ]
+                        ),
+                    )
                 )
 
                 eq_(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
-                  datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
-                  True,
-                  raw_crash.uuid
+                    datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
+                    True,
+                    raw_crash.uuid
                 )
 
                 epc = DotDict()
@@ -397,8 +404,8 @@ class TestLegacyProcessor(TestCase):
                 epc.additional_minidumps = ['aux_dump_001']
                 epc.aux_dump_001 = {'success': True}
                 eq_(
-                  processed_crash,
-                  dict(epc)
+                    processed_crash,
+                    dict(epc)
                 )
 
                 leg_proc._statistics.assert_has_calls(
@@ -431,7 +438,7 @@ class TestLegacyProcessor(TestCase):
 
                 started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
                 leg_proc._log_job_start = mock.Mock(
-                  return_value=started_timestamp
+                    return_value=started_timestamp
                 )
 
                 basic_processed_crash = DotDict()
@@ -440,10 +447,10 @@ class TestLegacyProcessor(TestCase):
                 basic_processed_crash.hang_type = 0
                 basic_processed_crash.java_stack_trace = None
                 leg_proc._create_basic_processed_crash = mock.Mock(
-                  return_value=basic_processed_crash)
+                    return_value=basic_processed_crash)
 
                 leg_proc._get_temp_dump_pathname = mock.Mock(
-                  return_value='/tmp/x'
+                    return_value='/tmp/x'
                 )
 
                 leg_proc._log_job_end = mock.Mock()
@@ -451,23 +458,22 @@ class TestLegacyProcessor(TestCase):
                 processed_crash_update_dict = DotDict()
                 processed_crash_update_dict.success = True
                 leg_proc._do_breakpad_stack_dump_analysis = mock.Mock(
-                  side_effect=Exception('nobody expects the spanish '
-                                        'inquisition')
+                    side_effect=Exception('nobody expects the spanish '
+                                          'inquisition')
                 )
 
-                 # Here's the call being tested
-                processed_crash = \
-                    leg_proc.process_crash(
-                      raw_crash,
-                      raw_dump,
-                      {}
-                    )
+                # Here's the call being tested
+                processed_crash = leg_proc.process_crash(
+                    raw_crash,
+                    raw_dump,
+                    {}
+                )
 
                 eq_(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
-                  datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
-                  False,
-                  raw_crash.uuid
+                    datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
+                    False,
+                    raw_crash.uuid
                 )
 
                 e = {
@@ -482,7 +488,7 @@ class TestLegacyProcessor(TestCase):
                   'hang_type': 0,
                   'java_stack_trace': None,
                   'additional_minidumps': [],
-                }
+                }  # noqa
                 eq_(e, processed_crash)
                 leg_proc._statistics.assert_has_calls(
                     [
@@ -492,7 +498,6 @@ class TestLegacyProcessor(TestCase):
                     ],
                     any_order=True
                 )
-
 
     def test_create_basic_processed_crash_normal(self):
         config = setup_config_with_mocks()
@@ -517,16 +522,16 @@ class TestLegacyProcessor(TestCase):
 
                 # test 01
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 assert 'exploitability' in processed_crash
                 eq_(
-                  processed_crash,
-                  dict(cannonical_basic_processed_crash)
+                    processed_crash,
+                    dict(cannonical_basic_processed_crash)
                 )
 
                 # test 02
@@ -534,21 +539,20 @@ class TestLegacyProcessor(TestCase):
                 raw_crash_missing_product = copy.deepcopy(raw_crash)
                 del raw_crash_missing_product['ProductName']
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_missing_product,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_missing_product,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_missing_product = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_missing_product.product = None
                 eq_(
-                  processed_crash,
-                  processed_crash_missing_product
+                    processed_crash,
+                    processed_crash_missing_product
                 )
-                ok_('WARNING: raw_crash missing ProductName' in
-                                processor_notes)
+                ok_('WARNING: raw_crash missing ProductName' in processor_notes)
                 eq_(len(processor_notes), 1)
 
                 # test 03
@@ -556,34 +560,32 @@ class TestLegacyProcessor(TestCase):
                 raw_crash_missing_version = copy.deepcopy(raw_crash)
                 del raw_crash_missing_version['Version']
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_missing_version,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_missing_version,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_missing_version = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_missing_version.version = None
                 eq_(
-                  processed_crash,
-                  processed_crash_missing_version
+                    processed_crash,
+                    processed_crash_missing_version
                 )
-                ok_('WARNING: raw_crash missing Version' in
-                                processor_notes)
+                ok_('WARNING: raw_crash missing Version' in processor_notes)
                 eq_(len(processor_notes), 1)
 
                 # test 04
                 processor_notes = []
                 raw_crash_with_hangid = copy.deepcopy(raw_crash)
-                raw_crash_with_hangid.HangID = \
-                    '30cb3212-b61d-4d1f-85ae-3bc4bcaa0504'
+                raw_crash_with_hangid.HangID = '30cb3212-b61d-4d1f-85ae-3bc4bcaa0504'
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_hangid,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_hangid,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_hangid = \
                     copy.copy(cannonical_basic_processed_crash)
@@ -591,8 +593,8 @@ class TestLegacyProcessor(TestCase):
                     raw_crash_with_hangid.HangID
                 processed_crash_with_hangid.hang_type = -1
                 eq_(
-                  processed_crash,
-                  processed_crash_with_hangid
+                    processed_crash,
+                    processed_crash_with_hangid
                 )
                 eq_(len(processor_notes), 0)
 
@@ -601,11 +603,11 @@ class TestLegacyProcessor(TestCase):
                 raw_crash_with_pluginhang = copy.deepcopy(raw_crash)
                 raw_crash_with_pluginhang.PluginHang = '1'
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_pluginhang,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_pluginhang,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_pluginhang = \
                     copy.copy(cannonical_basic_processed_crash)
@@ -613,8 +615,8 @@ class TestLegacyProcessor(TestCase):
                     'fake-3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 processed_crash_with_pluginhang.hang_type = -1
                 eq_(
-                  processed_crash,
-                  processed_crash_with_pluginhang
+                    processed_crash,
+                    processed_crash_with_pluginhang
                 )
                 eq_(len(processor_notes), 0)
 
@@ -623,18 +625,18 @@ class TestLegacyProcessor(TestCase):
                 raw_crash_with_hang_only = copy.deepcopy(raw_crash)
                 raw_crash_with_hang_only.Hang = 16
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_hang_only,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_hang_only,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_hang_only = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_with_hang_only.hang_type = 1
                 eq_(
-                  processed_crash,
-                  processed_crash_with_hang_only
+                    processed_crash,
+                    processed_crash_with_hang_only
                 )
                 eq_(len(processor_notes), 0)
                 leg_proc._statistics.assert_has_calls(
@@ -649,18 +651,18 @@ class TestLegacyProcessor(TestCase):
                 raw_crash_with_hang_only = copy.deepcopy(raw_crash)
                 raw_crash_with_hang_only.Hang = 'bad value'
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_hang_only,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_hang_only,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_hang_only = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_with_hang_only.hang_type = 0
                 eq_(
-                  processed_crash,
-                  processed_crash_with_hang_only
+                    processed_crash,
+                    processed_crash_with_hang_only
                 )
                 eq_(len(processor_notes), 0)
                 leg_proc._statistics.assert_has_calls(
@@ -675,11 +677,11 @@ class TestLegacyProcessor(TestCase):
                 bad_raw_crash = copy.deepcopy(raw_crash)
                 bad_raw_crash['SecondsSinceLastCrash'] = 'badness'
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  bad_raw_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    bad_raw_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 eq_(processed_crash.last_crash, None)
                 ok_(
@@ -692,11 +694,11 @@ class TestLegacyProcessor(TestCase):
                 bad_raw_crash = copy.deepcopy(raw_crash)
                 bad_raw_crash['CrashTime'] = 'badness'
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  bad_raw_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    bad_raw_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 eq_(processed_crash.crash_time, 0)
                 ok_(
@@ -710,11 +712,11 @@ class TestLegacyProcessor(TestCase):
                 bad_raw_crash['InstallTime'] = 'more badness'
                 bad_raw_crash['CrashTime'] = 'even more badness'
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  bad_raw_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    bad_raw_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 eq_(processed_crash.install_age, 0)
                 ok_(
@@ -747,21 +749,21 @@ class TestLegacyProcessor(TestCase):
                 raw_crash = canonical_standard_raw_crash
                 processor_notes = []
                 addon_list = leg_proc._process_list_of_addons(
-                  raw_crash,
-                  processor_notes
+                    raw_crash,
+                    processor_notes
                 )
                 expected_addon_list = [
-                  ('adblockpopups@jessehakanen.net', '0.3'),
-                  ('dmpluginff@westbyte.com', '1,4.8'),
-                  ('firebug@software.joehewitt.com', '1.9.1'),
-                  ('killjasmin@pierros14.com', '2.4'),
-                  ('support@surfanonymous-free.com', '1.0'),
-                  ('uploader@adblockfilters.mozdev.org', '2.1'),
-                  ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
-                  ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
-                  ('anttoolbar@ant.com', '2.4.6.4'),
-                  ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
-                  ('elemhidehelper@adblockplus.org', '1.2.1')
+                    ('adblockpopups@jessehakanen.net', '0.3'),
+                    ('dmpluginff@westbyte.com', '1,4.8'),
+                    ('firebug@software.joehewitt.com', '1.9.1'),
+                    ('killjasmin@pierros14.com', '2.4'),
+                    ('support@surfanonymous-free.com', '1.0'),
+                    ('uploader@adblockfilters.mozdev.org', '2.1'),
+                    ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
+                    ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
+                    ('anttoolbar@ant.com', '2.4.6.4'),
+                    ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
+                    ('elemhidehelper@adblockplus.org', '1.2.1')
                 ]
                 eq_(addon_list, expected_addon_list)
 
@@ -770,11 +772,11 @@ class TestLegacyProcessor(TestCase):
                 raw_crash['Add-ons'] = 'adblockpopups@jessehakanen.net:0:3:1'
                 processor_notes = []
                 addon_list = leg_proc._process_list_of_addons(
-                  raw_crash,
-                  processor_notes
+                    raw_crash,
+                    processor_notes
                 )
                 expected_addon_list = [
-                  ('adblockpopups@jessehakanen.net', '0:3:1'),
+                    ('adblockpopups@jessehakanen.net', '0:3:1'),
                 ]
                 eq_(addon_list, expected_addon_list)
                 leg_proc._statistics.assert_has_calls(
@@ -804,7 +806,7 @@ class TestLegacyProcessor(TestCase):
                 raw_crash = canonical_standard_raw_crash
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(pc_update, {})
                 eq_(processor_notes, [])
@@ -814,13 +816,13 @@ class TestLegacyProcessor(TestCase):
                 raw_crash.ProcessType = 'unknown'
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(
-                  pc_update,
-                  {
-                    'process_type': 'unknown',
-                  }
+                    pc_update,
+                    {
+                        'process_type': 'unknown',
+                    }
                 )
                 eq_(processor_notes, [])
 
@@ -829,16 +831,16 @@ class TestLegacyProcessor(TestCase):
                 raw_crash.ProcessType = 'plugin'
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(
-                  pc_update,
-                  {
-                    'process_type': 'plugin',
-                    'PluginFilename': '',
-                    'PluginName': '',
-                    'PluginVersion': '',
-                  }
+                    pc_update,
+                    {
+                        'process_type': 'plugin',
+                        'PluginFilename': '',
+                        'PluginName': '',
+                        'PluginVersion': '',
+                    }
                 )
                 eq_(processor_notes, [])
 
@@ -850,16 +852,16 @@ class TestLegacyProcessor(TestCase):
                 raw_crash.PluginVersion = '6.6.6'
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(
-                  pc_update,
-                  {
-                    'process_type': 'plugin',
-                    'PluginFilename': 'myfile.dll',
-                    'PluginName': 'myplugin',
-                    'PluginVersion': '6.6.6',
-                  }
+                    pc_update,
+                    {
+                        'process_type': 'plugin',
+                        'PluginFilename': 'myfile.dll',
+                        'PluginName': 'myplugin',
+                        'PluginVersion': '6.6.6',
+                    }
                 )
                 eq_(processor_notes, [])
 
@@ -897,9 +899,9 @@ class TestLegacyProcessor(TestCase):
                 for x in zip(xrange(5), dump_analysis_line_iterator):
                     pass
                 return DotDict({
-                  "signature": 'signature',
-                  "truncated": False,
-                  "topmost_filenames": 'topmost_sourcefiles',
+                    "signature": 'signature',
+                    "truncated": False,
+                    "topmost_filenames": 'topmost_sourcefiles',
                 })
 
         config = setup_config_with_mocks()
@@ -917,26 +919,25 @@ class TestLegacyProcessor(TestCase):
                 leg_proc = MyProcessor(config, config.mock_quit_fn)
 
                 processor_notes = []
-                processed_crash_update = \
-                    leg_proc._do_breakpad_stack_dump_analysis(
-                      '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                      'some_path',
-                      0,
-                      None,
-                      datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
-                      processor_notes
-                    )
+                processed_crash_update = leg_proc._do_breakpad_stack_dump_analysis(
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    'some_path',
+                    0,
+                    None,
+                    datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
+                    processor_notes
+                )
 
                 e_pcu = DotDict({
-                  'os_name': 'Windows NT',
-                  'success': False,
-                  'dump': 'a\nb\nc',
-                  'truncated': False,
-                  'crashedThread': 17,
-                  'signature': 'signature',
-                  'topmost_filenames': 'topmost_sourcefiles',
-                  'exploitability': None,
-                  'json_dump': {'thread_count': 0},
+                    'os_name': 'Windows NT',
+                    'success': False,
+                    'dump': 'a\nb\nc',
+                    'truncated': False,
+                    'crashedThread': 17,
+                    'signature': 'signature',
+                    'topmost_filenames': 'topmost_sourcefiles',
+                    'exploitability': None,
+                    'json_dump': {'thread_count': 0},
                 })
                 eq_(e_pcu, processed_crash_update)
                 excess = list(m_iter)
