@@ -28,6 +28,7 @@ before_script:
 
 script:
   - ./scripts/build.sh
+  - ./scripts/lint.sh || echo "Linting didn't work :("
 
 notifications:
   webhooks: http://leeroybot.lonnen.com/hubot/travis?room=%23breakpad
