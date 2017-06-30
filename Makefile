@@ -71,3 +71,6 @@ dockerdocs:
 
 dockerrun:
 	${DC} up webapp processor
+
+dockerstop:
+	${DC} stop
