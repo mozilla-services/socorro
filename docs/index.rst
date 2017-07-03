@@ -35,7 +35,8 @@ Contents
 
 .. toctree::
    :numbered:
-   :hidden:
+   :includehidden:
+   :maxdepth: 2
    :glob:
 
    gettingstarted

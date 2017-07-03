@@ -71,8 +71,11 @@ All products must have one or more releases:
 http://crash-stats/admin/releases/
 
 Make sure to restart memcached so you see your changes right away:
+
 ::
-  sudo systemctl restart memcached
+
+    sudo systemctl restart memcached
+
 
 Now go to the front page for your application. For example, if your application
 was named "KillerApp" then it will appear at:
