@@ -202,6 +202,11 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             if 'firefox_versions.json' in url:
                 return Response({
                     'FIREFOX_NIGHTLY': '52.0a1',
+                    # Kept for legacy and smooth transition.
+                    # We USED to consider the latest AURORA version a
+                    # featured version but we no longer build aurora
+                    # so Socorro shouldn't pick this up any more
+                    # even if product-details.mozilla.org supplies it.
                     'FIREFOX_AURORA': '51.0a2',
                     'FIREFOX_ESR': '45.4.0esr',
                     'FIREFOX_ESR_NEXT': '',
@@ -276,7 +281,9 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
                 ('Firefox', '24.5.0', False),
                 ('Firefox', '49.0.1', True),
                 ('Firefox', '50.0b', True),
-                ('Firefox', '51.0a2', True),
+                # Note that the 'Aurora' branch is still mentioned but
+                # note that it's NOT featured (hence 'False').
+                ('Firefox', '51.0a2', False),
                 ('Firefox', '52.0a1', True),
             ]
         )

@@ -180,7 +180,7 @@ class ReportPartitionInfo(BaseTable):
              '{}',
              'report_date', 'DATE'],
             ['missing_symbols', '14',
-             '{"date_processed,debug_file,debug_id"}',
+             '{}',
              '{}',
              '{}',
              'date_processed', 'DATE']]

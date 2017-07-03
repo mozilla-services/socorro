@@ -105,7 +105,7 @@ class IdCache:
           if None != cacheMap:
             cacheMap[key] = id
             countMap[key] = 1
-        except psycopg2.IntegrityError,x: # in case of race condition
+        except psycopg2.IntegrityError as x: # in case of race condition
           logger.info("%s - Failed (%s) insert %s into %s",threading.currentThread().getName(),x,key,table)
           self.cursor.connection.rollback()
           self.cursor.execute(getSql,sqlKey)

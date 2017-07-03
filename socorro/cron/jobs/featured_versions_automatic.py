@@ -100,7 +100,6 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
         featured = set()
         if product_name == 'Firefox':
             featured.add(versions['FIREFOX_NIGHTLY'])
-            featured.add(versions['FIREFOX_AURORA'])
             featured.add(versions['LATEST_FIREFOX_VERSION'])
             beta = versions['LATEST_FIREFOX_DEVEL_VERSION']
             # If the beta version is something like '59.0b12'

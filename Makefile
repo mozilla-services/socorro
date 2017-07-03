@@ -66,5 +66,8 @@ dockertest:
 dockertestshell:
 	./docker/run_tests_in_docker.sh --shell
 
+dockerdocs:
+	./docker/run_build_docs.sh
+
 dockerrun:
 	${DC} up webapp processor

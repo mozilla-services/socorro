@@ -76,7 +76,7 @@ class PostgreSQLAlchemyManager(object):
             raw_sql = open(myfile).read()
             try:
                 self.session.execute(raw_sql)
-            except exc.SQLAlchemyError, e:
+            except exc.SQLAlchemyError as e:
                 self.logger.error("Something went horribly wrong: %s" % e)
                 raise
         return True
@@ -220,7 +220,7 @@ class PostgreSQLAlchemyManager(object):
                 self.session.begin_nested()
                 self.session.execute(r)
                 self.session.commit()
-            except exc.DatabaseError, e:
+            except exc.DatabaseError as e:
                 if e.orig.pgerror.strip() in errors:
                     self.session.rollback()
                     continue
@@ -325,12 +325,12 @@ class PostgreSQLAlchemyManager(object):
                 self.session.begin_nested()
                 self.session.execute(r)
                 self.session.commit()
-            except exc.ProgrammingError, e:
+            except exc.ProgrammingError as e:
                 if 'already exists' not in e.orig.pgerror.strip():
                     raise
                 self.session.rollback()
                 continue
-            except exc.DatabaseError, e:
+            except exc.DatabaseError as e:
                 raise
 
         # Need to close the outer transaction
@@ -350,7 +350,7 @@ class PostgreSQLAlchemyManager(object):
             # work around for autocommit behavior
             connection.execute('commit')
             connection.execute('DROP DATABASE %s' % database_name)
-        except (exc.OperationalError, exc.ProgrammingError), e:
+        except (exc.OperationalError, exc.ProgrammingError) as e:
             if re.search(
                 'database "%s" does not exist' % database_name,
                 e.orig.pgerror.strip()
@@ -367,7 +367,7 @@ class PostgreSQLAlchemyManager(object):
             connection.execute('commit')
             connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
                                database_name)
-        except (exc.OperationalError, exc.ProgrammingError), e:
+        except (exc.OperationalError, exc.ProgrammingError) as e:
             if re.search(
                 'database "%s" already exists' % database_name,
                 e.orig.pgerror.strip()
