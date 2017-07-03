@@ -31,7 +31,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     required_config = Namespace()
     # configuration is broken into three namespaces: processor,
     # new_crash_source, and companion_process
- 
+
     # processor namespace
     #     this namespace is for config parameter having to do with the
     #     implementation of the algorithm of converting raw crashes into
@@ -95,7 +95,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 'this crash cannot be found in raw crash storage'
             )
             return
-        except Exception, x:
+        except Exception as x:
             self.config.logger.warning(
                 'error loading crash %s',
                 crash_id,
@@ -191,7 +191,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 try:
                     if "TEMPORARY" in a_dump_pathname:
                         os.unlink(a_dump_pathname)
-                except OSError, x:
+                except OSError as x:
                     # the file does not actually exist
                     self.config.logger.info(
                         'deletion of dump failed: %s',

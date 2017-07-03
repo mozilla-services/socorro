@@ -102,8 +102,7 @@ class IndexCreator(RequiredConfig):
             self.config.logger.info(
                 'Created new elasticsearch index: %s', es_index
             )
-        except elasticsearch.exceptions.RequestError, e:
+        except elasticsearch.exceptions.RequestError as e:
             # If this index already exists, swallow the error.
-            # NOTE! This is NOT how the error looks like in ES 2.x
-            if 'IndexAlreadyExistsException' not in str(e):
+            if e.error != 'index_already_exists_exception':
                 raise

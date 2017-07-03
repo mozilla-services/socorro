@@ -1,16 +1,17 @@
 .. index:: symbols
 
+==============================
 How to pack and upload symbols
 ==============================
 
 How to pack the symbols archive files
--------------------------------------
+=====================================
 
 The minidump processor uses the binary filename (of the executable or shared
 library) along with a debug ID (which is a GUID with one additional character)
-to locate symbol files for each module in a minidump. Breakpad symbol files
-as produced by the ``dump_syms`` tool contain all the information needed to
-create the proper file paths in the first line of the file.
+to locate symbol files for each module in a minidump. Breakpad symbol files as
+produced by the ``dump_syms`` tool contain all the information needed to create
+the proper file paths in the first line of the file.
 
 As a concrete example, if you run ``dump_syms`` on a single binary named
 ``test``:
@@ -38,28 +39,28 @@ As a concrete example, if you run ``dump_syms`` on a single binary named
     ---------                     -------
          1056                     3 files
 
-The filename here is ``test``, and the debug ID is the GUID shown. The
-contents of the ``symbols`` directory can be zipped up as shown and
-will work properly to symbolicate crash reports.
+The filename here is ``test``, and the debug ID is the GUID shown. The contents
+of the ``symbols`` directory can be zipped up as shown and will work properly to
+symbolicate crash reports.
 
-There are `a simple set of scripts <https://gist.github.com/luser/2ad32d290f224782fcfc>`_
-available for generating and uploading symbol zip files in the proper format.
-You may also be interested in
-`symbolstore.py <https://dxr.mozilla.org/mozilla-central/source/toolkit/crashreporter/tools/symbolstore.py>`_,
+There are `a simple set of scripts
+<https://gist.github.com/luser/2ad32d290f224782fcfc>`_ available for generating
+and uploading symbol zip files in the proper format. You may also be interested
+in `symbolstore.py
+<https://dxr.mozilla.org/mozilla-central/source/toolkit/crashreporter/tools/symbolstore.py>`_,
 which is what official Firefox builds use to package their symbols.
 
 
 How to upload
--------------
+=============
 
-To be able to upload you need to have an account with which you
-have the ``Upload Symbols Files`` permission.
+First, you need to have an account on crash-stats with which you have the
+**Upload Symbols Files** permission.
 
-Once you have that, visit https://crash-stats.mozilla.com/symbols/
-and there will be two links presented there.
+Once you have that, visit `<https://crash-stats.mozilla.com/symbols/>`_ and
+there will be two links presented there.
 
 One to do a regular web file upload in the browser.
 
-And one that takes you to the documentation about how to do uploads
-using the API. That link will have links to where you can set up
-API tokens.
+And one that takes you to the documentation about how to do uploads using the
+API. That link will have links to where you can set up API tokens.

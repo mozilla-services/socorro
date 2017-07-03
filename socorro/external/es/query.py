@@ -5,7 +5,6 @@
 import datetime
 import elasticsearch
 import json
-import re
 
 from socorro.lib import (
     DatabaseError,
@@ -13,7 +12,6 @@ from socorro.lib import (
     ResourceNotFound,
 )
 from socorro.external.es.base import ElasticsearchBase
-from socorro.external.es.supersearch import BAD_INDEX_REGEX
 from socorro.lib import datetimeutil, external_common
 
 
@@ -66,12 +64,12 @@ class Query(ElasticsearchBase):
                 body=json.dumps(params.query),
                 **search_args
             )
-        except elasticsearch.exceptions.NotFoundError, e:
-            missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
+        except elasticsearch.exceptions.NotFoundError as e:
+            missing_index = e.info['error']['index']
             raise ResourceNotFound(
                 "elasticsearch index '%s' does not exist" % missing_index
             )
-        except elasticsearch.exceptions.TransportError, e:
+        except elasticsearch.exceptions.TransportError as e:
             raise DatabaseError(e)
 
         return results

@@ -8,12 +8,10 @@ import json
 import requests_mock
 from nose.tools import assert_raises, eq_, ok_
 
-from socorro.lib import BadArgumentError, datetimeutil
-from socorro.middleware import search_common
+from socorro.lib import BadArgumentError, datetimeutil, search_common
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     SuperSearchWithFields,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -74,7 +72,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ]
         )
 
-    @minimum_es_version('1.0')
     def test_get(self):
         """Run a very basic test, just to see if things work. """
         self.index_crash({
@@ -115,7 +112,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # processed_crash.json_dump.write_combine_size > write_combine_size
         ok_('write_combine_size' in res['hits'][0])
 
-    @minimum_es_version('1.0')
     def test_get_with_root_field(self):
         """Verify that querying fields at the root of the crash document works.
         """
@@ -137,13 +133,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('removed_fields' in res['facets'])
         eq_(len(res['facets']['removed_fields']), 2)
 
-    @minimum_es_version('1.0')
     def test_get_with_bad_results_number(self):
         """Run a very basic test, just to see if things work. """
         with assert_raises(BadArgumentError):
             self.api.get(_columns=['date'], _results_number=-1)
 
-    @minimum_es_version('1.0')
     def test_get_with_enum_operators(self):
         self.index_crash({
             'product': 'WaterWolf',
@@ -198,7 +192,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             ok_('that I used' in hit['app_notes'])
 
-    @minimum_es_version('1.0')
     def test_get_with_string_operators(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -218,6 +211,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         })
         self.index_crash({
             'signature': 'foo(bar)',
+            'date_processed': self.now,
+        })
+        self.index_crash({
             'date_processed': self.now,
         })
         self.refresh_index()
@@ -242,10 +238,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             signature='!~js'  # does not contain
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        eq_(res['total'], 3)
+        eq_(len(res['hits']), 3)
         for hit in res['hits']:
-            ok_('js' not in hit['signature'])
+            ok_(hit['signature'] is None or 'js' not in hit['signature'])
 
         ok_('signature' in res['facets'])
         eq_(len(res['facets']['signature']), 2)
@@ -273,10 +269,13 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             signature='!^js'  # does not start with
         )
 
-        eq_(res['total'], 3)
-        eq_(len(res['hits']), 3)
+        eq_(res['total'], 4)
+        eq_(len(res['hits']), 4)
         for hit in res['hits']:
-            ok_(not hit['signature'].startswith('js'))
+            ok_(
+                hit['signature'] is None or
+                not hit['signature'].startswith('js')
+            )
 
         ok_('signature' in res['facets'])
         eq_(len(res['facets']['signature']), 3)
@@ -320,10 +319,13 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             signature='!$rowser'  # does not end with
         )
 
-        eq_(res['total'], 3)
-        eq_(len(res['hits']), 3)
+        eq_(res['total'], 4)
+        eq_(len(res['hits']), 4)
         for hit in res['hits']:
-            ok_(not hit['signature'].endswith('rowser'))
+            ok_(
+                hit['signature'] is None or
+                not hit['signature'].endswith('rowser')
+            )
 
         ok_('signature' in res['facets'])
         eq_(len(res['facets']['signature']), 3)
@@ -349,12 +351,27 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get(
             signature='!@mozilla::.*::function'  # regex
         )
-        eq_(res['total'], 4)
-        eq_(len(res['hits']), 4)
+        eq_(res['total'], 5)
+        eq_(len(res['hits']), 5)
         for hit in res['hits']:
             ok_(hit['signature'] != 'mozilla::js::function')
 
-    @minimum_es_version('1.0')
+        # Test the "missing" operator.
+        res = self.api.get(
+            signature='__null__'  # missing
+        )
+        eq_(res['total'], 1)
+        eq_(len(res['hits']), 1)
+        eq_(res['hits'][0]['signature'], None)
+
+        res = self.api.get(
+            signature='!__null__'  # exists
+        )
+        eq_(res['total'], 5)
+        eq_(len(res['hits']), 5)
+        for hit in res['hits']:
+            ok_(hit['signature'] is not None)
+
     def test_get_with_range_operators(self):
         self.index_crash({
             'build': 2000,
@@ -432,7 +449,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             ok_(hit['build_id'] <= 2000)
 
-    @minimum_es_version('1.0')
     def test_get_with_bool_operators(self):
         self.index_crash(
             processed_crash={
@@ -488,7 +504,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(len(res['hits']), 2)
         ok_(not res['hits'][0]['accessibility'])
 
-    @minimum_es_version('1.0')
     def test_get_with_combined_operators(self):
         sigs = (
             'js::break_your_browser',
@@ -559,7 +574,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             sorted([sigs[0], sigs[1]])
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_pagination(self):
         number_of_crashes = 21
         processed_crash = {
@@ -599,7 +613,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(res['total'], number_of_crashes)
         eq_(len(res['hits']), 0)
 
-    @minimum_es_version('1.0')
     def test_get_with_sorting(self):
         """Test a search with sort returns expected results. """
         self.index_crash({
@@ -665,7 +678,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _sort='something',
         )  # `something` is invalid
 
-    @minimum_es_version('1.0')
     def test_get_with_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -791,7 +803,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _facets=['unknownfield']
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_too_many_facets(self):
         # Some crazy big number
         assert_raises(
@@ -808,7 +819,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _facets_size=10000,
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_no_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -861,7 +871,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_(res['hits'])
         eq_(len(res['hits']), res['total'])
 
-    @minimum_es_version('1.0')
     def test_get_with_cardinality(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -939,7 +948,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _facets=['_cardinality.unknownfield']
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_sub_aggregations(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -1229,7 +1237,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             **args
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_date_histogram(self):
         yesterday = self.now - datetime.timedelta(days=1)
         the_day_before = self.now - datetime.timedelta(days=2)
@@ -1487,7 +1494,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             **args
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_date_histogram_with_bad_interval(self):
         kwargs = {
             '_histogram.date': ['product', 'platform'],
@@ -1503,12 +1509,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         except BadArgumentError as exception:
             eq_(exception.param, '_histogram_interval.date')
 
-    @minimum_es_version('1.0')
     def test_get_with_number_histogram(self):
         yesterday = self.now - datetime.timedelta(days=1)
         the_day_before = self.now - datetime.timedelta(days=2)
 
-        time_str = '%Y%m%d%H%M%S'
+        time_str = '%Y%m%d000000'
         today_int = int(self.now.strftime(time_str))
         yesterday_int = int(yesterday.strftime(time_str))
         day_before_int = int(the_day_before.strftime(time_str))
@@ -1560,6 +1565,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # Test several facets
         kwargs = {
             '_histogram.build_id': ['product', 'platform'],
+            '_histogram_interval.build_id': 1000000,
             'signature': '!=crash_me_I_m_famous',
         }
         res = self.api.get(**kwargs)
@@ -1607,16 +1613,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 'term': today_int,
                 'count': 2,
                 'facets': {
-                    'product': [
-                        {
-                            'term': 'EarthRacoon',
-                            'count': 1
-                        },
-                        {
-                            'term': 'WaterWolf',
-                            'count': 1
-                        },
-                    ],
                     'platform': [
                         {
                             'term': 'Linux',
@@ -1627,6 +1623,16 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                             'count': 1
                         }
                     ],
+                    'product': [
+                        {
+                            'term': 'EarthRacoon',
+                            'count': 1
+                        },
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        },
+                    ],
                 }
             }
         ]
@@ -1635,6 +1641,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # Test one facet with filters
         kwargs = {
             '_histogram.build_id': ['product'],
+            '_histogram_interval.build_id': 1000000,
             'product': 'WaterWolf',
         }
         res = self.api.get(**kwargs)
@@ -1670,6 +1677,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # Test one facet with a different filter
         kwargs = {
             '_histogram.build_id': ['product'],
+            '_histogram_interval.build_id': 1000000,
             'platform': 'linux',
         }
         res = self.api.get(**kwargs)
@@ -1717,6 +1725,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # Test the number of results.
         kwargs = {
             '_histogram.build_id': ['version'],
+            '_histogram_interval.build_id': 1000000,
             'signature': '=crash_me_I_m_famous',
         }
         res = self.api.get(**kwargs)
@@ -1731,6 +1740,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # Test with a different number of facets results.
         kwargs = {
             '_histogram.build_id': ['version'],
+            '_histogram_interval.build_id': 1000000,
             '_facets_size': 20,
             'signature': '=crash_me_I_m_famous',
         }
@@ -1745,6 +1755,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         kwargs = {
             '_histogram.build_id': ['version'],
+            '_histogram_interval.build_id': 1000000,
             '_facets_size': 100,
             'signature': '=crash_me_I_m_famous',
         }
@@ -1764,7 +1775,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             **args
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_columns(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -1814,7 +1824,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['fake_field']
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_beta_version(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -1883,14 +1892,12 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('aggs' in query)
         ok_('size' in query)
 
-    @minimum_es_version('1.0')
     def test_get_with_zero(self):
         res = self.api.get(
             _results_number=0,
         )
         eq_(len(res['hits']), 0)
 
-    @minimum_es_version('1.0')
     def test_get_with_too_many(self):
         assert_raises(
             BadArgumentError,
@@ -1898,7 +1905,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _results_number=1001,
         )
 
-    @minimum_es_version('1.0')
     @requests_mock.Mocker(real_http=True)
     def test_get_with_failing_shards(self, mock_requests):
         # Test with one failing shard.

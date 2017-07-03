@@ -48,15 +48,12 @@ class IntegrationTestQuery(ElasticsearchTestCase):
 
         query = {
             'query': {
-                'filtered': {
-                    'query': {
-                        'match_all': {}
-                    },
-                    'filter': {
+                'bool': {
+                    'filter': [{
                         'term': {
-                            'product': 'earthraccoon'
+                            'processed_crash.product': 'earthraccoon'
                         }
-                    }
+                    }]
                 }
             }
         }
@@ -65,27 +62,23 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         ok_('hits' in res)
         eq_(res['hits']['total'], 1)
 
-    @mock.patch('socorro.external.es.connection_context.elasticsearch')
-    def test_get_with_errors(self, mocked_es):
-        # Test missing argument.
-        assert_raises(
-            MissingArgumentError,
-            self.api.get,
-        )
-
-        # Test missing index in elasticsearch.
-        mocked_connection = mock.Mock()
-        mocked_es.Elasticsearch.return_value = mocked_connection
-
-        mocked_connection.search.side_effect = (
-            elasticsearch.exceptions.NotFoundError(
-                404, '[[socorro_201801] missing]'
-            )
-        )
+    def test_get_with_missing_index(self):
         assert_raises(
             ResourceNotFound,
             self.api.get,
             query={'query': {}},
+            indices=['unknown'],
+        )
+
+    @mock.patch('socorro.external.es.connection_context.elasticsearch')
+    def test_get_with_errors(self, mocked_es):
+        mocked_connection = mock.Mock()
+        mocked_es.Elasticsearch.return_value = mocked_connection
+
+        # Test missing argument.
+        assert_raises(
+            MissingArgumentError,
+            self.api.get,
         )
 
         # Test a generic error response from elasticsearch.

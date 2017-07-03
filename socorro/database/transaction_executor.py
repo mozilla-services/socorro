@@ -41,7 +41,7 @@ class TransactionExecutor(RequiredConfig):
                 result = function(connection, *args, **kwargs)
                 connection.commit()
                 return result
-            except BaseException, x:
+            except BaseException as x:
                 connection.rollback()
                 if hasattr(x, 'abandon_transaction'):
                     self.config.logger.debug(
@@ -110,7 +110,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         connection.rollback()
                         raise
 
-            except self.db_conn_context_source.conditional_exceptions, x:
+            except self.db_conn_context_source.conditional_exceptions as x:
                 # these exceptions may or may not be retriable
                 # the test is for is a last ditch effort to see if
                 # we can retry
@@ -137,7 +137,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                     self.connection_source_type,
                     exc_info=True)
 
-            except BaseException, x:
+            except BaseException as x:
                 if hasattr(x, 'abandon_transaction'):
                     self.config.logger.debug(
                         '%s transaction intentionally abandoned by exception',

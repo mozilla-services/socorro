@@ -184,5 +184,5 @@ class BugzillaCronApp(BaseCronApp):
         for report in results['bugs']:
             yield (
                 int(report['id']),
-                find_signatures(report['cf_crash_signature'])
+                find_signatures(report.get('cf_crash_signature', ''))
             )

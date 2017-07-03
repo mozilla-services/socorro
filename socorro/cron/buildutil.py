@@ -55,7 +55,7 @@ def insert_build(cursor, product_name, version, platform, build_id, build_type,
     try:
         cursor.execute(sql, params)
         cursor.connection.commit()
-    except psycopg2.Error, e:
+    except psycopg2.Error as e:
         cursor.connection.rollback()
         logger.error("Failed inserting new release: %s" % e)
         raise

@@ -73,7 +73,7 @@ class SkunkClassificationRule(Rule):
         """
         try:
             return self._predicate(*args, **kwargs)
-        except Exception, x:
+        except Exception as x:
             if not self.config:
                 if 'processor' in kwargs:
                     self.config = kwargs['processor'].config
@@ -128,7 +128,7 @@ class SkunkClassificationRule(Rule):
         classification system itself."""
         try:
             return self._action(*args, **kwargs)
-        except KeyError, x:
+        except KeyError as x:
             # skunk classifiers originally did not have access to a config
             # object and used the 'processor' keyword argument (a reference
             # to the actual processor class) to "borrow" a logger.  This code
@@ -144,7 +144,7 @@ class SkunkClassificationRule(Rule):
                 self.__class__,
                 x,
             )
-        except Exception, x:
+        except Exception as x:
             if not self.config:
                 if 'processor' in kwargs:
                     self.config = kwargs['processor'].config
@@ -264,7 +264,7 @@ class SkunkClassificationRule(Rule):
             stack = a_json_dump['crashing_thread']['frames']
         # these exceptions are kept as separate cases just to help keep track
         # of what situations they cover
-        except KeyError, x:
+        except KeyError as x:
             # no threads or no crash_info or no crashing_thread
             return False
         except IndexError:
@@ -428,7 +428,7 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
                     'architecture',
                 )
                 return True
-        except (KeyError, AttributeError), x:
+        except (KeyError, AttributeError) as x:
             log(
                 'skunk_classifier: reject - no architecture info found',
             )
@@ -516,7 +516,7 @@ class UpdateWindowAttributes(SkunkClassificationRule):
                 classification_data,
                 processor.config.logger
             )
-        except Exception, x:
+        except Exception as x:
             print x
 
         return True

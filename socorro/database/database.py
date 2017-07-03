@@ -73,7 +73,7 @@ def singleValueSql (aCursor, sql, parameters=None):
   result = aCursor.fetchall()
   try:
     return result[0][0]
-  except Exception, x:
+  except Exception as x:
     raise SQLDidNotReturnSingleValue("%s: %s" % (str(x), sql))
 
 
@@ -82,7 +82,7 @@ def singleRowSql (aCursor, sql, parameters=None):
   result = aCursor.fetchall()
   try:
     return result[0]
-  except Exception, x:
+  except Exception as x:
     raise SQLDidNotReturnSingleRow("%s: %s" % (str(x), sql))
 
 
@@ -163,7 +163,7 @@ class Database(object):
     #self.logger.info("%s - %s", threadName, self.dsn)
     try:
       return databaseModule.connect(self.dsn)
-    except Exception, x:
+    except Exception as x:
       self.logger.critical("%s - cannot connect to the database", threadName)
       raise CannotConnectToDatabase(x)
 
