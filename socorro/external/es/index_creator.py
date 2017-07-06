@@ -83,6 +83,7 @@ class IndexCreator(RequiredConfig):
                 SuperSearchFields
             )
             mappings = SuperSearchFields(config=self.config).get_mapping()
+            print mappings
 
         es_settings = self.get_socorro_index_settings(mappings)
         self.create_index(es_index, es_settings)

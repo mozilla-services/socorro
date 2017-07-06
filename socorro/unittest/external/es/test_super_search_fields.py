@@ -3,15 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import elasticsearch
 from nose.tools import assert_raises, eq_, ok_
-import mock
 
-from socorro.lib import (
-    BadArgumentError,
-    MissingArgumentError,
-    ResourceNotFound,
-)
+from socorro.lib import BadArgumentError
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (

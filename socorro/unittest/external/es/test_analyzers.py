@@ -12,9 +12,9 @@ from socorro.unittest.external.es.base import (
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
+import logging
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 class IntegrationTestAnalyzers(ElasticsearchTestCase):

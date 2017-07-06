@@ -13,6 +13,7 @@ from socorro.external.es.base import ElasticsearchBase
 
 SUPER_SEARCH_FIELDS_JSON_PATH = os.path.join(
     os.path.dirname(__file__),
+    'data',
     'super_search_fields.json'
 )
 
@@ -27,9 +28,7 @@ class SuperSearchFields(ElasticsearchBase):
 
     def get_fields(self):
         """Return all the fields from our super_search_fields.json file."""
-        print("IN get_fields")
-        raise Exception#XXX
-        with open(SUPER_SEARCH_FIELDS_JSON_PATH) as f:
+        with open(SUPER_SEARCH_FIELDS_JSON_PATH, 'r') as f:
             return json.load(f)
 
     # The reason for this alias is because this class gets used from
@@ -112,6 +111,7 @@ class SuperSearchFields(ElasticsearchBase):
         """Return the mapping to be used in elasticsearch, generated from the
         current list of fields in the database.
         """
+        print('call me maybe')
         properties = {}
         all_fields = self.get_fields()
 

@@ -10,6 +10,7 @@ import mock
 from nose.tools import assert_raises, eq_, ok_
 
 from socorro.lib import BadArgumentError, datetimeutil, search_common
+from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     SuperSearchWithFields,
@@ -18,9 +19,9 @@ from socorro.unittest.external.es.base import (
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
+import logging
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 class IntegrationTestSuperSearch(ElasticsearchTestCase):
@@ -102,7 +103,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(res['hits'][0]['signature'], 'js::break_your_browser')
 
         eq_(res['facets'].keys(), ['signature'])
-        print(res)
         eq_(
             res['facets']['signature'][0],
             {'term': 'js::break_your_browser', 'count': 1}
