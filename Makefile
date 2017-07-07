@@ -55,7 +55,6 @@ dockerbuild:
 # run migrations here, too.
 dockersetup: .docker-build
 	-${DC} run webapp /app/docker/run_setup_postgres.sh
-	-${DC} run webapp /app/docker/run_setup_elasticsearch.sh
 
 dockerclean:
 	rm .docker-build
