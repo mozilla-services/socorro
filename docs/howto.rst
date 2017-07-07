@@ -30,20 +30,18 @@ Populate Elasticsearch database
 
    See the chapter about :ref:`elasticsearch-chapter` for more information.
 
-First you need to setup your Elasticsearch database:
-
-::
-
-   cd scripts && python ./setup_supersearch_app.py
-
-
-Then, and once you have populated your PostgreSQL database with "fake data",
+Once you have populated your PostgreSQL database with "fake data",
 you can migrate that data into Elasticsearch:
 
 ::
 
    python socorro/external/postgresql/crash_migration_app.py
 
+
+.. Warning::
+
+    This file actually doesn't exist anymore. We need to find a different
+    way of inserting data into Elasticsearch for development.
 
 Sync Django database
 ====================

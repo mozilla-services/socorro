@@ -611,49 +611,6 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    def test_supersearch_fields(self):
-        self._login()
-        url = reverse('manage:supersearch_fields')
-
-        def mocked_supersearchfields_get_fields(**params):
-            return {
-                'signature': {
-                    'name': 'signature',
-                    'namespace': 'processed_crash',
-                    'in_database_name': 'signature',
-                    'query_type': 'string',
-                    'form_field_choices': None,
-                    'permissions_needed': [],
-                    'default_value': None,
-                    'is_exposed': True,
-                    'is_returned': True,
-                    'is_mandatory': False,
-                },
-                'product': {
-                    'name': 'product',
-                    'namespace': 'processed_crash',
-                    'in_database_name': 'product',
-                    'query_type': 'enum',
-                    'form_field_choices': None,
-                    'permissions_needed': [],
-                    'default_value': None,
-                    'is_exposed': True,
-                    'is_returned': True,
-                    'is_mandatory': False,
-                }
-            }
-
-        SuperSearchFields.implementation().get.side_effect = (
-            mocked_supersearchfields_get_fields
-        )
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('signature' in response.content)
-        ok_('string' in response.content)
-        ok_('product' in response.content)
-        ok_('enum' in response.content)
-
     def test_supersearch_fields_missing(self):
         self._login()
         url = reverse('manage:supersearch_fields_missing')
@@ -696,208 +653,6 @@ class TestViews(BaseTestViews):
         ok_('field_a' in response.content)
         ok_('namespace1.field_b' in response.content)
         ok_('namespace2.subspace1.field_c' in response.content)
-
-    def test_supersearch_field(self):
-        self._login()
-        url = reverse('manage:supersearch_field')
-
-        def mocked_supersearchfields_get_fields(**params):
-            return {
-                'signature': {
-                    'name': 'signature',
-                    'namespace': 'processed_crash',
-                    'in_database_name': 'signature',
-                    'query_type': 'string',
-                    'form_field_choices': None,
-                    'permissions_needed': [],
-                    'default_value': None,
-                    'is_exposed': True,
-                    'is_returned': True,
-                    'is_mandatory': False,
-                },
-                'platform': {
-                    'name': 'platform',
-                    'namespace': 'processed_crash',
-                    'in_database_name': 'platform',
-                    'query_type': 'enum',
-                    'form_field_choices': None,
-                    'permissions_needed': [],
-                    'default_value': None,
-                    'is_exposed': True,
-                    'is_returned': True,
-                    'is_mandatory': False,
-                }
-            }
-
-        SuperSearchFields.implementation().get.side_effect = (
-            mocked_supersearchfields_get_fields
-        )
-
-        # Test when creating a new field.
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('signature' not in response.content)
-        ok_('platform' not in response.content)
-
-        # Test when creating a new field with some default values.
-        response = self.client.get(
-            url + '?full_name=namespace.subspace.field_z'
-        )
-        eq_(response.status_code, 200)
-        ok_('field_z' in response.content)
-        ok_('namespace.subspace' in response.content)
-        ok_('namespace.subspace.field_z' not in response.content)
-
-        # Test when editing an existing field.
-        response = self.client.get(url, {'name': 'signature'})
-        eq_(response.status_code, 200)
-        ok_('signature' in response.content)
-        ok_('string' in response.content)
-        ok_('platform' not in response.content)
-
-        # Test a missing field.
-        response = self.client.get(url, {'name': 'unknown'})
-        eq_(response.status_code, 400)
-
-    def test_supersearch_field_create(self):
-        user = self._login()
-        url = reverse('manage:supersearch_field_create')
-
-        def mocked_supersearchfields_get_fields(**params):
-            return {}
-
-        def mocked_supersearchfields_create_field(**params):
-            assert 'name' in params
-            assert 'in_database_name' in params
-            return True
-
-        SuperSearchFields.implementation().get.side_effect = (
-            mocked_supersearchfields_get_fields
-        )
-        SuperSearchFields.implementation().create_field.side_effect = (
-            mocked_supersearchfields_create_field
-        )
-
-        response = self.client.post(
-            url,
-            {
-                'name': 'something',
-                'in_database_name': 'something',
-            }
-        )
-        eq_(response.status_code, 302)
-
-        event, = Log.objects.all()
-        eq_(event.user, user)
-        eq_(event.action, 'supersearch_field.post')
-        eq_(event.extra['name'], 'something')
-
-        response = self.client.post(url)
-        eq_(response.status_code, 400)
-
-        response = self.client.post(url, {'name': 'abcd'})
-        eq_(response.status_code, 400)
-
-        response = self.client.post(url, {'in_database_name': 'bar'})
-        eq_(response.status_code, 400)
-
-    def test_supersearch_field_update(self):
-        user = self._login()
-        url = reverse('manage:supersearch_field_update')
-
-        # Create a permission to test permission validation.
-
-        ct = ContentType.objects.create(
-            model='',
-            app_label='crashstats.crashstats',
-        )
-        Permission.objects.create(
-            name='I can haz permission!',
-            codename='i.can.haz.permission',
-            content_type=ct
-        )
-
-        def mocked_supersearchfields_get_fields(**params):
-            return {}
-
-        def mocked_supersearchfields_update_field(**data):
-            ok_('name' in data)
-            ok_('description' in data)
-            ok_('is_returned' in data)
-            ok_('form_field_choices' in data)
-            ok_('permissions_needed' in data)
-
-            ok_(not data['is_returned'])
-            ok_('' not in data['form_field_choices'])
-
-            eq_(
-                data['permissions_needed'],
-                ['crashstats.i.can.haz.permission']
-            )
-            return True
-
-        SuperSearchFields.implementation().get.side_effect = (
-            mocked_supersearchfields_get_fields
-        )
-        SuperSearchFields.implementation().update_field.side_effect = (
-            mocked_supersearchfields_update_field
-        )
-
-        response = self.client.post(
-            url,
-            {
-                'name': 'something',
-                'in_database_name': 'something',
-                'description': 'hello world',
-                'is_returned': False,
-                'form_field_choices': ['', 'a choice', 'another choice'],
-                'permissions_needed': ['', 'crashstats.i.can.haz.permission'],
-            }
-        )
-        eq_(response.status_code, 302)
-
-        event, = Log.objects.all()
-        eq_(event.user, user)
-        eq_(event.action, 'supersearch_field.put')
-        eq_(event.extra['name'], 'something')
-
-        response = self.client.post(url)
-        eq_(response.status_code, 400)
-
-        response = self.client.post(url, {'name': 'foo'})
-        eq_(response.status_code, 400)
-
-        response = self.client.post(url, {'in_database_name': 'bar'})
-        eq_(response.status_code, 400)
-
-    def test_supersearch_field_delete(self):
-        user = self._login()
-        url = reverse('manage:supersearch_field_delete')
-
-        def mocked_supersearchfields_get_fields(**params):
-            return {}
-
-        def mocked_supersearchfields_delete_field(**params):
-            assert 'name' in params
-            return True
-
-        SuperSearchFields.implementation().get.side_effect = (
-            mocked_supersearchfields_get_fields
-        )
-        SuperSearchFields.implementation().delete_field.side_effect = (
-            mocked_supersearchfields_delete_field
-        )
-
-        response = self.client.get(url, {'name': 'signature'})
-        eq_(response.status_code, 302)
-
-        event, = Log.objects.all()
-        eq_(event.user, user)
-        eq_(event.action, 'supersearch_field.delete')
-        eq_(event.extra['name'], 'signature')
-
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
 
     def test_create_product(self):
 
@@ -1140,26 +895,14 @@ class TestViews(BaseTestViews):
             action='group.edit',
             extra={'id': group.id}
         )
-        Log.objects.create(
-            user=user,
-            action='supersearch_field.post',
-            extra={'name': 'sig1'}
-        )
-        Log.objects.create(
-            user=user,
-            action='supersearch_field.put',
-            extra={'name': 'sig2'}
-        )
         url = reverse('manage:events_data')
         response = self.client.get(url)
         data = json.loads(response.content)
-        eq_(data['count'], 5)
-        five, four, three, two, one = data['events']
+        eq_(data['count'], 3)
+        three, two, one = data['events']
         eq_(one['url'], reverse('manage:user', args=(user.id,)))
         eq_(two['url'], reverse('manage:group', args=(group.id,)))
         eq_(three['url'], reverse('manage:group', args=(group.id,)))
-        eq_(four['url'], reverse('manage:supersearch_field') + '?name=sig1')
-        eq_(five['url'], reverse('manage:supersearch_field') + '?name=sig2')
 
     def test_api_tokens(self):
         permission = self._create_permission()
