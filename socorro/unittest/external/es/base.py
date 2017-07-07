@@ -828,19 +828,11 @@ class ElasticsearchTestCase(TestCaseWithConfig):
     def setUp(self):
         with mock.patch.object(SuperSearchFields, 'get_fields') as get_fields_mock:
             get_fields_mock.return_value = copy.deepcopy(SUPERSEARCH_FIELDS)
-            ssf = SuperSearchFields(config=self.config)
-            print ssf.get_mapping()
-            all_fields = ssf.get_fields()
-            print len(all_fields.keys())
 
             self.index_creator.create_socorro_index(
                 self.config.elasticsearch.elasticsearch_index
             )
 
-            print self.index_client.get_field_mapping(
-                fields='signature',
-                index=self.config.elasticsearch.elasticsearch_index
-            )
         super(ElasticsearchTestCase, self).setUp()
 
     def tearDown(self):

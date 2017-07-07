@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import copy
 import datetime
 from nose.tools import assert_raises, eq_, ok_
 
@@ -15,9 +16,9 @@ from socorro.unittest.external.es.base import (
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
-import logging
-logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-logging.getLogger('requests').setLevel(logging.ERROR)
+# import logging
+# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
@@ -28,7 +29,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         super(IntegrationTestSuperSearchFields, self).setUp()
 
         self.api = SuperSearchFields(config=self.config)
-        self.api.get_fields = lambda: SUPERSEARCH_FIELDS
+        self.api.get_fields = lambda: copy.deepcopy(SUPERSEARCH_FIELDS)
 
     def test_get_fields(self):
         results = self.api.get_fields()

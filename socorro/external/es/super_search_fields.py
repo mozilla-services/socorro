@@ -111,7 +111,6 @@ class SuperSearchFields(ElasticsearchBase):
         """Return the mapping to be used in elasticsearch, generated from the
         current list of fields in the database.
         """
-        print('call me maybe')
         properties = {}
         all_fields = self.get_fields()
 
