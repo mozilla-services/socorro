@@ -81,7 +81,6 @@ class IndexCreator(RequiredConfig):
         """Create an index that will receive crash reports. """
         if mappings is None:
             mappings = SuperSearchFields(config=self.config).get_mapping()
-            print mappings
 
         es_settings = self.get_socorro_index_settings(mappings)
         self.create_index(es_index, es_settings)

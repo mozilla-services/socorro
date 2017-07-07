@@ -26,8 +26,6 @@ from crashstats.crashstats.models import (
     Reprocessing,
 )
 from crashstats.supersearch.models import (
-    SuperSearch,
-    SuperSearchField,
     SuperSearchFields,
     SuperSearchMissingFields,
 )
