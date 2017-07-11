@@ -3787,5 +3787,24 @@
         "is_exposed": true,
         "form_field_choices": [],
         "description": "'extension' if a WebExtension, 'web' or missing otherwise. This is only set for content crashes."
+    },
+    "telemetry_environment": {
+       "default_value": null,
+       "is_mandatory": false,
+       "description": "A field containing the entire Telemetry Environment, as sent with crash pings to Telemetry.",
+       "is_returned": true,
+       "query_type": "string",
+       "permissions_needed": [],
+       "storage_mapping": {
+          "index": "not_analyzed",
+          "type": "string"
+       },
+       "namespace": "raw_crash",
+       "has_full_version": false,
+       "data_validation_type": "str",
+       "in_database_name": "TelemetryEnvironment",
+       "is_exposed": true,
+       "form_field_choices": [],
+       "name": "telemetry_environment"
     }
 }
