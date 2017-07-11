@@ -19,7 +19,7 @@ CERT_.*
 CFRelease
 _chkstk
 CleanupPerAppKey
-ConditionVariableFallback::wait.*
+ConditionVariableFallback::wait\(.*\)
 core::result::unwrap_failed<T>
 CrashInJS
 CreateFileMappingA
