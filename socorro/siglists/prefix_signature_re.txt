@@ -19,8 +19,10 @@ CERT_.*
 CFRelease
 _chkstk
 CleanupPerAppKey
+ConditionVariableFallback::wait.*
 core::result::unwrap_failed<T>
 CrashInJS
+CreateFileMappingA
 __delayLoadHelper2
 dlmalloc
 dlmalloc_trim
