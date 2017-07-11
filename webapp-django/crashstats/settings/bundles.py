@@ -72,6 +72,7 @@ PIPELINE_CSS = {
     'report_index': {
         'source_filenames': (
             'crashstats/css/report_index.css',
+            'crashstats/css/tree.css',
         ),
         'output_filename': 'css/report-index.min.css',
     },
