@@ -3796,8 +3796,7 @@
        "query_type": "string",
        "permissions_needed": [],
        "storage_mapping": {
-          "index": "not_analyzed",
-          "type": "string"
+          "type": "keyword"
        },
        "namespace": "raw_crash",
        "has_full_version": false,
