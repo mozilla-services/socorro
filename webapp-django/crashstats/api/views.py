@@ -1,6 +1,7 @@
 import json
 import re
 import datetime
+import inspect
 
 from django import http
 from django.shortcuts import render
@@ -415,8 +416,15 @@ def documentation(request):
     endpoints = []
 
     all_models = []
+    unique_model_names = set()
     for source in MODELS_MODULES:
-        all_models += [getattr(source, x) for x in dir(source)]
+        for name, value in inspect.getmembers(source):
+            if name in unique_model_names:
+                # model potentially in multiple modules
+                continue
+            if inspect.isclass(value):
+                all_models.append(value)
+                unique_model_names.add(name)
 
     for model in all_models:
         try:
