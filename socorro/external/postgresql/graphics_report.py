@@ -57,7 +57,7 @@ This was the original SQL used in the old cron job:
         %(prod_phrase)s %(ver_phrase)s
       order by 5 -- r.date_processed, munged
 
-"""
+"""  # noqa
 
 SQL = """
 SELECT
