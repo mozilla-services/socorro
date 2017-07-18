@@ -7,13 +7,12 @@ import os
 import datetime
 import elasticsearch
 
-from pkg_resources import resource_stream
-
 from socorro.lib import BadArgumentError, datetimeutil
 from socorro.external.es.base import ElasticsearchBase
 
 
 SUPER_SEARCH_FIELDS_JSON_PATH = os.path.join(
+    os.path.dirname(__file__),
     'data',
     'super_search_fields.json'
 )
@@ -29,7 +28,7 @@ class SuperSearchFields(ElasticsearchBase):
 
     def get_fields(self):
         """Return all the fields from our super_search_fields.json file."""
-        with resource_stream(__name__, SUPER_SEARCH_FIELDS_JSON_PATH) as f:
+        with open(SUPER_SEARCH_FIELDS_JSON_PATH, 'r') as f:
             return json.load(f)
 
     # The reason for this alias is because this class gets used from
