@@ -294,6 +294,10 @@
                             "type": ["string", "null"],
                             "description": "Address of the crash."
                         },
+                        "address_likely_wrong": {
+                            "type": ["boolean", "null"],
+                            "description": "Is the address field here likely incorrect?"
+                        },
                         "crashing_thread": {
                             "type": ["integer", "null"],
                             "description": "Number of the crashing thread?"

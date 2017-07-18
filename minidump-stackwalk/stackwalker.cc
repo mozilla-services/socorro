@@ -73,11 +73,13 @@ using google_breakpad::CodeModule;
 using google_breakpad::CodeModules;
 using google_breakpad::ExploitabilityRating;
 using google_breakpad::Minidump;
+using google_breakpad::MinidumpException;
 using google_breakpad::MinidumpMemoryInfo;
 using google_breakpad::MinidumpMemoryInfoList;
 using google_breakpad::MinidumpMiscInfo;
 using google_breakpad::MinidumpModule;
 using google_breakpad::MinidumpProcessor;
+using google_breakpad::MinidumpSystemInfo;
 using google_breakpad::PathnameStripper;
 using google_breakpad::ProcessResult;
 using google_breakpad::ProcessState;
@@ -856,6 +858,84 @@ static void ConvertLSBReleaseToJSON(const string& lsb_release,
   root["lsb_release"] = lsb;
 }
 
+// Returns true if `ptr` is not in x86-64 canonical form.
+// https://en.wikipedia.org/wiki/X86-64#Virtual_address_space_details
+static bool is_non_canonical(uint64_t ptr) {
+  return ptr > 0x7FFFFFFFFFFF && ptr < 0xFFFF800000000000;
+}
+
+// Returns true if the exception described by `*address`, `exception_code`,
+// and `exception_flags` on the system described by `raw_system_info` looks
+// like a general protection fault.
+static bool looks_like_general_protection_fault(
+    uint32_t platform_id,
+    uint64_t address,
+    uint32_t exception_code,
+    uint32_t exception_flags) {
+  // On Linux the crashing address is zero in these cases, and it
+  // presents as a SIGSEGV.
+  // See do_general_protection:
+  // http://lxr.free-electrons.com/source/arch/x86/kernel/traps.c?v=3.13#L271
+  // and __send_signal (info == SEND_SIG_PRIV in this case):
+  // http://lxr.free-electrons.com/source/kernel/signal.c?v=3.13#L1106
+  if (platform_id == MD_OS_LINUX &&
+      exception_code == MD_EXCEPTION_CODE_LIN_SIGSEGV &&
+      address == 0)
+    return true;
+
+  // On OS X the crashing address is zero and it presents as an
+  // EXC_BAD_ACCESS / EXC_I386_GPFLT
+  // See user_trap:
+  // http://opensource.apple.com/source/xnu/xnu-2050.24.15/osfmk/i386/trap.c
+  if (platform_id == MD_OS_MAC_OS_X &&
+      exception_code == MD_EXCEPTION_MAC_BAD_ACCESS &&
+      exception_flags == MD_EXCEPTION_CODE_MAC_X86_GENERAL_PROTECTION_FAULT &&
+      address == 0)
+    return true;
+
+  // On Windows the crashing address is (uint64_t)-1 and it presents
+  // as an EXCEPTION_ACCESS_VIOLATION
+  if ((platform_id == MD_OS_WIN32_NT ||
+       platform_id == MD_OS_WIN32_WINDOWS) &&
+      address == 0xFFFFFFFFFFFFFFFF &&
+      exception_code == MD_EXCEPTION_CODE_WIN_ACCESS_VIOLATION)
+    return true;
+
+  return false;
+}
+
+// On x86-64, exceptions due to referencing non-canonical addresses
+// do not include the faulting address in the general protection fault,
+// so the crash address is not useful and can lead to misdiagnosing the
+// crash. See if that's the case, and add a note if so.
+static void CheckCrashAddress(Minidump& dump,
+                              uint64_t address,
+                              Json::Value& root) {
+  MinidumpException* exception = dump.GetException();
+  if (!exception)
+    return;
+  const MDRawExceptionStream* raw_exception = exception->exception();
+  if (!raw_exception)
+    return;
+  MinidumpSystemInfo* minidump_system_info = dump.GetSystemInfo();
+  if (!minidump_system_info)
+    return;
+  const MDRawSystemInfo* raw_system_info = minidump_system_info->system_info();
+  if (!raw_system_info)
+    return;
+
+  uint32_t exception_code = raw_exception->exception_record.exception_code;
+  uint32_t exception_flags = raw_exception->exception_record.exception_flags;
+
+  if (raw_system_info->processor_architecture == MD_CPU_ARCHITECTURE_AMD64 &&
+      looks_like_general_protection_fault(raw_system_info->platform_id,
+                                          address,
+                                          exception_code,
+                                          exception_flags)) {
+    root["crash_info"]["address_likely_wrong"] = true;
+  }
+}
+
 static string ResultString(ProcessResult result) {
   string str;
   switch (result) {
@@ -1025,6 +1105,7 @@ int main(int argc, char** argv)
   if (result == google_breakpad::PROCESS_OK) {
     ConvertProcessStateToJSON(process_state, symbolizer,
                               http_symbol_supplier, root, raw_root);
+    CheckCrashAddress(minidump, process_state.crash_address(), root);
   }
   ConvertMemoryInfoToJSON(minidump, raw_root, root);
 
