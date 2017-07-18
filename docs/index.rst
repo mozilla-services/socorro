@@ -1,62 +1,33 @@
-Socorro
-=======
+==================================
+Socorro - Crash ingestion pipeline
+==================================
 
-Socorro is a set of components for collecting, processing and reporting on crashes. It is used by Mozilla for tracking crashes of Firefox, B2G, Thunderbird and other projects. The production Mozilla install is public and hosted at https://crash-stats.mozilla.com/
+Socorro is a set of components for collecting, processing and reporting on
+crashes. It is used by Mozilla for tracking crashes of Mozilla products.
+
+Mozilla's crash analysis tool is hosted at
+`<https://crash-stats.mozilla.com/>`_.
 
 The components which make up Socorro are:
 
 * Collector - collects breakpad minidump crashes which come in over HTTP POST
+
+  `Antenna <https://antenna.readthedocs.io/>`_ now collects crashes for Socorro.
+
 * Processor - turn breakpad minidump crashes into stack traces and other info
-* Middleware - provide HTTP REST interface for JSON reports and real-time data
-* Web UI aka crash-stats - django-based web app for visualizing crash data
+* Web UI for analysis aka crash-stats - Django-based web app for visualizing
+  crash data
 
-Socorro is available as an RPM for RHEL/CentOS, or you can build from source
-on Mac OSX, Ubuntu or RHEL/CentOS.
+Socorro is available from source in a git repository at
+`<https://github.com/mozilla-services/socorro/>`_.
 
-* For production installation, proceed to :ref:`production_install-chapter`.
-* If you want to build from source, see the :ref:`development-chapter` section.
+* Free software: Mozilla Public License version 2.0
+* Code:
 
-We welcome contributions!
+  * Antenna: https://github.com/mozilla-services/antenna
+  * Socorro: https://github.com/mozilla-services/socorro
 
-* Start here to contribute to documentation: :ref:`writingdocs-chapter`.
-* Start here to contribute code: :ref:`newdeveloperguide-chapter`.
-
-See http://wiki.mozilla.org/Breakpad for up-to-date information about development team activity and our meetings.
-
-This documentation is `available on readthedocs <https://socorro.readthedocs.io>`_. The source and current development activity is `available on Github <https://github.com/mozilla/socorro/>`_.
-
-The Socorro development mailing list is https://lists.mozilla.org/listinfo/tools-socorro
-
-
-Support
-=======
-
-This is a very Mozilla-specific product. We do not currently have the capacity
-to support external users. If you are looking to use Socorro for your product,
-maybe you want to consider alternatives like `electron/mini-breakpad-server
-<https://github.com/electron/mini-breakpad-server>`_.
-
-
-May 3rd, 2017 Update
---------------------
-
-For the last year or so, we've been removing code and making changes that aren't
-backwards compatible. A couple of weeks ago, we (Mozilla) extracted the
-collector out of Socorro into a separate repository. Because of that, we're
-going to start removing code.
-
-If you rely on that collector, the last good release is `270
-<https://github.com/mozilla/socorro/releases/tag/270>`_.
-
-You can get it with something like this::
-
-    git clone https://github.com/mozilla/socorro
-    git checkout 270
-
-
- Or get the tarball::
-
-    wget https://github.com/mozilla/socorro/archive/270.tar.gz
+* Documentation: https://antenna.readthedocs.io/
 
 
 Contents
@@ -64,10 +35,15 @@ Contents
 
 .. toctree::
    :numbered:
-   :hidden:
+   :includehidden:
+   :maxdepth: 2
+   :glob:
 
-   production-install
-   configuring-socorro
+   gettingstarted
+   contributing
    symbols
-   troubleshoot
-   development/index
+   architecture/*
+   components/*
+   services/*
+   deploy
+   howto
