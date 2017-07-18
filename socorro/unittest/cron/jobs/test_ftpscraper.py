@@ -22,6 +22,7 @@ from socorro.unittest.cron.setup_configman import (
 
 
 class Response(object):
+
     def __init__(self, content, status_code=200):
         self.content = content
         self.status_code = status_code
@@ -234,7 +235,7 @@ class TestFTPScraper(TestCaseBase):
         eq_(
             list(self.scrapers.get_release('http://x/ONE')),
             [('linux', 'ONE',
-             {'BUILDID': '123', 'version_build': 'build-11'}, [])]
+              {'BUILDID': '123', 'version_build': 'build-11'}, [])]
         )
 
     def test_get_json_nightly(self):
@@ -488,7 +489,6 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 u'moz_source_repo':
                 u'http://hg.mozilla.org/releases/mozilla-beta',
                 u'buildid': u'20140113161826',
-                'repository': u'http://hg.mozilla.org/releases/mozilla-beta',
                 u'moz_update_channel': u'beta',
                 u'moz_pkg_platform': u'win32',
                 'buildID': u'20140113161826',
@@ -597,7 +597,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                     <a href="%s-03-02-04-mozilla-central/">txt</a>
                 """ % (today.strftime('%Y-%m-%d'), today.strftime('%Y-%m-%d'))
             if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
-                            '%Y-%m-%d-03-02-03-mozilla-central/')):
+                                           '%Y-%m-%d-03-02-03-mozilla-central/')):
                 return html_wrap % """
                     <a href="firefox-30.0a1.en-US.linux-i686.json">txt</a>
                 """
