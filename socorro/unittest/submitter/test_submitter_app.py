@@ -18,7 +18,8 @@ from socorro.unittest.testbase import TestCase
 
 
 def sequencer(*args):
-    list_of_args =  list(args)
+    list_of_args = list(args)
+
     def foo(*fargs, **fkwargs):
         try:
             return list_of_args.pop()
@@ -28,7 +29,8 @@ def sequencer(*args):
 
 
 def generator_for_sequence(*args):
-    list_of_args =  list(args)
+    list_of_args = list(args)
+
     def foo(*fargs, **fkwargs):
         try:
             yield list_of_args.pop()
@@ -90,19 +92,17 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
         )
         raw_dumps_files = sub_walker.get_raw_dumps_as_files(dump_pathnames)
 
-        dump_names = {'upload_file_minidump':
-             '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.dump',
-             'flash1':
-             '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash1.dump',
-             'flash2':
-             '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump'
-             }
+        dump_names = {
+            'upload_file_minidump': '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.dump',
+            'flash1': '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash1.dump',
+            'flash2': '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump'
+        }
 
         ok_(isinstance(raw_dumps_files, dict))
         eq_(raw_dumps_files, dump_names)
 
     def test_new_crashes(self):
-        sequence =  [
+        sequence = [
             (
                 './',
                 '6611a662-e70f-4ba5-a397-69a3a2121129.json',
@@ -259,7 +259,7 @@ class TestSubmitterApp(TestCase):
         config.producer_consumer.number_of_threads = float(1)
 
         config.new_crash_source = DotDict()
-        mocked_new_crash_source =  mock.Mock()
+        mocked_new_crash_source = mock.Mock()
         mocked_new_crash_source.id = 'mocked_new_crash_source'
         config.new_crash_source.new_crash_source_class = mock.Mock(
             return_value=mocked_new_crash_source
@@ -423,13 +423,14 @@ class TestSubmitterApp(TestCase):
         sub._setup_task_manager()
         itera = sub.source_iterator()
 
-        config.new_crash_source.new_crash_source_class.return_value \
-            .new_crashes = lambda: iter([((1, ), {'finished_func': 1,}), 2, 3])
+        def _iter():
+            return iter([((1, ), {'finished_func': (1,)}), 2, 3])
+        config.new_crash_source.new_crash_source_class.return_value.new_crashes = _iter
 
-        eq_(itera.next(), ((1,), {'finished_func': 1,}))
+        eq_(itera.next(), ((1,), {'finished_func': (1,)}))
         eq_(itera.next(), ((2,), {}))
         eq_(itera.next(), ((3,), {}))
-        eq_(itera.next(), ((1,), {'finished_func': 1,}))
+        eq_(itera.next(), ((1,), {'finished_func': (1,)}))
         eq_(itera.next(), ((2,), {}))
         assert_raises(StopIteration, itera.next)
 

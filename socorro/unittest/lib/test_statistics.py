@@ -66,8 +66,6 @@ class TestStatsd(TestCase):
                 ]
             )
 
-
-
     def test_statistics_all_missing_prefix(self):
         d = DotDict()
         d.statsd_host = 'localhost'
@@ -118,7 +116,6 @@ class TestStatsd(TestCase):
                     call.incr('processor.unknown')
                 ]
             )
-
 
     def test_statistics_all_missing_prefix_and_missing_name(self):
         d = DotDict()
