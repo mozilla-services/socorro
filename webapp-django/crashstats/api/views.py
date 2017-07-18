@@ -185,6 +185,7 @@ BLACKLIST = (
     'Releases',
     # because it's only used for the admin
     'Field',
+    'SuperSearchField',
     'SuperSearchMissingFields',
     # because it's very sensitive and we don't want to expose it
     'Query',

@@ -7,7 +7,7 @@ fi
 
 function help {
     echo "USAGE: ${0} <role>"
-    echo "Valid roles are: postgres, webapp, admin, consul."
+    echo "Valid roles are: postgres, webapp, elasticsearch, admin, consul."
     exit 1
 }
 
@@ -61,7 +61,7 @@ function webapp {
         echo "WARN could not run django syncdb"
         echo "See /var/log/socorro/django-syncdb.log for more info"
     fi
-
+    
     /data/socorro/socorro-virtualenv/bin/python \
         /data/socorro/webapp-django/manage.py migrate --noinput \
         &> /var/log/socorro/django-migrate.log
@@ -69,6 +69,23 @@ function webapp {
         echo "WARN could not run django migration"
         echo "See /var/log/socorro/django-migrate.log for more info"
     fi
+}
+
+function elasticsearch {
+    # create Elasticsearch indexes
+    echo "Creating Elasticsearch indexes"
+    pushd /data/socorro/application/scripts > /dev/null
+    su socorro -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
+        setup_supersearch_app.py \
+        &> /var/log/socorro/setup_supersearch.log"
+    
+    if [ $? != 0 ]; then
+        echo "WARN could not create Elasticsearch indexes"
+        echo "See /var/log/socorro/setup_supersearch.log for more info"
+        echo "You may want to run"
+        echo "/data/socorro/application/scripts/setup_supersearch_app.py manually"
+    fi
+    popd > /dev/null
 }
 
 function admin {

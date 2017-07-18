@@ -135,7 +135,7 @@ class SearchBase(object):
                 ))
 
                 # Add an interval field.
-                default_interval = 50
+                default_interval = 1
                 if field['query_type'] == 'date':
                     default_interval = 'day'
                 all_meta_filters.append(SearchFilter(
