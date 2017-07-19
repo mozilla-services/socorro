@@ -12,8 +12,8 @@ from datetime import datetime
 from configman.dotdict import DotDict
 
 from socorro.processor.hybrid_processor import (
-  HybridCrashProcessor,
-  create_symbol_path_str
+    HybridCrashProcessor,
+    create_symbol_path_str
 )
 from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
 from socorro.lib.util import CachingIterator
@@ -27,7 +27,7 @@ def setup_config_with_mocks():
     config.logger = mock.Mock()
     config.transaction = mock.MagicMock()
     config.transaction_executor_class = mock.Mock(
-      return_value=config.transaction
+        return_value=config.transaction
     )
     config.database = mock.Mock()
     config.database_class = mock.Mock(return_value=config.database)
@@ -35,15 +35,15 @@ def setup_config_with_mocks():
     config.with_old_monitor = True
 
     config.stackwalk_command_line = (
-      '$minidump_stackwalk_pathname -m $dumpfilePathname '
-      '$processor_symbols_pathname_list 2>/dev/null'
+        '$minidump_stackwalk_pathname -m $dumpfilePathname '
+        '$processor_symbols_pathname_list 2>/dev/null'
     )
     config.minidump_stackwalk_pathname = '/bin/mdsw'
     config.symbol_cache_path = '/symbol/cache'
     config.processor_symbols_pathname_list = '"/a/a" "/b/b" "/c/c"'
 
     config.exploitability_tool_command_line = (
-      '$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
+        '$exploitability_tool_pathname $dumpfilePathname 2>/dev/null'
     )
     config.exploitability_tool_pathname = '/bin/explt'
 
@@ -252,8 +252,8 @@ class TestHybridProcessor(TestCase):
             eq_(config.transaction, leg_proc.transaction)
             eq_(config.database,  leg_proc.database)
             eq_(
-              leg_proc.mdsw_command_line,
-              '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
+                leg_proc.mdsw_command_line,
+                '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
             )
             eq_(m_transform.call_count, 4)
 
@@ -274,7 +274,7 @@ class TestHybridProcessor(TestCase):
                 raw_crash.uuid = '3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 raw_crash.submitted_timestamp = '2012-05-04T15:33:33'
                 raw_dump = {'upload_file_minidump':
-                                '/some/path/%s.dump' % raw_crash.uuid,
+                            '/some/path/%s.dump' % raw_crash.uuid,
                             'upload_file_minidump_aux_dump_001':
                             '/some/path/upload_file_minidump_aux_001.%s.dump'
                                 % raw_crash.uuid,
@@ -283,7 +283,7 @@ class TestHybridProcessor(TestCase):
 
                 started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
                 leg_proc._log_job_start = mock.Mock(
-                  return_value=started_timestamp
+                    return_value=started_timestamp
                 )
 
                 basic_processed_crash = DotDict()
@@ -291,24 +291,24 @@ class TestHybridProcessor(TestCase):
                 basic_processed_crash.hang_type = 0
                 basic_processed_crash.java_stack_trace = None
                 leg_proc._create_basic_processed_crash = mock.Mock(
-                  return_value=basic_processed_crash)
+                    return_value=basic_processed_crash)
 
                 leg_proc._log_job_end = mock.Mock()
 
                 processed_crash_update_dict = DotDict()
                 processed_crash_update_dict.success = True
                 leg_proc._do_breakpad_stack_dump_analysis = mock.Mock(
-                  return_value=processed_crash_update_dict
+                    return_value=processed_crash_update_dict
                 )
 
                 leg_proc._cleanup_temp_file = mock.Mock()
 
-                 # Here's the call being tested
+                # Here's the call being tested
                 processed_crash = \
                     leg_proc.process_crash(
-                      raw_crash,
-                      raw_dump,
-                      {}
+                        raw_crash,
+                        raw_dump,
+                        {}
                     )
 
                 # test the result
@@ -328,58 +328,58 @@ class TestHybridProcessor(TestCase):
                 )
 
                 eq_(
-                  1,
-                  leg_proc._create_basic_processed_crash.call_count
+                    1,
+                    leg_proc._create_basic_processed_crash.call_count
                 )
                 minimal_processed_crash = \
                     leg_proc._create_minimal_processed_crash()
                 leg_proc._create_basic_processed_crash.assert_called_with(
-                  raw_crash.uuid,
-                  raw_crash,
-                  minimal_processed_crash,
-                  datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                  started_timestamp,
-                  [
-                      'testing_processor:2012',
-                      'HybridCrashProcessor'
-                  ]
+                    raw_crash.uuid,
+                    raw_crash,
+                    minimal_processed_crash,
+                    datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                    started_timestamp,
+                    [
+                        'testing_processor:2012',
+                        'HybridCrashProcessor'
+                    ]
                 )
 
                 eq_(
-                  2,
-                  leg_proc._do_breakpad_stack_dump_analysis.call_count
+                    2,
+                    leg_proc._do_breakpad_stack_dump_analysis.call_count
                 )
                 first_call, second_call = \
                     leg_proc._do_breakpad_stack_dump_analysis.call_args_list
                 eq_(
-                  first_call,
-                  ((raw_crash.uuid,
-                    '/some/path/%s.dump' % raw_crash.uuid,
-                    '/tmp/%s.MainThread.TEMPORARY.json' % raw_crash.uuid,
-                   0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                   [
-                      'testing_processor:2012',
-                      'HybridCrashProcessor'
-                   ]),)
+                    first_call,
+                    ((raw_crash.uuid,
+                      '/some/path/%s.dump' % raw_crash.uuid,
+                      '/tmp/%s.MainThread.TEMPORARY.json' % raw_crash.uuid,
+                      0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                      [
+                          'testing_processor:2012',
+                          'HybridCrashProcessor'
+                      ]),)
                 )
                 eq_(
-                  second_call,
-                  ((raw_crash.uuid,
-                   '/some/path/upload_file_minidump_aux_001.%s.dump'
-                       % raw_crash.uuid,
-                   '/tmp/%s.MainThread.TEMPORARY.json' % raw_crash.uuid,
-                   0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
-                   [
-                      'testing_processor:2012',
-                      'HybridCrashProcessor'
-                   ]),)
+                    second_call,
+                    ((raw_crash.uuid,
+                      '/some/path/upload_file_minidump_aux_001.%s.dump'
+                      % raw_crash.uuid,
+                      '/tmp/%s.MainThread.TEMPORARY.json' % raw_crash.uuid,
+                      0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
+                      [
+                          'testing_processor:2012',
+                          'HybridCrashProcessor'
+                      ]),)
                 )
 
                 eq_(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
-                  datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
-                  True,
-                  raw_crash.uuid
+                    datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
+                    True,
+                    raw_crash.uuid
                 )
 
                 epc = DotDict()
@@ -399,8 +399,8 @@ class TestHybridProcessor(TestCase):
                 ]
                 epc.upload_file_minidump_aux_dump_001 = {'success': True}
                 eq_(
-                  dict(processed_crash),
-                  dict(epc)
+                    dict(processed_crash),
+                    dict(epc)
                 )
 
                 leg_proc._statistics.assert_has_calls(
@@ -433,7 +433,7 @@ class TestHybridProcessor(TestCase):
 
                 started_timestamp = datetime(2012, 5, 4, 15, 10, tzinfo=UTC)
                 leg_proc._log_job_start = mock.Mock(
-                  return_value=started_timestamp
+                    return_value=started_timestamp
                 )
 
                 basic_processed_crash = DotDict()
@@ -442,10 +442,10 @@ class TestHybridProcessor(TestCase):
                 basic_processed_crash.hang_type = 0
                 basic_processed_crash.java_stack_trace = None
                 leg_proc._create_basic_processed_crash = mock.Mock(
-                  return_value=basic_processed_crash)
+                    return_value=basic_processed_crash)
 
                 leg_proc._get_temp_dump_pathname = mock.Mock(
-                  return_value='/tmp/x'
+                    return_value='/tmp/x'
                 )
 
                 leg_proc._log_job_end = mock.Mock()
@@ -453,37 +453,37 @@ class TestHybridProcessor(TestCase):
                 processed_crash_update_dict = DotDict()
                 processed_crash_update_dict.success = True
                 leg_proc._do_breakpad_stack_dump_analysis = mock.Mock(
-                  side_effect=Exception('nobody expects the spanish '
-                                        'inquisition')
+                    side_effect=Exception('nobody expects the spanish '
+                                          'inquisition')
                 )
 
-                 # Here's the call being tested
+                # Here's the call being tested
                 processed_crash = \
                     leg_proc.process_crash(
-                      raw_crash,
-                      raw_dump,
-                      {}
+                        raw_crash,
+                        raw_dump,
+                        {}
                     )
 
                 eq_(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
-                  datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
-                  False,
-                  raw_crash.uuid
+                    datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
+                    False,
+                    raw_crash.uuid
                 )
 
                 e = {
-                  'processor_notes':
-                      'testing_processor:2012; HybridCrashProcessor; '
-                      'unrecoverable processor error: '
-                      'nobody expects the spanish inquisition',
-                  'completeddatetime': datetime(2012, 5, 4, 15, 11,
-                                                tzinfo=UTC),
-                  'success': False,
-                  'uuid': raw_crash.uuid,
-                  'hang_type': 0,
-                  'java_stack_trace': None,
-                  'additional_minidumps': [],
+                    'processor_notes':
+                    'testing_processor:2012; HybridCrashProcessor; '
+                    'unrecoverable processor error: '
+                    'nobody expects the spanish inquisition',
+                    'completeddatetime': datetime(2012, 5, 4, 15, 11,
+                                                  tzinfo=UTC),
+                    'success': False,
+                    'uuid': raw_crash.uuid,
+                    'hang_type': 0,
+                    'java_stack_trace': None,
+                    'additional_minidumps': [],
                 }
                 eq_(e, dict(processed_crash))
                 leg_proc._statistics.assert_has_calls(
@@ -494,7 +494,6 @@ class TestHybridProcessor(TestCase):
                     ],
                     any_order=True
                 )
-
 
     def test_create_basic_processed_crash_normal(self):
         config = setup_config_with_mocks()
@@ -520,17 +519,17 @@ class TestHybridProcessor(TestCase):
                 # test 01
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 assert 'exploitability' in processed_crash
                 eq_(
-                  processed_crash,
-                  dict(cannonical_basic_processed_crash)
+                    processed_crash,
+                    dict(cannonical_basic_processed_crash)
                 )
 
                 # test 02
@@ -539,22 +538,22 @@ class TestHybridProcessor(TestCase):
                 del raw_crash_missing_product['ProductName']
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_missing_product,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_missing_product,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_missing_product = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_missing_product.product = None
                 eq_(
-                  processed_crash,
-                  processed_crash_missing_product
+                    processed_crash,
+                    processed_crash_missing_product
                 )
                 ok_('WARNING: raw_crash missing ProductName' in
-                                processor_notes)
+                    processor_notes)
                 eq_(len(processor_notes), 1)
 
                 # test 03
@@ -562,22 +561,22 @@ class TestHybridProcessor(TestCase):
                 raw_crash_missing_version = copy.deepcopy(raw_crash)
                 del raw_crash_missing_version['Version']
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_missing_version,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_missing_version,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_missing_version = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_missing_version.version = None
                 eq_(
-                  processed_crash,
-                  processed_crash_missing_version
+                    processed_crash,
+                    processed_crash_missing_version
                 )
                 ok_('WARNING: raw_crash missing Version' in
-                                processor_notes)
+                    processor_notes)
                 eq_(len(processor_notes), 1)
 
                 # test 04
@@ -587,12 +586,12 @@ class TestHybridProcessor(TestCase):
                     '30cb3212-b61d-4d1f-85ae-3bc4bcaa0504'
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_hangid,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_hangid,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_hangid = \
                     copy.copy(cannonical_basic_processed_crash)
@@ -600,8 +599,8 @@ class TestHybridProcessor(TestCase):
                     raw_crash_with_hangid.HangID
                 processed_crash_with_hangid.hang_type = -1
                 eq_(
-                  processed_crash,
-                  processed_crash_with_hangid
+                    processed_crash,
+                    processed_crash_with_hangid
                 )
                 eq_(len(processor_notes), 0)
 
@@ -611,12 +610,12 @@ class TestHybridProcessor(TestCase):
                 raw_crash_with_pluginhang.PluginHang = '1'
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_pluginhang,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_pluginhang,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_pluginhang = \
                     copy.copy(cannonical_basic_processed_crash)
@@ -624,8 +623,8 @@ class TestHybridProcessor(TestCase):
                     'fake-3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 processed_crash_with_pluginhang.hang_type = -1
                 eq_(
-                  processed_crash,
-                  processed_crash_with_pluginhang
+                    processed_crash,
+                    processed_crash_with_pluginhang
                 )
                 eq_(len(processor_notes), 0)
 
@@ -635,19 +634,19 @@ class TestHybridProcessor(TestCase):
                 raw_crash_with_hang_only.Hang = 16
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_hang_only,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_hang_only,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_hang_only = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_with_hang_only.hang_type = 1
                 eq_(
-                  processed_crash,
-                  processed_crash_with_hang_only
+                    processed_crash,
+                    processed_crash_with_hang_only
                 )
                 eq_(len(processor_notes), 0)
                 leg_proc._statistics.assert_has_calls(
@@ -663,19 +662,19 @@ class TestHybridProcessor(TestCase):
                 raw_crash_with_hang_only.Hang = 'bad value'
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  raw_crash_with_hang_only,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    raw_crash_with_hang_only,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 processed_crash_with_hang_only = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_with_hang_only.hang_type = 0
                 eq_(
-                  processed_crash,
-                  processed_crash_with_hang_only
+                    processed_crash,
+                    processed_crash_with_hang_only
                 )
                 eq_(len(processor_notes), 0)
                 leg_proc._statistics.assert_has_calls(
@@ -691,12 +690,12 @@ class TestHybridProcessor(TestCase):
                 bad_raw_crash['SecondsSinceLastCrash'] = 'badness'
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  bad_raw_crash,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    bad_raw_crash,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 eq_(processed_crash.last_crash, None)
                 ok_(
@@ -710,12 +709,12 @@ class TestHybridProcessor(TestCase):
                 bad_raw_crash['CrashTime'] = 'badness'
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  bad_raw_crash,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    bad_raw_crash,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 eq_(processed_crash.crash_time, 0)
                 ok_(
@@ -730,12 +729,12 @@ class TestHybridProcessor(TestCase):
                 bad_raw_crash['CrashTime'] = 'even more badness'
                 processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
-                  '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                  bad_raw_crash,
-                  processed_crash,
-                  datetimeFromISOdateString(raw_crash.submitted_timestamp),
-                  started_timestamp,
-                  processor_notes,
+                    '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                    bad_raw_crash,
+                    processed_crash,
+                    datetimeFromISOdateString(raw_crash.submitted_timestamp),
+                    started_timestamp,
+                    processor_notes,
                 )
                 eq_(processed_crash.install_age, 0)
                 ok_(
@@ -768,21 +767,21 @@ class TestHybridProcessor(TestCase):
                 raw_crash = canonical_standard_raw_crash
                 processor_notes = []
                 addon_list = leg_proc._process_list_of_addons(
-                  raw_crash,
-                  processor_notes
+                    raw_crash,
+                    processor_notes
                 )
                 expected_addon_list = [
-                  ('adblockpopups@jessehakanen.net', '0.3'),
-                  ('dmpluginff@westbyte.com', '1,4.8'),
-                  ('firebug@software.joehewitt.com', '1.9.1'),
-                  ('killjasmin@pierros14.com', '2.4'),
-                  ('support@surfanonymous-free.com', '1.0'),
-                  ('uploader@adblockfilters.mozdev.org', '2.1'),
-                  ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
-                  ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
-                  ('anttoolbar@ant.com', '2.4.6.4'),
-                  ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
-                  ('elemhidehelper@adblockplus.org', '1.2.1')
+                    ('adblockpopups@jessehakanen.net', '0.3'),
+                    ('dmpluginff@westbyte.com', '1,4.8'),
+                    ('firebug@software.joehewitt.com', '1.9.1'),
+                    ('killjasmin@pierros14.com', '2.4'),
+                    ('support@surfanonymous-free.com', '1.0'),
+                    ('uploader@adblockfilters.mozdev.org', '2.1'),
+                    ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
+                    ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
+                    ('anttoolbar@ant.com', '2.4.6.4'),
+                    ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
+                    ('elemhidehelper@adblockplus.org', '1.2.1')
                 ]
                 eq_(addon_list, expected_addon_list)
 
@@ -791,11 +790,11 @@ class TestHybridProcessor(TestCase):
                 raw_crash['Add-ons'] = 'adblockpopups@jessehakanen.net:0:3:1'
                 processor_notes = []
                 addon_list = leg_proc._process_list_of_addons(
-                  raw_crash,
-                  processor_notes
+                    raw_crash,
+                    processor_notes
                 )
                 expected_addon_list = [
-                  ('adblockpopups@jessehakanen.net', '0:3:1'),
+                    ('adblockpopups@jessehakanen.net', '0:3:1'),
                 ]
                 eq_(addon_list, expected_addon_list)
                 leg_proc._statistics.assert_has_calls(
@@ -825,7 +824,7 @@ class TestHybridProcessor(TestCase):
                 raw_crash = canonical_standard_raw_crash
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(pc_update, {})
                 eq_(processor_notes, [])
@@ -835,35 +834,35 @@ class TestHybridProcessor(TestCase):
                 raw_crash.ProcessType = 'unknown'
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(
-                  pc_update,
-                  {
-                    'process_type': 'unknown',
-                  }
+                    pc_update,
+                    {
+                        'process_type': 'unknown',
+                    }
                 )
                 eq_(processor_notes, [])
 
-                #test plugin null case
+                # test plugin null case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
                 raw_crash.ProcessType = 'plugin'
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(
-                  pc_update,
-                  {
-                    'process_type': 'plugin',
-                    'PluginFilename': '',
-                    'PluginName': '',
-                    'PluginVersion': '',
-                  }
+                    pc_update,
+                    {
+                        'process_type': 'plugin',
+                        'PluginFilename': '',
+                        'PluginName': '',
+                        'PluginVersion': '',
+                    }
                 )
                 eq_(processor_notes, [])
 
-                #test plugin case
+                # test plugin case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
                 raw_crash.ProcessType = 'plugin'
                 raw_crash.PluginFilename = 'myfile.dll'
@@ -871,16 +870,16 @@ class TestHybridProcessor(TestCase):
                 raw_crash.PluginVersion = '6.6.6'
                 processor_notes = []
                 pc_update = leg_proc._add_process_type_to_processed_crash(
-                  raw_crash
+                    raw_crash
                 )
                 eq_(
-                  pc_update,
-                  {
-                    'process_type': 'plugin',
-                    'PluginFilename': 'myfile.dll',
-                    'PluginName': 'myplugin',
-                    'PluginVersion': '6.6.6',
-                  }
+                    pc_update,
+                    {
+                        'process_type': 'plugin',
+                        'PluginFilename': 'myfile.dll',
+                        'PluginName': 'myplugin',
+                        'PluginVersion': '6.6.6',
+                    }
                 )
                 eq_(processor_notes, [])
 
@@ -922,9 +921,9 @@ class TestHybridProcessor(TestCase):
                 for x in zip(xrange(5), dump_analysis_line_iterator):
                     pass
                 return DotDict({
-                  "signature": 'signature',
-                  "truncated": False,
-                  "topmost_filenames": 'topmost_sourcefiles',
+                    "signature": 'signature',
+                    "truncated": False,
+                    "topmost_filenames": 'topmost_sourcefiles',
                 })
 
         config = setup_config_with_mocks()
@@ -944,25 +943,25 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
                 processed_crash_update = \
                     leg_proc._do_breakpad_stack_dump_analysis(
-                      '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
-                      'some_path',
-                      'some_other_path',
-                      0,
-                      None,
-                      datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
-                      processor_notes
+                        '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                        'some_path',
+                        'some_other_path',
+                        0,
+                        None,
+                        datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
+                        processor_notes
                     )
 
                 e_pcu = DotDict({
-                  'os_name': 'Windows NT',
-                  'success': False,
-                  'dump': 'a\nb\nc\n',
-                  'truncated': False,
-                  'crashedThread': 17,
-                  'signature': 'signature',
-                  'topmost_filenames': 'topmost_sourcefiles',
-                  'exploitability': 'unknown',
-                  'json_dump': {'status': 'unknown error'},
+                    'os_name': 'Windows NT',
+                    'success': False,
+                    'dump': 'a\nb\nc\n',
+                    'truncated': False,
+                    'crashedThread': 17,
+                    'signature': 'signature',
+                    'topmost_filenames': 'topmost_sourcefiles',
+                    'exploitability': 'unknown',
+                    'json_dump': {'status': 'unknown error'},
                 })
 
                 eq_(e_pcu, processed_crash_update)
@@ -1339,9 +1338,9 @@ class TestHybridProcessor(TestCase):
         processed_crash.java_stack_trace = ['why are you using Java?']
         processed_crash_update_dict = {'hello': 'good-bye'}
         processor._do_breakpad_stack_dump_analysis = mock.Mock(
-          return_value=processed_crash_update_dict
+            return_value=processed_crash_update_dict
         )
-        submitted_timestamp='2014-08-07T00:00:00'
+        submitted_timestamp = '2014-08-07T00:00:00'
         processor_notes = []
 
         with mock.patch(
@@ -1386,9 +1385,9 @@ class TestHybridProcessor(TestCase):
         processed_crash.additional_minidumps = []
         processed_crash_update_dict = {'hello': 'good-bye'}
         processor._do_breakpad_stack_dump_analysis = mock.Mock(
-          return_value=processed_crash_update_dict
+            return_value=processed_crash_update_dict
         )
-        submitted_timestamp='2014-08-07T00:00:00'
+        submitted_timestamp = '2014-08-07T00:00:00'
         processor_notes = []
 
         with mock.patch(
@@ -1440,12 +1439,12 @@ class TestHybridProcessor(TestCase):
         processed_crash.additional_minidumps = []
         processed_crash_update_dict = {'hello': 'good-bye'}
         processor._do_breakpad_stack_dump_analysis = mock.Mock(
-          return_value=processed_crash_update_dict
+            return_value=processed_crash_update_dict
         )
         processor._extract_memory_info = mock.Mock(
-          return_value="I'm a memory report"
+            return_value="I'm a memory report"
         )
-        submitted_timestamp='2014-08-07T00:00:00'
+        submitted_timestamp = '2014-08-07T00:00:00'
         processor_notes = []
 
         with mock.patch(
@@ -1523,7 +1522,7 @@ class TestHybridProcessor(TestCase):
             'socorro.processor.hybrid_processor.gzip'
         ) as mocked_gzip:
 
-            mocked_fd = mocked_gzip.open.side_effect=IOError('bad')
+            mocked_fd = mocked_gzip.open.side_effect = IOError('bad')
 
             # the call being tested:
             memory_info = processor._extract_memory_info(
@@ -1556,7 +1555,7 @@ class TestHybridProcessor(TestCase):
             ) as mocked_json:
 
                 mocked_fd = mocked_gzip.open.return_value
-                mocked_json.load.side_effect=ValueError('sigh')
+                mocked_json.load.side_effect = ValueError('sigh')
 
                 # the call being tested:
                 memory_info = processor._extract_memory_info(
@@ -1577,6 +1576,3 @@ class TestHybridProcessor(TestCase):
                 self.assertEqual(processor_notes, [error_message])
                 self.assertEqual(memory_info, {'ERROR': error_message})
                 mocked_fd.close.assert_called_once()
-
-
-

@@ -5,9 +5,12 @@
 import mock
 import random
 import uuid
+from distutils.version import LooseVersion
+from functools import wraps
 
 from elasticsearch.helpers import bulk
 from configman import ConfigurationManager, environment
+from nose import SkipTest
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.index_creator import IndexCreator
@@ -50,10 +53,11 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         },
@@ -72,10 +76,11 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         },
@@ -94,7 +99,8 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'keyword',
+            'type': 'string',
+            'analyzer': 'keyword'
         },
     },
     'platform': {
@@ -111,10 +117,11 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         },
@@ -133,7 +140,7 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'keyword',
+            'type': 'string'
         },
     },
     'date': {
@@ -170,7 +177,7 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'keyword',
+            'type': 'string'
         },
     },
     'build_id': {
@@ -199,17 +206,12 @@ SUPERSEARCH_FIELDS = {
         'form_field_choices': None,
         'permissions_needed': [],
         'default_value': None,
-        'has_full_version': True,
+        'has_full_version': False,
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'string'
         },
     },
     'email': {
@@ -226,7 +228,8 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'keyword',
+            'type': 'string',
+            'analyzer': 'keyword'
         },
     },
     'url': {
@@ -243,7 +246,8 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'keyword',
+            'type': 'string',
+            'analyzer': 'keyword'
         },
     },
     'uuid': {
@@ -260,7 +264,8 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'keyword'
+            'index': 'not_analyzed',
+            'type': 'string'
         }
     },
     'process_type': {
@@ -279,7 +284,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'keyword',
+            'type': 'string'
         }
     },
     'user_comments': {
@@ -296,10 +301,11 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         }
@@ -335,7 +341,8 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'keyword'
+            'analyzer': 'keyword',
+            'type': 'string'
         }
     },
     'bios_manufacturer': {
@@ -352,7 +359,8 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'keyword'
+            'analyzer': 'keyword',
+            'type': 'string'
         }
     },
     'vendor': {
@@ -369,7 +377,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'keyword',
+            'type': 'string'
         }
     },
     'useragent_locale': {
@@ -386,7 +394,8 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'keyword'
+            'analyzer': 'keyword',
+            'type': 'string'
         }
     },
     'is_garbage_collecting': {
@@ -454,10 +463,11 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         }
@@ -476,10 +486,11 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         }
@@ -498,10 +509,11 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         }
@@ -520,10 +532,11 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         }
@@ -542,7 +555,8 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
-            'type': 'keyword'
+            'index': 'not_analyzed',
+            'type': 'string'
         }
     },
     'cpu_info': {
@@ -559,10 +573,11 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'fields': {
                 'full': {
-                    'type': 'keyword',
+                    'type': 'string',
+                    'index': 'not_analyzed',
                 }
             }
         }
@@ -589,7 +604,7 @@ SUPERSEARCH_FIELDS = {
         'data_validation_type': 'enum',
         'default_value': None,
         'form_field_choices': None,
-        'has_full_version': True,
+        'has_full_version': False,
         'in_database_name': 'app_notes',
         'is_exposed': True,
         'is_mandatory': False,
@@ -599,12 +614,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'string'
         }
     },
     'hang_type': {
@@ -632,7 +642,7 @@ SUPERSEARCH_FIELDS = {
         'form_field_choices': [
             'high', 'normal', 'low', 'none', 'unknown', 'error'
         ],
-        'has_full_version': True,
+        'has_full_version': False,
         'in_database_name': 'exploitability',
         'is_exposed': True,
         'is_mandatory': False,
@@ -644,19 +654,14 @@ SUPERSEARCH_FIELDS = {
         ],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'string'
         }
     },
     'platform_version': {
         'data_validation_type': 'str',
         'default_value': None,
         'form_field_choices': None,
-        'has_full_version': True,
+        'has_full_version': False,
         'in_database_name': 'os_version',
         'is_exposed': True,
         'is_mandatory': False,
@@ -666,12 +671,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'string'
         }
     },
     'write_combine_size': {
@@ -705,9 +705,8 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
-            'type': 'text',
+            'type': 'string',
             'analyzer': 'semicolon_keywords',
-            'fielddata': True,
         }
     },
     # A field that is in the root of the crash report document.
@@ -725,8 +724,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
-            'type': 'text',
-            'fielddata': True,
+            'type': 'string',
         }
     },
     # Add a synonym field.
@@ -760,6 +758,28 @@ SUPERSEARCH_FIELDS = {
         'query_type': 'enum',
     },
 }
+
+
+def minimum_es_version(minimum_version):
+    """Skip the test if the Elasticsearch version is less than specified.
+    :arg minimum_version: string; the minimum Elasticsearch version required
+    """
+    def decorated(test):
+        """Decorator to only run the test if ES version is greater or
+        equal than specified.
+        """
+        @wraps(test)
+        def test_with_version(self):
+            "Only run the test if ES version is not less than specified."
+            actual_version = self.connection.info()['version']['number']
+            if LooseVersion(actual_version) >= LooseVersion(minimum_version):
+                test(self)
+            else:
+                raise SkipTest
+
+        return test_with_version
+
+    return decorated
 
 
 class SuperSearchWithFields(SuperSearch):

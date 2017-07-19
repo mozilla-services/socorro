@@ -24,7 +24,7 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
         index_creator = IndexCreator(config=self.config)
         index_creator.create_index(
             self.config.elasticsearch.elasticsearch_index,
-            {}
+            {'foo': 'bar'}
         )
 
         ok_(
