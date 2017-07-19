@@ -19,6 +19,7 @@ from socorro.external.postgresql.dbapi2_util import (
 
 
 class Response(object):
+
     def __init__(self, content, status_code=200):
         if not isinstance(content, basestring):
             content = json.dumps(content)

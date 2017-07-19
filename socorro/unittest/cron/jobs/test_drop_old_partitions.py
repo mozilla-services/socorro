@@ -13,7 +13,7 @@ from socorro.unittest.cron.setup_configman import (
 class TestDropOldPartitions(IntegrationTestBase):
 
     def _setup_config_manager(self):
-        _super = super(TestDropOldPartitions, self)._setup_config_manager
+        super(TestDropOldPartitions, self)._setup_config_manager
         return get_config_manager_for_crontabber(
             jobs='socorro.cron.jobs.drop_old_partitions.'
             'DropOldPartitionsCronApp|1m',

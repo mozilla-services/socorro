@@ -248,6 +248,7 @@ cannonical_json_dump = {
 
 
 class TestCase(TestCase):
+
     def test_get(self):
         a_list = ['a', 'b', 'c']
         eq_(bpj._get(a_list, 0, None), 'a')
@@ -261,7 +262,6 @@ class TestCase(TestCase):
         eq_(bpj._get_int(a_list, 1, None), 1)
         eq_(bpj._get_int(a_list, 2, None), None)
         eq_(bpj._get_int(a_list, 3, None), None)
-
 
     def test_extract_OS_info(self):
         info = ['OS', 'Windows NT', '5.1.2600 Service Pack 2']
@@ -277,7 +277,7 @@ class TestCase(TestCase):
         )
 
     def test_extract_OS_info_fail(self):
-        info = ['OS',]
+        info = ['OS', ]
         d = DotDict()
         bpj._extract_OS_info(info, d)
         ok_('system_info' in d)
@@ -372,7 +372,6 @@ class TestCase(TestCase):
             }
         )
 
-
     def test_extract_frame_inf(self):
         info = ['0', '12', 'msvcr100.dll', '_callthreadstartex',
                 'f:\\src\\threadex.c', '314', '0x6']
@@ -418,8 +417,6 @@ class TestCase(TestCase):
                 ]
             }
         )
-
-
 
     def test_pipe_dump_to_json_dump(self):
         pipe_dump = [
