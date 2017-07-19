@@ -1157,7 +1157,9 @@ def graphics_report(request):
     writer = utils.UnicodeWriter(out, delimiter='\t')
     writer.writerow(GRAPHICS_REPORT_HEADER)
     pages = data['total'] // batch_size
-    pages += data['total'] % batch_size and 1 or 0
+    # if there is a remainder, add one more page
+    if data['total'] % batch_size:
+        pages += 1
     alias = {
         'crash_id': 'uuid',
         'os_name': 'platform',
@@ -1168,7 +1170,11 @@ def graphics_report(request):
     }
     # Make sure that we don't have an alias for a header we don't need
     alias_excess = set(alias.keys()) - set(GRAPHICS_REPORT_HEADER)
-    assert not alias_excess, alias_excess
+    if alias_excess:
+        raise ValueError(
+            'Not all keys in the map of aliases are in '
+            'the header ({!r})'.format(alias_excess)
+        )
 
     def get_value(row, key):
         value = row.get(alias.get(key, key))
@@ -1191,7 +1197,7 @@ def graphics_report(request):
 
     for page in range(pages):
         if page > 0:
-            params['_results_offset'] = 500 * page
+            params['_results_offset'] = batch_size * page
             data = api.get(**params)
 
         for row in data['hits']:
