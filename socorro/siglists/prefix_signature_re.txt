@@ -20,7 +20,9 @@ CFRelease
 _chkstk
 CleanupPerAppKey
 ConditionVariableFallback::wait\(.*\)
+core::option::expect_failed
 core::result::unwrap_failed<T>
+core::str::slice_error_fail
 CrashInJS
 CreateFileMappingA
 __delayLoadHelper2
