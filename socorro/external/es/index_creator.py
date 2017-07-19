@@ -8,8 +8,6 @@ import os
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from socorro.external.es.super_search_fields import SuperSearchFields
-
 
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
@@ -80,6 +78,10 @@ class IndexCreator(RequiredConfig):
     def create_socorro_index(self, es_index, mappings=None):
         """Create an index that will receive crash reports. """
         if mappings is None:
+            # Import at runtime to avoid dependency circle.
+            from socorro.external.es.super_search_fields import (
+                SuperSearchFields
+            )
             mappings = SuperSearchFields(config=self.config).get_mapping()
 
         es_settings = self.get_socorro_index_settings(mappings)
@@ -102,5 +104,6 @@ class IndexCreator(RequiredConfig):
             )
         except elasticsearch.exceptions.RequestError as e:
             # If this index already exists, swallow the error.
-            if e.error != 'index_already_exists_exception':
+            # NOTE! This is NOT how the error looks like in ES 2.x
+            if 'IndexAlreadyExistsException' not in str(e):
                 raise

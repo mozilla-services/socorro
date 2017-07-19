@@ -81,12 +81,12 @@ class TestTransformRules(TestCase):
     def test_kw_str_parse(self):
         a = 'a=1, b=2'
         actual = transform_rules.kw_str_parse(a)
-        expected = {'a':1, 'b':2}
+        expected = {'a': 1, 'b': 2}
         assert_expected(expected, actual)
 
         a = 'a="fred", b=3.1415'
         actual = transform_rules.kw_str_parse(a)
-        expected = {'a':'fred', 'b':3.1415}
+        expected = {'a': 'fred', 'b': 3.1415}
         assert_expected(expected, actual)
 
     def test_TransfromRule_init(self):
@@ -129,7 +129,7 @@ class TestTransformRules(TestCase):
         r = transform_rules.TransformRule(
             'socorro.unittest.lib.test_transform_rules.foo',
             (1,),
-            {'a':13},
+            {'a': 13},
             'socorro.unittest.lib.test_transform_rules.bar',
             '',
             ''
@@ -137,7 +137,7 @@ class TestTransformRules(TestCase):
         repr_pred = repr(r.predicate)
         assert 'foo' in repr_pred, 'expected "foo" in %s' % repr_pred
         assert_expected(r.predicate_args, (1,))
-        assert_expected(r.predicate_kwargs, {'a':13})
+        assert_expected(r.predicate_kwargs, {'a': 13})
         repr_act = repr(r.action)
         assert 'bar' in repr_act, 'expected "bar" in %s' % repr_act
         assert_expected(r.action_args, ())
@@ -153,8 +153,8 @@ class TestTransformRules(TestCase):
         )
         repr_pred = repr(r.predicate)
         assert 'foo' in repr_pred, 'expected "foo" in %s' % repr_pred
-        assert_expected(r.predicate_args, (1,2))
-        assert_expected(r.predicate_kwargs, {'a':13})
+        assert_expected(r.predicate_args, (1, 2))
+        assert_expected(r.predicate_kwargs, {'a': 13})
         repr_act = repr(r.action)
         assert 'bar' in repr_act, 'expected "bar" in %s' % repr_act
         assert_expected(r.action_args, ())
@@ -164,12 +164,15 @@ class TestTransformRules(TestCase):
         """test to make sure that classes can be used as predicates and
         actions"""
         class MyRule(object):
+
             def __init__(self, config=None):
                 self.predicate_called = False
                 self.action_called = False
+
             def predicate(self):
                 self.predicate_called = True
                 return True
+
             def action(self):
                 self.action_called = True
                 return True
@@ -188,12 +191,15 @@ class TestTransformRules(TestCase):
         """test to make sure that classes can be mixed with functions as
         predicates and actions"""
         class MyRule(object):
+
             def __init__(self, config=None):
                 self.predicate_called = False
                 self.action_called = False
+
             def predicate(self):
                 self.predicate_called = True
                 return True
+
             def action(self):
                 self.action_called = True
                 return True
@@ -207,12 +213,12 @@ class TestTransformRules(TestCase):
         )
         eq_(r.predicate, my_predicate)
         eq_(r.action, r._action_implementation.action)
-        self.assertNotEqual(r._action_implementation, r._predicate_implementation)
+        self.assertNotEqual(r._action_implementation,
+                            r._predicate_implementation)
         r.act()
         # make sure that the class predicate function was not called
         ok_(not r._action_implementation.predicate_called)
         ok_(r._action_implementation.action_called)
-
 
     def test_TransfromRule_function_or_constant(self):
         r = transform_rules.TransformRule.function_invocation_proxy(True,
@@ -230,7 +236,7 @@ class TestTransformRules(TestCase):
         assert_expected(r, True)
         r = transform_rules.TransformRule.function_invocation_proxy(False,
                                                                     (),
-                                                                    {'a':13})
+                                                                    {'a': 13})
         assert_expected(r, False)
 
         r = transform_rules.TransformRule.function_invocation_proxy('True',
@@ -239,7 +245,7 @@ class TestTransformRules(TestCase):
         assert_expected(r, True)
         r = transform_rules.TransformRule.function_invocation_proxy(None,
                                                                     (),
-                                                                    {'a':13})
+                                                                    {'a': 13})
         assert_expected(r, False)
 
         def fn1(*args, **kwargs):
@@ -251,9 +257,8 @@ class TestTransformRules(TestCase):
         assert_expected(r, ((1, 2, 3), {}))
         r = transform_rules.TransformRule.function_invocation_proxy(fn1,
                                                                     (1, 2, 3),
-                                                                    {'a':13})
-        assert_expected(r, ((1, 2, 3), {'a':13}))
-
+                                                                    {'a': 13})
+        assert_expected(r, ((1, 2, 3), {'a': 13}))
 
     def test_TransfromRule_act(self):
         rule = transform_rules.TransformRule(True, (), {}, True, (), {})
@@ -273,12 +278,12 @@ class TestTransformRules(TestCase):
         r = rule.act(s, d)
         assert_expected(r, (True, False))
 
-        rule = transform_rules.TransformRule(pred1, (), {'fred':True},
+        rule = transform_rules.TransformRule(pred1, (), {'fred': True},
                                              False, (), {})
         r = rule.act(s, d)
         assert_expected(r, (True, False))
 
-        rule = transform_rules.TransformRule(pred1, (), {'fred':False},
+        rule = transform_rules.TransformRule(pred1, (), {'fred': False},
                                              False, (), {})
         r = rule.act(s, d)
         assert_expected(r, (False, None))
@@ -287,14 +292,13 @@ class TestTransformRules(TestCase):
             d[d_key] = s[s_key]
             return True
 
-        rule = transform_rules.TransformRule(pred1, (), {'fred':True},
+        rule = transform_rules.TransformRule(pred1, (), {'fred': True},
                                              copy1, (),
-                                               's_key="dwight", d_key="wilma"')
+                                             's_key="dwight", d_key="wilma"')
         r = rule.act(s, d)
         assert_expected(r, (True, True))
         assert_expected(s['dwight'], 96)
         assert_expected(d['wilma'], 96)
-
 
     def test_TransformRuleSystem_init(self):
         rules = transform_rules.TransformRuleSystem()
@@ -341,7 +345,7 @@ class TestTransformRules(TestCase):
                       (True, '', '', assign_1, '', ''),
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
-                     ]
+                      ]
         rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
@@ -369,7 +373,7 @@ class TestTransformRules(TestCase):
                       (True, '', '', assign_1, '', ''),
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
-                     ]
+                      ]
         rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
@@ -377,7 +381,6 @@ class TestTransformRules(TestCase):
         rules.apply_until_action_succeeds(s, d)
         assert_expected(d, {'one': 1})
         assert_expected(quit_check_mock.call_count, 2)
-
 
     def test_TransformRuleSystem_apply_all_until_action_fails(self):
 
@@ -398,7 +401,7 @@ class TestTransformRules(TestCase):
                       (True, '', '', assign_1, '', ''),
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
-                     ]
+                      ]
         rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
@@ -406,7 +409,6 @@ class TestTransformRules(TestCase):
         rules.apply_until_action_fails(s, d)
         assert_expected(d, {})
         assert_expected(quit_check_mock.call_count, 1)
-
 
     def test_TransformRuleSystem_apply_all_until_predicate_succeeds(self):
 
@@ -427,7 +429,7 @@ class TestTransformRules(TestCase):
                       (True, '', '', assign_1, '', ''),
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
-                     ]
+                      ]
         rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
@@ -455,7 +457,7 @@ class TestTransformRules(TestCase):
                       (True, '', '', assign_1, '', ''),
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
-                     ]
+                      ]
         rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
@@ -499,17 +501,17 @@ class TestTransformRules(TestCase):
             transform_rules.is_not_null_predicate(
                 {'alpha': 'hello'}, None, None, None, 'beta'
             )
-        )
+            )
         ok_(not
             transform_rules.is_not_null_predicate(
                 {'alpha': ''}, None, None, None, 'alpha'
             )
-        )
+            )
         ok_(not
             transform_rules.is_not_null_predicate(
                 {'alpha': None}, None, None, None, 'alpha'
             )
-        )
+            )
 
     def test_rule_simple(self):
         fake_config = DotDict()
@@ -523,6 +525,7 @@ class TestTransformRules(TestCase):
         eq_(r1.act(), (True, True))
 
         class BadPredicate(transform_rules.Rule):
+
             def _predicate(self, *args, **kwargs):
                 return False
 
@@ -532,6 +535,7 @@ class TestTransformRules(TestCase):
         eq_(r2.act(), (False, None))
 
         class BadAction(transform_rules.Rule):
+
             def _action(self, *args, **kwargs):
                 return False
 
@@ -547,6 +551,7 @@ class TestTransformRules(TestCase):
         fake_config.chatty = False
 
         class BadPredicate(transform_rules.Rule):
+
             def _predicate(self, *args, **kwargs):
                 raise Exception("highwater")
 
@@ -567,6 +572,7 @@ class TestTransformRules(TestCase):
         fake_config.logger.debug.reset_mock()
 
         class BadAction(transform_rules.Rule):
+
             def _action(self, *args, **kwargs):
                 raise Exception("highwater")
 
@@ -617,6 +623,7 @@ class TestTransformRules(TestCase):
             pass
 
         class BadPredicate(transform_rules.Rule):
+
             def _predicate(self, *args, **kwargs):
                 raise SomeError("highwater")
 
@@ -646,6 +653,7 @@ class TestTransformRules(TestCase):
         ok_(isinstance(exc, SomeError))
 
         class BadAction(transform_rules.Rule):
+
             def _action(self, *args, **kwargs):
                 raise SomeError("highwater")
 
@@ -684,6 +692,7 @@ class TestTransformRules(TestCase):
         )
 
         class BadPredicate(transform_rules.Rule):
+
             def _predicate(self, *args, **kwargs):
                 raise NameError("highwater")
 

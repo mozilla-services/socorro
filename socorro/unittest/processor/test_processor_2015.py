@@ -11,7 +11,6 @@ from socorro.processor.processor_2015 import (
     Processor2015,
     rule_sets_from_string
 )
-from socorro.lib.util import DotDict as SDotDict
 from socorro.lib.transform_rules import TransformRuleSystem
 from socorro.processor.support_classifiers import (
     BitguardClassifier,
@@ -190,5 +189,3 @@ class TestProcessor2015(TestCase):
             "dwight; Processor2015; earlier processing: 2014-01-01T00:00:00; "
             "we've been here before; yep"
         )
-
-

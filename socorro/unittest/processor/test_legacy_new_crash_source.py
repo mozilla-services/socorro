@@ -10,7 +10,7 @@ from nose.tools import eq_
 from configman.dotdict import DotDict
 
 from socorro.processor.legacy_new_crash_source import (
-  LegacyNewCrashSource,
+    LegacyNewCrashSource,
 )
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
@@ -48,9 +48,9 @@ class TestLegacyNewCrashSource(TestCase):
 
         eq_(m_transaction_executor_class.call_count, 1)
         m_transaction_executor_class.assert_called_with(
-          config,
-          database,
-          None)
+            config,
+            database,
+            None)
 
     def test_incoming_job_stream_normal(self):
         config = DotDict()
@@ -60,6 +60,7 @@ class TestLegacyNewCrashSource(TestCase):
         config.logger = mock.Mock()
 
         class StubbedIterators(LegacyNewCrashSource):
+
             def _priority_jobs_iter(self):
                 while True:
                     yield None
@@ -82,7 +83,7 @@ class TestLegacyNewCrashSource(TestCase):
                     '3456',
                     '4567',
                     '5678',
-                   )
+                    )
         for x, y in zip(new_crash_source, expected):
             eq_(x, ((y,), {}))
 
@@ -96,6 +97,7 @@ class TestLegacyNewCrashSource(TestCase):
         config.logger = mock.Mock()
 
         class StubbedIterators(LegacyNewCrashSource):
+
             def _normal_jobs_iter(self):
                 while True:
                     yield None
@@ -118,7 +120,7 @@ class TestLegacyNewCrashSource(TestCase):
                     '3456',
                     '4567',
                     '5678',
-                   )
+                    )
         for x, y in zip(new_crash_source, expected):
             eq_(x, ((y,), {}))
 
@@ -132,6 +134,7 @@ class TestLegacyNewCrashSource(TestCase):
         config.logger = mock.Mock()
 
         class StubbedIterators(LegacyNewCrashSource):
+
             def _normal_jobs_iter(self):
                 values = [
                     (1, '1234', 1),
@@ -173,7 +176,7 @@ class TestLegacyNewCrashSource(TestCase):
                     '4567',
                     'p5678',
                     '5678',
-                   )
+                    )
         for x, y in zip(new_crash_source, expected):
             eq_(x, ((y,), {}))
 
@@ -189,26 +192,26 @@ class TestLegacyNewCrashSource(TestCase):
         config.logger = mock.Mock()
 
         transaction_returns = (
-          'priority_jobs_17',
-          [  # fetchall
-              (1, '1234', 1, None),
-              (2, '2345', 1, None),
-              (3, '3456', 1, None),
-          ],
-          None,  # delete
-          None,  # delete
-          None,  # delete
-          [  # nothing to do
-          ],
-          [
-              (4, '4567', 1, None),
-              (5, '5678', 1, None),
-          ],
-          None,  # delete
-          None,  # delete
-          [  # nothing to do
-          ],
-          None,  # drop table
+            'priority_jobs_17',
+            [  # fetchall
+                (1, '1234', 1, None),
+                (2, '2345', 1, None),
+                (3, '3456', 1, None),
+            ],
+            None,  # delete
+            None,  # delete
+            None,  # delete
+            [  # nothing to do
+            ],
+            [
+                (4, '4567', 1, None),
+                (5, '5678', 1, None),
+            ],
+            None,  # delete
+            None,  # delete
+            [  # nothing to do
+            ],
+            None,  # drop table
         )
         m_transaction.side_effect = sequencer(*transaction_returns)
 
@@ -222,23 +225,23 @@ class TestLegacyNewCrashSource(TestCase):
         )
 
         new_crash_source = LegacyNewCrashSource(config,
-                                       processor_name='dwight')
+                                                processor_name='dwight')
 
         for x, y in zip(new_crash_source._priority_jobs_iter(),
                         expected_sequence):
             eq_(x, y)
 
         expected_get_priority_jobs_sql = (
-          "select"
-          "    j.id,"
-          "    pj.uuid,"
-          "    1,"
-          "    j.starteddatetime "
-          "from"
-          "    jobs j right join priority_jobs_17 pj on j.uuid = pj.uuid"
+            "select"
+            "    j.id,"
+            "    pj.uuid,"
+            "    1,"
+            "    j.starteddatetime "
+            "from"
+            "    jobs j right join priority_jobs_17 pj on j.uuid = pj.uuid"
         )
         expected_delete_one_priority_job_sql = (
-          "delete from priority_jobs_17 where uuid = %s"
+            "delete from priority_jobs_17 where uuid = %s"
         )
         expected_transactions = (
             ((new_crash_source._create_priority_jobs,),),
@@ -273,19 +276,19 @@ class TestLegacyNewCrashSource(TestCase):
         config.pollingInterval = timedelta(0, 0, 0, 0)
 
         transaction_returns = (
-          'priority_jobs_17',
-          [  # fetchall
-              (1, '1234', 1),
-              (2, '2345', 1),
-              (3, '3456', 1),
-          ],
-          [  # nothing to do
-          ],
-          [
-              (4, '4567', 1),
-              (5, '5678', 1),
-          ],
-          None,  # drop table
+            'priority_jobs_17',
+            [  # fetchall
+                (1, '1234', 1),
+                (2, '2345', 1),
+                (3, '3456', 1),
+            ],
+            [  # nothing to do
+            ],
+            [
+                (4, '4567', 1),
+                (5, '5678', 1),
+            ],
+            None,  # drop table
         )
         m_transaction.side_effect = sequencer(*transaction_returns)
 
@@ -299,24 +302,24 @@ class TestLegacyNewCrashSource(TestCase):
         )
 
         new_crash_source = LegacyNewCrashSource(config,
-                                       processor_name='dwight')
+                                                processor_name='dwight')
         new_crash_source.processor_id = 17
         for x, y in zip(new_crash_source._normal_jobs_iter(),
                         exepected_sequence):
             eq_(x, y)
 
         expected_get_normal_sql = (
-          "select"
-          "    j.id,"
-          "    j.uuid,"
-          "    priority "
-          "from"
-          "    jobs j "
-          "where"
-          "    j.owner = 17"
-          "    and j.starteddatetime is null "
-          "order by queueddatetime"
-          "  limit 10"
+            "select"
+            "    j.id,"
+            "    j.uuid,"
+            "    priority "
+            "from"
+            "    jobs j "
+            "where"
+            "    j.owner = 17"
+            "    and j.starteddatetime is null "
+            "order by queueddatetime"
+            "  limit 10"
         )
         expected_transactions = (
             ((new_crash_source._create_priority_jobs,),),

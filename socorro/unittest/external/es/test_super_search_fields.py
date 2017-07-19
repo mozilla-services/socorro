@@ -2,16 +2,21 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
 import datetime
+import elasticsearch
 from nose.tools import assert_raises, eq_, ok_
 
-from socorro.lib import BadArgumentError
+from socorro.lib import (
+    BadArgumentError,
+    MissingArgumentError,
+    ResourceNotFound,
+)
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     SUPERSEARCH_FIELDS,
     ElasticsearchTestCase,
+    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -29,12 +34,170 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         super(IntegrationTestSuperSearchFields, self).setUp()
 
         self.api = SuperSearchFields(config=self.config)
-        self.api.get_fields = lambda: copy.deepcopy(SUPERSEARCH_FIELDS)
 
     def test_get_fields(self):
         results = self.api.get_fields()
         eq_(results, SUPERSEARCH_FIELDS)
 
+    def test_create_field(self):
+        # Test with all parameters set.
+        params = {
+            'name': 'plotfarm',
+            'data_validation_type': 'str',
+            'default_value': None,
+            'description': 'a plotfarm like Lunix or Wondiws',
+            'form_field_choices': ['lun', 'won', 'cam'],
+            'has_full_version': True,
+            'in_database_name': 'os_name',
+            'is_exposed': True,
+            'is_returned': True,
+            'is_mandatory': False,
+            'query_type': 'str',
+            'namespace': 'processed_crash',
+            'permissions_needed': ['view_plotfarm'],
+            'storage_mapping': {"type": "multi_field"},
+        }
+        res = self.api.create_field(**params)
+        ok_(res)
+        field = self.connection.get(
+            index=self.config.elasticsearch.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            id='plotfarm',
+        )
+        field = field['_source']
+        eq_(sorted(field.keys()), sorted(params.keys()))
+        for key in field.keys():
+            eq_(field[key], params[key])
+
+        # Test default values.
+        res = self.api.create_field(
+            name='brand_new_field',
+            in_database_name='brand_new_field',
+            namespace='processed_crash',
+        )
+        ok_(res)
+        ok_(
+            self.connection.get(
+                index=self.config.elasticsearch.elasticsearch_default_index,
+                doc_type='supersearch_fields',
+                id='brand_new_field',
+            )
+        )
+
+        # Test errors.
+        # `name` is missing.
+        assert_raises(
+            MissingArgumentError,
+            self.api.create_field,
+            in_database_name='something',
+        )
+
+        # `in_database_name` is missing.
+        assert_raises(
+            MissingArgumentError,
+            self.api.create_field,
+            name='something',
+        )
+
+        # Field already exists.
+        assert_raises(
+            BadArgumentError,
+            self.api.create_field,
+            name='product',
+            in_database_name='product',
+            namespace='processed_crash',
+        )
+
+        # Test logging.
+        res = self.api.create_field(
+            name='what_a_field',
+            in_database_name='what_a_field',
+            namespace='processed_crash',
+            storage_mapping='{"type": "long"}',
+        )
+        ok_(res)
+        self.api.config.logger.info.assert_called_with(
+            'elasticsearch mapping changed for field "%s", '
+            'added new mapping "%s"',
+            'what_a_field',
+            {u'type': u'long'},
+        )
+
+    def test_update_field(self):
+        # Let's create a field first.
+        assert self.api.create_field(
+            name='super_field',
+            in_database_name='super_field',
+            namespace='superspace',
+            description='inaccurate description',
+            permissions_needed=['view_nothing'],
+            storage_mapping={'type': 'boolean', 'null_value': False}
+        )
+
+        # Now let's update that field a little.
+        res = self.api.update_field(
+            name='super_field',
+            description='very accurate description',
+            storage_mapping={'type': 'long', 'analyzer': 'keyword'},
+        )
+        ok_(res)
+
+        # Test logging.
+        self.api.config.logger.info.assert_called_with(
+            'Elasticsearch mapping changed for field "%s", '
+            'was "%s", now "%s"',
+            'super_field',
+            {'type': 'boolean', 'null_value': False},
+            {'type': 'long', 'analyzer': 'keyword'},
+        )
+
+        field = self.connection.get(
+            index=self.config.elasticsearch.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            id='super_field',
+        )
+        field = field['_source']
+
+        # Verify the changes were taken into account.
+        eq_(field['description'], 'very accurate description')
+        eq_(field['storage_mapping'], {'type': 'long', 'analyzer': 'keyword'})
+
+        # Verify other values did not change.
+        eq_(field['permissions_needed'], ['view_nothing'])
+        eq_(field['in_database_name'], 'super_field')
+        eq_(field['namespace'], 'superspace')
+
+        # Test errors.
+        assert_raises(
+            MissingArgumentError,
+            self.api.update_field,
+        )  # `name` is missing
+
+        assert_raises(
+            ResourceNotFound,
+            self.api.update_field,
+            name='unkownfield',
+        )
+
+    def test_delete_field(self):
+        self.api.delete_field(name='product')
+
+        ok_(
+            self.connection.get(
+                index=self.config.elasticsearch.elasticsearch_default_index,
+                doc_type='supersearch_fields',
+                id='signature',
+            )
+        )
+        assert_raises(
+            elasticsearch.exceptions.NotFoundError,
+            self.connection.get,
+            index=self.config.elasticsearch.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            id='product',
+        )
+
+    @minimum_es_version('1.0')
     def test_get_missing_fields(self):
         config = self.get_base_config(
             es_index='socorro_integration_test_%W'
@@ -163,14 +326,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         ok_('fake_field' not in properties['raw_crash']['properties'])
 
         # Those fields have a `storage_mapping`.
-        eq_(processed_crash['signature'], {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
-        })
+        eq_(processed_crash['release_channel'], {'type': 'string'})
 
         # Test nested objects.
         ok_('json_dump' in processed_crash)
