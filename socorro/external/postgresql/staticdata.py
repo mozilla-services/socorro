@@ -75,7 +75,10 @@ class WindowsVersions(BaseTable):
             ['Windows 2000', '5', '0'],
             ['Windows XP', '5', '1'],
             ['Windows Vista', '6', '0'],
-            ['Windows 7', '6', '1']]
+            ['Windows 7', '6', '1'],
+            ['Windows 8', '6', '2'],
+            ['Windows 8.1', '6', '3'],
+            ['Windows 10', '10', '0']]
 
 
 class OSVersions(BaseTable):
