@@ -70,7 +70,7 @@ PIPELINE_CSS = {
     },
     'jsonview': {
         'source_filenames': (
-            'documentation/css/jsonview.custom.less',
+            'jsonview/jsonview.custom.less',
         ),
         'output_filename': 'css/jsonview.min.css',
     },
