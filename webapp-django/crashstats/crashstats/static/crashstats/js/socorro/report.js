@@ -15,17 +15,15 @@ $(document).ready(function () {
             var container = $('#telemetryenvironment-json');
             if (container.length) {
                 var jsonData = container.data('telemetryenvironment');
-                if (jsonData) {
-                    try {
-                        $('#telemetryenvironment-json').JSONView(jsonData);
-                    } catch (ex) {
-                        console.warn(
-                            "The data in the #telemetryenvironment-json dataset is not valid JSON"
-                        );
-                        container.append(
-                            $('<p>Invalid JSON in TelemetryEnvironment</p>')
-                        );
-                    }
+                try {
+                    $('#telemetryenvironment-json').JSONView(jsonData);
+                } catch (ex) {
+                    console.warn(
+                        "The data in the #telemetryenvironment-json dataset is not valid JSON"
+                    );
+                    container.append(
+                        $('<p>Invalid JSON in TelemetryEnvironment</p>')
+                    );
                 }
             }
         };

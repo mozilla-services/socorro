@@ -804,8 +804,7 @@
                 {% if raw.TelemetryEnvironment %}
                 <div id="telemetryenvironment" class="ui-tabs-hide">
                      {# Remmber, raw.TelemetryEnvironment is a string.
-                        But jQuery till automatically convert it a map upon
-                        accessing it.
+                        jQuery will automatically convert it a map upon accessing it.
                         Safe to include because jinja will escape anything in it. #}
                      <div id="telemetryenvironment-json"
                           data-telemetryenvironment="{{ raw.TelemetryEnvironment }}">
