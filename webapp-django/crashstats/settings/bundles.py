@@ -65,9 +65,14 @@ PIPELINE_CSS = {
     'documentation': {
         'source_filenames': (
             'documentation/css/documentation.less',
-            'documentation/css/jsonview.custom.less',
         ),
         'output_filename': 'css/documentation.min.css',
+    },
+    'jsonview': {
+        'source_filenames': (
+            'documentation/css/jsonview.custom.less',
+        ),
+        'output_filename': 'css/jsonview.min.css',
     },
     'report_index': {
         'source_filenames': (
@@ -271,10 +276,15 @@ PIPELINE_JS = {
     },
     'documentation': {
         'source_filenames': (
-            'documentation/js/lib/jquery.jsonview.js',
             'documentation/js/documentation.js',
         ),
         'output_filename': 'js/documentation.min.js',
+    },
+    'jsonview': {
+        'source_filenames': (
+            'jsonview/jquery.jsonview.js',
+        ),
+        'output_filename': 'js/jsonview.min.js',
     },
     'exploitability_report': {
         'source_filenames': (
