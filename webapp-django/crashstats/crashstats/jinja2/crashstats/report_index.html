@@ -78,13 +78,6 @@
                             <span>Extensions</span>
                         </a>
                     </li>
-                    {% if has_telemetry_environment %}
-                    <li class="ui-state-default ui-corner-top">
-                        <a href="#telemetryenvironment" class="ui-tabs-anchor">
-                            <span>Telemetry Environment</span>
-                        </a>
-                    </li>
-                    {% endif %}
                     <li class="ui-state-default ui-corner-top correlations hidden">
                         <a href="#correlation" class="ui-tabs-anchor">
                             <span>Correlations</span>
@@ -799,13 +792,6 @@
                 </div>
                 <!-- /extensions -->
 
-                {% if has_telemetry_environment %}
-                <div id="telemetryenvironment" class="ui-tabs-hide">
-                    {{ dict_as_html_tree(raw.TelemetryEnvironment) }}
-                </div>
-                <!-- /telemetryenvironment -->
-                {% endif %}
-
                 <div id="correlation" class="ui-tabs-hide">
                     <h3></h3>
                     <pre></pre>
@@ -873,4 +859,3 @@
 </div>
 
 {% endblock %}
-≠

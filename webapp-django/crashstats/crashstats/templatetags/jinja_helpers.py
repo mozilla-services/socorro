@@ -13,7 +13,6 @@ from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.template import engines
 from django.utils.safestring import mark_safe
-from django.utils.html import escape
 
 from crashstats import scrubber
 from crashstats.crashstats.utils import parse_isodate
@@ -387,41 +386,3 @@ def show_filesize(bytes, unit='bytes'):
 @library.global_function
 def booleanish_to_boolean(value):
     return str(value).lower() in ('1', 'true', 'yes')
-
-
-@library.global_function
-def dict_as_html_tree(structure):
-    if not isinstance(structure, dict):
-        # then it has to be a JSON string
-        structure = json.loads(structure)
-
-    def tree(container, depth=1):
-        P = ' ' * 4
-        html = []
-
-        # The reason for using `key=lambda s: s.lower()` instead
-        # of just `str.lower` is because it's not a guarantee that
-        # all strings are byte strings. Or unicode for that matter.
-        for key in sorted(container, key=lambda s: s.lower()):
-            values = container[key]
-            html.append('{}<li>{}'.format(P * depth, escape(key)))
-            if isinstance(values, dict):
-                html.append('{}<ul>'.format(P * (depth + 1)))
-                html.append(tree(values, depth=depth + 2))
-                html.append('{}</ul>'.format(P * (depth + 1)))
-            else:
-                if not isinstance(values, list):
-                    values = [values]
-                if isinstance(values, list) and values:
-                    html.append('{}<ul>'.format(P * (depth + 1)))
-                    for value in values:
-                        html.append('{}<li>{}</li>'.format(
-                            P * (depth + 2),
-                            escape(value),
-                        ))
-                    html.append('{}</ul>'.format(P * (depth + 1)))
-
-            html.append('{}</li>'.format(P * depth))
-        return '\n'.join(html)
-
-    return mark_safe('<ul class="tree">\n{}\n</ul>'.format(tree(structure)))
