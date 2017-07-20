@@ -1177,6 +1177,13 @@ def graphics_report(request):
         )
 
     def get_value(row, key):
+        """Return the appropriate output from the row of data, one key
+        at a time. The output is what's used in writing the CSV file.
+
+        The reason for doing these "hacks" is to match what used to be
+        done with the SELECT statement in SQL in the ancient, but now
+        replaced, report.
+        """
         value = row.get(alias.get(key, key))
         if key == 'cpu_info':
             value = '{cpu_name} | {cpu_info}'.format(
