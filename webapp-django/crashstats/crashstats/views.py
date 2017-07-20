@@ -999,10 +999,6 @@ def report_index(request, crash_id, default_context=None):
             ':'.join(x) for x in context['report']['addons']
         ]
 
-    context['has_telemetry_environment'] = (
-        context['raw'].get('TelemetryEnvironment')
-    )
-
     return render(request, 'crashstats/report_index.html', context)
 
 

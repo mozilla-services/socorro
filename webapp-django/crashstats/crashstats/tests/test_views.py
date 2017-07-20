@@ -1773,48 +1773,6 @@ class TestViews(BaseTestViews):
         ok_('Crashing Thread (2)' not in response.content)
         ok_('Crashing Thread (0)' in response.content)
 
-    def test_report_index_with_telemetry_environment(self):
-
-        def mocked_raw_crash_get(**params):
-            assert 'datatype' in params
-            if params['datatype'] == 'meta':
-                crash = copy.deepcopy(_SAMPLE_META)
-                crash['TelemetryEnvironment'] = {
-                    'key': ['values'],
-                    'plainstring': 'I am a string',
-                    'plainint': 12345,
-                    'empty': [],
-                    'foo': {
-                        'keyA': 'AAA',
-                        'keyB': 'BBB',
-                    },
-                }
-                return crash
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
-
-        def mocked_processed_crash_get(**params):
-            assert 'datatype' in params
-            if params['datatype'] == 'unredacted':
-                return copy.deepcopy(_SAMPLE_UNREDACTED)
-
-            raise NotImplementedError(params)
-
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-        url = reverse('crashstats:report_index', args=(crash_id,))
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-
-        ok_('Telemetry Environment' in response.content)
-        ok_('<li>I am a string</li>' in response.content)
-
     def test_report_index_fennecandroid_report(self):
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@mozilla.com'
