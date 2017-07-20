@@ -359,7 +359,6 @@ PIPELINE_JS = {
             'signature/js/signature_tab_comments.js',
             'signature/js/signature_tab_correlations.js',
             'signature/js/signature_tab_bugzilla.js',
-            'signature/js/signature_tab_graph.js',
             'signature/js/signature_panel.js',
         ),
         'output_filename': 'js/signature-report.min.js',
