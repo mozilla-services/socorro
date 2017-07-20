@@ -269,8 +269,8 @@ class Tcbs(DeclarativeBase):
         'signatures.signature_id'), primary_key=True, nullable=False, index=True)
     report_date = Column(u'report_date', DATE(),
                          primary_key=True, nullable=False, index=True)
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True,
+                                nullable=False, autoincrement=False)
     process_type = Column(u'process_type', CITEXT(),
                           primary_key=True, nullable=False)
     release_channel = Column(u'release_channel', CITEXT(), ForeignKey(
@@ -440,8 +440,7 @@ class RawAdiLogs(DeclarativeBase):
         build_channel,
         product_guid,
         count
-    )
-    }
+    )}
 
 
 class RawAdi(DeclarativeBase):
@@ -596,8 +595,8 @@ class BuildAdu(DeclarativeBase):
     __tablename__ = 'build_adu'
 
     # column definitions
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(),
+                                primary_key=True, nullable=False, autoincrement=False)
     build_date = Column(u'build_date', DATE(),
                         primary_key=True, nullable=False)
     adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
@@ -618,8 +617,8 @@ class CrashType(DeclarativeBase):
                         nullable=False, index=True, unique=True)
     crash_type_id = Column(u'crash_type_id', INTEGER(),
                            primary_key=True, nullable=False)
-    crash_type_short = Column(u'crash_type_short', CITEXT(
-    ), nullable=False, index=True, unique=True)
+    crash_type_short = Column(u'crash_type_short', CITEXT(),
+                              nullable=False, index=True, unique=True)
     has_hang_id = Column(u'has_hang_id', BOOLEAN())
     include_agg = Column(u'include_agg', BOOLEAN(),
                          nullable=False, server_default=text('True'))
@@ -641,8 +640,8 @@ class CrashesByUser(DeclarativeBase):
         'crash_types.crash_type_id'), primary_key=True, nullable=False)
     os_short_name = Column(u'os_short_name', CITEXT(),
                            primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(),
+                                primary_key=True, nullable=False, autoincrement=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE(),
                          primary_key=True, nullable=False)
@@ -663,8 +662,8 @@ class CrashesByUserBuild(DeclarativeBase):
         'crash_types.crash_type_id'), primary_key=True, nullable=False)
     os_short_name = Column(u'os_short_name', CITEXT(),
                            primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True,
+                                nullable=False, autoincrement=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE(),
                          primary_key=True, nullable=False)
@@ -707,8 +706,7 @@ class EmailCampaign(DeclarativeBase):
     id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
     product = Column(u'product', TEXT(), nullable=False)
     signature = Column(u'signature', TEXT(), nullable=False)
-    start_date = Column(u'start_date', TIMESTAMP(
-        timezone=True), nullable=False)
+    start_date = Column(u'start_date', TIMESTAMP(timezone=True), nullable=False)
     status = Column(u'status', TEXT(), nullable=False,
                     server_default='stopped')
     subject = Column(u'subject', TEXT(), nullable=False)
@@ -782,8 +780,8 @@ class HomePageGraphBuild(DeclarativeBase):
     adu = Column(u'adu', INTEGER(), nullable=False, server_default=text('0'))
     build_date = Column(u'build_date', DATE(),
                         primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(),
+                                primary_key=True, nullable=False, autoincrement=False)
     report_count = Column(u'report_count', INTEGER(),
                           nullable=False, server_default=text('0'))
     report_date = Column(u'report_date', DATE(),
@@ -922,8 +920,8 @@ class ProductAdu(DeclarativeBase):
                        nullable=False, server_default=text('0'))
     adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
     os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(),
+                                primary_key=True, nullable=False, autoincrement=False)
 
 
 class ProductProductidMap(DeclarativeBase):
@@ -1063,8 +1061,8 @@ class RankCompare(DeclarativeBase):
 
     # column definitions
     percent_of_total = Column(u'percent_of_total', NUMERIC())
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
+    product_version_id = Column(u'product_version_id', INTEGER(),
+                                primary_key=True, nullable=False, autoincrement=False)
     rank_days = Column(u'rank_days', INTEGER(),
                        primary_key=True, nullable=False)
     rank_report_count = Column(u'rank_report_count', INTEGER())
@@ -1315,8 +1313,8 @@ class SignatureProduct(DeclarativeBase):
 
     # column definitions
     first_report = Column(u'first_report', TIMESTAMP(timezone=True))
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False, index=True)
+    product_version_id = Column(u'product_version_id', INTEGER(),
+                                primary_key=True, nullable=False, autoincrement=False, index=True)
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey(
         'signatures.signature_id'), primary_key=True, nullable=False)
 
