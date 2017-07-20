@@ -221,8 +221,8 @@ class CrashAduByBuildSignature(DeclarativeBase):
     __tablename__ = 'crash_adu_by_build_signature'
 
     # column definitions
-    adu_by_build_id = Column(u'crash_adu_by_build_signature_id', INTEGER(
-    ), primary_key=True, autoincrement=True)
+    adu_by_build_id = Column(u'crash_adu_by_build_signature_id', INTEGER(),
+                             primary_key=True, autoincrement=True)
     signature_id = Column(u'signature_id', INTEGER(),
                           primary_key=False, nullable=False, index=True)
     signature = Column(u'signature', CITEXT(),
