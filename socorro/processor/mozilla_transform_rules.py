@@ -903,21 +903,6 @@ class BetaVersionRule(Rule):
         return True
 
 
-class FennecBetaError20150430(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return raw_crash['ProductName'].startswith('Fennec') and \
-            raw_crash['BuildID'] == '20150427090529' and \
-            raw_crash['ReleaseChannel'] == 'release'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        raw_crash['ReleaseChannel'] = 'beta'
-        return True
-
-
 class OSPrettyVersionRule(Rule):
     required_config = Namespace()
     required_config.add_option(
