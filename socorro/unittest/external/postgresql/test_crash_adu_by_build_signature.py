@@ -150,10 +150,10 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                 '%(tomorrow)s',
                 'windows',
                 321) """ % {
-                    'product_version_id': product_version_id,
-                    'now': now,
-                    'tomorrow': tomorrow
-                    })
+            'product_version_id': product_version_id,
+            'now': now,
+            'tomorrow': tomorrow
+        })
 
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """

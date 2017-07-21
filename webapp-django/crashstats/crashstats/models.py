@@ -41,12 +41,6 @@ from crashstats import scrubber
 from crashstats.base.utils import requests_retry_session
 
 
-DEPRECATION_RAMPAGE_WARNING = (
-    'This endpoint is deprecated and will soon cease to exist.\n'
-    'Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1314814'
-)
-
-
 logger = logging.getLogger('crashstats_models')
 
 
@@ -1087,6 +1081,11 @@ class GraphicsDevices(SocorroMiddleware):
 class AduBySignature(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.crashes.AduBySignature
+
+    deprecation_warning = (
+        'This endpoint is deprecated and will soon cease to exist.\n'
+        'Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1380761'
+    )
 
     required_params = (
         'product_name',

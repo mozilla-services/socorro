@@ -8,16 +8,14 @@ Create, prepare and load schema for Socorro PostgreSQL database.
 """
 from __future__ import unicode_literals
 
-import logging
 import os
 import re
-import sys
 from glob import glob
 
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
 
-from socorro.external.postgresql.models import *
+from socorro.external.postgresql.models import DeclarativeBase
 
 
 class PostgreSQLAlchemyManager(object):

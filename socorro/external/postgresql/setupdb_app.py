@@ -9,19 +9,13 @@ Create, prepare and load schema for Socorro PostgreSQL database.
 from __future__ import unicode_literals
 
 import cStringIO
-import logging
 import os
 import re
 import sys
-from glob import glob
-from collections import defaultdict
-
 
 from alembic import command
 from alembic.config import Config
 from configman import Namespace, class_converter
-from psycopg2 import ProgrammingError
-from sqlalchemy import create_engine, exc
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
 
@@ -30,7 +24,7 @@ from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.connection_context import (
     get_field_from_pg_database_url
 )
-from socorro.external.postgresql.models import *
+#from socorro.external.postgresql.models import *
 from socorro.external.postgresql.postgresqlalchemymanager import (
     PostgreSQLAlchemyManager
 )
@@ -61,8 +55,7 @@ class SocorroDBApp(App):
 
     required_config.add_option(
         'database_class',
-        default=
-            'socorro.external.postgresql.connection_context.ConnectionContext',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
         doc='the class responsible for connecting to Postgres',
         reference_value_from='resource.postgresql',
         from_string_converter=class_converter

@@ -6,9 +6,7 @@ import time
 
 import mock
 from nose.tools import eq_, ok_, assert_raises
-import psycopg2
 from psycopg2 import OperationalError
-from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 
 from configman import ConfigurationManager
 from configman.dotdict import DotDict
@@ -213,7 +211,7 @@ class TestPostgresBasicCrashStorage(TestCase):
                           broken_processed_crash)
 
     def test_basic_postgres_save_processed_success(self):
-        config =  DotDict()
+        config = DotDict()
         config.database_class = mock.MagicMock()
         config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
         config.redactor_class = mock.Mock()
@@ -245,7 +243,7 @@ class TestPostgresBasicCrashStorage(TestCase):
             ok_(a_fragment in a_call[0][0])
 
     def test_basic_postgres_save_processed_success_2(self):
-        config =  DotDict()
+        config = DotDict()
         config.database_class = mock.MagicMock()
         config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
         config.redactor_class = mock.Mock()
@@ -260,10 +258,11 @@ class TestPostgresBasicCrashStorage(TestCase):
         )
         mocked_cursor = mocked_connection.cursor.return_value.__enter__.return_value
         fetch_all_returns = [((666,),), None, ((23,),), ]
+
         def fetch_all_func(*args):
             result = fetch_all_returns.pop(0)
             return result
-        mocked_cursor.fetchall =  fetch_all_func
+        mocked_cursor.fetchall = fetch_all_func
 
         # the call to be tested
         crashstorage = PostgreSQLCrashStorage(config)
@@ -283,7 +282,7 @@ class TestPostgresBasicCrashStorage(TestCase):
             ok_(a_fragment in a_call[0][0])
 
     def test_basic_postgres_save_processed_success_3_truncations(self):
-        config =  DotDict()
+        config = DotDict()
         config.database_class = mock.MagicMock()
         config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
         config.redactor_class = mock.Mock()
@@ -425,7 +424,10 @@ class TestPostgresCrashStorage(TestCase):
                 SELECT * from insert_raw_crash
             """, {
                 'crash_id': '936ce666-ff3b-4c7a-9674-367fe2120408',
-                'raw_crash': '{"submitted_timestamp": "2012-04-08 10:52:42.0", "Version": "6.02E23", "ProductName": "Fennicky"}',
+                'raw_crash': (
+                    '{"submitted_timestamp": "2012-04-08 10:52:42.0", '
+                    '"Version": "6.02E23", "ProductName": "Fennicky"}'
+                ),
                 'date_processed': "2012-04-08 10:52:42.0"
             }),),)
 
@@ -475,7 +477,7 @@ class TestPostgresCrashStorage(TestCase):
                           broken_processed_crash)
 
     def test_basic_postgres_save_processed_success(self):
-        config =  DotDict()
+        config = DotDict()
         config.database_class = mock.MagicMock()
         config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
         config.redactor_class = mock.Mock()
@@ -508,7 +510,7 @@ class TestPostgresCrashStorage(TestCase):
             ok_(a_fragment in a_call[0][0])
 
     def test_basic_postgres_save_processed_success_2(self):
-        config =  DotDict()
+        config = DotDict()
         config.database_class = mock.MagicMock()
         config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
         config.redactor_class = mock.Mock()
@@ -523,10 +525,11 @@ class TestPostgresCrashStorage(TestCase):
         )
         mocked_cursor = mocked_connection.cursor.return_value.__enter__.return_value
         fetch_all_returns = [((666,),), None, ((23,),), ]
+
         def fetch_all_func(*args):
             result = fetch_all_returns.pop(0)
             return result
-        mocked_cursor.fetchall =  fetch_all_func
+        mocked_cursor.fetchall = fetch_all_func
 
         # the call to be tested
         crashstorage = PostgreSQLCrashStorage(config)
@@ -547,7 +550,7 @@ class TestPostgresCrashStorage(TestCase):
             ok_(a_fragment in a_call[0][0])
 
     def test_basic_postgres_save_processed_success_3_truncations(self):
-        config =  DotDict()
+        config = DotDict()
         config.database_class = mock.MagicMock()
         config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
         config.redactor_class = mock.Mock()
