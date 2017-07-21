@@ -244,8 +244,8 @@ def bugzilla_submit_url(report, bug_product):
         'product': bug_product,
         'op_sys': op_sys,
         'rep_platform': report['cpu_name'],
-        'cf_crash_signature': '[@ {}]'.format(report['signature']),
-        'short_desc': 'Crash in {}'.format(report['signature']),
+        'cf_crash_signature': u'[@ {}]'.format(report['signature']),
+        'short_desc': u'Crash in {}'.format(report['signature']),
         'comment': (
             'This bug was filed from the Socorro interface and is \n'
             'report bp-{}.\n'

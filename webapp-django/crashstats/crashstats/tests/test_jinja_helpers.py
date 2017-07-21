@@ -232,6 +232,21 @@ class TestBugzillaSubmitURL(TestCase):
         qs = self._extract_query_string(url)
         ok_('op_sys' not in qs)
 
+    def test_with_unicode_signatuer(self):
+        """The jinja helper bugzilla_submit_url should work when
+        the signature contains non-ascii characters.
+
+        Based on an actual error in production:
+        https://bugzilla.mozilla.org/show_bug.cgi?id=1383269
+        """
+        report = self._create_report(
+            os_name=None,
+            signature=u'YouTube\u2122 No Buffer (Stop Auto-playing)',
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        # Most important that it should work
+        ok_('Crash+in+YouTube%3F+No+Buffer+%28Stop+Auto-playing' in url)
+
 
 class TestReplaceBugzillaLinks(TestCase):
     def test_simple(self):
