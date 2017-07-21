@@ -219,6 +219,25 @@ class TestCPUInfoRule(TestCase):
         # raw crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
 
+    def test_missing_json_dump(self):
+        config = self.get_basic_config()
+
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = CPUInfoRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash['cpu_info'] == ''
+        assert processed_crash['cpu_name'] == ''
+
+        # raw crash should be unchanged
+        assert raw_crash == {}
+
 
 class TestOSInfoRule(TestCase):
 

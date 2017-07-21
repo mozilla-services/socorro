@@ -25,7 +25,7 @@ class CPUInfoRule(Rule):
         cpu_name = ''
         cpu_info = ''
 
-        system_info = processed_crash.json_dump.get('system_info')
+        system_info = processed_crash.get('json_dump', {}).get('system_info')
         if system_info:
             cpu_name = system_info.get('cpu_arch', '')
 
