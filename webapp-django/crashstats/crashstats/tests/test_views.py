@@ -1814,7 +1814,10 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         ok_('Telemetry Environment' in response.content)
-        ok_('<li>I am a string</li>' in response.content)
+        # it's non-trivial to check that the dict above is serialized
+        # exactly like jinja does it so let's just check the data attribute
+        # is there.
+        ok_('id="telemetryenvironment-json"' in response.content)
 
     def test_report_index_fennecandroid_report(self):
         comment0 = 'This is a comment\nOn multiple lines'
