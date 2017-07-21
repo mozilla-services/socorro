@@ -50,10 +50,10 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         assert_raises(dbapi2_util.SQLDidNotReturnSingleValue,
-                          dbapi2_util.single_value_sql,
-                          conn,
-                          "select 17",
-                          (1, 2, 3))
+                      dbapi2_util.single_value_sql,
+                      conn,
+                      "select 17",
+                      (1, 2, 3))
         eq_(conn.cursor.call_count, 1)
         eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with('select 17', (1, 2, 3))
@@ -97,10 +97,10 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         assert_raises(dbapi2_util.SQLDidNotReturnSingleRow,
-                          dbapi2_util.single_row_sql,
-                          conn,
-                          "select 17, 22",
-                          (1, 2, 3))
+                      dbapi2_util.single_row_sql,
+                      conn,
+                      "select 17, 22",
+                      (1, 2, 3))
         eq_(conn.cursor.call_count, 1)
         eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
@@ -150,7 +150,7 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         zipped = zip(dbapi2_util.execute_query_iter(conn,
-                                               "select * from somewhere"),
+                                                    "select * from somewhere"),
                      expected)
         for x, y in zipped:
             eq_(x, y)
@@ -167,15 +167,15 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         dbapi2_util.execute_no_results(
-          conn,
-          "insert into table (a, b, c) values (%s, %s, %s)",
-          (1, 2, 3)
+            conn,
+            "insert into table (a, b, c) values (%s, %s, %s)",
+            (1, 2, 3)
         )
         eq_(conn.cursor.call_count, 1)
         eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with(
-          "insert into table (a, b, c) values (%s, %s, %s)",
-          (1, 2, 3)
+            "insert into table (a, b, c) values (%s, %s, %s)",
+            (1, 2, 3)
         )
 
     def test_fetch_all_sequence(self):
@@ -184,6 +184,7 @@ class TestDBAPI2Helper(TestCase):
         # description object.
 
         class Description(object):
+
             def __init__(self, name):
                 self.name = name
 
