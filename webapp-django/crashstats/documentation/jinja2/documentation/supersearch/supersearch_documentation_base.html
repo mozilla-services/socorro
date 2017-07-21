@@ -3,10 +3,12 @@
 {% block site_css %}
     {{ super() }}
     {% stylesheet 'documentation' %}
+    {% stylesheet 'jsonview' %}
 {% endblock %}
 
 {% block site_js %}
     {{ super() }}
+    {% javascript 'jsonview' %}
     {% javascript 'documentation' %}
 {% endblock %}
 

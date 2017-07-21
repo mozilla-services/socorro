@@ -85,7 +85,9 @@ class TestMatviews(IntegrationTestBase):
     def tearDown(self):
         cursor = self.conn.cursor()
         cursor.execute("DROP FUNCTION harmless(date)")
-        cursor.execute("DROP FUNCTION harmless_twotimestamps(timestamp with time zone, timestamp with time zone)")
+        cursor.execute(
+            "DROP FUNCTION harmless_twotimestamps"
+            "(timestamp with time zone, timestamp with time zone)")
         self.conn.commit()
 
         # restore the old proc_name attributes
@@ -96,10 +98,10 @@ class TestMatviews(IntegrationTestBase):
 
     def test_one_matview_alone(self):
         config_manager = self._setup_config_manager(
-          'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
-          'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
-          ''
-          'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d'
+            'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
+            'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
+            ''
+            'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d'
         )
 
         with config_manager.context() as config:
@@ -131,15 +133,15 @@ class TestMatviews(IntegrationTestBase):
         mocked_utc_now.side_effect = mock_utc_now
 
         config_manager = self._setup_config_manager(
-          'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
-          'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
-          'socorro.unittest.cron.jobs.test_matviews.FetchADIFromHiveCronApp|1d\n'
-          ''
-          'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
-          'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
-          'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|02:00\n'
+            'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
+            'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
+            'socorro.unittest.cron.jobs.test_matviews.FetchADIFromHiveCronApp|1d\n'
+            ''
+            'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
+            'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
+            'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
+            'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
+            'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|02:00\n'
         )
 
         with config_manager.context() as config:
@@ -166,8 +168,8 @@ class TestMatviews(IntegrationTestBase):
 
     def test_reports_clean_with_dependency(self):
         config_manager = self._setup_config_manager(
-          'socorro.cron.jobs.matviews.DuplicatesCronApp|1h\n'
-          'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h'
+            'socorro.cron.jobs.matviews.DuplicatesCronApp|1h\n'
+            'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h'
         )
 
         with config_manager.context() as config:
@@ -181,7 +183,7 @@ class TestMatviews(IntegrationTestBase):
 
     def test_duplicates(self):
         config_manager = self._setup_config_manager(
-          'socorro.cron.jobs.matviews.DuplicatesCronApp|1d'
+            'socorro.cron.jobs.matviews.DuplicatesCronApp|1d'
         )
 
         with config_manager.context() as config:

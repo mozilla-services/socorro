@@ -65,13 +65,19 @@ PIPELINE_CSS = {
     'documentation': {
         'source_filenames': (
             'documentation/css/documentation.less',
-            'documentation/css/jsonview.custom.less',
         ),
         'output_filename': 'css/documentation.min.css',
+    },
+    'jsonview': {
+        'source_filenames': (
+            'jsonview/jsonview.custom.less',
+        ),
+        'output_filename': 'css/jsonview.min.css',
     },
     'report_index': {
         'source_filenames': (
             'crashstats/css/report_index.css',
+            'crashstats/css/tree.css',
         ),
         'output_filename': 'css/report-index.min.css',
     },
@@ -270,10 +276,15 @@ PIPELINE_JS = {
     },
     'documentation': {
         'source_filenames': (
-            'documentation/js/lib/jquery.jsonview.js',
             'documentation/js/documentation.js',
         ),
         'output_filename': 'js/documentation.min.js',
+    },
+    'jsonview': {
+        'source_filenames': (
+            'jsonview/jquery.jsonview.js',
+        ),
+        'output_filename': 'js/jsonview.min.js',
     },
     'exploitability_report': {
         'source_filenames': (
@@ -359,7 +370,6 @@ PIPELINE_JS = {
             'signature/js/signature_tab_comments.js',
             'signature/js/signature_tab_correlations.js',
             'signature/js/signature_tab_bugzilla.js',
-            'signature/js/signature_tab_graph.js',
             'signature/js/signature_panel.js',
         ),
         'output_filename': 'js/signature-report.min.js',
