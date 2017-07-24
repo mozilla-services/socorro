@@ -441,6 +441,10 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'pipeline.finders.PipelineFinder',
+    # Make sure this comes last!
+    '{}.base.finders.LeftoverPipelineFinder'.format(
+        PROJECT_MODULE,
+    )
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
