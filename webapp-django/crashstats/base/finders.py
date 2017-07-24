@@ -11,7 +11,10 @@ class LeftoverPipelineFinder(PipelineFinder):
     that pipeline.finders.PipelineFinder couldn't find.
     """
     def find(self, path, all=False):
-        # But where was it defined?
+        # If we're here, the file couldn't be found in any of the other
+        # staticfiles finders. Before we raise an error, try to find out where,
+        # in the bundles, this was defined. This will make it easier to correct
+        # the mistake.
         for config_name in 'STYLESHEETS', 'JAVASCRIPT':
             config = settings.PIPELINE[config_name]
             for key, directive in config.items():
