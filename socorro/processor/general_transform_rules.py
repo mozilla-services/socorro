@@ -22,22 +22,25 @@ class CPUInfoRule(Rule):
         return '1.0'
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.cpu_info = ''
-        processed_crash.cpu_name = ''
+        cpu_name = ''
+        cpu_info = ''
 
-        system_info = processed_crash.json_dump.get('system_info')
+        system_info = processed_crash.get('json_dump', {}).get('system_info')
         if system_info:
-            processed_crash.cpu_name = system_info.get('cpu_arch', '')
-            try:
-                processed_crash.cpu_info = (
+            cpu_name = system_info.get('cpu_arch', '')
+
+            if 'cpu_info' in system_info and 'cpu_count' in system_info:
+                cpu_info = (
                     '%s | %s' % (
                         system_info['cpu_info'],
                         system_info['cpu_count']
                     )
                 )
-            except KeyError:
-                # cpu_count is likely missing
-                processed_crash.cpu_info = system_info.get('cpu_info', '')
+            else:
+                cpu_info = system_info.get('cpu_info', '')
+
+        processed_crash['cpu_name'] = cpu_name
+        processed_crash['cpu_info'] = cpu_info
 
         return True
 

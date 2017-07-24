@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 #
 # CSS
 #
@@ -409,6 +411,7 @@ PIPELINE_JS = {
     },
 }
 
+
 # This is sanity checks, primarily for developers. It checks that
 # you haven't haven't accidentally make a string a tuple with an
 # excess comma, no underscores in the bundle name and that the
@@ -430,22 +433,22 @@ for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
         for asset_file in v['source_filenames']:
             if asset_file in _used:
                 # Consider using warnings.warn here instead
-                print '{:<52} in {:<20} already in {}'.format(
+                print('{:<52} in {:<20} already in {}'.format(
                     asset_file,
                     k,
                     _used[asset_file]
-                )
+                ))
                 _trouble.add(asset_file)
             _used[asset_file] = k
 
     for asset_file in _trouble:
-        print "REPEATED", asset_file
+        print("REPEATED", asset_file)
         found_in = []
         sets = []
         for k, v in config.items():
             if asset_file in v['source_filenames']:
                 found_in.append(k)
                 sets.append(set(list(v['source_filenames'])))
-        print "FOUND IN", found_in
-        print "ALWAYS TOGETHER WITH", set.intersection(*sets)
+        print("FOUND IN", found_in)
+        print("ALWAYS TOGETHER WITH", set.intersection(*sets))
         break
