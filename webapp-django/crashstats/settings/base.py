@@ -57,11 +57,8 @@ STATIC_URL = '/static/'
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '', cast=Csv())
 
 
-# Name of the top-level module where you put all your apps.
-PROJECT_MODULE = 'crashstats'
-
 # Defines the views served for root URLs.
-ROOT_URLCONF = '%s.urls' % PROJECT_MODULE
+ROOT_URLCONF = 'crashstats.urls'
 
 INSTALLED_APPS = (
     'pipeline',
@@ -73,24 +70,24 @@ INSTALLED_APPS = (
     'session_csrf',
 
     # Application base, containing global templates.
-    '%s.base' % PROJECT_MODULE,
+    'crashstats.base',
 
     # Other Socorro apps.
-    '%s.crashstats' % PROJECT_MODULE,
-    '%s.api' % PROJECT_MODULE,
-    '%s.authentication' % PROJECT_MODULE,
-    '%s.documentation' % PROJECT_MODULE,
-    '%s.home' % PROJECT_MODULE,
-    '%s.manage' % PROJECT_MODULE,
-    '%s.monitoring' % PROJECT_MODULE,
-    '%s.profile' % PROJECT_MODULE,
-    '%s.signature' % PROJECT_MODULE,
-    '%s.status' % PROJECT_MODULE,
-    '%s.supersearch' % PROJECT_MODULE,
-    '%s.symbols' % PROJECT_MODULE,
-    '%s.tokens' % PROJECT_MODULE,
-    '%s.tools' % PROJECT_MODULE,
-    '%s.topcrashers' % PROJECT_MODULE,
+    'crashstats.crashstats',
+    'crashstats.api',
+    'crashstats.authentication',
+    'crashstats.documentation',
+    'crashstats.home',
+    'crashstats.manage',
+    'crashstats.monitoring',
+    'crashstats.profile',
+    'crashstats.signature',
+    'crashstats.status',
+    'crashstats.supersearch',
+    'crashstats.symbols',
+    'crashstats.tokens',
+    'crashstats.tools',
+    'crashstats.topcrashers',
 
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
@@ -121,8 +118,8 @@ MIDDLEWARE_CLASSES = (
     'csp.middleware.CSPMiddleware',
     'waffle.middleware.WaffleMiddleware',
     'ratelimit.middleware.RatelimitMiddleware',
-    '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
-    '%s.crashstats.middleware.Pretty400Errors' % PROJECT_MODULE,
+    'crashstats.tokens.middleware.APIAuthenticationMiddleware',
+    'crashstats.crashstats.middleware.Pretty400Errors',
 )
 
 
@@ -134,10 +131,10 @@ _CONTEXT_PROCESSORS = (
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
-    '%s.authentication.context_processors.oauth2' % PROJECT_MODULE,
-    '%s.base.context_processors.debug' % PROJECT_MODULE,
-    '%s.status.context_processors.status_message' % PROJECT_MODULE,
-    '%s.crashstats.context_processors.help_urls' % PROJECT_MODULE,
+    'crashstats.authentication.context_processors.oauth2',
+    'crashstats.base.context_processors.debug',
+    'crashstats.status.context_processors.status_message',
+    'crashstats.crashstats.context_processors.help_urls',
 )
 
 TEMPLATES = [
@@ -339,7 +336,7 @@ RATELIMIT_SUPERSEARCH = '10/m'
 RATELIMIT_SUPERSEARCH_AUTHENTICATED = '100/m'
 
 # Path to the view that gets executed if you hit upon a ratelimit block
-RATELIMIT_VIEW = '%s.crashstats.views.ratelimit_blocked' % PROJECT_MODULE
+RATELIMIT_VIEW = 'crashstats.crashstats.views.ratelimit_blocked'
 
 # When we pull platforms from the Platforms API we later decide which of
 # these to display at various points in the UI.
@@ -442,9 +439,7 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'pipeline.finders.PipelineFinder',
     # Make sure this comes last!
-    '{}.base.finders.LeftoverPipelineFinder'.format(
-        PROJECT_MODULE,
-    )
+    'crashstats.base.finders.LeftoverPipelineFinder',
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
