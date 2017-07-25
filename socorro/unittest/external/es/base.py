@@ -868,7 +868,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
     def health_check(self):
         self.connection.cluster.health(
             wait_for_status='yellow',
-            request_timeout=1
+            request_timeout=5
         )
 
     def get_url(self):
