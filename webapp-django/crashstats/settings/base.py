@@ -268,7 +268,6 @@ TCBS_RESULT_COUNTS = (
 CHANNELS = (
     'release',
     'beta',
-    'aurora',
     'nightly',
     'esr'
 )
