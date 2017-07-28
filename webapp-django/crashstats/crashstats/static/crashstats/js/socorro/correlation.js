@@ -42,10 +42,7 @@ window.correlations = (function () {
                     'date': totals['date'],
                 };
 
-                var channels = ['release', 'beta', 'aurora', 'nightly'];
-                if (product === 'Firefox') {
-                    channels.push('esr');
-                }
+                var channels = $('#mainbody').data('channels');
 
                 channels.forEach(function (ch) {
                     correlationData[product][ch] = {
