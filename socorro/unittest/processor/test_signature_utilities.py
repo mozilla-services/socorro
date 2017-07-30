@@ -1096,30 +1096,28 @@ class TestSignatureGeneration(TestCase):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
 
-        raw_crash = CDotDict(
-            {
-                'JavaStackTrace': (
-                    '   SomeJavaException: %s  \n'
-                    'at org.mozilla.lars.myInvention('
-                    'larsFile.java)' % ('t' * 1000)
-                )
-            }
-        )
-        raw_dumps = {}
-        processed_crash = CDotDict()
-        processor_meta = CDotDict({
+        raw_crash = {
+            'JavaStackTrace': (
+                '   SomeJavaException: %s  \n'
+                'at org.mozilla.lars.myInvention('
+                'larsFile.java)' % ('t' * 1000)
+            )
+        }
+
+        processed_crash = {}
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         )
         eq_(
-            processor_meta.processor_notes,
+            processor_meta['processor_notes'],
             [
                 'JavaSignatureTool: dropped Java exception description due to '
                 'length'
@@ -1131,23 +1129,22 @@ class TestSignatureGeneration(TestCase):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
 
-        raw_crash = CDotDict()
-        raw_dumps = {}
-        processed_crash = CDotDict(sample_json_dump)
-        processor_meta = CDotDict({
+        raw_crash = {}
+        processed_crash = dict(sample_json_dump)
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________'
         )
         eq_(
-            processed_crash.proto_signature,
+            processed_crash['proto_signature'],
             'NtWaitForMultipleObjects | WaitForMultipleObjectsEx | '
             'WaitForMultipleObjectsExImplementation | '
             'RealMsgWaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
@@ -1157,28 +1154,27 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        eq_(processor_meta.processor_notes, [])
+        eq_(processor_meta['processor_notes'], [])
 
     def test_action_2_with_templates(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
 
-        raw_crash = CDotDict()
-        raw_dumps = {}
-        processed_crash = CDotDict(sample_json_dump_with_templates)
-        processor_meta = CDotDict({
+        raw_crash = {}
+        processed_crash = dict(sample_json_dump_with_templates)
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'Alpha<T>::Echo<T>'
         )
         eq_(
-            processed_crash.proto_signature,
+            processed_crash['proto_signature'],
             'NtWaitForMultipleObjects | Alpha<T>::Echo<T> | '
             'WaitForMultipleObjectsExImplementation | '
             'RealMsgWaitForMultipleObjectsEx | '
@@ -1189,31 +1185,28 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        eq_(processor_meta.processor_notes, [])
+        eq_(processor_meta['processor_notes'], [])
 
     def test_action_2_with_templates_and_special_case(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
 
-        raw_crash = CDotDict()
-        raw_dumps = {}
-        processed_crash = CDotDict(
-            sample_json_dump_with_templates_and_special_case
-        )
-        processor_meta = CDotDict({
+        raw_crash = {}
+        processed_crash = dict(sample_json_dump_with_templates_and_special_case)
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             '<name omitted> | '
             'IPC::ParamTraits<mozilla::net::NetAddr>::Write'
         )
         eq_(
-            processed_crash.proto_signature,
+            processed_crash['proto_signature'],
             'NtWaitForMultipleObjects | '
             '<name omitted> | '
             'IPC::ParamTraits<mozilla::net::NetAddr>::Write | '
@@ -1225,39 +1218,38 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        eq_(processor_meta.processor_notes, [])
+        eq_(processor_meta['processor_notes'], [])
 
     def test_action_3(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
 
-        raw_crash = CDotDict()
-        raw_dumps = {}
-        processed_crash = CDotDict({
+        raw_crash = {}
+        processed_crash = {
             'json_dump': {
                 'crashing_thread': {
                     'frames': []
                 }
             }
-        })
-        processed_crash.frames = []
-        processor_meta = CDotDict({
+        }
+        processed_crash['frames'] = []
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'EMPTY: no crashing thread identified'
         )
         eq_(
-            processed_crash.proto_signature,
+            processed_crash['proto_signature'],
             ''
         )
         eq_(
-            processor_meta.processor_notes,
+            processor_meta['processor_notes'],
             [
                 'CSignatureTool: No signature could be created because we do '
                 'not know which thread crashed'
@@ -1268,10 +1260,9 @@ class TestSignatureGeneration(TestCase):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
 
-        raw_crash = CDotDict()
-        raw_dumps = {}
-        processed_crash = CDotDict(copy.deepcopy(sample_json_dump))
-        processed_crash.json_dump.threads = [
+        raw_crash = {}
+        processed_crash = copy.deepcopy(sample_json_dump)
+        processed_crash['json_dump']['threads'] = [
             {
                 "frames": [
                     {
@@ -1296,126 +1287,122 @@ class TestSignatureGeneration(TestCase):
                 ]
             },
         ]
-        processor_meta = CDotDict({
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'user2.dll@0x20869'
         )
         eq_(
-            processed_crash.proto_signature,
+            processed_crash['proto_signature'],
             '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
         )
-        eq_(processor_meta.processor_notes, [])
+        eq_(processor_meta['processor_notes'], [])
 
 
 class TestOOMSignature(TestCase):
 
     def test_predicate_no_match(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {}
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
         ok_(not predicate_result)
 
     def test_predicate(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-        rd = {}
-        rc = DotDict()
-        rc.OOMAllocationSize = 17
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'OOMAllocationSize': 17
+        }
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
         ok_(predicate_result)
 
     def test_predicate_signature_fragment_1(self):
-        pc = DotDict()
-        pc.signature = 'this | is | a | NS_ABORT_OOM | signature'
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': 'this | is | a | NS_ABORT_OOM | signature'
+        }
+        raw_crash = {}
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
         ok_(predicate_result)
 
     def test_predicate_signature_fragment_2(self):
-        pc = DotDict()
-        pc.signature = 'mozalloc_handle_oom | this | is | bad'
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': 'mozalloc_handle_oom | this | is | bad'
+        }
+        raw_crash = {}
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
         ok_(predicate_result)
 
     def test_predicate_signature_fragment_3(self):
-        pc = DotDict()
-        pc.signature = 'CrashAtUnhandlableOOM'
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': 'CrashAtUnhandlableOOM'
+        }
+        raw_crash = {}
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
         ok_(predicate_result)
 
     def test_action_success(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {}
         fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-
         rule = OOMSignature(fake_processor.config)
-        action_result = rule.action(rc, rd, pc, fake_processor)
+        action_result = rule.action(raw_crash, {}, processed_crash, fake_processor)
 
         ok_(action_result)
-        eq_(pc.original_signature, 'hello')
-        eq_(pc.signature, 'OOM | unknown | hello')
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'OOM | unknown | hello')
 
     def test_action_small(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'OOMAllocationSize': 17
+        }
         fake_processor = create_basic_fake_processor()
 
-        rc = DotDict()
-        rc.OOMAllocationSize = 17
-        rd = {}
-
         rule = OOMSignature(fake_processor.config)
-        action_result = rule.action(rc, rd, pc, fake_processor)
+        action_result = rule.action(raw_crash, {}, processed_crash, fake_processor)
 
         ok_(action_result)
-        eq_(pc.original_signature, 'hello')
-        eq_(pc.signature, 'OOM | small')
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'OOM | small')
 
     def test_action_large(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'OOMAllocationSize': 17000000
+        }
         fake_processor = create_basic_fake_processor()
 
-        rc = DotDict()
-        rc.OOMAllocationSize = 17000000
-        rd = {}
-
         rule = OOMSignature(fake_processor.config)
-        action_result = rule.action(rc, rd, pc, fake_processor)
+        action_result = rule.action(raw_crash, {}, processed_crash, fake_processor)
 
         ok_(action_result)
-        eq_(pc.original_signature, 'hello')
-        eq_(pc.signature, 'OOM | large | hello')
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'OOM | large | hello')
 
 
 class TestAbortSignature(TestCase):
@@ -1428,11 +1415,12 @@ class TestAbortSignature(TestCase):
         config = self.get_config()
         rule = AbortSignature(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'hello'
-
-        raw_crash = DotDict()
-        raw_crash.AbortMessage = 'something'
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'AbortMessage': 'something'
+        }
 
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(predicate_result)
@@ -1440,12 +1428,11 @@ class TestAbortSignature(TestCase):
     def test_predicate_no_match(self):
         config = self.get_config()
         rule = AbortSignature(config)
-
-        processed_crash = DotDict()
-        processed_crash.signature = 'hello'
-
-        raw_crash = DotDict()
-        # No AbortMessage.
+        processed_crash = {
+            'signature': 'hello'
+        }
+        # No AbortMessage
+        raw_crash = {}
 
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(not predicate_result)
@@ -1453,71 +1440,67 @@ class TestAbortSignature(TestCase):
     def test_predicate_empty_message(self):
         config = self.get_config()
         rule = AbortSignature(config)
-
-        processed_crash = DotDict()
-        processed_crash.signature = 'hello'
-
-        raw_crash = DotDict()
-        raw_crash.AbortMessage = ''
-
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'AbortMessage': ''
+        }
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(not predicate_result)
 
     def test_action_success(self):
         config = self.get_config()
         rule = AbortSignature(config)
-
-        processed_crash = DotDict()
-        processed_crash.signature = 'hello'
-
-        raw_crash = DotDict()
-        raw_crash.AbortMessage = 'unknown'
-
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'AbortMessage': 'unknown'
+        }
         action_result = rule.action(raw_crash, {}, processed_crash, {})
-
         ok_(action_result)
-        eq_(processed_crash.original_signature, 'hello')
-        eq_(processed_crash.signature, 'Abort | unknown | hello')
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'Abort | unknown | hello')
 
     def test_action_success_long_message(self):
         config = self.get_config()
         rule = AbortSignature(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'hello'
-
-        raw_crash = DotDict()
-        raw_crash.AbortMessage = 'a' * 81
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'AbortMessage': 'a' * 81
+        }
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
         ok_(action_result)
-        eq_(processed_crash.original_signature, 'hello')
+        eq_(processed_crash['original_signature'], 'hello')
         expected_sig = 'Abort | {}... | hello'.format('a' * 77)
-        eq_(processed_crash.signature, expected_sig)
+        eq_(processed_crash['signature'], expected_sig)
 
     def test_action_success_remove_unwanted_parts(self):
         config = self.get_config()
         rule = AbortSignature(config)
 
-        processed_crash = DotDict()
-
-        raw_crash = DotDict()
+        processed_crash = {}
+        raw_crash = {}
 
         # Test with just the "ABOR" thing at the start.
-        processed_crash.signature = 'hello'
-        raw_crash.AbortMessage = '[5392] ###!!! ABORT: foo bar line 42'
+        processed_crash['signature'] = 'hello'
+        raw_crash['AbortMessage'] = '[5392] ###!!! ABORT: foo bar line 42'
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
         ok_(action_result)
-        eq_(processed_crash.original_signature, 'hello')
-        expected_sig = 'Abort | foo bar line 42 | hello'
-        eq_(processed_crash.signature, expected_sig)
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'Abort | foo bar line 42 | hello')
 
         # Test with a file name and line number.
-        processed_crash.signature = 'hello'
-        raw_crash.AbortMessage = (
+        processed_crash['signature'] = 'hello'
+        raw_crash['AbortMessage'] = (
             '[7616] ###!!! ABORT: unsafe destruction: file '
             'c:/builds/moz2_slave/m-rel-w32-00000000000000000000/build/src/'
             'dom/plugins/ipc/PluginModuleParent.cpp, line 777'
@@ -1526,24 +1509,22 @@ class TestAbortSignature(TestCase):
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
         ok_(action_result)
-        eq_(processed_crash.original_signature, 'hello')
-        expected_sig = 'Abort | unsafe destruction | hello'
-        eq_(processed_crash.signature, expected_sig)
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'Abort | unsafe destruction | hello')
 
         # Test with a message that lacks interesting content.
-        processed_crash.signature = 'hello'
-        raw_crash.AbortMessage = '[204] ###!!! ABORT: file ?, '
+        processed_crash['signature'] = 'hello'
+        raw_crash['AbortMessage'] = '[204] ###!!! ABORT: file ?, '
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
         ok_(action_result)
-        eq_(processed_crash.original_signature, 'hello')
-        expected_sig = 'Abort | hello'
-        eq_(processed_crash.signature, expected_sig)
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'Abort | hello')
 
         # Test with another message that lacks interesting content.
-        processed_crash.signature = 'hello'
-        raw_crash.AbortMessage = (
+        processed_crash['signature'] = 'hello'
+        raw_crash['AbortMessage'] = (
             '[4648] ###!!! ABORT: file resource:///modules/sessionstore/'
             'SessionStore.jsm, line 1459'
         )
@@ -1551,9 +1532,8 @@ class TestAbortSignature(TestCase):
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
         ok_(action_result)
-        eq_(processed_crash.original_signature, 'hello')
-        expected_sig = 'Abort | hello'
-        eq_(processed_crash.signature, expected_sig)
+        eq_(processed_crash['original_signature'], 'hello')
+        eq_(processed_crash['signature'], 'Abort | hello')
 
 
 class TestSigTrim(TestCase):
@@ -1566,11 +1546,11 @@ class TestSigTrim(TestCase):
         config = self.get_config()
         rule = SigTrim(config)
 
-        processed_crash = DotDict()
+        processed_crash = {}
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
-        processed_crash.signature = 42
+        processed_crash['signature'] = 42
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
@@ -1578,8 +1558,9 @@ class TestSigTrim(TestCase):
         config = self.get_config()
         rule = SigTrim(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'fooo::baar'
+        processed_crash = {
+            'signature': 'fooo::baar'
+        }
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(predicate_result)
@@ -1587,95 +1568,86 @@ class TestSigTrim(TestCase):
     def test_action_success(self):
         config = self.get_config()
         rule = SigTrim(config)
-        processed_crash = DotDict()
-
-        processed_crash.signature = 'all   good'
+        processed_crash = {
+            'signature': 'all   good'
+        }
         action_result = rule.action({}, {}, processed_crash, {})
         ok_(action_result)
-        eq_(processed_crash.signature, 'all   good')
+        eq_(processed_crash['signature'], 'all   good')
 
-        processed_crash.signature = 'all   good     '
+        processed_crash['signature'] = 'all   good     '
         action_result = rule.action({}, {}, processed_crash, {})
         ok_(action_result)
-        eq_(processed_crash.signature, 'all   good')
+        eq_(processed_crash['signature'], 'all   good')
 
-        processed_crash.signature = '    all   good  '
+        processed_crash['signature'] = '    all   good  '
         action_result = rule.action({}, {}, processed_crash, {})
         ok_(action_result)
-        eq_(processed_crash.signature, 'all   good')
+        eq_(processed_crash['signature'], 'all   good')
 
 
 class TestSigTrunc(TestCase):
 
     def test_predicate_no_match(self):
-        pc = DotDict()
-        pc.signature = '0' * 100
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': '0' * 100
+        }
         fake_processor = create_basic_fake_processor()
         rule = SigTrunc(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
         ok_(not predicate_result)
 
     def test_predicate(self):
-        pc = DotDict()
-        pc.signature = '9' * 256
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': '9' * 256
+        }
         fake_processor = create_basic_fake_processor()
         rule = SigTrunc(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
         ok_(predicate_result)
 
     def test_action_success(self):
-        pc = DotDict()
-        pc.signature = '9' * 256
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': '9' * 256
+        }
         fake_processor = create_basic_fake_processor()
         rule = SigTrunc(fake_processor.config)
-        action_result = rule.action(rc, rd, pc, fake_processor)
+        action_result = rule.action({}, {}, processed_crash, fake_processor)
         ok_(action_result)
-        eq_(len(pc.signature), 255)
-        ok_(pc.signature.endswith('9...'))
+        eq_(len(processed_crash['signature']), 255)
+        ok_(processed_crash['signature'].endswith('9...'))
 
 
 class TestStackwalkerErrorSignatureRule(TestCase):
 
     def test_predicate_no_match(self):
-        pc = DotDict()
-        pc.signature = '0' * 100
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': '0' * 100
+        }
         fake_processor = create_basic_fake_processor()
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
         ok_(not predicate_result)
 
     def test_predicate(self):
-        pc = DotDict()
-        pc.signature = "EMPTY: like my soul"
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': 'EMPTY: like my soul'
+        }
         fake_processor = create_basic_fake_processor()
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
         ok_(predicate_result)
 
     def test_action_success(self):
-        pc = DotDict()
-        pc.signature = "EMPTY: like my soul"
-        pc.mdsw_status_string = 'catastrophic stackwalker failure'
-        rc = DotDict()
-        rd = {}
+        processed_crash = {
+            'signature': 'EMPTY: like my soul',
+            'mdsw_status_string': 'catastrophic stackwalker failure'
+        }
         fake_processor = create_basic_fake_processor()
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
-        action_result = rule.action(rc, rd, pc, fake_processor)
+        action_result = rule.action({}, {}, processed_crash, fake_processor)
         ok_(action_result)
-        ok_(
-            pc.signature,
-            "EMPTY: like my soul; catastrophic stackwalker failure"
-        )
+        eq_(processed_crash['signature'], 'EMPTY: like my soul; catastrophic stackwalker failure')
 
 
 class TestSignatureWatchDogRule(TestCase):
@@ -1727,24 +1699,23 @@ class TestSignatureWatchDogRule(TestCase):
         config = self.get_config()
         sgr = SignatureRunWatchDog(config)
 
-        raw_crash = CDotDict()
-        raw_dumps = {}
-        processed_crash = CDotDict(sample_json_dump)
-        processed_crash.signature = 'foo::bar'  # set a fake signature
-        processor_meta = CDotDict({
+        processed_crash = copy.deepcopy(sample_json_dump)
+        # Set a fake signature
+        processed_crash['signature'] = 'foo::bar'
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+        ok_(sgr._action({}, {}, processed_crash, processor_meta))
 
         # Verify the signature has been re-generated based on thread 0.
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'shutdownhang | MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________'
         )
-        eq_(processor_meta.processor_notes, [])
+        eq_(processor_meta['processor_notes'], [])
 
 
 class TestSignatureJitCategory(TestCase):
@@ -1757,17 +1728,18 @@ class TestSignatureJitCategory(TestCase):
         config = self.get_config()
         rule = SignatureJitCategory(config)
 
-        processed_crash = DotDict()
-        processed_crash.classifications = DotDict()
+        processed_crash = {
+            'classifications': {}
+        }
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
-        processed_crash.classifications.jit = DotDict()
+        processed_crash['classifications']['jit'] = {}
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
-        processed_crash.classifications.jit.category = ''
+        processed_crash['classifications']['jit']['category'] = ''
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
@@ -1775,10 +1747,11 @@ class TestSignatureJitCategory(TestCase):
         config = self.get_config()
         rule = SignatureJitCategory(config)
 
-        processed_crash = DotDict()
-        processed_crash.classifications = {
-            'jit': {
-                'category': 'JIT Crash'
+        processed_crash = {
+            'classifications': {
+                'jit': {
+                    'category': 'JIT Crash'
+                }
             }
         }
 
@@ -1789,22 +1762,23 @@ class TestSignatureJitCategory(TestCase):
         config = self.get_config()
         rule = SignatureJitCategory(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'foo::bar'
-        processed_crash.classifications = {
-            'jit': {
-                'category': 'JIT Crash'
+        processed_crash = {
+            'signature': 'foo::bar',
+            'classifications': {
+                'jit': {
+                    'category': 'JIT Crash'
+                }
             }
         }
-        processor_meta = CDotDict({
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
         action_result = rule.action({}, {}, processed_crash, processor_meta)
         ok_(action_result)
-        eq_(processed_crash.signature, 'jit | JIT Crash')
+        eq_(processed_crash['signature'], 'jit | JIT Crash')
         eq_(
-            processor_meta.processor_notes,
+            processor_meta['processor_notes'],
             ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
         )
 
@@ -1819,11 +1793,11 @@ class TestSignatureIPCChannelError(TestCase):
         config = self.get_config()
         rule = SignatureIPCChannelError(config)
 
-        raw_crash = DotDict()
+        raw_crash = {}
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
-        raw_crash.ipc_channel_error = ''
+        raw_crash['ipc_channel_error'] = ''
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
@@ -1831,8 +1805,9 @@ class TestSignatureIPCChannelError(TestCase):
         config = self.get_config()
         rule = SignatureIPCChannelError(config)
 
-        raw_crash = DotDict()
-        raw_crash.ipc_channel_error = 'foo, bar'
+        raw_crash = {
+            'ipc_channel_error': 'foo, bar'
+        }
 
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(predicate_result)
@@ -1841,48 +1816,43 @@ class TestSignatureIPCChannelError(TestCase):
         config = self.get_config()
         rule = SignatureIPCChannelError(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'foo::bar'
-
-        raw_crash = DotDict()
-        raw_crash.ipc_channel_error = 'ipc' * 50
-
-        processor_meta = CDotDict({
+        processed_crash = {
+            'signature': 'foo::bar'
+        }
+        raw_crash = {
+            'ipc_channel_error': 'ipc' * 50
+        }
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, processor_meta
-        )
+        action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         ok_(action_result)
-
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'IPCError-content | {}'.format(('ipc' * 50)[:100])
         )
         eq_(
-            processor_meta.processor_notes,
+            processor_meta['processor_notes'],
             ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
         )
 
         # Now test with a browser crash.
-        processed_crash.signature = 'foo::bar'
-        raw_crash.additional_minidumps = 'browser'
-        processor_meta = CDotDict({
+        processed_crash['signature'] = 'foo::bar'
+        raw_crash['additional_minidumps'] = 'browser'
+        processor_meta = {
             'processor_notes': []
-        })
+        }
 
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, processor_meta
-        )
+        action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         ok_(action_result)
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'IPCError-browser | {}'.format(('ipc' * 50)[:100])
         )
         eq_(
-            processor_meta.processor_notes,
+            processor_meta['processor_notes'],
             ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
         )
 
@@ -1905,8 +1875,9 @@ class TestSignatureShutdownTimeout(TestCase):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
 
-        raw_crash = DotDict()
-        raw_crash.AsyncShutdownTimeout = '{"foo": "bar"}'
+        raw_crash = {
+            'AsyncShutdownTimeout': '{"foo": "bar"}'
+        }
 
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(predicate_result)
@@ -1915,29 +1886,29 @@ class TestSignatureShutdownTimeout(TestCase):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'foo'
-        raw_crash = DotDict()
-        raw_crash.AsyncShutdownTimeout = "{{{{"
-        processor_meta = CDotDict({
+        processed_crash = {
+            'signature': 'foo'
+        }
+        raw_crash = {
+            'AsyncShutdownTimeout': '{{{{'
+        }
+        processor_meta = {
             'processor_notes': []
-        })
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, processor_meta
-        )
+        }
+        action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         ok_(action_result)
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'AsyncShutdownTimeout | UNKNOWN'
         )
 
         ok_(
             'Error parsing AsyncShutdownTimeout:' in
-            processor_meta.processor_notes[0]
+            processor_meta['processor_notes'][0]
         )
-        ok_('Expected object or value' in processor_meta.processor_notes[0])
+        ok_('Expected object or value' in processor_meta['processor_notes'][0])
         eq_(
-            processor_meta.processor_notes[1],
+            processor_meta['processor_notes'][1],
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
@@ -1945,30 +1916,30 @@ class TestSignatureShutdownTimeout(TestCase):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'foo'
-        raw_crash = DotDict()
-        raw_crash.AsyncShutdownTimeout = json.dumps({
-            'no': 'phase or condition'
-        })
-        processor_meta = CDotDict({
+        processed_crash = {
+            'signature': 'foo'
+        }
+        raw_crash = {
+            'AsyncShutdownTimeout': json.dumps({
+                'no': 'phase or condition'
+            })
+        }
+        processor_meta = {
             'processor_notes': []
-        })
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, processor_meta
-        )
+        }
+        action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         ok_(action_result)
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'AsyncShutdownTimeout | UNKNOWN'
         )
 
         eq_(
-            processor_meta.processor_notes[0],
+            processor_meta['processor_notes'][0],
             "Error parsing AsyncShutdownTimeout: 'phase'"
         )
         eq_(
-            processor_meta.processor_notes[1],
+            processor_meta['processor_notes'][1],
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
@@ -1976,31 +1947,31 @@ class TestSignatureShutdownTimeout(TestCase):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'foo'
-        processor_meta = CDotDict({
+        processed_crash = {
+            'signature': 'foo'
+        }
+        processor_meta = {
             'processor_notes': []
-        })
-        raw_crash = DotDict()
-        raw_crash.AsyncShutdownTimeout = json.dumps({
-            'phase': 'beginning',
-            'conditions': [
-                {'name': 'A'},
-                {'name': 'B'},
-            ]
-        })
+        }
+        raw_crash = {
+            'AsyncShutdownTimeout': json.dumps({
+                'phase': 'beginning',
+                'conditions': [
+                    {'name': 'A'},
+                    {'name': 'B'},
+                ]
+            })
+        }
 
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, processor_meta
-        )
+        action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         ok_(action_result)
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'AsyncShutdownTimeout | beginning | A,B'
         )
         eq_(
-            processor_meta.processor_notes[0],
+            processor_meta['processor_notes'][0],
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
@@ -2008,28 +1979,28 @@ class TestSignatureShutdownTimeout(TestCase):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
 
-        processed_crash = DotDict()
-        processed_crash.signature = 'foo'
-        processor_meta = CDotDict({
+        processed_crash = {
+            'signature': 'foo'
+        }
+        processor_meta = {
             'processor_notes': []
-        })
-        raw_crash = DotDict()
-        raw_crash.AsyncShutdownTimeout = json.dumps({
-            'phase': 'beginning',
-            'conditions': []
-        })
+        }
+        raw_crash = {
+            'AsyncShutdownTimeout': json.dumps({
+                'phase': 'beginning',
+                'conditions': []
+            })
+        }
 
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, processor_meta
-        )
+        action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         ok_(action_result)
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'AsyncShutdownTimeout | beginning | (none)'
         )
         eq_(
-            processor_meta.processor_notes[0],
+            processor_meta['processor_notes'][0],
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
@@ -2044,11 +2015,11 @@ class TestSignatureIPCMessageName(TestCase):
         config = self.get_config()
         rule = SignatureIPCMessageName(config)
 
-        raw_crash = DotDict()
+        raw_crash = {}
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
-        raw_crash.IPCMessageName = ''
+        raw_crash['IPCMessageName'] = ''
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
@@ -2056,10 +2027,12 @@ class TestSignatureIPCMessageName(TestCase):
         config = self.get_config()
         rule = SignatureIPCMessageName(config)
 
-        raw_crash = DotDict()
-        processed_crash = DotDict()
-        processed_crash.signature = 'fooo::baar'
-        raw_crash.IPCMessageName = 'foo, bar'
+        raw_crash = {
+            'IPCMessageName': 'foo, bar'
+        }
+        processed_crash = {
+            'signature': 'fooo::baar'
+        }
 
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(predicate_result)
@@ -2067,19 +2040,16 @@ class TestSignatureIPCMessageName(TestCase):
     def test_action_success(self):
         config = self.get_config()
         rule = SignatureIPCMessageName(config)
-
-        processed_crash = DotDict()
-        processed_crash.signature = 'fooo::baar'
-
-        raw_crash = DotDict()
-        raw_crash.IPCMessageName = 'foo, bar'
-
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, {}
-        )
+        processed_crash = {
+            'signature': 'fooo::baar'
+        }
+        raw_crash = {
+            'IPCMessageName': 'foo, bar'
+        }
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
         ok_(action_result)
 
         eq_(
-            processed_crash.signature,
+            processed_crash['signature'],
             'fooo::baar | IPC_Message_Name=foo, bar'
         )
