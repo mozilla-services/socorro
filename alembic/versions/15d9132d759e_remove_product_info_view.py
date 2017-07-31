@@ -14,8 +14,8 @@ down_revision = 'a5e0f0bc87d6'
 
 
 def upgrade():
-    op.execute('DROP VIEW default_versions_builds')
-    op.execute('DROP VIEW versions_builds')
+    op.execute('DROP VIEW IF EXISTS default_versions_builds')
+    op.execute('DROP VIEW IF EXISTS versions_builds')
     op.execute('DROP VIEW product_info')
 
 
