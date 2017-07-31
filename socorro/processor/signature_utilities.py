@@ -662,12 +662,22 @@ class SignatureShutdownTimeout(Rule):
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return bool(raw_crash.get('AsyncShutdownTimeout'))
 
+    def get_name(self, c):
+        """Return best name for an AsyncShutdownTimeout notation condition"""
+        # The AsyncShutdownTimeout notation condition can either be a string that looks like a
+        # "name" or a dict with a "name" in it.
+        #
+        # This handles both variations.
+        if isinstance(c, dict):
+            return c.get('name')
+        return c
+
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         parts = ['AsyncShutdownTimeout']
         try:
             shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
             parts.append(shutdown_data['phase'])
-            conditions = [c['name'] for c in shutdown_data['conditions']]
+            conditions = [self.get_name(c) for c in shutdown_data['conditions']]
             if conditions:
                 conditions.sort()
                 parts.append(','.join(conditions))
