@@ -53,7 +53,7 @@ class OSInfoRule(Rule):
         processed_crash.os_name = ''
         processed_crash.os_version = ''
 
-        system_info = processed_crash.json_dump.get('system_info')
+        system_info = processed_crash.get('json_dump').get('system_info')
         if system_info:
             processed_crash.os_name = system_info.get('os', '').strip()
             processed_crash.os_version = system_info.get('os_ver', '').strip()
