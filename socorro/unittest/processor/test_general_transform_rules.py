@@ -284,9 +284,7 @@ class TestOSInfoRule(TestCase):
         rule = OSInfoRule(config)
 
         # the call to be tested
-        r = rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        eq_(r, (True, False))
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # processed crash should have empties
         expected = DotDict()
