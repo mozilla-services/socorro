@@ -15,7 +15,6 @@ class IntegrationTestProductVersionsBase(PostgreSQLTestCase):
 
     @classmethod
     def setUpClass(cls):
-        """ Populate product_info table with fake data """
         super(IntegrationTestProductVersionsBase, cls).setUpClass()
 
         cls.truncate()
