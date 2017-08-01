@@ -639,7 +639,7 @@ class FlashVersionRule(Rule):
         processed_crash.flash_version = ''
         flash_version = None
 
-        modules = processed_crash['json_dump'].get('modules', [])
+        modules = processed_crash.get('json_dump', {}).get('modules', [])
         if isinstance(modules, (tuple, list)):
             for index, a_module in enumerate(modules):
                 flash_version = self._get_flash_version(**a_module)
