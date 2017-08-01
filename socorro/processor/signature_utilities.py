@@ -667,7 +667,14 @@ class SignatureShutdownTimeout(Rule):
         try:
             shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
             parts.append(shutdown_data['phase'])
-            conditions = [c['name'] for c in shutdown_data['conditions']]
+            conditions = [
+                # NOTE(willkg): The AsyncShutdownTimeout notation condition can either be a string
+                # that looks like a "name" or a dict with a "name" in it.
+                #
+                # This handles both variations.
+                c['name'] if isinstance(c, dict) else c
+                for c in shutdown_data['conditions']
+            ]
             if conditions:
                 conditions.sort()
                 parts.append(','.join(conditions))
