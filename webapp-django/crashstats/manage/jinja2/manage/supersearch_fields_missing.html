@@ -5,7 +5,15 @@
 {% block admin_title %}{{ super() }} - Super Search Missing Fields{% endblock %}
 
 {% block site_css %}
-  {{ super() }}
+{{ super() }}
+<style type="text/css">
+table.data-table tr td {
+    max-width: 500px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+</style>
 {% endblock %}
 
 {% block mainbody %}
