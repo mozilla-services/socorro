@@ -1975,6 +1975,35 @@ class TestSignatureShutdownTimeout(TestCase):
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
+    def test_action_success_string_conditions(self):
+        config = self.get_config()
+        rule = SignatureShutdownTimeout(config)
+
+        processed_crash = {
+            'signature': 'foo'
+        }
+        processor_meta = {
+            'processor_notes': []
+        }
+        raw_crash = {
+            'AsyncShutdownTimeout': json.dumps({
+                'phase': 'beginning',
+                'conditions': ['A', 'B', 'C']
+            })
+        }
+
+        action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
+        ok_(action_result)
+
+        eq_(
+            processed_crash['signature'],
+            'AsyncShutdownTimeout | beginning | A,B,C'
+        )
+        eq_(
+            processor_meta['processor_notes'][0],
+            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        )
+
     def test_action_success_empty_conditions_key(self):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
