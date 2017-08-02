@@ -8,6 +8,7 @@
 import os
 import sys
 import collections
+from pkg_resources import resource_string
 
 import raven
 from configman import Namespace
@@ -20,6 +21,14 @@ from socorro.app.fetch_transform_save_app import (
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib.util import DotDict
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
+
+# When socorro is installed (python setup.py install), it will create
+# a file in site-packages for socorro called "socorro/socorro_revision.txt".
+# If this socorro was installed like that, let's pick it up and use it.
+try:
+    SOCORRO_REVISION = resource_string('socorro', 'socorro_revision.txt').strip()
+except IOError:
+    SOCORRO_REVISION = None
 
 
 class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
@@ -151,7 +160,10 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                         exceptions = exception
                     else:
                         exceptions = [exception]
-                    client = raven.Client(dsn=self.config.sentry.dsn)
+                    client = raven.Client(
+                        dsn=self.config.sentry.dsn,
+                        release=SOCORRO_REVISION,
+                    )
                     client.context.activate()
                     client.context.merge({'extra': {
                         'crash_id': crash_id,
