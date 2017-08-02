@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 
+import copy
+import json
 import mock
 from nose.tools import eq_, ok_
+import re
 
 from configman.dotdict import DotDict as CDotDict
 
@@ -27,10 +29,8 @@ from socorro.processor.signature_utilities import (
     SignatureShutdownTimeout,
     SignatureIPCMessageName,
 )
+from socorro.unittest.processor import create_basic_fake_processor
 from socorro.unittest.testbase import TestCase
-
-import re
-import copy
 
 
 class BaseTestClass(TestCase):
@@ -1016,25 +1016,6 @@ sample_json_dump_with_templates_and_special_case = {
 
     }
 }
-
-csig_config = DotDict()
-csig_config.irrelevant_signature_re = ''
-csig_config.prefix_signature_re = ''
-csig_config.signatures_with_line_numbers_re = ''
-csig_config.signature_sentinels = []
-csig_config.collapse_arguments = True
-c_signature_tool = CSignatureTool(csig_config)
-
-
-def create_basic_fake_processor():
-    fake_processor = DotDict()
-    fake_processor.c_signature_tool = c_signature_tool
-    fake_processor.config = DotDict()
-    # need help figuring out failures? switch to FakeLogger and read stdout
-    fake_processor.config.logger = mock.MagicMock()
-    #fake_processor.config.logger = sutil.FakeLogger()
-    return fake_processor
-
 
 class TestSignatureGeneration(TestCase):
 
