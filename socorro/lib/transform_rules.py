@@ -5,26 +5,16 @@
 import re
 import collections
 import inspect
-from pkg_resources import resource_string
 
-import raven
 import configman
-
 from configman import RequiredConfig, Namespace
 from configman.dotdict import DotDict
 from configman.converters import to_str
 
+from socorro.lib import raven_client
 from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
 )
-
-# When socorro is installed (python setup.py install), it will create
-# a file in site-packages for socorro called "socorro/socorro_revision.txt".
-# If this socorro was installed like that, let's pick it up and use it.
-try:
-    SOCORRO_REVISION = resource_string('socorro', 'socorro_revision.txt').strip()
-except IOError:
-    SOCORRO_REVISION = None
 
 
 # support methods
@@ -87,10 +77,7 @@ class Rule(RequiredConfig):
                     extra['crash_id'] = crash_id
 
             try:
-                client = raven.Client(
-                    dsn=dsn,
-                    release=SOCORRO_REVISION,
-                )
+                client = raven_client.get_client(dsn)
                 client.context.activate()
                 client.context.merge({'extra': extra})
                 try:
