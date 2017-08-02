@@ -41,8 +41,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     required_config.processor.add_option(
         'processor_class',
         doc='the class that transforms raw crashes into processed crashes',
-        default='socorro.processor.socorrolite_processor_2015'
-        '.SocorroLiteProcessorAlgorithm2015',
+        default='socorro.processor.processor_2015.Processor2015',
         from_string_converter=class_converter
     )
 

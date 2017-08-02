@@ -1,3 +1,5 @@
+from django import forms
+
 from crashstats.crashstats.forms import BaseModelForm
 from . import models
 
@@ -27,3 +29,9 @@ class GenerateTokenForm(BaseModelForm):
         self.fields['notes'].help_text = (
             'Optional. Entirely for your own records.'
         )
+
+    def clean_notes(self):
+        value = self.cleaned_data['notes']
+        if len(value) > 2000:
+            raise forms.ValidationError('Text too long')
+        return value

@@ -49,3 +49,4 @@ e2e-tests/.cache/
 
 # docker things
 .docker-build
+.cache/
