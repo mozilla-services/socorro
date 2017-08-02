@@ -10,9 +10,7 @@ from socorro.processor.rules.memory_report_extraction import (
     MemoryReportExtraction,
 )
 from socorro.unittest.testbase import TestCase
-from socorro.unittest.processor.test_signature_utilities import (
-    create_basic_fake_processor
-)
+from socorro.unittest.processor import create_basic_fake_processor
 
 
 HERE = os.path.dirname(__file__)
