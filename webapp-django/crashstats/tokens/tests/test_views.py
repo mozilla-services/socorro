@@ -101,6 +101,13 @@ class TestViews(BaseTestViews):
         eq_(token.permissions.all().count(), 0)
         token.delete()
 
+        # The 'notes' field can't been too long
+        response = self.client.post(url, {
+            'notes': 'X' * 10000,
+        })
+        eq_(response.status_code, 200)
+        ok_('Text too long' in response.content)
+
         group = Group.objects.create(name='Cool people')
         group.permissions.add(p1)
         group.permissions.add(p3)
