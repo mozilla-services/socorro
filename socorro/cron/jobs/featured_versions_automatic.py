@@ -114,7 +114,6 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
             featured.add(versions['version'])
         elif product_name == 'Thunderbird':
             featured.add(versions['LATEST_THUNDERBIRD_DEVEL_VERSION'])
-            featured.add(versions['LATEST_THUNDERBIRD_ALPHA_VERSION'])
             featured.add(versions['LATEST_THUNDERBIRD_VERSION'])
             featured.add(versions['LATEST_THUNDERBIRD_NIGHTLY_VERSION'])
         else:
