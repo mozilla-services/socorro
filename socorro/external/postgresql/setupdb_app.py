@@ -320,8 +320,9 @@ class SocorroDBApp(App):
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % database_name)
                     if not confirm == "y":
-                        self.config.logger.warn('NOT dropping table')
+                        self.config.logger.warning('NOT dropping table')
                         return 2
+
                 db.drop_database(database_name)
                 db.commit()
 

@@ -51,11 +51,9 @@ dockerbuild:
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
 # postgres going forward and has the needed environment variables.
-# FIXME(willkg): These are not idempotent, but they should be. Plus we should
-# run migrations here, too.
 dockersetup: .docker-build
-	-${DC} run webapp /app/docker/run_setup_postgres.sh
-	-${DC} run webapp /app/docker/run_setup_elasticsearch.sh
+	${DC} run webapp /app/docker/run_setup_postgres.sh
+	${DC} run webapp /app/docker/run_setup_elasticsearch.sh
 
 dockerclean:
 	rm .docker-build
