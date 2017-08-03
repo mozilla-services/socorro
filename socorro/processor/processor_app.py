@@ -9,7 +9,6 @@ import os
 import sys
 import collections
 
-import raven
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -19,6 +18,7 @@ from socorro.app.fetch_transform_save_app import (
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib.util import DotDict
+from socorro.lib import raven_client
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
 
 
@@ -150,7 +150,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                         exceptions = exception
                     else:
                         exceptions = [exception]
-                    client = raven.Client(dsn=self.config.sentry.dsn)
+                    client = raven_client.get_client(self.config.sentry.dsn)
                     client.context.activate()
                     client.context.merge({'extra': {
                         'crash_id': crash_id,
