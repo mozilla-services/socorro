@@ -162,15 +162,6 @@ class SocorroDBApp(App):
         exclude_from_dump_conf=True
     )
 
-    @staticmethod
-    def get_application_defaults():
-        """since this app is more of an interactive app than the others, the
-        logging of config information is rather disruptive.  Override the
-        default logging level to one that is less annoying."""
-        return {
-            'logging.stderr_error_logging_level': 40  # only ERROR or worse
-        }
-
     def bulk_load_table(self, db, table):
         io = cStringIO.StringIO()
         for line in table.generate_rows():
@@ -329,8 +320,9 @@ class SocorroDBApp(App):
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % database_name)
                     if not confirm == "y":
-                        self.config.logger.warn('NOT dropping table')
+                        self.config.logger.warning('NOT dropping table')
                         return 2
+
                 db.drop_database(database_name)
                 db.commit()
 
