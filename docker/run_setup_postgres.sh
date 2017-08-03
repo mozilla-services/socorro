@@ -11,16 +11,24 @@
 
 cd /app
 
-# FIXME(willkg): Make this idempotent so that running it after it's already been
-# run doesn't affect anything.
-echo "Setting up the db..."
+# This is a webapp environment variable. If it doesn't exist, then use
+# "breakpad"
+DATABASE="${DATASERVICE_DATABASE_NAME:-breakpad}"
+
+# Wait until postgres is listening
+urlwait "${DATABASE_URL}" 10
+
+# FIXME(willkg): Make this idempotent so it doesn't affect anything if run
+# multiple times
+# NOTE(willkg): add --dropdb to this if you want to recreate the db
+echo "Setting up the db (${DATABASE}) and generating fake data..."
 ./scripts/socorro setupdb \
-                  --database_name=breakpad \
+                  --database_name="${DATABASE}" \
                   --fakedata \
                   --fakedata_days=3 \
                   --createdb
 
-# This does Django migrations. It's idempotent.
+# This does Django migrations and is idempotent
 echo "Setting up the db for Django..."
 cd /app/webapp-django
 python manage.py migrate auth
