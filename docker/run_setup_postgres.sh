@@ -29,7 +29,7 @@ echo "Dropping existing db and creating new db named (${DATABASE})..."
                   --dropdb \
                   --createdb
 
-# This does Django migrations and is idempotent
+# Run Django migrations
 echo "Setting up the db for Django..."
 cd /app/webapp-django
 python manage.py migrate auth

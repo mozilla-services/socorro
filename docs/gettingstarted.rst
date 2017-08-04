@@ -49,7 +49,12 @@ Quickstart
       Pull requests welcome!
 
 
-At that point, you should have a functional Socorro development environment.
+At that point, you should have a basic functional Socorro development
+environment.
+
+See :ref:`webapp-chapter` for additional setup and running the webapp.
+
+See :ref:`processor-chapter` for additional setup and running the processor.
 
 
 Configuration
@@ -115,8 +120,8 @@ will find the following folders. Here is what each of them contains:
 +-----------------+-------------------------------------------------------------+
 | tools/          | External tools used by Socorro.                             |
 +-----------------+-------------------------------------------------------------+
-| webapp-django/  | Front-end Django application (also called UI). See          |
-|                 | :ref:`ui-chapter`.                                          |
+| webapp-django/  | Front-end Django application (also called webapp). See      |
+|                 | :ref:`webapp-chapter`.                                      |
 +-----------------+-------------------------------------------------------------+
 
 
