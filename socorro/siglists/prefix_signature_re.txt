@@ -199,6 +199,7 @@ std::_Allocate.*
 std::list<.*>::.*
 std::panicking::begin_panic<.*>
 std::panicking::rust_panic_with_hook
+std::collections::hash::map::.*
 strcat
 strncmp
 ssl3_.*
