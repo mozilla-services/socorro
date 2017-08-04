@@ -54,11 +54,8 @@ superuser.
 
 Run this::
 
-  $ docker-compose run webapp python manage.py createsuperuser
+  $ docker-compose run webapp python manage.py makesuperuser email@example.com
 
-
-Then follow the prompts. The username and password don't matter at all, but the
-email address needs to match what you plan to use for Google auth.
 
 You can do this as many times as you like.
 

@@ -1,11 +1,19 @@
-import sys
+from __future__ import print_function
+
+try:
+    _input = raw_input
+except NameError:
+    # You're on Python >=3
+    _input = input
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
+from crashstats.authentication.views import default_username
+
 
 def get_input(text):
-    return raw_input(text).strip()
+    return _input(text).strip()
 
 
 class Command(BaseCommand):
@@ -23,15 +31,15 @@ class Command(BaseCommand):
             try:
                 user = User.objects.get(email__iexact=email)
             except User.DoesNotExist:
-                print >> sys.stderr, "No user with that email %s" % (email,)
-                break
-            if user.is_superuser:
-                print >> sys.stdout, (
-                    '%s was already a superuser' % (user.email,)
+                user = User.objects.create(
+                    username=default_username(email),
+                    email=email,
                 )
+                user.set_unusable_password()
+
+            if user.is_superuser:
+                print('{} was already a superuser'.format(user.email))
             else:
                 user.is_superuser = True
                 user.save()
-                print >> sys.stdout, (
-                    '%s is now a superuser' % (user.email,)
-                )
+                print('{} is now a superuser'.format(user.email))
