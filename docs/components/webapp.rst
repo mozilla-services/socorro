@@ -63,8 +63,8 @@ email address needs to match what you plan to use for Google auth.
 You can do this as many times as you like.
 
 
-Setting up the webapp for Google signin
----------------------------------------
+Setting up the webapp for Google Sign-In
+----------------------------------------
 
 In order to authenticate in the webapp using the "Google signin" button, you
 need to get a set of oauth credentials.
@@ -87,7 +87,7 @@ need to get a set of oauth credentials.
    client secret that you got from step 3
 
 
-After that, Google signin should work.
+After that, Google Sign-In should work.
 
 
 About Permissions, User and Groups
