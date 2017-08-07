@@ -1,10 +1,6 @@
 from __future__ import print_function
 
-try:
-    _input = raw_input
-except NameError:
-    # You're on Python >=3
-    _input = input
+from six.moves import input
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
@@ -13,7 +9,7 @@ from crashstats.authentication.views import default_username
 
 
 def get_input(text):
-    return _input(text).strip()
+    return input(text).strip()
 
 
 class Command(BaseCommand):
