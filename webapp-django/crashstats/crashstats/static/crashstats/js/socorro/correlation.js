@@ -43,6 +43,12 @@ window.correlations = (function () {
                 };
 
                 var channels = $('#mainbody').data('channels');
+                if (!channels) {
+                    channels = [$('#mainbody').data('channel')];
+                }
+                if (!channels || !channels.length) {
+                    throw new Error('No channel or channels dataset attribute set');
+                }
 
                 channels.forEach(function (ch) {
                     correlationData[product][ch] = {
@@ -50,8 +56,6 @@ window.correlations = (function () {
                         'signatures': {},
                     };
                 });
-            })
-            .then(function () {
                 return correlationData[product];
             });
         });
