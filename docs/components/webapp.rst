@@ -54,7 +54,7 @@ superuser.
 
 Run this::
 
-  $ docker-compose run webapp python manage.py makesuperuser email@example.com
+  $ docker-compose run webapp python webapp-django/manage.py makesuperuser email@example.com
 
 
 You can do this as many times as you like.
