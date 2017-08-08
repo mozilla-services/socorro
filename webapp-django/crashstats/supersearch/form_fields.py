@@ -4,6 +4,7 @@ import isodate
 
 from django import forms
 from django.utils.timezone import utc
+from django.utils.encoding import smart_str
 
 from crashstats.crashstats.utils import parse_isodate
 
@@ -180,6 +181,7 @@ class BooleanField(forms.CharField):
         """
         if value is None:
             return None
-        if str(value).lower() in ('__true__', 'true', 't', '1', 'y', 'yes'):
+        truthy_strings = ('__true__', 'true', 't', '1', 'y', 'yes')
+        if smart_str(value).lower() in truthy_strings:
             return '__true__'
         return '!__true__'
