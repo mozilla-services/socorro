@@ -1078,13 +1078,9 @@ class TestSignatureGeneration(TestCase):
         # the call to be tested
         assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        assert (
-            processed_crash['signature'] ==
-            'MsgWaitForMultipleObjects | '
-            'F_1152915508__________________________________'
-        )
-        assert (
-            processed_crash['proto_signature'] ==
+        expected = 'MsgWaitForMultipleObjects | F_1152915508__________________________________'
+        assert processed_crash['signature'] == expected
+        expected = (
             'NtWaitForMultipleObjects | WaitForMultipleObjectsEx | '
             'WaitForMultipleObjectsExImplementation | '
             'RealMsgWaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
@@ -1094,6 +1090,7 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
+        assert processed_crash['proto_signature'] == expected
         assert processor_meta['processor_notes'] == []
 
     def test_action_2_with_templates(self):
@@ -1110,8 +1107,7 @@ class TestSignatureGeneration(TestCase):
         assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
         assert processed_crash['signature'] == 'Alpha<T>::Echo<T>'
-        assert (
-            processed_crash['proto_signature'] ==
+        expected = (
             'NtWaitForMultipleObjects | Alpha<T>::Echo<T> | '
             'WaitForMultipleObjectsExImplementation | '
             'RealMsgWaitForMultipleObjectsEx | '
@@ -1122,6 +1118,7 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
+        assert processed_crash['proto_signature'] == expected
         assert processor_meta['processor_notes'] == []
 
     def test_action_2_with_templates_and_special_case(self):
@@ -1137,13 +1134,9 @@ class TestSignatureGeneration(TestCase):
         # the call to be tested
         assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        assert (
-            processed_crash['signature'] ==
-            '<name omitted> | '
-            'IPC::ParamTraits<mozilla::net::NetAddr>::Write'
-        )
-        assert (
-            processed_crash['proto_signature'] ==
+        expected = '<name omitted> | IPC::ParamTraits<mozilla::net::NetAddr>::Write'
+        assert processed_crash['signature'] == expected
+        expected = (
             'NtWaitForMultipleObjects | '
             '<name omitted> | '
             'IPC::ParamTraits<mozilla::net::NetAddr>::Write | '
@@ -1155,6 +1148,7 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
+        assert processed_crash['proto_signature'] == expected
         assert processor_meta['processor_notes'] == []
 
     def test_action_3(self):
@@ -1179,13 +1173,11 @@ class TestSignatureGeneration(TestCase):
 
         assert processed_crash['signature'] == 'EMPTY: no crashing thread identified'
         assert processed_crash['proto_signature'] == ''
-        assert (
-            processor_meta['processor_notes'] ==
-            [
-                'CSignatureTool: No signature could be created because we do '
-                'not know which thread crashed'
-            ]
-        )
+        expected = [
+            'CSignatureTool: No signature could be created because we do '
+            'not know which thread crashed'
+        ]
+        assert processor_meta['processor_notes'] == expected
 
     def test_lower_case_modules(self):
         config = self.get_config()
@@ -1226,10 +1218,8 @@ class TestSignatureGeneration(TestCase):
         assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
         assert processed_crash['signature'] == 'user2.dll@0x20869'
-        assert (
-            processed_crash['proto_signature'] ==
-            '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
-        )
+        expected = '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
+        assert processed_crash['proto_signature'] == expected
         assert processor_meta['processor_notes'] == []
 
 
@@ -1638,11 +1628,11 @@ class TestSignatureWatchDogRule(TestCase):
         assert sgr._action({}, {}, processed_crash, processor_meta) is True
 
         # Verify the signature has been re-generated based on thread 0.
-        assert (
-            processed_crash['signature'] ==
+        expected = (
             'shutdownhang | MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________'
         )
+        assert processed_crash['signature'] == expected
         assert processor_meta['processor_notes'] == []
 
 
@@ -1705,10 +1695,8 @@ class TestSignatureJitCategory(TestCase):
         action_result = rule.action({}, {}, processed_crash, processor_meta)
         assert action_result is True
         assert processed_crash['signature'] == 'jit | JIT Crash'
-        assert (
-            processor_meta['processor_notes'] ==
-            ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
-        )
+        expected = ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
+        assert processor_meta['processor_notes'] == expected
 
 
 class TestSignatureIPCChannelError(TestCase):
@@ -1756,14 +1744,10 @@ class TestSignatureIPCChannelError(TestCase):
 
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         assert action_result is True
-        assert (
-            processed_crash['signature'] ==
-            'IPCError-content | {}'.format(('ipc' * 50)[:100])
-        )
-        assert (
-            processor_meta['processor_notes'] ==
-            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
-        )
+        expected = 'IPCError-content | {}'.format(('ipc' * 50)[:100])
+        assert processed_crash['signature'] == expected
+        expected = ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        assert processor_meta['processor_notes'] == expected
 
         # Now test with a browser crash.
         processed_crash['signature'] = 'foo::bar'
@@ -1775,14 +1759,10 @@ class TestSignatureIPCChannelError(TestCase):
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         assert action_result is True
 
-        assert (
-            processed_crash['signature'] ==
-            'IPCError-browser | {}'.format(('ipc' * 50)[:100])
-        )
-        assert (
-            processor_meta['processor_notes'] ==
-            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
-        )
+        expected = 'IPCError-browser | {}'.format(('ipc' * 50)[:100])
+        assert processed_crash['signature'] == expected
+        expected = ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        assert processor_meta['processor_notes'] == expected
 
 
 class TestSignatureShutdownTimeout(TestCase):
@@ -1825,20 +1805,12 @@ class TestSignatureShutdownTimeout(TestCase):
         }
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         assert action_result is True
-        assert (
-            processed_crash['signature'] ==
-            'AsyncShutdownTimeout | UNKNOWN'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
 
-        assert (
-            'Error parsing AsyncShutdownTimeout:' in
-            processor_meta['processor_notes'][0]
-        )
+        assert 'Error parsing AsyncShutdownTimeout:' in processor_meta['processor_notes'][0]
         assert 'Expected object or value' in processor_meta['processor_notes'][0]
-        assert (
-            processor_meta['processor_notes'][1] ==
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][1] == expected
 
     def test_action_missing_keyerror(self):
         config = self.get_config()
@@ -1857,19 +1829,12 @@ class TestSignatureShutdownTimeout(TestCase):
         }
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         assert action_result is True
-        assert (
-            processed_crash['signature'] ==
-            'AsyncShutdownTimeout | UNKNOWN'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
 
-        assert (
-            processor_meta['processor_notes'][0] ==
-            "Error parsing AsyncShutdownTimeout: 'phase'"
-        )
-        assert (
-            processor_meta['processor_notes'][1] ==
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        expected = "Error parsing AsyncShutdownTimeout: 'phase'"
+        assert processor_meta['processor_notes'][0] == expected
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][1] == expected
 
     def test_action_success(self):
         config = self.get_config()
@@ -1894,14 +1859,9 @@ class TestSignatureShutdownTimeout(TestCase):
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         assert action_result is True
 
-        assert (
-            processed_crash['signature'] ==
-            'AsyncShutdownTimeout | beginning | A,B'
-        )
-        assert (
-            processor_meta['processor_notes'][0] ==
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | A,B'
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][0] == expected
 
     def test_action_success_string_conditions(self):
         config = self.get_config()
@@ -1923,14 +1883,9 @@ class TestSignatureShutdownTimeout(TestCase):
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         assert action_result is True
 
-        assert (
-            processed_crash['signature'] ==
-            'AsyncShutdownTimeout | beginning | A,B,C'
-        )
-        assert (
-            processor_meta['processor_notes'][0] ==
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | A,B,C'
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][0] == expected
 
     def test_action_success_empty_conditions_key(self):
         config = self.get_config()
@@ -1952,14 +1907,9 @@ class TestSignatureShutdownTimeout(TestCase):
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
         assert action_result is True
 
-        assert (
-            processed_crash['signature'] ==
-            'AsyncShutdownTimeout | beginning | (none)'
-        )
-        assert (
-            processor_meta['processor_notes'][0] ==
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | (none)'
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][0] == expected
 
 
 class TestSignatureIPCMessageName(TestCase):
@@ -2006,7 +1956,4 @@ class TestSignatureIPCMessageName(TestCase):
         action_result = rule.action(raw_crash, {}, processed_crash, {})
         assert action_result is True
 
-        assert (
-            processed_crash['signature'] ==
-            'fooo::baar | IPC_Message_Name=foo, bar'
-        )
+        assert processed_crash['signature'] == 'fooo::baar | IPC_Message_Name=foo, bar'
