@@ -164,24 +164,20 @@ class TestFormFields(TestCase):
         eq_(cleaned_value, None)
 
         # The list of known truthy strings
-        for truthy in ('__TRUE__', 'true', 't', '1', 'Y', 'Yes'):
-            cleaned_value = field.clean(truthy)
+        for value in form_fields.BooleanField.truthy_strings:
+            cleaned_value = field.clean(value)
+            eq_(cleaned_value, '__true__')
+        # But it's also case insensitive, so check that it still works
+        for value in form_fields.BooleanField.truthy_strings:
+            cleaned_value = field.clean(value.upper())  # note
             eq_(cleaned_value, '__true__')
 
-        # Not truthy strings
-        for truthy in ('__False__', 'False', 'f', '0', 'n', 'No'):
-            cleaned_value = field.clean(truthy)
-            eq_(cleaned_value, '!__true__')
-
-        # Actually anything that isn't in the first list is '!__true__' in
-        # supersearch.
-        cleaned_value = field.clean('yeah')
+        # Any other string that is NOT in form_fields.BooleanField.truthy_strings
+        # should return `!__true__`
+        cleaned_value = field.clean('FALSE')
         eq_(cleaned_value, '!__true__')
-
-        # Should worth with unicode strings and byte strings
-        cleaned_value = field.clean(u'YES')
-        eq_(cleaned_value, '__true__')
-
+        cleaned_value = field.clean('anything')
+        eq_(cleaned_value, '!__true__')
         # But not choke on non-ascii strings
         cleaned_value = field.clean(u'Nöö')
         eq_(cleaned_value, '!__true__')

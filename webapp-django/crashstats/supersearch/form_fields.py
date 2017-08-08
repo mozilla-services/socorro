@@ -172,6 +172,9 @@ class StringField(MultipleValueField):
 
 
 class BooleanField(forms.CharField):
+
+    truthy_strings = ('__true__', 'true', 't', '1', 'y', 'yes')
+
     def to_python(self, value):
         """Return None if the value is None. Return 'true' if the value is one
         of the accepted values. Return 'false' otherwise.
@@ -181,7 +184,7 @@ class BooleanField(forms.CharField):
         """
         if value is None:
             return None
-        truthy_strings = ('__true__', 'true', 't', '1', 'y', 'yes')
-        if smart_str(value).lower() in truthy_strings:
+
+        if smart_str(value).lower() in self.truthy_strings:
             return '__true__'
         return '!__true__'
