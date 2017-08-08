@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import datetime
 from nose.tools import eq_, assert_raises
 
@@ -154,3 +156,28 @@ class TestFormFields(TestCase):
             field.clean,
             ['<2016-08-01', '<2016-08-02', '<2016-08-03']
         )
+
+    def test_boolean_field(self):
+        field = form_fields.BooleanField(required=False)
+        # If the input is None, leave it as None
+        cleaned_value = field.clean(None)
+        eq_(cleaned_value, None)
+
+        # The list of known truthy strings
+        for value in form_fields.BooleanField.truthy_strings:
+            cleaned_value = field.clean(value)
+            eq_(cleaned_value, '__true__')
+        # But it's also case insensitive, so check that it still works
+        for value in form_fields.BooleanField.truthy_strings:
+            cleaned_value = field.clean(value.upper())  # note
+            eq_(cleaned_value, '__true__')
+
+        # Any other string that is NOT in form_fields.BooleanField.truthy_strings
+        # should return `!__true__`
+        cleaned_value = field.clean('FALSE')
+        eq_(cleaned_value, '!__true__')
+        cleaned_value = field.clean('anything')
+        eq_(cleaned_value, '!__true__')
+        # But not choke on non-ascii strings
+        cleaned_value = field.clean(u'Nöö')
+        eq_(cleaned_value, '!__true__')
