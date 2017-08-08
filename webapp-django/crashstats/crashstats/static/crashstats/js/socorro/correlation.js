@@ -39,10 +39,16 @@ window.correlations = (function () {
             })
             .then(function (totals) {
                 correlationData[product] = {
-                    'date': totals['date'],
+                    'date': totals.date,
                 };
 
                 var channels = $('#mainbody').data('channels');
+                if (!channels) {
+                    channels = [$('#mainbody').data('channel')];
+                }
+                if (!channels || !channels.length) {
+                    throw new Error('No channel or channels dataset attribute set');
+                }
 
                 channels.forEach(function (ch) {
                     correlationData[product][ch] = {
@@ -50,8 +56,6 @@ window.correlations = (function () {
                         'signatures': {},
                     };
                 });
-            })
-            .then(function () {
                 return correlationData[product];
             });
         });
@@ -60,7 +64,7 @@ window.correlations = (function () {
     function loadCorrelationData(signature, channel, product) {
         return loadChannelsData(product)
         .then(function (channelsData) {
-            if (!channelsData || !channelsData[channel] || signature in channelsData[channel]['signatures']) {
+            if (!channelsData || !channelsData[channel] || signature in channelsData[channel].signatures) {
                 return;
             }
 
@@ -73,7 +77,7 @@ window.correlations = (function () {
                 return response.json();
             })
             .then(function (data) {
-                correlationData[product][channel]['signatures'][signature] = data;
+                correlationData[product][channel].signatures[signature] = data;
             });
         })
         .catch(handleError)
@@ -190,7 +194,7 @@ window.correlations = (function () {
                 return 'No correlation data was generated for the "' + channel + '" channel and the "' + product + '" product.';
             }
 
-            var signatureData = data[product][channel]['signatures'][signature];
+            var signatureData = data[product][channel].signatures[signature];
 
             if (!signatureData || !signatureData.results) {
                 return 'No correlation data was generated for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
