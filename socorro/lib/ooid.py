@@ -25,7 +25,9 @@ def create_new_ooid(timestamp=None, depth=None):
         depth = defaultDepth
     assert depth <= 4 and depth >= 1
     uuid = str(uu.uuid4())
-    return "%s%d%02d%02d%02d" % (uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day)
+    return "%s%d%02d%02d%02d" % (
+        uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day
+    )
 
 
 def uuid_to_ooid(uuid, timestamp=None, depth=None):
@@ -41,7 +43,9 @@ def uuid_to_ooid(uuid, timestamp=None, depth=None):
     if not depth:
         depth = defaultDepth
     assert depth <= 4 and depth >= 1
-    return "%s%d%02d%02d%02d" % (uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day)
+    return "%s%d%02d%02d%02d" % (
+        uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day
+    )
 
 
 def dateAndDepthFromOoid(ooid):
