@@ -2,18 +2,35 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+Tips on how to run this locally
+-------------------------------
+
+The easiest way to run this locally is with crontabber_app.py.
+You need a local Postgres to connect to and it needs to have the
+socorro tables (bug_associations, crontabber and crontabber_log).
+
+This examples shows how::
+
+    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations
+
+Since this running through crontabber, it has a frequency and won't run
+until it's time to run again. To override that use::
+
+    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations --force
+
+To change the database config, use --help to see what the parameters are called.
+"""
+
 import datetime
-import sys
 
 import requests
 from dateutil import tz
 from configman import Namespace
-from configman.converters import class_converter
 from crontabber.base import BaseCronApp
 from crontabber.mixins import with_postgres_transactions
 
 from socorro.lib.datetimeutil import utc_now
-from socorro.app.socorro_app import App, main
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     execute_no_results,
@@ -179,52 +196,3 @@ class BugzillaCronApp(BaseCronApp):
                 int(report['id']),
                 find_signatures(report.get('cf_crash_signature', ''))
             )
-
-
-class BugzillaCronAppDryRunner(App):  # pragma: no cover
-    """This class makes it possible to run the bugzilla crontabber app
-    independently of running the whole of crontabber just to run this app.
-
-    To run it, simply execute this file:
-
-        $ python socorro/cron/jobs/bugzilla.py
-
-    Note, this requires to actually be able to connect to a real Postgres
-    table.
-
-    Why not Mock? Because then it's hard to test if it really worked.
-
-    You just need to make sure you have a Postgres db that has a
-    `bug_associations` table. Then you can run it like this:
-
-        $ python socorro/cron/jobs/bugzilla.py  \
-        --database.dbname=mypostgresdatabase \
-        --database.user=me \
-        --database.password=secret
-
-    """
-
-    required_config = Namespace()
-    required_config = Namespace()
-    required_config.add_option(
-        'days_into_past',
-        default=1,
-        doc='number of days to look into the past for bugs (0 - use last '
-            'run time, >0 ignore when it last ran successfully)')
-    required_config.add_option(
-        'crontabber_job_class',
-        default='socorro.cron.jobs.bugzilla.BugzillaCronApp',
-        doc='not important',
-        from_string_converter=class_converter,
-    )
-
-    def __init__(self, config):
-        self.config = config
-        self.app = config.crontabber_job_class(config, {})
-
-    def main(self):
-        self.app.run()
-
-
-if __name__ == '__main__':  # pragma: no cover
-    sys.exit(main(BugzillaCronAppDryRunner))
