@@ -42,7 +42,7 @@ def db_transaction_retry_wrapper(fn):
   'exceptions_eligible_for_retry' that re-raises the exception."""
   @ft.wraps(fn)
   def f(self, *args, **kwargs):
-    backoffGenerator = util.backoffSecondsGenerator()
+    backoffGenerator = util.backoff_seconds_generator()
     try:
       while True:
         try:
@@ -197,4 +197,4 @@ class DatabaseConnectionPool(dict):
       except psycopg2.InterfaceError:
         self.logger.debug("%s - connection %s already closed", threading.currentThread().getName(), name)
       except:
-        util.reportExceptionAndContinue(self.logger)
+        util.report_exception_and_continue(self.logger)

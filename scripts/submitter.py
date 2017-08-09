@@ -29,8 +29,8 @@ except configurationManager.NotAnOptionError, x:
 logger = logging.getLogger("submitter")
 logger.setLevel(logging.DEBUG)
 
-sutil.setupLoggingHandlers(logger, config)
-sutil.echoConfig(logger, config)
+sutil.setup_logging_handlers(logger, config)
+sutil.echo_config(logger, config)
 
 config.logger = logger
 
@@ -63,4 +63,4 @@ else:
                               config.url,
                               config.logger)
     except Exception, x:
-        sutil.reportExceptionAndContinue(config.logger)
+        sutil.report_exception_and_continue(config.logger)
