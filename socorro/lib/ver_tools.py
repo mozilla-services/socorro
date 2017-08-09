@@ -13,19 +13,13 @@ normalize - given a version in a string, this function returns a list of
             Two lists are comparable using standard relational operators:
             <,>,!=,==, etc.
 
-compare - an old style __cmp__ comparitor for two version strings
-
-denormalize - the opposite of normalize.  Given a list in the format returned
-              by the normalize function, this function turns it back into
-              a string representation
 """
 
 import re
-import itertools
 
 
 # got a better memoizer?  feel free to replace...
-def _memoizeArgsOnly(max_cache_size=1000):
+def _memoize_args_only(max_cache_size=1000):
     """Python 2.4 compatible memoize decorator.
     It creates a cache that has a maximum size.  If the cache exceeds the max,
     it is thrown out and a new one made.  With such behavior, it is wise to set
@@ -55,7 +49,7 @@ def _memoizeArgsOnly(max_cache_size=1000):
 
 
 # to allow for easy replacement of the memoize decorator used below
-memoize = _memoizeArgsOnly
+memoize = _memoize_args_only
 
 # a regular expression to match the 'abcd' format defined in
 # https://developer.mozilla.org/en/Toolkit_version_format
@@ -95,23 +89,11 @@ def _str_to_high_str(x):
     return x
 
 
-# this function does the opposite of the previous two.  Given ints or
-# strings, it returns the null string for zero ints and the _padding_high_string
-def _convert_to_str(x):
-    if x == 0 or x == _padding_high_string:
-        return ''
-    return str(x)
-
-
 # corresponding to the int, string, int, string pattern of the 4-tuple
 # this tuple allows the groups found by a regular expression to be
 # conveniently converted.
 _normalize_fn_list = (_str_to_int, _str_to_high_str,
                       _str_to_int, _str_to_high_str)
-
-# for converstion the other way
-_denormalize_fn_list = (_convert_to_str, _convert_to_str,
-                        _convert_to_str, _convert_to_str)
 
 
 class NotAVersionException(Exception):
@@ -142,43 +124,3 @@ def normalize(version_string, max_version_parts=4):
         version_list.extend(t(x) for x, t in zip(groups, _normalize_fn_list))
     version_list.extend(_padding_list * (max_version_parts - part_count - 1))
     return version_list
-
-
-@memoize(1000)
-def _do_denormalize(version_tuple):
-    """separate action function to allow for the memoize decorator.  Lists,
-    the most common thing passed in to the 'denormalize' below are not hashable.
-    """
-    version_parts_list = []
-    for parts_tuple in itertools.imap(None, *([iter(version_tuple)] * 4)):
-        version_part = ''.join(fn(x) for fn, x in
-                               zip(_denormalize_fn_list, parts_tuple))
-        if version_part:
-            version_parts_list.append(version_part)
-    return '.'.join(version_parts_list)
-
-
-def denormalize(version_list):
-    """the opposite of the normalize function.  Given a tuple representing a
-    normalized version, return a single minimal length string equivalent.
-    Because of the ambiguities of zero valued numeric parts, this function
-    may return a string shorter than the one that was originally normalized.
-    As it says in https://developer.mozilla.org/en/Toolkit_version_format,
-    3 == 3. == 3.0 == 3.0.0
-
-    Parameters:
-        version_list - a list of the form [int, str, int, str]+
-    """
-    return _do_denormalize(tuple(version_list))
-
-
-@memoize(1000)
-def compare(v1, v2):
-    """old style __cmp__ function returning -1, 0, 1"""
-    v1_norm = normalize(v1)
-    v2_norm = normalize(v2)
-    if v1_norm < v2_norm:
-        return -1
-    if v1_norm > v2_norm:
-        return 1
-    return 0
