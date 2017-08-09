@@ -22,7 +22,7 @@ from socorro.lib.ooid import dateFromOoid
 from socorro.lib.transform_rules import Rule
 from socorro.lib.datetimeutil import (
     UTC,
-    datetimeFromISOdateString,
+    datetime_from_isodate_string,
     datestring_to_weekly_partition
 )
 from socorro.lib.context_tools import temp_file_context
@@ -241,7 +241,7 @@ class DatesAndTimesRule(Rule):
             dateFromOoid(raw_crash.uuid)
         )
         if isinstance(processed_crash.submitted_timestamp, basestring):
-            processed_crash.submitted_timestamp = datetimeFromISOdateString(
+            processed_crash.submitted_timestamp = datetime_from_isodate_string(
                 processed_crash.submitted_timestamp
             )
         processed_crash.date_processed = processed_crash.submitted_timestamp
