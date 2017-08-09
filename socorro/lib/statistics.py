@@ -2,12 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""
-"""
-
 from statsd import StatsClient
 
 from configman import RequiredConfig, Namespace
+
 
 def str_to_list(string_list):
     item_list = []
@@ -74,8 +72,8 @@ class StatisticsForStatsd(RequiredConfig):
 
     def incr(self, name):
         if (
-            self.config.statsd_host
-            and name in self.config.active_counters_list
+            self.config.statsd_host and
+            name in self.config.active_counters_list
         ):
             if self.prefix and name:
                 name = '.'.join((self.prefix, name))
@@ -84,4 +82,3 @@ class StatisticsForStatsd(RequiredConfig):
             elif not name:
                 name = 'unknown'
             self.statsd.incr(name)
-
