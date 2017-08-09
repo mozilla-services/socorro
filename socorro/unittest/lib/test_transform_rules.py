@@ -592,7 +592,7 @@ class TestTransformRules(TestCase):
         ok_(fake_config.logger.debug.called)
         fake_config.logger.debug.reset_mock()
 
-    @patch('socorro.lib.transform_rules.raven')
+    @patch('socorro.lib.raven_client.raven')
     def test_rule_exceptions_send_to_sentry(self, mock_raven):
 
         captured_exceptions = []  # a global
@@ -662,7 +662,7 @@ class TestTransformRules(TestCase):
         exc = captured_exceptions[1]
         ok_(isinstance(exc, SomeError))
 
-    @patch('socorro.lib.transform_rules.raven')
+    @patch('socorro.lib.raven_client.raven')
     def test_rule_exceptions_send_to_sentry_with_crash_id(self, mock_raven):
 
         def mock_capture_exception():

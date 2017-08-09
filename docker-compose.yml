@@ -85,10 +85,10 @@ services:
       - POSTGRES_PASSWORD=aPassword
       - POSTGRES_DB=breakpad
 
-  # https://hub.docker.com/r/atlassianlabs/localstack/
+  # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake S3
   localstack-s3:
-    image: atlassianlabs/localstack:0.4.1
+    image: localstack/localstack:0.7.3
     environment:
       - SERVICES=s3:5000
       - DEFAULT_REGION=us-east-1

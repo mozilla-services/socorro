@@ -188,7 +188,7 @@ class TestProcessorApp(TestCase):
             'Raven DSN is not configured and an exception happened'
         )
 
-    @mock.patch('socorro.processor.processor_app.raven')
+    @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_polystorage_error_with_raven_configured_successful(
         self,
         mock_raven,
@@ -240,7 +240,7 @@ class TestProcessorApp(TestCase):
         eq_(captured_exception_2.__class__, AssertionError)
         eq_(captured_exception_2.message, False)
 
-    @mock.patch('socorro.processor.processor_app.raven')
+    @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_misc_error_with_raven_configured_successful(
         self,
         mock_raven,
@@ -287,7 +287,7 @@ class TestProcessorApp(TestCase):
         eq_(captured_exception.__class__, ValueError)
         eq_(captured_exception.message, 'Someone is wrong on the Internet')
 
-    @mock.patch('socorro.processor.processor_app.raven')
+    @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_polystorage_error_with_raven_configured_failing(
         self,
         mock_raven,

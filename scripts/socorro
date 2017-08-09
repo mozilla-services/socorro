@@ -1,5 +1,11 @@
 #! /usr/bin/env python
 
+import sys
+
 from socorro.app.socorro_app import SocorroWelcomeApp
 
-SocorroWelcomeApp.run()
+ret = SocorroWelcomeApp.run()
+
+# If the app returned an integer that's not zero, then that's the exit code.
+if ret in (1, 2):
+    sys.exit(ret)

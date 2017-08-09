@@ -4,7 +4,7 @@
 
 import time
 
-from nose.tools import ok_, eq_
+from nose.tools import ok_
 from mock import Mock
 
 from socorro.lib.threaded_task_manager import ThreadedTaskManager, \
@@ -27,10 +27,10 @@ class TestThreadedTaskManager(TestCase):
         config.maximum_queue_size = 1
         ttm = ThreadedTaskManager(config)
         try:
-            ok_(ttm.config == config)
-            ok_(ttm.logger == self.logger)
-            ok_(ttm.task_func == default_task_func)
-            ok_(ttm.quit == False)
+            assert ttm.config == config
+            assert ttm.logger == self.logger
+            assert ttm.task_func == default_task_func
+            assert not ttm.quit
         finally:
             # we got threads to join
             ttm._kill_worker_threads()
@@ -44,15 +44,11 @@ class TestThreadedTaskManager(TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            ok_(ttm.queuing_thread.isAlive(),
-                "the queing thread is not running")
-            ok_(len(ttm.thread_list) == 1,
-                "where's the worker thread?")
-            ok_(ttm.thread_list[0].isAlive(),
-                "the worker thread is stillborn")
+            assert ttm.queuing_thread.isAlive(), "the queing thread is not running"
+            assert len(ttm.thread_list) == 1, "where's the worker thread?"
+            assert ttm.thread_list[0].isAlive(), "the worker thread is stillborn"
             ttm.stop()
-            ok_(ttm.queuing_thread.isAlive() == False,
-                "the queuing thread did not stop")
+            assert not ttm.queuing_thread.isAlive(), "the queuing thread did not stop"
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -202,16 +198,17 @@ class TestThreadedTaskManager(TestCase):
         config.maximum_queue_size = 2
         config.quit_on_empty_queue = True
 
+        calls = []
+
+        def task_func(index):
+            calls.append(index)
+
         tm = ThreadedTaskManager(
             config,
-            task_func=Mock()
+            task_func=task_func
         )
 
         waiting_func = Mock()
 
         tm.blocking_start(waiting_func=waiting_func)
-
-        eq_(
-            tm.task_func.call_count,
-            10
-        )
+        assert len(calls) == 10
