@@ -229,14 +229,14 @@ class Products(BaseTable):
 class ProductBuildTypes(BaseTable):
     table = 'product_build_types'
     columns = [
-        'product_name', 'build_type'
+        'product_name', 'build_type', 'throttle'
     ]
     rows = [
-        ['Firefox', 'release'],
-        ['Firefox', 'esr'],
-        ['Firefox', 'aurora'],
-        ['Firefox', 'beta'],
-        ['Firefox', 'nightly'],
+        ['Firefox', 'esr', '1.0',],
+        ['Firefox', 'aurora', '1.0'],
+        ['Firefox', 'beta', '1.0'],
+        ['Firefox', 'release', '0.1'],
+        ['Firefox', 'nightly', '1.0'],
     ]
 
 
@@ -244,14 +244,14 @@ class ProductBuildTypes(BaseTable):
 class ProductReleaseChannels(BaseTable):
     table = 'product_release_channels'
     columns = [
-        'product_name', 'release_channel'
+        'product_name', 'release_channel', 'throttle'
     ]
     rows = [
-        ['Firefox', 'Release'],
-        ['Firefox', 'ESR'],
-        ['Firefox', 'Aurora'],
-        ['Firefox', 'Beta'],
-        ['Firefox', 'Nightly'],
+        ['Firefox', 'ESR', '1.0'],
+        ['Firefox', 'Aurora', '1.0'],
+        ['Firefox', 'Beta', '1.0'],
+        ['Firefox', 'Release', '0.1'],
+        ['Firefox', 'Nightly', '1.0'],
     ]
 
 

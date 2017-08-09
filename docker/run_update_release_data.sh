@@ -4,6 +4,8 @@
 #
 # Usage: docker/run_update_release_data.sh
 
+set -eo pipefail
+
 # Fetch and update release information for these products (comma-delimited)
 PRODUCTS="firefox"
 
