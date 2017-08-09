@@ -85,7 +85,7 @@ class PostgreSQLAlchemyManager(object):
         return status
 
     def bulk_load(self, data, table, columns, sep):
-        self.logger.debug('bulk loading data')
+        self.logger.debug('bulk loading data into %s', table)
         connection = self.engine.raw_connection()
         with connection.cursor() as cursor:
             cursor.copy_from(data, table, columns=columns, sep=sep)
