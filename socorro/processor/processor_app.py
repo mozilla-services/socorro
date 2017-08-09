@@ -9,7 +9,6 @@ import os
 import sys
 import collections
 
-import raven
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -19,6 +18,7 @@ from socorro.app.fetch_transform_save_app import (
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib.util import DotDict
+from socorro.lib import raven_client
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
 
 
@@ -41,8 +41,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     required_config.processor.add_option(
         'processor_class',
         doc='the class that transforms raw crashes into processed crashes',
-        default='socorro.processor.socorrolite_processor_2015'
-        '.SocorroLiteProcessorAlgorithm2015',
+        default='socorro.processor.processor_2015.Processor2015',
         from_string_converter=class_converter
     )
 
@@ -151,7 +150,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                         exceptions = exception
                     else:
                         exceptions = [exception]
-                    client = raven.Client(dsn=self.config.sentry.dsn)
+                    client = raven_client.get_client(self.config.sentry.dsn)
                     client.context.activate()
                     client.context.merge({'extra': {
                         'crash_id': crash_id,

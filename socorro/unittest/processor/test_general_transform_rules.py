@@ -90,13 +90,13 @@ canonical_standard_raw_crash = DotDict({
 })
 
 canonical_processed_crash = DotDict({
-    "json_dump" : {
-        "system_info" : {
-            "os_ver" : "6.1.7601 Service Pack 1 ",
-            "cpu_count" : 4,
-            "cpu_info" : "GenuineIntel family 6 model 42 stepping 7",
-            "cpu_arch" : "x86",
-            "os" : "Windows NT"
+    "json_dump": {
+        "system_info": {
+            "os_ver": "6.1.7601 Service Pack 1 ",
+            "cpu_count": 4,
+            "cpu_info": "GenuineIntel family 6 model 42 stepping 7",
+            "cpu_arch": "x86",
+            "os": "Windows NT"
         },
     }
 })
@@ -189,30 +189,23 @@ class TestCPUInfoRule(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        eq_(
-            processed_crash.cpu_info,
-            "GenuineIntel family 6 model 42 stepping 7 | 4"
-        )
-        eq_(processed_crash.cpu_name, 'x86')
+        assert processed_crash.cpu_info == 'GenuineIntel family 6 model 42 stepping 7 | 4'
+        assert processed_crash.cpu_name == 'x86'
 
         # raw crash should be unchanged
-        eq_(raw_crash, canonical_standard_raw_crash)
+        assert raw_crash == canonical_standard_raw_crash
 
-    def test_stuff_missing(self):
+    def test_missing_cpu_count(self):
         config = self.get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
-
         raw_dumps = {}
-        system_info = copy.copy(
-            canonical_processed_crash['json_dump']['system_info']
-        )
+        system_info = copy.copy(canonical_processed_crash['json_dump']['system_info'])
         del system_info['cpu_count']
         processed_crash = DotDict()
         processed_crash.json_dump = {
             'system_info': system_info
         }
-
         processor_meta = self.get_basic_processor_meta()
 
         rule = CPUInfoRule(config)
@@ -220,14 +213,30 @@ class TestCPUInfoRule(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        eq_(
-            processed_crash.cpu_info,
-            "GenuineIntel family 6 model 42 stepping 7"
-        )
-        eq_(processed_crash.cpu_name, 'x86')
+        assert processed_crash.cpu_info == 'GenuineIntel family 6 model 42 stepping 7'
+        assert processed_crash.cpu_name == 'x86'
 
         # raw crash should be unchanged
-        eq_(raw_crash, canonical_standard_raw_crash)
+        assert raw_crash == canonical_standard_raw_crash
+
+    def test_missing_json_dump(self):
+        config = self.get_basic_config()
+
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = CPUInfoRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash['cpu_info'] == ''
+        assert processed_crash['cpu_name'] == ''
+
+        # raw crash should be unchanged
+        assert raw_crash == {}
 
 
 class TestOSInfoRule(TestCase):
@@ -275,9 +284,7 @@ class TestOSInfoRule(TestCase):
         rule = OSInfoRule(config)
 
         # the call to be tested
-        r = rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        eq_(r, (True, False))
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # processed crash should have empties
         expected = DotDict()

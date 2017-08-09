@@ -33,15 +33,15 @@ class TestIntegrationPostgresCrashData(TestCase):
         connection = store.database.connection()
         cursor = connection.cursor()
         table_data = (['reports', '1', '{id,uuid}',
-             '{date_processed,hangid,"product,version",reason,signature,url}',
-             '{}', 'date_processed', 'TIMESTAMPTZ'],
-            ['plugins_reports', '2', '{"report_id,plugin_id"}',
-             '{"report_id,date_processed"}',
-             '{}', 'date_processed', 'TIMESTAMPTZ'],
-            ['raw_crashes', '4', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ'],
-            ['processed_crashes', '6', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ'])
+                       '{date_processed,hangid,"product,version",reason,signature,url}',
+                       '{}', 'date_processed', 'TIMESTAMPTZ'],
+                      ['plugins_reports', '2', '{"report_id,plugin_id"}',
+                       '{"report_id,date_processed"}',
+                       '{}', 'date_processed', 'TIMESTAMPTZ'],
+                      ['raw_crashes', '4', '{uuid}', '{}', '{}', 'date_processed',
+                       'TIMESTAMPTZ'],
+                      ['processed_crashes', '6', '{uuid}', '{}', '{}', 'date_processed',
+                       'TIMESTAMPTZ'])
         query = """
             INSERT INTO report_partition_info
             (table_name, build_order, keys, indexes, fkeys, partition_column,

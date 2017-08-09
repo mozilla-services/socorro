@@ -6,7 +6,7 @@ import copy
 
 from nose.tools import eq_, ok_
 
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.lib.util import DotDict
 from socorro.processor.skunk_classifiers import (
     SkunkClassificationRule,
     DontConsiderTheseFilter,
@@ -16,29 +16,14 @@ from socorro.processor.skunk_classifiers import (
     Bug811804,
     Bug812318,
 )
-from socorro.processor.signature_utilities import CSignatureTool
+from socorro.unittest.processor import (
+    create_basic_fake_processor,
+    c_signature_tool,
+)
 from socorro.unittest.processor.test_breakpad_pipe_to_json import (
     cannonical_json_dump
 )
 from socorro.unittest.testbase import TestCase
-
-csig_config = DotDict()
-csig_config.irrelevant_signature_re = ''
-csig_config.prefix_signature_re = ''
-csig_config.signatures_with_line_numbers_re = ''
-csig_config.signature_sentinels = []
-csig_config.collapse_arguments = True
-c_signature_tool = CSignatureTool(csig_config)
-
-def create_basic_fake_processor():
-    fake_processor = DotDict()
-    fake_processor.c_signature_tool = c_signature_tool
-    fake_processor.config = DotDict()
-    # need help figuring out failures? switch to FakeLogger and read stdout
-    fake_processor.config.logger = SilentFakeLogger()
-    fake_processor.processor_notes = []
-    #fake_processor.config.logger = FakeLogger()
-    return fake_processor
 
 
 class TestSkunkClassificationRule(TestCase):
@@ -130,15 +115,15 @@ class TestSkunkClassificationRule(TestCase):
                 cache_normalizations=False
             ),
         )
-        ok_(not
-            skunk_rule._stack_contains(
+        ok_(
+            not skunk_rule._stack_contains(
                 stack,
                 'heh_',
                 c_signature_tool,
                 cache_normalizations=False
             ),
         )
-        ok_(not 'normalized' in stack[0])
+        ok_('normalized' not in stack[0])
         ok_(
             skunk_rule._stack_contains(
                 stack,
@@ -495,13 +480,18 @@ class TestUpdateWindowAttributes(TestCase):
 
     def test_action_success(self):
         jd = copy.deepcopy(cannonical_json_dump)
-        jd['crashing_thread']['frames'][1]['function'] = \
+        jd['crashing_thread']['frames'][1]['function'] = (
             "F_1152915508___________________________________"
-        jd['crashing_thread']['frames'][3]['function'] = \
-            "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes" \
-                "(bool)"
-        jd['crashing_thread']['frames'][5]['function'] = \
+        )
+        jd['crashing_thread']['frames'][3]['function'] = (
+            "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes"
+            "(bool)"
+        )
+
+        jd['crashing_thread']['frames'][5]['function'] = (
             "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)"
+        )
+
         pc = DotDict()
         pc.process_type = 'plugin'
         pc.json_dump = jd
@@ -519,13 +509,16 @@ class TestUpdateWindowAttributes(TestCase):
 
     def test_action_wrong_order(self):
         jd = copy.deepcopy(cannonical_json_dump)
-        jd['crashing_thread']['frames'][4]['function'] = \
+        jd['crashing_thread']['frames'][4]['function'] = (
             "F_1152915508___________________________________"
-        jd['crashing_thread']['frames'][3]['function'] = \
-            "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes" \
-                "(bool)"
-        jd['crashing_thread']['frames'][5]['function'] = \
+        )
+        jd['crashing_thread']['frames'][3]['function'] = (
+            "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes"
+            "(bool)"
+        )
+        jd['crashing_thread']['frames'][5]['function'] = (
             "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)"
+        )
         pc = DotDict()
         pc.dump = DotDict()
         pc.dump.json_dump = jd
@@ -538,8 +531,7 @@ class TestUpdateWindowAttributes(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
-        ok_(not 'classifications' in pc)
-
+        ok_('classifications' not in pc)
 
 
 class TestSetWindowPos(TestCase):
@@ -610,10 +602,12 @@ class TestSetWindowPos(TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
-            ['function'] = 'NtUserSetWindowPos'
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][4] \
-            ['function'] = 'F455544145'
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2]['function'] = (
+            'NtUserSetWindowPos'
+        )
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][4]['function'] = (
+            'F455544145'
+        )
 
         fake_processor = create_basic_fake_processor()
 
@@ -640,8 +634,9 @@ class TestSetWindowPos(TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
-            ['function'] = 'NtUserSetWindowPos'
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2]['function'] = (
+            'NtUserSetWindowPos'
+        )
 
         fake_processor = create_basic_fake_processor()
 
@@ -676,8 +671,7 @@ class TestSetWindowPos(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
-        ok_(not 'classifications' in pc)
-
+        ok_('classifications' not in pc)
 
 
 class TestSendWaitReceivePort(TestCase):
@@ -688,8 +682,9 @@ class TestSendWaitReceivePort(TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
-            ['function'] = 'NtAlpcSendWaitReceivePort'
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2]['function'] = (
+            'NtAlpcSendWaitReceivePort'
+        )
 
         fake_processor = create_basic_fake_processor()
 
@@ -707,8 +702,9 @@ class TestSendWaitReceivePort(TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][6] \
-            ['function'] = 'NtAlpcSendWaitReceivePort'
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][6]['function'] = (
+            'NtAlpcSendWaitReceivePort'
+        )
 
         fake_processor = create_basic_fake_processor()
 
@@ -719,8 +715,7 @@ class TestSendWaitReceivePort(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
-        ok_(not 'classifications' in pc)
-
+        ok_('classifications' not in pc)
 
 
 class TestBug811804(TestCase):
@@ -765,7 +760,7 @@ class TestBug811804(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
-        ok_(not 'classifications' in pc)
+        ok_('classifications' not in pc)
 
 
 class TestBug812318(TestCase):
@@ -776,10 +771,12 @@ class TestBug812318(TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1] \
-            ['function'] = 'NtUserPeekMessage'
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2] \
-            ['function'] = 'F849276792______________________________'
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1]['function'] = (
+            'NtUserPeekMessage'
+        )
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2]['function'] = (
+            'F849276792______________________________'
+        )
 
         fake_processor = create_basic_fake_processor()
 
@@ -801,8 +798,9 @@ class TestBug812318(TestCase):
         f2jd = copy.deepcopy(cannonical_json_dump)
         pc.upload_file_minidump_flash2 = DotDict()
         pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1] \
-            ['function'] = 'NtUserPeekMessage'
+        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1]['function'] = (
+            'NtUserPeekMessage'
+        )
 
         fake_processor = create_basic_fake_processor()
 
@@ -833,4 +831,4 @@ class TestBug812318(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
-        ok_(not 'classifications' in pc)
+        ok_('classifications' not in pc)

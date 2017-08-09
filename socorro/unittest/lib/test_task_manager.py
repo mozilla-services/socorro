@@ -19,7 +19,7 @@ class TestTaskManager(TestCase):
     def test_constuctor1(self):
         config = DotDict()
         config.logger = self.logger
-        config.quit_on_empty_queue =  False
+        config.quit_on_empty_queue = False
 
         tm = TaskManager(config)
         ok_(tm.config == config)
@@ -41,7 +41,7 @@ class TestTaskManager(TestCase):
     def test_get_iterator(self):
         config = DotDict()
         config.logger = self.logger
-        config.quit_on_empty_queue =  False
+        config.quit_on_empty_queue = False
 
         tm = TaskManager(
             config,
@@ -63,6 +63,7 @@ class TestTaskManager(TestCase):
         )
 
         class X(object):
+
             def __init__(self, config):
                 self.config = config
 
@@ -83,9 +84,10 @@ class TestTaskManager(TestCase):
         config = DotDict()
         config.logger = self.logger
         config.idle_delay = 1
-        config.quit_on_empty_queue =  False
+        config.quit_on_empty_queue = False
 
         class MyTaskManager(TaskManager):
+
             def _responsive_sleep(
                 self,
                 seconds,
@@ -114,12 +116,11 @@ class TestTaskManager(TestCase):
         )
         eq_(waiting_func.call_count, 0)
 
-
     def test_blocking_start_with_quit_on_empty(self):
         config = DotDict()
         config.logger = self.logger
         config.idle_delay = 1
-        config.quit_on_empty_queue =  True
+        config.quit_on_empty_queue = True
 
         tm = TaskManager(
             config,

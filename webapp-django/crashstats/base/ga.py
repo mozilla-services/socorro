@@ -6,7 +6,6 @@ v1/devguide#page
 """
 
 import logging
-import urlparse
 import uuid
 
 from raven.transport.threaded_requests import ThreadedRequestsHTTPTransport
@@ -91,7 +90,6 @@ def track_pageview(
     # it fails to verify and then the SSL handshake fails. Because we're doing
     # this, we removed any PII from the data ping.
     transporter = ThreadedRequestsHTTPTransport(
-        urlparse.urlparse(settings.GOOGLE_ANALYTICS_API_URL),
         timeout=settings.GOOGLE_ANALYTICS_API_TIMEOUT,
         verify_ssl=False
     )
@@ -116,6 +114,7 @@ def track_pageview(
         logger.exception('Failed to send GA page tracking')
     try:
         transporter.async_send(
+            settings.GOOGLE_ANALYTICS_API_URL,
             params,
             headers,
             success_cb,

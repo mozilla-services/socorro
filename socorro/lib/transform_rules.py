@@ -6,13 +6,12 @@ import re
 import collections
 import inspect
 
-import raven
 import configman
-
 from configman import RequiredConfig, Namespace
 from configman.dotdict import DotDict
 from configman.converters import to_str
 
+from socorro.lib import raven_client
 from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
 )
@@ -78,7 +77,7 @@ class Rule(RequiredConfig):
                     extra['crash_id'] = crash_id
 
             try:
-                client = raven.Client(dsn=dsn)
+                client = raven_client.get_client(dsn)
                 client.context.activate()
                 client.context.merge({'extra': extra})
                 try:

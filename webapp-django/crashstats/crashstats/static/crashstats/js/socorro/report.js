@@ -2,6 +2,33 @@
 
 $(document).ready(function () {
 
+    /* Idempotent function to display the TelemetryEnvironment with
+     * jQuery JSONView */
+    var displayTelemetryEnvironment = (function() {
+        var once = false;
+        return function inner() {
+            if (once) {
+                // idempotent function
+                return;
+            }
+            once = true;
+            var container = $('#telemetryenvironment-json');
+            if (container.length) {
+                var jsonData = container.data('telemetryenvironment');
+                try {
+                    $('#telemetryenvironment-json').JSONView(jsonData);
+                } catch (ex) {
+                    console.warn(
+                        "The data in the #telemetryenvironment-json dataset is not valid JSON"
+                    );
+                    container.append(
+                        $('<p>Invalid JSON in TelemetryEnvironment</p>')
+                    );
+                }
+            }
+        };
+    })();
+
     // If the page is loaded with a location.hash like '#tab-...'
     // then find out which index that is so when we set up $.tabs()
     // we can set the right active one.
@@ -11,6 +38,9 @@ $(document).ready(function () {
         var tab = $('#' + tabId);
         // only bother if this tab exists
         if (tab.length) {
+            if (tabId === 'telemetryenvironment') {
+                displayTelemetryEnvironment();
+            }
             $('.ui-tabs li a').each(function(i, tab) {
                 if (tab.href.search('#' + tabId) > -1) {
                     activeTab = i;
@@ -21,8 +51,12 @@ $(document).ready(function () {
     $('#report-index').tabs({
         active: activeTab,
         activate: function(event, ui) {
-            document.location.hash = 'tab-' + ui.newPanel.attr('id');
-            Analytics.trackTabSwitch('report_index', ui.newPanel.attr('id'));
+            var tabId = ui.newPanel.attr('id');
+            if (tabId === 'telemetryenvironment') {
+                displayTelemetryEnvironment();
+            }
+            document.location.hash = 'tab-' + tabId;
+            Analytics.trackTabSwitch('report_index', tabId);
         },
     });
 

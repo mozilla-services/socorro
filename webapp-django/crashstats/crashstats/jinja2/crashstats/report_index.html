@@ -12,6 +12,7 @@
 {{ super() }}
 {% stylesheet 'jquery_ui' %}
 {% stylesheet 'tablesorter' %}
+{% stylesheet 'jsonview' %}
 {% stylesheet 'report_index' %}
 {% endblock %}
 
@@ -21,6 +22,7 @@
 {% javascript 'tablesorter' %}
 {% javascript 'bugzilla' %}
 {% javascript 'correlation' %}
+{% javascript 'jsonview' %}
 {% javascript 'report_index' %}
 {% endblock %}
 
@@ -78,6 +80,13 @@
                             <span>Extensions</span>
                         </a>
                     </li>
+                    {% if raw.TelemetryEnvironment %}
+                    <li class="ui-state-default ui-corner-top">
+                        <a href="#telemetryenvironment" class="ui-tabs-anchor">
+                            <span>Telemetry Environment</span>
+                        </a>
+                    </li>
+                    {% endif %}
                     <li class="ui-state-default ui-corner-top correlations hidden">
                         <a href="#correlation" class="ui-tabs-anchor">
                             <span>Correlations</span>
@@ -688,7 +697,13 @@
                         <tbody>
                             {% for key in raw_keys %}
                             <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
-                                <th scope="row">{{ key }}</th>
+                                <th scope="row">
+                                    {% if key %}
+                                        {{ key }}
+                                    {% else %}
+                                        <i>empty key</i>
+                                    {% endif %}
+                                </th>
                                 {% if key == 'Comments' %}
                                 <td><pre>{{ raw[key] | scrub_pii }}</pre></td>
                                 {% else %}
@@ -792,6 +807,18 @@
                 </div>
                 <!-- /extensions -->
 
+                {% if raw.TelemetryEnvironment %}
+                <div id="telemetryenvironment" class="ui-tabs-hide">
+                     {# Remmber, raw.TelemetryEnvironment is a string.
+                        jQuery will automatically convert it a map upon accessing it.
+                        Safe to include because jinja will escape anything in it. #}
+                     <div id="telemetryenvironment-json"
+                          data-telemetryenvironment="{{ raw.TelemetryEnvironment }}">
+                    </div>
+                </div>
+                <!-- /telemetryenvironment -->
+                {% endif %}
+
                 <div id="correlation" class="ui-tabs-hide">
                     <h3></h3>
                     <pre></pre>
@@ -859,3 +886,4 @@
 </div>
 
 {% endblock %}
+≠

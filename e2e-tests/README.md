@@ -14,15 +14,21 @@ To review the specific-Python packages the tests use, please review `tox.ini`.
 Set up and run Socorro tests
 -----------------------------
 
-Review the documentation for [pytest-selenium][pytest-selenium] and decide which browser
-environment you wish to target.
+Review the documentation for [pytest-selenium][pytest-selenium] and decide
+which browser environment you wish to target.
 
 * [Install Tox](https://tox.readthedocs.io/en/latest/install.html)
 * Run `tox`
 
-An additional constraint for Firefox users: since version 48, Firefox now uses GeckoDriver and the Marionette-backed WebDriver, which currently lacks feature parity with WebDriver.  In the interim (while those are being brought up to WebDriver specification), we recommend using Firefox 47.0.2 which can be [downloaded here][firefoxdownloads].
+An additional constraint for Firefox users: since version 48, Firefox now uses
+GeckoDriver and the Marionette-backed WebDriver. You will need to make sure the
+geckodriver binary ([available here][geckodriver]) is in your path. For best
+results it's recommended that you use the latest stable Firefox version and the
+latest geckodriver release.
 
-If you have multiple versions of Firefox installed, you can specify one by using the `--firefox-path <path to firefox binary>` flag.
+If you have multiple versions of Firefox installed, you can specify which to
+use by modifying your [PATH variable][path variable] so that the *directory
+containing the target binary* is prioritised.
 
 ___Running the tests on stage___
 
@@ -31,17 +37,17 @@ ___Running the tests on stage___
 ___Running tests against localhost___
 
 	$ export PYTEST_BASE_URL="http://localhost:8000"
-	$ tox -e py27 
+	$ tox -e py27
 
+	$ export PATH=/path/to/firefox:$PATH
 	$ export PYTEST_BASE_URL="http://localhost:8000"
-	$ export PYTEST_ADDOPTS="--firefox-path=/path/to/firefox/binary"
 	$ tox -e py27
 
 ___Running tests against production___
 
 	$ export PYTEST_BASE_URL="https://crash-stats.mozilla.com"
 	$ tox -e py27
-	
+
 ___Running tests on SauceLabs___
 
 To use SauceLabs instead of an instance of Firefox running locally, do the following:
@@ -51,7 +57,7 @@ Create a text file called `.saucelabs` and put it in the e2e-tests directory. Ge
 	[credentials]
 	username = <SauceLabs user name>
 	key = <SauceLabs API key>
-	
+
 Then you can run the tests against staging using the following command
 
 	$ tox -e py27 -- --driver SauceLabs --capability browserName Firefox
@@ -103,10 +109,6 @@ version may not be compatible. Upgrading each of them to latest often fixes it.
 
 Tips and tricks
 ---------------
-
-Because Selenium opens real browser windows, it will steal focus and switch
-workspaces. Firefox doesn't have a headless mode of operation, so we can't
-simply turn off the UI.
 
 __Use a different driver__
 
@@ -165,5 +167,6 @@ This software is licensed under the [MPL] 2.0:
 [Style Guide]: https://wiki.mozilla.org/QA/Execution/Web_Testing/Docs/Automation/StyleGuide
 [MPL]: http://www.mozilla.org/MPL/2.0/
 [pytest-selenium]: http://pytest-selenium.readthedocs.org/
-[firefoxdownloads]: https://ftp.mozilla.org/pub/firefox/releases/47.0.2/
+[geckodriver]: https://github.com/mozilla/geckodriver/releases
 [test envs]: http://pytest-selenium.readthedocs.io/en/latest/user_guide.html#specifying-a-browser
+[path variable]: https://en.wikipedia.org/wiki/PATH_(variable)

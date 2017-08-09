@@ -23,13 +23,11 @@
     data-urls-bugzilla="{{ url('signature:signature_bugzilla') }}"
     data-urls-comments="{{ url('signature:signature_comments') }}"
     data-urls-correlations="{{ url('signature:signature_correlations') }}"
-    data-urls-graph="{{ url('signature:signature_report') }}graphdata/"
 
     data-channels="{{ channels | to_json }}"
     data-fields="{{ fields | to_json }}"
     data-columns="{{ columns | to_json }}"
     data-sort="{{ sort | join(',') }}"
-    data-default-channel="{{ channel }}"
 >
     <div class="page-heading">
         <h2>Signature report for <em>{{ signature }}</em></h2>
@@ -72,7 +70,6 @@
             <li><a href="#bugzilla" class="bugzilla" data-tab-name="bugzilla">Bugzilla</a></li>
             <li><a href="#comments" class="comments" data-tab-name="comments">Comments</a></li>
             <li><a href="#correlations" class="correlations" data-tab-name="correlations">Correlations</a></li>
-            <li><a href="#graph" class="graph" data-tab-name="graph">Build Graph</a></li>
         </ul>
     </nav>
 

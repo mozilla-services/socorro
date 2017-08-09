@@ -423,7 +423,6 @@ class BaseTable(object):
                     signature = weighted_choice([(
                         x, self.signatures[x]) for x in self.signatures])
 
-                    now = datetime.datetime.now()
                     amt = 1
 
                     for i in xrange(amt):
@@ -766,7 +765,7 @@ class ProcessedCrashes(BaseTable):
                 'release_channel', 'productid', 'exploitability',
                 'update_channel'
             ), data))
-            processed_crash.update({
+            processed_crash.update({  # noqa
                 "ReleaseChannel": "release",
                 "Winsock_LSP": "",
                 "additional_minidumps": [],
@@ -805,9 +804,15 @@ class ProcessedCrashes(BaseTable):
                                 "trust": "context"
                             },
                             {
-                                "file": "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom/string/src/nsTSubstring.cpp:d06a17a96fa2",
+                                "file": (
+                                    "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom"
+                                    "/string/src/nsTSubstring.cpp:d06a17a96fa2"
+                                ),
                                 "frame": 1,
-                                "function": "nsACString_internal::Assign(nsCSubstringTuple const &,mozilla::fallible_t const &)",
+                                "function": (
+                                    "nsACString_internal::Assign(nsCSubstringTuple "
+                                    "const &,mozilla::fallible_t const &)"
+                                ),
                                 "function_offset": "0xa4",
                                 "line": 416,
                                 "module": "xul.dll",
@@ -816,9 +821,14 @@ class ProcessedCrashes(BaseTable):
                                 "trust": "frame_pointer"
                             },
                             {
-                                "file": "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom/string/src/nsTSubstring.cpp:d06a17a96fa2",
+                                "file": (
+                                    "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom/"
+                                    "string/src/nsTSubstring.cpp:d06a17a96fa2"
+                                ),
                                 "frame": 2,
-                                "function": "nsACString_internal::Assign(nsCSubstringTuple const &)",
+                                "function": (
+                                    "nsACString_internal::Assign(nsCSubstringTuple const &)"
+                                ),
                                 "function_offset": "0x6",
                                 "line": 392,
                                 "module": "xul.dll",
@@ -868,7 +878,9 @@ class ProcessedCrashes(BaseTable):
                             "frame_count": 2,
                             "frames": [
                                 {
-                                    "file": "f:/dd/vctools/crt_bld/SELF_X86/crt/src/INTEL/memcpy.asm",
+                                    "file": (
+                                        "f:/dd/vctools/crt_bld/SELF_X86/crt/src/INTEL/memcpy.asm"
+                                    ),
                                     "frame": 0,
                                     "function": "memcpy",
                                     "function_offset": "0x154",
@@ -879,9 +891,15 @@ class ProcessedCrashes(BaseTable):
                                     "trust": "context"
                                 },
                                 {
-                                    "file": "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom/string/src/nsTSubstring.cpp:d06a17a96fa2",
+                                    "file": (
+                                        "hg:hg.mozilla.org/releases/mozilla-esr24:xpcom"
+                                        "/string/src/nsTSubstring.cpp:d06a17a96fa2"
+                                    ),
                                     "frame": 1,
-                                    "function": "nsACString_internal::Assign(nsCSubstringTuple const &,mozilla::fallible_t const &)",
+                                    "function": (
+                                        "nsACString_internal::Assign(nsCSubstringTuple "
+                                        "const &,mozilla::fallible_t const &)"
+                                    ),
                                     "function_offset": "0xa4",
                                     "line": 416,
                                     "module": "xul.dll",

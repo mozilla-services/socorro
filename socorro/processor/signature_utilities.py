@@ -26,17 +26,10 @@ class SignatureTool(RequiredConfig):
     def __init__(self, config, quit_check_callback=None):
         self.config = config
         self.max_len = config.setdefault('signature_max_len', 255)
-        self.escape_single_quote = \
-            config.setdefault('signature_escape_single_quote', True)
+        self.escape_single_quote = config.setdefault('signature_escape_single_quote', True)
         self.quit_check_callback = quit_check_callback
 
-    def generate(
-        self,
-        source_list,
-        hang_type=0,
-        crashed_thread=None,
-        delimiter=' | '
-    ):
+    def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=' | '):
         signature, signature_notes = self._do_generate(
             source_list,
             hang_type,
@@ -51,13 +44,7 @@ class SignatureTool(RequiredConfig):
                                    'length')
         return signature, signature_notes
 
-    def _do_generate(
-        self,
-        source_list,
-        hang_type,
-        crashed_thread,
-        delimiter
-    ):
+    def _do_generate(self, source_list, hang_type, crashed_thread, delimiter):
         raise NotImplementedError
 
 
@@ -91,11 +78,7 @@ class CSignatureToolBase(SignatureTool):
         self.fixup_comma = re.compile(r',(?! )')
 
     @staticmethod
-    def _is_exception(
-        exception_list,
-        remaining_original_line,
-        line_up_to_current_position
-    ):
+    def _is_exception(exception_list, remaining_original_line, line_up_to_current_position):
         for an_exception in exception_list:
             if remaining_original_line.startswith(an_exception):
                 return True
@@ -110,10 +93,14 @@ class CSignatureToolBase(SignatureTool):
         replacement_open_string,
         close_string,
         replacement_close_string,
-        exception_substring_list=(),  # list of exceptions that shouldn't collapse
+        exception_substring_list=[],
     ):
         """this method takes a string representing a C/C++ function signature
-        and replaces anything between to possibly nested delimiters"""
+        and replaces anything between to possibly nested delimiters
+
+        :arg list exception_substring_list: list of exceptions that shouldn't collapse
+
+        """
         target_counter = 0
         collapsed_list = []
         exception_mode = False
@@ -194,7 +181,7 @@ class CSignatureToolBase(SignatureTool):
             # Ensure a space after commas
             function = self.fixup_comma.sub(', ', function)
             return function
-        #if source is not None and source_line is not None:
+        # if source is not None and source_line is not None:
         if file and line:
             filename = file.rstrip('/\\')
             if '\\' in filename:
@@ -208,11 +195,7 @@ class CSignatureToolBase(SignatureTool):
             module = ''  # might have been None
         return '%s@%s' % (module, module_offset)
 
-    def _do_generate(self,
-                     source_list,
-                     hang_type,
-                     crashed_thread,
-                     delimiter=' | '):
+    def _do_generate(self, source_list, hang_type, crashed_thread, delimiter=' | '):
         """
         each element of signatureList names a frame in the crash stack; and is:
           - a prefix of a relevant frame: Append this element to the signature
@@ -251,10 +234,7 @@ class CSignatureToolBase(SignatureTool):
 
                 # If this trimmed DLL signature is the same as the previous
                 # frame's, we do not want to add it.
-                if (
-                    new_signature_list and
-                    a_signature == new_signature_list[-1]
-                ):
+                if new_signature_list and a_signature == new_signature_list[-1]:
                     continue
 
             new_signature_list.append(a_signature)
@@ -321,11 +301,7 @@ class JavaSignatureTool(SignatureTool):
     def join_ignore_empty(delimiter, list_of_strings):
         return delimiter.join(x for x in list_of_strings if x)
 
-    def _do_generate(self,
-                     source,
-                     hang_type_unused=0,
-                     crashed_thread_unused=None,
-                     delimiter=': '):
+    def _do_generate(self, source, hang_type_unused=0, crashed_thread_unused=None, delimiter=': '):
         signature_notes = []
         try:
             source_list = [x.strip() for x in source.splitlines()]
@@ -440,11 +416,7 @@ class SignatureGenerationRule(Rule):
             config.c_signature
         )
 
-    def _create_frame_list(
-        self,
-        crashing_thread_mapping,
-        make_modules_lower_case=False
-    ):
+    def _create_frame_list(self, crashing_thread_mapping, make_modules_lower_case=False):
         frame_signatures_list = []
         for a_frame in islice(
             crashing_thread_mapping.get('frames', {}),
@@ -462,42 +434,42 @@ class SignatureGenerationRule(Rule):
         return frame_signatures_list
 
     def _get_crashing_thread(self, processed_crash):
-        return processed_crash.json_dump['crash_info']['crashing_thread']
+        return processed_crash['json_dump']['crash_info']['crashing_thread']
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        if 'JavaStackTrace' in raw_crash and raw_crash.JavaStackTrace:
-            # generate a Java signature
+        # If this is a Java crash, then generate a Java signature
+        if 'JavaStackTrace' in raw_crash and raw_crash['JavaStackTrace']:
             signature, signature_notes = self.java_signature_tool.generate(
-                raw_crash.JavaStackTrace,
+                raw_crash['JavaStackTrace'],
                 delimiter=': '
             )
-            processed_crash.signature = signature
+            processed_crash['signature'] = signature
             if signature_notes:
-                processor_meta.processor_notes.extend(signature_notes)
+                processor_meta['processor_notes'].extend(signature_notes)
             return True
 
+        # This isn't a Java crash, so figure out what we need and then generate a C signature
         try:
             crashed_thread = self._get_crashing_thread(processed_crash)
         except KeyError:
             crashed_thread = None
+
         try:
             if processed_crash.get('hang_type', None) == 1:
-                # force the signature to come from thread 0
+                # Force the signature to come from thread 0
                 signature_list = self._create_frame_list(
-                    processed_crash.json_dump["threads"][0],
-                    processed_crash.json_dump['system_info']['os'] in
-                    "Windows NT"
+                    processed_crash['json_dump']['threads'][0],
+                    processed_crash['json_dump']['system_info']['os'] == 'Windows NT'
                 )
             elif crashed_thread is not None:
                 signature_list = self._create_frame_list(
-                    processed_crash.json_dump["threads"][crashed_thread],
-                    processed_crash.json_dump['system_info']['os'] in
-                    "Windows NT"
+                    processed_crash['json_dump']["threads"][crashed_thread],
+                    processed_crash['json_dump']['system_info']['os'] == 'Windows NT'
                 )
             else:
                 signature_list = []
         except Exception as x:
-            processor_meta.processor_notes.append(
+            processor_meta['processor_notes'].append(
                 'No crashing frames found because of %s' % x
             )
             signature_list = []
@@ -507,10 +479,10 @@ class SignatureGenerationRule(Rule):
             processed_crash.get('hang_type', ''),
             crashed_thread,
         )
-        processed_crash.proto_signature = ' | '.join(signature_list)
-        processed_crash.signature = signature
+        processed_crash['proto_signature'] = ' | '.join(signature_list)
+        processed_crash['signature'] = signature
         if signature_notes:
-            processor_meta.processor_notes.extend(signature_notes)
+            processor_meta['processor_notes'].extend(signature_notes)
         return True
 
 
@@ -531,27 +503,29 @@ class OOMSignature(Rule):
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if 'OOMAllocationSize' in raw_crash:
             return True
-        signature = processed_crash.signature
+
+        signature = processed_crash['signature']
         for a_signature_fragment in self.signature_fragments:
             if a_signature_fragment in signature:
                 return True
+
         return False
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.original_signature = processed_crash.signature
+        processed_crash['original_signature'] = processed_crash['signature']
         try:
-            size = int(raw_crash.OOMAllocationSize)
+            size = int(raw_crash['OOMAllocationSize'])
         except (TypeError, AttributeError, KeyError):
-            processed_crash.signature = (
-                "OOM | unknown | " + processed_crash.signature
+            processed_crash['signature'] = (
+                "OOM | unknown | " + processed_crash['signature']
             )
             return True
 
         if size <= 262144:  # 256K
-            processed_crash.signature = "OOM | small"
+            processed_crash['signature'] = "OOM | small"
         else:
-            processed_crash.signature = (
-                "OOM | large | " + processed_crash.signature
+            processed_crash['signature'] = (
+                "OOM | large | " + processed_crash['signature']
             )
         return True
 
@@ -564,19 +538,17 @@ class AbortSignature(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return 'AbortMessage' in raw_crash and raw_crash.AbortMessage
+        return bool(raw_crash.get('AbortMessage'))
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.original_signature = processed_crash.signature
-        abort_message = raw_crash.AbortMessage
+        processed_crash['original_signature'] = processed_crash['signature']
+        abort_message = raw_crash['AbortMessage']
 
         if '###!!! ABORT: file ' in abort_message:
             # This is an abort message that contains no interesting
             # information. We just want to put the "Abort" marker in the
             # signature.
-            processed_crash.signature = 'Abort | {}'.format(
-                processed_crash.signature
-            )
+            processed_crash['signature'] = 'Abort | {}'.format(processed_crash['signature'])
             return True
 
         if '###!!! ABORT:' in abort_message:
@@ -594,9 +566,9 @@ class AbortSignature(Rule):
         if len(abort_message) > 80:
             abort_message = abort_message[:77] + '...'
 
-        processed_crash.signature = 'Abort | {} | {}'.format(
+        processed_crash['signature'] = 'Abort | {} | {}'.format(
             abort_message,
-            processed_crash.signature
+            processed_crash['signature']
         )
 
         return True
@@ -610,10 +582,10 @@ class SigTrim(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return isinstance(processed_crash.signature, basestring)
+        return isinstance(processed_crash['signature'], basestring)
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.signature = processed_crash.signature.strip()
+        processed_crash['signature'] = processed_crash['signature'].strip()
         return True
 
 
@@ -624,10 +596,10 @@ class SigTrunc(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return len(processed_crash.signature) > 255
+        return len(processed_crash['signature']) > 255
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.signature = "%s..." % processed_crash.signature[:252]
+        processed_crash['signature'] = "%s..." % processed_crash['signature'][:252]
         return True
 
 
@@ -638,12 +610,12 @@ class StackwalkerErrorSignatureRule(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return processed_crash.signature.startswith('EMPTY')
+        return processed_crash['signature'].startswith('EMPTY')
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.signature = "%s; %s" % (
-            processed_crash.signature,
-            processed_crash.mdsw_status_string
+        processed_crash['signature'] = "%s; %s" % (
+            processed_crash['signature'],
+            processed_crash['mdsw_status_string']
         )
         return True
 
@@ -688,17 +660,21 @@ class SignatureShutdownTimeout(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            return bool(raw_crash['AsyncShutdownTimeout'])
-        except KeyError:
-            return False
+        return bool(raw_crash.get('AsyncShutdownTimeout'))
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         parts = ['AsyncShutdownTimeout']
         try:
             shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
             parts.append(shutdown_data['phase'])
-            conditions = [c['name'] for c in shutdown_data['conditions']]
+            conditions = [
+                # NOTE(willkg): The AsyncShutdownTimeout notation condition can either be a string
+                # that looks like a "name" or a dict with a "name" in it.
+                #
+                # This handles both variations.
+                c['name'] if isinstance(c, dict) else c
+                for c in shutdown_data['conditions']
+            ]
             if conditions:
                 conditions.sort()
                 parts.append(','.join(conditions))
@@ -750,10 +726,7 @@ class SignatureIPCChannelError(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            return bool(raw_crash['ipc_channel_error'])
-        except KeyError:
-            return False
+        return bool(raw_crash.get('ipc_channel_error'))
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if raw_crash.get('additional_minidumps') == 'browser':
@@ -778,10 +751,7 @@ class SignatureIPCMessageName(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            return bool(raw_crash['IPCMessageName'])
-        except KeyError:
-            return False
+        return bool(raw_crash.get('IPCMessageName'))
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash['signature'] = '{} | IPC_Message_Name={}'.format(

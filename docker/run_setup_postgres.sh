@@ -4,23 +4,32 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Sets up postgres tables, stored procedures, and such.
+set -e
 
-# This should get run only to initialize Postgres and probably only in local
-# development environments.
+# Sets up postgres tables, stored procedures, types, and such.
+
+# NOTE: This should only be run if you want to drop an existing database and
+# create a new one from scratch for a development environment.
 
 cd /app
 
-# FIXME(willkg): Make this idempotent so that running it after it's already been
-# run doesn't affect anything.
-echo "Setting up the db..."
+# This is a webapp environment variable. If it doesn't exist, then use
+# "breakpad"
+DATABASE="${DATASERVICE_DATABASE_NAME:-breakpad}"
+
+# Wait until postgres is listening
+urlwait "${DATABASE_URL}" 10
+
+# This drops and re-creates the db; the --dropdb code will prompt the user
+# before it does anything giving the user a chance to do a "oh no--don't do
+# that!" kind of thing
+echo "Dropping existing db and creating new db named (${DATABASE})..."
 ./scripts/socorro setupdb \
-                  --database_name=breakpad \
-                  --fakedata \
-                  --fakedata_days=3 \
+                  --database_name="${DATABASE}" \
+                  --dropdb \
                   --createdb
 
-# This does Django migrations. It's idempotent.
+# Run Django migrations
 echo "Setting up the db for Django..."
 cd /app/webapp-django
 python manage.py migrate auth

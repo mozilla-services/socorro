@@ -639,7 +639,7 @@ class FlashVersionRule(Rule):
         processed_crash.flash_version = ''
         flash_version = None
 
-        modules = processed_crash['json_dump'].get('modules', [])
+        modules = processed_crash.get('json_dump', {}).get('modules', [])
         if isinstance(modules, (tuple, list)):
             for index, a_module in enumerate(modules):
                 flash_version = self._get_flash_version(**a_module)
@@ -900,21 +900,6 @@ class BetaVersionRule(Rule):
                 )
         except KeyError:
             return False
-        return True
-
-
-class FennecBetaError20150430(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return raw_crash['ProductName'].startswith('Fennec') and \
-            raw_crash['BuildID'] == '20150427090529' and \
-            raw_crash['ReleaseChannel'] == 'release'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        raw_crash['ReleaseChannel'] = 'beta'
         return True
 
 

@@ -66,12 +66,11 @@ class TestMakeSuperuserCommand(DjangoTestCase):
     def test_nonexisting_user(self):
         cmd = makesuperuser.Command()
         buffer = StringIO()
-        with redirect_stderr(buffer):
-            cmd.handle(emailaddress=['neverheardof@mozilla.com'])
-        ok_(
-            'No user with that email neverheardof@mozilla.com'
-            in buffer.getvalue()
-        )
+        email = 'neverheardof@mozilla.com'
+        with redirect_stdout(buffer):
+            cmd.handle(emailaddress=[email])
+        ok_(User.objects.get(email=email, is_superuser=True))
+        ok_('{} is now a superuser'.format(email) in buffer.getvalue())
 
     @mock.patch(
         'crashstats.authentication.management.commands.makesuperuser.'

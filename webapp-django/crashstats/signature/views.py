@@ -1,4 +1,3 @@
-import datetime
 import functools
 import math
 
@@ -379,8 +378,6 @@ def signature_correlations(request, params):
     elif 'version' in params and params['version']:
         if all('b' in version for version in params['version']):
             context['channel'] = 'beta'
-        elif all('a2' in version for version in params['version']):
-            context['channel'] = 'aurora'
         elif all('a1' in version for version in params['version']):
             context['channel'] = 'nightly'
         elif all('esr' in version for version in params['version']):
@@ -397,74 +394,6 @@ def signature_correlations(request, params):
         context['product'] = 'FennecAndroid'
 
     return render(request, 'signature/signature_correlations.html', context)
-
-
-@utils.json_view
-@pass_validated_params
-def signature_graph_data(request, params, channel):
-    '''Return data for the graph of crashes/ADU against build date'''
-
-    signature = params['signature'][0]
-
-    # Check that a product was specified
-    if not params['product'] or not params['product'][0]:
-        return http.HttpResponseBadRequest(
-            '"product" parameter is mandatory'
-        )
-    product = params['product'][0]
-
-    # Initialise start and end dates
-    start_date = None
-    end_date = None
-
-    # Store one day as variable for readability
-    one_day = datetime.timedelta(days=1)
-
-    # Check for dates
-    if 'date' in params:
-        for date in params['date']:
-            # Set the earliest given start date as the start date
-            if date.startswith('>'):
-                if date.startswith('>='):
-                    d = utils.parse_isodate(date.lstrip('>='))
-                else:
-                    d = utils.parse_isodate(date.lstrip('>')) + one_day
-                if not start_date or d < start_date:
-                    start_date = d
-            # Set the latest given end date as the end date
-            elif date.startswith('<'):
-                if date.startswith('<='):
-                    d = utils.parse_isodate(date.lstrip('<='))
-                else:
-                    d = utils.parse_isodate(date.lstrip('<')) - one_day
-                if not end_date or d > end_date:
-                    end_date = d
-
-    # If start date wasn't given, set it to 7 days before the end date
-    # If end date wasn't given either, set it to 7 days before today
-    if not start_date:
-        if end_date:
-            start_date = end_date - datetime.timedelta(days=7)
-        else:
-            start_date = datetime.datetime.utcnow() - datetime.timedelta(
-                days=7
-            )
-
-    # If end date wasn't given, set it to today
-    if not end_date:
-        end_date = datetime.datetime.utcnow()
-
-    # Get the graph data
-    api = models.AduBySignature()
-    data = api.get(
-        signature=signature,
-        product_name=product,
-        start_date=start_date,
-        end_date=end_date,
-        channel=channel
-    )
-
-    return data
 
 
 @pass_validated_params
