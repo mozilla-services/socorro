@@ -312,6 +312,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         self.scrape_json_nightlies(connection, product_name, date)
 
     def _insert_build(self, cursor, *args, **kwargs):
+        self.config.logger.debug('adding %s', args)
         if self.config.dry_run:
             print "INSERT BUILD"
             print args
@@ -374,7 +375,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         version > '26.0' and
                         kvpairs.get('buildID')
                     ):
-                        logger.debug('is final beta version %s', version)
+                        logger.debug('adding final beta version %s', version)
                         repository = 'mozilla-beta'
                         build_id = kvpairs['buildID']
                         build_type = 'beta'
