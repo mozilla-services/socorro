@@ -7,7 +7,7 @@ import time
 import threading
 import Queue
 
-from configman import RequiredConfig, Namespace
+from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.lib.task_manager import (
@@ -22,9 +22,9 @@ class ThreadedTaskManager(TaskManager):
     this class will execute the function in a set of threads."""
     required_config = Namespace()
     required_config.add_option(
-      'idle_delay',
-      default=7,
-      doc='the delay in seconds if no job is found'
+        'idle_delay',
+        default=7,
+        doc='the delay in seconds if no job is found'
     )
     # how does one choose how many threads to use?  Keep the number low if your
     # application is compute bound.  You can raise it if your app is i/o
@@ -32,9 +32,9 @@ class ThreadedTaskManager(TaskManager):
     # several values.  For Socorro, we've found that setting this value to the
     # number of processor cores in the system gives the best throughput.
     required_config.add_option(
-      'number_of_threads',
-      default=4,
-      doc='the number of threads'
+        'number_of_threads',
+        default=4,
+        doc='the number of threads'
     )
     # there is wisdom is setting the maximum queue size to be no more than
     # twice the number of threads.  By keeping the threads starved, the
@@ -44,9 +44,9 @@ class ThreadedTaskManager(TaskManager):
     # the queue could be lost.  Limiting the queue size insures minimal
     # damage in a worst case scenario.
     required_config.add_option(
-      'maximum_queue_size',
-      default=8,
-      doc='the maximum size of the internal queue'
+        'maximum_queue_size',
+        default=8,
+        doc='the maximum size of the internal queue'
     )
 
     def __init__(self, config,
@@ -94,8 +94,8 @@ class ThreadedTaskManager(TaskManager):
             self.thread_list.append(new_thread)
             new_thread.start()
         self.queuing_thread = threading.Thread(
-          name="QueuingThread",
-          target=self._queuing_thread_func
+            name="QueuingThread",
+            target=self._queuing_thread_func
         )
         self.queuing_thread.start()
 
@@ -135,12 +135,14 @@ class ThreadedTaskManager(TaskManager):
                     self.stop()
                     break
                 except KeyboardInterrupt:
-                    self.logger.warning('We heard you the first time.  There '
-                                   'is no need for further keyboard or signal '
-                                   'interrupts.  We are waiting for the '
-                                   'worker threads to stop.  If this app '
-                                   'does not halt soon, you may have to send '
-                                   'SIGKILL (kill -9)')
+                    self.logger.warning(
+                        'We heard you the first time.  There '
+                        'is no need for further keyboard or signal '
+                        'interrupts.  We are waiting for the '
+                        'worker threads to stop.  If this app '
+                        'does not halt soon, you may have to send '
+                        'SIGKILL (kill -9)'
+                    )
 
     def wait_for_empty_queue(self, wait_log_interval=0, wait_reason=''):
         """Sit around and wait for the queue to become empty
@@ -212,8 +214,7 @@ class ThreadedTaskManager(TaskManager):
         quit itself."""
         self.logger.debug('_queuing_thread_func start')
         try:
-            for job_params in self._get_iterator():  # may never raise
-                                                     # StopIteration
+            for job_params in self._get_iterator():  # may never raise StopIteration
                 self.config.logger.debug('received %r', job_params)
                 if job_params is None:
                     if self.config.quit_on_empty_queue:
@@ -270,26 +271,27 @@ class ThreadedTaskManagerWithConfigSetup(ThreadedTaskManager):
     required_config = Namespace()
     required_config = Namespace()
     required_config.add_option(
-      'job_source_iterator',
-      default=default_iterator,
-      doc='an iterator or callable that will '
-      'return an iterator',
-      from_string_converter=class_converter
+        'job_source_iterator',
+        default=default_iterator,
+        doc='an iterator or callable that will '
+        'return an iterator',
+        from_string_converter=class_converter
     )
     required_config.add_option(
-      'task_func',
-      default=default_task_func,
-      doc='a callable that accomplishes a task',
-      from_string_converter=class_converter
+        'task_func',
+        default=default_task_func,
+        doc='a callable that accomplishes a task',
+        from_string_converter=class_converter
     )
 
     def __init__(self, config):
         """Create the ThreadedTaskManager with config options rather than
         functions passed into the constructor."""
         super(ThreadedTaskManagerWithConfigSetup, self).__init__(
-          config=config,
-          job_source_iterator=config.job_source_iterator,
-          task_func=config.task_func)
+            config=config,
+            job_source_iterator=config.job_source_iterator,
+            task_func=config.task_func
+        )
 
 
 class TaskThread(threading.Thread):
@@ -339,7 +341,5 @@ class TaskThread(threading.Thread):
                 except KeyboardInterrupt:  # TODO: can probably go away
                     self.config.logger.info('quit request detected')
                     quit_request_detected = True
-                    #thread.interrupt_main()  # only needed if signal handler
-                                             # not registered
         except Exception:
             self.config.logger.critical("Failure in task_queue", exc_info=True)
