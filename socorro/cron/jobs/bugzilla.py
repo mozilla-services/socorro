@@ -2,6 +2,26 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+Tips on how to run this locally
+-------------------------------
+
+The easiest way to run this locally is with crontabber_app.py.
+You need a local Postgres to connect to and it needs to have the
+socorro tables (bug_associations, crontabber and crontabber_log).
+
+This examples shows how::
+
+    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations
+
+Since this running through crontabber, it has a frequency and won't run
+until it's time to run again. To override that use::
+
+    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations --force
+
+To change the database config, use --help to see what the parameters are called.
+"""
+
 import datetime
 
 import requests
@@ -101,15 +121,12 @@ class BugzillaCronApp(BaseCronApp):
             bug_id,
             signature_set
         ) in self._iterator(last_run_formatted):
-            try:
-                # each run of this loop is a transaction
-                self.database_transaction_executor(
-                    self.inner_transaction,
-                    bug_id,
-                    signature_set
-                )
-            except NothingUsefulHappened:
-                pass
+            # each run of this loop is a transaction
+            self.database_transaction_executor(
+                self.inner_transaction,
+                bug_id,
+                signature_set
+            )
 
     def inner_transaction(
         self,
@@ -128,8 +145,6 @@ class BugzillaCronApp(BaseCronApp):
                 (bug_id,)
             )
             return
-
-        useful = False
 
         try:
             signature_rows = execute_query_fetchall(
@@ -151,7 +166,6 @@ class BugzillaCronApp(BaseCronApp):
                     self.config.logger.info(
                         'association removed: %s - "%s"',
                         bug_id, signature)
-                    useful = True
         except SQLDidNotReturnSingleRow:
             signatures_db = []
 
@@ -169,10 +183,6 @@ class BugzillaCronApp(BaseCronApp):
                     bug_id,
                     signature
                 )
-                useful = True
-
-        if not useful:
-            raise NothingUsefulHappened('nothing useful done')
 
     def _iterator(self, from_date):
         payload = BUGZILLA_PARAMS.copy()
