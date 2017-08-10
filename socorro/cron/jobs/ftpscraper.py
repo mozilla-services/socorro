@@ -271,14 +271,23 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         )
 
     def download(self, url):
+        try:
+            return self._download_cache[url]
+        except KeyError:
+            pass
+        except AttributeError:
+            self._download_cache = {}
+
         response = self.session.get(
             url,
             timeout=(self.config.connect_timeout, self.config.read_timeout)
         )
         if response.status_code == 404:
             # Legacy. Return None on any 404 error.
+            self._download_cache[url] = None
             return
         assert response.status_code == 200, response.status_code
+        self._download_cache[url] = response.content
         return response.content
 
     def skip_json_file(self, json_url):
