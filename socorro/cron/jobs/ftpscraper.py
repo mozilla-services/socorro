@@ -152,8 +152,21 @@ class ScrapersMixin(object):
         )
 
         for platform in possible_platforms:
-            platform_urls = self.get_links(latest_build, starts_with=platform)
+            platform_urls = self.get_links(
+                latest_build,
+                starts_with=platform
+            )
+
             for platform_url in platform_urls:
+                # We're only interested in going into depper directories.
+                # Inside a directory like 'firefox/candidates/45.3.0esr-candidates/build1/'
+                # there is likely to be regular files that match the
+                # 'possible_platforms' above. Skip those that aren't directories.
+                # This means we're much less likely to open URLs like
+                # '...45.3.0esr-candidates/build1/en-US/' which'll 404
+                if not platform_url.endswith('/'):
+                    continue
+
                 platform_local_url = urlparse.urljoin(platform_url, 'en-US/')
                 json_files = self.get_links(
                     platform_local_url,
@@ -290,6 +303,9 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             timeout=(self.config.connect_timeout, self.config.read_timeout)
         )
         if response.status_code == 404:
+            self.config.logger.warning(
+                '404 when downloading %s', url
+            )
             # Legacy. Return None on any 404 error.
             return
         assert response.status_code == 200, response.status_code
@@ -327,11 +343,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
 
     def _insert_build(self, cursor, *args, **kwargs):
         self.config.logger.debug('adding %s', args)
-        if self.config.dry_run:
-            print "INSERT BUILD"
-            print args
-            print kwargs
-        else:
+        if not self.config.dry_run:
             buildutil.insert_build(cursor, *args, **kwargs)
 
     def _is_final_beta(self, version):
