@@ -16,7 +16,6 @@ import sys
 
 import psycopg2
 import requests
-from six.moves.urllib.parse import quote_plus
 
 
 # NOTE(willkg): These platforms come from the -prod data.
@@ -25,16 +24,13 @@ PLATFORMS = ['Mac OS X', 'Linux', 'Windows', 'Unknown']
 
 def fetch_data_from_api(endpoint, product, version, platform, start_date, end_date):
     """Fetches data from API"""
-    params = []
-    params.append(('end_date', end_date))
-    params.append(('start_date', start_date))
-    params.append(('product', product))
-    params.append(('platforms', platform))
-    params.append(('versions', version))
-
-    qs = '&'.join(['%s=%s' % (param[0], quote_plus(param[1])) for param in params])
-    url = endpoint + '?' + qs
-    req = requests.get(url)
+    req = requests.get(endpoint, params={
+        'end_date': end_date,
+        'start_date': start_date,
+        'product': product,
+        'platforms': platform,
+        'versions': version,
+    })
     if req.status_code != 200:
         print('Error retrieving ADI: %s' % req.content)
         return []
@@ -46,7 +42,6 @@ def fetch_data_from_api(endpoint, product, version, platform, start_date, end_da
 def fetch_versions(conn, product_name):
     """Fetch the version strings for a product from product_versions table"""
 
-    # FIXME(willkg): There's probably a better way to do this, but I can't think of it offhand.
     cursor = conn.cursor()
     cursor.execute("""
         SELECT version_string
@@ -54,6 +49,7 @@ def fetch_versions(conn, product_name):
         WHERE
             product_name=%s
     """, (product_name,))
+    # NOTE(willkg): We don't want versions that end with "b" because they're weird.
     versions = set([record[0] for record in cursor if not record[0].endswith('b')])
     return list(versions)
 
@@ -68,13 +64,20 @@ def fetch_product_version_id(conn, product_name, version_string):
             product_name=%s AND
             version_string=%s
     """, (product_name, version_string))
-    return cursor.fetchone()[0]
+    ret = cursor.fetchone()
+    if ret is None:
+        return None
+    return ret[0]
 
 
 def insert_adu(conn, adu_count, adu_date, product_name, os_name, version_string):
     """Inserts ADU data into product_adu table"""
     # Fetch the product_version_id we need
     product_version_id = fetch_product_version_id(conn, product_name, version_string)
+
+    if product_version_id is None:
+        print('No product_version_id for %s %s' % (product_name, version_string))
+        return
 
     # Insert the data
     cursor = conn.cursor()
@@ -155,7 +158,9 @@ def main(args):
 
     conn = get_connection()
 
-    print('Fetching crash data for %s from %s to %s' % (args.products, start_date, end_date))
+    print('Fetching normalization data for %s from %s to %s' % (
+        args.products, start_date, end_date)
+    )
 
     for product in args.products.split(','):
         # Fetch versions from the product_versions table that we should pull data for
