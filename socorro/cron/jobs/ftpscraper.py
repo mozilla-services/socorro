@@ -5,6 +5,7 @@ import os
 import json
 import urlparse
 import fnmatch
+from functools import partial
 
 import mock
 import lxml.html
@@ -23,6 +24,45 @@ from socorro.cron import buildutil
 
 from socorro.app.socorro_app import App, main
 from socorro.lib.datetimeutil import string_to_datetime
+
+
+class memoize(object):
+    """cache the return value of a method
+
+    This class is meant to be used as a decorator of methods. The return value
+    from a given method invocation will be cached on the instance whose method
+    was invoked. All arguments passed to a method decorated with memoize must
+    be hashable.
+
+    If a memoized method is invoked directly on its class the result will not
+    be cached. Instead the method will be invoked like a static method:
+    class Obj(object):
+        @memoize
+        def add_to(self, arg):
+            return self + arg
+    Obj.add_to(1) # not enough arguments
+    Obj.add_to(1, 2) # returns 3, result is not cached
+    """
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self.func
+        return partial(self, obj)
+
+    def __call__(self, *args, **kw):
+        obj = args[0]
+        try:
+            cache = obj.__cache
+        except AttributeError:
+            cache = obj.__cache = {}
+        key = (self.func, args[1:], frozenset(kw.items()))
+        if key in cache:
+            res = cache[key]
+        else:
+            res = cache[key] = self.func(*args, **kw)
+        return res
 
 
 class ScrapersMixin(object):
@@ -270,24 +310,16 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             HTTPAdapter(max_retries=self.config.retries)
         )
 
+    @memoize
     def download(self, url):
-        try:
-            return self._download_cache[url]
-        except KeyError:
-            pass
-        except AttributeError:
-            self._download_cache = {}
-
         response = self.session.get(
             url,
             timeout=(self.config.connect_timeout, self.config.read_timeout)
         )
         if response.status_code == 404:
             # Legacy. Return None on any 404 error.
-            self._download_cache[url] = None
             return
         assert response.status_code == 200, response.status_code
-        self._download_cache[url] = response.content
         return response.content
 
     def skip_json_file(self, json_url):
