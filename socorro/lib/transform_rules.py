@@ -199,13 +199,14 @@ class Rule(RequiredConfig):
 class TransformRule(Rule):
     """a pairing of two functions with default parameters to be used as
     transformation rule."""
-    def __init__(self, predicate,
-                       predicate_args,
-                       predicate_kwargs,
-                       action,
-                       action_args,
-                       action_kwargs,
-                       config=None):
+    def __init__(self,
+                 predicate,
+                 predicate_args,
+                 predicate_kwargs,
+                 action,
+                 action_args,
+                 action_kwargs,
+                 config=None):
         """construct a new predicate/action rule pair.
         input parameters:
             pedicate - the name of a function to serve as a predicate.  The
@@ -516,7 +517,7 @@ class TransformRuleSystem(RequiredConfig):
                 self.config.logger.debug('trying to close %s', to_str(a_rule.__class__))
                 close_method = a_rule.close
             except AttributeError:
-                self.config.logger.debug('%s has no close',  to_str(a_rule.__class__))
+                self.config.logger.debug('%s has no close', to_str(a_rule.__class__))
                 # no close method mean no need to close
                 continue
             close_method()
