@@ -21,3 +21,6 @@ python socorro/cron/crontabber_app.py --job=ftpscraper \
 python socorro/cron/crontabber_app.py --job=featured-versions-automatic \
        --crontabber.class-FeaturedVersionsAutomaticCronApp.frequency=${FREQUENCY} \
        --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
+
+# Fetch normalization data
+python docker/fetch_normalization_data.py
