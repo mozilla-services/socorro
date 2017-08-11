@@ -5,6 +5,7 @@ import os
 import json
 import urlparse
 import fnmatch
+import functools
 
 import mock
 import lxml.html
@@ -23,6 +24,18 @@ from socorro.cron import buildutil
 
 from socorro.app.socorro_app import App, main
 from socorro.lib.datetimeutil import string_to_datetime
+
+
+def memoize_download(fun):
+    cache = {}
+
+    @functools.wraps(fun)
+    def inner(self, url):
+        if url not in cache:
+            cache[url] = fun(self, url)
+        return cache[url]
+
+    return inner
 
 
 class ScrapersMixin(object):
@@ -270,6 +283,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             HTTPAdapter(max_retries=self.config.retries)
         )
 
+    @memoize_download
     def download(self, url):
         response = self.session.get(
             url,
