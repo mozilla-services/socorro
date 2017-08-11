@@ -80,7 +80,7 @@ We put all that in a single shell script.
 
 Run::
 
-  $ docker-compose run processor docker/run_update_release_data.sh
+  $ make dockerupdatedata
 
 
 .. Warning::

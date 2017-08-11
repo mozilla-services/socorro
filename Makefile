@@ -47,6 +47,7 @@ dockerbuild:
 	${DC} build base
 	${DC} build processor
 	${DC} build webapp
+	${DC} build crontabber
 	touch .docker-build
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
@@ -66,6 +67,9 @@ dockertestshell:
 
 dockerdocs:
 	./docker/run_build_docs.sh
+
+dockerupdatedata:
+	./docker/run_update_data.sh
 
 dockerrun:
 	${DC} up webapp processor
