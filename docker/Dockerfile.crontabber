@@ -1,0 +1,7 @@
+FROM local/socorro_base
+
+COPY . /app/
+
+USER app
+
+CMD ["/app/docker/run_crontabber.sh"]
