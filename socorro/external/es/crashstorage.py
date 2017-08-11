@@ -185,7 +185,7 @@ class ESCrashStorage(CrashStorageBase):
                 pass
 
     @staticmethod
-    def remove_bad_keys(raw_crash):
+    def remove_bad_keys(data):
         """Removes keys from the top-level of the dict that are bad
 
         Good keys satisfy the following properties:
@@ -195,17 +195,19 @@ class ESCrashStorage(CrashStorageBase):
 
         Anything else is a bad key and needs to be removed.
 
-        This modifies the crash in-place.
+        This modifies the data dict in-place and only looks at the top level.
 
-        :arg dict raw_crash: raw crash data
+        :arg dict data: the data to remove bad keys from
 
         """
-        if not raw_crash:
+        if not data:
             return
 
-        for key in list(raw_crash.keys()):
+        # Copy the list of things we're iterating over because we're mutating
+        # the dict in place.
+        for key in list(data.keys()):
             if not is_valid_key(key):
-                del raw_crash[key]
+                del data[key]
 
     def _submit_crash_to_elasticsearch(self, connection, crash_document):
         """Submit a crash report to elasticsearch.
