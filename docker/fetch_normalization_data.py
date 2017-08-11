@@ -130,10 +130,10 @@ def main(args):
         help='comma separated set of products to fetch ADI for'
     )
     parser.add_argument(
-        '--start_date', default='LASTWEEK', help='start date (mm/dd/yyyy)'
+        '--start_date', default='LASTWEEK', help='start date (yyyy-mm-dd)'
     )
     parser.add_argument(
-        '--end_date', default='TODAY', help='end date (mm/dd/yyyy)'
+        '--end_date', default='TODAY', help='end date (yyyy-mm-dd)'
     )
     parser.add_argument(
         '--endpoint', default='https://crash-stats.mozilla.com/api/ADI/',
@@ -141,16 +141,16 @@ def main(args):
     )
     args = parser.parse_args()
 
-    today = datetime.datetime.now()
-    last_week = datetime.datetime.now() - datetime.timedelta(days=7)
+    today = datetime.datetime.utcnow()
+    last_week = today - datetime.timedelta(days=7)
 
     start_date = args.start_date
     if start_date == 'LASTWEEK':
-        start_date = last_week.strftime('%m/%d/%Y')
+        start_date = last_week.strftime('%Y-%m-%d')
 
     end_date = args.end_date
     if end_date == 'TODAY':
-        end_date = today.strftime('%m/%d/%Y')
+        end_date = today.strftime('%Y-%m-%d')
 
     if start_date > end_date:
         print('Start date (%s) cannot be after end date (%s). Exiting.' % (start_date, end_date))
