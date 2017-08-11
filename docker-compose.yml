@@ -49,6 +49,23 @@ services:
     volumes:
       - .:/app
 
+  # Crontabber app
+  crontabber:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.crontabber
+    image: local/socorro_crontabber
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/crontabber.env
+    depends_on:
+      - localstack-s3
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+    volumes:
+      - .:/app
+
   # -----------------------------
   # External services
   # -----------------------------
