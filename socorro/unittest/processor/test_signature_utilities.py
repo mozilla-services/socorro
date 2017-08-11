@@ -1538,7 +1538,7 @@ class TestSigTrunc(TestCase):
 
 class TestStackwalkerErrorSignatureRule(TestCase):
 
-    def test_predicate_no_match(self):
+    def test_predicate_no_match_signature(self):
         processed_crash = {
             'signature': '0' * 100
         }
@@ -1547,9 +1547,19 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
         assert predicate_result is False
 
-    def test_predicate(self):
+    def test_predicate_no_match_missing_mdsw_status_string(self):
         processed_crash = {
             'signature': 'EMPTY: like my soul'
+        }
+        fake_processor = create_basic_fake_processor()
+        rule = StackwalkerErrorSignatureRule(fake_processor.config)
+        predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
+        assert predicate_result is False
+
+    def test_predicate(self):
+        processed_crash = {
+            'signature': 'EMPTY: like my soul',
+            'mdsw_status_string': 'catastrophic stackwalker failure'
         }
         fake_processor = create_basic_fake_processor()
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
