@@ -9,26 +9,40 @@
 # Use the "--dev" argument to run the webapp in a docker container for
 # the purposes of local development.
 
+set -e
+
 BUFFER_SIZE=${BUFFER_SIZE:-"16384"}
 PORT=${PORT:-"8000"}
 NUM_WORKERS=${NUM_WORKERS:-"6"}
 
+# If this was kicked off via docker-compose, then it has a behavior
+# configuration already. If it wasn't, then we need to add behavior
+# configuration to the environment.
+if [[ -z "${WEBAPP_BEHAVIOR}" ]];
+then
+    echo "Pulling in webapp behavior configuration..."
+    CMDPREFIX="/app/bin/build_env.py /app/docker/config/webapp.env"
+else
+    echo "Already have webapp behavior configuration..."
+    CMDPREFIX=
+fi
+
 if [ "$1" == "--dev" ]; then
     # Collect static files
-    cd /app/webapp-django/ && python manage.py collectstatic --noinput
+    cd /app/webapp-django/ && ${CMDPREFIX} python manage.py collectstatic --noinput
 
     # Run with manage.py
     echo "Running webapp. Connect with browser using http://localhost:8000/ ."
-    cd /app/webapp-django/ && python manage.py runserver 0.0.0.0:8000
+    cd /app/webapp-django/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
 
 else
     # Run uwsgi
-    uwsgi --pythonpath /app/webapp-django/ \
-          --master \
-          --need-app \
-          --wsgi webapp-django.wsgi.socorro-crashstats \
-          --buffer-size "${BUFFER_SIZE}" \
-          --enable-threads \
-          --processes "${NUM_WORKERS}" \
-          --http-socket 0.0.0.0:"${PORT}"
+    ${CMDPREFIX} uwsgi --pythonpath /app/webapp-django/ \
+                 --master \
+                 --need-app \
+                 --wsgi webapp-django.wsgi.socorro-crashstats \
+                 --buffer-size "${BUFFER_SIZE}" \
+                 --enable-threads \
+                 --processes "${NUM_WORKERS}" \
+                 --http-socket 0.0.0.0:"${PORT}"
 fi
