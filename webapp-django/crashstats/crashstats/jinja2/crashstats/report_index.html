@@ -66,6 +66,11 @@
                         </a>
                     </li>
                     <li class="ui-state-default ui-corner-top">
+                        <a href="#bugzilla" class="ui-tabs-anchor">
+                            <span>Bugzilla</span>
+                        </a>
+                    </li>
+                    <li class="ui-state-default ui-corner-top">
                         <a href="#modules" class="ui-tabs-anchor">
                             <span>Modules</span>
                         </a>
@@ -583,30 +588,6 @@
                         </tbody>
                     </table>
 
-                    <div id="bugzilla" class="bugreporter">
-                        <p>
-                            <strong>Bugzilla</strong> - Report this bug in
-                            {% for bug_product in [report.product, 'Core', 'External Software Affecting Firefox', 'Toolkit'] %}
-                                {% if bug_product in bug_product_map %}
-                                    {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
-                                {% endif %}
-                                <a
-                                    href="{{ bugzilla_submit_url(report, bug_product) }}"
-                                    target="_blank">{{ bug_product }}</a>
-                            {% endfor %}
-                        </p>
-
-                        <h2>Related Bugs</h2>
-                        <div class="bug_ids_expanded_list">
-                            <ul class="bug_ids_expanded full_bug_ids full">
-                                {% for bug in bug_associations %}
-                                <li>{{ show_bug_link(bug.id) }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <!-- /bugzilla -->
-
                     {% if parsed_dump.threads %}
                     <div id="frames">
                         <h2>Crashing Thread ({{ crashing_thread }}){% if parsed_dump.threads[crashing_thread].thread_name %}, Name: {{ parsed_dump.threads[crashing_thread].thread_name }}{% endif %}</h2>
@@ -716,6 +697,32 @@
 
                 </div>
                 <!-- /#rawdetails -->
+
+                <div id="bugzilla" class="ui-tabs-hide">
+                    <div class="bugreporter">
+                        <p>
+                            <strong>Bugzilla</strong> - Report this bug in
+                            {% for bug_product in [report.product, 'Core', 'External Software Affecting Firefox', 'Toolkit'] %}
+                                {% if bug_product in bug_product_map %}
+                                    {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
+                                {% endif %}
+                                <a
+                                    href="{{ bugzilla_submit_url(report, bug_product) }}"
+                                    target="_blank">{{ bug_product }}</a>
+                            {% endfor %}
+                        </p>
+
+                        <h2>Related Bugs</h2>
+                        <div class="bug_ids_expanded_list">
+                            <ul class="bug_ids_expanded full_bug_ids full">
+                                {% for bug in bug_associations %}
+                                <li>{{ show_bug_link(bug.id) }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- /bugzilla -->
 
                 <div id="modules" class="ui-tabs-hide">
                     {% if parsed_dump.modules %}

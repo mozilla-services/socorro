@@ -41,19 +41,66 @@ Quickstart
 
      $ make dockersetup
 
+
+   You can run ``make dockersetup`` any time you want to wipe the database, pick
+   up changes in static data, stored procedures, types, migrations, etc.
+
    .. Warning::
 
-      This is a work in progress, isn't idempotent, and is fussy about the state
-      of things.
+      This is a work in progress and might be fussy about some things.
 
       Pull requests welcome!
 
 
-At that point, you should have a functional Socorro development environment.
+At this point, you should have a basic functional Socorro development
+environment.
+
+See :ref:`webapp-chapter` for additional setup and running the webapp.
+
+See :ref:`processor-chapter` for additional setup and running the processor.
+
+
+Updating data in a dev environment
+==================================
+
+Wiping the db
+-------------
+
+Any time you want to wipe the database and start over, run ``make dockersetup``.
+
+
+Updating release data
+---------------------
+
+Data on releases comes from running ftpscraper. After you run ftpscraper, you
+have to run featured-versions-automatic which will update the featured versions
+list.
+
+We put all that in a single shell script.
+
+Run::
+
+  $ docker-compose run processor docker/run_update_release_data.sh
+
+
+.. Warning::
+
+   This can take a long while to run and if you're running it against an
+   existing database, then ftpscraper will "catch up" since the last time it ran
+   which can take a long time, maybe hours.
+
+
+General architecture
+====================
+
+.. image:: block-diagram.png
+
+Arrows direction represents the flow of interesting information (crashes,
+authentication assertions, cached values), not trivia like acks.
 
 
 Configuration
-=============
+-------------
 
 All configuration is done with ENV files located in ``/app/docker/config/``.
 
@@ -81,15 +128,6 @@ In this way, we have behavioral configuration versioned alongside code changes
 and we can more easily push and revert changes.
 
 
-General architecture
-====================
-
-.. image:: block-diagram.png
-
-Arrows direction represents the flow of interesting information (crashes,
-authentication assertions, cached values), not trivia like acks.
-
-
 Top-level folders
 -----------------
 
@@ -115,8 +153,8 @@ will find the following folders. Here is what each of them contains:
 +-----------------+-------------------------------------------------------------+
 | tools/          | External tools used by Socorro.                             |
 +-----------------+-------------------------------------------------------------+
-| webapp-django/  | Front-end Django application (also called UI). See          |
-|                 | :ref:`ui-chapter`.                                          |
+| webapp-django/  | Front-end Django application (also called webapp). See      |
+|                 | :ref:`webapp-chapter`.                                      |
 +-----------------+-------------------------------------------------------------+
 
 
@@ -135,7 +173,11 @@ Here are descriptions of every submodule in there:
 +-------------------+---------------------------------------------------------------+
 | external          | Here are APIs related to external resources like databases.   |
 +-------------------+---------------------------------------------------------------+
+| processor         | Code for the processor component.                             |
++-------------------+---------------------------------------------------------------+
+| submitter         | Code for the stage submitter component.                       |
++-------------------+---------------------------------------------------------------+
 | unittest          | All our unit tests are here.                                  |
 +-------------------+---------------------------------------------------------------+
-| webapi            | Contains a few tools used by web-based services.              |
+| webapp            | Code for the webapp component.                                |
 +-------------------+---------------------------------------------------------------+

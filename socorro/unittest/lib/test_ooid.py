@@ -35,21 +35,21 @@ class TestOoid(TestCase):
 
 
   def testCreateNewOoid(self):
-    ooid = oo.createNewOoid()
+    ooid = oo.create_new_ooid()
     ndate = oo.dateFromOoid(ooid)
     ndepth = oo.depthFromOoid(ooid)
     assert self.nowstamp == ndate, 'Expect date of %s, got %s' %(self.nowstamp,ndate)
     assert oo.defaultDepth == ndepth, 'Expect default depth (%d) got %d' % (oo.defaultDepth,ndepth)
 
-    ooid = oo.createNewOoid(timestamp=self.xmas05)
+    ooid = oo.create_new_ooid(timestamp=self.xmas05)
     ndate = oo.dateFromOoid(ooid)
     ndepth = oo.depthFromOoid(ooid)
     assert self.xmas05 == ndate, 'Expect date of %s, got %s' %(self.xmas05,ndate)
     assert oo.defaultDepth == ndepth, 'Expect default depth (%d) got %d' % (oo.defaultDepth,ndepth)
 
     for d in range(1,5):
-      ooid0 = oo.createNewOoid(depth=d)
-      ooid1 = oo.createNewOoid(timestamp=self.xmas05,depth=d)
+      ooid0 = oo.create_new_ooid(depth=d)
+      ooid1 = oo.create_new_ooid(timestamp=self.xmas05,depth=d)
       ndate0 = oo.dateFromOoid(ooid0)
       ndepth0 = oo.depthFromOoid(ooid0)
       ndate1 = oo.dateFromOoid(ooid1)
@@ -64,19 +64,19 @@ class TestOoid(TestCase):
   def testUuidToOid(self):
     for i in range(len(self.rawuuids)):
       u = self.rawuuids[i]
-      o0 = oo.uuidToOoid(u)
+      o0 = oo.uuid_to_ooid(u)
       expected =  (self.nowstamp,oo.defaultDepth)
       got = oo.dateAndDepthFromOoid(o0)
       assert expected == got, 'Expected %s, got %s'%(expected,got)
-      o1 = oo.uuidToOoid(u,timestamp=self.baseDate)
+      o1 = oo.uuid_to_ooid(u,timestamp=self.baseDate)
       expected =  (self.baseDate,oo.defaultDepth)
       got = oo.dateAndDepthFromOoid(o1)
       assert expected == got, 'Expected %s, got %s'%(expected,got)
-      o2 = oo.uuidToOoid(u,depth=self.depths[i])
+      o2 = oo.uuid_to_ooid(u,depth=self.depths[i])
       expected = (self.nowstamp,self.depths[i])
       got = oo.dateAndDepthFromOoid(o2)
       assert expected == got, 'Expected %s, got %s'%(expected,got)
-      o3 = oo.uuidToOoid(u,depth=self.depths[i],timestamp=self.xmas05)
+      o3 = oo.uuid_to_ooid(u,depth=self.depths[i],timestamp=self.xmas05)
       expected = (self.xmas05,self.depths[i])
       got = oo.dateAndDepthFromOoid(o3)
       assert expected == got, 'Expected %s, got %s'%(expected,got)

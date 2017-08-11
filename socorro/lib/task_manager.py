@@ -3,7 +3,6 @@ import threading
 import os
 
 from configman import RequiredConfig, Namespace
-from configman.converters import class_converter
 
 
 def default_task_func(a_param):
@@ -21,6 +20,7 @@ def default_iterator():
         yield ((x,), {})
     while True:
         yield None
+
 
 def respond_to_SIGTERM(signal_number, frame, target=None):
     """ these classes are instrumented to respond to a KeyboardInterrupt by
@@ -54,14 +54,14 @@ def respond_to_SIGTERM(signal_number, frame, target=None):
 class TaskManager(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
-      'idle_delay',
-      default=7,
-      doc='the delay in seconds if no job is found'
+        'idle_delay',
+        default=7,
+        doc='the delay in seconds if no job is found'
     )
     required_config.add_option(
-      'quit_on_empty_queue',
-      default=False,
-      doc='stop if the queue is empty'
+        'quit_on_empty_queue',
+        default=False,
+        doc='stop if the queue is empty'
     )
 
     def __init__(self, config,
@@ -129,7 +129,7 @@ class TaskManager(RequiredConfig):
         This was also partially motivated by old versions' of Python inability
         to KeyboardInterrupt out of a long sleep()."""
 
-        for x in xrange(int(seconds)):
+        for x in range(int(seconds)):
             self.quit_check()
             if wait_log_interval and not x % wait_log_interval:
                 self.logger.info('%s: %dsec of %dsec',
@@ -147,8 +147,8 @@ class TaskManager(RequiredConfig):
         called at least once after the end of the task loop."""
         self.logger.debug('threadless start')
         try:
-            for job_params in self._get_iterator():  # may never raise
-                                                     # StopIteration
+            # May never raise StopIteration
+            for job_params in self._get_iterator():
                 self.config.logger.debug('received %r', job_params)
                 self.quit_check()
                 if job_params is None:
