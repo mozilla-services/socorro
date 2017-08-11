@@ -22,14 +22,14 @@ import requests
 PLATFORMS = ['Mac OS X', 'Linux', 'Windows', 'Unknown']
 
 
-def fetch_data_from_api(endpoint, product, version, platform, start_date, end_date):
+def fetch_data_from_api(endpoint, product, platform, versions, start_date, end_date):
     """Fetches data from API"""
     req = requests.get(endpoint, params={
         'end_date': end_date,
         'start_date': start_date,
         'product': product,
         'platforms': platform,
-        'versions': version,
+        'versions': versions,
     })
     if req.status_code != 200:
         print('Error retrieving ADI: %s' % req.content)
@@ -39,7 +39,7 @@ def fetch_data_from_api(endpoint, product, version, platform, start_date, end_da
     return data['hits']
 
 
-def fetch_versions(conn, product_name):
+def get_versions(conn, product_name):
     """Fetch the version strings for a product from product_versions table"""
 
     cursor = conn.cursor()
@@ -54,7 +54,7 @@ def fetch_versions(conn, product_name):
     return list(versions)
 
 
-def fetch_product_version_id(conn, product_name, version_string):
+def get_product_version_id(conn, product_name, version_string):
     """Given a product name and a version_string, returns a product_version_id"""
     cursor = conn.cursor()
     cursor.execute("""
@@ -73,7 +73,7 @@ def fetch_product_version_id(conn, product_name, version_string):
 def insert_adu(conn, adu_count, adu_date, product_name, os_name, version_string):
     """Inserts ADU data into product_adu table"""
     # Fetch the product_version_id we need
-    product_version_id = fetch_product_version_id(conn, product_name, version_string)
+    product_version_id = get_product_version_id(conn, product_name, version_string)
 
     if product_version_id is None:
         print('No product_version_id for %s %s' % (product_name, version_string))
@@ -164,31 +164,28 @@ def main(args):
 
     for product in args.products.split(','):
         # Fetch versions from the product_versions table that we should pull data for
-        versions = fetch_versions(conn, product)
+        versions = get_versions(conn, product)
 
-        for version in versions:
-            for platform in PLATFORMS:
-                # For each (product, version, platform) combo, fetch adu data and insert it
-                print('Fetching data for (%s, %s, %s)...' % (product, version, platform))
+        for platform in PLATFORMS:
+            print('Fetching data for (%s, %s, %s)...' % (product, versions, platform))
+            adu_data = fetch_data_from_api(
+                endpoint=args.endpoint,
+                product=product,
+                platform=platform,
+                versions=versions,
+                start_date=start_date,
+                end_date=end_date
+            )
 
-                adu_data = fetch_data_from_api(
-                    endpoint=args.endpoint,
-                    product=product,
-                    version=version,
-                    platform=platform,
-                    start_date=start_date,
-                    end_date=end_date
+            for hit in adu_data:
+                insert_adu(
+                    conn=conn,
+                    adu_count=hit['adi_count'],
+                    adu_date=hit['date'],
+                    product_name=product,
+                    os_name=platform,
+                    version_string=hit['version'],
                 )
-
-                for hit in adu_data:
-                    insert_adu(
-                        conn=conn,
-                        adu_count=hit['adi_count'],
-                        adu_date=hit['date'],
-                        product_name=product,
-                        os_name=platform,
-                        version_string=hit['version'],
-                    )
 
     conn.close()
 
