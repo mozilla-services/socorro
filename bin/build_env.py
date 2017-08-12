@@ -4,10 +4,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Opens the specified env file, pulls in configuration, then executes the specified command in that
+"""Opens specified env files, pulls in configuration, then executes the specified command in the new
 environment.
 
-Usage:
+This can take one or more env files. Env files are processed in the order specified and variables
+from later env files will override ones from earlier env files. Env files must end with ".env" and
+come before the command.
+
+Usage example:
 
     build_env.py somefile.env somecmd
 
@@ -21,7 +25,7 @@ import subprocess
 import sys
 
 
-USAGE = 'build_env.py [ENVFILE] [CMD...]'
+USAGE = 'build_env.py [ENVFILE]... [CMD]...'
 
 
 class ParseException(Exception):
@@ -56,20 +60,21 @@ def main(argv):
         print('Error: env file required.')
         return 1
 
-    env_file = argv.pop(0)
+    while argv and argv[0].endswith('.env'):
+        env_file = argv.pop(0)
+
+        try:
+            env = parse_env_file(env_file)
+        except (OSError, IOError) as exc:
+            raise ParseException('File error: %s' % exc)
+
+        for key, val in env.items():
+            os.environ[key] = val
 
     if not argv:
         print(USAGE)
         print('Error: cmd required.')
         return 1
-
-    try:
-        env = parse_env_file(env_file)
-    except (OSError, IOError) as exc:
-        raise ParseException('File error: %s' % exc)
-
-    for key, val in env.items():
-        os.environ[key] = val
 
     print('Running %s in new env' % argv)
     sys.stdout.flush()
