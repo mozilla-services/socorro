@@ -343,7 +343,11 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
 
     def _insert_build(self, cursor, *args, **kwargs):
         self.config.logger.debug('adding %s', args)
-        if not self.config.dry_run:
+        if self.config.dry_run:
+            print "INSERT BUILD"
+            print args
+            print kwargs
+        else:
             buildutil.insert_build(cursor, *args, **kwargs)
 
     def _is_final_beta(self, version):
