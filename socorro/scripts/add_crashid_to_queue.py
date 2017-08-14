@@ -2,9 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""
-Adds crash id to processing queue.
+import argparse
+import os
 
+import pika
+
+from socorro.lib.ooid import is_crash_id_valid
+
+
+EPILOG = """
 To use in a docker-based local dev environment:
 
     python scripts/add_crashid_to_queue.py socorro.normal <CRASHID>
@@ -12,7 +18,7 @@ To use in a docker-based local dev environment:
 To use in -prod:
 
     envconsul -once -prefix socorro/common -prefix socorro/processor env | \
-        /path/to/python scripts/send_to_stage.py socorro.submitter <CRASHID>
+        /path/to/python scripts/add_crashid_to_queue.py socorro.submitter <CRASHID>
 
 Queues:
 
@@ -21,13 +27,6 @@ Queues:
 * socorro.submitter (-prod only) - sends crash to -stage environment
 
 """
-
-import argparse
-import os
-
-import pika
-
-from socorro.lib.ooid import is_crash_id_valid
 
 
 def get_envvar(key, default=None):
@@ -72,14 +71,7 @@ def main(argv):
         formatter_class=WrappedTextHelpFormatter,
         prog='add_crashid_to_queue.py',
         description='Send crash id to rabbitmq queue for processing',
-        epilog=(
-            'Note: This does not move crash data--crash data must be in the raw_crash location '
-            'on S3 already.\n\n'
-            'Queues:\n\n'
-            '* socorro.normal - normal processing\n'
-            '* socorro.priority - priority processing\n'
-            '* socorro.submitter (-prod only) - sends crash to -stage environment'
-        )
+        epilog=EPILOG.strip(),
     )
     parser.add_argument('queue', help='the queue to add the crash id to')
     parser.add_argument('crashid', nargs='+', help='one or more crash ids to add')
