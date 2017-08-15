@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,7 +21,7 @@ echo "Activate Python virtualenv..."
 . /data/socorro/socorro-virtualenv/bin/activate
 
 echo "Add all the stuff from envconsul..."
-export "$(envconsul -prefix socorro/common -prefix socorro/processor -prefix socorro/webapp -prefix socorro/crontabber env)"
+export "$(envconsul -prefix socorro/common -prefix socorro/processor -prefix socorro/webapp-django -prefix socorro/crontabber env)"
 
 echo "Set prompt..."
 export PS1='(socorro) \u@\h:\w\$ '
