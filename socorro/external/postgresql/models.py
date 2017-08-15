@@ -673,15 +673,6 @@ class CrashesByUserBuild(DeclarativeBase):
         'CrashType', primaryjoin='CrashesByUserBuild.crash_type_id==CrashType.crash_type_id')
 
 
-class DataDictionary(DeclarativeBase):
-    __tablename__ = 'data_dictionary'
-
-    # column definitions
-    raw_field = Column(u'raw_field', TEXT(), nullable=False, primary_key=True)
-    transforms = Column(u'transforms', JSON())
-    product = Column(u'product', TEXT())
-
-
 class Domain(DeclarativeBase):
     __tablename__ = 'domains'
 
