@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import os.path
 
 import pika
 
@@ -13,7 +14,7 @@ from socorro.lib.ooid import is_crash_id_valid
 EPILOG = """
 To use in a docker-based local dev environment:
 
-    python scripts/add_crashid_to_queue.py socorro.normal <CRASHID>
+    scripts/add_crashid_to_queue.py socorro.normal <CRASHID>
 
 To use in -prod:
 
@@ -69,7 +70,7 @@ class WrappedTextHelpFormatter(argparse.HelpFormatter):
 def main(argv):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
-        prog='add_crashid_to_queue.py',
+        prog=os.path.basename(__file__),
         description='Send crash id to rabbitmq queue for processing',
         epilog=EPILOG.strip(),
     )
