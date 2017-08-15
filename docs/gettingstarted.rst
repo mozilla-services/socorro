@@ -37,7 +37,8 @@ Quickstart
    That will build the containers required for development: test, processor, and
    webapp.
 
-5. Then you need to set up Postgres and Elasticssearch. To do that, run::
+5. Then you need to set up the Postgres database (tables, stored procedures,
+   types, and such) and Elasticssearch. To do that, run::
 
      $ make dockersetup
 
@@ -51,43 +52,94 @@ Quickstart
 
       Pull requests welcome!
 
+6. Then you need to pull in product release and some other data that makes
+   Socorro go.
+
+   This data isn't static and it changes day to day, so depending on what you're
+   working on, you might have to run this at the start of every day.
+
+   To udpate data::
+
+     $ make dockerupdatedata
+
 
 At this point, you should have a basic functional Socorro development
 environment.
+
+See :ref:`gettingstarted-chapter-updating` for how to maintain and update your environment.
 
 See :ref:`webapp-chapter` for additional setup and running the webapp.
 
 See :ref:`processor-chapter` for additional setup and running the processor.
 
 
+.. _gettingstarted-chapter-updating:
+
 Updating data in a dev environment
 ==================================
 
-Wiping the db
--------------
+Updating the code
+-----------------
 
-Any time you want to wipe the database and start over, run ``make dockersetup``.
+Any time you want to update the code in the repostory, run something like this from
+the master branch::
+
+  $ git pull
+
+
+It depends on what you're working on and the state of things.
+
+After you do that, you'll need to update other things.
+
+If there were changes to the requirements files or setup scripts, you'll need to
+build new images::
+
+  $ make dockerbuild
+
+
+If there were changes to the database tables, stored procedures, types,
+migrations, or anything like that, you'll need to wipe the Postgres database and
+Elasticsearch::
+
+  $ make dockersetup
+
+
+After doing that, you'll definitely want to update data::
+
+  $ make dockerupdatedata
+
+
+Wiping the database
+-------------------
+
+Any time you want to wipe the database and start over, run::
+
+  $ make dockersetup
 
 
 Updating release data
 ---------------------
 
-Data on releases comes from running ftpscraper. After you run ftpscraper, you
+Release data and comes from running ftpscraper. After you run ftpscraper, you
 have to run featured-versions-automatic which will update the featured versions
-list.
+list. Additionally, there's other data that changes day-to-day that you need to
+pick up in order for some views in the webapp to work well.
 
-We put all that in a single shell script.
+Updating that data is done with a single make rule.
 
 Run::
 
   $ make dockerupdatedata
 
 
-.. Warning::
+.. Note::
 
    This can take a long while to run and if you're running it against an
    existing database, then ftpscraper will "catch up" since the last time it ran
    which can take a long time, maybe hours.
+
+   If you don't have anything in the database that you need, then it might be
+   better to wipe the database and start over.
 
 
 General architecture
