@@ -12,9 +12,11 @@ If you're interested in running Socorro in a server environment, then check out
 Quickstart
 ==========
 
-1. Install `Docker <https://docs.docker.com/engine/installation/>`_.
+1. Install required software.
 
-2. Install `docker-compose <https://docs.docker.com/compose/install/>`_. You need
+   Install `Docker <https://docs.docker.com/engine/installation/>`_.
+
+   Install `docker-compose <https://docs.docker.com/compose/install/>`_. You need
    1.10 or higher.
 
    .. Note::
@@ -25,42 +27,53 @@ Quickstart
 
       because it's way easier to type "dc" and I do it a lot.
 
-3. Install `make <https://www.gnu.org/software/make/>`_ using either your
+   Install `make <https://www.gnu.org/software/make/>`_ using either your
    system's package manager (Linux) or homebrew (OSX).
 
-   FIXME(willkg): Windows instructions?
+   Install `git <https://git-scm.com/>`_ using either your system's
+   package manager (Linux) or OSX command line utilities.
 
-4. From the root of this repository, run::
+2. Clone the repository so you have a copy on your host machine. Instructions
+   are `on GitHub <https://github.com/mozilla-services/socorro>`_.
+
+3. From the root of this repository, run::
 
      $ make dockerbuild
 
-   That will build the containers required for development: test, processor, and
-   webapp.
+   That will build the Docker images required for development: processor,
+   webapp, and crontabber.
 
-5. Then you need to set up the Postgres database (tables, stored procedures,
-   types, and such) and Elasticssearch. To do that, run::
+   Each of these images covers a single Socorro component: processor, webapp,
+   and crontabber.
+
+4. Then you need to set up the Postgres database and Elasticssearch. To do that,
+   run::
 
      $ make dockersetup
 
+   This creates the Postgres database and sets up tables, stored procedures,
+   integrity rules, types, and a bunch of other things. It also adds a bunch of
+   static data to lookup tables.
 
-   You can run ``make dockersetup`` any time you want to wipe the database, pick
-   up changes in static data, stored procedures, types, migrations, etc.
+   For Elasticsearch, it sets up Supersearch fields and the index for raw and
+   processed crash data.
 
-   .. Warning::
+   You can run ``make dockersetup`` any time you want to wipe the Postgres
+   database and Elasticsearch to pick up changes to those storage systems or
+   reset your environment.
 
-      This is a work in progress and might be fussy about some things.
-
-      Pull requests welcome!
-
-6. Then you need to pull in product release and some other data that makes
+5. Then you need to pull in product release and some other data that makes
    Socorro go.
 
-   This data isn't static and it changes day to day, so depending on what you're
-   working on, you might have to run this at the start of every day.
-
-   To udpate data::
+   To do that, run::
 
      $ make dockerupdatedata
+
+   This adds data that changes day-to-day. Things like product builds and
+   normalization data.
+
+   Depending on what you're working on, you might want to run this weekly or
+   maybe even daily.
 
 
 At this point, you should have a basic functional Socorro development
@@ -71,6 +84,8 @@ See :ref:`gettingstarted-chapter-updating` for how to maintain and update your e
 See :ref:`webapp-chapter` for additional setup and running the webapp.
 
 See :ref:`processor-chapter` for additional setup and running the processor.
+
+See :ref:`crontabber-chapter` for additional setup and running crontabber.
 
 
 .. _gettingstarted-chapter-updating:
