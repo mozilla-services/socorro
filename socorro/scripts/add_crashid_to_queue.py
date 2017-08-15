@@ -14,12 +14,12 @@ from socorro.lib.ooid import is_crash_id_valid
 EPILOG = """
 To use in a docker-based local dev environment:
 
-    scripts/add_crashid_to_queue.py socorro.normal <CRASHID>
+  $ scripts/add_crashid_to_queue.py socorro.normal <CRASHID>
 
 To use in -prod:
 
-    envconsul -once -prefix socorro/common -prefix socorro/processor env | \
-        /path/to/python scripts/add_crashid_to_queue.py socorro.submitter <CRASHID>
+  $ /data/socorro/bin/socorro_env.sh
+  (socorro) $ python scripts/add_crashid_to_queue.py socorro.submitter <CRASHID>
 
 Queues:
 
