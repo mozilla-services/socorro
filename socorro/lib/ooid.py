@@ -2,8 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# OOID is "Our opaque ID"
+"""
+OOID is "Our opaque ID"
+"""
+
 import datetime as dt
+import re
 import uuid as uu
 
 from socorro.lib.datetimeutil import utc_now, UTC
@@ -95,3 +99,27 @@ def dateFromOoid(ooid):
 
     """
     return dateAndDepthFromOoid(ooid)[0]
+
+
+CRASH_ID_RE = re.compile(r"""
+    ^
+    [a-f0-9]{8}-
+    [a-f0-9]{4}-
+    [a-f0-9]{4}-
+    [a-f0-9]{4}-
+    [a-f0-9]{6}
+    [0-9]{6}      # date in YYMMDD
+    $
+""", re.VERBOSE)
+
+
+def is_crash_id_valid(crash_id):
+    """Returns whether this is a valid crash id
+
+    :arg str crash_id: the crash id in question
+    :arg boolean strict: whether or not to be strict about the throttle character
+
+    :returns: True if it's valid, False if not
+
+    """
+    return bool(CRASH_ID_RE.match(crash_id))
