@@ -70,9 +70,9 @@ need to get a set of oauth credentials.
 
 2. Create a project
 
-3. Set up credentials
+3. Set up credentials (note: no trailing slash on the JS origin, but a trailing slash on the callback url)
 
-   :authorized js origin: http://localhost:8000/
+   :authorized js origin: http://localhost:8000
    :callback url: http://localhost:8000/oauth2/signin/
 
 4. Open ``webapp-django/.env`` in an editor and add these lines::
@@ -83,6 +83,8 @@ need to get a set of oauth credentials.
    where ``<client id>`` is the oauth client id and ``<secret>`` is the oauth
    client secret that you got from step 3
 
+5. If you see a "Signed in to Google, but unable to sign in on the server." with a 403 CSRF error, mark the callback url as csrf_exempt
+   e.g. with `this patch <https://github.com/g-k/socorro/commit/2afeb8d44a485d2936f0f9a06fa3572d5baea6d6#diff-2fef780ed0ba541e7eb26fd5c32022f4>`_
 
 After that, Google Sign-In should work.
 
