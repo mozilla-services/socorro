@@ -19,7 +19,6 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
-import socorro.external.postgresql.crashes
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
@@ -1076,32 +1075,6 @@ class GraphicsDevices(SocorroMiddleware):
                 names[key] = name_pair
 
         return names
-
-
-class AduBySignature(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.crashes.AduBySignature
-
-    deprecation_warning = (
-        'This endpoint is deprecated and will soon cease to exist.\n'
-        'Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1380761'
-    )
-
-    required_params = (
-        'product_name',
-        'signature',
-        'channel',
-    )
-
-    possible_params = (
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
 
 
 class ADI(SocorroMiddleware):
