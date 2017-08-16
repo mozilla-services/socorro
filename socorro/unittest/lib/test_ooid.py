@@ -3,11 +3,26 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import uuid as uu
-import  socorro.lib.ooid as oo
+import socorro.lib.ooid as oo
 import datetime as dt
+
+import pytest
 
 from socorro.lib.datetimeutil import utc_now, UTC
 from socorro.unittest.testbase import TestCase
+
+
+@pytest.mark.parametrize('crashid, expected', [
+    ('', False),
+    ('aaa', False),
+    ('de1bb258cbbf4589a67334f800160918', False),
+    ('DE1BB258-CBBF-4589-A673-34F800160918', False),
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', False),
+    ('00000000-0000-0000-0000-000000000000', True),
+])
+def test_validate_crash_id(crashid, expected):
+    assert oo.is_crash_id_valid(crashid) == expected
+
 
 class TestOoid(TestCase):
   def setUp(self):
