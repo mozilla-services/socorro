@@ -12,7 +12,7 @@
 #
 # Usage:
 #
-#     /data/socorro/scripts/activate_socorro
+#     /data/socorro/application/scripts/activate_socorro
 
 set -e
 
