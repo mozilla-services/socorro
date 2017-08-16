@@ -18,6 +18,7 @@ services:
     image: local/socorro_processor
     env_file:
       - docker/config/docker_common.env
+      - docker/config/local_development.env
       - docker/config/processor.env
     depends_on:
       # - statsd -- FIXME(willkg): broken for some reason
@@ -36,6 +37,7 @@ services:
     image: local/socorro_webapp
     env_file:
       - docker/config/docker_common.env
+      - docker/config/local_development.env
       - docker/config/webapp.env
     depends_on:
       # - statsd -- FIXME(willkg): broken for some reason
@@ -57,6 +59,7 @@ services:
     image: local/socorro_crontabber
     env_file:
       - docker/config/docker_common.env
+      - docker/config/local_development.env
       - docker/config/crontabber.env
     depends_on:
       - localstack-s3
