@@ -572,16 +572,6 @@ class AlembicVersion(DeclarativeBase):
     __mapper_args__ = {"primary_key": (version_num)}
 
 
-class Bug(DeclarativeBase):
-    __tablename__ = 'bugs'
-
-    # column definitions
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    status = Column(u'status', TEXT())
-    resolution = Column(u'resolution', TEXT())
-    short_desc = Column(u'short_desc', TEXT())
-
-
 class BugAssociation(DeclarativeBase):
     __tablename__ = 'bug_associations'
 
