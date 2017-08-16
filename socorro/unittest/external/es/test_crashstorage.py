@@ -10,9 +10,11 @@ from nose.tools import eq_, ok_, assert_raises
 from copy import deepcopy
 
 from configman.dotdict import DotDict
+import pytest
 
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
+    is_valid_key,
     ESCrashStorage,
     ESCrashStorageRedactedSave,
     ESCrashStorageRedactedJsonDump,
@@ -165,6 +167,29 @@ class TestRawCrashRedactor(TestCaseWithConfig):
         eq_(crash, expected_crash)
 
 
+class TestIsValidKey(object):
+    @pytest.mark.parametrize('key', [
+        'a',
+        'abc',
+        'ABC',
+        'AbcDef',
+        'Abc_Def',
+        'Abc-def'
+        'Abc-123-def'
+    ])
+    def test_valid_key(self, key):
+        assert is_valid_key(key) is True
+
+    @pytest.mark.parametrize('key', [
+        '',
+        '.',
+        'abc def',
+        u'na\xefve',
+    ])
+    def test_invalid_key(self, key):
+        assert is_valid_key(key) is False
+
+
 class IntegrationTestESCrashStorage(ElasticsearchTestCase):
     """These tests interact with Elasticsearch (or some other external
     resource).
@@ -233,6 +258,33 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
                 id=a_processed_crash['uuid']
             )
         )
+        es_storage.close()
+
+    def test_index_crash_with_bad_keys(self):
+        a_raw_crash_with_bad_keys = {
+            'foo': 'alpha',
+            '': 'bad key 1',
+            '.': 'bad key 2',
+            u'na\xefve': 'bad key 3',
+        }
+
+        es_storage = ESCrashStorage(config=self.config)
+
+        es_storage.save_raw_and_processed(
+            raw_crash=a_raw_crash_with_bad_keys,
+            dumps=None,
+            processed_crash=a_processed_crash,
+            crash_id=a_processed_crash['uuid']
+        )
+
+        # Ensure that the document was indexed by attempting to retreive it.
+        doc = self.es_client.get(
+            index=self.config.elasticsearch.elasticsearch_index,
+            id=a_processed_crash['uuid']
+        )
+        # Make sure the invalid keys aren't in the crash.
+        raw_crash = doc['_source']['raw_crash']
+        assert raw_crash == {'foo': 'alpha'}
         es_storage.close()
 
     def test_bulk_index_crash(self):

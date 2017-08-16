@@ -37,6 +37,22 @@ class RawCrashRedactor(Redactor):
         ]
 
 
+# Valid Elasticsearch keys contain one or more ascii alphanumeric characters, underscore, and hyphen
+# and that's it.
+VALID_KEY = re.compile(r'^[a-zA-Z0-9_-]+$')
+
+
+def is_valid_key(key):
+    """Validates an Elasticsearch document key
+
+    :arg string key: the key to validate
+
+    :returns: True if it's valid and False if not
+
+    """
+    return bool(VALID_KEY.match(key))
+
+
 class ESCrashStorage(CrashStorageBase):
     """This sends raw and processed crash reports to Elasticsearch."""
 
@@ -168,12 +184,40 @@ class ESCrashStorage(CrashStorageBase):
                 # not there? we don't care
                 pass
 
+    @staticmethod
+    def remove_bad_keys(data):
+        """Removes keys from the top-level of the dict that are bad
+
+        Good keys satisfy the following properties:
+
+        * have one or more characters
+        * are composed of a-zA-Z0-9_-
+
+        Anything else is a bad key and needs to be removed.
+
+        This modifies the data dict in-place and only looks at the top level.
+
+        :arg dict data: the data to remove bad keys from
+
+        """
+        if not data:
+            return
+
+        # Copy the list of things we're iterating over because we're mutating
+        # the dict in place.
+        for key in list(data.keys()):
+            if not is_valid_key(key):
+                del data[key]
+
     def _submit_crash_to_elasticsearch(self, connection, crash_document):
         """Submit a crash report to elasticsearch.
         """
         # Massage the crash such that the date_processed field is formatted
         # in the fashion of our established mapping.
         self.reconstitute_datetimes(crash_document['processed_crash'])
+
+        # Remove bad keys from the raw crash.
+        self.remove_bad_keys(crash_document['raw_crash'])
 
         # Obtain the index name.
         es_index = self.get_index_for_crash(
@@ -190,8 +234,7 @@ class ESCrashStorage(CrashStorageBase):
         # Submit the crash for indexing.
         # Don't retry more than 5 times. That is to avoid infinite loops in
         # case of an unhandled exception.
-        times = range(5)
-        while times.pop(-1):
+        for attempt in range(5):
             try:
                 connection.index(
                     index=es_index,
