@@ -11,6 +11,10 @@ Base class implemented in ``socorro/external/crashstorage_base.py``
 
 These are our base classes for all crash storage for Socorro.
 
+.. Warning::
+
+   August 17th, 2017: These docs are outdated.
+
 
 socorro.external.crashstorage_base
 ==================================
