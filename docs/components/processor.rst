@@ -34,6 +34,11 @@ Then you can start and stop the processor and tweak files and all that jazz.
    The stackwalk binaries are in ``/stackwalk`` in the container.
 
 
+.. Warning::
+
+   August 17th, 2017: Everything below this point is outdated.
+
+
 Troubleshooting
 ===============
 
