@@ -12,26 +12,31 @@ If you're interested in running Socorro in a server environment, then check out
 Quickstart
 ==========
 
-1. Install required software.
+1. Install required software: Docker, docker-compose (1.10+), make, and git.
 
-   Install `Docker <https://docs.docker.com/engine/installation/>`_.
+   **Linux**:
 
-   Install `docker-compose <https://docs.docker.com/compose/install/>`_. You need
-   1.10 or higher.
+       Use your package manager.
 
-   .. Note::
+   **OSX**:
 
-      It helps to add an alias to your shell::
+       Install `Docker for Mac <https://docs.docker.com/docker-for-mac/>`_ which
+       will install Docker and docker-compose.
 
-        alias dc=docker-compose
+       Use `homebrew <https://brew.sh>`_ to install make and git::
 
-      because it's way easier to type "dc" and I do it a lot.
+         $ brew install make git
 
-   Install `make <https://www.gnu.org/software/make/>`_ using either your
-   system's package manager (Linux) or homebrew (OSX).
+   **Other**:
 
-   Install `git <https://git-scm.com/>`_ using either your system's
-   package manager (Linux) or OSX command line utilities.
+       Install `Docker <https://docs.docker.com/engine/installation/>`_.
+
+       Install `docker-compose <https://docs.docker.com/compose/install/>`_. You need
+       1.10 or higher.
+
+       Install `make <https://www.gnu.org/software/make/>`_.
+
+       Install `git <https://git-scm.com/>`_.
 
 2. Clone the repository so you have a copy on your host machine. Instructions
    are `on GitHub <https://github.com/mozilla-services/socorro>`_.
