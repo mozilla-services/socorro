@@ -87,7 +87,7 @@ def fetch_crash(outputdir, api_token, crash_id):
     # http://antenna.readthedocs.io/en/latest/architecture.html#aws-s3-file-hierarchy
 
     # Save raw crash to file system
-    fn = os.path.join(outputdir, 'v2', 'raw_crash', crash_id[0:3], crash_id[-6:], crash_id)
+    fn = os.path.join(outputdir, 'v2', 'raw_crash', crash_id[0:3], '20' + crash_id[-6:], crash_id)
     create_dir_if_needed(os.path.dirname(fn))
     with open(fn, 'w') as fp:
         json.dump(raw_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
