@@ -84,7 +84,11 @@ Quickstart
 At this point, you should have a basic functional Socorro development
 environment.
 
-See :ref:`gettingstarted-chapter-updating` for how to maintain and update your environment.
+See :ref:`gettingstarted-chapter-updating` for how to maintain and update your
+environment.
+
+See :ref:`gettingstarted-chapter-configuration` for how configuration works and
+about ``my.env``.
 
 See :ref:`webapp-chapter` for additional setup and running the webapp.
 
@@ -162,42 +166,82 @@ Run::
    better to wipe the database and start over.
 
 
-General architecture
-====================
-
-.. image:: block-diagram.png
-
-Arrows direction represents the flow of interesting information (crashes,
-authentication assertions, cached values), not trivia like acks.
-
+.. _gettingstarted-chapter-configuration:
 
 Configuration
--------------
+=============
 
 All configuration is done with ENV files located in ``/app/docker/config/``.
 
-Each service uses ``docker_common.env`` and then a service-specific ENV file.
-
 ``docker_common.env``
-    This holds secrets and environment-specific configuration required
+    This holds secrets and *environment-specific configuration* required
     to get services to work in a docker environment for local development.
 
     This should NOT be used for server environments.
+
+``local_development.env``
+    This holds a few environment variables that are explicitly for
+    local development and should never show up in a server environment.
+
+``processor.env``, ``crontabber.env``, and ``webapp.env``
+    These configuration files hold *behavioral configuration* for these three
+    components for all environments--local development and servers.
+
+    For example, if you want to add a new destination crash store to the system,
+    you'd add it to ``processor.env``.
 
 ``test.env``
     This holds configuration specific to running the tests. It has some
     configuration value overrides because the tests are "interesting".
 
-``processor.env`` and ``webapp.env``
-    These configuration files hold behavioral configuration for these two things
-    that work across ALL environments--local development and servers.
+``my.env``
+    This file lets you override any environment variables for your local
+    development environment.
 
-    For example, if you want to add a new destination crash store to the system,
-    you'd add it to ``processor.env``.
+    The template for this is in ``docker/config/my.env.dist``.
 
 
-In this way, we have behavioral configuration versioned alongside code changes
-and we can more easily push and revert changes.
+In this way:
+
+1. environmental configuration can be set up for every environment
+
+2. behavioral configuration is committed to this repository and versioned
+   alongside the code making it easy to push and revert behavioral changes
+
+3. ``my.env`` lets you override any configuration and is not checked into
+   version control
+
+
+See the ``docker-compose.yml`` file for order of precedence and which EMV files
+are used for which component container.
+
+
+Setting configuration specific to your local dev environment
+------------------------------------------------------------
+
+There are some variables you need to set that are specific to your local dev
+environment. Put them in ``my.env``.
+
+
+Overriding configuration
+------------------------
+
+If you want to override configuration temporarily for your local development
+environment, put it in ``my.env``.
+
+
+General architecture
+====================
+
+.. Warning::
+
+   August 17th, 2017. Everything below this point needs to be updated.
+
+
+.. image:: block-diagram.png
+
+Arrows direction represents the flow of interesting information (crashes,
+authentication assertions, cached values), not trivia like acks.
 
 
 Top-level folders
