@@ -195,20 +195,26 @@ All configuration is done with ENV files located in ``/app/docker/config/``.
     configuration value overrides because the tests are "interesting".
 
 ``my.env``
-    This file lets you override any environment variables for your local
-    development environment.
+    This file lets you override any environment variables set in other ENV files
+    as well as set variables that are specific to your instance.
+
+    It is your personal file for your specific development environment--it
+    doesn't get checked into version control.
 
     The template for this is in ``docker/config/my.env.dist``.
 
 
 In this way:
 
-1. environmental configuration can be set up for every environment
+1. environmental configuration which covers secrets, hosts, ports, and
+   infrastructure-specific things can be set up for every environment
 
-2. behavioral configuration is committed to this repository and versioned
-   alongside the code making it easy to push and revert behavioral changes
+2. behavioral configuration which covers how the code behaves and which classes
+   it uses is versioned alongside the code making it easy to deploy and revert
+   behavioral changes with the code depending on them
 
-3. ``my.env`` lets you override any configuration and is not checked into
+3. ``my.env`` lets you set configuration specific to your development
+   environment as well as override any configuration and is not checked into
    version control
 
 
