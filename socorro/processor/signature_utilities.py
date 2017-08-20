@@ -610,7 +610,10 @@ class StackwalkerErrorSignatureRule(Rule):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return processed_crash['signature'].startswith('EMPTY')
+        return bool(
+            processed_crash['signature'].startswith('EMPTY') and
+            processed_crash.get('mdsw_status_string')
+        )
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash['signature'] = "%s; %s" % (

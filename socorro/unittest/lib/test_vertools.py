@@ -24,28 +24,7 @@ tests = [('3',            [3, phs, 0, phs] + pl * 3, '3'),
          ]
 
 
-def testNormalize():
+def test_normalize():
     for ver, expected, ver2 in tests:
         got = vtl.normalize(ver)
         assert got == expected, "expected %s, but got %s" % (expected, got)
-
-
-def testDenomalize():
-    for ver, norm, expected in tests:
-        got = vtl.denormalize(norm)
-        assert got == expected, "expected %s, but got %s" % (expected, got)
-
-
-def testCompare():
-    got = vtl.compare('3', '3.1')
-    assert got == -1, "expected %s, but got %s" % (-1, got)
-    got = vtl.compare('3', '3.0')
-    assert got == 0, "expected %s, but got %s" % (0, got)
-    got = vtl.compare('3', '3.0pre')
-    assert got == 1, "expected %s, but got %s" % (1, got)
-    got = vtl.compare('3.5b2', '3.5b1')
-    assert got == 1, "expected %s, but got %s" % (1, got)
-    got = vtl.compare('3.5', '3.5b1')
-    assert got == 1, "expected %s, but got %s" % (1, got)
-    got = vtl.compare('3.5.1', '3.5.1b3')
-    assert got == 1, "expected %s, but got %s" % (1, got)

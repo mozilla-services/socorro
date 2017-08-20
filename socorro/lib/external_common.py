@@ -173,7 +173,7 @@ def check_type(param, datatype):
         not isinstance(param, datetime.timedelta)
     ):
         try:
-            param = dtutil.strHoursToTimeDelta(param)
+            param = dtutil.str_hours_to_time_delta(param)
         except ValueError:
             param = None
 

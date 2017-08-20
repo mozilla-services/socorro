@@ -40,35 +40,46 @@ json_enhancements_pg_extension: bootstrap
 
 DC := $(shell which docker-compose)
 
+my.env:
+	@if [ ! -f my.env ]; \
+	then \
+	echo "Copying my.env.dist to my.env..."; \
+	cp docker/config/my.env.dist my.env; \
+	fi
+
 .docker-build:
 	make dockerbuild
 
-dockerbuild:
+dockerbuild: my.env
 	${DC} build base
 	${DC} build processor
 	${DC} build webapp
+	${DC} build crontabber
 	touch .docker-build
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
 # postgres going forward and has the needed environment variables.
-dockersetup: .docker-build
+dockersetup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup_postgres.sh
 	${DC} run webapp /app/docker/run_setup_elasticsearch.sh
 
 dockerclean:
 	rm .docker-build
 
-dockertest:
+dockertest: my.env
 	./docker/run_tests_in_docker.sh ${ARGS}
 
-dockertestshell:
+dockertestshell: my.env
 	./docker/run_tests_in_docker.sh --shell
 
-dockerdocs:
+dockerdocs: my.env
 	./docker/run_build_docs.sh
 
-dockerrun:
+dockerupdatedata: my.env
+	./docker/run_update_data.sh
+
+dockerrun: my.env
 	${DC} up webapp processor
 
-dockerstop:
+dockerstop: my.env
 	${DC} stop

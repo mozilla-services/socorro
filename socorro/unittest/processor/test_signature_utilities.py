@@ -6,7 +6,6 @@
 import copy
 import json
 import mock
-from nose.tools import eq_, ok_
 import re
 
 from configman.dotdict import DotDict as CDotDict
@@ -33,17 +32,7 @@ from socorro.unittest.processor import create_basic_fake_processor
 from socorro.unittest.testbase import TestCase
 
 
-class BaseTestClass(TestCase):
-
-    def assert_equal_with_nicer_output(self, expected, received):
-        eq_(
-            expected,
-            received,
-            'expected:\n%s\nbut got:\n%s' % (expected, received)
-        )
-
-
-class TestCSignatureTool(BaseTestClass):
+class TestCSignatureTool(TestCase):
 
     @staticmethod
     def setup_config_c_sig_tool(
@@ -82,21 +71,12 @@ class TestCSignatureTool(BaseTestClass):
 
         s, c = self.setup_config_c_sig_tool()
 
-        self.assert_equal_with_nicer_output(c, s.config)
-        self.assert_equal_with_nicer_output(
-            expected_regex.irrelevant_signature_re,
-            s.irrelevant_signature_re
-        )
-        self.assert_equal_with_nicer_output(
-            expected_regex.prefix_signature_re,
-            s.prefix_signature_re
-        )
-        self.assert_equal_with_nicer_output(
-            expected_regex.signatures_with_line_numbers_re,
-            s.signatures_with_line_numbers_re
-        )
-        eq_(fixup_space.pattern, s.fixup_space.pattern)
-        eq_(fixup_comma.pattern, s.fixup_comma.pattern)
+        assert c == s.config
+        assert expected_regex.irrelevant_signature_re == s.irrelevant_signature_re
+        assert expected_regex.prefix_signature_re == s.prefix_signature_re
+        assert expected_regex.signatures_with_line_numbers_re == s.signatures_with_line_numbers_re
+        assert fixup_space.pattern == s.fixup_space.pattern
+        assert fixup_comma.pattern == s.fixup_comma.pattern
 
     def test_normalize_with_collapse_args(self):
         """test_normalize: bunch of variations"""
@@ -155,43 +135,37 @@ class TestCSignatureTool(BaseTestClass):
         ]
         for args, e in a:
             r = s.normalize_signature(*args)
-            self.assert_equal_with_nicer_output(e, r)
+            assert e == r
 
     def test_generate_1(self):
         """test_generate_1: simple"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghijklmnopqrstuvwxyz')
-        e = 'd | e | f | g'
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'd | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        e = 'd | e | f | g'
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'd | e | f | g'
 
     def test_generate_2(self):
         """test_generate_2: hang"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghijklmnopqrstuvwxyz')
-        e = 'hang | d | e | f | g'
         sig, notes = s.generate(a, hang_type=-1)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'hang | d | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        e = 'hang | d | e | f | g'
         sig, notes = s.generate(a, hang_type=-1)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'hang | d | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        e = 'd | e | f | g'
         sig, notes = s.generate(a, hang_type=0)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'd | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        e = 'chromehang | d | e | f | g'
         sig, notes = s.generate(a, hang_type=1)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'chromehang | d | e | f | g'
 
     def test_generate_2a(self):
         """test_generate_2a: way too long"""
@@ -209,7 +183,7 @@ class TestCSignatureTool(BaseTestClass):
             "| ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" \
             "ffffffffffffff | ggggggggggggggggggggggggggggggggg..."
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = "hang | ddddddddddddddddddddddddddddddddddddddddddddddddddd" \
             "ddddddddddddddddddd " \
             "| eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" \
@@ -217,41 +191,37 @@ class TestCSignatureTool(BaseTestClass):
             "| ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" \
             "ffffffffffffff | gggggggggggggggggggggggggg..."
         sig, notes = s.generate(a, hang_type=-1)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
 
     def test_generate_3(self):
         """test_generate_3: simple sentinel"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel'
-        e = 'sentinel'
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'sentinel'
 
         s, c = self.setup_config_c_sig_tool(
             ['a', 'b', 'c', 'sentinel'],
             ['d', 'e', 'f']
         )
-        e = 'f | e | d | i'
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'f | e | d | i'
 
     def test_generate_4(self):
         """test_generate_4: tuple sentinel"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
-        e = 'd | e | f | g'
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'd | e | f | g'
 
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
         a[22] = 'ff'
-        e = 'sentinel2'
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'sentinel2'
 
         s, c = self.setup_config_c_sig_tool(
             ['a', 'b', 'c', 'sentinel2'],
@@ -260,9 +230,8 @@ class TestCSignatureTool(BaseTestClass):
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
         a[22] = 'ff'
-        e = 'f | e | d | i'
         sig, notes = s.generate(a)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'f | e | d | i'
 
     def test_generate_with_merged_dll(self):
         generator, config = self.setup_config_c_sig_tool(
@@ -277,31 +246,29 @@ class TestCSignatureTool(BaseTestClass):
             'foo32.dll@0x42',
             'g',
         )
-        e = 'd | foo32.dll | g'
         sig, notes = generator.generate(source_list)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'd | foo32.dll | g'
 
         source_list = (
             'foo32.dll',
             'foo32.dll@0x231423',
             'g',
         )
-        e = 'foo32.dll | g'
         sig, notes = generator.generate(source_list)
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == 'foo32.dll | g'
 
 
-class TestJavaSignatureTool(BaseTestClass):
+class TestJavaSignatureTool(TestCase):
     def test_generate_signature_1(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = 17
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = "EMPTY: Java stack trace not in expected format"
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: stack trace not '
              'in expected format']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_2(self):
         config = DotDict()
@@ -313,9 +280,8 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ('SomeJavaException: totally made up '
              'at org.mozilla.lars.myInvention('
              'larsFile.java)')
-        self.assert_equal_with_nicer_output(e, sig)
-        e = []
-        self.assert_equal_with_nicer_output(e, notes)
+        assert sig == e
+        assert notes == []
 
     def test_generate_signature_3(self):
         config = DotDict()
@@ -327,9 +293,8 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ('SomeJavaException: totally made up '
              'at org.mozilla.lars.myInvention('
              'larsFile.java)')
-        self.assert_equal_with_nicer_output(e, sig)
-        e = []
-        self.assert_equal_with_nicer_output(e, notes)
+        assert sig == e
+        assert notes == []
 
     def test_generate_signature_4(self):
         config = DotDict()
@@ -341,10 +306,10 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ('SomeJavaException: '
              'at org.mozilla.lars.myInvention('
              'larsFile.java)')
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: dropped Java exception description due to '
              'length']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_4_2(self):
         config = DotDict()
@@ -356,10 +321,10 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ('SomeJavaException: '
              'at org.mozilla.lars.myInvention('
              'larsFile.java)')
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: dropped Java exception description due to '
              'length']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_5(self):
         config = DotDict()
@@ -371,10 +336,10 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ('SomeJavaException: '
              'at org.mozilla.lars.myInvention('
              'larsFile.java)')
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: stack trace line 1 is '
              'not in the expected format']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_6(self):
         config = DotDict()
@@ -382,10 +347,9 @@ class TestJavaSignatureTool(BaseTestClass):
         java_stack_trace = 'SomeJavaException: totally made up  \n'
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
-
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: stack trace line 2 is missing']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_7(self):
         config = DotDict()
@@ -393,9 +357,9 @@ class TestJavaSignatureTool(BaseTestClass):
         java_stack_trace = 'SomeJavaException: totally made up  '
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: stack trace line 2 is missing']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_8(self):
         config = DotDict()
@@ -403,9 +367,9 @@ class TestJavaSignatureTool(BaseTestClass):
         java_stack_trace = 'SomeJavaException: totally made up  '
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: stack trace line 2 is missing']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_9(self):
         config = DotDict()
@@ -417,11 +381,11 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ('SomeJavaException: '
              'at org.mozilla.lars.myInvention('
              '%s...' % ('t' * 201))
-        self.assert_equal_with_nicer_output(e, sig)
+        assert sig == e
         e = ['JavaSignatureTool: dropped Java exception description due to '
              'length',
              'SignatureTool: signature truncated due to length']
-        self.assert_equal_with_nicer_output(e, notes)
+        assert notes == e
 
     def test_generate_signature_10_no_interference(self):
         """In general addresses of the form @xxxxxxxx are to be replaced with
@@ -436,8 +400,8 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ('SomeJavaException totally made up '
              'at org.mozilla.lars.myInvention('
              'larsFile.java:@abef1234)')
-        self.assert_equal_with_nicer_output(e, sig)
-        self.assert_equal_with_nicer_output([], notes)
+        assert sig == e
+        assert notes == []
 
     def test_generate_signature_11_replace_address(self):
         config = DotDict()
@@ -465,9 +429,8 @@ java.lang.IllegalArgumentException: Given view not a child of android.widget.Abs
         e = ('java.lang.IllegalArgumentException: '
              'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
              'at android.view.ViewGroup.updateViewLayout(ViewGroup.java)')
-        self.assert_equal_with_nicer_output(e, sig)
-        e = []
-        self.assert_equal_with_nicer_output(e, notes)
+        assert sig == e
+        assert notes == []
 
     def test_generate_signature_12_replace_address(self):
         config = DotDict()
@@ -495,9 +458,8 @@ java.lang.IllegalArgumentException: Given view not a child of android.widget.Abs
         e = ('java.lang.IllegalArgumentException: '
              'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
              'at android.view.ViewGroup.updateViewLayout(ViewGroup.java)')
-        self.assert_equal_with_nicer_output(e, sig)
-        e = []
-        self.assert_equal_with_nicer_output(e, notes)
+        assert sig == e
+        assert notes == []
 
     def test_generate_signature_13_replace_address(self):
         config = DotDict()
@@ -531,9 +493,8 @@ java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.G
              'org.mozilla.gecko.GeckoConnectivityReceiver@<addr>: '
              'at android.app.LoadedApk.forgetReceiverDispatcher'
              '(LoadedApk.java)')
-        self.assert_equal_with_nicer_output(e, sig)
-        e = []
-        self.assert_equal_with_nicer_output(e, notes)
+        assert sig == e
+        assert notes == []
 
     def test_generate_signature_14_replace_address(self):
         config = DotDict()
@@ -562,9 +523,8 @@ android.view.WindowManager$BadTokenException: Unable to add window -- token andr
              'Unable to add window -- token android.os.BinderProxy@<addr> '
              'is not valid; is your activity running? '
              'at android.view.ViewRoot.setView(ViewRoot.java)')
-        self.assert_equal_with_nicer_output(e, sig)
-        e = []
-        self.assert_equal_with_nicer_output(e, notes)
+        assert sig == e
+        assert notes == []
 
     def test_generate_signature_15_replace_address(self):
         config = DotDict()
@@ -603,9 +563,8 @@ java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.G
             'org.mozilla.gecko.GeckoNetworkManager@<addr>: '
             'at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java)'
         )
-        self.assert_equal_with_nicer_output(e, sig)
-        e = []
-        self.assert_equal_with_nicer_output(e, notes)
+        assert sig == e
+        assert notes == []
 
 
 #  rules testing section
@@ -1036,8 +995,8 @@ class TestSignatureGeneration(TestCase):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
 
-        ok_(isinstance(sgr.c_signature_tool, CSignatureTool))
-        ok_(isinstance(sgr.java_signature_tool, JavaSignatureTool))
+        assert isinstance(sgr.c_signature_tool, CSignatureTool)
+        assert isinstance(sgr.java_signature_tool, JavaSignatureTool)
 
     def test_create_frame_list_1(self):
         config = self.get_config()
@@ -1055,9 +1014,9 @@ class TestSignatureGeneration(TestCase):
             u'F1315696776________________________________',
             u'F_1428703866________________________________'
         ]
-        eq_(frame_signatures_list, expected)
-        ok_('normalized' in frames_from_json_dump['frames'][0])
-        eq_(frames_from_json_dump['frames'][0]['normalized'], expected[0])
+        assert frame_signatures_list == expected
+        assert 'normalized' in frames_from_json_dump['frames'][0]
+        assert frames_from_json_dump['frames'][0]['normalized'] == expected[0]
 
     def test_create_frame_list_2(self):
         config = self.get_config()
@@ -1069,9 +1028,9 @@ class TestSignatureGeneration(TestCase):
             u'WaitForMultipleObjectsEx',
             u'WaitForMultipleObjectsExImplementation',
         ]
-        eq_(frame_signatures_list, expected)
-        ok_('normalized' in frames_from_json_dump['frames'][0])
-        eq_(frames_from_json_dump['frames'][0]['normalized'], expected[0])
+        assert frame_signatures_list == expected
+        assert 'normalized' in frames_from_json_dump['frames'][0]
+        assert frames_from_json_dump['frames'][0]['normalized'] == expected[0]
 
     def test_action_1(self):
         config = self.get_config()
@@ -1091,20 +1050,20 @@ class TestSignatureGeneration(TestCase):
         }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
+        assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        eq_(
-            processed_crash['signature'],
+        assert (
+            processed_crash['signature'] ==
             'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         )
-        eq_(
-            processor_meta['processor_notes'],
+        assert (
+            processor_meta['processor_notes'] ==
             [
                 'JavaSignatureTool: dropped Java exception description due to '
                 'length'
             ]
         )
-        ok_('proto_signature' not in processed_crash)
+        assert 'proto_signature' not in processed_crash
 
     def test_action_2(self):
         config = self.get_config()
@@ -1117,15 +1076,11 @@ class TestSignatureGeneration(TestCase):
         }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
+        assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        eq_(
-            processed_crash['signature'],
-            'MsgWaitForMultipleObjects | '
-            'F_1152915508__________________________________'
-        )
-        eq_(
-            processed_crash['proto_signature'],
+        expected = 'MsgWaitForMultipleObjects | F_1152915508__________________________________'
+        assert processed_crash['signature'] == expected
+        expected = (
             'NtWaitForMultipleObjects | WaitForMultipleObjectsEx | '
             'WaitForMultipleObjectsExImplementation | '
             'RealMsgWaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
@@ -1135,7 +1090,8 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        eq_(processor_meta['processor_notes'], [])
+        assert processed_crash['proto_signature'] == expected
+        assert processor_meta['processor_notes'] == []
 
     def test_action_2_with_templates(self):
         config = self.get_config()
@@ -1148,14 +1104,10 @@ class TestSignatureGeneration(TestCase):
         }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
+        assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        eq_(
-            processed_crash['signature'],
-            'Alpha<T>::Echo<T>'
-        )
-        eq_(
-            processed_crash['proto_signature'],
+        assert processed_crash['signature'] == 'Alpha<T>::Echo<T>'
+        expected = (
             'NtWaitForMultipleObjects | Alpha<T>::Echo<T> | '
             'WaitForMultipleObjectsExImplementation | '
             'RealMsgWaitForMultipleObjectsEx | '
@@ -1166,7 +1118,8 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        eq_(processor_meta['processor_notes'], [])
+        assert processed_crash['proto_signature'] == expected
+        assert processor_meta['processor_notes'] == []
 
     def test_action_2_with_templates_and_special_case(self):
         config = self.get_config()
@@ -1179,15 +1132,11 @@ class TestSignatureGeneration(TestCase):
         }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
+        assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        eq_(
-            processed_crash['signature'],
-            '<name omitted> | '
-            'IPC::ParamTraits<mozilla::net::NetAddr>::Write'
-        )
-        eq_(
-            processed_crash['proto_signature'],
+        expected = '<name omitted> | IPC::ParamTraits<mozilla::net::NetAddr>::Write'
+        assert processed_crash['signature'] == expected
+        expected = (
             'NtWaitForMultipleObjects | '
             '<name omitted> | '
             'IPC::ParamTraits<mozilla::net::NetAddr>::Write | '
@@ -1199,7 +1148,8 @@ class TestSignatureGeneration(TestCase):
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        eq_(processor_meta['processor_notes'], [])
+        assert processed_crash['proto_signature'] == expected
+        assert processor_meta['processor_notes'] == []
 
     def test_action_3(self):
         config = self.get_config()
@@ -1219,23 +1169,15 @@ class TestSignatureGeneration(TestCase):
         }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
+        assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        eq_(
-            processed_crash['signature'],
-            'EMPTY: no crashing thread identified'
-        )
-        eq_(
-            processed_crash['proto_signature'],
-            ''
-        )
-        eq_(
-            processor_meta['processor_notes'],
-            [
-                'CSignatureTool: No signature could be created because we do '
-                'not know which thread crashed'
-            ]
-        )
+        assert processed_crash['signature'] == 'EMPTY: no crashing thread identified'
+        assert processed_crash['proto_signature'] == ''
+        expected = [
+            'CSignatureTool: No signature could be created because we do '
+            'not know which thread crashed'
+        ]
+        assert processor_meta['processor_notes'] == expected
 
     def test_lower_case_modules(self):
         config = self.get_config()
@@ -1273,17 +1215,12 @@ class TestSignatureGeneration(TestCase):
         }
 
         # the call to be tested
-        ok_(sgr._action(raw_crash, {}, processed_crash, processor_meta))
+        assert sgr._action(raw_crash, {}, processed_crash, processor_meta) is True
 
-        eq_(
-            processed_crash['signature'],
-            'user2.dll@0x20869'
-        )
-        eq_(
-            processed_crash['proto_signature'],
-            '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
-        )
-        eq_(processor_meta['processor_notes'], [])
+        assert processed_crash['signature'] == 'user2.dll@0x20869'
+        expected = '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
+        assert processed_crash['proto_signature'] == expected
+        assert processor_meta['processor_notes'] == []
 
 
 class TestOOMSignature(TestCase):
@@ -1296,7 +1233,7 @@ class TestOOMSignature(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate(self):
         processed_crash = {
@@ -1308,7 +1245,7 @@ class TestOOMSignature(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_predicate_signature_fragment_1(self):
         processed_crash = {
@@ -1318,7 +1255,7 @@ class TestOOMSignature(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_predicate_signature_fragment_2(self):
         processed_crash = {
@@ -1328,7 +1265,7 @@ class TestOOMSignature(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_predicate_signature_fragment_3(self):
         processed_crash = {
@@ -1338,7 +1275,7 @@ class TestOOMSignature(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = OOMSignature(fake_processor.config)
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, fake_processor)
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_action_success(self):
         processed_crash = {
@@ -1349,9 +1286,9 @@ class TestOOMSignature(TestCase):
         rule = OOMSignature(fake_processor.config)
         action_result = rule.action(raw_crash, {}, processed_crash, fake_processor)
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'OOM | unknown | hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'OOM | unknown | hello'
 
     def test_action_small(self):
         processed_crash = {
@@ -1365,9 +1302,9 @@ class TestOOMSignature(TestCase):
         rule = OOMSignature(fake_processor.config)
         action_result = rule.action(raw_crash, {}, processed_crash, fake_processor)
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'OOM | small')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'OOM | small'
 
     def test_action_large(self):
         processed_crash = {
@@ -1381,9 +1318,9 @@ class TestOOMSignature(TestCase):
         rule = OOMSignature(fake_processor.config)
         action_result = rule.action(raw_crash, {}, processed_crash, fake_processor)
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'OOM | large | hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'OOM | large | hello'
 
 
 class TestAbortSignature(TestCase):
@@ -1404,7 +1341,7 @@ class TestAbortSignature(TestCase):
         }
 
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_predicate_no_match(self):
         config = self.get_config()
@@ -1416,7 +1353,7 @@ class TestAbortSignature(TestCase):
         raw_crash = {}
 
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate_empty_message(self):
         config = self.get_config()
@@ -1428,7 +1365,7 @@ class TestAbortSignature(TestCase):
             'AbortMessage': ''
         }
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_action_success(self):
         config = self.get_config()
@@ -1440,9 +1377,9 @@ class TestAbortSignature(TestCase):
             'AbortMessage': 'unknown'
         }
         action_result = rule.action(raw_crash, {}, processed_crash, {})
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'Abort | unknown | hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'Abort | unknown | hello'
 
     def test_action_success_long_message(self):
         config = self.get_config()
@@ -1457,10 +1394,10 @@ class TestAbortSignature(TestCase):
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
         expected_sig = 'Abort | {}... | hello'.format('a' * 77)
-        eq_(processed_crash['signature'], expected_sig)
+        assert processed_crash['signature'] == expected_sig
 
     def test_action_success_remove_unwanted_parts(self):
         config = self.get_config()
@@ -1475,9 +1412,9 @@ class TestAbortSignature(TestCase):
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'Abort | foo bar line 42 | hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'Abort | foo bar line 42 | hello'
 
         # Test with a file name and line number.
         processed_crash['signature'] = 'hello'
@@ -1489,9 +1426,9 @@ class TestAbortSignature(TestCase):
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'Abort | unsafe destruction | hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'Abort | unsafe destruction | hello'
 
         # Test with a message that lacks interesting content.
         processed_crash['signature'] = 'hello'
@@ -1499,9 +1436,9 @@ class TestAbortSignature(TestCase):
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'Abort | hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'Abort | hello'
 
         # Test with another message that lacks interesting content.
         processed_crash['signature'] = 'hello'
@@ -1512,9 +1449,9 @@ class TestAbortSignature(TestCase):
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
 
-        ok_(action_result)
-        eq_(processed_crash['original_signature'], 'hello')
-        eq_(processed_crash['signature'], 'Abort | hello')
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'Abort | hello'
 
 
 class TestSigTrim(TestCase):
@@ -1529,11 +1466,11 @@ class TestSigTrim(TestCase):
 
         processed_crash = {}
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
         processed_crash['signature'] = 42
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate(self):
         config = self.get_config()
@@ -1544,7 +1481,7 @@ class TestSigTrim(TestCase):
         }
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_action_success(self):
         config = self.get_config()
@@ -1553,18 +1490,18 @@ class TestSigTrim(TestCase):
             'signature': 'all   good'
         }
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(action_result)
-        eq_(processed_crash['signature'], 'all   good')
+        assert action_result is True
+        assert processed_crash['signature'] == 'all   good'
 
         processed_crash['signature'] = 'all   good     '
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(action_result)
-        eq_(processed_crash['signature'], 'all   good')
+        assert action_result is True
+        assert processed_crash['signature'] == 'all   good'
 
         processed_crash['signature'] = '    all   good  '
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(action_result)
-        eq_(processed_crash['signature'], 'all   good')
+        assert action_result is True
+        assert processed_crash['signature'] == 'all   good'
 
 
 class TestSigTrunc(TestCase):
@@ -1576,7 +1513,7 @@ class TestSigTrunc(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = SigTrunc(fake_processor.config)
         predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate(self):
         processed_crash = {
@@ -1585,7 +1522,7 @@ class TestSigTrunc(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = SigTrunc(fake_processor.config)
         predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_action_success(self):
         processed_crash = {
@@ -1594,30 +1531,40 @@ class TestSigTrunc(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = SigTrunc(fake_processor.config)
         action_result = rule.action({}, {}, processed_crash, fake_processor)
-        ok_(action_result)
-        eq_(len(processed_crash['signature']), 255)
-        ok_(processed_crash['signature'].endswith('9...'))
+        assert action_result is True
+        assert len(processed_crash['signature']) == 255
+        assert processed_crash['signature'].endswith('9...')
 
 
 class TestStackwalkerErrorSignatureRule(TestCase):
 
-    def test_predicate_no_match(self):
+    def test_predicate_no_match_signature(self):
         processed_crash = {
             'signature': '0' * 100
         }
         fake_processor = create_basic_fake_processor()
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
         predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
-        ok_(not predicate_result)
+        assert predicate_result is False
 
-    def test_predicate(self):
+    def test_predicate_no_match_missing_mdsw_status_string(self):
         processed_crash = {
             'signature': 'EMPTY: like my soul'
         }
         fake_processor = create_basic_fake_processor()
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
         predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
-        ok_(predicate_result)
+        assert predicate_result is False
+
+    def test_predicate(self):
+        processed_crash = {
+            'signature': 'EMPTY: like my soul',
+            'mdsw_status_string': 'catastrophic stackwalker failure'
+        }
+        fake_processor = create_basic_fake_processor()
+        rule = StackwalkerErrorSignatureRule(fake_processor.config)
+        predicate_result = rule.predicate({}, {}, processed_crash, fake_processor)
+        assert predicate_result is True
 
     def test_action_success(self):
         processed_crash = {
@@ -1627,8 +1574,8 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         fake_processor = create_basic_fake_processor()
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
         action_result = rule.action({}, {}, processed_crash, fake_processor)
-        ok_(action_result)
-        eq_(processed_crash['signature'], 'EMPTY: like my soul; catastrophic stackwalker failure')
+        assert action_result is True
+        assert processed_crash['signature'] == 'EMPTY: like my soul; catastrophic stackwalker failure'
 
 
 class TestSignatureWatchDogRule(TestCase):
@@ -1652,10 +1599,10 @@ class TestSignatureWatchDogRule(TestCase):
         config = self.get_config()
         srwd = SignatureRunWatchDog(config)
 
-        ok_(isinstance(srwd.c_signature_tool, CSignatureTool))
-        ok_(isinstance(srwd.java_signature_tool, JavaSignatureTool))
+        assert isinstance(srwd.c_signature_tool, CSignatureTool)
+        assert isinstance(srwd.java_signature_tool, JavaSignatureTool)
 
-        eq_(srwd._get_crashing_thread({}), 0)
+        assert srwd._get_crashing_thread({}) == 0
 
     def test_predicate(self):
         config = self.get_config()
@@ -1664,17 +1611,17 @@ class TestSignatureWatchDogRule(TestCase):
         fake_processed_crash = {
             'signature': "I'm not real",
         }
-        ok_(not srwd.predicate({}, {}, fake_processed_crash, {}))
+        assert srwd.predicate({}, {}, fake_processed_crash, {}) is False
 
         fake_processed_crash = {
             'signature': "mozilla::`anonymous namespace''::RunWatchdog(void*)",
         }
-        ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
+        assert srwd.predicate({}, {}, fake_processed_crash, {}) is True
 
         fake_processed_crash = {
             'signature': "mozilla::(anonymous namespace)::RunWatchdog",
         }
-        ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
+        assert srwd.predicate({}, {}, fake_processed_crash, {}) is True
 
     def test_action(self):
         config = self.get_config()
@@ -1688,15 +1635,15 @@ class TestSignatureWatchDogRule(TestCase):
         }
 
         # the call to be tested
-        ok_(sgr._action({}, {}, processed_crash, processor_meta))
+        assert sgr._action({}, {}, processed_crash, processor_meta) is True
 
         # Verify the signature has been re-generated based on thread 0.
-        eq_(
-            processed_crash['signature'],
+        expected = (
             'shutdownhang | MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________'
         )
-        eq_(processor_meta['processor_notes'], [])
+        assert processed_crash['signature'] == expected
+        assert processor_meta['processor_notes'] == []
 
 
 class TestSignatureJitCategory(TestCase):
@@ -1714,15 +1661,15 @@ class TestSignatureJitCategory(TestCase):
         }
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
         processed_crash['classifications']['jit'] = {}
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
         processed_crash['classifications']['jit']['category'] = ''
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate(self):
         config = self.get_config()
@@ -1737,7 +1684,7 @@ class TestSignatureJitCategory(TestCase):
         }
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_action_success(self):
         config = self.get_config()
@@ -1756,12 +1703,10 @@ class TestSignatureJitCategory(TestCase):
         }
 
         action_result = rule.action({}, {}, processed_crash, processor_meta)
-        ok_(action_result)
-        eq_(processed_crash['signature'], 'jit | JIT Crash')
-        eq_(
-            processor_meta['processor_notes'],
-            ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
-        )
+        assert action_result is True
+        assert processed_crash['signature'] == 'jit | JIT Crash'
+        expected = ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
+        assert processor_meta['processor_notes'] == expected
 
 
 class TestSignatureIPCChannelError(TestCase):
@@ -1776,11 +1721,11 @@ class TestSignatureIPCChannelError(TestCase):
 
         raw_crash = {}
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
         raw_crash['ipc_channel_error'] = ''
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate(self):
         config = self.get_config()
@@ -1791,7 +1736,7 @@ class TestSignatureIPCChannelError(TestCase):
         }
 
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_action_success(self):
         config = self.get_config()
@@ -1808,15 +1753,11 @@ class TestSignatureIPCChannelError(TestCase):
         }
 
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
-        ok_(action_result)
-        eq_(
-            processed_crash['signature'],
-            'IPCError-content | {}'.format(('ipc' * 50)[:100])
-        )
-        eq_(
-            processor_meta['processor_notes'],
-            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
-        )
+        assert action_result is True
+        expected = 'IPCError-content | {}'.format(('ipc' * 50)[:100])
+        assert processed_crash['signature'] == expected
+        expected = ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        assert processor_meta['processor_notes'] == expected
 
         # Now test with a browser crash.
         processed_crash['signature'] = 'foo::bar'
@@ -1826,16 +1767,12 @@ class TestSignatureIPCChannelError(TestCase):
         }
 
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
-        ok_(action_result)
+        assert action_result is True
 
-        eq_(
-            processed_crash['signature'],
-            'IPCError-browser | {}'.format(('ipc' * 50)[:100])
-        )
-        eq_(
-            processor_meta['processor_notes'],
-            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
-        )
+        expected = 'IPCError-browser | {}'.format(('ipc' * 50)[:100])
+        assert processed_crash['signature'] == expected
+        expected = ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        assert processor_meta['processor_notes'] == expected
 
 
 class TestSignatureShutdownTimeout(TestCase):
@@ -1850,7 +1787,7 @@ class TestSignatureShutdownTimeout(TestCase):
 
         raw_crash = DotDict()
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate(self):
         config = self.get_config()
@@ -1861,7 +1798,7 @@ class TestSignatureShutdownTimeout(TestCase):
         }
 
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_action_missing_valueerror(self):
         config = self.get_config()
@@ -1877,21 +1814,13 @@ class TestSignatureShutdownTimeout(TestCase):
             'processor_notes': []
         }
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
-        ok_(action_result)
-        eq_(
-            processed_crash['signature'],
-            'AsyncShutdownTimeout | UNKNOWN'
-        )
+        assert action_result is True
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
 
-        ok_(
-            'Error parsing AsyncShutdownTimeout:' in
-            processor_meta['processor_notes'][0]
-        )
-        ok_('Expected object or value' in processor_meta['processor_notes'][0])
-        eq_(
-            processor_meta['processor_notes'][1],
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        assert 'Error parsing AsyncShutdownTimeout:' in processor_meta['processor_notes'][0]
+        assert 'Expected object or value' in processor_meta['processor_notes'][0]
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][1] == expected
 
     def test_action_missing_keyerror(self):
         config = self.get_config()
@@ -1909,20 +1838,13 @@ class TestSignatureShutdownTimeout(TestCase):
             'processor_notes': []
         }
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
-        ok_(action_result)
-        eq_(
-            processed_crash['signature'],
-            'AsyncShutdownTimeout | UNKNOWN'
-        )
+        assert action_result is True
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
 
-        eq_(
-            processor_meta['processor_notes'][0],
-            "Error parsing AsyncShutdownTimeout: 'phase'"
-        )
-        eq_(
-            processor_meta['processor_notes'][1],
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        expected = "Error parsing AsyncShutdownTimeout: 'phase'"
+        assert processor_meta['processor_notes'][0] == expected
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][1] == expected
 
     def test_action_success(self):
         config = self.get_config()
@@ -1945,16 +1867,11 @@ class TestSignatureShutdownTimeout(TestCase):
         }
 
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
-        ok_(action_result)
+        assert action_result is True
 
-        eq_(
-            processed_crash['signature'],
-            'AsyncShutdownTimeout | beginning | A,B'
-        )
-        eq_(
-            processor_meta['processor_notes'][0],
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | A,B'
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][0] == expected
 
     def test_action_success_string_conditions(self):
         config = self.get_config()
@@ -1974,16 +1891,11 @@ class TestSignatureShutdownTimeout(TestCase):
         }
 
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
-        ok_(action_result)
+        assert action_result is True
 
-        eq_(
-            processed_crash['signature'],
-            'AsyncShutdownTimeout | beginning | A,B,C'
-        )
-        eq_(
-            processor_meta['processor_notes'][0],
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | A,B,C'
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][0] == expected
 
     def test_action_success_empty_conditions_key(self):
         config = self.get_config()
@@ -2003,16 +1915,11 @@ class TestSignatureShutdownTimeout(TestCase):
         }
 
         action_result = rule.action(raw_crash, {}, processed_crash, processor_meta)
-        ok_(action_result)
+        assert action_result is True
 
-        eq_(
-            processed_crash['signature'],
-            'AsyncShutdownTimeout | beginning | (none)'
-        )
-        eq_(
-            processor_meta['processor_notes'][0],
-            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        )
+        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | (none)'
+        expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert processor_meta['processor_notes'][0] == expected
 
 
 class TestSignatureIPCMessageName(TestCase):
@@ -2027,11 +1934,11 @@ class TestSignatureIPCMessageName(TestCase):
 
         raw_crash = {}
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
         raw_crash['IPCMessageName'] = ''
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
-        ok_(not predicate_result)
+        assert predicate_result is False
 
     def test_predicate(self):
         config = self.get_config()
@@ -2045,7 +1952,7 @@ class TestSignatureIPCMessageName(TestCase):
         }
 
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
-        ok_(predicate_result)
+        assert predicate_result is True
 
     def test_action_success(self):
         config = self.get_config()
@@ -2057,9 +1964,6 @@ class TestSignatureIPCMessageName(TestCase):
             'IPCMessageName': 'foo, bar'
         }
         action_result = rule.action(raw_crash, {}, processed_crash, {})
-        ok_(action_result)
+        assert action_result is True
 
-        eq_(
-            processed_crash['signature'],
-            'fooo::baar | IPC_Message_Name=foo, bar'
-        )
+        assert processed_crash['signature'] == 'fooo::baar | IPC_Message_Name=foo, bar'

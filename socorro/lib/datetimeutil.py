@@ -10,15 +10,15 @@ import json
 UTC = isodate.UTC
 
 
-def datetimeFromISOdateString(s):
+def datetime_from_isodate_string(s):
     """Take an ISO date string of the form YYYY-MM-DDTHH:MM:SS.S
     and convert it into an instance of datetime.datetime
     """
     return string_to_datetime(s)
 
 
-def strHoursToTimeDelta(hoursAsString):
-    return datetime.timedelta(hours=int(hoursAsString))
+def str_hours_to_time_delta(hours_as_string):
+    return datetime.timedelta(hours=int(hours_as_string))
 
 
 def utc_now():

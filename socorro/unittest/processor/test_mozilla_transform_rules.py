@@ -14,7 +14,7 @@ from configman.dotdict import DotDict as CDotDict
 
 from socorro.unittest.testbase import TestCase
 from socorro.lib.util import DotDict
-from socorro.lib.datetimeutil import datetimeFromISOdateString
+from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.processor.mozilla_transform_rules import (
     ProductRule,
     UserDataRule,
@@ -569,7 +569,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -578,7 +578,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 1336519554)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('2012-05-08 23:25:54+00:00')
+            datetime_from_isodate_string('2012-05-08 23:25:54+00:00')
         )
         eq_(processed_crash.install_age, 1079662)
         eq_(processed_crash.uptime, 20116)
@@ -600,7 +600,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -609,7 +609,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 1336519554)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('2012-05-08 23:25:54+00:00')
+            datetime_from_isodate_string('2012-05-08 23:25:54+00:00')
         )
         eq_(processed_crash.install_age, 1079662)
         eq_(processed_crash.uptime, 20116)
@@ -637,7 +637,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -646,7 +646,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 0)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('1970-01-01 00:00:00+00:00')
+            datetime_from_isodate_string('1970-01-01 00:00:00+00:00')
         )
         eq_(processed_crash.install_age, -1335439892)
         eq_(processed_crash.uptime, 0)
@@ -677,7 +677,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -686,7 +686,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 1336519554)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('2012-05-08 23:25:54+00:00')
+            datetime_from_isodate_string('2012-05-08 23:25:54+00:00')
         )
         eq_(processed_crash.install_age, 1079662)
         eq_(processed_crash.uptime, 0)
@@ -715,7 +715,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -724,7 +724,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 1336519554)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('2012-05-08 23:25:54+00:00')
+            datetime_from_isodate_string('2012-05-08 23:25:54+00:00')
         )
         eq_(processed_crash.install_age, 1079662)
         eq_(processed_crash.uptime, 0)
@@ -748,7 +748,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -757,7 +757,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 1336519554)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('2012-05-08 23:25:54+00:00')
+            datetime_from_isodate_string('2012-05-08 23:25:54+00:00')
         )
         eq_(processed_crash.install_age, 1079662)
         eq_(processed_crash.uptime, 1336519554)
@@ -786,7 +786,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -795,7 +795,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 1336519554)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('2012-05-08 23:25:54+00:00')
+            datetime_from_isodate_string('2012-05-08 23:25:54+00:00')
         )
         eq_(processed_crash.install_age, 1336519554)
         eq_(processed_crash.uptime, 20116)
@@ -824,7 +824,7 @@ class TestDatesAndTimesRule(TestCase):
 
         eq_(
             processed_crash.submitted_timestamp,
-            datetimeFromISOdateString(raw_crash.submitted_timestamp)
+            datetime_from_isodate_string(raw_crash.submitted_timestamp)
         )
         eq_(
             processed_crash.date_processed,
@@ -833,7 +833,7 @@ class TestDatesAndTimesRule(TestCase):
         eq_(processed_crash.crash_time, 1336519554)
         eq_(
             processed_crash.client_crash_date,
-            datetimeFromISOdateString('2012-05-08 23:25:54+00:00')
+            datetime_from_isodate_string('2012-05-08 23:25:54+00:00')
         )
         eq_(processed_crash.install_age, 1079662)
         eq_(processed_crash.uptime, 20116)

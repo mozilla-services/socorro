@@ -22,6 +22,10 @@ The configuration is done using ``configman`` and it looks something like this::
 The default config lives in ``socorro/cron/crontabber_app.py`` as
 ``DEFAULT_JOBS``.
 
+.. Warning::
+
+   August 17th, 2017: Everything below this point is outdated.
+
 
 crontab runs crontabber
 =======================
