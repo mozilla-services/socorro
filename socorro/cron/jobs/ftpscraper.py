@@ -5,6 +5,7 @@ import os
 import json
 import urlparse
 import fnmatch
+import functools
 
 import mock
 import lxml.html
@@ -23,6 +24,18 @@ from socorro.cron import buildutil
 
 from socorro.app.socorro_app import App, main
 from socorro.lib.datetimeutil import string_to_datetime
+
+
+def memoize_download(fun):
+    cache = {}
+
+    @functools.wraps(fun)
+    def inner(self, url):
+        if url not in cache:
+            cache[url] = fun(self, url)
+        return cache[url]
+
+    return inner
 
 
 class ScrapersMixin(object):
@@ -139,8 +152,21 @@ class ScrapersMixin(object):
         )
 
         for platform in possible_platforms:
-            platform_urls = self.get_links(latest_build, starts_with=platform)
+            platform_urls = self.get_links(
+                latest_build,
+                starts_with=platform
+            )
+
             for platform_url in platform_urls:
+                # We're only interested in going into depper directories.
+                # Inside a directory like 'firefox/candidates/45.3.0esr-candidates/build1/'
+                # there is likely to be regular files that match the
+                # 'possible_platforms' above. Skip those that aren't directories.
+                # This means we're much less likely to open URLs like
+                # '...45.3.0esr-candidates/build1/en-US/' which'll 404
+                if not platform_url.endswith('/'):
+                    continue
+
                 platform_local_url = urlparse.urljoin(platform_url, 'en-US/')
                 json_files = self.get_links(
                     platform_local_url,
@@ -270,12 +296,16 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             HTTPAdapter(max_retries=self.config.retries)
         )
 
+    @memoize_download
     def download(self, url):
         response = self.session.get(
             url,
             timeout=(self.config.connect_timeout, self.config.read_timeout)
         )
         if response.status_code == 404:
+            self.config.logger.warning(
+                '404 when downloading %s', url
+            )
             # Legacy. Return None on any 404 error.
             return
         assert response.status_code == 200, response.status_code
@@ -312,6 +342,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         self.scrape_json_nightlies(connection, product_name, date)
 
     def _insert_build(self, cursor, *args, **kwargs):
+        self.config.logger.debug('adding %s', args)
         if self.config.dry_run:
             print "INSERT BUILD"
             print args
@@ -374,7 +405,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         version > '26.0' and
                         kvpairs.get('buildID')
                     ):
-                        logger.debug('is final beta version %s', version)
+                        logger.debug('adding final beta version %s', version)
                         repository = 'mozilla-beta'
                         build_id = kvpairs['buildID']
                         build_type = 'beta'

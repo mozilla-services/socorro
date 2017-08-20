@@ -22,14 +22,6 @@ class IntegrationTestBugs(PostgreSQLTestCase):
 
         # Insert data
         cursor.execute("""
-            INSERT INTO bugs VALUES
-            (1),
-            (2),
-            (3),
-            (4);
-        """)
-
-        cursor.execute("""
             INSERT INTO bug_associations
             (signature, bug_id)
             VALUES
@@ -57,7 +49,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE bug_associations, bugs
+            TRUNCATE bug_associations
             CASCADE
         """)
         self.connection.commit()

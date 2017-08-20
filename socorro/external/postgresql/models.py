@@ -572,16 +572,6 @@ class AlembicVersion(DeclarativeBase):
     __mapper_args__ = {"primary_key": (version_num)}
 
 
-class Bug(DeclarativeBase):
-    __tablename__ = 'bugs'
-
-    # column definitions
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    status = Column(u'status', TEXT())
-    resolution = Column(u'resolution', TEXT())
-    short_desc = Column(u'short_desc', TEXT())
-
-
 class BugAssociation(DeclarativeBase):
     __tablename__ = 'bug_associations'
 
@@ -671,15 +661,6 @@ class CrashesByUserBuild(DeclarativeBase):
     # relationship definitions
     crash_types = relationship(
         'CrashType', primaryjoin='CrashesByUserBuild.crash_type_id==CrashType.crash_type_id')
-
-
-class DataDictionary(DeclarativeBase):
-    __tablename__ = 'data_dictionary'
-
-    # column definitions
-    raw_field = Column(u'raw_field', TEXT(), nullable=False, primary_key=True)
-    transforms = Column(u'transforms', JSON())
-    product = Column(u'product', TEXT())
 
 
 class Domain(DeclarativeBase):

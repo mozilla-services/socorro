@@ -395,55 +395,6 @@ class TestModels(DjangoTestCase):
         })
         eq_(r, True)
 
-    @mock.patch('requests.get')
-    def test_adu_by_signature(self, rget):
-        model = models.AduBySignature
-        api = model()
-
-        def mocked_get(**options):
-            ok_('product_name' in options)
-            eq_(options['product_name'], 'WaterWolf')
-
-            ok_('signature' in options)
-            eq_(options['signature'], 'FakeSignature1')
-
-            ok_('channel' in options)
-            eq_(options['channel'], 'nightly')
-
-            return {
-                'hits': [
-                    {
-                        'build_date': '2014-04-01',
-                        'os_name': 'Windows',
-                        'buildid': '20140401000000',
-                        'adu_count': 1,
-                        'crash_count': 1,
-                        'adu_date': '2014-04-01',
-                        'signature': 'FakeSignature1',
-                        'channel': 'nightly'},
-                    {
-                        'build_date': '2014-04-01',
-                        'os_name': 'Windows',
-                        'buildid': '20140401000001',
-                        'adu_count': 2,
-                        'crash_count': 2,
-                        'adu_date': '2014-04-01',
-                        'signature': 'FakeSignature2',
-                        'channel': 'nightly'
-                    },
-                ],
-                'total': 2,
-            }
-
-        models.AduBySignature.implementation().get.side_effect = mocked_get
-
-        r = api.get(
-            product_name='WaterWolf',
-            signature='FakeSignature1',
-            channel='nightly',
-        )
-        eq_(r['total'], 2)
-
     def test_platforms(self):
         api = models.Platforms()
 

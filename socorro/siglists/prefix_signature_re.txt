@@ -9,6 +9,7 @@ Abort
 .*abort
 .*alloc_impl
 alloc::oom::default_oom_handler
+alloc::oom::oom
 _alloca_probe.*
 __android_log_assert
 arena_.*

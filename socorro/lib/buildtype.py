@@ -20,6 +20,7 @@ class BuildTypeType(types.UserDefinedType):
     def __repr__(self):
         return 'build_type'
 
+
 class BuildTypeEnumType(types.UserDefinedType):
     name = 'build_type_enum'
 
