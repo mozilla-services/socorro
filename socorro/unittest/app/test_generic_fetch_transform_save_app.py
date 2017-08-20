@@ -2,8 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_, assert_raises
 from mock import Mock
+
+import pytest
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
@@ -50,12 +51,8 @@ class TestFetchTransformSaveApp(TestCase):
 
         fts_app = TestFTSAppClass(config)
         fts_app.main()
-        ok_(len(fts_app.the_list) == 5,
-                        'expected to do 5 inserts, '
-                          'but %d were done instead' % len(fts_app.the_list))
-        ok_(sorted(fts_app.the_list) == range(5),
-                        'expected %s, but got %s' % (range(5),
-                                                     sorted(fts_app.the_list)))
+        assert len(fts_app.the_list) == 5
+        assert sorted(fts_app.the_list) == range(5)
 
     def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(FetchTransformSaveApp):
@@ -131,14 +128,12 @@ class TestFetchTransformSaveApp(TestCase):
         source = fts_app.source
         destination = fts_app.destination
 
-        eq_(source.store, destination.store)
-        eq_(len(destination.dumps), 4)
-        eq_(destination.dumps['1237'],
-                         source.get_raw_dumps('1237'))
+        assert source.store == destination.store
+        assert len(destination.dumps) == 4
+        assert destination.dumps['1237'] == source.get_raw_dumps('1237')
         # ensure that each storage system had its close called
-        eq_(source.number_of_close_calls, 1)
-        eq_(destination.number_of_close_calls, 1)
-
+        assert source.number_of_close_calls == 1
+        assert destination.number_of_close_calls == 1
 
     def test_source_iterator(self):
 
@@ -204,11 +199,11 @@ class TestFetchTransformSaveApp(TestCase):
             if x == 0:
                 # the iterator is exhausted on the 1st try and should have
                 # yielded a None before starting over
-                ok_(y is None)
+                assert y is None
             elif x < 1000:
                 if x - 1 != y[0][0] and not error_detected:
                     error_detected = True
-                    eq_(x, y,'iterator fails on iteration %d: %s' % (x, y))
+                    assert x == y, 'iterator fails on iteration %d: %s' % (x, y)
                 # invoke that finished func to ensure that we've got the
                 # right object
                 try:
@@ -218,8 +213,8 @@ class TestFetchTransformSaveApp(TestCase):
             else:
                 if y is not None and not error_detected:
                     error_detected = True
-                    ok_(x is None, 'iterator fails on iteration %d: %s' % (x, y))
-        eq_(faked_finished_func.call_count, 999 - no_finished_function_counter)
+                    assert x is None, 'iterator fails on iteration %d: %s' % (x, y)
+        assert faked_finished_func.call_count == (999 - no_finished_function_counter)
 
     def test_no_source(self):
 
@@ -253,7 +248,8 @@ class TestFetchTransformSaveApp(TestCase):
 
         fts_app = FetchTransformSaveApp(config)
 
-        assert_raises(TypeError, fts_app.main)
+        with pytest.raises(TypeError):
+            fts_app.main()
 
     def test_no_destination(self):
         class FakeStorageSource(object):
@@ -305,4 +301,5 @@ class TestFetchTransformSaveApp(TestCase):
 
         fts_app = FetchTransformSaveApp(config)
 
-        assert_raises(TypeError, fts_app.main)
+        with pytest.raises(TypeError):
+            fts_app.main()
