@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     'crashstats.tokens',
     'crashstats.tools',
     'crashstats.topcrashers',
+    'crashstats.sources',
 
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
@@ -220,7 +221,7 @@ VCS_MAPPINGS = {
     },
     's3': {
         'gecko-generated-sources': (
-            '/source/generated/?url=https://gecko-generated-so'
+            '/sources/highlight/?url=https://gecko-generated-so'
             'urces.s3.amazonaws.com/%(file)s#l-%(line)s'
         ),
     },
