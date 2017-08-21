@@ -1,3 +1,4 @@
+import copy
 import datetime
 from cStringIO import StringIO
 from unittest import TestCase
@@ -145,6 +146,62 @@ class TestUtils(TestCase):
             'offset': '0x1234',
         }
         eq_(actual, expected)
+
+    def test_enhance_frame_s3_generated_sources(self):
+        """Test a specific case when the frame references a S3 vcs
+        and the file contains a really long sha string"""
+        original_frame = {
+            'file': (
+                's3:gecko-generated-sources:36d62ce2ec2925f4a13e44fe534b246c23b'
+                '4b3d5407884d3bbfc9b0d9aebe4929985935ae582704c06e994ece0d1e7652'
+                '8ff1edf4543e400d0aaa8f7251b15ca/ipc/ipdl/PCompositorBridgeChild.cpp:'
+            ),
+            'frame': 22,
+            'function': (
+                'mozilla::layers::PCompositorBridgeChild::OnMessageReceived(IP'
+                'C::Message const&)'
+            ),
+            'function_offset': '0xd9d',
+            'line': 1495,
+            'module': 'XUL',
+            'module_offset': '0x7c50bd',
+            'normalized': 'mozilla::layers::PCompositorBridgeChild::OnMessageReceived',
+            'offset': '0x108b7b0bd',
+            'short_signature': 'mozilla::layers::PCompositorBridgeChild::OnMessageReceived',
+            'signature': (
+                'mozilla::layers::PCompositorBridgeChild::OnMessageReceived(IP'
+                'C::Message const&)'
+            ),
+            'trust': 'cfi'
+        }
+        # Remember, enhance_frame() mutates the dict.
+        frame = copy.copy(original_frame)
+        utils.enhance_frame(frame, {})
+        # Because it can't find a mapping in 'vcs_mappings', the frame's
+        # 'file', the default behavior is to extract just the file's basename.
+        frame['file'] = 'PCompositorBridgeChild.cpp'
+
+        # Try again, now with 's3' in vcs_mappings.
+        frame = copy.copy(original_frame)
+        utils.enhance_frame(frame, {
+            's3': {
+                'gecko-generated-sources': (
+                    'https://example.com/%(file)s#l-%(line)s'
+                ),
+            },
+        })
+        # There's a new key in the frame now. This is what's used in the
+        # <a href> in the HTML.
+        ok_(frame['source_link'])
+        eq_(
+            frame['source_link'],
+            'https://example.com/36d62ce2ec2925f4a13e44fe534b246c23b4b3d540788'
+            '4d3bbfc9b0d9aebe4929985935ae582704c06e994ece0d1e76528ff1edf4543e4'
+            '00d0aaa8f7251b15ca/ipc/ipdl/PCompositorBridgeChild.cpp#l-1495'
+        )
+        # And that links text is the frame's 'file' but without the 128 char
+        # sha.
+        eq_(frame['file'], 'ipc/ipdl/PCompositorBridgeChild.cpp')
 
     def test_enhance_json_dump(self):
         vcs_mappings = {

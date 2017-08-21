@@ -217,7 +217,13 @@ VCS_MAPPINGS = {
                             'f=%(file)s;h=%(revision)s#l%(line)s'),
         'github.com': ('https://github.com/%(repo)s/blob/%(revision)s/'
                        '%(file)s#L%(line)s')
-    }
+    },
+    's3': {
+        'gecko-generated-sources': (
+            'https://source-highlight.herokuapp.com/https://gecko-generated-so'
+            'urces.s3.amazonaws.com/%(file)s#l-%(line)s'
+        ),
+    },
 }
 
 
