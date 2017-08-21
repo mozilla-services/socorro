@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -9,6 +11,7 @@ import os.path
 import pika
 
 from socorro.lib.ooid import is_crash_id_valid
+from socorro.scripts import WrappedTextHelpFormatter
 
 
 EPILOG = """
@@ -19,7 +22,7 @@ To use in a docker-based local dev environment:
 To use in -prod:
 
   $ /data/socorro/bin/socorro_env.sh
-  (socorro) $ python scripts/add_crashid_to_queue.py socorro.submitter <CRASHID>
+  (socorro) $ scripts/add_crashid_to_queue.py socorro.submitter <CRASHID>
 
 Queues:
 
@@ -52,19 +55,6 @@ def build_pika_connection(host, port, virtual_host, user, password):
             )
         )
     )
-
-
-class WrappedTextHelpFormatter(argparse.HelpFormatter):
-    def _fill_text(self, text, width, indent):
-        """Wraps text like HelpFormatter, but doesn't squash lines
-
-        This makes it easier to do lists and paragraphs.
-
-        """
-        parts = text.split('\n')
-        for i, part in enumerate(parts):
-            parts[i] = super(WrappedTextHelpFormatter, self)._fill_text(part, width, indent)
-        return '\n'.join(parts)
 
 
 def main(argv):

@@ -35,6 +35,10 @@ urlpatterns = patterns(
         'crashstats.topcrashers.urls',
         namespace='topcrashers'
     )),
+    (r'^sources/', include(
+        'crashstats.sources.urls',
+        namespace='sources'
+    )),
     (r'^home/', include(
         'crashstats.home.urls',
         namespace='home'
