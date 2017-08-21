@@ -220,7 +220,7 @@ VCS_MAPPINGS = {
     },
     's3': {
         'gecko-generated-sources': (
-            'https://source-highlight.herokuapp.com/https://gecko-generated-so'
+            '/source/generated/?url=https://gecko-generated-so'
             'urces.s3.amazonaws.com/%(file)s#l-%(line)s'
         ),
     },
