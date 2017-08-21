@@ -4,8 +4,6 @@
 
 from types import FunctionType
 
-from nose.tools import eq_, ok_
-
 from socorro.unittest.testbase import TestCase
 
 from socorro.app.generic_app import main
@@ -18,6 +16,6 @@ from socorro.app.socorro_app import App as SApp
 class TestGenericAppModule(TestCase):
 
     def test_exsistance(self):
-        ok_(issubclass(App, SocorroApp))
-        eq_(App, SApp)
-        ok_(isinstance(main, FunctionType))
+        assert issubclass(App, SocorroApp)
+        assert App == SApp
+        assert isinstance(main, FunctionType)
