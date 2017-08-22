@@ -114,12 +114,28 @@ def enhance_frame(frame, vcs_mappings):
         vcsinfo = frame['file'].split(':')
         if len(vcsinfo) == 4:
             vcstype, root, vcs_source_file, revision = vcsinfo
-            server, repo = root.split('/', 1)
+            if '/' in root:
+                # The root is something like 'hg.mozilla.org/mozilla-central'
+                server, repo = root.split('/', 1)
+            else:
+                # E.g. 'gecko-generated-sources' or something without a '/'
+                repo = server = root
+
+            if vcs_source_file.count('/') > 1 and len(vcs_source_file.split('/')[0]) == 128:
+                # In this case, the 'vcs_source_file' will be something like
+                # '{SHA-512 hex}/ipc/ipdl/PCompositorBridgeChild.cpp'
+                # So drop the sha part for the sake of the 'file' because
+                # we don't want to display a 128 character hex code in the
+                # hyperlink text.
+                vcs_source_file_display = '/'.join(vcs_source_file.split('/')[1:])
+            else:
+                # Leave it as is if it's not unweildly long.
+                vcs_source_file_display = vcs_source_file
 
             if vcstype in vcs_mappings:
                 if server in vcs_mappings[vcstype]:
                     link = vcs_mappings[vcstype][server]
-                    frame['file'] = vcs_source_file
+                    frame['file'] = vcs_source_file_display
                     frame['source_link'] = link % {
                         'repo': repo,
                         'file': vcs_source_file,

@@ -1002,33 +1002,69 @@ class TestJitCrashCategorizeRule(TestCase):
         ok_('classifications.jit.category' not in processed_crash)
         ok_('classifications.jit.category_return_code' not in processed_crash)
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
-    def test_no_crashing_thread(self, mocked_subprocess_module):
+    def test_predicate_no_json_dump(self):
         config = self.get_basic_config()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
-        processed_crash = DotDict()
-        processed_crash.product = 'Firefox'
-        processed_crash.os_name = 'Windows NT'
-        processed_crash.cpu_name = 'x86'
-        processed_crash.signature = 'EnterBaseline'
-        processed_crash['json_dump'] = {}  # note the empty json_dump
-        processor_meta = self.get_basic_processor_meta()
-
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
-        mocked_subprocess_handle.wait.return_value = 0
+        processed_crash = DotDict({
+            'product': 'Firefox',
+            'os_name': 'Windows NT',
+            'cpu_name': 'x86',
+            'signature': 'EnterBaseline',
+        })
 
         rule = JitCrashCategorizeRule(config)
 
-        # the call to be tested
-        res = rule._predicate(
-            raw_crash, raw_dumps, processed_crash, processor_meta
-        )
+        assert rule._predicate({}, {}, processed_crash, {}) is True
 
-        # Simply verify that no exception is raised.
-        ok_(res)
+    def test_predicate_no_crashing_thread(self):
+        config = self.get_basic_config()
+        processed_crash = DotDict({
+            'product': 'Firefox',
+            'os_name': 'Windows NT',
+            'cpu_name': 'x86',
+            'signature': 'EnterBaseline',
+
+            # No "crashing_thread" key
+            'json_dump': {},
+        })
+
+        rule = JitCrashCategorizeRule(config)
+
+        assert rule._predicate({}, {}, processed_crash, {}) is True
+
+    def test_predicate_no_frames(self):
+        config = self.get_basic_config()
+        processed_crash = DotDict({
+            'product': 'Firefox',
+            'os_name': 'Windows NT',
+            'cpu_name': 'x86',
+            'signature': 'EnterBaseline',
+
+            'json_dump': {
+                # No "frames" key
+                'crashing_thread': {}
+            },
+        })
+
+        rule = JitCrashCategorizeRule(config)
+
+        assert rule._predicate({}, {}, processed_crash, {}) is True
+
+    def test_predicate_empty_frames(self):
+        config = self.get_basic_config()
+        processed_crash = DotDict({
+            'product': 'Firefox',
+            'os_name': 'Windows NT',
+            'cpu_name': 'x86',
+            'signature': 'EnterBaseline',
+
+            'json_dump': {
+                'crashing_thread': {
+                    # There is a "frames" key, but nothing in the list
+                    'frames': []
+                }
+            },
+        })
+
+        rule = JitCrashCategorizeRule(config)
+
+        assert rule._predicate({}, {}, processed_crash, {}) is True
