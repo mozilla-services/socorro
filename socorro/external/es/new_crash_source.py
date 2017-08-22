@@ -5,6 +5,7 @@
 import datetime
 
 from elasticsearch import helpers
+from elasticsearch_dsl import Search
 from configman import Namespace, RequiredConfig, class_converter
 
 
@@ -53,34 +54,30 @@ class ESNewCrashSource(RequiredConfig):
         """
         next_day = date + datetime.timedelta(days=1)
 
-        query = {
-            'filter': {
-                'bool': {
-                    'must': [
-                        {
-                            'range': {
-                                'processed_crash.date_processed': {
-                                    'gte': date.isoformat(),
-                                    'lt': next_day.isoformat(),
-                                }
-                            }
-                        },
-                        {
-                            'term': {
-                                'processed_crash.product': product.lower()
-                            }
-                        },
-                        {
-                            'terms': {
-                                'processed_crash.version': [
-                                    x.lower() for x in versions
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }
+        # Create a fake search object that we will use to generate the search
+        # body.
+        search = Search()
+
+        # Add filters to the search object. Note that we use that `kwargs`
+        # syntax because fields have a dot in their names.
+        filter_args = {'processed_crash.product': product.lower()}
+        search = search.filter('term', **filter_args)
+
+        filter_args = {
+            'processed_crash.version': [x.lower() for x in versions],
         }
+        search = search.filter('terms', **filter_args)
+
+        filter_args = {
+            'processed_crash.date_processed': {
+                'gte': date.isoformat(),
+                'lt': next_day.isoformat(),
+            },
+        }
+        search = search.filter('range', **filter_args)
+
+        # Turn that search body into a dict that we can send to Elasticsearch.
+        query = search.to_dict()
 
         es_index = date.strftime(self.config.elasticsearch.elasticsearch_index)
         es_doctype = self.config.elasticsearch.elasticsearch_doctype
@@ -92,11 +89,11 @@ class ESNewCrashSource(RequiredConfig):
                 scroll='2m',  # keep the "scroll" connection open for 2 minutes
                 index=es_index,
                 doc_type=es_doctype,
-                fields=['crash_id'],
                 query=query,
+                _source=False,
             )
             for hit in res:
-                crash_ids.append(hit['fields']['crash_id'][0])
+                crash_ids.append(hit['_id'])
                 if self.config.cap and len(crash_ids) >= self.config.cap:
                     break
 

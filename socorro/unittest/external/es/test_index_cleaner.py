@@ -9,10 +9,7 @@ from nose.tools import ok_
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.es.index_cleaner import IndexCleaner
-from socorro.unittest.external.es.base import (
-    ElasticsearchTestCase,
-    minimum_es_version,
-)
+from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
@@ -48,7 +45,6 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
     def get_index_for_date(self, date):
         return date.strftime(self.config.elasticsearch.elasticsearch_index)
 
-    @minimum_es_version('1.0')
     def test_delete_old_indices(self):
         # Create old indices to be deleted.
         self.index_client.create('socorro200142', {})
@@ -100,7 +96,6 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         ok_(not self.index_client.exists('socorro200000'))
         ok_(not self.index_client.exists('socorro200201'))
 
-    @minimum_es_version('1.0')
     def test_other_indices_are_not_deleted(self):
         """Verify that non-week-based indices are not removed.
         """

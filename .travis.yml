@@ -1,4 +1,4 @@
-sudo: no
+sudo: true
 cache:
   directories:
     - $HOME/.cache/pip
@@ -8,6 +8,9 @@ python:
 
 addons:
   postgresql: "9.3"
+  apt:
+    packages:
+      - oracle-java8-set-default
 
 services:
   - rabbitmq
