@@ -222,7 +222,7 @@ VCS_MAPPINGS = {
     's3': {
         'gecko-generated-sources': (
             '/sources/highlight/?url=https://gecko-generated-so'
-            'urces.s3.amazonaws.com/%(file)s#l-%(line)s'
+            'urces.s3.amazonaws.com/%(file)s#L-%(line)s'
         ),
     },
 }
