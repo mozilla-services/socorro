@@ -76,7 +76,7 @@ memcmp
 __memcmp16
 memcpy
 memmove
-_platform_memmove$VARIANT$Haswell 
+_platform_memmove\$VARIANT\$Haswell
 memset
 mozalloc_abort.*
 mozalloc_handle_oom

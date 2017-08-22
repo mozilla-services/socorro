@@ -186,7 +186,7 @@ class TestUtils(TestCase):
         utils.enhance_frame(frame, {
             's3': {
                 'gecko-generated-sources': (
-                    'https://example.com/%(file)s#l-%(line)s'
+                    'https://example.com/%(file)s#L-%(line)s'
                 ),
             },
         })
@@ -197,7 +197,7 @@ class TestUtils(TestCase):
             frame['source_link'],
             'https://example.com/36d62ce2ec2925f4a13e44fe534b246c23b4b3d540788'
             '4d3bbfc9b0d9aebe4929985935ae582704c06e994ece0d1e76528ff1edf4543e4'
-            '00d0aaa8f7251b15ca/ipc/ipdl/PCompositorBridgeChild.cpp#l-1495'
+            '00d0aaa8f7251b15ca/ipc/ipdl/PCompositorBridgeChild.cpp#L-1495'
         )
         # And that links text is the frame's 'file' but without the 128 char
         # sha.
