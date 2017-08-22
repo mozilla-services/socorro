@@ -1,4 +1,4 @@
-.. _ui-chapter:
+.. _webapp-chapter:
 
 =================================
 Webapp (crash-stats analysis app)
@@ -13,7 +13,7 @@ To run the webapp using the webapp configuration, do::
 
 
 That will bring up all the services the webapp requires to run and start the
-webapp using the ``/app/docker/run_webapp.sh`` script and the webapp
+webapp using the ``/app/docker/run_webapp.sh`` script using the webapp
 configuration.
 
 To ease debugging, you can run a shell in the container::
@@ -40,7 +40,61 @@ Then you can start and stop the webapp, adjust files, and debug.
    https://docs.docker.com/compose/extends/
 
 
-FIXME(willkg): Review everything after this line.
+
+Setting up authentication and a superuser
+=========================================
+
+Creating a superuser
+--------------------
+
+If you want to do anything in the webapp admin, you'll need to create a
+superuser.
+
+Run this::
+
+  $ docker-compose run webapp python webapp-django/manage.py makesuperuser email@example.com
+
+
+You can do this as many times as you like.
+
+
+Setting up the webapp for Google Sign-In
+----------------------------------------
+
+In order to authenticate in the webapp using the "Google signin" button, you
+need to get a set of oauth credentials.
+
+1. Go to https://console.developers.google.com/apis/credentials
+
+2. Create a project
+
+3. Set up credentials:
+
+   * authorized js origin: ``http://localhost:8000``
+   * callback url: ``http://localhost:8000/oauth2/signin/``
+
+   .. Note::
+
+      There is no trailing slash on the JS origin, but there is a trailing slash
+      on the callback url.
+
+4. Open ``my.env`` in an editor and change these lines::
+
+       OAUTH2_CLIENT_ID=<client id>
+       OAUTH2_CLIENT_SECRET=<secret>
+
+   where ``<client id>`` is the oauth client id and ``<secret>`` is the oauth
+   client secret that you got from step 3
+
+5. If you see a "Signed in to Google, but unable to sign in on the server." with
+   a 403 CSRF error, mark the callback url as csrf_exempt e.g. with `this patch
+   <https://github.com/g-k/socorro/commit/2afeb8d44a485d2936f0f9a06fa3572d5baea6d6#diff-2fef780ed0ba541e7eb26fd5c32022f4>`_
+
+After that, Google Sign-In should work.
+
+.. Warning::
+
+   August 17th, 2017: Everything below this point is outdated.
 
 
 About Permissions, User and Groups

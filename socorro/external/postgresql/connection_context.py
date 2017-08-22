@@ -209,8 +209,7 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         for reuse of connections."""
         if force:
             try:
-                (super(ConnectionContextPooled, self)
-                  .close_connection(connection, force))
+                super(ConnectionContextPooled, self).close_connection(connection, force)
             except self.operational_exceptions:
                 self.config.logger.error('PostgresPooled - failed closing')
             for name, conn in self.pool.iteritems():

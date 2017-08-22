@@ -11,4 +11,9 @@ COPY . /app/
 
 USER app
 
+RUN mkdir -p /tmp/symbols/cache
+
+# Install aws cli using --user so it doesn't mess with Socorro requirements
+RUN /app/docker/set_up_awscli.sh
+
 CMD ["/app/docker/run_processor.sh"]

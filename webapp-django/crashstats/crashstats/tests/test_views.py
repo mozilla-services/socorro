@@ -38,6 +38,7 @@ from crashstats.supersearch.tests.common import (
 from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchUnredacted,
+    SuperSearch,
 )
 from crashstats.crashstats.views import GRAPHICS_REPORT_HEADER
 from .test_models import Response
@@ -1775,6 +1776,51 @@ class TestViews(BaseTestViews):
         ok_('Crashing Thread (2)' not in response.content)
         ok_('Crashing Thread (0)' in response.content)
 
+    def test_report_index_with_telemetry_environment(self):
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                crash = copy.deepcopy(_SAMPLE_META)
+                crash['TelemetryEnvironment'] = {
+                    'key': ['values'],
+                    'plainstring': 'I am a string',
+                    'plainint': 12345,
+                    'empty': [],
+                    'foo': {
+                        'keyA': 'AAA',
+                        'keyB': 'BBB',
+                    },
+                }
+                return crash
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return copy.deepcopy(_SAMPLE_UNREDACTED)
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        ok_('Telemetry Environment' in response.content)
+        # it's non-trivial to check that the dict above is serialized
+        # exactly like jinja does it so let's just check the data attribute
+        # is there.
+        ok_('id="telemetryenvironment-json"' in response.content)
+
     def test_report_index_fennecandroid_report(self):
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@mozilla.com'
@@ -2536,31 +2582,35 @@ class TestViews(BaseTestViews):
 
     def test_graphics_report(self):
 
-        def mocked_get(**options):
-            assert options['product'] == settings.DEFAULT_PRODUCT
+        def mocked_supersearch_get(**params):
+            assert params['product'] == [settings.DEFAULT_PRODUCT]
             hits = [
                 {
                     'signature': 'my signature',
-                    'date_processed': '2015-10-08 23:22:21'
+                    'date': '2015-10-08T23:22:21.1234 +00:00',
+                    'cpu_name': 'arm',
+                    'cpu_info': 'ARMv7 ARM',
                 },
                 {
                     'signature': 'other signature',
-                    'date_processed': '2015-10-08 13:12:11'
+                    'date': '2015-10-08T13:12:11.1123 +00:00',
+                    'cpu_info': 'something',
+                    # note! no cpu_name
                 },
             ]
-            # value for each of these needs to be in there
-            # supplement missing ones from the fixtures we intend to return
+            # Value for each of these needs to be in there
+            # supplement missing ones from the fixtures we intend to return.
             for hit in hits:
                 for head in GRAPHICS_REPORT_HEADER:
                     if head not in hit:
                         hit[head] = None
             return {
                 'hits': hits,
-                'total': len(hits)
+                'total': 2
             }
 
-        models.GraphicsReport.implementation().get.side_effect = (
-            mocked_get
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
         )
 
         url = reverse('crashstats:graphics_report')
@@ -2608,7 +2658,7 @@ class TestViews(BaseTestViews):
         )
         eq_(
             first[GRAPHICS_REPORT_HEADER.index('date_processed')],
-            '2015-10-08 23:22:21'
+            '201510082322'
         )
 
         # now fetch it with gzip

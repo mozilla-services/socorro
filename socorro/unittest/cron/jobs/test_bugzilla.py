@@ -34,7 +34,9 @@ SAMPLE_BUGZILLA_RESULTS = {
         },
         {
             'id': '5',
-            'cf_crash_signature': '[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455',
+            'cf_crash_signature': (
+                '[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455'
+            ),
         },
         {
             'id': '6',

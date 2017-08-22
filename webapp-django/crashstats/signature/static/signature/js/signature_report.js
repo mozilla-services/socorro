@@ -42,7 +42,6 @@ SignatureReport.init = function () {
         'bugzilla': SignatureReport.BugzillaTab,
         'comments': SignatureReport.CommentsTab,
         'correlations': SignatureReport.CorrelationsTab,
-        'graph': SignatureReport.GraphTab,
     };
 
     // Set the current tab, either from location.hash or defaultTab.

@@ -19,9 +19,7 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
-import socorro.external.postgresql.crashes
 import socorro.external.postgresql.products
-import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
@@ -40,12 +38,6 @@ from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
 from crashstats.base.utils import requests_retry_session
-
-
-DEPRECATION_RAMPAGE_WARNING = (
-    'This endpoint is deprecated and will soon cease to exist.\n'
-    'Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1314814'
-)
 
 
 logger = logging.getLogger('crashstats_models')
@@ -1085,27 +1077,6 @@ class GraphicsDevices(SocorroMiddleware):
         return names
 
 
-class AduBySignature(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.crashes.AduBySignature
-
-    required_params = (
-        'product_name',
-        'signature',
-        'channel',
-    )
-
-    possible_params = (
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-
 class ADI(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.adi.ADI
@@ -1138,28 +1109,6 @@ class ProductBuildTypes(SocorroMiddleware):
 
     API_WHITELIST = (
         'hits',
-    )
-
-
-class GraphicsReport(SocorroMiddleware):
-    """The legacy solution to supply the CSV reports that the Mozilla
-    Graphics Team needs."""
-
-    # This endpoint is protected in a django view with permission
-    # requirements. That means we don't have to worry about it being
-    # overly requested by rogue clients.
-    # Also, the response payload is usually very very large meaning
-    # it will cause strain having to store it in the cacheing server
-    # when it does get re-used much by repeated queries.
-    cache_seconds = 0
-
-    implementation = (
-        socorro.external.postgresql.graphics_report.GraphicsReport
-    )
-
-    required_params = (
-        'product',
-        ('date', datetime.date),
     )
 
 

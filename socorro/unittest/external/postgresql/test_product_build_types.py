@@ -16,7 +16,6 @@ class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
 
     @classmethod
     def setUpClass(cls):
-        """ Populate product_info table with fake data """
         super(IntegrationTestProductBuildTypes, cls).setUpClass()
 
         cursor = cls.connection.cursor()

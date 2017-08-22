@@ -15,7 +15,6 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
     """Test of Crash ADU By Build Signature stored procedures"""
 
     def setUp(self):
-        """ Populate product_info table with fake data """
         super(IntegrationTestCrashAduByBuildSignature, self).setUp()
 
         cursor = self.connection.cursor()
@@ -150,10 +149,10 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                 '%(tomorrow)s',
                 'windows',
                 321) """ % {
-                    'product_version_id': product_version_id,
-                    'now': now,
-                    'tomorrow': tomorrow
-                    })
+            'product_version_id': product_version_id,
+            'now': now,
+            'tomorrow': tomorrow
+        })
 
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """

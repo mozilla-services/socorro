@@ -18,7 +18,9 @@ services:
     image: local/socorro_processor
     env_file:
       - docker/config/docker_common.env
+      - docker/config/local_development.env
       - docker/config/processor.env
+      - my.env
     depends_on:
       # - statsd -- FIXME(willkg): broken for some reason
       - localstack-s3
@@ -36,7 +38,9 @@ services:
     image: local/socorro_webapp
     env_file:
       - docker/config/docker_common.env
+      - docker/config/local_development.env
       - docker/config/webapp.env
+      - my.env
     depends_on:
       # - statsd -- FIXME(willkg): broken for some reason
       - localstack-s3
@@ -46,6 +50,25 @@ services:
     command: ["/app/docker/run_webapp.sh", "--dev"]
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
+
+  # Crontabber app
+  crontabber:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.crontabber
+    image: local/socorro_crontabber
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/local_development.env
+      - docker/config/crontabber.env
+      - my.env
+    depends_on:
+      - localstack-s3
+      - postgresql
+      - elasticsearch
+      - rabbitmq
     volumes:
       - .:/app
 
@@ -62,9 +85,8 @@ services:
 
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
-  # Note: We use 5.3.2 because that is the last supported 5.3.x version.
   elasticsearch:
-    image: elasticsearch:5.3.2
+    image: elasticsearch:1.4.5
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -86,13 +108,13 @@ services:
       - POSTGRES_PASSWORD=aPassword
       - POSTGRES_DB=breakpad
 
-  # https://hub.docker.com/r/atlassianlabs/localstack/
+  # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake S3
   localstack-s3:
-    image: atlassianlabs/localstack:0.4.0
+    image: localstack/localstack:0.7.4
     environment:
       - SERVICES=s3:5000
-      - DEFAULT_REGION=us-east-1
+      - DEFAULT_REGION=us-west-2
       - HOSTNAME=localstack-s3
     ports:
       - "5000:5000"

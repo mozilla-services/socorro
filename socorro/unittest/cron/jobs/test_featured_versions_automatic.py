@@ -19,6 +19,7 @@ from socorro.external.postgresql.dbapi2_util import (
 
 
 class Response(object):
+
     def __init__(self, content, status_code=200):
         if not isinstance(content, basestring):
             content = json.dumps(content)
@@ -266,7 +267,7 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
 
             config.logger.info.assert_called_with(
                 'Set featured versions for Thunderbird to: '
-                '45.4.0, 50.0b1, 51.0a2, 52.0a1'
+                '45.4.0, 50.0b1, 52.0a1'
             )
 
         rows = execute_query_fetchall(

@@ -42,23 +42,24 @@ class TestConnectionContext(TestCase):
     def test_basic_postgres_usage(self):
 
         class Sneak(ConnectionContext):
+
             def connection(self, __=None):
                 assert self.dsn
                 return MockConnection(self.dsn)
 
         definition = Namespace()
         local_config = {
-          'database_hostname': 'host',
-          'database_name': 'name',
-          'database_port': 'port',
-          'database_username': 'user',
-          'database_password': 'password',
+            'database_hostname': 'host',
+            'database_name': 'name',
+            'database_port': 'port',
+            'database_username': 'user',
+            'database_password': 'password',
         }
         postgres = Sneak(definition, local_config)
         with postgres() as connection:
             ok_(isinstance(connection, MockConnection))
             eq_(connection.dsn,
-                 'host=host dbname=name port=port user=user password=password')
+                'host=host dbname=name port=port user=user password=password')
             eq_(_closes, 0)
         # exiting the context would lastly call 'connection.close()'
         eq_(_closes, 1)
@@ -78,7 +79,7 @@ class TestConnectionContext(TestCase):
         try:
             with postgres() as connection:
                 connection.transaction_status = \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                    psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise psycopg2.OperationalError('crap!')
             # OperationalError's aren't bubbled up
         except psycopg2.OperationalError:

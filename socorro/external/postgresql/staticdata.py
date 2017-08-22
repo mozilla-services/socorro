@@ -75,7 +75,10 @@ class WindowsVersions(BaseTable):
             ['Windows 2000', '5', '0'],
             ['Windows XP', '5', '1'],
             ['Windows Vista', '6', '0'],
-            ['Windows 7', '6', '1']]
+            ['Windows 7', '6', '1'],
+            ['Windows 8', '6', '2'],
+            ['Windows 8.1', '6', '3'],
+            ['Windows 10', '10', '0']]
 
 
 class OSVersions(BaseTable):
@@ -97,14 +100,37 @@ class OSVersions(BaseTable):
 class ReleaseRepositories(BaseTable):
     table = 'release_repositories'
     columns = ['repository']
-    rows = [['dev'],
-            ['beta'],
-            ['release'],
-            ['esr'],
-            ['other-dev'],
-            ['other-beta'],
-            ['other-release'],
-            ['other-esr']]
+    rows = [
+        ['mozilla-central'],
+        ['mozilla-1.9.2'],
+        ['comm-central'],
+        ['comm-1.9.2'],
+        ['comm-central-trunk'],
+        ['mozilla-central-android'],
+        ['mozilla-release'],
+        ['mozilla-beta'],
+        ['mozilla-aurora'],
+        ['mozilla-aurora-android'],
+        ['mozilla-esr10'],
+        ['mozilla-esr10-android'],
+        ['b2g-release'],
+        ['mozilla-aurora-android-xul'],
+        ['mozilla-central-android-xul'],
+        ['comm-aurora'],
+        ['mozilla-central-android-api-11'],
+        ['mozilla-aurora-android-api-11'],
+        ['mozilla-central-android-api-15'],
+        ['mozilla-aurora-android-api-15'],
+        ['mozilla-beta-android-api-15'],
+        ['mozilla-release-android-api-15'],
+        ['mozilla-esr38'],
+        ['mozilla-esr45'],
+        ['comm-esr38'],
+        ['comm-esr45'],
+        ['comm-beta'],
+        ['mozilla-esr52'],
+        ['comm-esr52'],
+    ]
 
 
 class CrashTypes(BaseTable):
@@ -186,8 +212,79 @@ class ReportPartitionInfo(BaseTable):
              'date_processed', 'DATE']]
 
 
+class Products(BaseTable):
+    table = 'products'
+    columns = [
+        'product_name', 'sort', 'rapid_release_version', 'release_name', 'rapid_beta_version'
+    ]
+    rows = [
+        ['Fennec', '3', '5.0', 'mobile', '999.0'],
+        ['Thunderbird', '2', '6.0', 'thunderbird', '999.0'],
+        ['Firefox', '1', '5.0', 'firefox', '23.0'],
+        ['SeaMonkey', '6', '2.3', 'seamonkey', '999.0'],
+        ['FennecAndroid', '4', '5.0', '**SPECIAL**', '999.0'],
+    ]
+
+
+class ProductBuildTypes(BaseTable):
+    table = 'product_build_types'
+    columns = [
+        'product_name', 'build_type', 'throttle'
+    ]
+    rows = [
+        ['Firefox', 'esr', '1.0',],
+        ['Firefox', 'aurora', '1.0'],
+        ['Firefox', 'beta', '1.0'],
+        ['Firefox', 'release', '0.1'],
+        ['Firefox', 'nightly', '1.0'],
+    ]
+
+
+# DEPRECATED
+class ProductReleaseChannels(BaseTable):
+    table = 'product_release_channels'
+    columns = [
+        'product_name', 'release_channel', 'throttle'
+    ]
+    rows = [
+        ['Firefox', 'ESR', '1.0'],
+        ['Firefox', 'Aurora', '1.0'],
+        ['Firefox', 'Beta', '1.0'],
+        ['Firefox', 'Release', '0.1'],
+        ['Firefox', 'Nightly', '1.0'],
+    ]
+
+
+class SpecialProductPlatforms(BaseTable):
+    table = 'special_product_platforms'
+    columns = [
+        'platform', 'repository', 'release_channel', 'release_name', 'product_name', 'min_version'
+    ]
+    rows = [
+        ['android', 'mozilla-release', 'release', 'mobile', 'FennecAndroid', '10.0'],
+        ['android', 'mozilla-release', 'beta', 'mobile', 'FennecAndroid', '10.0'],
+        ['android', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid', '10.0'],
+        ['android-arm', 'mozilla-central-android', 'nightly', 'mobile', 'FennecAndroid', '10.0'],
+        ['android-arm', 'mozilla-central-android', 'aurora', 'mobile', 'FennecAndroid', '10.0'],
+        ['android-arm', 'mozilla-aurora-android', 'aurora', 'mobile', 'FennecAndroid', '10.0'],
+        ['android-arm', 'mozilla-central-android-api-11', 'nightly', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-aurora-android-api-11', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-x86', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-api-9', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-api-11', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-x86', 'mozilla-release', 'release', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-api-9', 'mozilla-release', 'release', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-api-11', 'mozilla-release', 'release', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-central-android-api-15', 'nightly', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-aurora-android-api-15', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-beta-android-api-15', 'beta', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-release-android-api-15', 'release', 'mobile', 'FennecAndroid', '37.0']
+    ]
+
+
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, ReleaseChannels,
           ReleaseChannelMatches, UptimeLevels, WindowsVersions,
           OSVersions, ReleaseRepositories,
-          CrashTypes, ReportPartitionInfo]
+          CrashTypes, ReportPartitionInfo,
+          Products, ProductBuildTypes, ProductReleaseChannels, SpecialProductPlatforms]

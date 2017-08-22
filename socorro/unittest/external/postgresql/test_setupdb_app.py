@@ -12,7 +12,6 @@ from nose.tools import ok_, eq_
 from socorro.external.postgresql.setupdb_app import SocorroDBApp
 from socorro.unittest.testbase import TestCase
 from configman import ConfigurationManager
-from configman.dotdict import DotDict
 
 
 class NoInheritanceCheatSocorroDBApp(SocorroDBApp):

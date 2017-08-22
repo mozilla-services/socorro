@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 #
 # CSS
 #
@@ -65,13 +67,19 @@ PIPELINE_CSS = {
     'documentation': {
         'source_filenames': (
             'documentation/css/documentation.less',
-            'documentation/css/jsonview.custom.less',
         ),
         'output_filename': 'css/documentation.min.css',
+    },
+    'jsonview': {
+        'source_filenames': (
+            'jsonview/jsonview.custom.less',
+        ),
+        'output_filename': 'css/jsonview.min.css',
     },
     'report_index': {
         'source_filenames': (
             'crashstats/css/report_index.css',
+            'crashstats/css/tree.css',
         ),
         'output_filename': 'css/report-index.min.css',
     },
@@ -270,10 +278,15 @@ PIPELINE_JS = {
     },
     'documentation': {
         'source_filenames': (
-            'documentation/js/lib/jquery.jsonview.js',
             'documentation/js/documentation.js',
         ),
         'output_filename': 'js/documentation.min.js',
+    },
+    'jsonview': {
+        'source_filenames': (
+            'jsonview/jquery.jsonview.js',
+        ),
+        'output_filename': 'js/jsonview.min.js',
     },
     'exploitability_report': {
         'source_filenames': (
@@ -359,7 +372,6 @@ PIPELINE_JS = {
             'signature/js/signature_tab_comments.js',
             'signature/js/signature_tab_correlations.js',
             'signature/js/signature_tab_bugzilla.js',
-            'signature/js/signature_tab_graph.js',
             'signature/js/signature_panel.js',
         ),
         'output_filename': 'js/signature-report.min.js',
@@ -399,6 +411,7 @@ PIPELINE_JS = {
     },
 }
 
+
 # This is sanity checks, primarily for developers. It checks that
 # you haven't haven't accidentally make a string a tuple with an
 # excess comma, no underscores in the bundle name and that the
@@ -420,22 +433,22 @@ for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
         for asset_file in v['source_filenames']:
             if asset_file in _used:
                 # Consider using warnings.warn here instead
-                print '{:<52} in {:<20} already in {}'.format(
+                print('{:<52} in {:<20} already in {}'.format(
                     asset_file,
                     k,
                     _used[asset_file]
-                )
+                ))
                 _trouble.add(asset_file)
             _used[asset_file] = k
 
     for asset_file in _trouble:
-        print "REPEATED", asset_file
+        print("REPEATED", asset_file)
         found_in = []
         sets = []
         for k, v in config.items():
             if asset_file in v['source_filenames']:
                 found_in.append(k)
                 sets.append(set(list(v['source_filenames'])))
-        print "FOUND IN", found_in
-        print "ALWAYS TOGETHER WITH", set.intersection(*sets)
+        print("FOUND IN", found_in)
+        print("ALWAYS TOGETHER WITH", set.intersection(*sets))
         break

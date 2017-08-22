@@ -42,9 +42,9 @@ class TestTrackingPageviews(DjangoTestCase):
     def test_basic_pageview(self, logger, rpost, aw):
         queues_started = []
 
-        def mocked_queue(function, data, headers, success_cb, failure_cb):
+        def mocked_queue(function, url, data, headers, success_cb, failure_cb):
             queues_started.append(data)
-            function(data, headers, success_cb, failure_cb)
+            function(url, data, headers, success_cb, failure_cb)
 
         aw().queue.side_effect = mocked_queue
 
@@ -125,8 +125,8 @@ class TestTrackingPageviews(DjangoTestCase):
     @mock.patch('requests.post')
     @mock.patch('crashstats.base.ga.logger')
     def test_api_pageview(self, logger, rpost, aw):
-        def mocked_queue(function, data, headers, success_cb, failure_cb):
-            function(data, headers, success_cb, failure_cb)
+        def mocked_queue(function, url, data, headers, success_cb, failure_cb):
+            function(url, data, headers, success_cb, failure_cb)
 
         aw().queue.side_effect = mocked_queue
 
@@ -158,8 +158,8 @@ class TestTrackingPageviews(DjangoTestCase):
     @mock.patch('crashstats.base.ga.logger')
     def test_basic_pageview_failure(self, logger, rpost, aw):
 
-        def mocked_queue(function, data, headers, success_cb, failure_cb):
-            function(data, headers, success_cb, failure_cb)
+        def mocked_queue(function, url, data, headers, success_cb, failure_cb):
+            function(url, data, headers, success_cb, failure_cb)
 
         aw().queue.side_effect = mocked_queue
 
@@ -193,7 +193,7 @@ class TestTrackingPageviews(DjangoTestCase):
     @mock.patch('crashstats.base.ga.logger')
     def test_basic_pageview_strange_errors(self, logger, aw):
 
-        def mocked_queue(function, data, headers, success_cb, failure_cb):
+        def mocked_queue(function, url, data, headers, success_cb, failure_cb):
             raise Exception('crap')
 
         aw().queue.side_effect = mocked_queue
@@ -218,7 +218,7 @@ class TestTrackingPageviews(DjangoTestCase):
         # Use this mutable to keep track of executions of the mocked queue
         queues = []
 
-        def mocked_queue(function, data, headers, success_cb, failure_cb):
+        def mocked_queue(function, url, data, headers, success_cb, failure_cb):
             queues.append(data)
             # Don't need to execute the function because we're only
             # interested in if this queue function got called.

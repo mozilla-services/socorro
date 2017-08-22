@@ -4,12 +4,12 @@
 
 import time
 
-from nose.tools import ok_, eq_
+from nose.tools import ok_
 from mock import Mock
 
 from socorro.lib.threaded_task_manager import ThreadedTaskManager, \
-      ThreadedTaskManagerWithConfigSetup, \
-      default_task_func
+    ThreadedTaskManagerWithConfigSetup, \
+    default_task_func
 from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.unittest.testbase import TestCase
 
@@ -27,10 +27,10 @@ class TestThreadedTaskManager(TestCase):
         config.maximum_queue_size = 1
         ttm = ThreadedTaskManager(config)
         try:
-            ok_(ttm.config == config)
-            ok_(ttm.logger == self.logger)
-            ok_(ttm.task_func == default_task_func)
-            ok_(ttm.quit == False)
+            assert ttm.config == config
+            assert ttm.logger == self.logger
+            assert ttm.task_func == default_task_func
+            assert not ttm.quit
         finally:
             # we got threads to join
             ttm._kill_worker_threads()
@@ -44,15 +44,11 @@ class TestThreadedTaskManager(TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            ok_(ttm.queuing_thread.isAlive(),
-                            "the queing thread is not running")
-            ok_(len(ttm.thread_list) == 1,
-                            "where's the worker thread?")
-            ok_(ttm.thread_list[0].isAlive(),
-                            "the worker thread is stillborn")
+            assert ttm.queuing_thread.isAlive(), "the queing thread is not running"
+            assert len(ttm.thread_list) == 1, "where's the worker thread?"
+            assert ttm.thread_list[0].isAlive(), "the worker thread is stillborn"
             ttm.stop()
-            ok_(ttm.queuing_thread.isAlive() == False,
-                            "the queuing thread did not stop")
+            assert not ttm.queuing_thread.isAlive(), "the queuing thread did not stop"
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -69,15 +65,15 @@ class TestThreadedTaskManager(TestCase):
 
         ttm = ThreadedTaskManager(config,
                                   task_func=insert_into_list
-                                 )
+                                  )
         try:
             ttm.start()
             time.sleep(0.2)
             ok_(len(my_list) == 10,
-                            'expected to do 10 inserts, '
-                               'but %d were done instead' % len(my_list))
+                'expected to do 10 inserts, '
+                'but %d were done instead' % len(my_list))
             ok_(my_list == range(10),
-                            'expected %s, but got %s' % (range(10), my_list))
+                'expected %s, but got %s' % (range(10), my_list))
             ttm.stop()
         except Exception:
             # we got threads to join
@@ -98,19 +94,19 @@ class TestThreadedTaskManager(TestCase):
                                   task_func=insert_into_list,
                                   job_source_iterator=(((x,), {}) for x in
                                                        xrange(10))
-                                 )
+                                  )
         try:
             ttm.start()
             time.sleep(0.2)
             ok_(len(ttm.thread_list) == 2,
-                            "expected 2 threads, but found %d"
-                              % len(ttm.thread_list))
+                "expected 2 threads, but found %d"
+                % len(ttm.thread_list))
             ok_(len(my_list) == 10,
-                            'expected to do 10 inserts, '
-                              'but %d were done instead' % len(my_list))
+                'expected to do 10 inserts, '
+                'but %d were done instead' % len(my_list))
             ok_(sorted(my_list) == range(10),
-                            'expected %s, but got %s' % (range(10),
-                                                         sorted(my_list)))
+                'expected %s, but got %s' % (range(10),
+                                             sorted(my_list)))
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -137,14 +133,14 @@ class TestThreadedTaskManager(TestCase):
             ttm.start()
             time.sleep(0.2)
             ok_(len(ttm.thread_list) == 2,
-                            "expected 2 threads, but found %d"
-                              % len(ttm.thread_list))
+                "expected 2 threads, but found %d"
+                % len(ttm.thread_list))
             ok_(len(my_list) == 5,
-                            'expected to do 5 inserts, '
-                              'but %d were done instead' % len(my_list))
+                'expected to do 5 inserts, '
+                'but %d were done instead' % len(my_list))
             ok_(sorted(my_list) == range(5),
-                            'expected %s, but got %s' % (range(5),
-                                                         sorted(my_list)))
+                'expected %s, but got %s' % (range(5),
+                                             sorted(my_list)))
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -182,14 +178,14 @@ class TestThreadedTaskManager(TestCase):
             ttm.start()
             time.sleep(0.2)
             ok_(len(ttm.thread_list) == 1,
-                            "expected 1 threads, but found %d"
-                              % len(ttm.thread_list))
+                "expected 1 threads, but found %d"
+                % len(ttm.thread_list))
             ok_(sorted(my_list) == [0, 1, 2, 4, 5, 6, 7, 8, 9],
-                            'expected %s, but got %s'
-                              % ([0, 1, 2, 5, 6, 7, 8, 9], sorted(my_list)))
+                'expected %s, but got %s'
+                % ([0, 1, 2, 5, 6, 7, 8, 9], sorted(my_list)))
             ok_(len(my_list) == 9,
-                            'expected to do 9 inserts, '
-                              'but %d were done instead' % len(my_list))
+                'expected to do 9 inserts, '
+                'but %d were done instead' % len(my_list))
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -200,18 +196,19 @@ class TestThreadedTaskManager(TestCase):
         config.logger = self.logger
         config.number_of_threads = 2
         config.maximum_queue_size = 2
-        config.quit_on_empty_queue =  True
+        config.quit_on_empty_queue = True
+
+        calls = []
+
+        def task_func(index):
+            calls.append(index)
 
         tm = ThreadedTaskManager(
             config,
-            task_func=Mock()
+            task_func=task_func
         )
 
         waiting_func = Mock()
 
         tm.blocking_start(waiting_func=waiting_func)
-
-        eq_(
-            tm.task_func.call_count,
-            10
-        )
+        assert len(calls) == 10

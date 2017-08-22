@@ -12,6 +12,7 @@
 {{ super() }}
 {% stylesheet 'jquery_ui' %}
 {% stylesheet 'tablesorter' %}
+{% stylesheet 'jsonview' %}
 {% stylesheet 'report_index' %}
 {% endblock %}
 
@@ -21,6 +22,7 @@
 {% javascript 'tablesorter' %}
 {% javascript 'bugzilla' %}
 {% javascript 'correlation' %}
+{% javascript 'jsonview' %}
 {% javascript 'report_index' %}
 {% endblock %}
 
@@ -64,6 +66,11 @@
                         </a>
                     </li>
                     <li class="ui-state-default ui-corner-top">
+                        <a href="#bugzilla" class="ui-tabs-anchor">
+                            <span>Bugzilla</span>
+                        </a>
+                    </li>
+                    <li class="ui-state-default ui-corner-top">
                         <a href="#modules" class="ui-tabs-anchor">
                             <span>Modules</span>
                         </a>
@@ -78,6 +85,13 @@
                             <span>Extensions</span>
                         </a>
                     </li>
+                    {% if raw.TelemetryEnvironment %}
+                    <li class="ui-state-default ui-corner-top">
+                        <a href="#telemetryenvironment" class="ui-tabs-anchor">
+                            <span>Telemetry Environment</span>
+                        </a>
+                    </li>
+                    {% endif %}
                     <li class="ui-state-default ui-corner-top correlations hidden">
                         <a href="#correlation" class="ui-tabs-anchor">
                             <span>Correlations</span>
@@ -574,30 +588,6 @@
                         </tbody>
                     </table>
 
-                    <div id="bugzilla" class="bugreporter">
-                        <p>
-                            <strong>Bugzilla</strong> - Report this bug in
-                            {% for bug_product in [report.product, 'Core', 'External Software Affecting Firefox', 'Toolkit'] %}
-                                {% if bug_product in bug_product_map %}
-                                    {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
-                                {% endif %}
-                                <a
-                                    href="{{ bugzilla_submit_url(report, bug_product) }}"
-                                    target="_blank">{{ bug_product }}</a>
-                            {% endfor %}
-                        </p>
-
-                        <h2>Related Bugs</h2>
-                        <div class="bug_ids_expanded_list">
-                            <ul class="bug_ids_expanded full_bug_ids full">
-                                {% for bug in bug_associations %}
-                                <li>{{ show_bug_link(bug.id) }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <!-- /bugzilla -->
-
                     {% if parsed_dump.threads %}
                     <div id="frames">
                         <h2>Crashing Thread ({{ crashing_thread }}){% if parsed_dump.threads[crashing_thread].thread_name %}, Name: {{ parsed_dump.threads[crashing_thread].thread_name }}{% endif %}</h2>
@@ -688,7 +678,13 @@
                         <tbody>
                             {% for key in raw_keys %}
                             <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
-                                <th scope="row">{{ key }}</th>
+                                <th scope="row">
+                                    {% if key %}
+                                        {{ key }}
+                                    {% else %}
+                                        <i>empty key</i>
+                                    {% endif %}
+                                </th>
                                 {% if key == 'Comments' %}
                                 <td><pre>{{ raw[key] | scrub_pii }}</pre></td>
                                 {% else %}
@@ -701,6 +697,32 @@
 
                 </div>
                 <!-- /#rawdetails -->
+
+                <div id="bugzilla" class="ui-tabs-hide">
+                    <div class="bugreporter">
+                        <p>
+                            <strong>Bugzilla</strong> - Report this bug in
+                            {% for bug_product in [report.product, 'Core', 'External Software Affecting Firefox', 'Toolkit'] %}
+                                {% if bug_product in bug_product_map %}
+                                    {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
+                                {% endif %}
+                                <a
+                                    href="{{ bugzilla_submit_url(report, bug_product) }}"
+                                    target="_blank">{{ bug_product }}</a>
+                            {% endfor %}
+                        </p>
+
+                        <h2>Related Bugs</h2>
+                        <div class="bug_ids_expanded_list">
+                            <ul class="bug_ids_expanded full_bug_ids full">
+                                {% for bug in bug_associations %}
+                                <li>{{ show_bug_link(bug.id) }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- /bugzilla -->
 
                 <div id="modules" class="ui-tabs-hide">
                     {% if parsed_dump.modules %}
@@ -792,6 +814,18 @@
                 </div>
                 <!-- /extensions -->
 
+                {% if raw.TelemetryEnvironment %}
+                <div id="telemetryenvironment" class="ui-tabs-hide">
+                     {# Remmber, raw.TelemetryEnvironment is a string.
+                        jQuery will automatically convert it a map upon accessing it.
+                        Safe to include because jinja will escape anything in it. #}
+                     <div id="telemetryenvironment-json"
+                          data-telemetryenvironment="{{ raw.TelemetryEnvironment }}">
+                    </div>
+                </div>
+                <!-- /telemetryenvironment -->
+                {% endif %}
+
                 <div id="correlation" class="ui-tabs-hide">
                     <h3></h3>
                     <pre></pre>
@@ -859,3 +893,4 @@
 </div>
 
 {% endblock %}
+≠
