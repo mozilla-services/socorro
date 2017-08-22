@@ -1,4 +1,8 @@
 sudo: true
+env:
+  global:
+    # See https://github.com/travis-ci/travis-ci/issues/7940
+    - BOTO_CONFIG=/dev/null
 cache:
   directories:
     - $HOME/.cache/pip
