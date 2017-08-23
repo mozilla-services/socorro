@@ -34,11 +34,11 @@ PARAMETERS_LISTING_FIELDS = (
 
 
 class SuperSearchFieldsWithoutConfig(super_search_fields.SuperSearchFields):
-    """In the SuperSearchFields "middleware" class we know with confidence
+    """In the SuperSearchFields implementation class we know with confidence
     we can just call
     socorro.external.es.super_search_fields.SuperSearchFields.get() without
     first having instanciated the base class with the necessary configuration
-    needed to reach ElasticSearch.
+    needed to reach Elasticsearch.
 
     This way we can call `.get()` on an instance of this class, which
     just reads a .json file.
