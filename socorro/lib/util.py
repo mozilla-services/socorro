@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import collections
 import logging
 import sys
 import threading
@@ -146,3 +147,34 @@ class DotDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+
+def flatten(d, parent_key='', sep='.'):
+    """Return a dictionary with only top-level keys. The sub-level fields
+    are moved to a top-level key named by concatenating the keys of each level.
+    For example:
+        IN:
+        {
+            "a": 1,
+            "b": {
+                "c": 2,
+                "d": {
+                    "e": 3
+                }
+            }
+        }
+        OUT:
+        {
+            "a": 1,
+            "b.c": 2,
+            "b.d.e": 3
+        }
+    """
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)

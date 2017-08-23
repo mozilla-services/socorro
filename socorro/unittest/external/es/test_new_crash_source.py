@@ -7,6 +7,12 @@ from socorro.lib.datetimeutil import utc_now
 from socorro.external.es.new_crash_source import ESNewCrashSource
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
+# Uncomment these lines to decrease verbosity of the elasticsearch library
+# while running unit tests.
+# import logging
+# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('requests').setLevel(logging.ERROR)
+
 
 # A dummy crash report that is used for testing.
 a_processed_crash = {
@@ -82,12 +88,6 @@ a_raw_crash = {
     'foo': 'alpha',
     'bar': 42
 }
-
-
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
 
 class IntegrationTestESNewCrashSource(ElasticsearchTestCase):
