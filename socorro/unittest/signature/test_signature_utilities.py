@@ -13,7 +13,7 @@ from configman.dotdict import DotDict as CDotDict
 import socorro.lib.util as sutil
 
 from socorro.lib.util import DotDict
-from socorro.processor.signature_utilities import (
+from socorro.signature.signature_utilities import (
     AbortSignature,
     CSignatureTool,
     JavaSignatureTool,

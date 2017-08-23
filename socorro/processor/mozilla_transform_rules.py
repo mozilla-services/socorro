@@ -3,34 +3,30 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import time
-import ujson
-import re
-
-from sys import maxint
-
 from gzip import open as gzip_open
-from ujson import loads as json_loads
+import re
+from sys import maxint
+import time
 from urllib import unquote_plus
 
 from configman import Namespace
-from configman.converters import (
-    str_to_python_object,
-)
-
-from socorro.lib.ooid import dateFromOoid
-from socorro.lib.transform_rules import Rule
-from socorro.lib.datetimeutil import (
-    UTC,
-    datetime_from_isodate_string,
-    datestring_to_weekly_partition
-)
-from socorro.lib.context_tools import temp_file_context
+from configman.converters import str_to_python_object
+import ujson
+from ujson import loads as json_loads
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     execute_no_results
 )
+from socorro.lib.context_tools import temp_file_context
+from socorro.lib.datetimeutil import (
+    UTC,
+    datetime_from_isodate_string,
+    datestring_to_weekly_partition
+)
+from socorro.lib.ooid import dateFromOoid
+from socorro.lib.transform_rules import Rule
+from socorro.signature import SignatureGenerator
 
 
 class ProductRule(Rule):
@@ -1048,4 +1044,19 @@ class ThemePrettyNameRule(Rule):
                     )
             elif addon in self.conversions:
                 addons[index] = self.conversions[addon]
+        return True
+
+
+class SignatureGeneratorRule(Rule):
+    """Generates a Socorro crash signature"""
+
+    def __init__(self, config):
+        super(SignatureGeneratorRule, self).__init__(config)
+        self.generator = SignatureGenerator(config)
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        # Generate a crash signature and capture the signature and notes
+        ret = self.generator.generate(raw_crash, processed_crash)
+        processed_crash['signature'] = ret['signature']
+        processor_meta['processor_notes'].extend(ret['notes'])
         return True

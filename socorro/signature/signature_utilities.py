@@ -2,17 +2,26 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import re
-
-import ujson
 from itertools import islice
+import re
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
-
-from socorro.lib.transform_rules import Rule
+import ujson
 
 from socorro import siglists
+
+
+class Rule(object):
+    """Base class for Signature generation rules"""
+    def __init__(self, config):
+        self.config = config
+
+    def predicate(self, raw_crash, processed_crash, notes):
+        return True
+
+    def action(self, raw_crash, processed_crash, notes):
+        return True
 
 
 class SignatureTool(RequiredConfig):
@@ -436,7 +445,7 @@ class SignatureGenerationRule(Rule):
     def _get_crashing_thread(self, processed_crash):
         return processed_crash['json_dump']['crash_info']['crashing_thread']
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         # If this is a Java crash, then generate a Java signature
         if 'JavaStackTrace' in raw_crash and raw_crash['JavaStackTrace']:
             signature, signature_notes = self.java_signature_tool.generate(
@@ -445,7 +454,7 @@ class SignatureGenerationRule(Rule):
             )
             processed_crash['signature'] = signature
             if signature_notes:
-                processor_meta['processor_notes'].extend(signature_notes)
+                notes.extend(signature_notes)
             return True
 
         # This isn't a Java crash, so figure out what we need and then generate a C signature
@@ -469,9 +478,7 @@ class SignatureGenerationRule(Rule):
             else:
                 signature_list = []
         except Exception as x:
-            processor_meta['processor_notes'].append(
-                'No crashing frames found because of %s' % x
-            )
+            notes.append('No crashing frames found because of %s' % x)
             signature_list = []
 
         signature, signature_notes = self.c_signature_tool.generate(
@@ -482,7 +489,7 @@ class SignatureGenerationRule(Rule):
         processed_crash['proto_signature'] = ' | '.join(signature_list)
         processed_crash['signature'] = signature
         if signature_notes:
-            processor_meta['processor_notes'].extend(signature_notes)
+            notes.extend(signature_notes)
         return True
 
 
@@ -497,10 +504,7 @@ class OOMSignature(Rule):
         'AutoEnterOOMUnsafeRegion'
     )
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         if 'OOMAllocationSize' in raw_crash:
             return True
 
@@ -511,7 +515,7 @@ class OOMSignature(Rule):
 
         return False
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         processed_crash['original_signature'] = processed_crash['signature']
         try:
             size = int(raw_crash['OOMAllocationSize'])
@@ -534,13 +538,10 @@ class AbortSignature(Rule):
     """To satisfy Bug 803779, this rule will modify the signature to
     tag Abort crashes"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return bool(raw_crash.get('AbortMessage'))
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         processed_crash['original_signature'] = processed_crash['signature']
         abort_message = raw_crash['AbortMessage']
 
@@ -578,13 +579,10 @@ class SigTrim(Rule):
     """ensure that the signature never has any leading or trailing white
     spaces"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return isinstance(processed_crash['signature'], basestring)
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = processed_crash['signature'].strip()
         return True
 
@@ -592,13 +590,10 @@ class SigTrim(Rule):
 class SigTrunc(Rule):
     """ensure that the signature is never longer than 255 characters"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return len(processed_crash['signature']) > 255
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = "%s..." % processed_crash['signature'][:252]
         return True
 
@@ -606,16 +601,13 @@ class SigTrunc(Rule):
 class StackwalkerErrorSignatureRule(Rule):
     """ensure that the signature contains the stackwalker error message"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return bool(
             processed_crash['signature'].startswith('EMPTY') and
             processed_crash.get('mdsw_status_string')
         )
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = "%s; %s" % (
             processed_crash['signature'],
             processed_crash['mdsw_status_string']
@@ -626,10 +618,7 @@ class StackwalkerErrorSignatureRule(Rule):
 class SignatureRunWatchDog(SignatureGenerationRule):
     """ensure that the signature contains the stackwalker error message"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return 'RunWatchdog' in processed_crash['signature']
 
     def _get_crashing_thread(self, processed_crash):
@@ -637,18 +626,13 @@ class SignatureRunWatchDog(SignatureGenerationRule):
         # was hanging when the software was artificially crashed.
         return 0
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         # For shutdownhang crashes, we need to use thread 0 instead of the
         # crashing thread. The reason is because those crashes happen
         # artificially when thread 0 gets stuck. So whatever the crashing
         # thread is, we don't care about it and only want to know what was
         # happening in thread 0 when it got stuck.
-        result = super(SignatureRunWatchDog, self)._action(
-            raw_crash,
-            raw_dumps,
-            processed_crash,
-            processor_meta
-        )
+        result = super(SignatureRunWatchDog, self).action(raw_crash, processed_crash, notes)
         processed_crash['signature'] = (
             "shutdownhang | %s" % processed_crash['signature']
         )
@@ -659,13 +643,10 @@ class SignatureShutdownTimeout(Rule):
     """replaces the signature if there is a shutdown timeout message in the
     crash"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return bool(raw_crash.get('AsyncShutdownTimeout'))
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         parts = ['AsyncShutdownTimeout']
         try:
             shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
@@ -685,12 +666,10 @@ class SignatureShutdownTimeout(Rule):
                 parts.append("(none)")
         except (ValueError, KeyError) as e:
             parts.append("UNKNOWN")
-            processor_meta['processor_notes'].append(
-                'Error parsing AsyncShutdownTimeout: {}'.format(e)
-            )
+            notes.append('Error parsing AsyncShutdownTimeout: {}'.format(e))
 
         new_sig = ' | '.join(parts)
-        processor_meta['processor_notes'].append(
+        notes.append(
             'Signature replaced with a Shutdown Timeout signature, '
             'was: "{}"'.format(processed_crash['signature'])
         )
@@ -702,17 +681,14 @@ class SignatureShutdownTimeout(Rule):
 class SignatureJitCategory(Rule):
     """replaces the signature if there is a JIT classification in the crash"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         try:
             return bool(processed_crash['classifications']['jit']['category'])
         except KeyError:
             return False
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processor_meta['processor_notes'].append(
+    def action(self, raw_crash, processed_crash, notes):
+        notes.append(
             'Signature replaced with a JIT Crash Category, '
             'was: "{}"'.format(processed_crash['signature'])
         )
@@ -725,20 +701,17 @@ class SignatureJitCategory(Rule):
 class SignatureIPCChannelError(Rule):
     """replaces the signature if there is a IPC channel error in the crash"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return bool(raw_crash.get('ipc_channel_error'))
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         if raw_crash.get('additional_minidumps') == 'browser':
             new_sig = 'IPCError-browser | {}'
         else:
             new_sig = 'IPCError-content | {}'
         new_sig = new_sig.format(raw_crash['ipc_channel_error'][:100])
 
-        processor_meta['processor_notes'].append(
+        notes.append(
             'Signature replaced with an IPC Channel Error, '
             'was: "{}"'.format(processed_crash['signature'])
         )
@@ -750,13 +723,10 @@ class SignatureIPCChannelError(Rule):
 class SignatureIPCMessageName(Rule):
     """augments the signature if there is a IPC message name in the crash"""
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, processed_crash, notes):
         return bool(raw_crash.get('IPCMessageName'))
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = '{} | IPC_Message_Name={}'.format(
             processed_crash['signature'],
             raw_crash['IPCMessageName']
