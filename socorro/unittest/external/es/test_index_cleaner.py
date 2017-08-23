@@ -27,9 +27,6 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         })
 
     def setUp(self):
-        # Create the supersearch fields.
-        self.index_super_search_fields()
-
         self.indices = []
 
     def tearDown(self):
