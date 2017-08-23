@@ -3042,7 +3042,8 @@
             "type": "text",
             "fields": {
                 "full": {
-                    "type": "keyword"
+                    "type": "keyword",
+                    "ignore_above": 30000
                 }
             }
         },
