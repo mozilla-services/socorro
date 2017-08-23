@@ -33,6 +33,22 @@ PARAMETERS_LISTING_FIELDS = (
 )
 
 
+class SuperSearchFieldsWithoutConfig(super_search_fields.SuperSearchFields):
+    """In the SuperSearchFields "middleware" class we know with confidence
+    we can just call
+    socorro.external.es.super_search_fields.SuperSearchFields.get() without
+    first having instanciated the base class with the necessary configuration
+    needed to reach ElasticSearch.
+
+    This way we can call `.get()` on an instance of this class, which
+    just reads a .json file.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # Deliberately don't do anything
+        pass
+
+
 def get_api_whitelist(include_all_fields=False):
 
     def get_from_es(include_all_fields):
@@ -216,14 +232,15 @@ class SuperSearchUnredacted(SuperSearch):
 
 class SuperSearchFields(ESSocorroMiddleware):
 
-    implementation = super_search_fields.SuperSearchFields
+    # Read it in once as a class attribute since it'll never change
+    # unless the .json file on disk changes and if that happens you
+    # will have reloaded the Python process.
+    _fields = SuperSearchFieldsWithoutConfig().get()
 
     API_WHITELIST = None
 
-    # The only reason this data will change is if a user changes it via the UI.
-    # If that happens, the cache will be reset automatically. We can thus
-    # increase the cache a lot here.
-    cache_seconds = 60 * 60 * 24  # 24 hours
+    def get(self):
+        return self._fields
 
 
 class SuperSearchMissingFields(ESSocorroMiddleware):
