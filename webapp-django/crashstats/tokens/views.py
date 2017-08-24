@@ -2,6 +2,7 @@ from django import http
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.http import require_POST
 from django.db import transaction
 
 from crashstats.crashstats.decorators import login_required
@@ -68,6 +69,7 @@ def home(request):
     return render(request, 'tokens/home.html', context)
 
 
+@require_POST
 @login_required
 @transaction.atomic
 def delete_token(request, pk):
