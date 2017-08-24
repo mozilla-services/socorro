@@ -52,7 +52,7 @@ Web app. Here is a list of those features:
 Supported versions
 ==================
 
-Socorro currently requires Elasticsearch version 1.4.
+Socorro currently requires Elasticsearch version 5.3.
 
 
 Configuration
