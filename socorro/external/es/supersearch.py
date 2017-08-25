@@ -5,6 +5,7 @@
 import datetime
 import sys
 import re
+import sys
 from collections import defaultdict
 
 from elasticsearch.exceptions import NotFoundError, RequestError
