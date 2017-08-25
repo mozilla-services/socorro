@@ -1,8 +1,4 @@
-sudo: true
-env:
-  global:
-    # See https://github.com/travis-ci/travis-ci/issues/7940
-    - BOTO_CONFIG=/dev/null
+sudo: no
 cache:
   directories:
     - $HOME/.cache/pip
@@ -12,9 +8,6 @@ python:
 
 addons:
   postgresql: "9.3"
-  apt:
-    packages:
-      - oracle-java8-set-default
 
 services:
   - rabbitmq

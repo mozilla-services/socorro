@@ -104,5 +104,6 @@ class IndexCreator(RequiredConfig):
             )
         except elasticsearch.exceptions.RequestError as e:
             # If this index already exists, swallow the error.
-            if e.error != 'index_already_exists_exception':
+            # NOTE! This is NOT how the error looks like in ES 2.x
+            if 'IndexAlreadyExistsException' not in str(e):
                 raise
