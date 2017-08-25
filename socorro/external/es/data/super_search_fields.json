@@ -1,42 +1,4 @@
 {
-    "accessibility_client": {
-        "default_value": null,
-        "is_mandatory": false,
-        "name": "accessibility_client",
-        "is_returned": true,
-        "query_type": "string",
-        "permissions_needed": [],
-        "storage_mapping": {
-            "type": "keyword",
-            "ignore_above": 10922
-        },
-        "namespace": "raw_crash",
-        "has_full_version": false,
-        "data_validation_type": "str",
-        "in_database_name": "AccessibilityClient",
-        "is_exposed": true,
-        "form_field_choices": [],
-        "description": "Out-of-process accessibility client program name and version information."
-    },
-    "accessibility_in_proc_client": {
-        "default_value": null,
-        "is_mandatory": false,
-        "name": "accessibility_in_proc_client",
-        "is_returned": true,
-        "query_type": "string",
-        "permissions_needed": [],
-        "storage_mapping": {
-            "type": "keyword",
-            "ignore_above": 10922
-        },
-        "namespace": "raw_crash",
-        "has_full_version": false,
-        "data_validation_type": "str",
-        "in_database_name": "AccessibilityInProcClient",
-        "is_exposed": true,
-        "form_field_choices": [],
-        "description": "In-process accessibility client detection information. See Compatibility.h for more details."
-    },
     "InstallTime": {
         "default_value": null,
         "is_mandatory": false,
