@@ -615,7 +615,7 @@ class TestViews(BaseTestViews):
         self._login()
         url = reverse('manage:supersearch_fields_missing')
 
-        def mocked_supersearchfields(**params):
+        def mocked_supersearchfields_get_fields(**params):
             return {
                 'product': {
                     'name': 'product',
@@ -641,10 +641,9 @@ class TestViews(BaseTestViews):
                 'total': 3
             }
 
-        supersearchfields_mock_get = mock.Mock()
-        supersearchfields_mock_get.side_effect = mocked_supersearchfields
-        SuperSearchFields.get = supersearchfields_mock_get
-
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
         SuperSearchMissingFields.implementation().get.side_effect = (
             mocked_supersearchfields_get_missing_fields
         )
