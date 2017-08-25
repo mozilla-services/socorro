@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
 import mock
 import random
 import uuid
@@ -20,6 +19,9 @@ from socorro.unittest.testbase import TestCase
 DEFAULT_VALUES = {
     'elasticsearch.elasticsearch_class': (
         'socorro.external.es.connection_context.ConnectionContext'
+    ),
+    'resource.elasticsearch.elasticsearch_default_index': (
+        'socorro_integration_test'
     ),
     'resource.elasticsearch.elasticsearch_index': (
         'socorro_integration_test_reports'
@@ -765,7 +767,7 @@ class SuperSearchWithFields(SuperSearch):
     This class does that automatically so we can just use `get()`. """
 
     def get(self, **kwargs):
-        kwargs['_fields'] = copy.deepcopy(SUPERSEARCH_FIELDS)
+        kwargs['_fields'] = SuperSearchFields(config=self.config).get_fields()
         return super(SuperSearchWithFields, self).get(**kwargs)
 
 
@@ -823,17 +825,20 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             self.connection = conn
 
     def setUp(self):
-        with mock.patch.object(SuperSearchFields, 'get_fields') as get_fields_mock:
-            get_fields_mock.return_value = copy.deepcopy(SUPERSEARCH_FIELDS)
+        # Create the supersearch fields.
+        self.index_super_search_fields()
 
-            self.index_creator.create_socorro_index(
-                self.config.elasticsearch.elasticsearch_index
-            )
+        self.index_creator.create_socorro_index(
+            self.config.elasticsearch.elasticsearch_index
+        )
 
         super(ElasticsearchTestCase, self).setUp()
 
     def tearDown(self):
         # Clear the test indices.
+        self.index_client.delete(
+            self.config.elasticsearch.elasticsearch_default_index
+        )
         self.index_client.delete(
             self.config.elasticsearch.elasticsearch_index
         )
@@ -870,6 +875,28 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             ElasticsearchConfig,
             extra_values=extra_values
         )
+
+    def index_super_search_fields(self, fields=None):
+        if fields is None:
+            fields = SUPERSEARCH_FIELDS
+
+        es_index = self.config.elasticsearch.elasticsearch_default_index
+
+        actions = []
+        for name, field in fields.iteritems():
+            action = {
+                '_index': es_index,
+                '_type': 'supersearch_fields',
+                '_id': name,
+                '_source': field,
+            }
+            actions.append(action)
+
+        bulk(
+            client=self.connection,
+            actions=actions,
+        )
+        self.index_client.refresh(index=[es_index])
 
     def index_crash(
         self, processed_crash, raw_crash=None, crash_id=None, root_doc=None

@@ -34,18 +34,22 @@ table.data-table tr td {
             <thead>
                 <tr>
                     <th>Field</th>
+                    <th>Options</th>
                 </tr>
             </thead>
         {% for field in missing_fields %}
             <tr>
                 <td>{{ field }}</td>
-            </tr>
-        {% else %}
-            <tr>
                 <td>
-                    No fields are missing at the moment.
+                    <a href="{{ url('manage:supersearch_field') }}?{{ make_query_string(
+                        full_name=field,
+                        ) }}">
+                        Create this field
+                    </a>
                 </td>
             </tr>
+        {% else %}
+            <tr colspan="2">No fields are missing at the moment.</tr>
         {% endfor %}
         </table>
     </div>
