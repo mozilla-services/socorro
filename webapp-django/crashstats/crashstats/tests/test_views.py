@@ -381,11 +381,9 @@ class BaseTestViews(DjangoTestCase):
                 'in_database_name': 'Accessibility',
             }
             return results
-
-        supersearchfields_mock_get = mock.Mock()
-        supersearchfields_mock_get.side_effect = mocked_supersearchfields
-        SuperSearchFields.get = supersearchfields_mock_get
-
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields
+        )
         # This will make sure the cache is pre-populated
         SuperSearchFields().get()
 

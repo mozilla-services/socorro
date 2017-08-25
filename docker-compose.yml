@@ -85,9 +85,8 @@ services:
 
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
-  # Note: We use 5.3.2 because that is the last supported 5.3.x version.
   elasticsearch:
-    image: elasticsearch:5.3.2
+    image: elasticsearch:1.4.5
     ports:
       - "9200:9200"
       - "9300:9300"
