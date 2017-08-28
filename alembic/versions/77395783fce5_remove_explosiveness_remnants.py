@@ -41,24 +41,24 @@ def downgrade():
     """
     op.create_table(
         'explosiveness',
-        day0=Column(u'day0', NUMERIC()),
-        day1=Column(u'day1', NUMERIC()),
-        day2=Column(u'day2', NUMERIC()),
-        day3=Column(u'day3', NUMERIC()),
-        day4=Column(u'day4', NUMERIC()),
-        day5=Column(u'day5', NUMERIC()),
-        day6=Column(u'day6', NUMERIC()),
-        day7=Column(u'day7', NUMERIC()),
-        day8=Column(u'day8', NUMERIC()),
-        day9=Column(u'day9', NUMERIC()),
-        last_date=Column(
+        Column(u'day0', NUMERIC()),
+        Column(u'day1', NUMERIC()),
+        Column(u'day2', NUMERIC()),
+        Column(u'day3', NUMERIC()),
+        Column(u'day4', NUMERIC()),
+        Column(u'day5', NUMERIC()),
+        Column(u'day6', NUMERIC()),
+        Column(u'day7', NUMERIC()),
+        Column(u'day8', NUMERIC()),
+        Column(u'day9', NUMERIC()),
+        Column(
             u'last_date',
             DATE(),
             primary_key=True,
             nullable=False
         ),
-        oneday=Column(u'oneday', NUMERIC()),
-        product_version_id=Column(
+        Column(u'oneday', NUMERIC()),
+        Column(
             u'product_version_id',
             INTEGER(),
             primary_key=True,
@@ -66,12 +66,12 @@ def downgrade():
             autoincrement=False,
             index=True
         ),
-        signature_id=Column(
+        Column(
             u'signature_id',
             INTEGER(),
             primary_key=True,
             nullable=False,
             index=True
         ),
-        threeday=Column(u'threeday', NUMERIC())
+        Column(u'threeday', NUMERIC())
     )
