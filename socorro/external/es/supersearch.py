@@ -500,7 +500,7 @@ class SuperSearch(SearchBase):
                 except IndexError:
                     # Not an ElasticsearchParseException exception
                     pass
-                # Why not just do `raise e`?
+                # Why not just do `raise exception`?
                 # Because if we don't do it this way, the eventual traceback
                 # is going to point to *this* line (right after this comment)
                 # rather than the actual error where it originally happened.
