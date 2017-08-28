@@ -48,6 +48,7 @@ setup(
     test_suite='nose.collector',
     zip_safe=False,
     data_files=[
+        ('socorro/external/es/data', glob.glob('socorro/external/es/data/*.json')),
         ('socorro/external/postgresql/raw_sql/procs',
             glob.glob('socorro/external/postgresql/raw_sql/procs/*.sql')),
         ('socorro/external/postgresql/raw_sql/views',
