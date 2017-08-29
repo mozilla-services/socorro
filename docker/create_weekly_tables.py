@@ -83,7 +83,7 @@ def main(args):
     all_tables = get_raw_crash_tables(cursor)
     new_tables = all_tables - existing
     if new_tables:
-        for table_name in new_tables:
+        for table_name in sorted(new_tables):
             print('Created %s' % table_name)
     else:
         print('Created no new tables')
