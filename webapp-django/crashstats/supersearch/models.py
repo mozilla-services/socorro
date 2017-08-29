@@ -1,3 +1,4 @@
+import copy
 import functools
 
 from socorro.external.es import query
@@ -31,6 +32,22 @@ PARAMETERS_LISTING_FIELDS = (
     '_aggs.android_cpu_abi.android_manufacturer.android_model',
     '_facets',
 )
+
+
+class SuperSearchFieldsWithoutConfig(super_search_fields.SuperSearchFields):
+    """In the SuperSearchFields implementation class we know with confidence
+    we can just call
+    socorro.external.es.super_search_fields.SuperSearchFields.get() without
+    first having instanciated the base class with the necessary configuration
+    needed to reach Elasticsearch.
+
+    This way we can call `.get()` on an instance of this class, which
+    just returns the fields.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # Deliberately don't do anything
+        pass
 
 
 def get_api_whitelist(include_all_fields=False):
@@ -216,14 +233,15 @@ class SuperSearchUnredacted(SuperSearch):
 
 class SuperSearchFields(ESSocorroMiddleware):
 
-    implementation = super_search_fields.SuperSearchFields
+    # Read it in once as a class attribute since it'll never change unless the
+    # Python code changes and if that happens you will have reloaded the
+    # Python process.
+    _fields = SuperSearchFieldsWithoutConfig().get()
 
     API_WHITELIST = None
 
-    # The only reason this data will change is if a user changes it via the UI.
-    # If that happens, the cache will be reset automatically. We can thus
-    # increase the cache a lot here.
-    cache_seconds = 60 * 60 * 24  # 24 hours
+    def get(self):
+        return copy.deepcopy(self._fields)
 
 
 class SuperSearchMissingFields(ESSocorroMiddleware):
@@ -233,48 +251,6 @@ class SuperSearchMissingFields(ESSocorroMiddleware):
     # This service's data doesn't change a lot over time, it's fine to cache
     # it for a long time.
     cache_seconds = 60 * 60 * 12  # 12 hours
-
-
-class SuperSearchField(ESSocorroMiddleware):
-
-    implementation = super_search_fields.SuperSearchFields
-
-    required_params = (
-        'name',
-    )
-
-    possible_params = (
-        'namespace',
-        'in_database_name',
-        'description',
-        'query_type',
-        'data_validation_type',
-        'permissions_needed',
-        'form_field_choices',
-        'is_exposed',
-        'is_returned',
-        'is_mandatory',
-        'has_full_version',
-        'storage_mapping',
-    )
-
-    def get(self, **kwargs):
-        raise NotImplemented()
-
-    def create_field(self, **kwargs):
-        return self.get_implementation().create_field(**kwargs)
-
-    def update_field(self, **kwargs):
-        return self.get_implementation().update_field(**kwargs)
-
-    def delete_field(self, **kwargs):
-        return self.get_implementation().delete_field(**kwargs)
-
-    def post(self, payload):
-        raise NotImplementedError('Use create_field')
-
-    def put(self, payload):
-        raise NotImplementedError('Use update_field')
 
 
 class Query(ESSocorroMiddleware):
