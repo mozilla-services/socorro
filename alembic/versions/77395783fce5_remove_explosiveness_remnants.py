@@ -16,7 +16,7 @@ down_revision = 'e5a31e87d305'
 
 
 def upgrade():
-    op.drop_table('explosiveness')
+    op.execute('DROP TABLE IF EXISTS explosiveness')
 
 
 def downgrade():
