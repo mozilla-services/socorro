@@ -54,13 +54,21 @@ def get_connection():
     return psycopg2.connect(dsn)
 
 
-def get_raw_crash_tables(cursor):
+def get_partition_tables(cursor):
     existing = set()
+
     cursor.execute(
-        'SELECT table_name FROM information_schema.tables WHERE table_name LIKE \'raw_crash%\''
+        'SELECT table_name FROM report_partition_info'
     )
-    for row in cursor.fetchall():
-        existing.add(row[0])
+    partition_tables = [row[0] for row in cursor.fetchall()]
+
+    for table in partition_tables:
+        cursor.execute(
+            'SELECT table_name FROM information_schema.tables WHERE table_name LIKE %s',
+            (table + '%',)
+        )
+        for row in cursor.fetchall():
+            existing.add(row[0])
     return existing
 
 
@@ -72,7 +80,7 @@ def main(args):
     cursor = conn.cursor()
 
     # Query raw_crashes tables
-    existing = get_raw_crash_tables(cursor)
+    existing = get_partition_tables(cursor)
 
     # This starts 8 weeks ago and tells the procedure to make 10 weeks worth of tables. So that
     # covers 8 weeks ago up to 2 weeks from now. That should be sufficient for any kinds of
@@ -80,7 +88,7 @@ def main(args):
     cursor.callproc('weekly_report_partitions', [10, eight_weeks_ago.strftime('%Y-%m-%d')])
 
     # Query tables again and print out new ones
-    all_tables = get_raw_crash_tables(cursor)
+    all_tables = get_partition_tables(cursor)
     new_tables = all_tables - existing
     if new_tables:
         for table_name in sorted(new_tables):
