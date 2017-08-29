@@ -2,17 +2,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
-import time
 import json
+import time
 
-from nose.tools import eq_, ok_, assert_raises
+from configman.dotdict import DotDict
+import mock
+import pytest
 
 from socorro.submitter.submitter_app import (
     SubmitterApp,
     SubmitterFileSystemWalkerSource,
 )
-from configman.dotdict import DotDict
 from socorro.external.crashstorage_base import Redactor
 from socorro.unittest.testbase import TestCase
 
@@ -56,8 +56,8 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
     def test_setup(self):
         config = self.get_standard_config()
         sub_walker = SubmitterFileSystemWalkerSource(config)
-        eq_(sub_walker.config, config)
-        eq_(sub_walker.config.logger, config.logger)
+        assert sub_walker.config == config
+        assert sub_walker.config.logger == config.logger
 
     def test_get_raw_crash(self):
         config = self.get_standard_config()
@@ -74,8 +74,8 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
                       ]
 
         raw_crash = sub_walker.get_raw_crash(path_tuple)
-        ok_(isinstance(raw_crash, DotDict))
-        eq_(raw_crash['name'], 'Gabi')
+        assert isinstance(raw_crash, DotDict)
+        assert raw_crash['name'] == 'Gabi'
 
     def test_get_raw_dumps_as_files(self):
         config = self.get_standard_config()
@@ -98,8 +98,8 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
             'flash2': '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump'
         }
 
-        ok_(isinstance(raw_dumps_files, dict))
-        eq_(raw_dumps_files, dump_names)
+        assert isinstance(raw_dumps_files, dict)
+        assert raw_dumps_files == dump_names
 
     def test_new_crashes(self):
         sequence = [
@@ -191,7 +191,7 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
 
                 sub_walker = SubmitterFileSystemWalkerSource(config)
                 result = [x for x in sub_walker.new_crashes()]
-                eq_(result, expected)
+                assert result == expected
 
 
 class TestSubmitterApp(TestCase):
@@ -277,8 +277,8 @@ class TestSubmitterApp(TestCase):
     def test_setup(self):
         config = self.get_standard_config()
         sub = SubmitterApp(config)
-        eq_(sub.config, config)
-        eq_(sub.config.logger, config.logger)
+        assert sub.config == config
+        assert sub.config.logger == config.logger
 
     def test_transform(self):
         config = self.get_standard_config()
@@ -319,10 +319,11 @@ class TestSubmitterApp(TestCase):
         sub.source.new_crashes = lambda: iter([1, 2, 3])
         itera = sub.source_iterator()
 
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
-        assert_raises(StopIteration, itera.next)
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
+        with pytest.raises(StopIteration):
+            itera.next()
 
         # Test with number of submissions equal to forever
         # It never raises StopIterations
@@ -335,12 +336,12 @@ class TestSubmitterApp(TestCase):
 
         sub.source.new_crashes = lambda: iter([1, 2, 3])
 
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
 
         # Test with number of submissions equal to an integer > number of items
         # It raises StopIterations after some number of elements were called
@@ -353,12 +354,13 @@ class TestSubmitterApp(TestCase):
 
         sub.source.new_crashes = lambda: iter([1, 2, 3])
 
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        assert_raises(StopIteration, itera.next)
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        with pytest.raises(StopIteration):
+            itera.next()
 
         # Test with number of submissions equal to an integer < number of items
         # It raises StopIterations after some number of elements were called
@@ -371,8 +373,9 @@ class TestSubmitterApp(TestCase):
 
         sub.source.new_crashes = lambda: iter([1, 2, 3])
 
-        eq_(itera.next(), ((1,), {}))
-        assert_raises(StopIteration, itera.next)
+        assert itera.next() == ((1,), {})
+        with pytest.raises(StopIteration):
+            itera.next()
 
     def test_new_crash_source_iterator(self):
 
@@ -388,10 +391,11 @@ class TestSubmitterApp(TestCase):
             .new_crashes = lambda: iter([1, 2, 3])
         itera = sub.source_iterator()
 
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
-        assert_raises(StopIteration, itera.next)
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
+        with pytest.raises(StopIteration):
+            itera.next()
 
         # Test with number of submissions equal to forever
         # It never raises StopIterations
@@ -407,12 +411,12 @@ class TestSubmitterApp(TestCase):
         config.new_crash_source.new_crash_source_class.return_value \
             .new_crashes = lambda: iter([1, ((2, ), {}), 3])
 
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
-        eq_(itera.next(), ((1,), {}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
+        assert itera.next() == ((1,), {})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
 
         # Test with number of submissions equal to an integer > number of items
         # It raises StopIterations after some number of elements were called
@@ -427,12 +431,13 @@ class TestSubmitterApp(TestCase):
             return iter([((1, ), {'finished_func': (1,)}), 2, 3])
         config.new_crash_source.new_crash_source_class.return_value.new_crashes = _iter
 
-        eq_(itera.next(), ((1,), {'finished_func': (1,)}))
-        eq_(itera.next(), ((2,), {}))
-        eq_(itera.next(), ((3,), {}))
-        eq_(itera.next(), ((1,), {'finished_func': (1,)}))
-        eq_(itera.next(), ((2,), {}))
-        assert_raises(StopIteration, itera.next)
+        assert itera.next() == ((1,), {'finished_func': (1,)})
+        assert itera.next() == ((2,), {})
+        assert itera.next() == ((3,), {})
+        assert itera.next() == ((1,), {'finished_func': (1,)})
+        assert itera.next() == ((2,), {})
+        with pytest.raises(StopIteration):
+            itera.next()
 
         # Test with number of submissions equal to an integer < number of items
         # It raises StopIterations after some number of elements were called
@@ -446,8 +451,9 @@ class TestSubmitterApp(TestCase):
         config.new_crash_source.new_crash_source_class.return_value \
             .new_crashes = lambda: iter([1, 2, 3])
 
-        eq_(itera.next(), ((1,), {}))
-        assert_raises(StopIteration, itera.next)
+        assert itera.next() == ((1,), {})
+        with pytest.raises(StopIteration):
+            itera.next()
 
         # Test with number of submissions equal to an integer < number of items
         # AND the new_crashes iter returning an args, kwargs form rather than
@@ -460,20 +466,12 @@ class TestSubmitterApp(TestCase):
         sub._setup_task_manager()
         itera = sub.source_iterator()
 
+        item1 = (((1, ['./1.json', './1.dump', './1.other.dump']), ), {})
+        item2 = (((2, ['./2.json', './1.dump']), ), {})
         config.new_crash_source.new_crash_source_class.return_value \
-            .new_crashes = lambda: iter(
-                [
-                    (((1, ['./1.json', './1.dump', './1.other.dump']), ), {}),
-                    (((2, ['./2.json', './1.dump']), ), {})
-                ]
-            )
+            .new_crashes = lambda: iter([item1, item2])
 
-        eq_(
-            itera.next(),
-            (((1, ['./1.json', './1.dump', './1.other.dump']), ), {})
-        )
-        eq_(
-            itera.next(),
-            (((2, ['./2.json', './1.dump']), ), {})
-        )
-        assert_raises(StopIteration, itera.next)
+        assert itera.next() == item1
+        assert itera.next() == item2
+        with pytest.raises(StopIteration):
+            itera.next()
