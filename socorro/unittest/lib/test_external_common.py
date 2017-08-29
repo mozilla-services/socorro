@@ -26,7 +26,6 @@ class TestExternalCommon(TestCase):
         datatype = "int"
         res = external_common.check_type(param, datatype)
 
-        assert isinstance(res, int)
         assert res == param
 
         # Test 3: integer
@@ -34,7 +33,6 @@ class TestExternalCommon(TestCase):
         datatype = "int"
         res = external_common.check_type(param, datatype)
 
-        assert isinstance(res, int)
         assert res == 12
 
         # Test 4: string
@@ -42,7 +40,6 @@ class TestExternalCommon(TestCase):
         datatype = "str"
         res = external_common.check_type(param, datatype)
 
-        assert isinstance(res, str)
         assert res == "2012-01-01 00:00:00"
 
         # Test 5: boolean
@@ -50,7 +47,6 @@ class TestExternalCommon(TestCase):
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        assert isinstance(res, bool)
         assert res is True
 
         # Test 6: boolean
@@ -58,7 +54,6 @@ class TestExternalCommon(TestCase):
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        assert isinstance(res, bool)
         assert res is True
 
         # Test 7: boolean
@@ -66,7 +61,6 @@ class TestExternalCommon(TestCase):
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        assert isinstance(res, bool)
         assert res is False
 
         # Test 8: datetime
