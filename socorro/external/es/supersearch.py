@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import sys
 import re
 from collections import defaultdict
 
@@ -484,6 +485,7 @@ class SuperSearch(SearchBase):
                     shards = None
                     break
             except RequestError as exception:
+                exc_type, exc_value, exc_tb = sys.exc_info()
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
                 try:
@@ -498,7 +500,11 @@ class SuperSearch(SearchBase):
                 except IndexError:
                     # Not an ElasticsearchParseException exception
                     pass
-                raise
+                # Why not just do `raise exception`?
+                # Because if we don't do it this way, the eventual traceback
+                # is going to point to *this* line (right after this comment)
+                # rather than the actual error where it originally happened.
+                raise exc_type, exc_value, exc_tb
 
         if shards and shards.failed:
             # Some shards failed. We want to explain what happened in the
