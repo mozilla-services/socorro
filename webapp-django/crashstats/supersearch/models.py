@@ -1,3 +1,4 @@
+import copy
 import functools
 
 from socorro.external.es import query
@@ -41,7 +42,7 @@ class SuperSearchFieldsWithoutConfig(super_search_fields.SuperSearchFields):
     needed to reach Elasticsearch.
 
     This way we can call `.get()` on an instance of this class, which
-    just reads a .json file.
+    just returns the fields.
     """
 
     def __init__(self, *args, **kwargs):
@@ -232,15 +233,15 @@ class SuperSearchUnredacted(SuperSearch):
 
 class SuperSearchFields(ESSocorroMiddleware):
 
-    # Read it in once as a class attribute since it'll never change
-    # unless the .json file on disk changes and if that happens you
-    # will have reloaded the Python process.
+    # Read it in once as a class attribute since it'll never change unless the
+    # Python code changes and if that happens you will have reloaded the
+    # Python process.
     _fields = SuperSearchFieldsWithoutConfig().get()
 
     API_WHITELIST = None
 
     def get(self):
-        return self._fields
+        return copy.deepcopy(self._fields)
 
 
 class SuperSearchMissingFields(ESSocorroMiddleware):
