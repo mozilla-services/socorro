@@ -63,7 +63,7 @@ def downgrade():
             checkdata boolean DEFAULT true,
             check_period interval DEFAULT '01:00:00'::interval
         ) RETURNS boolean
-            LANGUAGE plpgsqlq
+            LANGUAGE plpgsql
             SET client_min_messages TO 'ERROR'
         AS $$
         BEGIN
