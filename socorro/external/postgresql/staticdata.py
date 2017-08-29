@@ -147,69 +147,146 @@ class CrashTypes(BaseTable):
 
 class ReportPartitionInfo(BaseTable):
     table = 'report_partition_info'
-    columns = ['table_name', 'build_order', 'keys', 'indexes',
-               'fkeys', 'partition_column', 'timetype']
-    rows = [['reports', '1', '{id,uuid}',
-             '{date_processed,hangid,"product,version",reason,signature,url}',
-             '{}', 'date_processed', 'TIMESTAMPTZ'],
-            ['plugins_reports', '2', '{"report_id,plugin_id"}',
-             '{"report_id,date_processed"}',
-             ('{"(plugin_id) REFERENCES plugins(id)","(report_id)'
-              ' REFERENCES reports_WEEKNUM(id)"}'),
-             'date_processed', 'TIMESTAMPTZ'],
-            ['extensions', '3', '{"report_id,extension_key"}',
-             '{"report_id,date_processed"}',
-             '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
-             'date_processed', 'TIMESTAMPTZ'],
-            ['raw_crashes', '4', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ'],
-            ['processed_crashes', '5', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ'],
-            ['signature_summary_products', '6',
-             '{"signature_id,product_name,version_string,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_installations', '7',
-             '{"signature_id,product_name,version_string,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_uptime', '8',
-             '{"signature_id,product_name,version_string,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_os', '9',
-             '{"signature_id,os_version_string,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_process_type', '10',
-             '{"signature_id,process_type,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_architecture', '11',
-             '{"signature_id,architecture,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_flash_version', '12',
-             '{"signature_id,flash_version,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_device', '13',
-             '{"signature_id,android_device_id,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['missing_symbols', '14',
-             '{}',
-             '{}',
-             '{}',
-             'date_processed', 'DATE']]
+    columns = [
+        'table_name', 'build_order', 'keys', 'indexes', 'fkeys', 'partition_column', 'timetype'
+    ]
+    rows = [
+        (
+            'reports',
+            '1',
+            '{id,uuid}',
+            '{date_processed,hangid,"product,version",reason,signature,url}',
+            '{}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'plugins_reports',
+            '2',
+            '{"report_id,plugin_id"}',
+            '{"report_id,date_processed"}',
+            '{"(plugin_id) REFERENCES plugins(id)","(report_id) REFERENCES reports_WEEKNUM(id)"}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'extensions',
+            '3',
+            '{"report_id,extension_key"}',
+            '{"report_id,date_processed"}',
+            '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'raw_crashes',
+            '4',
+            '{uuid}',
+            '{date_processed}',
+            '{}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'signature_summary_installations',
+            '5',
+            '{"signature_id,product_name,version_string,report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'signature_summary_architecture',
+            '6',
+            '{"signature_id, architecture, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'signature_summary_flash_version',
+            '7',
+            '{"signature_id, flash_version, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'signature_summary_os',
+            '8',
+            '{"signature_id, os_version_string, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'signature_summary_process_type',
+            '9',
+            '{"signature_id, process_type, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'signature_summary_products',
+            '10',
+            '{"signature_id, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'signature_summary_uptime',
+            '11',
+            '{"signature_id, uptime_string, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'processed_crashes',
+            '12',
+            '{uuid}',
+            '{date_processed}',
+            '{}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'missing_symbols',
+            '13',
+            '{}',
+            '{}',
+            '{}',
+            'date_processed',
+            'DATE'
+        ),
+        (
+            'signature_summary_device',
+            '14',
+            '{"signature_id, android_device_id, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+        (
+            'signature_summary_graphics',
+            '15',
+            '{"signature_id, graphics_device_id, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        ),
+    ]
 
 
 class Products(BaseTable):
