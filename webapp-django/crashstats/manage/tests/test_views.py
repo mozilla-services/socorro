@@ -104,8 +104,8 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         # certain links on that page
-        fields_url = reverse('manage:supersearch_fields')
-        ok_(fields_url in response.content)
+        fields_missing_url = reverse('manage:supersearch_fields_missing')
+        ok_(fields_missing_url in response.content)
         users_url = reverse('manage:users')
         ok_(users_url in response.content)
         products_url = reverse('manage:products')

@@ -2,7 +2,6 @@ import collections
 import copy
 import hashlib
 import math
-import urllib
 
 from django import http
 from django.conf import settings
@@ -25,10 +24,7 @@ from crashstats.crashstats.models import (
     Platforms,
     Reprocessing,
 )
-from crashstats.supersearch.models import (
-    SuperSearchFields,
-    SuperSearchMissingFields,
-)
+from crashstats.supersearch.models import SuperSearchMissingFields
 from crashstats.tokens.models import Token
 from crashstats.status.models import StatusMessage
 from crashstats.symbols.models import SymbolsUpload
@@ -413,34 +409,6 @@ def symbols_uploads_data(request):
 
 
 @superuser_required
-def supersearch_fields(request):
-    context = {}
-    sorted_fields = sorted(
-        SuperSearchFields().get().values(),
-        key=lambda x: x['name'].lower()
-    )
-    context['fields'] = sorted_fields
-    return render(request, 'manage/supersearch_fields.html', context)
-
-
-def _get_supersearch_field_data(source):
-    form = forms.SuperSearchFieldForm(source)
-
-    if not form.is_valid():
-        return str(form.errors)
-
-    return form.cleaned_data
-
-
-def _delete_supersearch_fields_api_cache(namespace=None):
-    # The API is using cache to get all fields by a specific namespace
-    # for the whitelist lookup, clear that cache too.
-    if namespace:
-        cache.delete('api_supersearch_fields_{}'.format(namespace))
-    cache.delete('api_supersearch_fields')
-
-
-@superuser_required
 def supersearch_fields_missing(request):
     context = {}
     missing_fields = SuperSearchMissingFields().get()
@@ -591,14 +559,6 @@ def events_data(request):
             return reverse('manage:user', args=(extra.get('id'),))
         if action in ('group.edit', 'group.add') and extra.get('id'):
             return reverse('manage:group', args=(extra.get('id'),))
-        if (
-            action in ('supersearch_field.post', 'supersearch_field.put') and
-            extra.get('name')
-        ):
-            return (
-                reverse('manage:supersearch_field') + '?' +
-                urllib.urlencode({'name': extra.get('name')})
-            )
 
     for event in batch_page.object_list:
         items.append({
