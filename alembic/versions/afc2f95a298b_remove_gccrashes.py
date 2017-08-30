@@ -25,7 +25,7 @@ def upgrade():
     op.execute(
         'DROP FUNCTION backfill_gccrashes(date, interval)'
     )
-    op.drop_table('gccrashes')
+    op.execute('DROP TABLE IF EXISTS gccrashes')
     load_stored_proc(op, ['backfill_matviews.sql'])
 
 
