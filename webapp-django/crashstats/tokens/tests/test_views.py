@@ -146,6 +146,10 @@ class TestViews(BaseTestViews):
         )
 
         url = reverse('tokens:delete_token', args=(token1.pk,))
+        # Just like a good logout endpoint, shouldn't be able to GET there.
+        response = self.client.get(url)
+        eq_(response.status_code, 405)
+        # It has to be post.
         response = self.client.post(url)
         eq_(response.status_code, 302)
         ok_(not models.Token.objects.filter(notes='Some note'))
