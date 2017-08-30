@@ -3,20 +3,25 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from itertools import islice
+import logging
 import re
 
-from configman import Namespace, RequiredConfig
-from configman.converters import class_converter
 import ujson
 
 from socorro import siglists
+from socorro.lib.treelib import tree_get
+
+
+SIGNATURE_MAX_LENGTH = 255
+MAXIMUM_FRAMES_TO_CONSIDER = 40
+SIGNATURE_ESCAPE_SINGLE_QUOTE = True
+
+
+logger = logging.getLogger(__name__)
 
 
 class Rule(object):
     """Base class for Signature generation rules"""
-    def __init__(self, config):
-        self.config = config
-
     def predicate(self, raw_crash, processed_crash, notes):
         return True
 
@@ -24,18 +29,16 @@ class Rule(object):
         return True
 
 
-class SignatureTool(RequiredConfig):
+class SignatureTool(object):
     """this is the base class for signature generation objects.  It defines the
     basic interface and provides truncation and quoting service.  Any derived
     classes should implement the '_do_generate' function.  If different
     truncation or quoting techniques are desired, then derived classes may
-    override the 'generate' function."""
-    required_config = Namespace()
+    override the 'generate' function.
 
-    def __init__(self, config, quit_check_callback=None):
-        self.config = config
-        self.max_len = config.setdefault('signature_max_len', 255)
-        self.escape_single_quote = config.setdefault('signature_escape_single_quote', True)
+    """
+
+    def __init__(self, quit_check_callback=None):
         self.quit_check_callback = quit_check_callback
 
     def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=' | '):
@@ -45,10 +48,10 @@ class SignatureTool(RequiredConfig):
             crashed_thread,
             delimiter
         )
-        if self.escape_single_quote:
+        if SIGNATURE_ESCAPE_SINGLE_QUOTE:
             signature = signature.replace("'", "''")
-        if len(signature) > self.max_len:
-            signature = "%s..." % signature[:self.max_len - 3]
+        if len(signature) > SIGNATURE_MAX_LENGTH:
+            signature = "%s..." % signature[:SIGNATURE_MAX_LENGTH - 3]
             signature_notes.append('SignatureTool: signature truncated due to '
                                    'length')
         return signature, signature_notes
@@ -62,26 +65,19 @@ class CSignatureToolBase(SignatureTool):
     breakpad C/C++ stacks.  It provides a method to normalize signatures
     and then defines its own '_do_generate' method."""
 
-    required_config = Namespace()
-    required_config.add_option(
-        'collapse_arguments',
-        default=False,
-        doc="remove function arguments during normalization",
-        reference_value_from='resource.signature'
-    )
-
     hang_prefixes = {
         -1: "hang",
         1: "chromehang"
     }
 
-    def __init__(self, config, quit_check_callback=None):
-        super(CSignatureToolBase, self).__init__(config, quit_check_callback)
+    def __init__(self, quit_check_callback=None):
+        super(CSignatureToolBase, self).__init__(quit_check_callback)
         self.irrelevant_signature_re = None
         self.prefix_signature_re = None
         self.signatures_with_line_numbers_re = None
         self.trim_dll_signature_re = None
         self.signature_sentinels = []
+        self.collapse_arguments = True
 
         self.fixup_space = re.compile(r' (?=[\*&,])')
         self.fixup_comma = re.compile(r',(?! )')
@@ -173,7 +169,7 @@ class CSignatureToolBase(SignatureTool):
                 'T>',
                 ('name omitted', 'IPC::ParamTraits')
             )
-            if self.config.collapse_arguments:
+            if self.collapse_arguments:
                 function = self._collapse(
                     function,
                     '(',
@@ -283,8 +279,8 @@ class CSignatureTool(CSignatureToolBase):
     """This is a C/C++ signature generation class that gets its initialization
     from files."""
 
-    def __init__(self, config, quit_check_callback=None):
-        super(CSignatureTool, self).__init__(config, quit_check_callback)
+    def __init__(self, quit_check_callback=None):
+        super(CSignatureTool, self).__init__(quit_check_callback)
         self.irrelevant_signature_re = re.compile(
             '|'.join(siglists.IRRELEVANT_SIGNATURE_RE)
         )
@@ -377,7 +373,7 @@ class JavaSignatureTool(SignatureTool):
                 (java_exception_class, description_java_method_phrase)
             )
 
-        if len(signature) > self.max_len:
+        if len(signature) > SIGNATURE_MAX_LENGTH:
             signature = delimiter.join(
                 (java_exception_class, java_method)
             )
@@ -390,46 +386,17 @@ class JavaSignatureTool(SignatureTool):
 
 
 class SignatureGenerationRule(Rule):
-    required_config = Namespace()
-    required_config.namespace('c_signature')
-    required_config.c_signature.add_option(
-        'c_signature_tool_class',
-        doc='the class that can generate a C signature',
-        default='socorro.processor.signature_utilities.CSignatureTool',
-        from_string_converter=class_converter,
-        reference_value_from='resource.signature'
-    )
-    required_config.c_signature.add_option(
-        'maximum_frames_to_consider',
-        doc='the maximum number of frames to consider',
-        default=40,
-        reference_value_from='resource.signature'
-    )
-    required_config.namespace('java_signature')
-    required_config.java_signature.add_option(
-        'java_signature_tool_class',
-        doc='the class that can generate a Java signature',
-        default='socorro.processor.signature_utilities.JavaSignatureTool',
-        from_string_converter=class_converter,
-        reference_value_from='resource.signature'
-    )
 
-    def __init__(self, config):
-        super(SignatureGenerationRule, self).__init__(config)
-        self.java_signature_tool = (
-            self.config.java_signature.java_signature_tool_class(
-                config.java_signature
-            )
-        )
-        self.c_signature_tool = self.config.c_signature.c_signature_tool_class(
-            config.c_signature
-        )
+    def __init__(self):
+        super(SignatureGenerationRule, self).__init__()
+        self.java_signature_tool = JavaSignatureTool()
+        self.c_signature_tool = CSignatureTool()
 
     def _create_frame_list(self, crashing_thread_mapping, make_modules_lower_case=False):
         frame_signatures_list = []
         for a_frame in islice(
             crashing_thread_mapping.get('frames', {}),
-            self.config.c_signature.maximum_frames_to_consider
+            MAXIMUM_FRAMES_TO_CONSIDER
         ):
             if make_modules_lower_case and 'module' in a_frame:
                 a_frame['module'] = a_frame['module'].lower()
@@ -580,7 +547,7 @@ class SigTrim(Rule):
     spaces"""
 
     def predicate(self, raw_crash, processed_crash, notes):
-        return isinstance(processed_crash['signature'], basestring)
+        return isinstance(tree_get(processed_crash, 'signature', default=None), basestring)
 
     def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = processed_crash['signature'].strip()
@@ -615,6 +582,7 @@ class StackwalkerErrorSignatureRule(Rule):
         return True
 
 
+# FIXME(willkg): This needs to be rethought
 class SignatureRunWatchDog(SignatureGenerationRule):
     """ensure that the signature contains the stackwalker error message"""
 

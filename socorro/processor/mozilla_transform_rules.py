@@ -1052,7 +1052,7 @@ class SignatureGeneratorRule(Rule):
 
     def __init__(self, config):
         super(SignatureGeneratorRule, self).__init__(config)
-        self.generator = SignatureGenerator(config)
+        self.generator = SignatureGenerator()
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
