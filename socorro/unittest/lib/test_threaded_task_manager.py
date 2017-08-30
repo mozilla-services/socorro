@@ -4,12 +4,13 @@
 
 import time
 
-from nose.tools import ok_
 from mock import Mock
 
-from socorro.lib.threaded_task_manager import ThreadedTaskManager, \
-    ThreadedTaskManagerWithConfigSetup, \
-    default_task_func
+from socorro.lib.threaded_task_manager import (
+    ThreadedTaskManager,
+    ThreadedTaskManagerWithConfigSetup,
+    default_task_func,
+)
 from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.unittest.testbase import TestCase
 
@@ -69,11 +70,8 @@ class TestThreadedTaskManager(TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            ok_(len(my_list) == 10,
-                'expected to do 10 inserts, '
-                'but %d were done instead' % len(my_list))
-            ok_(my_list == range(10),
-                'expected %s, but got %s' % (range(10), my_list))
+            assert len(my_list) == 10
+            assert my_list == range(10)
             ttm.stop()
         except Exception:
             # we got threads to join
@@ -98,15 +96,9 @@ class TestThreadedTaskManager(TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            ok_(len(ttm.thread_list) == 2,
-                "expected 2 threads, but found %d"
-                % len(ttm.thread_list))
-            ok_(len(my_list) == 10,
-                'expected to do 10 inserts, '
-                'but %d were done instead' % len(my_list))
-            ok_(sorted(my_list) == range(10),
-                'expected %s, but got %s' % (range(10),
-                                             sorted(my_list)))
+            assert len(ttm.thread_list) == 2
+            assert len(my_list) == 10
+            assert sorted(my_list) == range(10)
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -132,15 +124,9 @@ class TestThreadedTaskManager(TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            ok_(len(ttm.thread_list) == 2,
-                "expected 2 threads, but found %d"
-                % len(ttm.thread_list))
-            ok_(len(my_list) == 5,
-                'expected to do 5 inserts, '
-                'but %d were done instead' % len(my_list))
-            ok_(sorted(my_list) == range(5),
-                'expected %s, but got %s' % (range(5),
-                                             sorted(my_list)))
+            assert len(ttm.thread_list) == 2
+            assert len(my_list) == 5
+            assert sorted(my_list) == range(5)
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -177,15 +163,9 @@ class TestThreadedTaskManager(TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            ok_(len(ttm.thread_list) == 1,
-                "expected 1 threads, but found %d"
-                % len(ttm.thread_list))
-            ok_(sorted(my_list) == [0, 1, 2, 4, 5, 6, 7, 8, 9],
-                'expected %s, but got %s'
-                % ([0, 1, 2, 5, 6, 7, 8, 9], sorted(my_list)))
-            ok_(len(my_list) == 9,
-                'expected to do 9 inserts, '
-                'but %d were done instead' % len(my_list))
+            assert len(ttm.thread_list) == 1
+            assert sorted(my_list) == [0, 1, 2, 4, 5, 6, 7, 8, 9]
+            assert len(my_list) == 9
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
