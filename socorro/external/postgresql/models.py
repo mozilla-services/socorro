@@ -20,7 +20,6 @@ from sqlalchemy.dialects.postgresql import (
     TEXT,
     TIMESTAMP,
     NUMERIC,
-    REAL,
     DATE,
     BOOLEAN,
     UUID,
@@ -1633,20 +1632,6 @@ class CrontabberLog(DeclarativeBase):
         Index('crontabber_log_app_name_idx', app_name),
         Index('crontabber_log_log_time_idx', log_time),
     )
-
-
-class GCCrashes(DeclarativeBase):
-    __tablename__ = 'gccrashes'
-
-    report_date = Column(u'report_date', TIMESTAMP(
-        timezone=True), nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), nullable=False)
-    build = Column(u'build', NUMERIC(), nullable=True)
-    gc_count_madu = Column(u'gc_count_madu', REAL(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (report_date, product_version_id, build,
-                                       gc_count_madu)}
 
 
 class RawUpdateChannel(DeclarativeBase):
