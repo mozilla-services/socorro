@@ -330,8 +330,7 @@ class JavaSignatureTool(SignatureTool):
             java_exception_class = source_list[0]
             description = ''
             signature_notes.append(
-                'JavaSignatureTool: stack trace line 1 is '
-                'not in the expected format'
+                'JavaSignatureTool: stack trace line 1 is not in the expected format'
             )
         try:
             java_method = re.sub(
@@ -409,12 +408,9 @@ class SignatureGenerationRule(Rule):
             frame_signatures_list.append(normalized_signature)
         return frame_signatures_list
 
-    def _get_crashing_thread(self, processed_crash):
-        return processed_crash['json_dump']['crash_info']['crashing_thread']
-
     def action(self, raw_crash, processed_crash, notes):
         # If this is a Java crash, then generate a Java signature
-        if 'JavaStackTrace' in raw_crash and raw_crash['JavaStackTrace']:
+        if raw_crash.get('JavaStackTrace', None):
             signature, signature_notes = self.java_signature_tool.generate(
                 raw_crash['JavaStackTrace'],
                 delimiter=': '
@@ -425,27 +421,24 @@ class SignatureGenerationRule(Rule):
             return True
 
         # This isn't a Java crash, so figure out what we need and then generate a C signature
-        try:
-            crashed_thread = self._get_crashing_thread(processed_crash)
-        except KeyError:
-            crashed_thread = None
+        crashed_thread = tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', None)
 
         try:
-            if processed_crash.get('hang_type', None) == 1:
+            if processed_crash.get('hang_type', '') == 1:
                 # Force the signature to come from thread 0
                 signature_list = self._create_frame_list(
-                    processed_crash['json_dump']['threads'][0],
-                    processed_crash['json_dump']['system_info']['os'] == 'Windows NT'
+                    tree_get(processed_crash, 'json_dump.threads.[0]'),
+                    tree_get(processed_crash, 'json_dump.system_info.os') == 'Windows NT'
                 )
             elif crashed_thread is not None:
                 signature_list = self._create_frame_list(
-                    processed_crash['json_dump']["threads"][crashed_thread],
-                    processed_crash['json_dump']['system_info']['os'] == 'Windows NT'
+                    tree_get(processed_crash, 'json_dump.threads.[%d]' % crashed_thread),
+                    tree_get(processed_crash, 'json_dump.system_info.os') == 'Windows NT'
                 )
             else:
                 signature_list = []
-        except Exception as x:
-            notes.append('No crashing frames found because of %s' % x)
+        except (KeyError, IndexError) as exc:
+            notes.append('No crashing frames found because of %s' % exc)
             signature_list = []
 
         signature, signature_notes = self.c_signature_tool.generate(
@@ -475,7 +468,7 @@ class OOMSignature(Rule):
         if 'OOMAllocationSize' in raw_crash:
             return True
 
-        signature = processed_crash['signature']
+        signature = processed_crash. get('signature', [])
         for a_signature_fragment in self.signature_fragments:
             if a_signature_fragment in signature:
                 return True
@@ -547,7 +540,7 @@ class SigTrim(Rule):
     spaces"""
 
     def predicate(self, raw_crash, processed_crash, notes):
-        return isinstance(tree_get(processed_crash, 'signature', default=None), basestring)
+        return isinstance(processed_crash.get('signature', None), basestring)
 
     def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = processed_crash['signature'].strip()
