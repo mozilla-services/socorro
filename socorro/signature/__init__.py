@@ -85,12 +85,13 @@ class SignatureGenerator:
 
     def generate(self, raw_crash, processed_crash):
         """Takes data and returns a signature string"""
-        notes = []
+        all_notes = []
 
         for rule in self.pipeline:
+            notes = []
             try:
                 logger.debug(rule.__class__.__name__)
-                if rule.predicate(raw_crash, processed_crash, notes):
+                if rule.predicate(raw_crash, processed_crash):
                     rule.action(raw_crash, processed_crash, notes)
                 logger.debug('    -> %r' % processed_crash['signature'])
 
@@ -98,8 +99,9 @@ class SignatureGenerator:
                 self._send_to_sentry(rule, raw_crash, processed_crash)
                 logger.debug('Rule %s failed: "%s"', str(rule.__class__), exc, exc_info=True)
                 notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
+            all_notes.extend(notes)
 
         return {
             'signature': processed_crash['signature'],
-            'notes': notes
+            'notes': all_notes
         }

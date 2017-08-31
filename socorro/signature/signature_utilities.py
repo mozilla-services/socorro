@@ -22,12 +22,11 @@ logger = logging.getLogger(__name__)
 
 class Rule(object):
     """Base class for Signature generation rules"""
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         """Whether or not to run this rule
 
         :arg dict raw_crash: the raw crash structure
         :arg dict processed_crash: the processed crash structure
-        :arg list notes: the processor notes
 
         :returns: True or False
 
@@ -452,7 +451,7 @@ class OOMSignature(Rule):
         'AutoEnterOOMUnsafeRegion'
     )
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         if raw_crash.get('OOMAllocationSize'):
             return True
 
@@ -485,7 +484,7 @@ class AbortSignature(Rule):
     """To satisfy Bug 803779, this rule will modify the signature to
     tag Abort crashes"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return bool(raw_crash.get('AbortMessage'))
 
     def action(self, raw_crash, processed_crash, notes):
@@ -526,7 +525,7 @@ class SigTrim(Rule):
     """ensure that the signature never has any leading or trailing white
     spaces"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return isinstance(processed_crash.get('signature'), basestring)
 
     def action(self, raw_crash, processed_crash, notes):
@@ -537,7 +536,7 @@ class SigTrim(Rule):
 class SigTrunc(Rule):
     """ensure that the signature is never longer than 255 characters"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return len(processed_crash.get('signature', '')) > 255
 
     def action(self, raw_crash, processed_crash, notes):
@@ -548,7 +547,7 @@ class SigTrunc(Rule):
 class StackwalkerErrorSignatureRule(Rule):
     """ensure that the signature contains the stackwalker error message"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return bool(
             processed_crash.get('signature', '').startswith('EMPTY') and
             processed_crash.get('mdsw_status_string')
@@ -565,7 +564,7 @@ class StackwalkerErrorSignatureRule(Rule):
 class SignatureRunWatchDog(SignatureGenerationRule):
     """ensure that the signature contains the stackwalker error message"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return 'RunWatchdog' in processed_crash.get('signature', '')
 
     def _get_crashing_thread(self, processed_crash):
@@ -590,7 +589,7 @@ class SignatureShutdownTimeout(Rule):
     """replaces the signature if there is a shutdown timeout message in the
     crash"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return bool(raw_crash.get('AsyncShutdownTimeout'))
 
     def action(self, raw_crash, processed_crash, notes):
@@ -628,7 +627,7 @@ class SignatureShutdownTimeout(Rule):
 class SignatureJitCategory(Rule):
     """replaces the signature if there is a JIT classification in the crash"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return bool(tree_get(processed_crash, 'classifications.jit.category', None))
 
     def action(self, raw_crash, processed_crash, notes):
@@ -645,7 +644,7 @@ class SignatureJitCategory(Rule):
 class SignatureIPCChannelError(Rule):
     """replaces the signature if there is a IPC channel error in the crash"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return bool(raw_crash.get('ipc_channel_error'))
 
     def action(self, raw_crash, processed_crash, notes):
@@ -667,7 +666,7 @@ class SignatureIPCChannelError(Rule):
 class SignatureIPCMessageName(Rule):
     """augments the signature if there is a IPC message name in the crash"""
 
-    def predicate(self, raw_crash, processed_crash, notes):
+    def predicate(self, raw_crash, processed_crash):
         return bool(raw_crash.get('IPCMessageName'))
 
     def action(self, raw_crash, processed_crash, notes):

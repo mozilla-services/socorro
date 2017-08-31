@@ -26,7 +26,6 @@ from socorro.signature.signature_utilities import (
     SignatureShutdownTimeout,
     SignatureIPCMessageName,
 )
-from socorro.unittest.processor import create_basic_fake_processor
 
 
 class TestCSignatureTool:
@@ -1141,7 +1140,7 @@ class TestOOMSignature:
         processed_crash = {
             'signature': 'hello'
         }
-        predicate_result = OOMSignature().predicate({}, processed_crash, [])
+        predicate_result = OOMSignature().predicate({}, processed_crash)
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1152,7 +1151,7 @@ class TestOOMSignature:
             'signature': 'hello'
         }
         rule = OOMSignature()
-        predicate_result = rule.predicate(raw_crash, processed_crash, [])
+        predicate_result = rule.predicate(raw_crash, processed_crash)
         assert predicate_result is True
 
     def test_predicate_signature_fragment_1(self):
@@ -1160,7 +1159,7 @@ class TestOOMSignature:
             'signature': 'this | is | a | NS_ABORT_OOM | signature'
         }
         rule = OOMSignature()
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is True
 
     def test_predicate_signature_fragment_2(self):
@@ -1168,7 +1167,7 @@ class TestOOMSignature:
             'signature': 'mozalloc_handle_oom | this | is | bad'
         }
         rule = OOMSignature()
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is True
 
     def test_predicate_signature_fragment_3(self):
@@ -1176,7 +1175,7 @@ class TestOOMSignature:
             'signature': 'CrashAtUnhandlableOOM'
         }
         rule = OOMSignature()
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is True
 
     def test_action_success(self):
@@ -1230,7 +1229,7 @@ class TestAbortSignature:
         processed_crash = {
             'signature': 'hello'
         }
-        predicate_result = rule.predicate(raw_crash, processed_crash, [])
+        predicate_result = rule.predicate(raw_crash, processed_crash)
         assert predicate_result is True
 
     def test_predicate_no_match(self):
@@ -1240,7 +1239,7 @@ class TestAbortSignature:
         processed_crash = {
             'signature': 'hello'
         }
-        predicate_result = rule.predicate(raw_crash, processed_crash, [])
+        predicate_result = rule.predicate(raw_crash, processed_crash)
         assert predicate_result is False
 
     def test_predicate_empty_message(self):
@@ -1251,7 +1250,7 @@ class TestAbortSignature:
         processed_crash = {
             'signature': 'hello'
         }
-        predicate_result = rule.predicate(raw_crash, processed_crash, [])
+        predicate_result = rule.predicate(raw_crash, processed_crash)
         assert predicate_result is False
 
     def test_action_success(self):
@@ -1344,11 +1343,11 @@ class TestSigTrim:
         rule = SigTrim()
 
         processed_crash = {}
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
         processed_crash['signature'] = 42
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1356,7 +1355,7 @@ class TestSigTrim:
         processed_crash = {
             'signature': 'fooo::baar'
         }
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is True
 
     @pytest.mark.parametrize('signature, expected', [
@@ -1381,7 +1380,7 @@ class TestSigTrunc:
         processed_crash = {
             'signature': '0' * 100
         }
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1389,7 +1388,7 @@ class TestSigTrunc:
         processed_crash = {
             'signature': '9' * 256
         }
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is True
 
     def test_action_success(self):
@@ -1410,7 +1409,7 @@ class TestStackwalkerErrorSignatureRule:
         processed_crash = {
             'signature': '0' * 100
         }
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
     def test_predicate_no_match_missing_mdsw_status_string(self):
@@ -1418,7 +1417,7 @@ class TestStackwalkerErrorSignatureRule:
         processed_crash = {
             'signature': 'EMPTY: like my soul'
         }
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1427,7 +1426,7 @@ class TestStackwalkerErrorSignatureRule:
             'signature': 'EMPTY: like my soul',
             'mdsw_status_string': 'catastrophic stackwalker failure'
         }
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is True
 
     def test_action_success(self):
@@ -1458,17 +1457,17 @@ class TestSignatureWatchDogRule:
         fake_processed_crash = {
             'signature': "I'm not real",
         }
-        assert srwd.predicate({}, fake_processed_crash, []) is False
+        assert srwd.predicate({}, fake_processed_crash) is False
 
         fake_processed_crash = {
             'signature': "mozilla::`anonymous namespace''::RunWatchdog(void*)",
         }
-        assert srwd.predicate({}, fake_processed_crash, []) is True
+        assert srwd.predicate({}, fake_processed_crash) is True
 
         fake_processed_crash = {
             'signature': "mozilla::(anonymous namespace)::RunWatchdog",
         }
-        assert srwd.predicate({}, fake_processed_crash, []) is True
+        assert srwd.predicate({}, fake_processed_crash) is True
 
     def test_action(self):
         sgr = SignatureRunWatchDog()
@@ -1499,15 +1498,15 @@ class TestSignatureJitCategory:
             'classifications': {}
         }
 
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
         processed_crash['classifications']['jit'] = {}
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
         processed_crash['classifications']['jit']['category'] = ''
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1521,7 +1520,7 @@ class TestSignatureJitCategory:
             }
         }
 
-        predicate_result = rule.predicate({}, processed_crash, [])
+        predicate_result = rule.predicate({}, processed_crash)
         assert predicate_result is True
 
     def test_action_success(self):
@@ -1550,11 +1549,11 @@ class TestSignatureIPCChannelError:
         rule = SignatureIPCChannelError()
 
         raw_crash = {}
-        predicate_result = rule.predicate(raw_crash, {}, [])
+        predicate_result = rule.predicate(raw_crash, {})
         assert predicate_result is False
 
         raw_crash['ipc_channel_error'] = ''
-        predicate_result = rule.predicate(raw_crash, {}, [])
+        predicate_result = rule.predicate(raw_crash, {})
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1564,7 +1563,7 @@ class TestSignatureIPCChannelError:
             'ipc_channel_error': 'foo, bar'
         }
 
-        predicate_result = rule.predicate(raw_crash, {}, [])
+        predicate_result = rule.predicate(raw_crash, {})
         assert predicate_result is True
 
     def test_action_success(self):
@@ -1603,7 +1602,7 @@ class TestSignatureShutdownTimeout:
 
     def test_predicate_no_match(self):
         rule = SignatureShutdownTimeout()
-        predicate_result = rule.predicate({}, {}, [])
+        predicate_result = rule.predicate({}, {})
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1613,7 +1612,7 @@ class TestSignatureShutdownTimeout:
             'AsyncShutdownTimeout': '{"foo": "bar"}'
         }
 
-        predicate_result = rule.predicate(raw_crash, {}, [])
+        predicate_result = rule.predicate(raw_crash, {})
         assert predicate_result is True
 
     def test_action_missing_valueerror(self):
@@ -1728,11 +1727,11 @@ class TestSignatureIPCMessageName:
         rule = SignatureIPCMessageName()
 
         raw_crash = {}
-        predicate_result = rule.predicate(raw_crash, {}, [])
+        predicate_result = rule.predicate(raw_crash, {})
         assert predicate_result is False
 
         raw_crash['IPCMessageName'] = ''
-        predicate_result = rule.predicate(raw_crash, {}, [])
+        predicate_result = rule.predicate(raw_crash, {})
         assert predicate_result is False
 
     def test_predicate(self):
@@ -1745,7 +1744,7 @@ class TestSignatureIPCMessageName:
             'signature': 'fooo::baar'
         }
 
-        predicate_result = rule.predicate(raw_crash, processed_crash, [])
+        predicate_result = rule.predicate(raw_crash, processed_crash)
         assert predicate_result is True
 
     def test_action_success(self):
