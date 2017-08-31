@@ -28,36 +28,45 @@ def upgrade():
 
     # Now delete all these massive tables
     for table_name in all_table_names:
-        op.execute('DROP TABLE {}'.format(table_name))
+        op.execute('DROP TABLE IF EXISTS {}'.format(table_name))
 
     # Now delete all stored procedures
-    op.execute(
-        'DROP FUNCTION update_signature_summary_architecture(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_device(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_flash_version(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_graphics(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_installations(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_os(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_process_type(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_products(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_uptime(date, boolean)'
-    )
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_architecture(date, boolean)
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_device(date, boolean)'
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_flash_version(date, boolean)'
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_graphics(date, boolean)'
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_installations(date, boolean)'
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_os(date, boolean)'
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_process_type(date, boolean)'
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_products(date, boolean)'
+    """)
+    op.execute("""
+        DROP FUNCTION IF EXISTS
+        update_signature_summary_uptime(date, boolean)'
+    """)
     load_stored_proc(op, ['backfill_matviews.sql'])
 
     # Remove all mentions of signature_summary_* from the table that
