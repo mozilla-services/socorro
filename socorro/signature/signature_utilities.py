@@ -34,6 +34,17 @@ class Rule(object):
         return True
 
     def action(self, raw_crash, processed_crash, notes):
+        """Runs the rule against the data
+
+        This modifies ``processed_crash`` and ``notes`` in place.
+
+        :arg dict raw_crash: the raw crash structure
+        :arg dict processed_crash: the processed crash structure; modify the ``signature`` key
+        :arg list notes: list to add processing notes to
+
+        :returns: True
+
+        """
         return True
 
 
