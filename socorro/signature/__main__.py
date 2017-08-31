@@ -18,6 +18,7 @@ import sys
 
 import requests
 
+from socorro.lib.treelib import tree_get
 from socorro.signature import SignatureGenerator
 
 
@@ -26,24 +27,6 @@ logger = logging.getLogger('socorro.signature')
 
 # FIXME(willkg): This hits production. We might want it configurable.
 API_URL = 'https://crash-stats.mozilla.com/api/'
-
-
-def mega_get(thing, path):
-    """Traverses a thing structure using the instructions in path and returns the most helpful thing
-
-    :arg thing: a complex structure of dicts and lists and all that
-    :arg path: a list of keys
-    :returns: the value at the end of the path or ``None``
-
-    """
-    ret = thing
-    for key in path:
-        try:
-            ret = ret[key]
-        except (KeyError, IndexError):
-            return None
-
-    return ret
 
 
 def main(args):
@@ -114,32 +97,25 @@ def main(args):
         processed_crash = ret.json()
 
         old_signature = processed_crash['signature']
-        crashing_thread = mega_get(processed_crash, ['json_dump', 'crash_info', 'crashing_thread'])
+        crashing_thread = tree_get(processed_crash, 'json_dump.crash_info.crashing_thread')
 
         processed_crash_minimal = {
             'hang_type': processed_crash.get('hang_type', None),
             'json_dump': {
-                'threads': [
-                    # Thread 0
-                    mega_get(processed_crash, ['json_dump', 'threads', 0]),
-                    # crashed_thread (which might be thread 0, but that's fine)
-                    mega_get(processed_crash, ['json_dump', 'threads', crashing_thread]),
-                ],
+                'threads': tree_get(processed_crash, 'json_dump.threads', []),
                 'system_info': {
-                    'os': mega_get(processed_crash, ['json_dump', 'system_info', 'os']),
+                    'os': tree_get(processed_crash, 'json_dump.system_info.os', ''),
                 },
                 'crash_info': {
                     'crashing_thread': crashing_thread,
                 },
                 'classifications': {
                     'jit': {
-                        'category': mega_get(processed_crash, ['classifications', 'jit', 'category']),
+                        'category': tree_get(processed_crash, 'classifications.jit.category', ''),
                     }
                 },
             },
-
-            # FIXME(willkg): I don't see this in the processed crashes I've looked at.
-            'mdsw_status_string': None,
+            'mdsw_status_string': processed_crash.get('mdsw_status_string', None),
 
             # This needs to be an empty string--the signature generator fills it in.
             'signature': ''

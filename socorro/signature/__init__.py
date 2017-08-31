@@ -92,7 +92,7 @@ class SignatureGenerator:
                 logger.debug(rule.__class__.__name__)
                 if rule.predicate(raw_crash, processed_crash, notes):
                     rule.action(raw_crash, processed_crash, notes)
-                logger.debug('    Signature: %r' % processed_crash['signature'])
+                logger.debug('    -> %r' % processed_crash['signature'])
 
             except Exception as exc:
                 self._send_to_sentry(rule, raw_crash, processed_crash)
