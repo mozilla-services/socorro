@@ -422,7 +422,7 @@ class SignatureGenerationRule(Rule):
         crashed_thread = tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', None)
 
         try:
-            if processed_crash.get('hang_type', '') == 1:
+            if processed_crash.get('hang_type', None) == 1:
                 # Force the signature to come from thread 0
                 signature_list = self._create_frame_list(
                     tree_get(processed_crash, 'json_dump.threads.[0]'),
@@ -441,7 +441,7 @@ class SignatureGenerationRule(Rule):
 
         signature, signature_notes = self.c_signature_tool.generate(
             signature_list,
-            processed_crash.get('hang_type', ''),
+            processed_crash.get('hang_type', None),
             crashed_thread,
         )
         processed_crash['proto_signature'] = ' | '.join(signature_list)

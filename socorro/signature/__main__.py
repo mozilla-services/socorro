@@ -10,8 +10,10 @@ Usage:
     python -m socorro.signature <CRASHID> [<CRASHID>...]
 
 """
+from __future__ import print_function
 
 import argparse
+import csv
 import logging
 import logging.config
 import sys
@@ -29,25 +31,7 @@ logger = logging.getLogger('socorro.signature')
 API_URL = 'https://crash-stats.mozilla.com/api/'
 
 
-def main(args):
-    """
-    Takes crash data via args and generates a Socorro signature
-    """
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-v', '--verbose', help='increase output verbosity', action='store_true'
-    )
-    parser.add_argument(
-        'crashids', metavar='crashid', nargs='+', help='crash id to generate signatures for'
-    )
-    args = parser.parse_args()
-
-    if args.verbose:
-        logging_level = 'DEBUG'
-    else:
-        logging_level = 'INFO'
-
+def setup_logging(logging_level):
     dc = {
         'version': 1,
         'disable_existing_loggers': True,
@@ -73,64 +57,124 @@ def main(args):
     }
     logging.config.dictConfig(dc)
 
-    for crash_id in args.crashids:
-        print('Working on: %s' % crash_id)
 
-        ret = requests.get(API_URL + '/RawCrash/', params={'crash_id': crash_id})
-        if ret.status_code == 404:
-            logger.warning('WARNING: Crash %s does not exist.' % crash_id)
-            continue
+class OutputBase:
+    def __enter__(self):
+        return self
 
-        raw_crash = ret.json()
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
 
-        raw_crash_minimal = {
-            'JavaStackTrace': raw_crash.get('JavaStackTrace', None),
-            'OOMAllocationSize': raw_crash.get('OOMAllocationSize', None),
-            'AbortMessage': raw_crash.get('AbortMessage', None),
-            'AsyncShutdownTimeout': raw_crash.get('AsyncShutdownTimeout', None),
-            'ipc_channel_error': raw_crash.get('ipc_channel_error', None),
-            'additional_minidumps': raw_crash.get('additional_minidumps', None),
-            'IPCMessageName': raw_crash.get('IPCMessageName', None),
-        }
+    def warning(self, line):
+        print('WARNING: %s' % line, file=sys.stderr)
 
-        ret = requests.get(API_URL + '/ProcessedCrash/', params={'crash_id': crash_id})
-        processed_crash = ret.json()
+    def data(self, crash_id, old_sig, new_sig, notes):
+        pass
 
-        old_signature = processed_crash['signature']
-        crashing_thread = tree_get(processed_crash, 'json_dump.crash_info.crashing_thread')
 
-        processed_crash_minimal = {
-            'hang_type': processed_crash.get('hang_type', None),
-            'json_dump': {
-                'threads': tree_get(processed_crash, 'json_dump.threads', []),
-                'system_info': {
-                    'os': tree_get(processed_crash, 'json_dump.system_info.os', ''),
+class TextOutput(OutputBase):
+    def data(self, crash_id, old_sig, new_sig, notes):
+        print('Original: %s' % old_sig)
+        print('New:      %s' % new_sig)
+        print('Same?:    %s' % (old_sig == new_sig))
+
+        if notes:
+            print('Notes:    (%d)' % len(notes))
+            for note in notes:
+                print('          %s' % notes)
+
+
+class CSVOutput(OutputBase):
+    def __enter__(self):
+        self.out = csv.writer(sys.stdout, quoting=csv.QUOTE_ALL)
+        self.out.writerow(['crashid', 'old', 'new', 'same?', 'notes'])
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.out = None
+
+    def data(self, crash_id, old_sig, new_sig, notes):
+        self.out.writerow([crash_id, old_sig, new_sig, str(old_sig == new_sig), notes])
+
+
+def main(args):
+    """
+    Takes crash data via args and generates a Socorro signature
+    """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-v', '--verbose', help='increase output verbosity', action='store_true'
+    )
+    parser.add_argument(
+        '--format', help='specify output format: json, csv, text (default)'
+    )
+    parser.add_argument(
+        'crashids', metavar='crashid', nargs='+', help='crash id to generate signatures for'
+    )
+    args = parser.parse_args()
+
+    if args.format == 'csv':
+        outputter = CSVOutput
+    else:
+        outputter = TextOutput
+
+    if args.verbose:
+        logging_level = 'DEBUG'
+    else:
+        logging_level = 'INFO'
+
+    setup_logging(logging_level)
+
+    with outputter() as out:
+        for crash_id in args.crashids:
+            ret = requests.get(API_URL + '/RawCrash/', params={'crash_id': crash_id})
+            if ret.status_code == 404:
+                out.warning('%s: does not exist.' % crash_id)
+                continue
+
+            raw_crash = ret.json()
+
+            raw_crash_minimal = {
+                'JavaStackTrace': raw_crash.get('JavaStackTrace', None),
+                'OOMAllocationSize': raw_crash.get('OOMAllocationSize', None),
+                'AbortMessage': raw_crash.get('AbortMessage', None),
+                'AsyncShutdownTimeout': raw_crash.get('AsyncShutdownTimeout', None),
+                'ipc_channel_error': raw_crash.get('ipc_channel_error', None),
+                'additional_minidumps': raw_crash.get('additional_minidumps', None),
+                'IPCMessageName': raw_crash.get('IPCMessageName', None),
+            }
+
+            ret = requests.get(API_URL + '/ProcessedCrash/', params={'crash_id': crash_id})
+            processed_crash = ret.json()
+
+            old_signature = processed_crash['signature']
+
+            processed_crash_minimal = {
+                'hang_type': processed_crash.get('hang_type', None),
+                'json_dump': {
+                    'threads': tree_get(processed_crash, 'json_dump.threads', []),
+                    'system_info': {
+                        'os': tree_get(processed_crash, 'json_dump.system_info.os', ''),
+                    },
+                    'crash_info': {
+                        'crashing_thread': tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', None),
+                    },
+                    'classifications': {
+                        'jit': {
+                            'category': tree_get(processed_crash, 'classifications.jit.category', ''),
+                        }
+                    },
                 },
-                'crash_info': {
-                    'crashing_thread': crashing_thread,
-                },
-                'classifications': {
-                    'jit': {
-                        'category': tree_get(processed_crash, 'classifications.jit.category', ''),
-                    }
-                },
-            },
-            'mdsw_status_string': processed_crash.get('mdsw_status_string', None),
+                'mdsw_status_string': processed_crash.get('mdsw_status_string', None),
 
-            # This needs to be an empty string--the signature generator fills it in.
-            'signature': ''
-        }
+                # This needs to be an empty string--the signature generator fills it in.
+                'signature': ''
+            }
 
-        ret = SignatureGenerator().generate(raw_crash_minimal, processed_crash_minimal)
+            ret = SignatureGenerator().generate(raw_crash_minimal, processed_crash_minimal)
 
-        # NOTE(willkg): We use print here instead of logging because we might want to change the
-        # output format and this is the place for that.
-        print('Original: %s' % old_signature)
-        print('New:      %s' % ret['signature'])
-        if ret['notes']:
-            print('Notes: (%d)' % len(ret['notes']))
-            for note in ret['notes']:
-                print('   %s' % note)
+            out.data(crash_id, old_signature, ret['signature'], ret['notes'])
 
 
 if __name__ == '__main__':
