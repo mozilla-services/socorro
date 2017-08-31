@@ -73,7 +73,7 @@ def upgrade():
     # handles making more partitions.
     op.execute("""
         DELETE FROM report_partition_info
-        WHERE table_name LIKE 'signature_summary_%'
+        WHERE table_name LIKE 'signature_summary_%
     """)
 
 
