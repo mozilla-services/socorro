@@ -15,17 +15,17 @@ down_revision = 'afc2f95a298b'
 
 def upgrade():
     # Get a list of ALL tables that start with 'signature_summary_*'
-    connection_class = op.get_bind()
+    connection = op.get_bind()
+    cursor = connection.connection.cursor()
+    cursor.execute("""
+        SELECT c.relname FROM pg_catalog.pg_class c
+        WHERE c.relkind = 'r' AND c.relname LIKE 'signature_summary_%'
+    """)
     all_table_names = []
-    with connection_class as conn:
-        cursor = conn.connection.cursor()
-        cursor.execute("""
-            SELECT c.relname FROM pg_catalog.pg_class c
-            WHERE c.relkind = 'r' AND c.relname LIKE 'signature_summary_%'
-        """)
-        for records in cursor.fetchall():
-            table_name, = records
-            all_table_names.append(table_name)
+    for records in cursor.fetchall():
+        table_name, = records
+        all_table_names.append(table_name)
+
     # Now delete all these massive tables
     for table_name in all_table_names:
         op.execute('DROP TABLE {}'.format(table_name))
@@ -42,9 +42,6 @@ def upgrade():
     )
     op.execute(
         'DROP FUNCTION update_signature_summary_graphics(date, boolean)'
-    )
-    op.execute(
-        'DROP FUNCTION update_signature_summary_installations(date, boolean)'
     )
     op.execute(
         'DROP FUNCTION update_signature_summary_installations(date, boolean)'
@@ -69,7 +66,6 @@ def upgrade():
         DELETE FROM report_partition_info
         WHERE table_name LIKE 'signature_summary_%'
     """)
-    # raise Exception
 
 
 def downgrade():
