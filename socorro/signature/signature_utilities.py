@@ -453,7 +453,7 @@ class OOMSignature(Rule):
     )
 
     def predicate(self, raw_crash, processed_crash, notes):
-        if 'OOMAllocationSize' in raw_crash:
+        if raw_crash.get('OOMAllocationSize'):
             return True
 
         signature = processed_crash.get('signature', '')
@@ -637,7 +637,7 @@ class SignatureJitCategory(Rule):
             'was: "{}"'.format(processed_crash.get('signature', ''))
         )
         processed_crash['signature'] = "jit | {}".format(
-            processed_crash['classifications']['jit']['category']
+            tree_get(processed_crash, 'classifications.jit.category')
         )
         return True
 
