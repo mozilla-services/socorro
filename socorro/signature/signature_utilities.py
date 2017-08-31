@@ -23,6 +23,15 @@ logger = logging.getLogger(__name__)
 class Rule(object):
     """Base class for Signature generation rules"""
     def predicate(self, raw_crash, processed_crash, notes):
+        """Whether or not to run this rule
+
+        :arg dict raw_crash: the raw crash structure
+        :arg dict processed_crash: the processed crash structure
+        :arg list notes: the processor notes
+
+        :returns: True or False
+
+        """
         return True
 
     def action(self, raw_crash, processed_crash, notes):
@@ -52,16 +61,15 @@ class SignatureTool(object):
             signature = signature.replace("'", "''")
         if len(signature) > SIGNATURE_MAX_LENGTH:
             signature = "%s..." % signature[:SIGNATURE_MAX_LENGTH - 3]
-            signature_notes.append('SignatureTool: signature truncated due to '
-                                   'length')
+            signature_notes.append('SignatureTool: signature truncated due to length')
         return signature, signature_notes
 
     def _do_generate(self, source_list, hang_type, crashed_thread, delimiter):
         raise NotImplementedError
 
 
-class CSignatureToolBase(SignatureTool):
-    """This is the base class for signature generation tools that work on
+class CSignatureTool(SignatureTool):
+    """This is the class for signature generation tools that work on
     breakpad C/C++ stacks.  It provides a method to normalize signatures
     and then defines its own '_do_generate' method."""
 
@@ -71,12 +79,22 @@ class CSignatureToolBase(SignatureTool):
     }
 
     def __init__(self, quit_check_callback=None):
-        super(CSignatureToolBase, self).__init__(quit_check_callback)
-        self.irrelevant_signature_re = None
-        self.prefix_signature_re = None
-        self.signatures_with_line_numbers_re = None
-        self.trim_dll_signature_re = None
-        self.signature_sentinels = []
+        super(CSignatureTool, self).__init__(quit_check_callback)
+
+        self.irrelevant_signature_re = re.compile(
+            '|'.join(siglists.IRRELEVANT_SIGNATURE_RE)
+        )
+        self.prefix_signature_re = re.compile(
+            '|'.join(siglists.PREFIX_SIGNATURE_RE)
+        )
+        self.signatures_with_line_numbers_re = re.compile(
+            '|'.join(siglists.SIGNATURES_WITH_LINE_NUMBERS_RE)
+        )
+        self.trim_dll_signature_re = re.compile(
+            '|'.join(siglists.TRIM_DLL_SIGNATURE_RE)
+        )
+        self.signature_sentinels = siglists.SIGNATURE_SENTINELS
+
         self.collapse_arguments = True
 
         self.fixup_space = re.compile(r' (?=[\*&,])')
@@ -227,25 +245,24 @@ class CSignatureToolBase(SignatureTool):
         # Get all the relevant frame signatures.
         new_signature_list = []
         for a_signature in source_list:
-            # If the signature matches the irrelevant signatures regex,
-            # skip to the next frame.
+            # If the signature matches the irrelevant signatures regex, skip to the next frame.
             if self.irrelevant_signature_re.match(a_signature):
                 continue
 
-            # If the signature matches the trim dll signatures regex,
-            # rewrite it to remove all but the module name.
+            # If the signature matches the trim dll signatures regex, rewrite it to remove all but
+            # the module name.
             if self.trim_dll_signature_re.match(a_signature):
                 a_signature = a_signature.split('@')[0]
 
-                # If this trimmed DLL signature is the same as the previous
-                # frame's, we do not want to add it.
+                # If this trimmed DLL signature is the same as the previous frame's, we do not want
+                # to add it.
                 if new_signature_list and a_signature == new_signature_list[-1]:
                     continue
 
             new_signature_list.append(a_signature)
 
-            # If the signature does not match the prefix signatures regex,
-            # then it is the last one we add to the list.
+            # If the signature does not match the prefix signatures regex, then it is the last one
+            # we add to the list.
             if not self.prefix_signature_re.match(a_signature):
                 break
 
@@ -258,42 +275,22 @@ class CSignatureToolBase(SignatureTool):
         # Handle empty signatures to explain why we failed generating them.
         if signature == '' or signature is None:
             if crashed_thread is None:
-                signature_notes.append("CSignatureTool: No signature could be "
-                                       "created because we do not know which "
-                                       "thread crashed")
+                signature_notes.append(
+                    "CSignatureTool: No signature could be created because we do not know which "
+                    "thread crashed"
+                )
                 signature = "EMPTY: no crashing thread identified"
             else:
-                signature_notes.append("CSignatureTool: No proper signature "
-                                       "could be created because no good data "
-                                       "for the crashing thread (%s) was found"
-                                       % crashed_thread)
+                signature_notes.append(
+                    "CSignatureTool: No proper signature could be created because no good data "
+                    "for the crashing thread (%s) was found" % crashed_thread
+                )
                 try:
                     signature = source_list[0]
                 except IndexError:
                     signature = "EMPTY: no frame data available"
 
         return signature, signature_notes
-
-
-class CSignatureTool(CSignatureToolBase):
-    """This is a C/C++ signature generation class that gets its initialization
-    from files."""
-
-    def __init__(self, quit_check_callback=None):
-        super(CSignatureTool, self).__init__(quit_check_callback)
-        self.irrelevant_signature_re = re.compile(
-            '|'.join(siglists.IRRELEVANT_SIGNATURE_RE)
-        )
-        self.prefix_signature_re = re.compile(
-            '|'.join(siglists.PREFIX_SIGNATURE_RE)
-        )
-        self.signatures_with_line_numbers_re = re.compile(
-            '|'.join(siglists.SIGNATURES_WITH_LINE_NUMBERS_RE)
-        )
-        self.trim_dll_signature_re = re.compile(
-            '|'.join(siglists.TRIM_DLL_SIGNATURE_RE)
-        )
-        self.signature_sentinels = siglists.SIGNATURE_SENTINELS
 
 
 class JavaSignatureTool(SignatureTool):
@@ -311,9 +308,7 @@ class JavaSignatureTool(SignatureTool):
         try:
             source_list = [x.strip() for x in source.splitlines()]
         except AttributeError:
-            signature_notes.append(
-                'JavaSignatureTool: stack trace not in expected format'
-            )
+            signature_notes.append('JavaSignatureTool: stack trace not in expected format')
             return (
                 "EMPTY: Java stack trace not in expected format",
                 signature_notes
@@ -339,13 +334,9 @@ class JavaSignatureTool(SignatureTool):
                 source_list[1]
             )
             if not java_method:
-                signature_notes.append(
-                    'JavaSignatureTool: stack trace line 2 is empty'
-                )
+                signature_notes.append('JavaSignatureTool: stack trace line 2 is empty')
         except IndexError:
-            signature_notes.append(
-                'JavaSignatureTool: stack trace line 2 is missing'
-            )
+            signature_notes.append('JavaSignatureTool: stack trace line 2 is missing')
             java_method = ''
 
         # an error in an earlier version of this code resulted in the colon
@@ -377,8 +368,7 @@ class JavaSignatureTool(SignatureTool):
                 (java_exception_class, java_method)
             )
             signature_notes.append(
-                'JavaSignatureTool: dropped Java exception '
-                'description due to length'
+                'JavaSignatureTool: dropped Java exception description due to length'
             )
 
         return signature, signature_notes
@@ -400,9 +390,7 @@ class SignatureGenerationRule(Rule):
             if make_modules_lower_case and 'module' in a_frame:
                 a_frame['module'] = a_frame['module'].lower()
 
-            normalized_signature = self.c_signature_tool.normalize_signature(
-                **a_frame
-            )
+            normalized_signature = self.c_signature_tool.normalize_signature(**a_frame)
             if 'normalized' not in a_frame:
                 a_frame['normalized'] = normalized_signature
             frame_signatures_list.append(normalized_signature)
@@ -468,7 +456,10 @@ class OOMSignature(Rule):
         if 'OOMAllocationSize' in raw_crash:
             return True
 
-        signature = processed_crash. get('signature', [])
+        signature = processed_crash.get('signature', '')
+        if not signature:
+            return False
+
         for a_signature_fragment in self.signature_fragments:
             if a_signature_fragment in signature:
                 return True
@@ -480,17 +471,13 @@ class OOMSignature(Rule):
         try:
             size = int(raw_crash['OOMAllocationSize'])
         except (TypeError, AttributeError, KeyError):
-            processed_crash['signature'] = (
-                "OOM | unknown | " + processed_crash['signature']
-            )
+            processed_crash['signature'] = "OOM | unknown | " + processed_crash['signature']
             return True
 
         if size <= 262144:  # 256K
             processed_crash['signature'] = "OOM | small"
         else:
-            processed_crash['signature'] = (
-                "OOM | large | " + processed_crash['signature']
-            )
+            processed_crash['signature'] = "OOM | large | " + processed_crash['signature']
         return True
 
 
@@ -540,7 +527,7 @@ class SigTrim(Rule):
     spaces"""
 
     def predicate(self, raw_crash, processed_crash, notes):
-        return isinstance(processed_crash.get('signature', None), basestring)
+        return isinstance(processed_crash.get('signature'), basestring)
 
     def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = processed_crash['signature'].strip()
@@ -551,7 +538,7 @@ class SigTrunc(Rule):
     """ensure that the signature is never longer than 255 characters"""
 
     def predicate(self, raw_crash, processed_crash, notes):
-        return len(processed_crash['signature']) > 255
+        return len(processed_crash.get('signature', '')) > 255
 
     def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = "%s..." % processed_crash['signature'][:252]
@@ -563,7 +550,7 @@ class StackwalkerErrorSignatureRule(Rule):
 
     def predicate(self, raw_crash, processed_crash, notes):
         return bool(
-            processed_crash['signature'].startswith('EMPTY') and
+            processed_crash.get('signature', '').startswith('EMPTY') and
             processed_crash.get('mdsw_status_string')
         )
 
@@ -575,12 +562,11 @@ class StackwalkerErrorSignatureRule(Rule):
         return True
 
 
-# FIXME(willkg): This needs to be rethought
 class SignatureRunWatchDog(SignatureGenerationRule):
     """ensure that the signature contains the stackwalker error message"""
 
     def predicate(self, raw_crash, processed_crash, notes):
-        return 'RunWatchdog' in processed_crash['signature']
+        return 'RunWatchdog' in processed_crash.get('signature', '')
 
     def _get_crashing_thread(self, processed_crash):
         # Always use thread 0 in this case, because that's the thread that
@@ -625,9 +611,9 @@ class SignatureShutdownTimeout(Rule):
                 parts.append(','.join(conditions))
             else:
                 parts.append("(none)")
-        except (ValueError, KeyError) as e:
+        except (ValueError, KeyError) as exc:
             parts.append("UNKNOWN")
-            notes.append('Error parsing AsyncShutdownTimeout: {}'.format(e))
+            notes.append('Error parsing AsyncShutdownTimeout: {}'.format(exc))
 
         new_sig = ' | '.join(parts)
         notes.append(
@@ -643,15 +629,12 @@ class SignatureJitCategory(Rule):
     """replaces the signature if there is a JIT classification in the crash"""
 
     def predicate(self, raw_crash, processed_crash, notes):
-        try:
-            return bool(processed_crash['classifications']['jit']['category'])
-        except KeyError:
-            return False
+        return bool(tree_get(processed_crash, 'classifications.jit.category', None))
 
     def action(self, raw_crash, processed_crash, notes):
         notes.append(
             'Signature replaced with a JIT Crash Category, '
-            'was: "{}"'.format(processed_crash['signature'])
+            'was: "{}"'.format(processed_crash.get('signature', ''))
         )
         processed_crash['signature'] = "jit | {}".format(
             processed_crash['classifications']['jit']['category']
