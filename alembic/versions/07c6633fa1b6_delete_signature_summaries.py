@@ -37,35 +37,35 @@ def upgrade():
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_device(date, boolean)'
+        update_signature_summary_device(date, boolean)
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_flash_version(date, boolean)'
+        update_signature_summary_flash_version(date, boolean)
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_graphics(date, boolean)'
+        update_signature_summary_graphics(date, boolean)
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_installations(date, boolean)'
+        update_signature_summary_installations(date, boolean)
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_os(date, boolean)'
+        update_signature_summary_os(date, boolean)
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_process_type(date, boolean)'
+        update_signature_summary_process_type(date, boolean)
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_products(date, boolean)'
+        update_signature_summary_products(date, boolean)
     """)
     op.execute("""
         DROP FUNCTION IF EXISTS
-        update_signature_summary_uptime(date, boolean)'
+        update_signature_summary_uptime(date, boolean)
     """)
     load_stored_proc(op, ['backfill_matviews.sql'])
 
