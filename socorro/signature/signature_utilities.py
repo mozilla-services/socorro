@@ -406,6 +406,9 @@ class SignatureGenerationRule(Rule):
             frame_signatures_list.append(normalized_signature)
         return frame_signatures_list
 
+    def _get_crashing_thread(self, processed_crash):
+        return tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', None)
+
     def action(self, raw_crash, processed_crash, notes):
         # If this is a Java crash, then generate a Java signature
         if raw_crash.get('JavaStackTrace', None):
@@ -419,7 +422,7 @@ class SignatureGenerationRule(Rule):
             return True
 
         # This isn't a Java crash, so figure out what we need and then generate a C signature
-        crashed_thread = tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', None)
+        crashed_thread = self._get_crashing_thread(processed_crash)
 
         try:
             if processed_crash.get('hang_type', None) == 1:
