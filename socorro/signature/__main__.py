@@ -158,12 +158,15 @@ def main(args):
                         'os': tree_get(processed_crash, 'json_dump.system_info.os', ''),
                     },
                     'crash_info': {
-                        'crashing_thread': tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', None),
+                        'crashing_thread': tree_get(
+                            processed_crash, 'json_dump.crash_info.crashing_thread', None
+                        ),
                     },
-                    'classifications': {
-                        'jit': {
-                            'category': tree_get(processed_crash, 'classifications.jit.category', ''),
-                        }
+                },
+                # NOTE(willkg): Classifications aren't available via the public API.
+                'classifications': {
+                    'jit': {
+                        'category': tree_get(processed_crash, 'classifications.jit.category', ''),
                     },
                 },
                 'mdsw_status_string': processed_crash.get('mdsw_status_string', None),
