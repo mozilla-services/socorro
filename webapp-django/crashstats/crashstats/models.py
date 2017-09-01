@@ -630,6 +630,7 @@ class ProcessedCrash(SocorroMiddleware):
         'addons',
         'json_dump',
         'upload_file_minidump_*',
+        'mdsw_status_string',
     )
 
     # Same as for RawCrash, we supplement with the existing list, on top
