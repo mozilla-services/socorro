@@ -2,20 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""
-Given crash ids, returns signatures and signature notes.
-
-Usage:
-
-    python -m socorro.signature <CRASHID> [<CRASHID>...]
-
-"""
 from __future__ import print_function
 
 import argparse
 import csv
 import logging
 import logging.config
+import os
 import sys
 
 import requests
@@ -23,6 +16,16 @@ import requests
 from socorro.lib.treelib import tree_get
 from socorro.signature import SignatureGenerator
 
+
+DESCRIPTION = """
+Given crash ids, pulls down information from Socorro, generates signatures, and prints
+signature information.
+"""
+
+EPILOG = """
+Note: In order for the SignatureJitCategory rule to work, you need a valid API token from
+Socorro that has "View Personally Identifiable Information" permission.
+"""
 
 logger = logging.getLogger('socorro.signature')
 
@@ -97,17 +100,30 @@ class CSVOutput(OutputBase):
         self.out.writerow([crash_id, old_sig, new_sig, str(old_sig == new_sig), notes])
 
 
+def fetch(endpoint, crash_id, api_token=None):
+    kwargs = {
+        'params': {
+            'crash_id': crash_id
+        }
+    }
+    if api_token:
+        kwargs['headers'] = {
+            'Auth-Token': api_token
+        }
+
+    return requests.get(API_URL + endpoint, **kwargs)
+
+
 def main(args):
     """
     Takes crash data via args and generates a Socorro signature
     """
-
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
     parser.add_argument(
         '-v', '--verbose', help='increase output verbosity', action='store_true'
     )
     parser.add_argument(
-        '--format', help='specify output format: json, csv, text (default)'
+        '--format', help='specify output format: csv, text (default)'
     )
     parser.add_argument(
         'crashids', metavar='crashid', nargs='+', help='crash id to generate signatures for'
@@ -124,16 +140,18 @@ def main(args):
     else:
         logging_level = 'INFO'
 
+    api_token = os.environ.get('SOCORRO_API_TOKEN', '')
+
     setup_logging(logging_level)
 
     with outputter() as out:
         for crash_id in args.crashids:
-            ret = requests.get(API_URL + '/RawCrash/', params={'crash_id': crash_id})
-            if ret.status_code == 404:
+            resp = fetch('/RawCrash/', crash_id, api_token)
+            if resp.status_code == 404:
                 out.warning('%s: does not exist.' % crash_id)
                 continue
 
-            raw_crash = ret.json()
+            raw_crash = resp.json()
 
             raw_crash_minimal = {
                 'JavaStackTrace': raw_crash.get('JavaStackTrace', None),
@@ -145,9 +163,12 @@ def main(args):
                 'IPCMessageName': raw_crash.get('IPCMessageName', None),
             }
 
-            ret = requests.get(API_URL + '/ProcessedCrash/', params={'crash_id': crash_id})
-            processed_crash = ret.json()
+            resp = fetch('/ProcessedCrash/', crash_id, api_token)
+            if resp.status_code == 404:
+                out.warning('%s: does not have processed crash.' % crash_id)
+                continue
 
+            processed_crash = resp.json()
             old_signature = processed_crash['signature']
 
             processed_crash_minimal = {
