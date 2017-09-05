@@ -322,7 +322,6 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 os.makedirs(os.path.dirname(fn))
             if os.path.exists(fn):
                 with open(fn, 'r') as fp:
-                    print('hit')
                     return fp.read()
 
         response = self.session.get(
