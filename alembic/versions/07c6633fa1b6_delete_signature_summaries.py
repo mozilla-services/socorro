@@ -26,7 +26,12 @@ def upgrade():
         table_name, = records
         all_table_names.append(table_name)
 
-    # Now delete all these massive tables
+    # Now delete all these massive tables.
+    # But make sure that we drop them in the "right" order.
+    # In particular we want to make sure we first drop
+    # 'signature_summary_os_20130603' *before* we drop 'signature_summary_os'
+    # since the former depends on the latter.
+    all_table_names.sort(reverse=True)
     for table_name in all_table_names:
         op.execute('DROP TABLE IF EXISTS {}'.format(table_name))
 
