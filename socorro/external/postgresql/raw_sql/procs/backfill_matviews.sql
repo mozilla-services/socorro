@@ -95,7 +95,5 @@ END LOOP;
 RAISE INFO 'rank_compare';
 PERFORM backfill_rank_compare(lastday);
 
-DROP TABLE temp_signature_summaries;
-
 RETURN true;
 END; $$;
