@@ -18,6 +18,7 @@ dalvik-LinearAlloc
 dalvik-mark-stack
 data@app@org\.mozilla\.f.*-\d\.apk@classes\.dex@0x.*
 framework\.odex@0x.*
+gfxPlatform::GetPlatform
 google_breakpad::ExceptionHandler::HandleInvalidParameter.*
 KiFastSystemCallRet
 libandroid_runtime\.so@0x.*
