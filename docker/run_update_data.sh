@@ -6,18 +6,25 @@
 
 set -eo pipefail
 
+HOSTUSER=$(id -u):$(id -g)
+
+# The assumption is that you're running this from /app inside the container
+CACHEDIR=/app/.cache/ftpscraper
+
 # Fetch and update release information for these products (comma-delimited)
 PRODUCTS="firefox"
 CRONTABBER="docker-compose run crontabber python socorro/cron/crontabber_app.py"
 
 
-# Fetch release data
-${CRONTABBER} --job=ftpscraper \
-       --crontabber.class-FTPScraperCronApp.products=${PRODUCTS}
+# Fetch release data -- do it as the user so it can cache things
+docker-compose run -u "${HOSTUSER}" crontabber python socorro/cron/crontabber_app.py \
+               --job=ftpscraper \
+               --crontabber.class-FTPScraperCronApp.cachedir=${CACHEDIR} \
+               --crontabber.class-FTPScraperCronApp.products=${PRODUCTS}
 
 # Update featured versions data based on release data
 ${CRONTABBER} --job=featured-versions-automatic \
-       --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
+              --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
 
 # Fetch normalization data for versions we know about
 docker-compose run processor python docker/fetch_normalization_data.py
