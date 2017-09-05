@@ -188,69 +188,6 @@ class ReportPartitionInfo(BaseTable):
             'TIMESTAMPTZ'
         ),
         (
-            'signature_summary_installations',
-            '5',
-            '{"signature_id,product_name,version_string,report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
-            'signature_summary_architecture',
-            '6',
-            '{"signature_id, architecture, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
-            'signature_summary_flash_version',
-            '7',
-            '{"signature_id, flash_version, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
-            'signature_summary_os',
-            '8',
-            '{"signature_id, os_version_string, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
-            'signature_summary_process_type',
-            '9',
-            '{"signature_id, process_type, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
-            'signature_summary_products',
-            '10',
-            '{"signature_id, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
-            'signature_summary_uptime',
-            '11',
-            '{"signature_id, uptime_string, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
             'processed_crashes',
             '12',
             '{uuid}',
@@ -266,24 +203,6 @@ class ReportPartitionInfo(BaseTable):
             '{}',
             '{}',
             'date_processed',
-            'DATE'
-        ),
-        (
-            'signature_summary_device',
-            '14',
-            '{"signature_id, android_device_id, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
-            'DATE'
-        ),
-        (
-            'signature_summary_graphics',
-            '15',
-            '{"signature_id, graphics_device_id, product_version_id, report_date"}',
-            '{report_date}',
-            '{}',
-            'report_date',
             'DATE'
         ),
     ]
