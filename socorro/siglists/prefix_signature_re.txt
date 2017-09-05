@@ -38,6 +38,7 @@ _files_getaddrinfo
 .*free
 free_impl
 GCGraphBuilder::NoteXPCOMChild
+gfxPlatform::Init
 getanswer
 HandleInvalidParameter
 HeapFree
