@@ -174,13 +174,13 @@ def main(args):
             processed_crash_minimal = {
                 'hang_type': processed_crash.get('hang_type', None),
                 'json_dump': {
-                    'threads': tree_get(processed_crash, 'json_dump.threads', []),
+                    'threads': tree_get(processed_crash, 'json_dump.threads', default=[]),
                     'system_info': {
-                        'os': tree_get(processed_crash, 'json_dump.system_info.os', ''),
+                        'os': tree_get(processed_crash, 'json_dump.system_info.os', default=''),
                     },
                     'crash_info': {
                         'crashing_thread': tree_get(
-                            processed_crash, 'json_dump.crash_info.crashing_thread', None
+                            processed_crash, 'json_dump.crash_info.crashing_thread', default=None
                         ),
                     },
                 },

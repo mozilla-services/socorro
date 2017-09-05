@@ -407,7 +407,7 @@ class SignatureGenerationRule(Rule):
         return frame_signatures_list
 
     def _get_crashing_thread(self, processed_crash):
-        return tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', None)
+        return tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', default=None)
 
     def action(self, raw_crash, processed_crash, notes):
         # If this is a Java crash, then generate a Java signature
@@ -642,7 +642,7 @@ class SignatureJitCategory(Rule):
     """replaces the signature if there is a JIT classification in the crash"""
 
     def predicate(self, raw_crash, processed_crash):
-        return bool(tree_get(processed_crash, 'classifications.jit.category', None))
+        return bool(tree_get(processed_crash, 'classifications.jit.category', default=None))
 
     def action(self, raw_crash, processed_crash, notes):
         notes.append(
