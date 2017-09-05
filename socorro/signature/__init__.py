@@ -4,11 +4,12 @@
 
 import logging
 
-import raven
+try:
+    import raven
+except ImportError:
+    raven = None
 
 from socorro.signature.signature_utilities import (
-    JavaSignatureTool,
-    CSignatureTool,
     SignatureGenerationRule,
     StackwalkerErrorSignatureRule,
     OOMSignature,
@@ -42,23 +43,16 @@ logger = logging.getLogger(__name__)
 
 
 class SignatureGenerator:
-    def __init__(self, pipeline=None):
+    def __init__(self, pipeline=None, sentrydsn=None):
         self.pipeline = pipeline or list(DEFAULT_PIPELINE)
 
     def _send_to_sentry(self, rule, raw_crash, processed_crash):
-        """Execute this when an exception has happened only
+        """Sends an unhandled error to Sentry
 
-        # FIXME(willkg): FIX THIS
-
-        If self.config.sentry.dsn is set up, it will try to send it to Sentry. If not configured,
-        nothing happens.
+        If self.sentry_dsn is non-None, it will try to send it to Sentry.
 
         """
-        # FIXME(willkg): Fix this
-        try:
-            dsn = self.config.sentry.dsn
-        except (KeyError, AttributeError):
-            # if self.config is not a DotDict, we can't access the sentry.dsn
+        if self.sentry_dsn is None:
             logger.warning('Raven DSN is not configured and an exception happened')
             return
 
@@ -70,7 +64,7 @@ class SignatureGenerator:
             extra['crash_id'] = raw_crash['uuid']
 
         try:
-            client = raven.Client(dsn=dsn)
+            client = raven.Client(dsn=self.sentry_dsn)
             client.context.activate()
             client.context.merge({'extra': extra})
             try:
@@ -84,7 +78,15 @@ class SignatureGenerator:
             logger.error('Unable to report error with Raven', exc_info=True)
 
     def generate(self, raw_crash, processed_crash):
-        """Takes data and returns a signature string"""
+        """Takes data and returns a signature
+
+        :arg dict raw_crash: the raw crash data
+        :arg dict processed_crash: the processed crash data
+
+        :returns: dict containing ``signature`` and ``notes`` keys representing the
+            signature and processor notes
+
+        """
         all_notes = []
 
         for rule in self.pipeline:

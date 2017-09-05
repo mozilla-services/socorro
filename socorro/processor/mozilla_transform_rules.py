@@ -1052,7 +1052,13 @@ class SignatureGeneratorRule(Rule):
 
     def __init__(self, config):
         super(SignatureGeneratorRule, self).__init__(config)
-        self.generator = SignatureGenerator()
+        try:
+            sentry_dsn = self.config.sentry.dsn
+        except KeyError:
+            # DotDict raises a KeyError when things are missing
+            sentry_dsn = None
+
+        self.generator = SignatureGenerator(sentry_dsn)
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes

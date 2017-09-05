@@ -62,6 +62,14 @@ def setup_logging(logging_level):
 
 
 class OutputBase:
+    """Base class for outputter classes
+
+    Outputter classes are context managers. If they require start/top or begin/end semantics, they
+    should implement ``__enter__`` and ``__exit__``.
+
+    Otherwise they can just implement ``data`` and should be fine.
+
+    """
     def __enter__(self):
         return self
 
@@ -69,9 +77,25 @@ class OutputBase:
         pass
 
     def warning(self, line):
+        """Prints out a warning line to stderr
+
+        :arg str line: the line to print to stderr
+
+        """
         print('WARNING: %s' % line, file=sys.stderr)
 
     def data(self, crash_id, old_sig, new_sig, notes):
+        """Outputs a data point
+
+        :arg str crash_id: the crash id for the signature generated
+
+        :arg str old_sig: the old signature retrieved in the processed crash
+
+        :arg str new_sig: the new generated signature
+
+        :arg list notes: any processor notes
+
+        """
         pass
 
 
@@ -115,8 +139,8 @@ def fetch(endpoint, crash_id, api_token=None):
 
 
 def main(args):
-    """
-    Takes crash data via args and generates a Socorro signature
+    """Takes crash data via args and generates a Socorro signature
+
     """
     parser = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
     parser.add_argument(
