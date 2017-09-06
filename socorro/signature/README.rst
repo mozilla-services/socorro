@@ -1,12 +1,11 @@
-======
-README
-======
+Signature generation module
+===========================
 
 This Python module covers crash signature generation.
 
 
 command line interface
-======================
+----------------------
 
 This module defines a command line interface for signature generation. Given a
 crash id, it pulls the raw and processed data from Socorro -prod, generates a
@@ -47,7 +46,7 @@ For more argument help, see::
 
 
 library
-=======
+-------
 
 This code can sort of be used as a library. It's been decoupled from many of
 Socorro's bits, but still has some requirements. Roughtly, it requires:
