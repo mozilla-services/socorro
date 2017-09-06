@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-from gzip import open as gzip_open
+import gzip
 import re
 from sys import maxint
 import time
@@ -12,7 +12,6 @@ from urllib import unquote_plus
 from configman import Namespace
 from configman.converters import str_to_python_object
 import ujson
-from ujson import loads as json_loads
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
@@ -348,7 +347,7 @@ class OutOfMemoryBinaryRule(Rule):
             return {"ERROR": error_message}
 
         try:
-            fd = gzip_open(dump_pathname, "rb")
+            fd = gzip.open(dump_pathname, "rb")
         except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
@@ -364,7 +363,7 @@ class OutOfMemoryBinaryRule(Rule):
                 )
                 return error_out(error_message)
 
-            memory_info = json_loads(memory_info_as_string)
+            memory_info = ujson.loads(memory_info_as_string)
         except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
@@ -1058,7 +1057,7 @@ class SignatureGeneratorRule(Rule):
             # DotDict raises a KeyError when things are missing
             sentry_dsn = None
 
-        self.generator = SignatureGenerator(sentry_dsn)
+        self.generator = SignatureGenerator(sentry_dsn=sentry_dsn)
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes

@@ -43,9 +43,9 @@ logger = logging.getLogger(__name__)
 
 
 class SignatureGenerator:
-    def __init__(self, pipeline=None, sentrydsn=None, debug=False):
+    def __init__(self, pipeline=None, sentry_dsn=None, debug=False):
         self.pipeline = pipeline or list(DEFAULT_PIPELINE)
-        self.sentrydsn = sentrydsn
+        self.sentry_dsn = sentry_dsn
         self.debug = debug
 
     def _send_to_sentry(self, rule, raw_crash, processed_crash):
@@ -55,7 +55,7 @@ class SignatureGenerator:
 
         """
         if self.sentry_dsn is None:
-            logger.warning('Raven DSN is not configured and an exception happened')
+            logger.warning('Sentry DSN is not configured and an exception happened')
             return
 
         extra = {
@@ -72,8 +72,7 @@ class SignatureGenerator:
             try:
                 identifier = client.captureException()
                 logger.info('Error captured in Sentry! Reference: {}'.format(identifier))
-                # it worked!
-                return True
+
             finally:
                 client.context.clear()
         except Exception:
@@ -95,7 +94,7 @@ class SignatureGenerator:
             notes = []
             try:
                 if rule.predicate(raw_crash, processed_crash):
-                    sig = processed_crash['signature']
+                    sig = processed_crash.get('signature', '')
                     rule.action(raw_crash, processed_crash, notes)
                     if self.debug:
                         notes.append('%s: %s -> %s' % (
@@ -110,6 +109,6 @@ class SignatureGenerator:
                 all_notes.extend(notes)
 
         return {
-            'signature': processed_crash['signature'],
+            'signature': processed_crash.get('signature', ''),
             'notes': all_notes
         }

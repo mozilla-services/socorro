@@ -176,6 +176,14 @@ def main(args):
             if resp.status_code == 404:
                 out.warning('%s: does not exist.' % crash_id)
                 continue
+            if resp.status_code == 429:
+                out.warning('API rate limit reached. %s' % resp.content)
+                # FIXME(willkg): Maybe there's something better we could do here. Like maybe wait a
+                # few minutes.
+                return 1
+            if resp.status_code == 500:
+                out.warning('HTTP 500: %s' % resp.content)
+                continue
 
             raw_crash = resp.json()
 
@@ -199,6 +207,15 @@ def main(args):
             if resp.status_code == 404:
                 out.warning('%s: does not have processed crash.' % crash_id)
                 continue
+            if resp.status_code == 429:
+                out.warning('API rate limit reached. %s' % resp.content)
+                # FIXME(willkg): Maybe there's something better we could do here. Like maybe wait a
+                # few minutes.
+                return 1
+            if resp.status_code == 500:
+                out.warning('HTTP 500: %s' % resp.content)
+                continue
+
             processed_crash = resp.json()
 
             # If there's an error in the processed crash, then something is wrong--probably with the

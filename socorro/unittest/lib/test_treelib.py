@@ -9,9 +9,6 @@ from socorro.lib import treelib
 
 class TestParsePath:
     @pytest.mark.parametrize('path, expected', [
-        # Empty string
-        ('', []),
-
         # Keys
         ('a', [('key', 'a')]),
         ('a.b', [('key', 'a'), ('key', 'b')]),
@@ -27,15 +24,28 @@ class TestParsePath:
     def test_good_paths(self, path, expected):
         assert treelib.parse_path(path) == expected
 
+    def test_empty_path(self):
+        with pytest.raises(treelib.MalformedPath) as exc_info:
+            treelib.parse_path('')
+
+        exc_str = str(exc_info.exconly())
+        expected = "MalformedPath: '' is a malformed path: empty edge"
+        assert exc_str == expected
+
+    def test_bad_path_empty_edge(self):
+        with pytest.raises(treelib.MalformedPath) as exc_info:
+            treelib.parse_path('a..b')
+
+        exc_str = str(exc_info.exconly())
+        expected = "MalformedPath: 'a..b' is a malformed path: empty edge"
+        assert exc_str == expected
+
     def test_bad_path_mismatched_brackets(self):
         with pytest.raises(treelib.MalformedPath) as exc_info:
             treelib.parse_path('a.[10')
 
         exc_str = str(exc_info.exconly())
-        expected = (
-            'MalformedPath: a.[10 is a malformed path: '
-            '[ without ]'
-        )
+        expected = "MalformedPath: 'a.[10' is a malformed path: [ without ]"
         assert exc_str == expected
 
     def test_bad_path_index_is_not_int(self):
@@ -44,17 +54,14 @@ class TestParsePath:
 
         exc_str = str(exc_info.exconly())
         expected = (
-            'MalformedPath: a.[a] is a malformed path: '
-            'invalid literal for int() with base 10: \'a\''
+            "MalformedPath: 'a.[a]' is a malformed path: "
+            "invalid literal for int() with base 10: 'a'"
         )
         assert exc_str == expected
 
 
 class TestTreeGet:
     @pytest.mark.parametrize('tree, path, expected', [
-        # Test empty path
-        ({'a': 1}, '', {'a': 1}),
-
         # Key paths
         ({'a': 1}, 'a', 1),
         ({'a': {'b': 1}}, 'a.b', 1),

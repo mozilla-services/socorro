@@ -22,13 +22,13 @@ To use::
 
 Pulling crash ids from a file::
 
-    $ cat < crashids.txt | xargs python -m socorro.signature
+    $ cat crashids.txt | xargs python -m socorro.signature
 
 
 Spitting output in CSV format to more easily analyze results for generating
 signatures for multiple crashes::
 
-    $ cat < crashids.txt | xargs python -m socorro.signature --format=csv
+    $ cat crashids.txt | xargs python -m socorro.signature --format=csv
 
 
 For more argument help, see::

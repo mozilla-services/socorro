@@ -115,14 +115,15 @@ def parse_path(path):
     tokens = []
     for part in parts:
         if not part:
-            continue
+            raise MalformedPath('%r is a malformed path: empty edge' % path)
+
         if part[0] == '[':
             if part[-1] != ']':
-                raise MalformedPath('%s is a malformed path: [ without ]' % path)
+                raise MalformedPath('%r is a malformed path: [ without ]' % path)
             try:
                 tokens.append((INDEX_EDGE, int(part[1:-1])))
             except ValueError as exc:
-                raise MalformedPath('%s is a malformed path: %s' % (path, exc))
+                raise MalformedPath('%r is a malformed path: %s' % (path, exc))
 
         else:
             # FIXME(willkg): This doesn't validate edges per the rules above. We're just going to
@@ -171,18 +172,18 @@ def tree_get(tree, path, default=NO_DEFAULT):
     :raises IndexError: if no default is specified and an index in the path doesn't exist
 
     """
-    for token in parse_path(path):
-        if token[0] == INDEX_EDGE:
+    for edge_type, edge in parse_path(path):
+        if edge_type == INDEX_EDGE:
             try:
-                tree = tree[token[1]]
+                tree = tree[edge]
             except IndexError:
                 if default is NO_DEFAULT:
                     raise
                 return default
 
-        elif token[0] == KEY_EDGE:
+        elif edge_type == KEY_EDGE:
             try:
-                tree = tree[token[1]]
+                tree = tree[edge]
             except KeyError:
                 if default is NO_DEFAULT:
                     raise
