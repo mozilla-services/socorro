@@ -43,8 +43,10 @@ logger = logging.getLogger(__name__)
 
 
 class SignatureGenerator:
-    def __init__(self, pipeline=None, sentrydsn=None):
+    def __init__(self, pipeline=None, sentrydsn=None, debug=False):
         self.pipeline = pipeline or list(DEFAULT_PIPELINE)
+        self.sentrydsn = sentrydsn
+        self.debug = debug
 
     def _send_to_sentry(self, rule, raw_crash, processed_crash):
         """Sends an unhandled error to Sentry
@@ -92,16 +94,20 @@ class SignatureGenerator:
         for rule in self.pipeline:
             notes = []
             try:
-                logger.debug(rule.__class__.__name__)
                 if rule.predicate(raw_crash, processed_crash):
+                    sig = processed_crash['signature']
                     rule.action(raw_crash, processed_crash, notes)
-                logger.debug('    -> %r' % processed_crash['signature'])
+                    if self.debug:
+                        notes.append('%s: %s -> %s' % (
+                            rule.__class__.__name__, sig, processed_crash['signature']
+                        ))
 
             except Exception as exc:
                 self._send_to_sentry(rule, raw_crash, processed_crash)
-                logger.debug('Rule %s failed: "%s"', str(rule.__class__), exc, exc_info=True)
                 notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
-            all_notes.extend(notes)
+
+            if notes:
+                all_notes.extend(notes)
 
         return {
             'signature': processed_crash['signature'],

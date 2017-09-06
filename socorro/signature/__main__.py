@@ -108,7 +108,7 @@ class TextOutput(OutputBase):
         if notes:
             print('Notes:    (%d)' % len(notes))
             for note in notes:
-                print('          %s' % notes)
+                print('          %s' % note)
 
 
 class CSVOutput(OutputBase):
@@ -168,6 +168,8 @@ def main(args):
 
     setup_logging(logging_level)
 
+    generator = SignatureGenerator(debug=args.verbose)
+
     with outputter() as out:
         for crash_id in args.crashids:
             resp = fetch('/RawCrash/', crash_id, api_token)
@@ -176,6 +178,12 @@ def main(args):
                 continue
 
             raw_crash = resp.json()
+
+            # If there's an error in the raw crash, then something is wrong--probably with the API
+            # token. So print that out and exit.
+            if 'error' in raw_crash:
+                out.warning('Error fetching raw crash: %s' % raw_crash['error'])
+                return 1
 
             raw_crash_minimal = {
                 'JavaStackTrace': raw_crash.get('JavaStackTrace', None),
@@ -191,8 +199,14 @@ def main(args):
             if resp.status_code == 404:
                 out.warning('%s: does not have processed crash.' % crash_id)
                 continue
-
             processed_crash = resp.json()
+
+            # If there's an error in the processed crash, then something is wrong--probably with the
+            # API token. So print that out and exit.
+            if 'error' in processed_crash:
+                out.warning('Error fetching processed crash: %s' % processed_crash['error'])
+                return 1
+
             old_signature = processed_crash['signature']
 
             processed_crash_minimal = {
@@ -220,7 +234,7 @@ def main(args):
                 'signature': ''
             }
 
-            ret = SignatureGenerator().generate(raw_crash_minimal, processed_crash_minimal)
+            ret = generator.generate(raw_crash_minimal, processed_crash_minimal)
 
             out.data(crash_id, old_signature, ret['signature'], ret['notes'])
 
