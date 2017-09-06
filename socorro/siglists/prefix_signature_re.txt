@@ -87,6 +87,7 @@ mozilla::detail::ConditionVariableImpl::.*
 SleepConditionVariableSRW
 mozilla::TimeStamp::Now
 GetTickCount64
+mozilla::detail::MutexImpl::.*
 mozilla::detail::nsStringRepr::First
 mozilla::detail::nsStringRepr::Last
 mozilla::ipc::LogicError
