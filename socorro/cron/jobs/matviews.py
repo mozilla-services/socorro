@@ -119,16 +119,6 @@ class GraphicsDeviceCronApp(_MatViewBackfillBase):
     app_name = 'graphics-device-matview'
 
 
-class CrashAduByBuildSignatureCronApp(_MatViewBackfillBase):
-    proc_name = 'update_crash_adu_by_build_signature'
-    app_name = 'update-crash-adu-by-build-signature'
-    depends_on = (
-        'adu-matview',
-        'reports-clean',
-        'build-adu-matview',
-    )
-
-
 class RawUpdateChannelCronApp(_MatViewBackfillBase):
     proc_name = 'update_raw_update_channel'
     app_name = 'raw-update-channel-matview'
