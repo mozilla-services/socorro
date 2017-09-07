@@ -306,6 +306,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         )
 
         self.cache_hits = 0
+        self.cache_misses = 0
 
     def url_to_filename(self, url):
         fn = re.sub('\W', '_', url)
@@ -326,6 +327,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 self.cache_hits += 1
                 with open(fn, 'r') as fp:
                     return fp.read()
+            self.cache_misses += 1
 
         response = self.session.get(
             url,
@@ -368,7 +370,13 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             )
 
         if self.config.cachedir:
-            self.config.logger.debug('Cache hits: %d' % self.cache_hits)
+            total = float(self.cache_hits + self.cache_misses)
+            self.config.logger.debug('Cache: hits: %d (%2.2f%%) misses: %d (%2.2f%%)' % (
+                self.cache_hits,
+                self.cache_hits / total * 100,
+                self.cache_misses,
+                self.cache_misses / total * 100,
+            ))
 
     def _scrape_json_releases_and_nightlies(
         self,
