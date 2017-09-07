@@ -305,6 +305,8 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             HTTPAdapter(max_retries=self.config.retries)
         )
 
+        self.cache_hits = 0
+
     def url_to_filename(self, url):
         fn = re.sub('\W', '_', url)
         fn = re.sub('__', '_', fn)
@@ -321,6 +323,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             if not os.path.isdir(os.path.dirname(fn)):
                 os.makedirs(os.path.dirname(fn))
             if os.path.exists(fn):
+                self.cache_hits += 1
                 with open(fn, 'r') as fp:
                     return fp.read()
 
@@ -363,6 +366,9 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 product_name,
                 date
             )
+
+        if self.config.cachedir:
+            self.config.logger.debug('Cache hits: %d' % self.cache_hits)
 
     def _scrape_json_releases_and_nightlies(
         self,
