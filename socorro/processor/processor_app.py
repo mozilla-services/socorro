@@ -175,7 +175,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                     )
             else:
                 self.config.logger.warning(
-                    'Raven DSN is not configured and an exception happened'
+                    'Sentry DSN is not configured and an exception happened'
                 )
 
             # Why not just do `raise exception`?

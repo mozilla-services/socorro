@@ -53,16 +53,6 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.MissingSymbolsRule, "
         "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
         "socorro.processor.rules.memory_report_extraction.MemoryReportExtraction, "
-        "socorro.processor.signature_utilities.SignatureGenerationRule,"
-        "socorro.processor.signature_utilities.StackwalkerErrorSignatureRule, "
-        "socorro.processor.signature_utilities.OOMSignature, "
-        "socorro.processor.signature_utilities.AbortSignature, "
-        "socorro.processor.signature_utilities.SignatureShutdownTimeout, "
-        "socorro.processor.signature_utilities.SignatureRunWatchDog, "
-        "socorro.processor.signature_utilities.SignatureIPCChannelError, "
-        "socorro.processor.signature_utilities.SignatureIPCMessageName, "
-        "socorro.processor.signature_utilities.SigTrim, "
-        "socorro.processor.signature_utilities.SigTrunc, "
     ],
     [   # a set of classifiers for support
         "support_classifiers",
@@ -78,7 +68,15 @@ mozilla_processor_rule_sets = [
         "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.JitCrashCategorizeRule, "
-        "socorro.processor.signature_utilities.SignatureJitCategory, "
+    ],
+    [
+        # generate signature now that we've done all the processing it depends on
+        'generate_signature',
+        'processor.signature',
+        'socorro.lib.transform_rules.TransformRuleSystem',
+        'apply_all_rules',
+
+        'socorro.processor.mozilla_transform_rules.SignatureGeneratorRule, '
     ],
     [   # a set of special request classifiers
         "skunk_classifiers",
