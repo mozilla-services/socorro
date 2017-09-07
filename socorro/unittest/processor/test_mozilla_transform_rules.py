@@ -919,7 +919,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processor_meta = self.get_basic_processor_meta()
 
         with patch(
-            'socorro.processor.mozilla_transform_rules.gzip_open'
+            'socorro.processor.mozilla_transform_rules.gzip.open'
         ) as mocked_gzip_open:
             mocked_gzip_open.return_value = StringIO(
                 json.dumps({'myserious': ['awesome', 'memory']})
@@ -944,7 +944,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processor_meta = self.get_basic_processor_meta()
 
         with patch(
-            'socorro.processor.mozilla_transform_rules.gzip_open'
+            'socorro.processor.mozilla_transform_rules.gzip.open'
         ) as mocked_gzip_open:
 
             opened = Mock()
@@ -997,7 +997,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processor_meta = self.get_basic_processor_meta()
 
         with patch(
-            'socorro.processor.mozilla_transform_rules.gzip_open'
+            'socorro.processor.mozilla_transform_rules.gzip.open'
         ) as mocked_gzip_open:
             mocked_gzip_open.side_effect = IOError
             rule = OutOfMemoryBinaryRule(config)
@@ -1035,10 +1035,10 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processor_meta = self.get_basic_processor_meta()
 
         with patch(
-            'socorro.processor.mozilla_transform_rules.gzip_open'
+            'socorro.processor.mozilla_transform_rules.gzip.open'
         ) as mocked_gzip_open:
             with patch(
-                'socorro.processor.mozilla_transform_rules.json_loads'
+                'socorro.processor.mozilla_transform_rules.ujson.loads'
             ) as mocked_json_loads:
                 mocked_json_loads.side_effect = ValueError
 

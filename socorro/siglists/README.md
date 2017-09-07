@@ -20,17 +20,30 @@ File: [``signature_sentinels.txt``](./signature_sentinels.txt)
 
 Signature Sentinels are signatures (not regular expression) that should be used as the top of the stack if present. Everything before the first matching signature will be ignored.
 
+The code iterates through the stack frame, throwing away everything it finds until it encounters a match to this regular expression or the end of the stack. If it finds a match, it passes all the frames after the match to the next step. If it finds no match, it passes the whole list of frames to the next step.
+
+A typical line might be `_purecall`.
+
+
 ### Irrelevant Signatures
 
 File: [``irrelevant_signature_re.txt``](./irrelevant_signature_re.txt)
 
 Irrelevant Signatures are regular expressions of signatures that will be ignored while going through the stack. Anything that matches this list will not be added to the overall signature.
 
+A typical rule might be `(Nt|Zw)?WaitForSingleObject(Ex)?`.
+
+
 ### Prefix Signatures
 
 File: [``prefix_signature_re.txt``](./prefix_signature_re.txt)
 
 Prefix Signatures are regular expressions of signatures that will be combined with the following frame's signature. Signature generation stops at the first non-matching signature it finds.
+
+A typical rule might be `JSAutoCompartment::JSAutoCompartment.*`.
+
+Note: These are regular expressions. Dollar signs an other regexp characters need to be escaped with a `\`.
+
 
 ### Trim DLL Signatures
 
