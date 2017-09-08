@@ -659,7 +659,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'port': config('resource.boto.port', None),
             'secure': config('resource.boto.secure', True),
             'calling_format': config(
-                'resource.boto.calling_format', 'boto.s3.connection.SubdomainCallingFormat'
+                'resource.boto.calling_format', 'boto.s3.connection.OrdinaryCallingFormat'
             ),
         }
     }
