@@ -231,13 +231,11 @@ class TestPostgresBasicCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash)
 
         eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
+        eq_(mocked_cursor.execute.call_count, 3)
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
             ok_(a_fragment in a_call[0][0])
@@ -269,14 +267,12 @@ class TestPostgresBasicCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash)
 
         eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 6)
+        eq_(mocked_cursor.execute.call_count, 4)
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
             'insert into plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
             ok_(a_fragment in a_call[0][0])
@@ -302,7 +298,7 @@ class TestPostgresBasicCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash_with_everything_too_long)
 
         eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
+        eq_(mocked_cursor.execute.call_count, 3)
         # check correct fragments
 
         first_call = mocked_cursor.execute.call_args_list[0]
@@ -497,13 +493,11 @@ class TestPostgresCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash)
 
         eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
+        eq_(mocked_cursor.execute.call_count, 3)
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
             'UPDATE processed_crashes_20120402'
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
@@ -536,14 +530,12 @@ class TestPostgresCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash)
 
         eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 6)
+        eq_(mocked_cursor.execute.call_count, 4)
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
             'insert into plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
             'UPDATE processed_crashes_20120402'
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
@@ -570,7 +562,7 @@ class TestPostgresCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash_with_everything_too_long)
 
         eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
+        eq_(mocked_cursor.execute.call_count, 3)
         # check correct fragments
 
         first_call = mocked_cursor.execute.call_args_list[0]
