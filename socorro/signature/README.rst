@@ -1,7 +1,8 @@
 Signature generation module
 ===========================
 
-This Python module covers crash signature generation.
+This Python module covers crash signature generation. Note that signature generation is
+largely controlled by the config files in `the siglists directory<https://github.com/mozilla-services/socorro/tree/master/socorro/siglists>`_.
 
 
 command line interface

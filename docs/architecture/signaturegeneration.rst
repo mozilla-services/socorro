@@ -16,6 +16,10 @@ The signature generation code is here:
 
 https://github.com/mozilla-services/socorro/tree/master/socorro/signature
 
+Signature generation is largely controlled by a set of config files which live here:
+
+https://github.com/mozilla-services/socorro/tree/master/socorro/siglists
+
 
 .. include:: ../../socorro/signature/README.rst
 
