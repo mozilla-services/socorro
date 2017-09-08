@@ -176,8 +176,9 @@ bug contains examples of crash reports that should be impacted, look at their
 frames). Note that we have a unit test that verifies there are no syntax errors
 in those files.
 
-Run the pull request changes through signature generation using the command line
-interface in your local dev environment.
+Run the pull request changes through `signature generation using the command line
+interface in your local dev environment
+<https://socorro.readthedocs.io/en/latest/architecture/signaturegeneration.html#signature-generation-module>`_.
 
 Verify with the author that the changes occur as intended.
 
