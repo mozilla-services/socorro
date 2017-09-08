@@ -377,19 +377,6 @@ class ExploitabilityReport(DeclarativeBase):
     )
 
 
-class PluginsReport(DeclarativeBase):
-    __tablename__ = 'plugins_reports'
-
-    # column definitions
-    report_id = Column(u'report_id', INTEGER(), nullable=False)
-    plugin_id = Column(u'plugin_id', INTEGER(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    version = Column(u'version', TEXT(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (
-        report_id, plugin_id, date_processed, version)}
-
-
 class RawAdiLogs(DeclarativeBase):
     __tablename__ = 'raw_adi_logs'
 
