@@ -118,7 +118,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         self._save_plugins(connection, processed_crash, report_id)
 
     def _save_processed_report(self, connection, processed_crash):
-        """ Here we INSERT or UPDATE a row in the reports table.
+        """Here we INSERT or UPDATE a row in the reports table.
         This is the first stop before imported data gets into our normalized
         batch reporting (next table: reports_clean).
 
@@ -143,6 +143,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         _save_processed_crash(), but is much simpler seeming because there are
         far fewer columns being passed into the parameterized query.
         """
+
         column_list = []
         placeholder_list = []
         # create a list of values to go into the reports table
