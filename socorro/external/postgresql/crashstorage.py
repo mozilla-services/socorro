@@ -245,7 +245,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
             except SQLDidNotReturnSingleValue:
                 insert_plugsins_sql = ("insert into plugins (filename, name) "
                                        "values (%s, %s) returning id")
-                single_value_sql(
+                execute_no_results(
                     connection,
                     insert_plugsins_sql,
                     (plugin_filename, plugin_name)
