@@ -51,16 +51,19 @@ We have helper scripts for these steps.
 -------------------------------
 
 This will fetch raw crash data from -prod and save it in the appropriate
-directory structure rooted at outputdir.
+directory structure.
+
+By default, this saves crash data to ``crashdata/``, but you can specify the
+directory using the ``--outputdir`` argument.
 
 Usage from host::
 
-  $ docker/as_me.sh scripts/fetch_crash_data.py <outputdir> <crashid> [<crashid> ...]
+  $ docker/as_me.sh scripts/fetch_crash_data.py <crashid> [<crashid> ...]
 
 
 For example (assumes this crash exists)::
 
-  $ docker/as_me.sh scripts/fetch_crash_data.py ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
+  $ docker/as_me.sh scripts/fetch_crash_data.py 5c9cecba-75dc-435f-b9d0-289a50170818
 
 
 You can get command help::
@@ -72,14 +75,27 @@ You should run this with ``docker/as_me.sh`` so that the files that get saved to
 the file system are owned by the user/group of the account you're using on your
 host.
 
-This script requires that you have a valid API token from the -prod environment
-that has the "View Raw Dumps" permission.
+.. Note::
 
-You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
+   If you want full crash data including the dumps, then you have a valid API token
+   from the -prod environment that has the "View Raw Dumps" permission.
 
-Add the API token value to your ``my.env`` file::
+   You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
 
-    SOCORRO_API_TOKEN=apitokenhere
+   Add the API token value to your ``my.env`` file::
+
+       SOCORRO_API_TOKEN=apitokenhere
+
+   If you don't do that, then the crash data you fetch will only be publicly
+   available crash data.
+
+
+You can also run this script to grab a bunch of publicly available raw crash
+data. For example::
+
+  $ docker/as_me.sh scripts/fetch_crash_data.py --num=100 --date=2017-09-01
+
+This will fetch 100 crashes from September 1st, 2017.
 
 
 ``scripts/socorro_aws_s3.sh``

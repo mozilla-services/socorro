@@ -10,7 +10,16 @@ class WrappedTextHelpFormatter(argparse.HelpFormatter):
         This makes it easier to do lists and paragraphs.
 
         """
-        parts = text.split('\n')
+        parts = text.split('\n\n')
         for i, part in enumerate(parts):
-            parts[i] = super(WrappedTextHelpFormatter, self)._fill_text(part, width, indent)
-        return '\n'.join(parts)
+            # Check to see if it's a bulleted list--if so, then fill each line
+            if part.startswith('* '):
+                subparts = part.split('\n')
+                for j, subpart in enumerate(subparts):
+                    subparts[j] = super(WrappedTextHelpFormatter, self)._fill_text(
+                        subpart, width, indent
+                    )
+                parts[i] = '\n'.join(subparts)
+            else:
+                parts[i] = super(WrappedTextHelpFormatter, self)._fill_text(part, width, indent)
+        return '\n\n'.join(parts)
