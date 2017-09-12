@@ -47,6 +47,31 @@ crash id to the "socorro.normal" RabbitMQ queue.
 We have helper scripts for these steps.
 
 
+``scripts/fetch_crashids.py``
+-----------------------------
+
+This will generate a list of crash ids from -prod that meet specified criteria.
+Crash ids are printed to stdout, so you can use this in conjunction with other
+scripts or redirect to a file.
+
+This pulls 100 crash ids from yesterday for Firefox product::
+
+  $ docker/as_me.sh scripts/fetch_crashids.py
+
+This pulls 5 crash ids from 2017-09-01::
+
+  $ docker/as_me.sh scripts/fetch_crashids.py --num=5 --date=2017-09-01
+
+This pulls 100 crash ids for criteria specified with a Super Search url that we
+copy and pasted::
+
+  $ docker/as_me.sh scripts/fetch_crashids.py "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform#facet-signature"
+
+You can get command help::
+
+  $ docker/as_me.sh scripts/fetch_crash_data.py --help
+
+
 ``scripts/fetch_crash_data.py``
 -------------------------------
 
@@ -61,6 +86,13 @@ Usage from host::
 For example (assumes this crash exists)::
 
   $ docker/as_me.sh scripts/fetch_crash_data.py ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
+
+
+Use with ``scripts/fetch_crashids.py`` to fetch crash data from 100 crashes from
+yesterday for Firefox::
+
+  $ docker/as_me.sh bash
+  app@...:/app$ scripts/fetch_crashids.py | xargs scripts/fetch_crash_data.py ./testdata
 
 
 You can get command help::
@@ -80,6 +112,11 @@ You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
 Add the API token value to your ``my.env`` file::
 
     SOCORRO_API_TOKEN=apitokenhere
+
+.. Note::
+
+   Make sure you treat any data you pull from production in accordance with our
+   data policies that you agreed to when granted access to it.
 
 
 ``scripts/socorro_aws_s3.sh``
