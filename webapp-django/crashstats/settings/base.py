@@ -647,6 +647,20 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
                 'resource.boto.keybuilder_class',
                 'socorro.external.boto.connection_context.DatePrefixKeyBuilder'
             ),
+
+            # NOTE(willkg): In the local dev environment, we need to use a
+            # HostPortS3ConnectionContext which requires these additional configuration bits. The
+            # defaults are taken from the config sections of the relevant classes.
+            'resource_class': config(
+                'resource.boto.resource_class',
+                'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
+            ),
+            'host': config('resource.boto.host', None),
+            'port': config('resource.boto.port', None),
+            'secure': config('resource.boto.secure', True),
+            'calling_format': config(
+                'resource.boto.calling_format', 'boto.s3.connection.OrdinaryCallingFormat'
+            ),
         }
     }
 }

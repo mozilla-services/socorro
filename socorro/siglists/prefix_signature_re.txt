@@ -104,6 +104,7 @@ mozilla::ipc::RPCChannel::EnteredCxxStack
 mozilla::ipc::RPCChannel::Send
 mozilla::layers::CompositorD3D11::Failed
 mozilla::layers::CompositorD3D11::HandleError
+mozilla::WrapNotNull<.*
 mozilla.*FatalError
 moz_xmalloc
 moz_xrealloc

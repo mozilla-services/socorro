@@ -161,15 +161,6 @@ class ReportPartitionInfo(BaseTable):
             'TIMESTAMPTZ'
         ),
         (
-            'plugins_reports',
-            '2',
-            '{"report_id,plugin_id"}',
-            '{"report_id,date_processed"}',
-            '{"(plugin_id) REFERENCES plugins(id)","(report_id) REFERENCES reports_WEEKNUM(id)"}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-        (
             'extensions',
             '3',
             '{"report_id,extension_key"}',

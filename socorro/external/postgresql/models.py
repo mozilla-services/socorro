@@ -216,31 +216,6 @@ ischema_names['build_type_enum'] = build_type_enum
 # Schema definition: Tables
 ###############################
 
-class CrashAduByBuildSignature(DeclarativeBase):
-    __tablename__ = 'crash_adu_by_build_signature'
-
-    # column definitions
-    adu_by_build_id = Column(u'crash_adu_by_build_signature_id', INTEGER(),
-                             primary_key=True, autoincrement=True)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=False, nullable=False, index=True)
-    signature = Column(u'signature', CITEXT(),
-                       primary_key=False, nullable=False)
-    adu_date = Column(u'adu_date', DATE(), primary_key=False,
-                      nullable=False, index=True)
-    build_date = Column(u'build_date', DATE(),
-                        primary_key=False, nullable=False, index=True)
-    build_id = Column(u'buildid', NUMERIC(), nullable=False,
-                      server_default=text('0'))
-    crash_count = Column(u'crash_count', INTEGER(),
-                         nullable=False, server_default=text('0'))
-    adu_count = Column(u'adu_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    os_name = Column(u'os_name', CITEXT(), primary_key=False, nullable=False)
-    channel = Column(u'channel', CITEXT(), primary_key=False, nullable=False)
-    product_name = Column(u'product_name', CITEXT(),
-                          primary_key=False, nullable=False)
-
 
 class EmailCampaignsContact(DeclarativeBase):
     __tablename__ = 'email_campaigns_contacts'
@@ -400,19 +375,6 @@ class ExploitabilityReport(DeclarativeBase):
         Index('exploitable_signature_date_idx', signature_id,
               product_version_id, report_date, unique=True),
     )
-
-
-class PluginsReport(DeclarativeBase):
-    __tablename__ = 'plugins_reports'
-
-    # column definitions
-    report_id = Column(u'report_id', INTEGER(), nullable=False)
-    plugin_id = Column(u'plugin_id', INTEGER(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    version = Column(u'version', TEXT(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (
-        report_id, plugin_id, date_processed, version)}
 
 
 class RawAdiLogs(DeclarativeBase):

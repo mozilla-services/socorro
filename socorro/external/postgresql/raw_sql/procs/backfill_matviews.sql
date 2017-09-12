@@ -85,8 +85,6 @@ WHILE thisday <= lastday LOOP
     PERFORM backfill_android_devices(thisday);
     RAISE INFO 'graphics_devices';
     PERFORM backfill_graphics_devices(thisday);
-    RAISE INFO 'crash_adu_by_build_signature';
-    PERFORM backfill_crash_adu_by_build_signature(thisday);
     thisday := thisday + 1;
 
 END LOOP;
