@@ -15,6 +15,10 @@ from socorro.lib.datetimeutil import JsonDTEncoder
 from socorro.scripts import WrappedTextHelpFormatter
 
 
+DESCRIPTION = """
+Fetches crash data from crash-stats.mozilla.com system
+"""
+
 EPILOG = """
 Given a crash id, fetches crash data and puts it in specified directory
 
@@ -28,6 +32,8 @@ To create an API token for Socorro in -prod, visit:
 
 """
 
+HOST = 'https://crash-stats.mozilla.com'
+
 
 class CrashDoesNotExist(Exception):
     pass
@@ -39,14 +45,17 @@ def create_dir_if_needed(d):
 
 
 def fetch_crash(outputdir, api_token, crash_id):
-    headers = {
-        'Auth-Token': api_token
-    }
+    if api_token:
+        headers = {
+            'Auth-Token': api_token
+        }
+    else:
+        headers = {}
 
     # Fetch raw crash metadata
     print('Fetching %s' % crash_id)
     resp = requests.get(
-        'https://crash-stats.mozilla.com/api/RawCrash/',
+        HOST + '/api/RawCrash/',
         params={
             'crash_id': crash_id,
             'format': 'meta',
@@ -58,7 +67,7 @@ def fetch_crash(outputdir, api_token, crash_id):
 
     raw_crash = resp.json()
 
-    # Fetch dumps from -prod
+    # Fetch dumps
     dumps = {}
     dump_names = raw_crash.get('dump_checksums', {}).keys()
     for dump_name in dump_names:
@@ -67,7 +76,7 @@ def fetch_crash(outputdir, api_token, crash_id):
             dump_name = 'dump'
 
         resp = requests.get(
-            'https://crash-stats.mozilla.com/api/RawCrash/',
+            HOST + '/api/RawCrash/',
             params={
                 'crash_id': crash_id,
                 'format': 'raw',
@@ -113,7 +122,7 @@ def main(argv):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
         prog=os.path.basename(__file__),
-        description='Fetches crash data from crash-stats.mozilla.com system',
+        description=DESCRIPTION.strip(),
         epilog=EPILOG.strip(),
     )
     parser.add_argument('outputdir', help='directory to place crash data in')
@@ -128,7 +137,8 @@ def main(argv):
         return 1
 
     api_token = os.environ.get('SOCORRO_API_TOKEN')
-    print('Using api token: %s' % api_token)
+    if api_token:
+        print('Using api token: %s%s' % (api_token[:4], 'x' * (len(api_token) - 4)))
 
     for crash_id in args.crashid:
         print('Working on %s...' % crash_id)
