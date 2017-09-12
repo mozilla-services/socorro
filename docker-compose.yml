@@ -9,6 +9,7 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
     image: local/socorro_base
+    restart: always
 
   # Processor app
   processor:
@@ -29,6 +30,7 @@ services:
       - rabbitmq
     volumes:
       - .:/app
+    restart: always
 
   # Webapp app
   webapp:
@@ -52,6 +54,7 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+    restart: always
 
   # Crontabber app
   crontabber:
@@ -71,6 +74,7 @@ services:
       - rabbitmq
     volumes:
       - .:/app
+    restart: always
 
   # -----------------------------
   # External services
@@ -82,6 +86,7 @@ services:
     image: kamon/grafana_graphite
     ports:
       - "8080:3000"  # grafana port
+    restart: always
 
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
@@ -90,6 +95,7 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
+    restart: always
 
   # https://hub.docker.com/_/rabbitmq/
   rabbitmq:
@@ -98,6 +104,7 @@ services:
       - RABBITMQ_DEFAULT_USER=rabbituser
       - RABBITMQ_DEFAULT_PASS=rabbitpwd
       - RABBITMQ_DEFAULT_VHOST=rabbitvhost
+    restart: always
 
   # https://hub.docker.com/_/postgres/
   postgresql:
@@ -107,6 +114,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=aPassword
       - POSTGRES_DB=breakpad
+    restart: always
 
   # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake S3
@@ -118,3 +126,4 @@ services:
       - HOSTNAME=localstack-s3
     ports:
       - "5000:5000"
+    restart: always
