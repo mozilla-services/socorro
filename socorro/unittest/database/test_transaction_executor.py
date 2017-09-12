@@ -2,14 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_, assert_raises
-import psycopg2
 from configman import Namespace, ConfigurationManager, class_converter
+import psycopg2
+import pytest
+
 import socorro.database.transaction_executor
 from socorro.database.transaction_executor import (
-  TransactionExecutor, TransactionExecutorWithInfiniteBackoff)
+    TransactionExecutor,
+    TransactionExecutorWithInfiniteBackoff
+)
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.unittest.testbase import TestCase
+
 
 class SomeError(Exception):
     pass
@@ -44,8 +48,7 @@ class MockLogging:
 class MockConnection(object):
 
     def __init__(self):
-        self.transaction_status = \
-          psycopg2.extensions.TRANSACTION_STATUS_IDLE
+        self.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_IDLE
 
     def get_transaction_status(self):
         return self.transaction_status
@@ -76,26 +79,25 @@ class TestTransactionExecutor(TestCase):
     def test_basic_usage_with_postgres(self):
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          #default=TransactionExecutorWithBackoff,
-          default=TransactionExecutor,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutor,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -108,33 +110,33 @@ class TestTransactionExecutor(TestCase):
                 _function_calls.append(connection)
 
             executor(mock_function)
-            ok_(_function_calls)
-            eq_(commit_count, 1)
-            eq_(rollback_count, 0)
+            assert _function_calls
+            assert commit_count == 1
+            assert rollback_count == 0
 
     def test_rollback_transaction_exceptions_with_postgres(self):
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutor,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutor,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -143,37 +145,36 @@ class TestTransactionExecutor(TestCase):
 
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
-                connection.transaction_status = \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise SomeError('crap!')
 
-            assert_raises(SomeError, executor, mock_function)
+            with pytest.raises(SomeError):
+                executor(mock_function)
 
-            eq_(commit_count, 0)
-            eq_(rollback_count, 1)
-            ok_(mock_logging.errors)
+            assert commit_count == 0
+            assert rollback_count == 1
+            assert mock_logging.errors
 
     def test_basic_usage_with_postgres_with_backoff(self):
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutorWithInfiniteBackoff,
-          #default=TransactionExecutor,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutorWithInfiniteBackoff,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -186,39 +187,38 @@ class TestTransactionExecutor(TestCase):
                 _function_calls.append(connection)
 
             executor(mock_function)
-            ok_(_function_calls)
-            eq_(commit_count, 1)
-            eq_(rollback_count, 0)
+            assert _function_calls
+            assert commit_count == 1
+            assert rollback_count == 0
 
     def test_operation_error_with_postgres_with_backoff(self):
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutorWithInfiniteBackoff,
-          #default=TransactionExecutor,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutorWithInfiniteBackoff,
+            #default=TransactionExecutor,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
+            executor = config.transaction_executor_class(config, mocked_context)
             _function_calls = []  # some mutable
 
             _sleep_count = []
@@ -242,39 +242,38 @@ class TestTransactionExecutor(TestCase):
 
             try:
                 executor(mock_function)
-                ok_(_function_calls)
-                eq_(commit_count, 1)
-                eq_(rollback_count, 5)
-                ok_(mock_logging.criticals)
-                eq_(len(mock_logging.criticals), 5)
-                ok_(len(_sleep_count) > 10)
+                assert _function_calls
+                assert commit_count == 1
+                assert rollback_count == 5
+                assert mock_logging.criticals
+                assert len(mock_logging.criticals) == 5
+                assert len(_sleep_count) > 10
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
 
     def test_operation_error_with_postgres_with_backoff_with_rollback(self):
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutorWithInfiniteBackoff,
-          #default=TransactionExecutor,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutorWithInfiniteBackoff,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -286,8 +285,7 @@ class TestTransactionExecutor(TestCase):
 
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
-                connection.transaction_status = \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 _function_calls.append(connection)
                 # the default sleep times are going to be,
                 # 2, 4, 6, 10, 15
@@ -305,51 +303,49 @@ class TestTransactionExecutor(TestCase):
 
             try:
                 executor(mock_function)
-                ok_(_function_calls)
-                eq_(commit_count, 1)
-                eq_(rollback_count, 5)
-                ok_(mock_logging.criticals)
-                eq_(len(mock_logging.criticals), 5)
-                ok_(len(_sleep_count) > 10)
+                assert _function_calls
+                assert commit_count == 1
+                assert rollback_count == 5
+                assert mock_logging.criticals
+                assert len(mock_logging.criticals) == 5
+                assert len(_sleep_count) > 10
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
 
     def test_programming_error_with_postgres_with_backoff_with_rollback(self):
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutorWithInfiniteBackoff,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutorWithInfiniteBackoff,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
+            executor = config.transaction_executor_class(config, mocked_context)
             _function_calls = []  # some mutable
 
             _sleep_count = []
 
             def mock_function_struggling(connection):
                 assert isinstance(connection, MockConnection)
-                connection.transaction_status = \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 _function_calls.append(connection)
                 # the default sleep times are going to be,
                 # 2, 4, 6, 10, 15
@@ -369,12 +365,12 @@ class TestTransactionExecutor(TestCase):
 
             try:
                 executor(mock_function_struggling)
-                ok_(_function_calls)
-                eq_(commit_count, 1)
-                eq_(rollback_count, 5)
-                ok_(mock_logging.criticals)
-                eq_(len(mock_logging.criticals), 5)
-                ok_(len(_sleep_count) > 10)
+                assert _function_calls
+                assert commit_count == 1
+                assert rollback_count == 5
+                assert mock_logging.criticals
+                assert len(mock_logging.criticals) == 5
+                assert len(_sleep_count) > 10
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
 
@@ -387,13 +383,11 @@ class TestTransactionExecutor(TestCase):
 
             def mock_function_developer_mistake(connection):
                 assert isinstance(connection, MockConnection)
-                connection.transaction_status = \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise psycopg2.ProgrammingError("syntax error")
 
-            assert_raises(psycopg2.ProgrammingError,
-                              executor,
-                              mock_function_developer_mistake)
+            with pytest.raises(psycopg2.ProgrammingError):
+                executor(mock_function_developer_mistake)
 
     def test_abandon_transaction(self):
         """this is when a transaction is intentionally aborted, not because
@@ -401,26 +395,26 @@ class TestTransactionExecutor(TestCase):
         determined that the transaction is of no further use."""
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutor,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutor,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -434,16 +428,15 @@ class TestTransactionExecutor(TestCase):
 
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
-                connection.transaction_status = \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise AbandonTransaction('crap!')
 
             # the method to test
             executor(mock_function)
 
-            eq_(commit_count, 0)
-            eq_(rollback_count, 1)
-            ok_(not mock_logging.errors)
+            assert commit_count == 0
+            assert rollback_count == 1
+            assert not mock_logging.errors
 
     def test_abandon_backoff_transaction(self):
         """this is when a transaction is intentionally aborted, not because
@@ -453,26 +446,26 @@ class TestTransactionExecutor(TestCase):
         the base TransactionExcutor"""
         required_config = Namespace()
         required_config.add_option(
-          'transaction_executor_class',
-          default=TransactionExecutorWithInfiniteBackoff,
-          doc='a class that will execute transactions'
+            'transaction_executor_class',
+            default=TransactionExecutorWithInfiniteBackoff,
+            doc='a class that will execute transactions'
         )
         required_config.add_option(
-          'database_class',
-          default=MockConnectionContext,
-          from_string_converter=class_converter
+            'database_class',
+            default=MockConnectionContext,
+            from_string_converter=class_converter
         )
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[],
+            argv_source=[]
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
@@ -486,13 +479,12 @@ class TestTransactionExecutor(TestCase):
 
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
-                connection.transaction_status = \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise AbandonTransaction('crap!')
 
             # the method to test
             executor(mock_function)
 
-            eq_(commit_count, 0)
-            eq_(rollback_count, 1)
-            ok_(not mock_logging.errors)
+            assert commit_count == 0
+            assert rollback_count == 1
+            assert not mock_logging.errors
