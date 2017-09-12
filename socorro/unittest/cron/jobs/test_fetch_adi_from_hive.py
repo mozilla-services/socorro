@@ -3,13 +3,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
 import contextlib
-
-import mock
-from nose.tools import eq_, ok_
+import datetime
 
 from crontabber.app import CronTabber
+import mock
+
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
@@ -176,7 +175,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             "select %s from raw_adi_logs" % ','.join(columns)
         )
         adi_logs = [dict(zip(columns, row)) for row in pgcursor.fetchall()]
-        eq_(adi_logs[0], {
+        expected = {
             'report_date': yesterday,
             'product_name': 'WinterWolf',
             'product_os_platform': 'Ginko',
@@ -186,8 +185,10 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'build_channel': 'nightly',
             'product_guid': 'a-guid',
             'count': 1
-        })
-        eq_(adi_logs[1], {
+        }
+        assert adi_logs[0] == expected
+
+        expected = {
             'report_date': yesterday,
             'product_name': 'NothingMuch',
             'product_os_platform': 'Ginko',
@@ -197,8 +198,10 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'build_channel': 'release-cck-blah',
             'product_guid': 'webapprt@mozilla.org',
             'count': 1
-        })
-        eq_(adi_logs[2], {
+        }
+        assert adi_logs[1] == expected
+
+        expected = {
             'report_date': datetime.date(2019, 1, 1),
             'product_name': 'NothingMuch',
             'product_os_platform': 'Ginko\xe2\x98\xa2',
@@ -208,8 +211,10 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'build_channel': 'release-cck-\\',
             'product_guid': '{a-guid}',
             'count': 2
-        })
-        eq_(adi_logs[3], {
+        }
+        assert adi_logs[2] == expected
+
+        expected = {
             'report_date': yesterday,
             'product_name': 'FennecAndroid',
             'product_os_platform': 'Ginko',
@@ -219,7 +224,8 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'build_channel': 'release',
             'product_guid': 'a-guid',
             'count': 666
-        })
+        }
+        assert adi_logs[3] == expected
 
         columns = (
             'adi_count',
@@ -237,7 +243,8 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 order by update_channel desc""" % ','.join(columns)
         )
         adi = [dict(zip(columns, row)) for row in pgcursor.fetchall()]
-        eq_(adi[0], {
+
+        expected = {
             'update_channel': 'release',
             'product_guid': '{webapprt@mozilla.org}',
             'product_version': '10.0.4',
@@ -247,8 +254,10 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'date': yesterday,
             'product_os_version': '3.2.1',
             'product_name': 'NothingMuch'
-        })
-        eq_(adi[1], {
+        }
+        assert adi[0] == expected
+
+        expected = {
             'update_channel': 'nightly',
             'product_guid': 'a-guid',
             'product_version': '10.0.4',
@@ -258,8 +267,10 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'date': yesterday,
             'product_os_version': '2.3.1',
             'product_name': 'WinterWolf'
-        })
-        eq_(adi[2], {
+        }
+        assert adi[1] == expected
+
+        expected = {
             'update_channel': 'beta',
             'product_guid': 'a-guid',
             'product_version': '38.0',
@@ -269,7 +280,8 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'date': yesterday,
             'product_os_version': '3.1415',
             'product_name': 'FennecAndroid'
-        })
+        }
+        assert adi[2] == expected
 
     @mock.patch('socorro.cron.jobs.fetch_adi_from_hive.pyhs2')
     def test_mocked_fetch_with_secondary_destination(self, fake_hive):
@@ -333,7 +345,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
         # Critical test here.
         # We make sure the secondary database class gets used
         # for a `cursor.copy_from()` call.
-        ok_(MockedPGConnectionContext.connection.cursor().copy_from.called)
+        assert MockedPGConnectionContext.connection.cursor().copy_from.called
 
     @mock.patch('socorro.cron.jobs.fetch_adi_from_hive.pyhs2')
     def test_fetch_with_zero_hive_results(self, fake_hive):
@@ -356,7 +368,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             assert information['fetch-adi-from-hive']
 
             assert information['fetch-adi-from-hive']['last_error']
-            ok_(
+            assert (
                 NoRowsWritten.__name__ in
                 information['fetch-adi-from-hive']['last_error']['type']
             )
@@ -377,7 +389,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             "select count(*) from raw_adi_logs"
         )
         count, = pgcursor.fetchone()
-        eq_(count, 0)
+        assert count == 0
 
 
 class TestFAKEFetchADIFromHive(IntegrationTestBase):
