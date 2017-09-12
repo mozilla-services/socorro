@@ -128,7 +128,8 @@ def main(argv):
         return 1
 
     api_token = os.environ.get('SOCORRO_API_TOKEN')
-    print('Using api token: %s' % api_token)
+    if api_token:
+        print('Using api token: %s%s' % (api_token[:4], 'x' * (len(api_token) - 4)))
 
     for crash_id in args.crashid:
         print('Working on %s...' % crash_id)
