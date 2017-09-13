@@ -92,7 +92,7 @@ Use with ``scripts/fetch_crashids.py`` to fetch crash data from 100 crashes from
 yesterday for Firefox::
 
   $ docker/as_me.sh bash
-  app@...:/app$ scripts/fetch_crashids.py | xargs scripts/fetch_crash_data.py ./testdata
+  app@...:/app$ scripts/fetch_crashids.py | scripts/fetch_crash_data.py ./testdata
 
 
 You can get command help::

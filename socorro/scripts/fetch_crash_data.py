@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import os.path
+import sys
 
 import requests
 
@@ -20,7 +21,8 @@ Fetches crash data from crash-stats.mozilla.com system
 """
 
 EPILOG = """
-Given a crash id, fetches crash data and puts it in specified directory
+Given one or more crash ids via command line or stdin (one per line), fetches crash data and puts it
+in specified directory.
 
 This requires an auth-token to be in the environment::
 
@@ -126,7 +128,7 @@ def main(argv):
         epilog=EPILOG.strip(),
     )
     parser.add_argument('outputdir', help='directory to place crash data in')
-    parser.add_argument('crashid', nargs='+', help='one or more crash ids to fetch data for')
+    parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
 
     args = parser.parse_args(argv)
 
@@ -140,7 +142,14 @@ def main(argv):
     if api_token:
         print('Using api token: %s%s' % (api_token[:4], 'x' * (len(api_token) - 4)))
 
-    for crash_id in args.crashid:
+    if args.crashid:
+        crashids_iterator = iter(args.crashid)
+    else:
+        crashids_iterator = sys.stdin
+
+    for crash_id in crashids_iterator:
+        crash_id = crash_id.strip()
+
         print('Working on %s...' % crash_id)
         fetch_crash(outputdir, api_token, crash_id)
 
