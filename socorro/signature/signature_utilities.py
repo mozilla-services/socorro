@@ -462,7 +462,8 @@ class OOMSignature(Rule):
         'NS_ABORT_OOM',
         'mozalloc_handle_oom',
         'CrashAtUnhandlableOOM',
-        'AutoEnterOOMUnsafeRegion'
+        'AutoEnterOOMUnsafeRegion',
+        'alloc::oom::oom',
     )
 
     def predicate(self, raw_crash, processed_crash):
