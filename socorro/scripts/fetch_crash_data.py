@@ -142,12 +142,13 @@ def main(argv):
     if api_token:
         print('Using api token: %s%s' % (api_token[:4], 'x' * (len(api_token) - 4)))
 
+    # This will pull crash ids from the command line if specified, otherwise it'll pull from stdin
     if args.crashid:
-        crashids_iterator = iter(args.crashid)
+        crashids_iteratable = args.crashid
     else:
-        crashids_iterator = sys.stdin
+        crashids_iteratable = sys.stdin
 
-    for crash_id in crashids_iterator:
+    for crash_id in crashids_iteratable:
         crash_id = crash_id.strip()
 
         print('Working on %s...' % crash_id)
