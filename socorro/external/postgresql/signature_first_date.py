@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
+
 from socorro.lib import MissingArgumentError, external_common
 from socorro.external.postgresql.base import PostgreSQLBase
 
@@ -35,3 +37,16 @@ class SignatureFirstDate(PostgreSQLBase):
             'hits': signatures,
             'total': len(signatures)
         }
+
+    def post(self, **kwargs):
+        filters = [
+            ('signature', None, str),
+            ('first_report', None, datetime.datetime),
+            ('first_build', None, str),
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+        sql_insert = """
+            INSERT INTO signatures (signature, first_report, first_build)
+            VALUES (%s, %s, %s)
+        """
+        self.query(sql_insert, params)

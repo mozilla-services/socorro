@@ -29,6 +29,7 @@ socorro.cron.jobs.clean_missing_symbols.CleanMissingSymbolsCronApp|1d
 socorro.cron.jobs.missingsymbols.MissingSymbolsCronApp|1d
 socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h
 socorro.cron.jobs.upload_crash_report_json_schema.UploadCrashReportJSONSchemaCronApp|1h
+socorro.cron.jobs.first_signatures.FirstSignaturesCronApp|1h
 '''
 
 
