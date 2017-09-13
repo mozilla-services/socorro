@@ -48,8 +48,8 @@ def extract_params(url):
     params = parse_qs(parsed.query)
 
     for key in list(params.keys()):
-        # Remove any params that start with a _
-        if key.startswith('_'):
+        # Remove any params that start with a _ except _sort since that's helpful
+        if key.startswith('_') and key != '_sort':
             del params[key]
 
     return params

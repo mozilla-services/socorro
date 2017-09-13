@@ -50,9 +50,9 @@ We have helper scripts for these steps.
 ``scripts/fetch_crashids.py``
 -----------------------------
 
-This will generate a list of crash ids from -prod that meet specified criteria.
-Crash ids are printed to stdout, so you can use this in conjunction with other
-scripts or redirect to a file.
+This will generate a list of crash ids from crash-stats.mozilla.com that meet
+specified criteria. Crash ids are printed to stdout, so you can use this in
+conjunction with other scripts or redirect to a file.
 
 This pulls 100 crash ids from yesterday for Firefox product::
 
@@ -65,7 +65,7 @@ This pulls 5 crash ids from 2017-09-01::
 This pulls 100 crash ids for criteria specified with a Super Search url that we
 copy and pasted::
 
-  $ docker/as_me.sh scripts/fetch_crashids.py "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform#facet-signature"
+  $ docker/as_me.sh scripts/fetch_crashids.py "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
 
 You can get command help::
 
@@ -75,8 +75,8 @@ You can get command help::
 ``scripts/fetch_crash_data.py``
 -------------------------------
 
-This will fetch raw crash data from -prod and save it in the appropriate
-directory structure rooted at outputdir.
+This will fetch raw crash data from crash-stats.mozilla.com and save it in the
+appropriate directory structure rooted at outputdir.
 
 Usage from host::
 
@@ -104,8 +104,8 @@ You should run this with ``docker/as_me.sh`` so that the files that get saved to
 the file system are owned by the user/group of the account you're using on your
 host.
 
-This script requires that you have a valid API token from the -prod environment
-that has the "View Raw Dumps" permission.
+This script requires that you have a valid API token from the
+crash-stats.mozilla.com environment that has the "View Raw Dumps" permission.
 
 You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
 
