@@ -47,6 +47,7 @@ services:
       - postgresql
       - elasticsearch
       - rabbitmq
+      - memcached
     command: ["/app/docker/run_webapp.sh", "--dev"]
     ports:
       - "8000:8000"
@@ -118,3 +119,9 @@ services:
       - HOSTNAME=localstack-s3
     ports:
       - "5000:5000"
+
+  # https://hub.docker.com/_/memcached/
+  memcached:
+    image: memcached:1.5.1
+    ports:
+      - "11211:11211"
