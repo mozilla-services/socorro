@@ -62,7 +62,7 @@ If you wish to run them against different environemts, set `PYTEST_BASE_URL` as 
 
 ___Running tests using headless Firefox___
 
-NOTE: This instructions are for Linux os macOS only.
+NOTE: This instructions are for Linux and macOS only.
 
 To run the tests using a copy of Firefox that can be run in 'headless' mode (meaning with no UI), do the following:
 
