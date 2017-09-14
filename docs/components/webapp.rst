@@ -218,3 +218,42 @@ with stack traces by adding this to
       ('Your Name', 'your_email@domain.com'),
   )
   MANAGERS = ADMINS
+
+
+Running Web App in a Prod-like Way
+==================================
+
+By default, for local development when you run ``docker-compose up webapp`` it
+starts the web app geared towards local development. This means it starts
+Django's ``runserver`` and you most likely have ``DEBUG=True`` in your
+``my.env`` file. That means that static assets are automatically served from
+within the individual Django apps rather than serving the minified and
+concatenated static assets you'd get in a production-like environment.
+
+If you want to, locally on your laptop, run the web app in a more
+"prod-like way" here's how you'd do that. First start a ``bash`` shell with
+service ports::
+
+  $ docker-compose run --service-ports webapp bash
+
+Now, the intention is to run the web app with ``DEBUG=False`` but for
+static assets to work you first need to run ``collectstatic``::
+
+  app@...:/app$ cd webapp-django/
+  app@...:/app/webapp-django$ ./manage.py collectstatic --noinput
+  app@...:/app/webapp-django$ cd ..
+
+Now to get as close as possible to a production-like environment, start
+``uwsgi`` instead of Django's ``runserver`` but do it with ``DEBUG=False``::
+
+  app@...:/app$ DEBUG=False bash docker/run_webapp.sh
+
+You will now be able to open ``http://localhost:8000`` on the host and if you
+view the source you see that the minified and concatenated static assets
+are served instead.
+
+When running the web app with ``DEBUG=False`` without using a web server in
+front, like Nginx, the static files are served by Whitenoise and this depends
+on you first having run that ``./manage.py collectstatic`` command. If you
+change any static file and want to see this reflected, stop the web app,
+go back and run that ``./manage.py collectstatic`` command again.
