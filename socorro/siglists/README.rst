@@ -73,7 +73,7 @@ non-matching signature it finds.
 
 A typical rule might be ``JSAutoCompartment::JSAutoCompartment.*``.
 
-Note: These are regular expressions. Dollar signs an other regexp characters
+Note: These are regular expressions. Dollar signs and other regexp characters
 need to be escaped with a ``\``.
 
 
