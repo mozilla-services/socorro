@@ -282,7 +282,7 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             ('Firefox', '51.0a2', False),
             ('Firefox', '52.0a1', True),
         ]
-        assert sorted(rows) == sorted(expected)
+        assert sorted(rows) == expected
 
     @mock.patch('requests.get')
     def test_download_error(self, rget):
