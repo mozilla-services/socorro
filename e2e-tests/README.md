@@ -83,7 +83,6 @@ Then run the tests using the following command:
 
 	$ tox -e py27
 
-
 ___Running specific tests___
 
 You can run tests in a given file::
