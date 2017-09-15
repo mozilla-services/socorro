@@ -77,6 +77,22 @@ services:
   # External services
   # -----------------------------
 
+  # https://hub.docker.com/r/mozilla/antenna/
+  # This seems weird, but for the purposes of Socorro, we should treat
+  # it as an external service.
+  antenna:
+    image: mozilla/antenna:latest
+    environment:
+      - LOGGING_LEVEL=INFO
+      - CRASHSTORAGE_CLASS=antenna.ext.s3.crashstorage.S3CrashStorage
+      - CRASHSTORAGE_ENDPOINT_URL=http://localstack-s3:5000
+      - CRASHSTORAGE_REGION=us-west-2
+      - CRASHSTORAGE_ACCESS_KEY=foo
+      - CRASHSTORAGE_SECRET_ACCESS_KEY=foo
+      - CRASHSTORAGE_BUCKET_NAME=dev_bucket
+    ports:
+      - "8888:8000"
+
   # https://hub.docker.com/r/kamon/grafana_graphite/
   # username: admin, password: admin
   statsd:
