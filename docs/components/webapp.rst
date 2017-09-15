@@ -225,9 +225,10 @@ Running Web App in a Prod-like Way
 
 By default, for local development when you run ``docker-compose up webapp`` it
 starts the web app geared towards local development. This means it starts
-Django's ``runserver`` and you most likely have ``DEBUG=True`` in your
-``my.env`` file. That means that static assets are automatically served from
-within the individual Django apps rather than serving the minified and
+Django's ``runserver`` and you have ``DEBUG=True`` in the
+``docker/config/local_development.env`` file. That means that static
+assets are automatically served from within the individual Django
+apps rather than serving the minified and
 concatenated static assets you'd get in a production-like environment.
 
 If you want to, locally on your laptop, run the web app in a more
