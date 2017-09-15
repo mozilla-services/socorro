@@ -101,6 +101,7 @@ class OutputBase:
 
 class TextOutput(OutputBase):
     def data(self, crash_id, old_sig, new_sig, notes):
+        print('Crash id: %s' % crash_id)
         print('Original: %s' % old_sig)
         print('New:      %s' % new_sig)
         print('Same?:    %s' % (old_sig == new_sig))
