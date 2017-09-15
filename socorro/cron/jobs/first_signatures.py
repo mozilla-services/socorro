@@ -74,7 +74,7 @@ class FirstSignaturesCronApp(BaseCronApp):
                 '<{}'.format(date.isoformat()),
             ],
             '_facets': 'signature',
-            '_facets_size': 1000,
+            '_facets_size': 10000,
             '_results_number': 0,
             '_fields': all_fields,
         }
