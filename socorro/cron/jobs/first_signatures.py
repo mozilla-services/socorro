@@ -82,7 +82,6 @@ class FirstSignaturesCronApp(BaseCronApp):
         signatures = [
             x['term'] for x in results['facets']['signature']
         ]
-        print("LIST LENGTH", len(signatures), 'SET LENGTH', len(set(signatures)))
         self.config.logger.info(
             'Found %s unique signatures between %s and %s',
             len(signatures),
