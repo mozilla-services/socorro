@@ -102,6 +102,7 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 
 MIDDLEWARE_CLASSES = (
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -404,19 +405,12 @@ STATSD_HOST = config('STATSD_HOST', 'localhost')
 STATSD_PORT = config('STATSD_PORT', 8125, cast=int)
 STATSD_PREFIX = config('STATSD_PREFIX', None)
 
-# Enable this to be able to run tests
-# NB: Disable this caching mechanism in production environment as
-# it will break work of anonymous CSRF if there is more than one
-# web server thread.
-# Comment out to use memcache from settings/base.py
 CACHES = {
     'default': {
-        # use django.core.cache.backends.locmem.LocMemCache for prod
         'BACKEND': config(
             'CACHE_BACKEND',
             'django.core.cache.backends.memcached.MemcachedCache',
         ),
-        # fox2mike suggest to use IP instead of localhost
         'LOCATION': config('CACHE_LOCATION', '127.0.0.1:11211'),
         'TIMEOUT': config('CACHE_TIMEOUT', 500),
         'KEY_PREFIX': config('CACHE_KEY_PREFIX', 'crashstats'),
@@ -449,6 +443,7 @@ STATICFILES_FINDERS = (
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+
 
 PIPELINE = {
     'STYLESHEETS': PIPELINE_CSS,

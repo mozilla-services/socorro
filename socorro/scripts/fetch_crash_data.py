@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import os.path
+import sys
 
 import requests
 
@@ -15,8 +16,13 @@ from socorro.lib.datetimeutil import JsonDTEncoder
 from socorro.scripts import WrappedTextHelpFormatter
 
 
+DESCRIPTION = """
+Fetches crash data from crash-stats.mozilla.com system
+"""
+
 EPILOG = """
-Given a crash id, fetches crash data and puts it in specified directory
+Given one or more crash ids via command line or stdin (one per line), fetches crash data and puts it
+in specified directory.
 
 This requires an auth-token to be in the environment::
 
@@ -27,6 +33,8 @@ To create an API token for Socorro in -prod, visit:
     https://crash-stats.mozilla.com/api/tokens/
 
 """
+
+HOST = 'https://crash-stats.mozilla.com'
 
 
 class CrashDoesNotExist(Exception):
@@ -39,14 +47,17 @@ def create_dir_if_needed(d):
 
 
 def fetch_crash(outputdir, api_token, crash_id):
-    headers = {
-        'Auth-Token': api_token
-    }
+    if api_token:
+        headers = {
+            'Auth-Token': api_token
+        }
+    else:
+        headers = {}
 
     # Fetch raw crash metadata
     print('Fetching %s' % crash_id)
     resp = requests.get(
-        'https://crash-stats.mozilla.com/api/RawCrash/',
+        HOST + '/api/RawCrash/',
         params={
             'crash_id': crash_id,
             'format': 'meta',
@@ -58,7 +69,7 @@ def fetch_crash(outputdir, api_token, crash_id):
 
     raw_crash = resp.json()
 
-    # Fetch dumps from -prod
+    # Fetch dumps
     dumps = {}
     dump_names = raw_crash.get('dump_checksums', {}).keys()
     for dump_name in dump_names:
@@ -67,7 +78,7 @@ def fetch_crash(outputdir, api_token, crash_id):
             dump_name = 'dump'
 
         resp = requests.get(
-            'https://crash-stats.mozilla.com/api/RawCrash/',
+            HOST + '/api/RawCrash/',
             params={
                 'crash_id': crash_id,
                 'format': 'raw',
@@ -113,11 +124,11 @@ def main(argv):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
         prog=os.path.basename(__file__),
-        description='Fetches crash data from crash-stats.mozilla.com system',
+        description=DESCRIPTION.strip(),
         epilog=EPILOG.strip(),
     )
     parser.add_argument('outputdir', help='directory to place crash data in')
-    parser.add_argument('crashid', nargs='+', help='one or more crash ids to fetch data for')
+    parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
 
     args = parser.parse_args(argv)
 
@@ -128,9 +139,18 @@ def main(argv):
         return 1
 
     api_token = os.environ.get('SOCORRO_API_TOKEN')
-    print('Using api token: %s' % api_token)
+    if api_token:
+        print('Using api token: %s%s' % (api_token[:4], 'x' * (len(api_token) - 4)))
 
-    for crash_id in args.crashid:
+    # This will pull crash ids from the command line if specified, otherwise it'll pull from stdin
+    if args.crashid:
+        crashids_iteratable = args.crashid
+    else:
+        crashids_iteratable = sys.stdin
+
+    for crash_id in crashids_iteratable:
+        crash_id = crash_id.strip()
+
         print('Working on %s...' % crash_id)
         fetch_crash(outputdir, api_token, crash_id)
 
