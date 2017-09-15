@@ -179,6 +179,28 @@ For example::
    Processing will fail unless the crash data is in the S3 container first!
 
 
+Processing crashes from Antenna
+===============================
+
+`Antenna <https://antenna.readthedocs.io/>`_ is the collector of the Socorro
+crash ingestion pipeline. It was originally part of the Socorro repository, but
+we extracted and rewrote it and now it lives in its own repository and
+infrastructure.
+
+Antenna deployments are based on images pushed to Docker Hub.
+
+To run Antenna in the Socorro local dev environment, do::
+
+  $ docker-compose up antenna
+
+
+It will listen on ``http://localhost:8888/`` for incoming crashes from a
+breakpad crash reporter. It will save crash data to the ``dev_bucket`` in the
+local S3 which is where the processor looks for it.
+
+FIXME(willkg): How to get crash ids into the processing queue?
+
+
 .. Warning::
 
    August 17th, 2017: Everything below this point is outdated.
