@@ -2,14 +2,11 @@ import datetime
 import json
 
 import mock
-from nose.tools import eq_, ok_
-
 from crontabber.app import CronTabber
+
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
-
-
 from socorro.lib.datetimeutil import utc_now
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.external.postgresql.dbapi2_util import (
@@ -275,19 +272,17 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             'select product_name, version_string, featured_version '
             'from product_versions'
         )
-        eq_(
-            sorted(rows),
-            [
-                ('Firefox', '15.0a1', False),
-                ('Firefox', '24.5.0', False),
-                ('Firefox', '49.0.1', True),
-                ('Firefox', '50.0b', True),
-                # Note that the 'Aurora' branch is still mentioned but
-                # note that it's NOT featured (hence 'False').
-                ('Firefox', '51.0a2', False),
-                ('Firefox', '52.0a1', True),
-            ]
-        )
+        expected = [
+            ('Firefox', '15.0a1', False),
+            ('Firefox', '24.5.0', False),
+            ('Firefox', '49.0.1', True),
+            ('Firefox', '50.0b', True),
+            # Note that the 'Aurora' branch is still mentioned but
+            # note that it's NOT featured (hence 'False').
+            ('Firefox', '51.0a2', False),
+            ('Firefox', '52.0a1', True),
+        ]
+        assert sorted(rows) == expected
 
     @mock.patch('requests.get')
     def test_download_error(self, rget):
@@ -306,5 +301,5 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             assert information['featured-versions-automatic']
             assert information['featured-versions-automatic']['last_error']
             error = information['featured-versions-automatic']['last_error']
-            ok_('DownloadError' in error['type'])
-            ok_('404' in error['value'])
+            assert 'DownloadError' in error['type']
+            assert '404' in error['value']

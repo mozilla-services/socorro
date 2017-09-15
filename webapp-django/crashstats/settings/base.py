@@ -102,6 +102,7 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 
 MIDDLEWARE_CLASSES = (
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -442,6 +443,7 @@ STATICFILES_FINDERS = (
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+
 
 PIPELINE = {
     'STYLESHEETS': PIPELINE_CSS,
