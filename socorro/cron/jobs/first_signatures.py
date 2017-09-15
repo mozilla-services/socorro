@@ -34,7 +34,7 @@ class FirstSignaturesCronApp(BaseCronApp):
     required_config = Namespace()
     required_config.add_option(
         'window_seconds',
-        default=60,  # seconds
+        default=60 * 60,  # seconds
         doc='Number of seconds to search for signature facets back'
     )
     required_config.add_option(
@@ -82,6 +82,7 @@ class FirstSignaturesCronApp(BaseCronApp):
         signatures = [
             x['term'] for x in results['facets']['signature']
         ]
+        print("LIST LENGTH", len(signatures), 'SET LENGTH', len(set(signatures)))
         self.config.logger.info(
             'Found %s unique signatures between %s and %s',
             len(signatures),
@@ -100,11 +101,6 @@ class FirstSignaturesCronApp(BaseCronApp):
         new_signatures = set(signatures) - set(results['hits'])
         self.config.logger.info('%s new signatures', len(new_signatures))
 
-        # Now, for each of these new signatures we have to find the oldest
-        # crash that has it and write down its date and buildid.
-        historic_date = date - datetime.timedelta(
-            days=self.config.historic_days
-        )
         for signature in new_signatures:
             # First look up by the oldest 'date'.
             params = {
@@ -115,9 +111,9 @@ class FirstSignaturesCronApp(BaseCronApp):
                 '_columns': ['date'],
                 '_facets_size': 0,
                 'date': [
-                    '>={}'.format(historic_date.isoformat()),
+                    '>={}'.format(start_date.isoformat()),
                     '<{}'.format(date.isoformat()),
-                ]
+                ],
             }
             results = api.get(**params)
             if results['errors'] and self.config.sensitive_to_errors:
