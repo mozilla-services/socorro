@@ -1,10 +1,9 @@
 import json
 
-import mock
-from nose.tools import eq_, assert_raises
 from boto.exception import StorageResponseError
-
 from configman import ConfigurationManager
+import mock
+import pytest
 
 from socorro.lib import MissingArgumentError, BadArgumentError
 from socorro.external.boto.crash_data import SimplifiedCrashData
@@ -60,7 +59,7 @@ class TestSimplifiedCrashData(TestCase):
             uuid='0bba929f-8721-460c-dead-a43c20071027',
             datatype='processed'
         )
-        eq_(result, {'foo': 'bar'})
+        assert result == {'foo': 'bar'}
 
     def test_get_not_found_processed(self):
         boto_s3_store = self.get_s3_store()
@@ -76,12 +75,11 @@ class TestSimplifiedCrashData(TestCase):
         mocked_connection.get_bucket().get_key = (
             mocked_get_key
         )
-        assert_raises(
-            CrashIDNotFound,
-            boto_s3_store.get,
-            uuid='0bba929f-8721-460c-dead-a43c20071027',
-            datatype='processed'
-        )
+        with pytest.raises(CrashIDNotFound):
+            boto_s3_store.get(
+                uuid='0bba929f-8721-460c-dead-a43c20071027',
+                datatype='processed'
+            )
 
     def test_get_basic_raw_dump(self):
         boto_s3_store = self.get_s3_store()
@@ -99,7 +97,7 @@ class TestSimplifiedCrashData(TestCase):
             uuid='0bba929f-8721-460c-dead-a43c20071027',
             datatype='raw',
         )
-        eq_(result, '\xa0')
+        assert result == '\xa0'
 
     def test_get_not_found_raw_dump(self):
         boto_s3_store = self.get_s3_store()
@@ -115,12 +113,11 @@ class TestSimplifiedCrashData(TestCase):
         mocked_connection.get_bucket().get_key = (
             mocked_get_key
         )
-        assert_raises(
-            CrashIDNotFound,
-            boto_s3_store.get,
-            uuid='0bba929f-8721-460c-dead-a43c20071027',
-            datatype='raw'
-        )
+        with pytest.raises(CrashIDNotFound):
+            boto_s3_store.get(
+                uuid='0bba929f-8721-460c-dead-a43c20071027',
+                datatype='raw'
+            )
 
     def test_get_not_found_raw_crash(self):
         boto_s3_store = self.get_s3_store()
@@ -136,27 +133,24 @@ class TestSimplifiedCrashData(TestCase):
         mocked_connection.get_bucket().get_key = (
             mocked_get_key
         )
-        assert_raises(
-            CrashIDNotFound,
-            boto_s3_store.get,
-            uuid='0bba929f-8721-460c-dead-a43c20071027',
-            datatype='meta'
-        )
+        with pytest.raises(CrashIDNotFound):
+            boto_s3_store.get(
+                uuid='0bba929f-8721-460c-dead-a43c20071027',
+                datatype='meta'
+            )
 
     def test_bad_arguments(self):
         boto_s3_store = self.get_s3_store()
-        assert_raises(
-            MissingArgumentError,
-            boto_s3_store.get
-        )
-        assert_raises(
-            MissingArgumentError,
-            boto_s3_store.get,
-            uuid='0bba929f-8721-460c-dead-a43c20071027',
-        )
-        assert_raises(
-            BadArgumentError,
-            boto_s3_store.get,
-            uuid='0bba929f-8721-460c-dead-a43c20071027',
-            datatype='junk',
-        )
+        with pytest.raises(MissingArgumentError):
+            boto_s3_store.get()
+
+        with pytest.raises(MissingArgumentError):
+            boto_s3_store.get(
+                uuid='0bba929f-8721-460c-dead-a43c20071027'
+            )
+
+        with pytest.raises(BadArgumentError):
+            boto_s3_store.get(
+                uuid='0bba929f-8721-460c-dead-a43c20071027',
+                datatype='junk'
+            )
