@@ -46,6 +46,7 @@ nvmap@0x.*
 org\.mozilla\.f.*-\d\.apk@0x.*
 PR_WaitCondVar
 RaiseException
+rtc::FatalMessage.*
 RtlpAdjustHeapLookasideDepth
 std::_Atomic_fetch_add_4
 std::panicking::.*
