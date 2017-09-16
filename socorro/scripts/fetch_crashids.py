@@ -66,8 +66,12 @@ def main(argv):
         help='Date to pull crash ids from (YYYY-MM-DD)'
     )
     parser.add_argument(
+        '--signature-contains', default='', dest='signature',
+        help='Signature contains this string'
+    )
+    parser.add_argument(
         '--url', default='',
-        help='Super Search url to pull crash ids from'
+        help='Super Search url to base query on'
     )
     parser.add_argument(
         '--num', default=100, type=int,
@@ -80,6 +84,7 @@ def main(argv):
 
     args = parser.parse_args(argv)
 
+    # Start with params from --url value or product=Firefox
     if args.url:
         params = extract_params(args.url)
     else:
@@ -87,6 +92,7 @@ def main(argv):
             'product': 'Firefox'
         }
 
+    # Override with date if specified
     datestamp = args.date
     if 'date' not in params or datestamp != 'yesterday':
         if datestamp == 'yesterday':
@@ -99,6 +105,11 @@ def main(argv):
             '>=%s' % startdate.strftime('%Y-%m-%d'),
             '<%s' % enddate.strftime('%Y-%m-%d')
         ]
+
+    # Override with signature-contains if specified
+    sig = args.signature
+    if sig:
+        params['signature'] = '~' + sig
 
     params.update({
         '_results_number': args.num,
