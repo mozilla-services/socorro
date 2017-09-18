@@ -3,9 +3,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
+import re
+import string
 import sys
 import threading
 import traceback
+
+import six
 
 
 class FakeLogger(object):
@@ -146,3 +150,32 @@ class DotDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+
+BAD_CHARS_RE = re.compile(
+    '[^%s]' % string.printable.translate(None, '\r\n\t')
+)
+
+
+def to_printable_string(text):
+    """Returns a Python str that only contains printable characters
+
+    This drops any non-ascii unicode characters, any whitespace characters that aren't " ", and any
+    non-printable characters.
+
+    :arg str/unicode text: the text to convert
+
+    :returns: converted str
+
+    """
+    if not isinstance(text, six.string_types):
+        raise TypeError('%r is wrong type (%s)', text, type(text))
+
+    # Convert it to a str dropping non-ascii characters
+    if isinstance(text, six.text_type):
+        text = text.encode('ascii', 'ignore')
+
+    # Remove non-printable characters and non-space whitespace
+    text = BAD_CHARS_RE.sub('', text)
+
+    return text

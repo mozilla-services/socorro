@@ -1334,6 +1334,19 @@ class TestAbortSignature:
         assert processed_crash['original_signature'] == 'hello'
         assert processed_crash['signature'] == 'Abort | hello'
 
+    def test_action_non_ascii_and_stuff(self):
+        rule = AbortSignature()
+        raw_crash = {
+            'AbortMessage': u'\u018a\t\r\nunknown'
+        }
+        processed_crash = {
+            'signature': 'hello'
+        }
+        action_result = rule.action(raw_crash, processed_crash, [])
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'Abort | unknown | hello'
+
 
 class TestSigTrim:
 
