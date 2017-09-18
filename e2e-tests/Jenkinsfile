@@ -1,4 +1,4 @@
-@Library('fxtest@1.6') _
+@Library('fxtest@1.9') _
 
 /** Desired capabilities */
 def capabilities = [
