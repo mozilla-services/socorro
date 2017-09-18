@@ -11,7 +11,7 @@ import mock
 import pytest
 
 from socorro.lib.util import DotDict
-from socorro.signature.signature_utilities import (
+from socorro.signature.rules import (
     AbortSignature,
     CSignatureTool,
     JavaSignatureTool,
@@ -39,9 +39,7 @@ class TestCSignatureTool:
         ss=('sentinel', ('sentinel2', lambda x: 'ff' in x)),
     ):
 
-        with mock.patch(
-            'socorro.signature.signature_utilities.siglists'
-        ) as mocked_siglists:
+        with mock.patch('socorro.signature.rules.siglists') as mocked_siglists:
             mocked_siglists.IRRELEVANT_SIGNATURE_RE = ig
             mocked_siglists.PREFIX_SIGNATURE_RE = pr
             mocked_siglists.SIGNATURES_WITH_LINE_NUMBERS_RE = si
