@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_
-
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
@@ -48,9 +46,9 @@ class IntegrationTestAnalyzers(ElasticsearchTestCase):
             app_init_dlls='/path/to/dll',
             _facets=['app_init_dlls'],
         )
-        eq_(res['total'], 2)
-        ok_('app_init_dlls' in res['facets'])
+        assert res['total'] == 2
+        assert 'app_init_dlls' in res['facets']
         facet_terms = [x['term'] for x in res['facets']['app_init_dlls']]
-        ok_('/path/to/dll' in facet_terms)
-        ok_('c:\\bar\\boo' in facet_terms)
-        ok_('foo' in facet_terms)
+        assert '/path/to/dll' in facet_terms
+        assert 'c:\\bar\\boo' in facet_terms
+        assert 'foo' in facet_terms
