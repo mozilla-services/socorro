@@ -3,15 +3,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
-import mock
-import random
-import uuid
 from distutils.version import LooseVersion
 from functools import wraps
+import random
+import uuid
 
-from elasticsearch.helpers import bulk
 from configman import ConfigurationManager, environment
-from nose import SkipTest
+from elasticsearch.helpers import bulk
+import mock
+import pytest
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.index_creator import IndexCreator
@@ -773,7 +773,7 @@ def minimum_es_version(minimum_version):
             if LooseVersion(actual_version) >= LooseVersion(minimum_version):
                 test(self)
             else:
-                raise SkipTest
+                pytest.skip()
 
         return test_with_version
 

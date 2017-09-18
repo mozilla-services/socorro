@@ -4,7 +4,8 @@
 
 import copy
 import datetime
-from nose.tools import assert_raises, eq_, ok_
+
+import pytest
 
 from socorro.lib import BadArgumentError
 from socorro.external.es.super_search_fields import SuperSearchFields
@@ -34,7 +35,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
 
     def test_get_fields(self):
         results = self.api.get_fields()
-        eq_(results, SUPERSEARCH_FIELDS)
+        assert results == SUPERSEARCH_FIELDS
 
     @minimum_es_version('1.0')
     def test_get_missing_fields(self):
@@ -138,8 +139,8 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
                 'namespace2.subspace1.field_b',
             ]
 
-            eq_(missing_fields['hits'], expected)
-            eq_(missing_fields['total'], 5)
+            assert missing_fields['hits'] == expected
+            assert missing_fields['total'] == 5
 
         finally:
             for index in indices:
@@ -149,32 +150,29 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         mapping = self.api.get_mapping()
         doctype = self.config.elasticsearch.elasticsearch_doctype
 
-        ok_(doctype in mapping)
+        assert doctype in mapping
         properties = mapping[doctype]['properties']
 
-        ok_('processed_crash' in properties)
-        ok_('raw_crash' in properties)
+        assert 'processed_crash' in properties
+        assert 'raw_crash' in properties
 
         processed_crash = properties['processed_crash']['properties']
 
         # Check in_database_name is used.
-        ok_('os_name' in processed_crash)
-        ok_('platform' not in processed_crash)
+        assert 'os_name' in processed_crash
+        assert 'platform' not in processed_crash
 
         # Those fields have no `storage_mapping`.
-        ok_('fake_field' not in properties['raw_crash']['properties'])
+        assert 'fake_field' not in properties['raw_crash']['properties']
 
         # Those fields have a `storage_mapping`.
-        eq_(processed_crash['release_channel'], {'type': 'string'})
+        assert processed_crash['release_channel'] == {'type': 'string'}
 
         # Test nested objects.
-        ok_('json_dump' in processed_crash)
-        ok_('properties' in processed_crash['json_dump'])
-        ok_('write_combine_size' in processed_crash['json_dump']['properties'])
-        eq_(
-            processed_crash['json_dump']['properties']['write_combine_size'],
-            {'type': 'long'}
-        )
+        assert 'json_dump' in processed_crash
+        assert 'properties' in processed_crash['json_dump']
+        assert 'write_combine_size' in processed_crash['json_dump']['properties']
+        assert processed_crash['json_dump']['properties']['write_combine_size'] == {'type': 'long'}
 
         # Test overwriting a field.
         mapping = self.api.get_mapping(overwrite_mapping={
@@ -185,17 +183,14 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         })
         properties = mapping[doctype]['properties']
 
-        ok_('fake_field' in properties['raw_crash']['properties'])
-        eq_(
-            properties['raw_crash']['properties']['fake_field']['type'],
-            'long'
-        )
+        assert 'fake_field' in properties['raw_crash']['properties']
+        assert properties['raw_crash']['properties']['fake_field']['type'] == 'long'
 
     def test_test_mapping(self):
         """Much test. So meta. Wow test_test_. """
         # First test a valid mapping.
         mapping = self.api.get_mapping()
-        ok_(self.api.test_mapping(mapping) is None)
+        assert self.api.test_mapping(mapping) is None
 
         # Insert an invalid storage mapping.
         mapping = self.api.get_mapping({
@@ -204,11 +199,8 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
                 'type': 'unkwown'
             }
         })
-        assert_raises(
-            BadArgumentError,
-            self.api.test_mapping,
-            mapping,
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.test_mapping(mapping)
 
         # Test with a correct mapping but with data that cannot be indexed.
         self.index_crash({
@@ -222,8 +214,5 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
                 'type': 'long'
             }
         })
-        assert_raises(
-            BadArgumentError,
-            self.api.test_mapping,
-            mapping,
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.test_mapping(mapping)
