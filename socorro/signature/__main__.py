@@ -18,8 +18,8 @@ from socorro.signature import SignatureGenerator
 
 
 DESCRIPTION = """
-Given crash ids, pulls down information from Socorro, generates signatures, and prints
-signature information.
+Given one or more crash ids via command line or stdin (one per line), pulls down information from
+Socorro, generates signatures, and prints signature information.
 """
 
 EPILOG = """
@@ -151,7 +151,7 @@ def main(args):
         '--format', help='specify output format: csv, text (default)'
     )
     parser.add_argument(
-        'crashids', metavar='crashid', nargs='+', help='crash id to generate signatures for'
+        'crashids', metavar='crashid', nargs='*', help='crash id to generate signatures for'
     )
     args = parser.parse_args()
 
@@ -170,9 +170,12 @@ def main(args):
     setup_logging(logging_level)
 
     generator = SignatureGenerator(debug=args.verbose)
+    crashids_iterable = args.crashids or sys.stdin
 
     with outputter() as out:
-        for crash_id in args.crashids:
+        for crash_id in crashids_iterable:
+            crash_id = crash_id.strip()
+
             resp = fetch('/RawCrash/', crash_id, api_token)
             if resp.status_code == 404:
                 out.warning('%s: does not exist.' % crash_id)
