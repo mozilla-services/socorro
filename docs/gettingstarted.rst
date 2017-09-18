@@ -173,15 +173,18 @@ Configuration
 
 All configuration is done with ENV files located in ``/app/docker/config/``.
 
-``docker_common.env``
-    This holds secrets and *environment-specific configuration* required
-    to get services to work in a docker environment for local development.
+``local_dev.env``
+    This holds *secrets* and *environment-specific configuration* required
+    to get services to work in a Docker-based local development environment.
 
-    This should NOT be used for server environments.
+    This should **NOT** be used for server environments, but you could base
+    configuration for a server environment on this file.
 
-``local_development.env``
-    This holds a few environment variables that are explicitly for
-    local development and should never show up in a server environment.
+``never_on_a_server.env``
+    This holds a few environment variables that override secure defaults and are
+    explicitly for a local development environment.
+
+    **These should never show up in a server environment.**
 
 ``processor.env``, ``crontabber.env``, and ``webapp.env``
     These configuration files hold *behavioral configuration* for these three

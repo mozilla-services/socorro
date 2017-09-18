@@ -17,8 +17,8 @@ services:
       dockerfile: ./docker/Dockerfile.processor
     image: local/socorro_processor
     env_file:
-      - docker/config/docker_common.env
-      - docker/config/local_development.env
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
       - docker/config/processor.env
       - my.env
     depends_on:
@@ -37,8 +37,8 @@ services:
       dockerfile: ./docker/Dockerfile.webapp
     image: local/socorro_webapp
     env_file:
-      - docker/config/docker_common.env
-      - docker/config/local_development.env
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
       - docker/config/webapp.env
       - my.env
     depends_on:
@@ -61,8 +61,8 @@ services:
       dockerfile: ./docker/Dockerfile.crontabber
     image: local/socorro_crontabber
     env_file:
-      - docker/config/docker_common.env
-      - docker/config/local_development.env
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
       - docker/config/crontabber.env
       - my.env
     depends_on:
