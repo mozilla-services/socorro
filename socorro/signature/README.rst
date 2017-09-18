@@ -20,15 +20,20 @@ To use::
     $ python -m socorro.signature CRASHID [CRASHID ...]
 
 
-Pulling crash ids from a file::
+Pulling crash ids from the file ``crashids.txt``::
 
-    $ cat crashids.txt | xargs python -m socorro.signature
+    $ cat crashids.txt | python -m socorro.signature
+
+
+Pulling crash ids from another script::
+
+    $ ./scripts/fetch_crashids.py --num=10 | python -m socorro.signature
 
 
 Spitting output in CSV format to more easily analyze results for generating
 signatures for multiple crashes::
 
-    $ cat crashids.txt | xargs python -m socorro.signature --format=csv
+    $ cat crashids.txt | python -m socorro.signature --format=csv
 
 
 For more argument help, see::
