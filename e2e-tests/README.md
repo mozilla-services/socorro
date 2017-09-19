@@ -62,22 +62,19 @@ If you wish to run them against different environemts, set `PYTEST_BASE_URL` as 
 
 ___Running tests using headless Firefox___
 
-NOTE: This instructions are for Linux and macOS only.
+NOTE: These instructions are for Linux or macOS only.
 
 To run the tests using a copy of Firefox that can be run in 'headless' mode (meaning with no UI), do the following:
 
-Set an environment variable MOZ_HEADLESS to be '1'. Check the documentation for your shell on how to do this. For zsh you can do using the following command:
+Set an environment variable `MOZ_HEADLESS` to be '1'. Check the documentation for your shell on how to do this. For zsh you can do using the following command:
 
 	$ export MOZ_HEADLESS=1
 
-Next you need to modify `tests/conftest.py` and add the following pytest fixture to tell it to use a different version of Firefox. Check to verify the version you want to use supports running headless.
+Next you need to set an environment variable `MOZ_BINARY_PATH` to be the location of the binary of Firefox you want to use. For example, if you were using zsh and Firefox Nightly (which supports running in headless mode) on macOS:
 
-	@pytest.fixture
-	def firefox_options(firefox_options):
-	    firefox_options.binary = '/path/to/firefox/binary'
-	    return firefox_options
+        $ export MOZ_BINARY_PATH='/Applications/FirefoxNightly.app/Contents/MacOS/firefox' 
 
-For example, on macOS it installs the binary for Nightly (which supports running headless) at `/Applications/FirefoxNightly.app/Contents/MacOS/firefox`
+Again, check your shell and your operating system to determine how to set the environment variable and the location of the Firefox binary on your system
 
 Then run the tests using the following command:
 

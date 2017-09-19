@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
 import pytest
 
 
@@ -18,3 +19,11 @@ def session_capabilities(pytestconfig, session_capabilities):
     if pytestconfig.getoption('driver') == 'SauceLabs':
         session_capabilities.setdefault('tags', []).append('socorro')
     return session_capabilities
+
+
+@pytest.fixture
+def firefox_options(firefox_options):
+    if os.environ.get('MOZ_HEADLESS'):
+        firefox_options.binary = os.environ.get('MOZ_BINARY_PATH')
+
+    return firefox_options
