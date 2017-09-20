@@ -23,7 +23,7 @@ def session_capabilities(pytestconfig, session_capabilities):
 
 @pytest.fixture
 def firefox_options(firefox_options):
-    if os.environ.get('MOZ_HEADLESS'):
+    if os.environ.get('MOZ_HEADLESS') == '1':
         firefox_options.binary = os.environ.get('MOZ_BINARY_PATH')
 
     return firefox_options
