@@ -2,12 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from mock import patch, Mock, MagicMock
 import socket
 
-from nose.tools import eq_, assert_raises
-
-from socorro.lib.util import DotDict
+from mock import patch, Mock, MagicMock
+import pytest
 
 from socorro.external.http.crashstorage import HTTPPOSTCrashStorage
 from socorro.database.transaction_executor import (
@@ -15,6 +13,7 @@ from socorro.database.transaction_executor import (
     TransactionExecutorWithLimitedBackoff
 )
 from socorro.external.crashstorage_base import MemoryDumpsMapping
+from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 
@@ -49,7 +48,6 @@ class TestCrashStorage(TestCase):
         })
         self.storage = HTTPPOSTCrashStorage(config)
 
-
     def test_save_raw_crash(self):
         raw_crash = {
             "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00",
@@ -69,7 +67,7 @@ class TestCrashStorage(TestCase):
 
                 self.storage.save_raw_crash(raw_crash, dumps, crash_id)
 
-                eq_(m_poster.encode.MultipartParam.call_count, 2)
+                assert m_poster.encode.MultipartParam.call_count == 2
                 m_poster.encode.multipart_encode.assert_called_once_with(
                     raw_crash
                 )
@@ -102,12 +100,9 @@ class TestCrashStorage(TestCase):
                 m_urllib.Request.return_value = 23
                 m_urllib.urlopen.side_effect = socket.timeout
 
-                assert_raises(
-                    socket.timeout,
-                    self.storage.save_raw_crash,
-                    raw_crash, dumps, crash_id,
-                )
+                with pytest.raises(socket.timeout):
+                    self.storage.save_raw_crash(raw_crash, dumps, crash_id)
 
-                eq_(m_poster.encode.MultipartParam.call_count, 4)
-                eq_(m_urllib.Request.call_count, 2)
-                eq_(m_urllib.urlopen.call_count, 2)
+                assert m_poster.encode.MultipartParam.call_count == 4
+                assert m_urllib.Request.call_count == 2
+                assert m_urllib.urlopen.call_count == 2

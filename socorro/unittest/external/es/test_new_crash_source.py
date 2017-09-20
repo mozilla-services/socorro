@@ -1,7 +1,5 @@
-import datetime
 from copy import deepcopy
-
-from nose.tools import eq_
+import datetime
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.es.new_crash_source import ESNewCrashSource
@@ -106,7 +104,7 @@ class IntegrationTestESNewCrashSource(ElasticsearchTestCase):
             'Firefox',
             ['43.0.1']
         )
-        eq_(list(generator), [])
+        assert list(generator) == []
 
         self.index_crash(
             a_processed_crash,
@@ -122,7 +120,7 @@ class IntegrationTestESNewCrashSource(ElasticsearchTestCase):
             'Firefox',
             ['43.0.1']
         )
-        eq_(list(generator), [])
+        assert list(generator) == []
 
     def test_new_crashes(self):
         new_crash_source = ESNewCrashSource(self.config)
@@ -165,4 +163,4 @@ class IntegrationTestESNewCrashSource(ElasticsearchTestCase):
             'Firefox',
             ['43.0.1']
         )
-        eq_(list(generator), [a_firefox_processed_crash['uuid']])
+        assert list(generator) == [a_firefox_processed_crash['uuid']]

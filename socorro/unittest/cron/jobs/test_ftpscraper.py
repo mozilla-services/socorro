@@ -3,14 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import json
 from functools import wraps
+import json
 
-import requests
-import mock
-from nose.tools import eq_, ok_, assert_raises
 from crontabber.app import CronTabber
 from crontabber.tests.base import TestCaseBase
+import mock
+import requests
+import pytest
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
@@ -79,23 +79,11 @@ class TestFTPScraper(TestCaseBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            self.scrapers.get_links('ONE', starts_with='One'),
-            ['One.html']
-        )
-        eq_(
-            self.scrapers.get_links('ONE', ends_with='.html'),
-            ['One.html']
-        )
-        eq_(
-            self.scrapers.get_links('ONE', starts_with='Two'),
-            []
-        )
-        assert_raises(
-            NotImplementedError,
-            self.scrapers.get_links,
-            'ONE'
-        )
+        assert self.scrapers.get_links('ONE', starts_with='One') == ['One.html']
+        assert self.scrapers.get_links('ONE', ends_with='.html') == ['One.html']
+        assert self.scrapers.get_links('ONE', starts_with='Two') == []
+        with pytest.raises(NotImplementedError):
+            self.scrapers.get_links('ONE')
 
     def test_get_links_advanced_startswith(self):
 
@@ -110,10 +98,8 @@ class TestFTPScraper(TestCaseBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            self.scrapers.get_links('http://x/some/dir/', starts_with='myp'),
-            ['http://x/some/dir/mypage/']
-        )
+        links = self.scrapers.get_links('http://x/some/dir/', starts_with='myp')
+        assert links == ['http://x/some/dir/mypage/']
 
     def test_get_links_with_page_not_found(self):
 
@@ -123,10 +109,7 @@ class TestFTPScraper(TestCaseBase):
             return response
 
         self.mocked_session.get.side_effect = mocked_get
-        eq_(
-            self.scrapers.get_links('ONE'),
-            []
-        )
+        assert self.scrapers.get_links('ONE') == []
 
     def test_parse_info_file(self):
 
@@ -149,26 +132,21 @@ class TestFTPScraper(TestCaseBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            self.scrapers.parse_info_file('ONE'),
-            ({'BUILDID': '123'}, [])
+        assert self.scrapers.parse_info_file('ONE') == ({'BUILDID': '123'}, [])
+        assert self.scrapers.parse_info_file('TWO') == ({'BUILDID': '123', 'buildID': '456'}, [])
+
+        expected = ({'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, [])
+        assert self.scrapers.parse_info_file('THREE', nightly=True) == expected
+
+        expected = (
+            {
+                'buildID': '123',
+                'rev': 'http://hg.mozilla.org/123',
+                'altrev': 'http://git.mozilla.org/123'
+            },
+            []
         )
-        eq_(
-            self.scrapers.parse_info_file('TWO'),
-            ({'BUILDID': '123',
-              'buildID': '456'}, [])
-        )
-        eq_(
-            self.scrapers.parse_info_file('THREE', nightly=True),
-            ({'buildID': '123',
-              'rev': 'http://hg.mozilla.org/123'}, [])
-        )
-        eq_(
-            self.scrapers.parse_info_file('FOUR', nightly=True),
-            ({'buildID': '123',
-              'rev': 'http://hg.mozilla.org/123',
-              'altrev': 'http://git.mozilla.org/123'}, [])
-        )
+        assert self.scrapers.parse_info_file('FOUR', nightly=True) == expected
 
     def test_parse_info_file_with_bad_lines(self):
 
@@ -181,15 +159,8 @@ class TestFTPScraper(TestCaseBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            self.scrapers.parse_info_file('ONE'),
-            ({}, ['BUILDID'])
-        )
-
-        eq_(
-            self.scrapers.parse_info_file('TWO'),
-            ({'BUILDID': '123'}, ['buildID'])
-        )
+        assert self.scrapers.parse_info_file('ONE') == ({}, ['BUILDID'])
+        assert self.scrapers.parse_info_file('TWO') == ({'BUILDID': '123'}, ['buildID'])
 
     def test_parse_info_file_with_page_not_found(self):
 
@@ -200,10 +171,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            self.scrapers.parse_info_file('ONE'),
-            ({}, [])
-        )
+        assert self.scrapers.parse_info_file('ONE') == ({}, [])
 
     def test_get_release(self):
 
@@ -228,15 +196,9 @@ class TestFTPScraper(TestCaseBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            list(self.scrapers.get_release('http://x/TWO')),
-            []
-        )
-        eq_(
-            list(self.scrapers.get_release('http://x/ONE')),
-            [('linux', 'ONE',
-              {'BUILDID': '123', 'version_build': 'build-11'}, [])]
-        )
+        assert list(self.scrapers.get_release('http://x/TWO')) == []
+        expected = [('linux', 'ONE', {'BUILDID': '123', 'version_build': 'build-11'}, [])]
+        assert list(self.scrapers.get_release('http://x/ONE')) == expected
 
     def test_get_json_nightly(self):
 
@@ -263,10 +225,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            list(self.scrapers.get_json_nightly('http://x/TWO/', 'TWO')),
-            []
-        )
+        assert list(self.scrapers.get_json_nightly('http://x/TWO/', 'TWO')) == []
         builds = list(self.scrapers.get_json_nightly('http://x/ONE/', 'ONE'))
         assert len(builds) == 2
 
@@ -278,7 +237,7 @@ class TestFTPScraper(TestCaseBase):
             'repository': 'mozilla-aurora',
             'moz_source_repo': 'mozilla-aurora',
         }
-        eq_(builds[0], ('linux-i686', 'ONE', '43.0a2', kvpairs))
+        assert builds[0] == ('linux-i686', 'ONE', '43.0a2', kvpairs)
 
 
 class TestIntegrationFTPScraper(IntegrationTestBase):
@@ -474,34 +433,29 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
 
         self.mocked_session.get.side_effect = mocked_get
 
-        eq_(
-            list(self.scrapers.get_json_release('http://x/TWO/', 'TWO')),
-            []
-        )
+        assert list(self.scrapers.get_json_release('http://x/TWO/', 'TWO')) == []
+
         scrapes = list(self.scrapers.get_json_release('http://x/ONE/', 'ONE'))
-        assert len(scrapes) == 1, len(scrapes)
-        eq_(
-            scrapes[0],
-            ('win', 'ONE', {
-                u'moz_app_version': u'27.0',
-                u'moz_app_name': u'firefox',
-                u'moz_app_vendor': u'Mozilla',
-                u'moz_source_repo':
-                u'http://hg.mozilla.org/releases/mozilla-beta',
-                u'buildid': u'20140113161826',
-                u'moz_update_channel': u'beta',
-                u'moz_pkg_platform': u'win32',
-                'buildID': u'20140113161826',
-                'repository': u'mozilla-beta',
-                'build_type': u'beta',
-                u'moz_app_maxversion': u'27.0.*',
-                'version_build': 'build-12'
-            })
-        )
-        eq_(
-            list(self.scrapers.get_json_release('http://x/THREE/', 'THREE')),
-            []
-        )
+        assert len(scrapes) == 1
+
+        expected = ('win', 'ONE', {
+            u'moz_app_version': u'27.0',
+            u'moz_app_name': u'firefox',
+            u'moz_app_vendor': u'Mozilla',
+            u'moz_source_repo':
+            u'http://hg.mozilla.org/releases/mozilla-beta',
+            u'buildid': u'20140113161826',
+            u'moz_update_channel': u'beta',
+            u'moz_pkg_platform': u'win32',
+            'buildID': u'20140113161826',
+            'repository': u'mozilla-beta',
+            'build_type': u'beta',
+            u'moz_app_maxversion': u'27.0.*',
+            'version_build': 'build-12'
+        })
+        assert scrapes[0] == expected
+
+        assert list(self.scrapers.get_json_release('http://x/THREE/', 'THREE')) == []
 
     def test_scrape_json_releases(self):
 
@@ -709,28 +663,35 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
 
-        ok_('20140113161827' in build_ids)
-        ok_('20140113161826' in build_ids)
-        ok_('20140205030203' in build_ids)
+        assert '20140113161827' in build_ids
+        assert '20140113161826' in build_ids
+        assert '20140205030203' in build_ids
         assert len(build_ids) == 4
-        eq_(builds, [{
-            'build_id': 20140113161827,
-            'product_name': 'firefox',
-            'build_type': 'release'
-        }, {
-            'build_id': 20140113161827,
-            'product_name': 'firefox',
-            'build_type': 'beta'
-        }, {
-            'build_id': 20140113161826,
-            'product_name': 'firefox',
-            'build_type': 'beta'
-        }, {
-            'build_id': 20140205030203,
-            'product_name': 'firefox',
-            'build_type': 'nightly'
-        }, {
-            'build_id': 20140205030204,
-            'product_name': 'firefox',
-            'build_type': 'aurora'
-        }])
+        expected = [
+            {
+                'build_id': 20140113161827,
+                'product_name': 'firefox',
+                'build_type': 'release'
+            },
+            {
+                'build_id': 20140113161827,
+                'product_name': 'firefox',
+                'build_type': 'beta'
+            },
+            {
+                'build_id': 20140113161826,
+                'product_name': 'firefox',
+                'build_type': 'beta'
+            },
+            {
+                'build_id': 20140205030203,
+                'product_name': 'firefox',
+                'build_type': 'nightly'
+            },
+            {
+                'build_id': 20140205030204,
+                'product_name': 'firefox',
+                'build_type': 'aurora'
+            }
+        ]
+        assert builds == expected

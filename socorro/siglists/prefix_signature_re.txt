@@ -201,10 +201,12 @@ SocketWritev
 ssl_.*
 SSL_.*
 std::_Allocate.*
+std::_Hash<T>::.*
 std::list<.*>::.*
 std::panicking::begin_panic<.*>
 std::panicking::rust_panic_with_hook
 std::collections::hash::map::.*
+stdext::hash_map<T>::.*
 strcat
 strncmp
 ssl3_.*

@@ -2,14 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import elasticsearch
-import mock
-
-from nose.tools import eq_, ok_, assert_raises
-
 from copy import deepcopy
 
 from configman.dotdict import DotDict
+import elasticsearch
+import mock
 import pytest
 
 from socorro.external.crashstorage_base import Redactor
@@ -164,7 +161,7 @@ class TestRawCrashRedactor(TestCaseWithConfig):
         }
 
         redactor.redact(crash)
-        eq_(crash, expected_crash)
+        assert crash == expected_crash
 
 
 class TestIsValidKey(object):
@@ -234,7 +231,7 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
         )
 
         # Ensure that the document was indexed by attempting to retreive it.
-        ok_(
+        assert (
             self.es_client.get(
                 index=self.config.elasticsearch.elasticsearch_index,
                 id=a_processed_crash['uuid']
@@ -302,7 +299,7 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
                 a_processed_crash['uuid'][2:]
             )
             # Ensure that the document was indexed by attempting to retreive it
-            ok_(
+            assert (
                 self.es_client.get(
                     index=local_config.elasticsearch.elasticsearch_index,
                     id=uuid
@@ -335,8 +332,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         index = es_storage.get_index_for_crash('some_date')
 
         # The index name is obtained from the test base class.
-        ok_(type(index) is str)
-        eq_(index, 'socorro_integration_test_reports')
+        assert type(index) is str
+        assert index == 'socorro_integration_test_reports'
 
     def test_get_index_for_crash_dynamic_name(self):
         """Test a dynamic (date-based) index name.
@@ -362,8 +359,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # The base index name is obtained from the test base class and the
         # date is appended to it according to pattern specified above.
-        ok_(type(index) is str)
-        eq_(index, 'socorro_integration_test_reports20120408')
+        assert type(index) is str
+        assert index == 'socorro_integration_test_reports20120408'
 
     def test_index_crash(self):
         """Mock test the entire crash submission mechanism.
@@ -383,7 +380,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         )
 
         # Ensure that the indexing function is only called once.
-        eq_(es_storage._submit_crash_to_elasticsearch.call_count, 1)
+        assert es_storage._submit_crash_to_elasticsearch.call_count == 1
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_success(self, espy_mock):
@@ -408,11 +405,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
-        ok_(espy_mock.Elasticsearch.called)
+        assert espy_mock.Elasticsearch.called
 
         # Ensure that the IndicesClient was also instantiated (this happens in
         # IndexCreator but is part of the crashstorage workflow).
-        ok_(espy_mock.client.IndicesClient.called)
+        assert espy_mock.client.IndicesClient.called
 
         # The actual call to index the document (crash).
         document = {
@@ -467,11 +464,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
-        ok_(espy_mock.Elasticsearch.called)
+        assert espy_mock.Elasticsearch.called
 
         # Ensure that the IndicesClient was also instantiated (this happens in
         # IndexCreator but is part of the crashstorage workflow).
-        ok_(espy_mock.client.IndicesClient.called)
+        assert espy_mock.client.IndicesClient.called
 
         # The actual call to index the document (crash).
         document = {
@@ -532,11 +529,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
-        ok_(espy_mock.Elasticsearch.called)
+        assert espy_mock.Elasticsearch.called
 
         # Ensure that the IndicesClient was also instantiated (this happens in
         # IndexCreator but is part of the crashstorage workflow).
-        ok_(espy_mock.client.IndicesClient.called)
+        assert espy_mock.client.IndicesClient.called
 
         expected_processed_crash = deepcopy(
             a_processed_crash_with_no_stackwalker
@@ -599,11 +596,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
-        ok_(espy_mock.Elasticsearch.called)
+        assert espy_mock.Elasticsearch.called
 
         # Ensure that the IndicesClient was also instantiated (this happens in
         # IndexCreator but is part of the crashstorage workflow).
-        ok_(espy_mock.client.IndicesClient.called)
+        assert espy_mock.client.IndicesClient.called
 
         # The actual call to index the document (crash).
         document = {
@@ -641,14 +638,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         sub_mock.index.side_effect = failure_exception
 
         # Submit a crash and ensure that it failed.
-        assert_raises(
-            Exception,
-            es_storage.save_raw_and_processed,
-            a_raw_crash,
-            None,
-            a_processed_crash,
-            crash_id
-        )
+        with pytest.raises(Exception):
+            es_storage.save_raw_and_processed(a_raw_crash, None, a_processed_crash, crash_id)
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_fatal_operational_exception(self, espy_mock):
@@ -676,14 +667,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         sub_mock.index.side_effect = failure_exception
 
         # Submit a crash and ensure that it failed.
-        assert_raises(
-            elasticsearch.exceptions.ConnectionError,
-            es_storage.save_raw_and_processed,
-            a_raw_crash,
-            None,
-            a_processed_crash,
-            crash_id
-        )
+        with pytest.raises(elasticsearch.exceptions.ConnectionError):
+            es_storage.save_raw_and_processed(a_raw_crash, None, a_processed_crash, crash_id)
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_success_operational_exception(self, espy_mock):
@@ -921,14 +906,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         es_class_mock().index.side_effect = mock_index_unparsable_error
 
-        assert_raises(
-            elasticsearch.exceptions.TransportError,
-            es_storage.save_raw_and_processed,
-            raw_crash,
-            None,
-            processed_crash,
-            crash_id
-        )
+        with pytest.raises(elasticsearch.exceptions.TransportError):
+            es_storage.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
 
         # Test with an error that we do not handle.
         def mock_index_unhandled_error(*args, **kwargs):
@@ -941,14 +920,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         es_class_mock().index.side_effect = mock_index_unhandled_error
 
-        assert_raises(
-            elasticsearch.exceptions.TransportError,
-            es_storage.save_raw_and_processed,
-            raw_crash,
-            None,
-            processed_crash,
-            crash_id
-        )
+        with pytest.raises(elasticsearch.exceptions.TransportError):
+            es_storage.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
 
     def test_crash_size_capture(self):
         """Verify we capture raw/processed crash sizes in ES crashstorage"""

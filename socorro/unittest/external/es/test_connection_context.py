@@ -4,11 +4,7 @@
 
 import elasticsearch
 
-from nose.tools import ok_
-
-from socorro.external.es.connection_context import (
-    ConnectionContext
-)
+from socorro.external.es.connection_context import ConnectionContext
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 
@@ -21,17 +17,14 @@ class IntegrationTestConnectionContext(ElasticsearchTestCase):
         es_context = ConnectionContext(config=self.config.elasticsearch)
 
         # The connection context *must* have specific elements.
-        ok_(es_context.config)
-        ok_(es_context.connection)
+        assert es_context.config
+        assert es_context.connection
 
         # There is one operational exception.
-        ok_(
-            elasticsearch.exceptions.ConnectionError in
-            es_context.operational_exceptions
-        )
+        assert elasticsearch.exceptions.ConnectionError in es_context.operational_exceptions
 
         # Currently there are no conditional exceptions.
-        ok_(len(es_context.conditional_exceptions) == 0)
+        assert len(es_context.conditional_exceptions) == 0
 
     def test_connection_context_client(self):
         """Instantiate the client and ensure that it quacks like a duck.
@@ -40,13 +33,13 @@ class IntegrationTestConnectionContext(ElasticsearchTestCase):
         client = es_context.connection()
 
         # The client *must* have specific elements.
-        ok_(client._connection)
-        ok_(client.close)
-        ok_(client.commit)
-        ok_(client.config)
-        ok_(client.rollback)
+        assert client._connection
+        assert client.close
+        assert client.commit
+        assert client.config
+        assert client.rollback
 
         # The underlying ES interface is exposed by _connection. This API is
         # exhaustive and well outside of the scope of this test suite; in the
         # interest of safety however, we'll check one here.
-        ok_(client._connection.index)
+        assert client._connection.index
