@@ -102,6 +102,7 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 
 MIDDLEWARE_CLASSES = (
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -443,6 +444,7 @@ STATICFILES_FINDERS = (
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
 
+
 PIPELINE = {
     'STYLESHEETS': PIPELINE_CSS,
     'JAVASCRIPT': PIPELINE_JS,
@@ -536,6 +538,9 @@ ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
 # Credentials for being able to make an S3 connection
 AWS_ACCESS_KEY = config('AWS_ACCESS_KEY', None)
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', None)
+AWS_HOST = config('AWS_HOST', None)
+AWS_PORT = config('AWS_PORT', 0, cast=int)
+AWS_SECURE = config('AWS_SECURE', True, cast=bool)
 
 # Information for uploading symbols to S3
 SYMBOLS_BUCKET_DEFAULT_NAME = config('SYMBOLS_BUCKET_DEFAULT_NAME', '')

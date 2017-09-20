@@ -1,6 +1,5 @@
 import datetime
 
-from nose.tools import eq_
 from crontabber.app import CronTabber
 
 from socorro.lib.datetimeutil import utc_now
@@ -70,4 +69,4 @@ class TestCleanMissingSymbolsCronApp(IntegrationTestBase):
         """)
         first, = cur.fetchall()
         date_processed = first[0]
-        eq_(date_processed, second)
+        assert date_processed == second

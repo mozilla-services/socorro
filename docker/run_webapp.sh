@@ -29,7 +29,10 @@ fi
 
 if [ "$1" == "--dev" ]; then
     # Run with manage.py
-    echo "Running webapp. Connect with browser using http://localhost:8000/ ."
+    echo "******************************************************************"
+    echo "Running webapp in local dev environment."
+    echo "Connect with your browser using: http://localhost:8000/ "
+    echo "******************************************************************"
     cd /app/webapp-django/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
 
 else

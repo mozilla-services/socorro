@@ -3,9 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+
 import elasticsearch
 import mock
-from nose.tools import eq_, ok_, assert_raises
+import pytest
 
 from socorro.lib import (
     DatabaseError,
@@ -42,9 +43,9 @@ class IntegrationTestQuery(ElasticsearchTestCase):
             }
         }
         res = self.api.get(query=query)
-        ok_(res)
-        ok_('hits' in res)
-        eq_(res['hits']['total'], 2)
+        assert res
+        assert 'hits' in res
+        assert res['hits']['total'] == 2
 
         query = {
             'query': {
@@ -61,17 +62,15 @@ class IntegrationTestQuery(ElasticsearchTestCase):
             }
         }
         res = self.api.get(query=query)
-        ok_(res)
-        ok_('hits' in res)
-        eq_(res['hits']['total'], 1)
+        assert res
+        assert 'hits' in res
+        assert res['hits']['total'] == 1
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_get_with_errors(self, mocked_es):
         # Test missing argument.
-        assert_raises(
-            MissingArgumentError,
-            self.api.get,
-        )
+        with pytest.raises(MissingArgumentError):
+            self.api.get()
 
         # Test missing index in elasticsearch.
         mocked_connection = mock.Mock()
@@ -82,21 +81,15 @@ class IntegrationTestQuery(ElasticsearchTestCase):
                 404, '[[socorro_201801] missing]'
             )
         )
-        assert_raises(
-            ResourceNotFound,
-            self.api.get,
-            query={'query': {}},
-        )
+        with pytest.raises(ResourceNotFound):
+            self.api.get(query={'query': {}})
 
         # Test a generic error response from elasticsearch.
         mocked_connection.search.side_effect = (
             elasticsearch.exceptions.TransportError('aaa')
         )
-        assert_raises(
-            DatabaseError,
-            self.api.get,
-            query={'query': {}},
-        )
+        with pytest.raises(DatabaseError):
+            self.api.get(query={'query': {}})
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_get_with_indices(self, mocked_es):

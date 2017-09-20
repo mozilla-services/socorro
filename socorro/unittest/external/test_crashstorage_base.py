@@ -4,8 +4,11 @@
 
 import copy
 
+from configman import Namespace, ConfigurationManager
+from configman.dotdict import DotDict
 import mock
-from nose.tools import eq_, ok_, assert_raises
+from mock import Mock
+import pytest
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -23,9 +26,6 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.lib.util import DotDict as SocorroDotDict
 from socorro.unittest.testbase import TestCase
-from configman import Namespace, ConfigurationManager
-from configman.dotdict import DotDict
-from mock import Mock
 
 
 class A(CrashStorageBase):
@@ -85,17 +85,17 @@ def fake_quit_check():
 class Testsocorrodotdict_to_dict(TestCase):
     def test_primitives(self):
         # Test all the primitives
-        eq_(socorrodotdict_to_dict(None), None)
-        eq_(socorrodotdict_to_dict([]), [])
-        eq_(socorrodotdict_to_dict(''), '')
-        eq_(socorrodotdict_to_dict(1), 1)
-        eq_(socorrodotdict_to_dict({}), {})
+        assert socorrodotdict_to_dict(None) is None
+        assert socorrodotdict_to_dict([]) == []
+        assert socorrodotdict_to_dict('') == ''
+        assert socorrodotdict_to_dict(1) == 1
+        assert socorrodotdict_to_dict({}) == {}
 
     def test_complex(self):
         def comp(data, expected):
             # First socorrodotdict_to_dict the data and compare it.
             new_dict = socorrodotdict_to_dict(data)
-            eq_(new_dict, expected)
+            assert new_dict == expected
 
             # Now deepcopy the new dict to make sure it's ok.
             copy.deepcopy(new_dict)
@@ -180,38 +180,28 @@ class TestBase(TestCase):
             )
             crashstorage.save_raw_crash({}, 'payload', 'ooid')
             crashstorage.save_processed({})
-            assert_raises(
-                NotImplementedError,
-                crashstorage.get_raw_crash, 'ooid'
-            )
-            assert_raises(
-                NotImplementedError,
-                crashstorage.get_raw_dump, 'ooid'
-            )
-            assert_raises(
-                NotImplementedError,
-                crashstorage.get_unredacted_processed, 'ooid'
-            )
-            assert_raises(
-                NotImplementedError,
-                crashstorage.remove, 'ooid'
-            )
-            eq_(crashstorage.new_crashes(), [])
+            with pytest.raises(NotImplementedError):
+                crashstorage.get_raw_crash('ooid')
+
+            with pytest.raises(NotImplementedError):
+                crashstorage.get_raw_dump('ooid')
+
+            with pytest.raises(NotImplementedError):
+                crashstorage.get_unredacted_processed('ooid')
+
+            with pytest.raises(NotImplementedError):
+                crashstorage.remove('ooid')
+
+            assert crashstorage.new_crashes() == []
             crashstorage.close()
 
         with config_manager.context() as config:
             class MyCrashStorageTest(CrashStorageBase):
                 def save_raw_crash(self, raw_crash, dumps, crash_id):
-                    eq_(crash_id, "fake_id")
-                    eq_(raw_crash, "fake raw crash")
-                    eq_(
-                        sorted(dumps.keys()),
-                        sorted(['one', 'two', 'three'])
-                    )
-                    eq_(
-                        sorted(dumps.values()),
-                        sorted(['eins', 'zwei', 'drei'])
-                    )
+                    assert crash_id == "fake_id"
+                    assert raw_crash == "fake raw crash"
+                    assert sorted(dumps.keys()) == sorted(['one', 'two', 'three'])
+                    assert sorted(dumps.values()) == sorted(['eins', 'zwei', 'drei'])
 
             values = ['eins', 'zwei', 'drei']
 
@@ -256,20 +246,18 @@ class TestBase(TestCase):
                 p.gather_current_exception()
             raise p
         except PolyStorageError as x:
-            eq_(len(x), 3)
-            ok_(x.has_exceptions())
-            types = [NameError, KeyError, AttributeError]
-            [eq_(a[0], b) for a, b in zip(x, types)]
-            ok_(1 not in x)
-            ok_(str(x[0][1]), 'dwight')
-            ok_(
-                all(sample in str(x) for sample in
-                    ['hell', 'NameError', 'KeyError', 'AttributeError']),
-                x
+            assert len(x) == 3
+            assert x.has_exceptions()
+            expected = [NameError, KeyError, AttributeError]
+            assert [exc[0] for exc in x] == expected
+            assert 1 not in x
+            assert str(x[0][1]) == 'dwight'
+            assert (
+                all(sample in str(x) for sample in ['hell', 'NameError', 'KeyError', 'AttributeError'])
             )
 
             x[0] = x[1]
-            eq_(x[0], x[1])
+            assert x[0] == x[1]
 
     def test_poly_crash_storage(self):
         n = Namespace()
@@ -291,30 +279,21 @@ class TestBase(TestCase):
         }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
-            eq_(config.storage0.crashstorage_class.foo, 'a')
-            eq_(config.storage1.crashstorage_class.foo, 'a')
-            eq_(config.storage1.y, 37)
-            eq_(config.storage2.crashstorage_class.foo, 'b')
+            assert config.storage0.crashstorage_class.foo == 'a'
+            assert config.storage1.crashstorage_class.foo == 'a'
+            assert config.storage1.y == 37
+            assert config.storage2.crashstorage_class.foo == 'b'
 
             poly_store = config.storage(config)
-            l = len(poly_store.storage_namespaces)
-            eq_(
-                l, 3,
-                'expected poly_store to have lenth of 3, '
-                'but %d was found instead' % l
-            )
-            eq_(poly_store.storage_namespaces[0], 'storage0')
-            eq_(poly_store.storage_namespaces[1], 'storage1')
-            eq_(poly_store.storage_namespaces[2], 'storage2')
-            l = len(poly_store.stores)
-            eq_(
-                l, 3,
-                'expected poly_store.store to have lenth of 3, '
-                'but %d was found instead' % l
-            )
-            eq_(poly_store.stores.storage0.foo, 'a')
-            eq_(poly_store.stores.storage1.foo, 'a')
-            eq_(poly_store.stores.storage2.foo, 'b')
+            assert len(poly_store.storage_namespaces) == 3
+            assert poly_store.storage_namespaces[0] == 'storage0'
+            assert poly_store.storage_namespaces[1] == 'storage1'
+            assert poly_store.storage_namespaces[2] == 'storage2'
+
+            assert len(poly_store.stores) == 3
+            assert poly_store.stores.storage0.foo == 'a'
+            assert poly_store.stores.storage1.foo == 'a'
+            assert poly_store.stores.storage2.foo == 'b'
 
             raw_crash = {'ooid': ''}
             dump = '12345'
@@ -347,44 +326,33 @@ class TestBase(TestCase):
             processed_crash = {'ooid': 'aoeu', 'product': 33}
 
             poly_store.stores['storage1'].save_raw_crash = Mock()
-            poly_store.stores['storage1'].save_raw_crash.side_effect = \
-                Exception('this is messed up')
+            poly_store.stores['storage1'].save_raw_crash.side_effect = Exception('this is messed up')
             poly_store.stores['storage2'].save_processed = Mock()
-            poly_store.stores['storage2'].save_processed.side_effect = \
-                Exception('this is messed up')
+            poly_store.stores['storage2'].save_processed.side_effect = Exception('this is messed up')
 
-            assert_raises(
-                PolyStorageError,
-                poly_store.save_raw_crash,
-                raw_crash,
-                dump,
-                ''
-            )
+            with pytest.raises(PolyStorageError):
+                poly_store.save_raw_crash(raw_crash, dump, '')
+
             for v in poly_store.stores.itervalues():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, '')
 
-            assert_raises(
-                PolyStorageError,
-                poly_store.save_processed,
-                processed_crash
-            )
+            with pytest.raises(PolyStorageError):
+                poly_store.save_processed(processed_crash)
+
             for v in poly_store.stores.itervalues():
                 v.save_processed.assert_called_with(processed_crash)
 
-            assert_raises(
-                PolyStorageError,
-                poly_store.save_raw_and_processed,
-                raw_crash,
-                dump,
-                processed_crash,
-                'n'
-            )
+            with pytest.raises(PolyStorageError):
+                poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, 'n')
+
             for v in poly_store.stores.itervalues():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
                 v.save_processed.assert_called_with(processed_crash)
 
             poly_store.stores['storage2'].close.side_effect = Exception
-            assert_raises(PolyStorageError, poly_store.close)
+            with pytest.raises(PolyStorageError):
+                poly_store.close()
+
             for v in poly_store.stores.itervalues():
                 v.close.assert_called_with()
 
@@ -424,7 +392,7 @@ class TestBase(TestCase):
             # 'foo'.
             # This test makes sure that the dict processed_crash here
             # is NOT affected.
-            eq_(processed_crash['foo'], 'bar')
+            assert processed_crash['foo'] == 'bar'
 
     def test_polycrashstorage_processed_immutability_with_nonmutating(self):
         """Verifies if a crash storage says it doesn't mutate the class that "
@@ -498,8 +466,8 @@ class TestBase(TestCase):
                 processed_crash,
                 'n'
             )
-            eq_(processed_crash['foo']['other'], 'thing')
-            eq_(processed_crash['bar']['something'], 'else')
+            assert processed_crash['foo']['other'] == 'thing'
+            assert processed_crash['bar']['something'] == 'else'
 
     def test_fallback_crash_storage(self):
         n = Namespace()
@@ -525,8 +493,8 @@ class TestBase(TestCase):
             argv_source=[]
         )
         with cm.context() as config:
-            eq_(config.primary.storage_class.foo, 'a')
-            eq_(config.fallback.storage_class.foo, 'b')
+            assert config.primary.storage_class.foo == 'a'
+            assert config.fallback.storage_class.foo == 'b'
 
             raw_crash = {'ooid': ''}
             crash_id = '1498dee9-9a45-45cc-8ec8-71bb62121203'
@@ -543,7 +511,7 @@ class TestBase(TestCase):
                 dump,
                 crash_id
             )
-            eq_(fb_store.fallback_store.save_raw_crash.call_count, 0)
+            assert fb_store.fallback_store.save_raw_crash.call_count == 0
 
             fb_store.primary_store.save_raw_crash = Mock()
             fb_store.primary_store.save_raw_crash.side_effect = Exception('!')
@@ -561,13 +529,9 @@ class TestBase(TestCase):
 
             fb_store.fallback_store.save_raw_crash = Mock()
             fb_store.fallback_store.save_raw_crash.side_effect = Exception('!')
-            assert_raises(
-                PolyStorageError,
-                fb_store.save_raw_crash,
-                raw_crash,
-                dump,
-                crash_id
-            )
+            with pytest.raises(PolyStorageError):
+                fb_store.save_raw_crash(raw_crash, dump, crash_id)
+
             fb_store.primary_store.save_raw_crash.assert_called_with(
                 raw_crash,
                 dump,
@@ -586,7 +550,7 @@ class TestBase(TestCase):
             fb_store.primary_store.save_processed.assert_called_with(
                 processed_crash
             )
-            eq_(fb_store.fallback_store.save_processed.call_count, 0)
+            assert fb_store.fallback_store.save_processed.call_count == 0
 
             fb_store.primary_store.save_processed = Mock()
             fb_store.primary_store.save_processed.side_effect = Exception('!')
@@ -600,11 +564,9 @@ class TestBase(TestCase):
 
             fb_store.fallback_store.save_processed = Mock()
             fb_store.fallback_store.save_processed.side_effect = Exception('!')
-            assert_raises(
-                PolyStorageError,
-                fb_store.save_processed,
-                processed_crash
-            )
+            with pytest.raises(PolyStorageError):
+                fb_store.save_processed(processed_crash)
+
             fb_store.primary_store.save_processed.assert_called_with(
                 processed_crash
             )
@@ -634,7 +596,9 @@ class TestBase(TestCase):
 
             fb_store.fallback_store.close = Mock()
             fb_store.fallback_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError, fb_store.close)
+
+            with pytest.raises(PolyStorageError):
+                fb_store.close()
             fb_store.primary_store.close.assert_called_with()
             fb_store.fallback_store.close.assert_called_with()
 
@@ -680,13 +644,13 @@ class TestBase(TestCase):
                 dump,
                 after_crash_id
             )
-            eq_(migration_store.fallback_store.save_raw_crash.call_count, 0)
+            assert migration_store.fallback_store.save_raw_crash.call_count == 0
 
             # save to fallback
             migration_store.primary_store.save_raw_crash = Mock()
             migration_store.fallback_store.save_raw_crash = Mock()
             migration_store.save_raw_crash(raw_crash, dump, before_crash_id)
-            eq_(migration_store.primary_store.save_raw_crash.call_count, 0)
+            assert migration_store.primary_store.save_raw_crash.call_count == 0
             migration_store.fallback_store.save_raw_crash.assert_called_with(
                 raw_crash,
                 dump,
@@ -702,14 +666,14 @@ class TestBase(TestCase):
             migration_store.primary_store.save_processed.assert_called_with(
                 processed_crash
             )
-            eq_(migration_store.fallback_store.save_processed.call_count, 0)
+            assert migration_store.fallback_store.save_processed.call_count == 0
 
             # save to fallback
             processed_crash['crash_id'] = before_crash_id
             migration_store.primary_store.save_processed = Mock()
             migration_store.fallback_store.save_processed = Mock()
             migration_store.save_processed(processed_crash)
-            eq_(migration_store.primary_store.save_processed.call_count, 0)
+            assert migration_store.primary_store.save_processed.call_count == 0
             migration_store.fallback_store.save_processed.assert_called_with(
                 processed_crash
             )
@@ -738,7 +702,9 @@ class TestBase(TestCase):
 
             migration_store.fallback_store.close = Mock()
             migration_store.fallback_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError, migration_store.close)
+
+            with pytest.raises(PolyStorageError):
+                migration_store.close()
             migration_store.primary_store.close.assert_called_with()
             migration_store.fallback_store.close.assert_called_with()
 
@@ -763,8 +729,8 @@ class TestBase(TestCase):
         }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
-            eq_(config.primary.storage_class.foo, 'a')
-            eq_(config.deferred.storage_class.foo, 'b')
+            assert config.primary.storage_class.foo == 'a'
+            assert config.deferred.storage_class.foo == 'b'
 
             raw_crash = {'ooid': ''}
             crash_id = '1498dee9-9a45-45cc-8ec8-71bb62121203'
@@ -782,7 +748,7 @@ class TestBase(TestCase):
                 dump,
                 crash_id
             )
-            eq_(pd_store.deferred_store.save_raw_crash.call_count, 0)
+            assert pd_store.deferred_store.save_raw_crash.call_count == 0
 
             pd_store.save_raw_crash(deferred_crash, dump, crash_id)
             pd_store.deferred_store.save_raw_crash.assert_called_with(
@@ -798,7 +764,7 @@ class TestBase(TestCase):
             pd_store.primary_store.save_processed.assert_called_with(
                 processed_crash
             )
-            eq_(pd_store.deferred_store.save_processed.call_count, 0)
+            assert pd_store.deferred_store.save_processed.call_count == 0
 
             pd_store.save_processed(deferred_crash)
             pd_store.deferred_store.save_processed.assert_called_with(
@@ -827,7 +793,8 @@ class TestBase(TestCase):
 
             pd_store.deferred_store.close = Mock()
             pd_store.deferred_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError, pd_store.close)
+            with pytest.raises(PolyStorageError):
+                pd_store.close()
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()
 
@@ -859,9 +826,9 @@ class TestBase(TestCase):
             argv_source=[]
         )
         with cm.context() as config:
-            eq_(config.primary.storage_class.foo, 'a')
-            eq_(config.deferred.storage_class.foo, 'b')
-            eq_(config.processed.storage_class.foo, 'b')
+            assert config.primary.storage_class.foo == 'a'
+            assert config.deferred.storage_class.foo == 'b'
+            assert config.processed.storage_class.foo == 'b'
 
             raw_crash = {'ooid': ''}
             crash_id = '1498dee9-9a45-45cc-8ec8-71bb62121203'
@@ -880,7 +847,7 @@ class TestBase(TestCase):
                 dump,
                 crash_id
             )
-            eq_(pd_store.deferred_store.save_raw_crash.call_count, 0)
+            assert pd_store.deferred_store.save_raw_crash.call_count == 0
 
             pd_store.save_raw_crash(deferred_crash, dump, crash_id)
             pd_store.deferred_store.save_raw_crash.assert_called_with(
@@ -897,7 +864,7 @@ class TestBase(TestCase):
             pd_store.processed_store.save_processed.assert_called_with(
                 processed_crash
             )
-            eq_(pd_store.primary_store.save_processed.call_count, 0)
+            assert pd_store.primary_store.save_processed.call_count == 0
 
             pd_store.save_processed(deferred_crash)
             pd_store.processed_store.save_processed.assert_called_with(
@@ -926,7 +893,8 @@ class TestBase(TestCase):
 
             pd_store.deferred_store.close = Mock()
             pd_store.deferred_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError, pd_store.close)
+            with pytest.raises(PolyStorageError):
+                pd_store.close()
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()
 
@@ -953,7 +921,7 @@ class TestRedactor(TestCase):
         d['upload_file_minidump_browser.json_dump.sensitive.secret'] = 66
         d['memory_info'] = {'incriminating_memory': 'call the FBI'}
 
-        ok_('json_dump' in d)
+        assert 'json_dump' in d
 
         config = DotDict()
         config.forbidden_keys = Redactor.required_config.forbidden_keys.default
@@ -973,14 +941,7 @@ class TestRedactor(TestCase):
         redactor(d)
         actual_surviving_keys = [x for x in d.keys()]
         actual_surviving_keys.sort()
-        eq_(
-            len(actual_surviving_keys),
-            len(expected_surviving_keys)
-        )
-        eq_(
-            actual_surviving_keys,
-            expected_surviving_keys
-        )
+        assert actual_surviving_keys == expected_surviving_keys
 
 
 class TestBench(TestCase):
@@ -1119,11 +1080,11 @@ class TestDumpsMappings(TestCase):
             'upload_file_minidump': 'binary_data',
             'moar_dump': "more binary data",
         })
-        ok_(mdm.as_memory_dumps_mapping() is mdm)
+        assert mdm.as_memory_dumps_mapping() is mdm
         fdm = mdm.as_file_dumps_mapping(
             'a',
             '/tmp',
             'dump'
         )
-        ok_(fdm.as_file_dumps_mapping() is fdm)
-        eq_(fdm.as_memory_dumps_mapping(), mdm)
+        assert fdm.as_file_dumps_mapping() is fdm
+        assert fdm.as_memory_dumps_mapping() == mdm
