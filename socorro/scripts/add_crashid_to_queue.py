@@ -7,6 +7,7 @@
 import argparse
 import os
 import os.path
+import sys
 
 import pika
 
@@ -65,12 +66,16 @@ def main(argv):
         epilog=EPILOG.strip(),
     )
     parser.add_argument('queue', help='the queue to add the crash id to')
-    parser.add_argument('crashid', nargs='+', help='one or more crash ids to add')
+    parser.add_argument('crashid', nargs='*', help='one or more crash ids to add')
 
     args = parser.parse_args(argv)
 
+    # This will pull crash ids from the command line if specified, or stdin
+    crashids_iterable = args.crashid or sys.stdin
+    crashids = [crashid.strip() for crashid in crashids_iterable if crashid.strip()]
+
     # Verify crash ids first
-    for crashid in args.crashid:
+    for crashid in crashids:
         if not is_crash_id_valid(crashid):
             print('Crash id "%s" is not valid. Exiting.' % crashid)
             return 1
@@ -91,14 +96,14 @@ def main(argv):
     print('password:     ********')
     print('virtual_host: %s' % virtual_host)
     print('queue:        %s' % args.queue)
-    print('crashids:     %s' % args.crashid)
+    print('# crashids:   %s' % len(crashids))
     print('')
 
     conn = build_pika_connection(host, port, virtual_host, user, password)
     props = pika.BasicProperties(delivery_mode=2)
     channel = conn.channel()
 
-    for crashid in args.crashid:
+    for crashid in crashids:
         print('Sending %s to %s....' % (crashid, args.queue))
 
         channel.basic_publish(
