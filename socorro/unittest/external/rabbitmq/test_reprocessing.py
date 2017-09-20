@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from configman.dotdict import DotDict
 from mock import Mock, MagicMock
-from nose.tools import eq_, ok_
 
 from socorro.external.crashstorage_base import (
     Redactor,
@@ -13,8 +13,6 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 from socorro.external.rabbitmq.connection_context import ConnectionContext
 from socorro.unittest.testbase import TestCase
-
-from configman.dotdict import DotDict
 
 
 class TestReprocessing(TestCase):
@@ -40,11 +38,11 @@ class TestReprocessing(TestCase):
         reprocessing = ReprocessingOneRabbitMQCrashStore(config)
 
         def mocked_save_raw_crash(raw_crash, dumps, crash_id):
-            eq_(crash_id, 'some-crash-id')
+            assert crash_id == 'some-crash-id'
             return True
 
         reprocessing.save_raw_crash = mocked_save_raw_crash
-        ok_(reprocessing.reprocess('some-crash-id'))
+        assert reprocessing.reprocess('some-crash-id')
 
     def test_post_multiple_one_fails(self):
         config = self._setup_config()
@@ -58,4 +56,4 @@ class TestReprocessing(TestCase):
             raise NotImplementedError(crash_id)
 
         reprocessing.save_raw_crash = mocked_save_raw_crash
-        ok_(not reprocessing.reprocess(['crash-id-1', 'crash-id-2']))
+        assert not reprocessing.reprocess(['crash-id-1', 'crash-id-2'])
