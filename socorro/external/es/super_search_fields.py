@@ -1869,6 +1869,22 @@ FIELDS = {
         'query_type': 'number',
         'storage_mapping': None
     },
+    'crashing_thread_name': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': 'Name of the crashing thread.',
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'crashing_thread_name',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'thread_name',
+        'namespace': 'processed_crash.json_dump.crashing_thread',
+        'permissions_needed': [],
+        'query_type': 'string',
+        'storage_mapping': None
+    },
     'date': {
         'data_validation_type': 'datetime',
         'default_value': None,
