@@ -450,7 +450,7 @@
     [[c_signature]]
 
         # the class that can generate a C signature
-        #c_signature_tool_class=socorro.processor.signature_utilities.CSignatureTool
+        #c_signature_tool_class=socorro.signature.rules.CSignatureTool
 
         # a regular expression matching frame signatures that should be ignored when generating an overall signature
         #irrelevant_signature_re=@0x[0-9a-fA-F]{2,}|@0x[1-9a-fA-F]|ashmem|app_process@0x.*|core\.odex@0x.*|_CxxThrowException|dalvik-heap|dalvik-jit-code-cache|dalvik-LinearAlloc|dalvik-mark-stack|data@app@org\.mozilla\.f.*-\d\.apk@classes\.dex@0x.*|framework\.odex@0x.*|google_breakpad::ExceptionHandler::HandleInvalidParameter.*|KiFastSystemCallRet|libandroid_runtime\.so@0x.*|libbinder\.so@0x.*|libc\.so@.*|libc-2\.5\.so@.*|libEGL\.so@.*|libdvm\.so\s*@\s*0x.*|libgui\.so@0x.*|libicudata.so@.*|libMali\.so@0x.*|libutils\.so@0x.*|libz\.so@0x.*|linux-gate\.so@0x.*|mnt@asec@org\.mozilla\.f.*-\d@pkg\.apk@classes\.dex@0x.*|MOZ_Assert|MOZ_Crash|mozcrt19.dll@0x.*|mozilla::ipc::RPCChannel::Call\(IPC::Message\*, IPC::Message\*\)|_NSRaiseError|(Nt|Zw)WaitForSingleObject(Ex)?|(Nt|Zw)WaitForMultipleObjects(Ex)?|nvmap@0x.*|org\.mozilla\.f.*-\d\.apk@0x.*|RaiseException|RtlpAdjustHeapLookasideDepth|system@framework@.*\.jar@classes\.dex@0x.*|___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___|WaitForSingleObjectExImplementation|WaitForMultipleObjectsExImplementation|RealMsgWaitFor.*_ZdlPv|zero
@@ -467,7 +467,7 @@
     [[java_signature]]
 
         # the class that can generate a Java signature
-        #java_signature_tool_class=socorro.processor.signature_utilities.JavaSignatureTool
+        #java_signature_tool_class=socorro.signature.rules.JavaSignatureTool
 
     [[statistics]]
 

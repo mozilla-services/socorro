@@ -10,6 +10,7 @@ import ujson
 
 from socorro import siglists
 from socorro.lib.treelib import tree_get
+from socorro.lib.util import to_printable_string
 
 
 SIGNATURE_MAX_LENGTH = 255
@@ -525,6 +526,8 @@ class AbortSignature(Rule):
             # remove those parts from the signature.
             abort_message = abort_message.split(': file ', 1)[0].strip()
 
+        # Convert the abort message to something palatable, then truncate it if need be
+        abort_message = to_printable_string(abort_message)
         if len(abort_message) > 80:
             abort_message = abort_message[:77] + '...'
 
