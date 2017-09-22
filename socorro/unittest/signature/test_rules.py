@@ -1281,58 +1281,73 @@ class TestAbortSignature:
         expected_sig = 'Abort | {}... | hello'.format('a' * 77)
         assert processed_crash['signature'] == expected_sig
 
-    def test_action_success_remove_unwanted_parts(self):
-        rule = AbortSignature()
+    @pytest.mark.parametrize('abort_msg, expected', [
+        # Test with just the "ABOR" thing at the start
+        (
+            '[5392] ###!!! ABORT: foo bar line 42',
+            'Abort | foo bar line 42 | hello'
+        ),
 
-        raw_crash = {}
-        processed_crash = {}
-
-        # Test with just the "ABOR" thing at the start.
-        processed_crash['signature'] = 'hello'
-        raw_crash['AbortMessage'] = '[5392] ###!!! ABORT: foo bar line 42'
-
-        action_result = rule.action(raw_crash, processed_crash, [])
-
-        assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'Abort | foo bar line 42 | hello'
-
-        # Test with a file name and line number.
-        raw_crash['AbortMessage'] = (
-            '[7616] ###!!! ABORT: unsafe destruction: file '
-            'c:/builds/moz2_slave/m-rel-w32-00000000000000000000/build/src/'
-            'dom/plugins/ipc/PluginModuleParent.cpp, line 777'
-        )
-        processed_crash['signature'] = 'hello'
-
-        action_result = rule.action(raw_crash, processed_crash, [])
-
-        assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'Abort | unsafe destruction | hello'
+        # Test with a file name and line number
+        (
+            (
+                '[7616] ###!!! ABORT: unsafe destruction: file '
+                'c:/builds/moz2_slave/m-rel-w32-00000000000000000000/build/src/'
+                'dom/plugins/ipc/PluginModuleParent.cpp, line 777'
+            ),
+            'Abort | unsafe destruction | hello'
+        ),
 
         # Test with a message that lacks interesting content.
-        raw_crash['AbortMessage'] = '[204] ###!!! ABORT: file ?, '
-        processed_crash['signature'] = 'hello'
-
-        action_result = rule.action(raw_crash, processed_crash, [])
-
-        assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'Abort | hello'
+        (
+            '[204] ###!!! ABORT: file ?, ',
+            'Abort | hello'
+        ),
 
         # Test with another message that lacks interesting content.
-        raw_crash['AbortMessage'] = (
-            '[4648] ###!!! ABORT: file resource:///modules/sessionstore/'
-            'SessionStore.jsm, line 1459'
-        )
-        processed_crash['signature'] = 'hello'
+        (
+            (
+                '[4648] ###!!! ABORT: file resource:///modules/sessionstore/'
+                'SessionStore.jsm, line 1459'
+            ),
+            'Abort | hello'
+        ),
+
+        # Test with "unable to find a usable font" case
+        (
+            u'unable to find a usable font (\u5fae\u8f6f\u96c5\u9ed1)',
+            'Abort | unable to find a usable font | hello'
+        ),
+    ])
+    def test_action_success_remove_unwanted_parts(self, abort_msg, expected):
+        rule = AbortSignature()
+
+        raw_crash = {
+            'AbortMessage': abort_msg
+        }
+        processed_crash = {
+            'signature': 'hello'
+        }
 
         action_result = rule.action(raw_crash, processed_crash, [])
 
         assert action_result is True
         assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'Abort | hello'
+        assert processed_crash['signature'] == expected
+
+    def test_action_non_ascii_abort_message(self):
+        # Non-ascii characters are removed from abort messages
+        rule = AbortSignature()
+        raw_crash = {
+            'AbortMessage': u'\u018a unknown'
+        }
+        processed_crash = {
+            'signature': 'hello'
+        }
+        action_result = rule.action(raw_crash, processed_crash, [])
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'Abort | unknown | hello'
 
 
 class TestSigTrim:

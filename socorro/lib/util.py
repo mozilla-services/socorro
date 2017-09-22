@@ -8,6 +8,22 @@ import threading
 import traceback
 
 
+def drop_unicode(text):
+    """Takes a text and drops all unicode characters
+
+    :arg str/unicode text: the text to fix
+
+    :returns: text with all unicode characters dropped
+
+    """
+    if isinstance(text, str):
+        # Convert any str to a unicode so that we can convert it back and drop any non-ascii
+        # characters
+        text = text.decode('unicode_escape')
+
+    return text.encode('ascii', 'ignore')
+
+
 class FakeLogger(object):
     loggingLevelNames = {
         logging.DEBUG: "DEBUG",
