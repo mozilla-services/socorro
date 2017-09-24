@@ -19,7 +19,6 @@ socorro.cron.jobs.bugzilla.BugzillaCronApp|1h
 socorro.cron.jobs.matviews.BuildADUCronApp|1d|08:30
 socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|05:00
 socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|05:00
-socorro.cron.jobs.matviews.CrashAduByBuildSignatureCronApp|1d|08:30
 socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
 socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d
 socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d

@@ -527,7 +527,7 @@ class SetWindowPos(SkunkClassificationRule):
     required_config.add_option(
         name='normalize_tool',
         doc='a fully qualified path to a signature normalization class',
-        default='socorro.processor.signature_utilities.CSignatureTool',
+        default='socorro.signature.rules.CSignatureTool',
         from_string_converter=class_converter
     )
 

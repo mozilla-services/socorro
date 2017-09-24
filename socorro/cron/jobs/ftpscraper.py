@@ -284,6 +284,15 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         from_string_converter=str_to_list
     )
 
+    required_config.add_option(
+        'cachedir',
+        default='',
+        doc=(
+            'Directory to cache .json files in. Empty string if you want to '
+            'disable caching'
+        )
+    )
+
     def __init__(self, *args, **kwargs):
         super(FTPScraperCronApp, self).__init__(*args, **kwargs)
         self.session = requests.Session()
@@ -296,8 +305,30 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             HTTPAdapter(max_retries=self.config.retries)
         )
 
+        self.cache_hits = 0
+        self.cache_misses = 0
+
+    def url_to_filename(self, url):
+        fn = re.sub('\W', '_', url)
+        fn = re.sub('__', '_', fn)
+        return fn
+
     @memoize_download
     def download(self, url):
+        is_caching = False
+        fn = None
+
+        if url.endswith('.json') and self.config.cachedir:
+            is_caching = True
+            fn = os.path.join(self.config.cachedir, self.url_to_filename(url))
+            if not os.path.isdir(os.path.dirname(fn)):
+                os.makedirs(os.path.dirname(fn))
+            if os.path.exists(fn):
+                self.cache_hits += 1
+                with open(fn, 'r') as fp:
+                    return fp.read()
+            self.cache_misses += 1
+
         response = self.session.get(
             url,
             timeout=(self.config.connect_timeout, self.config.read_timeout)
@@ -309,7 +340,13 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             # Legacy. Return None on any 404 error.
             return
         assert response.status_code == 200, response.status_code
-        return response.content
+        data = response.content
+
+        if is_caching:
+            with open(fn, 'w') as fp:
+                fp.write(data)
+
+        return data
 
     def skip_json_file(self, json_url):
         basename = os.path.basename(json_url)
@@ -331,6 +368,15 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 product_name,
                 date
             )
+
+        if self.config.cachedir:
+            total = float(self.cache_hits + self.cache_misses)
+            self.config.logger.debug('Cache: hits: %d (%2.2f%%) misses: %d (%2.2f%%)' % (
+                self.cache_hits,
+                self.cache_hits / total * 100,
+                self.cache_misses,
+                self.cache_misses / total * 100,
+            ))
 
     def _scrape_json_releases_and_nightlies(
         self,

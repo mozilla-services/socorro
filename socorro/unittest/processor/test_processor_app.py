@@ -185,7 +185,7 @@ class TestProcessorApp(TestCase):
         )
 
         config.logger.warning.assert_called_with(
-            'Raven DSN is not configured and an exception happened'
+            'Sentry DSN is not configured and an exception happened'
         )
 
     @mock.patch('socorro.lib.raven_client.raven')

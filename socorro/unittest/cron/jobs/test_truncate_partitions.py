@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_
 from crontabber.app import CronTabber
+
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
@@ -58,9 +58,9 @@ class TestTruncatePartitions(IntegrationTestBase):
         """
         cur.execute(statement)
         result = cur.fetchone()
-        eq_(result[0], 2L)
-        # need to get out of this transaction to
-        # allow crontabber to acquire a lock
+        assert result[0] == 2L
+
+        # need to get out of this transaction to allow crontabber to acquire a lock
         self.conn.commit()
 
         # Run the crontabber job to remove the test table.
@@ -82,4 +82,4 @@ class TestTruncatePartitions(IntegrationTestBase):
         """
         cur.execute(statement)
         result = cur.fetchone()
-        eq_(result[0], 0)
+        assert result[0] == 0

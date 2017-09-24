@@ -3,10 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mock
-
-from nose.tools import assert_raises, eq_, ok_
-
 from pkg_resources import resource_stream
+import pytest
 
 from socorro import siglists
 from socorro.unittest.testbase import TestCase
@@ -27,12 +25,12 @@ class TestSigLists(TestCase):
 
         for list_name in all_lists:
             content = getattr(siglists, list_name)
-            ok_(content, list_name)
+            assert content
 
             for line in content:
-                ok_(line)
+                assert line
                 if isinstance(line, basestring):
-                    ok_(not line.startswith('#'))
+                    assert not line.startswith('#')
 
     @mock.patch('socorro.siglists.resource_stream')
     def test_valid_entries(self, mocked_stream):
@@ -44,15 +42,16 @@ class TestSigLists(TestCase):
             '@0x[0-9a-fA-F]{2,}',
         )
         content = siglists._get_file_content('test-valid-sig-list')
-        eq_(content, expected)
+        assert content == expected
 
     @mock.patch('socorro.siglists.resource_stream')
     def test_invalid_entry(self, mocked_stream):
         mocked_stream.side_effect = _fake_stream
 
-        with assert_raises(siglists.BadRegularExpressionLineError) as cm:
+        with pytest.raises(siglists.BadRegularExpressionLineError) as exc_info:
             siglists._get_file_content('test-invalid-sig-list')
 
-        ok_(cm.exception.message.startswith('Regex error: '))
-        ok_(cm.exception.message.endswith('at line 3'))
-        ok_('test-invalid-sig-list.txt' in cm.exception.message)
+        msg = exc_info.exconly()
+        assert msg.startswith('BadRegularExpressionLineError: Regex error: ')
+        assert msg.endswith('at line 3')
+        assert 'test-invalid-sig-list.txt' in msg

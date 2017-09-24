@@ -169,6 +169,9 @@ def main(args):
     for product in args.products.split(','):
         # Fetch versions from the product_versions table that we should pull data for
         versions = get_versions(conn, product)
+        if not versions:
+            print('ERROR: No versions to fetch for %s. That seems bad. Exiting.' % product)
+            return 1
 
         for platform in PLATFORMS:
             print('Fetching data for (%s, %s, %s)...' % (product, versions, platform))

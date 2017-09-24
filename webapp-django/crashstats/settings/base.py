@@ -102,6 +102,7 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 
 MIDDLEWARE_CLASSES = (
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -404,19 +405,12 @@ STATSD_HOST = config('STATSD_HOST', 'localhost')
 STATSD_PORT = config('STATSD_PORT', 8125, cast=int)
 STATSD_PREFIX = config('STATSD_PREFIX', None)
 
-# Enable this to be able to run tests
-# NB: Disable this caching mechanism in production environment as
-# it will break work of anonymous CSRF if there is more than one
-# web server thread.
-# Comment out to use memcache from settings/base.py
 CACHES = {
     'default': {
-        # use django.core.cache.backends.locmem.LocMemCache for prod
         'BACKEND': config(
             'CACHE_BACKEND',
             'django.core.cache.backends.memcached.MemcachedCache',
         ),
-        # fox2mike suggest to use IP instead of localhost
         'LOCATION': config('CACHE_LOCATION', '127.0.0.1:11211'),
         'TIMEOUT': config('CACHE_TIMEOUT', 500),
         'KEY_PREFIX': config('CACHE_KEY_PREFIX', 'crashstats'),
@@ -449,6 +443,7 @@ STATICFILES_FINDERS = (
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+
 
 PIPELINE = {
     'STYLESHEETS': PIPELINE_CSS,
@@ -543,6 +538,9 @@ ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
 # Credentials for being able to make an S3 connection
 AWS_ACCESS_KEY = config('AWS_ACCESS_KEY', None)
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', None)
+AWS_HOST = config('AWS_HOST', None)
+AWS_PORT = config('AWS_PORT', 0, cast=int)
+AWS_SECURE = config('AWS_SECURE', True, cast=bool)
 
 # Information for uploading symbols to S3
 SYMBOLS_BUCKET_DEFAULT_NAME = config('SYMBOLS_BUCKET_DEFAULT_NAME', '')
@@ -647,6 +645,20 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
                 'resource.boto.keybuilder_class',
                 'socorro.external.boto.connection_context.DatePrefixKeyBuilder'
             ),
+
+            # NOTE(willkg): In the local dev environment, we need to use a
+            # HostPortS3ConnectionContext which requires these additional configuration bits. The
+            # defaults are taken from the config sections of the relevant classes.
+            'resource_class': config(
+                'resource.boto.resource_class',
+                'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
+            ),
+            'host': config('resource.boto.host', None),
+            'port': config('resource.boto.port', None),
+            'secure': config('resource.boto.secure', True),
+            'calling_format': config(
+                'resource.boto.calling_format', 'boto.s3.connection.OrdinaryCallingFormat'
+            ),
         }
     }
 }
@@ -719,8 +731,8 @@ CSP_OBJECT_SRC = (
 )
 CSP_SCRIPT_SRC = (
     "'self'",
-    'apis.google.com',
-    'www.google-analytics.com',
+    'https://apis.google.com',
+    'https://www.google-analytics.com',
 )
 CSP_STYLE_SRC = (
     "'self'",
@@ -733,7 +745,7 @@ CSP_IMG_SRC = (
 )
 CSP_CHILD_SRC = (
     "'self'",
-    'accounts.google.com',  # Google Sign-In uses an iframe
+    'https://accounts.google.com',  # Google Sign-In uses an iframe
 )
 CSP_CONNECT_SRC = (
     "'self'",

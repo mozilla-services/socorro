@@ -20,7 +20,6 @@ from sqlalchemy.dialects.postgresql import (
     TEXT,
     TIMESTAMP,
     NUMERIC,
-    REAL,
     DATE,
     BOOLEAN,
     UUID,
@@ -217,31 +216,6 @@ ischema_names['build_type_enum'] = build_type_enum
 # Schema definition: Tables
 ###############################
 
-class CrashAduByBuildSignature(DeclarativeBase):
-    __tablename__ = 'crash_adu_by_build_signature'
-
-    # column definitions
-    adu_by_build_id = Column(u'crash_adu_by_build_signature_id', INTEGER(),
-                             primary_key=True, autoincrement=True)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=False, nullable=False, index=True)
-    signature = Column(u'signature', CITEXT(),
-                       primary_key=False, nullable=False)
-    adu_date = Column(u'adu_date', DATE(), primary_key=False,
-                      nullable=False, index=True)
-    build_date = Column(u'build_date', DATE(),
-                        primary_key=False, nullable=False, index=True)
-    build_id = Column(u'buildid', NUMERIC(), nullable=False,
-                      server_default=text('0'))
-    crash_count = Column(u'crash_count', INTEGER(),
-                         nullable=False, server_default=text('0'))
-    adu_count = Column(u'adu_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    os_name = Column(u'os_name', CITEXT(), primary_key=False, nullable=False)
-    channel = Column(u'channel', CITEXT(), primary_key=False, nullable=False)
-    product_name = Column(u'product_name', CITEXT(),
-                          primary_key=False, nullable=False)
-
 
 class EmailCampaignsContact(DeclarativeBase):
     __tablename__ = 'email_campaigns_contacts'
@@ -401,19 +375,6 @@ class ExploitabilityReport(DeclarativeBase):
         Index('exploitable_signature_date_idx', signature_id,
               product_version_id, report_date, unique=True),
     )
-
-
-class PluginsReport(DeclarativeBase):
-    __tablename__ = 'plugins_reports'
-
-    # column definitions
-    report_id = Column(u'report_id', INTEGER(), nullable=False)
-    plugin_id = Column(u'plugin_id', INTEGER(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    version = Column(u'version', TEXT(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (
-        report_id, plugin_id, date_processed, version)}
 
 
 class RawAdiLogs(DeclarativeBase):
@@ -1345,147 +1306,6 @@ class GraphicsDevice(DeclarativeBase):
     adapter_name = Column(u'adapter_name', TEXT())
 
 
-class SignatureSummaryArchitecture(DeclarativeBase):
-    __tablename__ = 'signature_summary_architecture'
-
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    architecture = Column(u'architecture', TEXT(),
-                          primary_key=True, nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT(), nullable=False)
-    version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryDevice(DeclarativeBase):
-    __tablename__ = 'signature_summary_device'
-
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT())
-    version_string = Column(u'version_string', TEXT())
-    android_device_id = Column(
-        u'android_device_id', INTEGER(), primary_key=True, nullable=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryFlashVersion(DeclarativeBase):
-    __tablename__ = 'signature_summary_flash_version'
-
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    flash_version = Column(u'flash_version', TEXT(),
-                           primary_key=True, nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT(), nullable=False)
-    version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryInstallations(DeclarativeBase):
-    __tablename__ = 'signature_summary_installations'
-
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT(),
-                          primary_key=True, nullable=False)
-    version_string = Column(u'version_string', TEXT(),
-                            primary_key=True, nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    crash_count = Column(u'crash_count', INTEGER(), nullable=False)
-    install_count = Column(u'install_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryOS(DeclarativeBase):
-    __tablename__ = 'signature_summary_os'
-
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    os_version_string = Column(
-        u'os_version_string', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT(), nullable=False)
-    version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryProcessType(DeclarativeBase):
-    __tablename__ = 'signature_summary_process_type'
-
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    process_type = Column(u'process_type', TEXT(),
-                          primary_key=True, nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT(), nullable=False)
-    version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryProducts(DeclarativeBase):
-    __tablename__ = 'signature_summary_products'
-
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT(), nullable=False)
-    version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryUptime(DeclarativeBase):
-    __tablename__ = 'signature_summary_uptime'
-
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    uptime_string = Column(u'uptime_string', TEXT(),
-                           primary_key=True, nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT(), nullable=False)
-    version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class SignatureSummaryGraphics(DeclarativeBase):
-    __tablename__ = 'signature_summary_graphics'
-
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', TEXT())
-    version_string = Column(u'version_string', TEXT())
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    graphics_device_id = Column(
-        u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
 class SocorroDbVersion(DeclarativeBase):
     __tablename__ = 'socorro_db_version'
 
@@ -1633,20 +1453,6 @@ class CrontabberLog(DeclarativeBase):
         Index('crontabber_log_app_name_idx', app_name),
         Index('crontabber_log_log_time_idx', log_time),
     )
-
-
-class GCCrashes(DeclarativeBase):
-    __tablename__ = 'gccrashes'
-
-    report_date = Column(u'report_date', TIMESTAMP(
-        timezone=True), nullable=False)
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), nullable=False)
-    build = Column(u'build', NUMERIC(), nullable=True)
-    gc_count_madu = Column(u'gc_count_madu', REAL(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (report_date, product_version_id, build,
-                                       gc_count_madu)}
 
 
 class RawUpdateChannel(DeclarativeBase):

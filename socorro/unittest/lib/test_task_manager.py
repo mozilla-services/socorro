@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mock import Mock
-from nose.tools import eq_, ok_
 
 from socorro.lib.task_manager import TaskManager, default_task_func
 from socorro.lib.util import DotDict, SilentFakeLogger
@@ -22,10 +21,10 @@ class TestTaskManager(TestCase):
         config.quit_on_empty_queue = False
 
         tm = TaskManager(config)
-        ok_(tm.config == config)
-        ok_(tm.logger == self.logger)
-        ok_(tm.task_func == default_task_func)
-        ok_(tm.quit == False)
+        assert tm.config == config
+        assert tm.logger == self.logger
+        assert tm.task_func == default_task_func
+        assert tm.quit == False
 
     def test_executor_identity(self):
         config = DotDict()
@@ -36,7 +35,7 @@ class TestTaskManager(TestCase):
 
         )
         tm._pid = 666
-        eq_(tm.executor_identity(), '666-MainThread')
+        assert tm.executor_identity() == '666-MainThread'
 
     def test_get_iterator(self):
         config = DotDict()
@@ -47,7 +46,7 @@ class TestTaskManager(TestCase):
             config,
             job_source_iterator=range(1),
         )
-        eq_(tm._get_iterator(), [0])
+        assert tm._get_iterator() == [0]
 
         def an_iter(self):
             for i in range(5):
@@ -57,10 +56,7 @@ class TestTaskManager(TestCase):
             config,
             job_source_iterator=an_iter,
         )
-        eq_(
-            [x for x in tm._get_iterator()],
-            [0, 1, 2, 3, 4]
-        )
+        assert list(tm._get_iterator()) == [0, 1, 2, 3, 4]
 
         class X(object):
 
@@ -75,10 +71,7 @@ class TestTaskManager(TestCase):
             config,
             job_source_iterator=X(config)
         )
-        eq_(
-            [x for x in tm._get_iterator()],
-            [y for y in config.keys()]
-        )
+        assert list(tm._get_iterator()) == list(config.keys())
 
     def test_blocking_start(self):
         config = DotDict()
@@ -110,11 +103,8 @@ class TestTaskManager(TestCase):
 
         tm.blocking_start(waiting_func=waiting_func)
 
-        eq_(
-            tm.task_func.call_count,
-            10
-        )
-        eq_(waiting_func.call_count, 0)
+        assert tm.task_func.call_count == 10
+        assert waiting_func.call_count == 0
 
     def test_blocking_start_with_quit_on_empty(self):
         config = DotDict()
@@ -131,8 +121,5 @@ class TestTaskManager(TestCase):
 
         tm.blocking_start(waiting_func=waiting_func)
 
-        eq_(
-            tm.task_func.call_count,
-            10
-        )
-        eq_(waiting_func.call_count, 0)
+        assert tm.task_func.call_count == 10
+        assert waiting_func.call_count == 0

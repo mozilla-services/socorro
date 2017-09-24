@@ -1,9 +1,9 @@
-@Library('fxtest@1.6') _
+@Library('fxtest@1.9') _
 
 /** Desired capabilities */
 def capabilities = [
   browserName: 'Firefox',
-  version: '54.0',
+  version: '55.0',
   platform: 'Windows 10'
 ]
 

@@ -5,7 +5,7 @@
 import datetime
 
 import isodate
-from nose.tools import eq_, ok_, assert_raises
+import pytest
 
 from socorro.lib import BadArgumentError, external_common, util
 from socorro.unittest.testbase import TestCase
@@ -19,83 +19,77 @@ class TestExternalCommon(TestCase):
         param = None
         datatype = "datetime"
         res = external_common.check_type(param, datatype)
-        eq_(res, None)
+        assert res is None
 
         # Test 2: integer
         param = 12
         datatype = "int"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, int))
-        eq_(res, param)
+        assert res == param
 
         # Test 3: integer
         param = "12"
         datatype = "int"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, int))
-        eq_(res, 12)
+        assert res == 12
 
         # Test 4: string
         param = datetime.datetime(2012, 01, 01)
         datatype = "str"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, str))
-        eq_(res, "2012-01-01 00:00:00")
+        assert res == "2012-01-01 00:00:00"
 
         # Test 5: boolean
         param = 1
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, bool))
-        eq_(res, True)
+        assert res is True
 
         # Test 6: boolean
         param = "T"
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, bool))
-        eq_(res, True)
+        assert res is True
 
         # Test 7: boolean
         param = 14
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, bool))
-        eq_(res, False)
+        assert res is False
 
         # Test 8: datetime
         param = "2012-01-01T00:00:00"
         datatype = "datetime"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, datetime.datetime))
-        eq_(res.year, 2012)
-        eq_(res.month, 1)
-        eq_(res.hour, 0)
+        assert isinstance(res, datetime.datetime)
+        assert res.year == 2012
+        assert res.month == 1
+        assert res.hour == 0
 
         # Test 9: timedelta
         param = "72"
         datatype = "timedelta"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, datetime.timedelta))
-        eq_(res.days, 3)
+        assert isinstance(res, datetime.timedelta)
+        assert res.days == 3
 
         # Test: date
         param = "2012-01-01"
         datatype = "date"
         res = external_common.check_type(param, datatype)
 
-        ok_(isinstance(res, datetime.date))
-        eq_(res.year, 2012)
-        eq_(res.month, 1)
-        eq_(res.day, 1)
+        assert isinstance(res, datetime.date)
+        assert res.year == 2012
+        assert res.month == 1
+        assert res.day == 1
 
     def test_parse_arguments_old_way(self):
         """Test external_common.parse_arguments(). """
@@ -119,7 +113,7 @@ class TestExternalCommon(TestCase):
             modern=False,
         )
 
-        eq_(params, params_exp)
+        assert params == params_exp
 
     def test_parse_arguments(self):
         """Test external_common.parse_arguments(). """
@@ -161,12 +155,8 @@ class TestExternalCommon(TestCase):
             modern=True
         )
         for key in params:
-            eq_(params[key], params_exp[key], '{}: {!r} != {!r}'.format(
-                key,
-                params[key],
-                params_exp[key]
-            ))
-        eq_(params, params_exp)
+            assert params[key] == params_exp[key]
+        assert params == params_exp
 
     def test_parse_arguments_with_class_validators(self):
 
@@ -196,16 +186,11 @@ class TestExternalCommon(TestCase):
             arguments,
             modern=True
         )
-        eq_(params, params_exp)
+        assert params == params_exp
 
         # note that a ValueError becomes a BadArgumentError
         arguments = {
             "param1": "will cause a ValueError in NumberConverter.clean",
         }
-        assert_raises(
-            BadArgumentError,
-            external_common.parse_arguments,
-            filters,
-            arguments,
-            modern=True
-        )
+        with pytest.raises(BadArgumentError):
+            external_common.parse_arguments(filters, arguments, modern=True)

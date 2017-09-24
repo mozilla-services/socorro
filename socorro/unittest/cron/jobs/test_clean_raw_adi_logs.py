@@ -1,6 +1,5 @@
 import datetime
 
-from nose.tools import eq_
 from crontabber.app import CronTabber
 
 from socorro.lib.datetimeutil import utc_now
@@ -69,4 +68,4 @@ class TestCleanRawADILogsCronApp(IntegrationTestBase):
         """)
         result, = cur.fetchall()
         report_date = result[0]
-        eq_(report_date, second)
+        assert report_date == second

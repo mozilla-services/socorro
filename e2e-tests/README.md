@@ -3,10 +3,6 @@ End-to-End Tests for Socorro
 
 Continuous Integration
 ----------------------
-[![stage](https://img.shields.io/jenkins/s/https/webqa-ci.mozilla.com/socorro.stage.svg?label=stage)](https://webqa-ci.mozilla.com/job/socorro.stage/)
-[![prod](https://img.shields.io/jenkins/s/https/webqa-ci.mozilla.com/socorro.prod.svg?label=prod)](https://webqa-ci.mozilla.com/job/socorro.prod/)
-
-
 This directory holds Socorro client-based end-to-end tests, which is why they're different than the rest of the code in this repository.
 
 To review the specific-Python packages the tests use, please review `tox.ini`.
@@ -63,6 +59,26 @@ Then you can run the tests against staging using the following command
 	$ tox -e py27 -- --driver SauceLabs --capability browserName Firefox
 
 If you wish to run them against different environemts, set `PYTEST_BASE_URL` as indicated in the sections above for running tests against localhost or production
+
+___Running tests using headless Firefox___
+
+NOTE: These instructions are for Linux or macOS only.
+
+To run the tests using a copy of Firefox that can be run in 'headless' mode (meaning with no UI), do the following:
+
+Set an environment variable `MOZ_HEADLESS` to be '1'. Check the documentation for your shell on how to do this. For zsh you can do using the following command:
+
+	$ export MOZ_HEADLESS=1
+
+Next you need to set an environment variable `MOZ_BINARY_PATH` to be the location of the binary of Firefox you want to use. For example, if you were using zsh and Firefox Nightly (which supports running in headless mode) on macOS:
+
+        $ export MOZ_BINARY_PATH='/Applications/FirefoxNightly.app/Contents/MacOS/firefox' 
+
+Again, check your shell and your operating system to determine how to set the environment variable and the location of the Firefox binary on your system
+
+Then run the tests using the following command:
+
+	$ tox -e py27
 
 ___Running specific tests___
 
