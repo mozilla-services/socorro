@@ -206,7 +206,15 @@ class CSignatureTool(SignatureTool):
                     '',
                     ('anonymous namespace', 'operator')
                 )
-
+            if 'clone .cold' in function:
+                # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
+                function = self._collapse(
+                    function,
+                    '[',
+                    '',
+                    ']',
+                    ''
+                )
             if self.signatures_with_line_numbers_re.match(function):
                 function = "%s:%s" % (function, line)
             # Remove spaces before all stars, ampersands, and commas

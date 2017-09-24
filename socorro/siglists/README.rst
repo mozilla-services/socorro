@@ -166,31 +166,3 @@ Here's an example filter you can use today:
 .. raw:: html
 
    <pre>to:(socorro@noreply.github.com) ("A socorro/siglists/" OR "M socorro/siglists/" OR "D socorro/siglists")</pre>
-
-
-How to review a siglist change
-------------------------------
-
-The first step is to verify that there is no typo in the change (usually, the
-bug contains examples of crash reports that should be impacted, look at their
-frames). Note that we have a unit test that verifies there are no syntax errors
-in those files.
-
-Run the pull request changes through `signature generation using the command line
-interface in your local dev environment
-<https://socorro.readthedocs.io/en/latest/architecture/signaturegeneration.html#signature-generation-module>`_.
-
-Verify with the author that the changes occur as intended.
-
-Then merge it and verify the example crashes on -stage. The easiest way to do
-that is to use Super Search and search for a signature. The most common change
-is an addition to the prefix list, in which case you want to search for the
-frame signature that was added, and verify that in recent signatures there is
-something following it.
-
-If you don't want to wait for new crash reports to arrive, you can find an
-existing one and send it to reprocessing. That can be done on the report/index
-page directly, or via the admin panel.
-
-Note that after a signature change has been pushed to production, you might want
-to `reprocess the affected signatures <https://github.com/adngdb/reprocess>`_.

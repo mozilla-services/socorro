@@ -731,8 +731,8 @@ CSP_OBJECT_SRC = (
 )
 CSP_SCRIPT_SRC = (
     "'self'",
-    'apis.google.com',
-    'www.google-analytics.com',
+    'https://apis.google.com',
+    'https://www.google-analytics.com',
 )
 CSP_STYLE_SRC = (
     "'self'",
@@ -745,7 +745,7 @@ CSP_IMG_SRC = (
 )
 CSP_CHILD_SRC = (
     "'self'",
-    'accounts.google.com',  # Google Sign-In uses an iframe
+    'https://accounts.google.com',  # Google Sign-In uses an iframe
 )
 CSP_CONNECT_SRC = (
     "'self'",

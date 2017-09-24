@@ -151,6 +151,10 @@ def main(args):
         '--format', help='specify output format: csv, text (default)'
     )
     parser.add_argument(
+        '--different-only', dest='different', action='store_true',
+        help='limit output to just the signatures that changed',
+    )
+    parser.add_argument(
         'crashids', metavar='crashid', nargs='*', help='crash id to generate signatures for'
     )
     args = parser.parse_args()
@@ -255,9 +259,17 @@ def main(args):
                 'signature': ''
             }
 
+            # We want to generate fresh signatures, so we remove the "normalized" field from stack
+            # frames because this is essentially cached data from processing
+            for thread in processed_crash_minimal['json_dump'].get('threads', []):
+                for frame in thread.get('frames', []):
+                    if 'normalized' in frame:
+                        del frame['normalized']
+
             ret = generator.generate(raw_crash_minimal, processed_crash_minimal)
 
-            out.data(crash_id, old_signature, ret['signature'], ret['notes'])
+            if not args.different or old_signature != ret['signature']:
+                out.data(crash_id, old_signature, ret['signature'], ret['notes'])
 
 
 if __name__ == '__main__':

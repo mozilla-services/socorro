@@ -85,6 +85,7 @@ moz_free
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::.*
 mozilla::detail::ConditionVariableImpl::.*
+SleepConditionVariableCS
 SleepConditionVariableSRW
 mozilla::TimeStamp::Now
 GetTickCount64

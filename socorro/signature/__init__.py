@@ -9,7 +9,7 @@ try:
 except ImportError:
     raven = None
 
-from socorro.signature.signature_utilities import (
+from socorro.signature.rules import (
     SignatureGenerationRule,
     StackwalkerErrorSignatureRule,
     OOMSignature,
