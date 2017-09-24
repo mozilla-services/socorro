@@ -60,6 +60,26 @@ Then you can run the tests against staging using the following command
 
 If you wish to run them against different environemts, set `PYTEST_BASE_URL` as indicated in the sections above for running tests against localhost or production
 
+___Running tests using headless Firefox___
+
+NOTE: These instructions are for Linux or macOS only.
+
+To run the tests using a copy of Firefox that can be run in 'headless' mode (meaning with no UI), do the following:
+
+Set an environment variable `MOZ_HEADLESS` to be '1'. Check the documentation for your shell on how to do this. For zsh you can do using the following command:
+
+	$ export MOZ_HEADLESS=1
+
+Next you need to set an environment variable `MOZ_BINARY_PATH` to be the location of the binary of Firefox you want to use. For example, if you were using zsh and Firefox Nightly (which supports running in headless mode) on macOS:
+
+        $ export MOZ_BINARY_PATH='/Applications/FirefoxNightly.app/Contents/MacOS/firefox' 
+
+Again, check your shell and your operating system to determine how to set the environment variable and the location of the Firefox binary on your system
+
+Then run the tests using the following command:
+
+	$ tox -e py27
+
 ___Running specific tests___
 
 You can run tests in a given file::
