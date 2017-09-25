@@ -1,8 +1,6 @@
-from mock import Mock, MagicMock, patch
-
-from nose.tools import eq_, ok_
-
 from socket import timeout
+
+from mock import Mock, MagicMock, patch
 
 from socorro.external.rabbitmq.crashstorage import (
     RabbitMQCrashStorage,
@@ -34,7 +32,7 @@ class TestCrashStorage(TestCase):
     def test_constructor(self):
         config = self._setup_config()
         crash_store = RabbitMQCrashStorage(config)
-        eq_(len(crash_store.acknowledgement_token_cache), 0)
+        assert len(crash_store.acknowledgement_token_cache) == 0
         config.rabbitmq_class.assert_called_once_with(config)
         config.transaction_executor_class.assert_called_once_with(
             config,
@@ -52,7 +50,7 @@ class TestCrashStorage(TestCase):
             dumps=DotDict(),
             crash_id='crash_id'
         )
-        ok_(not crash_store.transaction.called)
+        assert not crash_store.transaction.called
         config.logger.reset_mock()
 
         # test for normal save
@@ -77,11 +75,12 @@ class TestCrashStorage(TestCase):
             dumps=DotDict,
             crash_id='crash_id'
         )
-        ok_(not crash_store.transaction.called)
+        assert not crash_store.transaction.called
 
     @patch('socorro.external.rabbitmq.crashstorage.randint')
     def test_save_raw_crash_normal_throttle(self, randint_mock):
         random_ints = [100, 49, 50, 51, 1, 100]
+
         def side_effect(*args, **kwargs):
             return random_ints.pop(0)
         randint_mock.side_effect = side_effect
@@ -96,7 +95,7 @@ class TestCrashStorage(TestCase):
             dumps=DotDict(),
             crash_id='crash_id'
         )
-        ok_(not crash_store.transaction.called)
+        assert not crash_store.transaction.called
         config.logger.reset_mock()
 
         # test for normal save #1: 49
@@ -135,10 +134,8 @@ class TestCrashStorage(TestCase):
             dumps=DotDict,
             crash_id='crash_id'
         )
-        ok_(not crash_store.transaction.called)
+        assert not crash_store.transaction.called
         crash_store.transaction.reset_mock()
-
-
 
         # test for save rejection because of "legacy_processing" #4: 1
         raw_crash = DotDict()
@@ -148,7 +145,7 @@ class TestCrashStorage(TestCase):
             dumps=DotDict,
             crash_id='crash_id'
         )
-        ok_(not crash_store.transaction.called)
+        assert not crash_store.transaction.called
 
         # test for save rejection because of "legacy_processing" #5: 100
         raw_crash = DotDict()
@@ -158,7 +155,7 @@ class TestCrashStorage(TestCase):
             dumps=DotDict,
             crash_id='crash_id'
         )
-        ok_(not crash_store.transaction.called)
+        assert not crash_store.transaction.called
 
     def test_save_raw_crash_no_legacy(self):
         config = self._setup_config()
@@ -276,8 +273,9 @@ class TestCrashStorage(TestCase):
             StopIteration(),
             ('1', '1', 'crash_id'),
         ]
+
         def iter_the_iterable(queue):
-            item =  iterable.pop()
+            item = iterable.pop()
             if isinstance(item, Exception):
                 raise item
             return item
@@ -287,7 +285,7 @@ class TestCrashStorage(TestCase):
 
         expected = 'crash_id'
         for result in crash_store.new_crashes():
-            eq_(expected, result)
+            assert expected == result
 
     def test_new_crash_with_fail_retry(self):
         config = self._setup_config()
@@ -301,26 +299,26 @@ class TestCrashStorage(TestCase):
             timeout(),
             ('2', '2', 'other_id')
         ]
+
         def an_iterator(queue):
-            item =  iterable.pop()
+            item = iterable.pop()
             if isinstance(item, Exception):
                 raise item
             return item
 
         crash_store.rabbitmq.operational_exceptions = (
-          timeout,
+            timeout,
         )
         crash_store.rabbitmq.return_value.__enter__.return_value  \
             .channel.basic_get = MagicMock(side_effect=an_iterator)
 
         expected = ('other_id', 'crash_id', )
-        for expected, result in zip(expected,  crash_store.new_crashes()):
-            eq_(expected, result)
+        for expected, result in zip(expected, crash_store.new_crashes()):
+            assert expected == result
 
     def test_new_crash_with_fail_retry_then_permanent_fail(self):
         config = self._setup_config()
-        config.transaction_executor_class = \
-            TransactionExecutorWithInfiniteBackoff
+        config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
         crash_store = RabbitMQCrashStorage(config)
 
         class MyException(Exception):
@@ -332,14 +330,15 @@ class TestCrashStorage(TestCase):
             timeout(),
             ('2', '2', 'other_id')
         ]
+
         def an_iterator(queue):
-            item =  iterable.pop()
+            item = iterable.pop()
             if isinstance(item, Exception):
                 raise item
             return item
 
         crash_store.rabbitmq.operational_exceptions = (
-          timeout,
+            timeout,
         )
         crash_store.rabbitmq.return_value.__enter__.return_value  \
             .channel.basic_get = MagicMock(side_effect=an_iterator)
@@ -347,14 +346,13 @@ class TestCrashStorage(TestCase):
         expected = ('other_id', )
         count = 0
         try:
-            for expected, result in zip(expected,  crash_store.new_crashes()):
+            for expected, result in zip(expected, crash_store.new_crashes()):
                 count += 1
-                if count ==  1:
-                    eq_(expected, result)
-                eq_(count, 1, 'looped too far')
+                if count == 1:
+                    assert expected == result
+                    assert count == 1, 'looped too far'
         except MyException:
-            eq_(count,  1)
-
+            assert count == 1
 
     def test_new_crash_duplicate_discovered(self):
         """ Tests queue with standard queue items only
@@ -392,7 +390,7 @@ class TestCrashStorage(TestCase):
 
         for result in crash_store.new_crashes():
             # new crash should be suppressed
-            eq_(None, result)
+            assert result is None
 
         # we should ack the new crash even though we did use it for processing
         transaction_connection.channel.basic_ack \
@@ -432,7 +430,7 @@ class TestCrashStorage(TestCase):
 
         expected = ['normal_crash_id']
         for result in crash_store.new_crashes():
-            eq_(expected.pop(), result)
+            assert expected.pop() == result
 
     def test_new_crash_reprocessing_queue(self):
         """ Tests queue with reprocessing, standard items; no priority items
@@ -463,4 +461,4 @@ class TestCrashStorage(TestCase):
 
         expected = ['normal_crash_id', 'reprocessing_crash_id']
         for result in crash_store.new_crashes():
-            eq_(expected.pop(), result)
+            assert expected.pop() == result
