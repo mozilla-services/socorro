@@ -1,8 +1,9 @@
 import os
 import shutil
-from mock import Mock
+
 from configman import ConfigurationManager
-from nose.tools import eq_, ok_, assert_raises
+from mock import Mock
+import pytest
 
 from socorro.external.fs.crashstorage import (
     FSLegacyDatedRadixTreeStorage,
@@ -35,16 +36,16 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
         required_config = FSLegacyDatedRadixTreeStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'minute_slice_interval': 1,
-            'fs_root': FS_ROOT,
-          }],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'minute_slice_interval': 1,
+                'fs_root': FS_ROOT,
+            }],
+            argv_source=[]
         )
         return config_manager
 
@@ -66,43 +67,45 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
 
     def test_save_raw_crash(self):
         self._make_test_crash()
-        ok_(os.path.islink(
+        assert os.path.islink(
             os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1))))
-        ok_(os.path.exists(
+                self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                self.fsrts._get_date_root_name(self.CRASH_ID_1)
+            )
+        )
+        assert os.path.exists(
             os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1),
-              self.CRASH_ID_1)))
+                self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                self.fsrts._get_date_root_name(self.CRASH_ID_1),
+                self.CRASH_ID_1
+            )
+        )
 
     def test_get_raw_crash(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
-                         "TEST")
-        assert_raises(CrashIDNotFound, self.fsrts.get_raw_crash,
-                          self.CRASH_ID_2)
+        assert self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'] == 'TEST'
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.get_raw_crash(self.CRASH_ID_2)
 
     def test_get_raw_dump(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo'),
-                         "bar")
-        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1,
-                                                 self.fsrts.config.dump_field),
-                         "baz")
-        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dump,
-                          self.CRASH_ID_2, "foo")
-        assert_raises(IOError, self.fsrts.get_raw_dump, self.CRASH_ID_1,
-                          "foor")
+        assert self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo') == "bar"
+        assert self.fsrts.get_raw_dump(self.CRASH_ID_1, self.fsrts.config.dump_field) == 'baz'
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.get_raw_dump(self.CRASH_ID_2, "foo")
+
+        with pytest.raises(IOError):
+            self.fsrts.get_raw_dump(self.CRASH_ID_1, "foor")
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), MemoryDumpsMapping({
+        expected = MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        }))
-        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dumps,
-                          self.CRASH_ID_2)
+        })
+        assert self.fsrts.get_raw_dumps(self.CRASH_ID_1) == expected
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.get_raw_dumps(self.CRASH_ID_2)
 
     def test_remove(self):
         self._make_test_crash()
@@ -110,21 +113,23 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
 
         parent = os.path.realpath(
             os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1)))
+                self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                self.fsrts._get_date_root_name(self.CRASH_ID_1)
+            )
+        )
 
         p = os.path.join(parent, self.CRASH_ID_1)
-        ok_(not os.path.exists(p))
+        assert not os.path.exists(p)
 
-        assert_raises(CrashIDNotFound, self.fsrts.remove,
-                          self.CRASH_ID_2)
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.remove(self.CRASH_ID_2)
 
     def test_new_crashes(self):
         self.fsrts._current_slot = lambda: ['00', '00_00']
         self._make_test_crash()
         self.fsrts._current_slot = lambda: ['00', '00_01']
-        eq_(list(self.fsrts.new_crashes()), [self.CRASH_ID_1])
-        eq_(list(self.fsrts.new_crashes()), [])
+        assert list(self.fsrts.new_crashes()) == [self.CRASH_ID_1]
+        assert list(self.fsrts.new_crashes()) == []
         self.fsrts.remove(self.CRASH_ID_1)
         del self.fsrts._current_slot
 
@@ -143,13 +148,13 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
         os.rename(date_path, webhead_path)
 
         os.unlink(os.sep.join([webhead_path, self.CRASH_ID_1]))
-        os.symlink('../../../../name/' + os.sep.join(self.fsrts._get_radix(
-                       self.CRASH_ID_1)),
-                   os.sep.join([webhead_path, self.CRASH_ID_1]))
+        os.symlink(
+            '../../../../name/' + os.sep.join(self.fsrts._get_radix(self.CRASH_ID_1)),
+            os.sep.join([webhead_path, self.CRASH_ID_1])
+        )
 
         self.fsrts._current_slot = lambda: ['00', '00_02']
-        eq_(list(self.fsrts.new_crashes()),
-                         [self.CRASH_ID_1])
+        assert list(self.fsrts.new_crashes()) == [self.CRASH_ID_1]
 
     def test_doesnt_raise_oserror(self):
         # Bug 1297760 is caused by trying to create a symlink which kicks up
@@ -164,6 +169,7 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
 class MyFSTemporaryStorage(FSTemporaryStorage):
     def _get_current_date(self):
         return "25"
+
 
 class TestFSTemporaryStorage(TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
@@ -183,16 +189,16 @@ class TestFSTemporaryStorage(TestCase):
         required_config = MyFSTemporaryStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'minute_slice_interval': 1,
-            'fs_root': FS_ROOT,
-          }],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'minute_slice_interval': 1,
+                'fs_root': FS_ROOT,
+            }],
+            argv_source=[]
         )
         return config_manager
 
@@ -228,43 +234,45 @@ class TestFSTemporaryStorage(TestCase):
 
     def test_save_raw_crash(self):
         self._make_test_crash()
-        ok_(os.path.islink(
+        assert os.path.islink(
             os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1))))
-        ok_(os.path.exists(
+                self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                self.fsrts._get_date_root_name(self.CRASH_ID_1)
+            )
+        )
+        assert os.path.exists(
             os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1),
-              self.CRASH_ID_1)))
+                self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                self.fsrts._get_date_root_name(self.CRASH_ID_1),
+                self.CRASH_ID_1
+            )
+        )
 
     def test_get_raw_crash(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
-                         "TEST")
-        assert_raises(CrashIDNotFound, self.fsrts.get_raw_crash,
-                          self.CRASH_ID_2)
+        assert self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'] == 'TEST'
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.get_raw_crash(self.CRASH_ID_2)
 
     def test_get_raw_dump(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo'),
-                         "bar")
-        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1,
-                                                 self.fsrts.config.dump_field),
-                         "baz")
-        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dump,
-                          self.CRASH_ID_2, "foo")
-        assert_raises(IOError, self.fsrts.get_raw_dump, self.CRASH_ID_1,
-                          "foor")
+        assert self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo') == 'bar'
+        assert self.fsrts.get_raw_dump(self.CRASH_ID_1, self.fsrts.config.dump_field) == 'baz'
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.get_raw_dump(self.CRASH_ID_2, "foo")
+
+        with pytest.raises(IOError):
+            self.fsrts.get_raw_dump(self.CRASH_ID_1, "foor")
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), MemoryDumpsMapping({
+        expected = MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        }))
-        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dumps,
-                          self.CRASH_ID_2)
+        })
+        assert self.fsrts.get_raw_dumps(self.CRASH_ID_1) == expected
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.get_raw_dumps(self.CRASH_ID_2)
 
     def test_remove(self):
         self._make_test_crash()
@@ -272,21 +280,23 @@ class TestFSTemporaryStorage(TestCase):
 
         parent = os.path.realpath(
             os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1)))
+                self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                self.fsrts._get_date_root_name(self.CRASH_ID_1)
+            )
+        )
 
         p = os.path.join(parent, self.CRASH_ID_1)
-        ok_(not os.path.exists(p))
+        assert not os.path.exists(p)
 
-        assert_raises(CrashIDNotFound, self.fsrts.remove,
-                          self.CRASH_ID_2)
+        with pytest.raises(CrashIDNotFound):
+            self.fsrts.remove(self.CRASH_ID_2)
 
     def test_new_crashes(self):
         self.fsrts._current_slot = lambda: ['00', '00_00']
         self._make_test_crash()
         self.fsrts._current_slot = lambda: ['00', '00_01']
-        eq_(list(self.fsrts.new_crashes()), [self.CRASH_ID_1])
-        eq_(list(self.fsrts.new_crashes()), [])
+        assert list(self.fsrts.new_crashes()) == [self.CRASH_ID_1]
+        assert list(self.fsrts.new_crashes()) == []
         self.fsrts.remove(self.CRASH_ID_1)
         del self.fsrts._current_slot
 
@@ -305,13 +315,13 @@ class TestFSTemporaryStorage(TestCase):
         os.rename(date_path, webhead_path)
 
         os.unlink(os.sep.join([webhead_path, self.CRASH_ID_1]))
-        os.symlink('../../../../name/' + os.sep.join(self.fsrts._get_radix(
-                       self.CRASH_ID_1)),
-                   os.sep.join([webhead_path, self.CRASH_ID_1]))
+        os.symlink(
+            '../../../../name/' + os.sep.join(self.fsrts._get_radix(self.CRASH_ID_1)),
+            os.sep.join([webhead_path, self.CRASH_ID_1])
+        )
 
         self.fsrts._current_slot = lambda: ['00', '00_02']
-        eq_(list(self.fsrts.new_crashes()),
-                         [self.CRASH_ID_1])
+        assert list(self.fsrts.new_crashes()) == [self.CRASH_ID_1]
 
     def test_doesnt_raise_oserror(self):
         # Bug 1297760 is caused by trying to create a symlink which kicks up
@@ -329,15 +339,15 @@ class TestFSTemporaryStorage(TestCase):
         self._make_test_crash()
         self._make_test_crash_3()
         self._make_test_crash_4()
-        ok_(os.path.exists(
+        assert os.path.exists(
             FS_ROOT + '/25/date/00/00_01/0bba929f-8721-460c-dead-a43c20071025'
-        ))
-        ok_(os.path.exists(
+        )
+        assert os.path.exists(
             FS_ROOT + '/25/date/00/00_01/0bba929f-8721-460c-dddd-a43c20071025'
-        ))
-        ok_(os.path.exists(
+        )
+        assert os.path.exists(
             FS_ROOT + '/25/date/00/00_01/0bba929f-8721-460c-dddd-a43c20071125'
-        ))
+        )
         for x in self.fsrts.new_crashes():
             pass
 
@@ -346,16 +356,16 @@ class TestFSTemporaryStorage(TestCase):
         required_config = FSLegacyDatedRadixTreeStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'minute_slice_interval': 1,
-            'fs_root': FS_ROOT
-          }],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'minute_slice_interval': 1,
+                'fs_root': FS_ROOT
+            }],
+            argv_source=[]
         )
         return config_manager
 
@@ -370,31 +380,31 @@ class TestFSTemporaryStorage(TestCase):
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
         }), self.CRASH_ID_1)
-        ok_(os.path.exists(
+        assert os.path.exists(
             FS_ROOT + '/20071025/date/00/00_00/0bba929f-8721-460c-dead-a43c20071025'
-        ))
+        )
 
         self.fsrts._current_slot = lambda: ['00', '00_00']
         #save crash 3 in new system
         self._make_test_crash_3()
 
-        ok_(os.path.exists(
+        assert os.path.exists(
             FS_ROOT + '/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
-        ))
+        )
 
         # consume crashes
         for x in self.fsrts.new_crashes():
             pass
 
         # should be consumed because it isn't in our working tree or slot
-        ok_(not os.path.exists(
+        assert not os.path.exists(
             FS_ROOT + '/20071025/date/00/00_00/0bba929f-8721-460c-dead-a43c20071025'
-        ))
+        )
 
         # should not be consumed, while in working tree, it is in active slot
-        ok_(os.path.exists(
+        assert os.path.exists(
             FS_ROOT + '/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
-        ))
+        )
 
         # switch to next active slot
         self.fsrts._current_slot = lambda: ['00', '00_01']
@@ -404,6 +414,6 @@ class TestFSTemporaryStorage(TestCase):
             pass
 
         # should be consumed because it is in working tree and inactive slot
-        ok_( not os.path.exists(
+        assert not os.path.exists(
             FS_ROOT + '/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
-        ))
+        )
