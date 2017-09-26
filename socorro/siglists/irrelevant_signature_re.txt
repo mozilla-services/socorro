@@ -48,7 +48,7 @@ nsThread::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
 nsThread::ProcessNextEvent
 NS_ProcessNextEvent
-NtWaitForKeyedEvent
+(Nt|Zw)?WaitForKeyedEvent
 (Nt|Zw)?WaitForSingleObject(Ex)?
 (Nt|Zw)?WaitForMultipleObjects(Ex)?
 nvmap@0x.*
@@ -70,4 +70,3 @@ WaitForMultipleObjectsExImplementation
 RealMsgWaitFor.*
 _ZdlPv
 zero
-ZwWaitForKeyedEvent
