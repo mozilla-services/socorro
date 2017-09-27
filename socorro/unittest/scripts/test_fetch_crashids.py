@@ -36,3 +36,13 @@ from socorro.scripts.fetch_crashids import INFINITY
 ])
 def test_infinity_comparisons(oper, rhs, expected):
     assert oper(INFINITY, rhs) == expected
+
+
+def test_infinity_lhs_subtraction():
+    assert INFINITY - 5 == INFINITY
+    assert INFINITY - INFINITY == 0
+
+
+def test_infinity_rhs_subtraction():
+    with pytest.raises(ValueError):
+        5 - INFINITY

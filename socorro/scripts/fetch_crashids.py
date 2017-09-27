@@ -52,6 +52,15 @@ class Infinity(object):
     def __repr__(self):
         return 'Infinity'
 
+    def __sub__(self, obj):
+        if isinstance(obj, Infinity):
+            return 0
+        return self
+
+    def __rsub__(self, obj):
+        # We don't need to deal with negative infinities, so let's not
+        raise ValueError('This Infinity does not support right-hand-side')
+
 
 # For our purposes, there is only one infinity
 INFINITY = Infinity()
@@ -102,7 +111,16 @@ def fetch_crashids(params, num_results):
 
         # Get the next page, but only as many results as we need
         params['_results_offset'] += MAX_PAGE
-        params['_results_number'] = min(MAX_PAGE, total - crashids_count)
+        params['_results_number'] = min(
+            # MAX_PAGE is the maximum we can request
+            MAX_PAGE,
+
+            # The number of results Super Search can return to us that is hasn't returned so far
+            total - crashids_count,
+
+            # The numver of results we want that we haven't gotten, yet
+            num_results - crashids_count
+        )
 
 
 def extract_params(url):
