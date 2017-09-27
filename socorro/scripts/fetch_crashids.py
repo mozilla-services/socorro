@@ -6,6 +6,7 @@
 
 import argparse
 import datetime
+from functools import total_ordering
 import os
 import os.path
 from urlparse import urlparse, parse_qs
@@ -34,11 +35,33 @@ HOST = 'https://crash-stats.mozilla.com'
 MAX_PAGE = 1000
 
 
+@total_ordering
+class Infinity(object):
+    """Infinity is greater than anything else except other Infinities
+
+    NOTE(willkg): There are multiple infinities and not all infinities are equal, so what we're
+    doing here is wrong, but it's helpful. We can rename it if someone gets really annoyed.
+
+    """
+    def __eq__(self, obj):
+        return isinstance(obj, Infinity)
+
+    def __lt__(self, obj):
+        return False
+
+    def __repr__(self):
+        return 'Infinity'
+
+
+# For our purposes, there is only one infinity
+INFINITY = Infinity()
+
+
 def fetch_crashids(params, num_results):
     """Generator that returns crash ids
 
     :arg dict params: dict of super search parameters to base the query on
-    :arg varies num: "all" or a number of results to get
+    :arg varies num: number of results to get or INFINITY
 
     :returns: generator of crash ids
 
@@ -53,7 +76,7 @@ def fetch_crashids(params, num_results):
 
     # Set up first page
     params['_results_offset'] = 0
-    params['_results_number'] = MAX_PAGE if num_results == 'all' else min(MAX_PAGE, num_results)
+    params['_results_number'] = min(MAX_PAGE, num_results)
 
     # Fetch pages of crash ids until we've gotten as many as we want or there aren't any more to get
     crashids_count = 0
@@ -69,7 +92,7 @@ def fetch_crashids(params, num_results):
             yield hit['uuid']
 
             # If we've gotten as many crashids as we need, we return
-            if num_results != 'all' and crashids_count >= num_results:
+            if crashids_count >= num_results:
                 return
 
         # If there are no more crash ids to get, we return
@@ -77,10 +100,9 @@ def fetch_crashids(params, num_results):
         if not hits or crashids_count >= total:
             return
 
-        # Get the next page
+        # Get the next page, but only as many results as we need
         params['_results_offset'] += MAX_PAGE
-        if num_results != 'all':
-            params['_results_number'] = min(MAX_PAGE, total - crashids_count)
+        params['_results_number'] = min(MAX_PAGE, total - crashids_count)
 
 
 def extract_params(url):
@@ -154,9 +176,11 @@ def main(argv):
     if sig:
         params['signature'] = '~' + sig
 
-    # Convert num to an int if it's not "all" and error out if that's not possible
     num_results = args.num
-    if num_results != 'all':
+    if num_results == 'all':
+        num_results = INFINITY
+
+    else:
         try:
             num_results = int(num_results)
         except ValueError:
