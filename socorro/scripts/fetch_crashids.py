@@ -11,6 +11,8 @@ import os.path
 from urlparse import urlparse, parse_qs
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.scripts import WrappedTextHelpFormatter
@@ -29,17 +31,56 @@ The second is to just specify command line arguments and the query will be based
 
 HOST = 'https://crash-stats.mozilla.com'
 
+MAX_PAGE = 1000
 
-def fetch_crashids(params):
+
+def fetch_crashids(params, num_results):
+    """Generator that returns crash ids
+
+    :arg dict params: dict of super search parameters to base the query on
+    :arg varies num: "all" or a number of results to get
+
+    :returns: generator of crash ids
+
+    """
     url = HOST + '/api/SuperSearch/'
 
-    resp = requests.get(url, params)
-    if resp.status_code == 200:
-        hits = resp.json()['hits']
-        crashids = [hit['uuid'] for hit in hits]
-        return crashids
+    # Set up retrying on 429s
+    retries = Retry(total=32, backoff_factor=1, status_forcelist=[429])
+    session = requests.Session()
+    session.mount('http://', HTTPAdapter(max_retries=retries))
+    session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    raise Exception('Bad response: %s %s' % (resp.status_code, resp.content))
+    # Set up first page
+    params['_results_offset'] = 0
+    params['_results_number'] = MAX_PAGE if num_results == 'all' else min(MAX_PAGE, num_results)
+
+    # Fetch pages of crash ids until we've gotten as many as we want or there aren't any more to get
+    crashids_count = 0
+    while True:
+        resp = session.get(url, params=params)
+        if resp.status_code != 200:
+            raise Exception('Bad response: %s %s' % (resp.status_code, resp.content))
+
+        hits = resp.json()['hits']
+
+        for hit in hits:
+            crashids_count += 1
+            yield hit['uuid']
+
+            # If we've gotten as many crashids as we need, we return
+            if num_results != 'all' and crashids_count >= num_results:
+                return
+
+        # If there are no more crash ids to get, we return
+        total = resp.json()['total']
+        if not hits or crashids_count >= total:
+            return
+
+        # Get the next page
+        params['_results_offset'] += MAX_PAGE
+        if num_results != 'all':
+            params['_results_number'] = min(MAX_PAGE, total - crashids_count)
 
 
 def extract_params(url):
@@ -74,8 +115,8 @@ def main(argv):
         help='Super Search url to base query on'
     )
     parser.add_argument(
-        '--num', default=100, type=int,
-        help='The number of crash ids you want'
+        '--num', default=100,
+        help='The number of crash ids you want or "all" for all of them'
     )
     parser.add_argument(
         '-v', '--verbose', action='store_true',
@@ -91,6 +132,8 @@ def main(argv):
         params = {
             'product': 'Firefox'
         }
+
+    params['_columns'] = 'uuid'
 
     # Override with date if specified
     datestamp = args.date
@@ -111,15 +154,19 @@ def main(argv):
     if sig:
         params['signature'] = '~' + sig
 
-    params.update({
-        '_results_number': args.num,
-        '_columns': 'uuid'
-    })
+    # Convert num to an int if it's not "all" and error out if that's not possible
+    num_results = args.num
+    if num_results != 'all':
+        try:
+            num_results = int(num_results)
+        except ValueError:
+            print('num needs to be an integer or "all"')
+            return 1
+
     if args.verbose:
         print('Params: %s' % params)
 
-    crashids = fetch_crashids(params)
-    for crashid in crashids:
+    for crashid in fetch_crashids(params, num_results):
         print(crashid)
 
     return 0
