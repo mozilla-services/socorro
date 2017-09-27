@@ -202,8 +202,8 @@ class BreakpadStackwalkerRule(Rule):
         return stackwalker_data
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        if 'additional_minidumps' not in processed_crash:
-            processed_crash.additional_minidumps = []
+        processed_crash.additional_minidumps = []
+
         with self._temp_raw_crash_json_file(
             raw_crash,
             raw_crash.uuid
