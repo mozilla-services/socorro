@@ -3,12 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-from nose.tools import ok_, assert_raises
+import pytest
 
-from socorro.lib import MissingArgumentError, datetimeutil
 from socorro.external.postgresql.releases import Releases
-
-from .unittestbase import PostgreSQLTestCase
+from socorro.lib import MissingArgumentError, datetimeutil
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestReleases(PostgreSQLTestCase):
@@ -211,7 +210,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         )
 
         res = service.post(**params)
-        ok_(res)
+        assert res
 
     def test_post_with_beta_number_null(self):
         self._insert_release_channels()
@@ -231,15 +230,11 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         )
 
         res = service.post(**params)
-        ok_(res)
+        assert res
 
         # but...
-        params['beta_number'] = 0
-        assert_raises(
-            MissingArgumentError,
-            service.post,
-            **params
-        )
+        with pytest.raises(MissingArgumentError):
+            service.post(beta_number=0)
 
     def test_post_missing_argument_error(self):
         self._insert_release_channels()
@@ -247,18 +242,14 @@ class IntegrationTestReleases(PostgreSQLTestCase):
 
         now = datetimeutil.utc_now()
         build_id = now.strftime('%Y%m%d%H%M')
-        params = dict(
-            product='',
-            version='1.0',
-            update_channel='beta',
-            build_id=build_id,
-            platform='Windows',
-            beta_number=1,
-            release_channel='Beta',
-            throttle=1
-        )
-        assert_raises(
-            MissingArgumentError,
-            service.post,
-            **params
-        )
+        with pytest.raises(MissingArgumentError):
+            service.post(
+                product='',
+                version='1.0',
+                update_channel='beta',
+                build_id=build_id,
+                platform='Windows',
+                beta_number=1,
+                release_channel='Beta',
+                throttle=1
+            )

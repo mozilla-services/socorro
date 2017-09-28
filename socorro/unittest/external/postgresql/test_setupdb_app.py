@@ -2,16 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from configman import ConfigurationManager
 import mock
 from psycopg2 import ProgrammingError
 import psycopg2
+import pytest
 
-from .unittestbase import PostgreSQLTestCase
-from nose.plugins.skip import SkipTest
-from nose.tools import ok_, eq_
 from socorro.external.postgresql.setupdb_app import SocorroDBApp
 from socorro.unittest.testbase import TestCase
-from configman import ConfigurationManager
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class NoInheritanceCheatSocorroDBApp(SocorroDBApp):
@@ -75,14 +74,12 @@ class TestConnectionContext(TestCase):
         )
         for a_config, expected_result in test_cases_no_super:
             setup_app = NoInheritanceCheatSocorroDBApp(a_config)
-            eq_(
-                setup_app.create_connection_url(
-                    database_name=a_config.get('database_name', ''),
-                    username=a_config.get('database_username', ''),
-                    password=a_config.get('database_password', '')
-                ),
-                expected_result
+            ret = setup_app.create_connection_url(
+                database_name=a_config.get('database_name', ''),
+                username=a_config.get('database_username', ''),
+                password=a_config.get('database_password', '')
             )
+            assert ret == expected_result
 
 
 class IntegrationTestSetupDB(PostgreSQLTestCase):
@@ -165,7 +162,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
         # have a superuser name/pass that match the default. Disable
         # this until there's a way to override. Not sure if this is
         # worth testing here anyway (we have other setupdb_app tests)
-        raise SkipTest
+        pytest.skip()
         config_manager = self._setup_config_manager({'dropdb': True})
         with config_manager.context() as config:
             db = SocorroDBApp(config)
@@ -182,11 +179,11 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             where relkind='r' and relname NOT ilike 'pg_%'
             """)
             count_tables, = cursor.fetchone()
-            ok_(count_tables > 50)
+            assert count_tables > 50
 
             cursor.execute("""
             select count(relname) from pg_class
             where relkind='v' and relname NOT ilike 'pg_%'
             """)
             count_views, = cursor.fetchone()
-            ok_(count_views > 50)
+            assert count_views > 50
