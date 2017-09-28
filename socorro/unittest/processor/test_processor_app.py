@@ -2,16 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
-from nose.tools import eq_, assert_raises
-
 from configman.dotdict import DotDict
+import mock
+import pytest
 
-from socorro.processor.processor_app import ProcessorApp
 from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     PolyStorageError,
 )
+from socorro.processor.processor_app import ProcessorApp
 from socorro.unittest.testbase import TestCase
 
 
@@ -84,10 +83,10 @@ class TestProcessorApp(TestCase):
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         g = pa.source_iterator()
-        eq_(g.next(), ((1,), {}))
-        eq_(g.next(), ((2,), {}))
-        eq_(g.next(), None)
-        eq_(g.next(), ((3,), {}))
+        assert g.next() == ((1,), {})
+        assert g.next() == ((2,), {})
+        assert g.next() is None
+        assert g.next() == ((3,), {})
 
     def test_transform_success(self):
         config = self.get_standard_config()
@@ -127,7 +126,7 @@ class TestProcessorApp(TestCase):
         pa.destination.save_raw_and_processed.assert_called_with(
             fake_raw_crash, None, 7, 17
         )
-        eq_(finished_func.call_count, 1)
+        assert finished_func.call_count == 1
 
     def test_transform_crash_id_missing(self):
         config = self.get_standard_config()
@@ -143,7 +142,7 @@ class TestProcessorApp(TestCase):
             17,
             'this crash cannot be found in raw crash storage'
         )
-        eq_(finished_func.call_count, 1)
+        assert finished_func.call_count == 1
 
     def test_transform_unexpected_exception(self):
         config = self.get_standard_config()
@@ -159,7 +158,7 @@ class TestProcessorApp(TestCase):
             17,
             'error in loading: bummer'
         )
-        eq_(finished_func.call_count, 1)
+        assert finished_func.call_count == 1
 
     def test_transform_polystorage_error_without_raven_configured(self):
         config = self.get_standard_config()
@@ -178,11 +177,8 @@ class TestProcessorApp(TestCase):
         )
         # The important thing is that this is the exception that
         # is raised and not something from the raven error handling.
-        assert_raises(
-            PolyStorageError,
-            pa.transform,
-            'mycrashid'
-        )
+        with pytest.raises(PolyStorageError):
+            pa.transform('mycrashid')
 
         config.logger.warning.assert_called_with(
             'Sentry DSN is not configured and an exception happened'
@@ -224,21 +220,18 @@ class TestProcessorApp(TestCase):
         )
         # The important thing is that this is the exception that
         # is raised and not something from the raven error handling.
-        assert_raises(
-            PolyStorageError,
-            pa.transform,
-            'mycrashid'
-        )
+        with pytest.raises(PolyStorageError):
+            pa.transform('mycrashid')
 
         config.logger.info.assert_called_with(
             'Error captured in Sentry! Reference: someidentifier'
         )
-        eq_(len(captured_exceptions), 2)
+        assert len(captured_exceptions) == 2
         captured_exception, captured_exception_2 = captured_exceptions
-        eq_(captured_exception.__class__, NameError)
-        eq_(captured_exception.message, 'waldo')
-        eq_(captured_exception_2.__class__, AssertionError)
-        eq_(captured_exception_2.message, False)
+        assert captured_exception.__class__ == NameError
+        assert captured_exception.message == 'waldo'
+        assert captured_exception_2.__class__ == AssertionError
+        assert captured_exception_2.message is False
 
     @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_misc_error_with_raven_configured_successful(
@@ -273,19 +266,16 @@ class TestProcessorApp(TestCase):
         )
         # The important thing is that this is the exception that
         # is raised and not something from the raven error handling.
-        assert_raises(
-            ValueError,
-            pa.transform,
-            'mycrashid'
-        )
+        with pytest.raises(ValueError):
+            pa.transform('mycrashid')
 
         config.logger.info.assert_called_with(
             'Error captured in Sentry! Reference: someidentifier'
         )
-        eq_(len(captured_exceptions), 1)
+        assert len(captured_exceptions) == 1
         captured_exception, = captured_exceptions
-        eq_(captured_exception.__class__, ValueError)
-        eq_(captured_exception.message, 'Someone is wrong on the Internet')
+        assert captured_exception.__class__ == ValueError
+        assert captured_exception.message == 'Someone is wrong on the Internet'
 
     @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_polystorage_error_with_raven_configured_failing(
@@ -320,11 +310,8 @@ class TestProcessorApp(TestCase):
         )
         # The important thing is that this is the exception that
         # is raised and not something from the raven error handling.
-        assert_raises(
-            PolyStorageError,
-            pa.transform,
-            'mycrashid'
-        )
+        with pytest.raises(PolyStorageError):
+            pa.transform('mycrashid')
 
         config.logger.error.assert_called_with(
             'Unable to report error with Raven', exc_info=True
