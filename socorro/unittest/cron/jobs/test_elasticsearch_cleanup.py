@@ -2,13 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from crontabber.app import CronTabber
 import mock
 
-from nose.tools import ok_
-
-from crontabber.app import CronTabber
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
@@ -29,6 +26,6 @@ class IntegrationTestElasticsearchCleanup(IntegrationTestBase):
             tab.run_all()
 
             information = self._load_structure()
-            ok_(information['elasticsearch-cleanup'])
-            ok_(not information['elasticsearch-cleanup']['last_error'])
-            ok_(information['elasticsearch-cleanup']['last_success'])
+            assert information['elasticsearch-cleanup']
+            assert not information['elasticsearch-cleanup']['last_error']
+            assert information['elasticsearch-cleanup']['last_success']
