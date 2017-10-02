@@ -33,14 +33,6 @@ class TestCrashReports:
         assert 'Login Required' in csp.page_heading
 
     @pytest.mark.nondestructive
-    @pytest.mark.xfail(reason="bug 1351757: Cease exposing SeaMonkey and bug 1292594: Fennec shouldn't be an option")
-    def test_that_products_are_sorted_correctly(self, base_url, selenium):
-        csp = CrashStatsHomePage(selenium, base_url).open()
-        products = csp.header.product_list
-
-        assert self._expected_products == products, 'Expected products not in the product dropdown'
-
-    @pytest.mark.nondestructive
     @pytest.mark.parametrize('product', _expected_products)
     def test_that_reports_form_has_same_product(self, base_url, selenium, product):
         csp = CrashStatsHomePage(selenium, base_url).open()
