@@ -148,7 +148,7 @@ class ScrapersMixin(object):
 
         possible_platforms = (
             'linux', 'mac', 'win', 'debug',  # for Firefox
-            'android-api-15', 'android-x86',  # for mobile
+            'android-api-16', 'android-api-15', 'android-x86',  # for mobile
         )
 
         for platform in possible_platforms:
