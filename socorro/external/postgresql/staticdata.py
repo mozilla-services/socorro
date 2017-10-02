@@ -269,8 +269,9 @@ class SpecialProductPlatforms(BaseTable):
         ['android-arm', 'mozilla-release-android-api-15', 'release', 'mobile', 'FennecAndroid', '37.0'],
 
         # FennecAndroid 56+
-        ['android-arm', 'mozilla-aurora-android-api-16', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
         ['android-arm', 'mozilla-central-android-api-16', 'nightly', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-beta-android-api-16', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-release-android-api-16', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
     ]
 
 
