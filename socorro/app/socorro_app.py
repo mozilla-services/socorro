@@ -529,7 +529,7 @@ class SocorroWelcomeApp(SocorroApp):
             #requested_app.config_manager = self.config_manager
             return requested_app.main()
         else:
-            print (
+            print(
                 "Welcome to Socorro.  To configure Socorro, please see "
                 "https://socorro.readthedocs.io/\n"
                 "use --help with this app to see what you can do here"

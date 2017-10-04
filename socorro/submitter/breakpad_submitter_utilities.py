@@ -62,7 +62,7 @@ class BreakpadPOSTDestination(CrashStorageBase):
                 submission_response
             )
             if self.config.echo_response:
-                print submission_response
+                print(submission_response)
         finally:
             for dump_name, dump_pathname in dumps.iteritems():
                 if "TEMPORARY" in dump_pathname:

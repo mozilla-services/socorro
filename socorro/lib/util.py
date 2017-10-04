@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import print_function
+
 import logging
 import sys
 import threading
@@ -43,7 +45,7 @@ class FakeLogger(object):
         return '%s %s' % (level, message)
 
     def log(self, *args, **kwargs):
-        print >>sys.stderr, self.create_log_message(*args)
+        print(self.create_log_message(*args), file=sys.stderr)
 
     def debug(self, *args, **kwargs):
         self.log(logging.DEBUG, *args)
@@ -145,7 +147,7 @@ def report_exception_and_continue(logger=FakeLogger(), loggingLevel=logging.ERRO
         finally:
             logging_report_lock.release()
     except Exception as x:
-        print >>sys.stderr, x
+        print(x, file=sys.stderr)
 
 
 # utilities
