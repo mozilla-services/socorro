@@ -15,7 +15,8 @@ class TestCrashReports:
     _expected_products = [
         'Firefox',
         'Thunderbird',
-        'FennecAndroid']
+        'FennecAndroid',
+        'SeaMonkey']
 
     @pytest.mark.nondestructive
     def test_that_bugzilla_link_contain_current_site(self, base_url, selenium):
