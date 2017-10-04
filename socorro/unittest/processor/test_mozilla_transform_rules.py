@@ -541,7 +541,6 @@ class TestDatesAndTimesRule(TestCase):
         # The warning message you get comes from a ValueError
         # which is phrased differently in python 2.6 compared to 2.7.
         # So we need to expect different things depend on python version.
-        # print repr(processor_notes[0])
         try:
             42[:1]
         except TypeError as err:

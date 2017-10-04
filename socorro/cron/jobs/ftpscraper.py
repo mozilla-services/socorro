@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import datetime
 import sys
 import re
@@ -390,9 +392,9 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     def _insert_build(self, cursor, *args, **kwargs):
         self.config.logger.debug('adding %s', args)
         if self.config.dry_run:
-            print "INSERT BUILD"
-            print args
-            print kwargs
+            print('INSERT BUILD')
+            print(args)
+            print(kwargs)
         else:
             buildutil.insert_build(cursor, *args, **kwargs)
 

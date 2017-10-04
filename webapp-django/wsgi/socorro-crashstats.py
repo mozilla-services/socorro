@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 
@@ -20,7 +22,8 @@ if newrelic:
             newrelic.agent.initialize(newrelic_ini)
             application = newrelic.agent.wsgi_application()(application)
         else:
-            print >>sys.stderr, (
+            print(
                 "NEWRELIC_PYTHON_INI_FILE set but file does not exist. "
-                "Skipping to initialize newrelic agent."
+                "Skipping to initialize newrelic agent.",
+                file=sys.stderr
             )

@@ -3,12 +3,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""demonstrates using configman to make a Socorro app"""
+"""demonstrates using configman to make a Socorro app
 
-# This app can be invoked like this:
-#     .../socorro/app/example_app.py --help
-# set your path to make that simpler
-# set both socorro and configman in your PYTHONPATH
+This app can be invoked like this:
+
+    .../socorro/app/example_app.py --help
+
+set your path to make that simpler
+set both socorro and configman in your PYTHONPATH
+
+"""
+
+
+from __future__ import print_function
 
 import datetime
 
@@ -33,14 +40,13 @@ class ExampleApp(App):
 
     # implementing this constructor is only necessary when there is more
     # initialization to be done before main can be called
-    #def __init__(self, config):
-        #super(ExampleApp,self).__init__(config)
+    # def __init__(self, config):
+    #    super(ExampleApp,self).__init__(config)
 
     def main(self):
         # this is where we'd implement the app
         # the configuraton is already setup as self.config
-        print 'hello, %s. The time is: %s' % (self.config.name,
-                                              self.config.time)
+        print('hello, %s. The time is: %s' % (self.config.name, self.config.time))
 
 
 if __name__ == '__main__':

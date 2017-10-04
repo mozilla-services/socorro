@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import zipfile
 import gzip
 import tarfile
@@ -66,7 +68,7 @@ def preview_archive_content(file_object, file_name):
     """return file listing of the contents of an archive file"""
     out = StringIO()
     for member in get_archive_members(file_object, file_name):
-        print >>out, member.name.ljust(70),
-        print >>out, str(member.size).rjust(9)
+        print(member.name.ljust(70), file=out, end='')
+        print(str(member.size).rjust(9), file=out)
 
     return out.getvalue()
