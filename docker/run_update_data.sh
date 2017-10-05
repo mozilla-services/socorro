@@ -12,7 +12,7 @@ HOSTUSER=$(id -u):$(id -g)
 CACHEDIR=/app/.cache/ftpscraper
 
 # Fetch and update release information for these products (comma-delimited)
-PRODUCTS="firefox"
+PRODUCTS="firefox,mobile"
 CRONTABBER="docker-compose run crontabber python socorro/cron/crontabber_app.py"
 
 
@@ -27,7 +27,7 @@ ${CRONTABBER} --job=featured-versions-automatic \
               --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
 
 # Fetch normalization data for versions we know about
-docker-compose run processor python docker/fetch_normalization_data.py
+docker-compose run processor python docker/fetch_normalization_data.py --products=${PRODUCTS}
 
 # NOTE(willkg): Running this next script creates the xyz_yyyymmdd tables
 # including raw_crashes_yyyymmdd and processed_crashes_yyyymmdd for the last 8

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import datetime
 import sys
 import re
@@ -148,7 +150,7 @@ class ScrapersMixin(object):
 
         possible_platforms = (
             'linux', 'mac', 'win', 'debug',  # for Firefox
-            'android-api-15', 'android-x86',  # for mobile
+            'android-api-16', 'android-api-15', 'android-x86',  # for mobile
         )
 
         for platform in possible_platforms:
@@ -390,9 +392,9 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     def _insert_build(self, cursor, *args, **kwargs):
         self.config.logger.debug('adding %s', args)
         if self.config.dry_run:
-            print "INSERT BUILD"
-            print args
-            print kwargs
+            print('INSERT BUILD')
+            print(args)
+            print(kwargs)
         else:
             buildutil.insert_build(cursor, *args, **kwargs)
 

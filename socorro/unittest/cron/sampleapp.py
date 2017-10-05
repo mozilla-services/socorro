@@ -20,6 +20,8 @@ To test this app run it like this::
 
 """
 
+from __future__ import print_function
+
 
 if __name__ == '__main__':
     import sys
@@ -31,7 +33,7 @@ if __name__ == '__main__':
 
     options, args = parser.parse_args()
     if options.out:
-        print >>sys.stdout, options.out
+        print(options.out)
     if options.err:
-        print >>sys.stderr, options.err
+        print(options.err, file=sys.stderr)
     sys.exit(options.exit_code)

@@ -1,15 +1,13 @@
-from nose.tools import ok_, eq_
-from mock import Mock
 from datetime import datetime
-
 import json
-import tarfile
 import gzip
+from os.path import join
+import tarfile
 import tempfile
 
-from os.path import join
 
 from configman.dotdict import DotDict
+from mock import Mock
 
 from socorro.external.fs.crashstorage import (
     TarFileWritingCrashStore,
@@ -44,9 +42,9 @@ class TestTarFileWritingCrashStorage(TestCase):
         tar_store = TarFileWritingCrashStore(config)
 
         # this is what should have happened
-        ok_(not hasattr(tar_store, 'tar_file'))
-        ok_(isinstance(tar_store.tarfile_module, Mock))
-        ok_(isinstance(tar_store.gzip_module, Mock))
+        assert not hasattr(tar_store, 'tar_file')
+        assert isinstance(tar_store.tarfile_module, Mock)
+        assert isinstance(tar_store.gzip_module, Mock)
         tar_store.tarfile_module.open.assert_called_once_with(
             config.tarball_name,
             'w'
@@ -83,10 +81,7 @@ class TestTarFileWritingCrashStorage(TestCase):
         )
         reconstituted_processed_crash_as_str = result_gzip_fp.read().strip()
 
-        eq_(
-            processed_crash_as_str,
-            reconstituted_processed_crash_as_str
-        )
+        assert processed_crash_as_str == reconstituted_processed_crash_as_str
 
 
 class TestTarFileSequentialReadingCrashStorage(TestCase):
@@ -129,9 +124,9 @@ class TestTarFileSequentialReadingCrashStorage(TestCase):
         reconstituted_processed_crash_1 = reading_tar_store.get_processed(
             'it does not matter what is said here'
         )
-        eq_(processed_crash_1, reconstituted_processed_crash_1)
+        assert processed_crash_1 == reconstituted_processed_crash_1
 
         reconstituted_processed_crash_2 = reading_tar_store.get_processed(
             'it does not matter what is said here'
         )
-        eq_(processed_crash_2, reconstituted_processed_crash_2)
+        assert processed_crash_2 == reconstituted_processed_crash_2

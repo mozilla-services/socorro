@@ -11,4 +11,4 @@ product_versions = json.load(urllib.urlopen(
 versions = [
     x['version'] for x in product_versions if 'esr' not in x['version']
 ]
-print ' '.join(sorted(versions))
+print(' '.join(sorted(versions)))

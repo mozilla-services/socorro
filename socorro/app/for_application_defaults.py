@@ -46,7 +46,6 @@ class ApplicationDefaultsProxy(object):
             # crontabber not yet supported in this environment
             #'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
             'processor': 'socorro.processor.processor_app.ProcessorApp',
-            'fetch': 'socorro.external.fetch_app.FetchApp',
             'reprocess_crashlist':
                 'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp',
             'purge_rmq':

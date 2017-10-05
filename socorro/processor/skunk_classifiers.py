@@ -517,7 +517,7 @@ class UpdateWindowAttributes(SkunkClassificationRule):
                 processor.config.logger
             )
         except Exception as x:
-            print x
+            print(x)
 
         return True
 
