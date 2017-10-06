@@ -66,7 +66,6 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'django_nose',
     'session_csrf',
 
     # Application base, containing global templates.
