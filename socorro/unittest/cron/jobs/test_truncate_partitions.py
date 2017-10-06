@@ -71,7 +71,7 @@ class TestTruncatePartitions(IntegrationTestBase):
 
         # Basic assertion test of stored procedure.
         information = self._load_structure()
-        print information['truncate-partitions']['last_error']
+        print(information['truncate-partitions']['last_error'])
         assert information['truncate-partitions']
         assert not information['truncate-partitions']['last_error']
         assert information['truncate-partitions']['last_success']

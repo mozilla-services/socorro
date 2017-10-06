@@ -123,6 +123,7 @@ class ReleaseRepositories(BaseTable):
         ['mozilla-aurora-android-api-15'],
         ['mozilla-beta-android-api-15'],
         ['mozilla-release-android-api-15'],
+        ['mozilla-central-android-api-16'],
         ['mozilla-esr38'],
         ['mozilla-esr45'],
         ['comm-esr38'],
@@ -265,7 +266,12 @@ class SpecialProductPlatforms(BaseTable):
         ['android-arm', 'mozilla-central-android-api-15', 'nightly', 'mobile', 'FennecAndroid', '37.0'],
         ['android-arm', 'mozilla-aurora-android-api-15', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
         ['android-arm', 'mozilla-beta-android-api-15', 'beta', 'mobile', 'FennecAndroid', '37.0'],
-        ['android-arm', 'mozilla-release-android-api-15', 'release', 'mobile', 'FennecAndroid', '37.0']
+        ['android-arm', 'mozilla-release-android-api-15', 'release', 'mobile', 'FennecAndroid', '37.0'],
+
+        # FennecAndroid 56+
+        ['android-arm', 'mozilla-central-android-api-16', 'nightly', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-beta-android-api-16', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-release-android-api-16', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
     ]
 
 

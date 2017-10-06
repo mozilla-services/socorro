@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
@@ -23,20 +25,20 @@ def migrate_users(combos, dry_run=False):
         # we'll deal with it one at a time.
         users = User.objects.filter(q)
         for user in users:
-            print 'NEED TO MIGRATE', user.email.ljust(30),
-            print 'TO', transform[user.email.lower()]
+            print('NEED TO MIGRATE', user.email.ljust(30), end='')
+            print('TO', transform[user.email.lower()])
             try:
                 destination = User.objects.get(
                     email__iexact=transform[user.email.lower()]
                 )
                 if user.is_staff:
-                    print "\tTransferring 'is_staff'"
+                    print("\tTransferring 'is_staff'")
                     destination.is_staff = True
                 if user.is_superuser:
-                    print "\tTransferring 'is_superuser'"
+                    print("\tTransferring 'is_superuser'")
                     destination.is_superuser = True
                 for group in user.groups.all():
-                    print '\tTransferring group membership %r' % group.name
+                    print('\tTransferring group membership %r' % group.name)
                     destination.groups.add(group)
                 if (
                     user.last_login and destination.last_login and
@@ -54,10 +56,10 @@ def migrate_users(combos, dry_run=False):
                     destination.save()
             except User.DoesNotExist:
                 # then it's easy peasy!
-                print '\tSimply changing email from %r to %r' % (
+                print('\tSimply changing email from %r to %r' % (
                     user.email,
                     transform[user.email.lower()]
-                )
+                ))
                 user.email = transform[user.email.lower()]
                 if not dry_run:
                     user.save()
