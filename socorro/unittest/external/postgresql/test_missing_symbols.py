@@ -5,10 +5,8 @@
 import datetime
 import types
 
-from nose.tools import ok_, eq_
-
 from socorro.external.postgresql.missing_symbols import MissingSymbols
-from unittestbase import PostgreSQLTestCase
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestMissingSymbols(PostgreSQLTestCase):
@@ -95,7 +93,7 @@ class IntegrationTestMissingSymbols(PostgreSQLTestCase):
         implementation = MissingSymbols(config=self.config)
         today = datetime.datetime.utcnow().date()
         res = implementation.iter(date=today)
-        ok_(isinstance(res, types.GeneratorType))
+        assert isinstance(res, types.GeneratorType)
 
         rows = sorted(list(res))  # run the generator into a list
         expected = sorted([
@@ -112,4 +110,4 @@ class IntegrationTestMissingSymbols(PostgreSQLTestCase):
                 'code_id': '54134E292c4000',
             },
         ])
-        eq_(rows, expected)
+        assert rows == expected

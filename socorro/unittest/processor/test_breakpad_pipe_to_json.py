@@ -2,11 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_
-
-import socorro.processor.breakpad_pipe_to_json as bpj
-
 from socorro.lib.util import DotDict
+import socorro.processor.breakpad_pipe_to_json as bpj
 from socorro.unittest.testbase import TestCase
 
 cannonical_json_dump = {
@@ -251,51 +248,47 @@ class TestCase(TestCase):
 
     def test_get(self):
         a_list = ['a', 'b', 'c']
-        eq_(bpj._get(a_list, 0, None), 'a')
-        eq_(bpj._get(a_list, 1, None), 'b')
-        eq_(bpj._get(a_list, 2, None), 'c')
-        eq_(bpj._get(a_list, 3, None), None)
+        assert bpj._get(a_list, 0, None) == 'a'
+        assert bpj._get(a_list, 1, None) == 'b'
+        assert bpj._get(a_list, 2, None) == 'c'
+        assert bpj._get(a_list, 3, None) is None
 
     def test_get_int(self):
         a_list = ['a', '1', 'c']
-        eq_(bpj._get_int(a_list, 0, None), None)
-        eq_(bpj._get_int(a_list, 1, None), 1)
-        eq_(bpj._get_int(a_list, 2, None), None)
-        eq_(bpj._get_int(a_list, 3, None), None)
+        assert bpj._get_int(a_list, 0, None) is None
+        assert bpj._get_int(a_list, 1, None) == 1
+        assert bpj._get_int(a_list, 2, None) is None
+        assert bpj._get_int(a_list, 3, None) is None
 
     def test_extract_OS_info(self):
         info = ['OS', 'Windows NT', '5.1.2600 Service Pack 2']
         d = DotDict()
         bpj._extract_OS_info(info, d)
-        ok_('system_info' in d)
-        eq_(
-            d.system_info,
-            {
-                'os': 'Windows NT',
-                'os_ver': '5.1.2600 Service Pack 2'
-            }
-        )
+        assert 'system_info' in d
+        expected = {
+            'os': 'Windows NT',
+            'os_ver': '5.1.2600 Service Pack 2'
+        }
+        assert d.system_info == expected
 
     def test_extract_OS_info_fail(self):
         info = ['OS', ]
         d = DotDict()
         bpj._extract_OS_info(info, d)
-        ok_('system_info' in d)
-        eq_(d.system_info, {})
+        assert 'system_info' in d
+        assert d.system_info == {}
 
     def test_extract_CPU_info(self):
         info = ['CPU', 'x86', 'GenuineIntel family 6 model 22 stepping 1', 1]
         d = DotDict()
         bpj._extract_CPU_info(info, d)
-        ok_('system_info' in d)
-        eq_(
-            d.system_info,
-            {
-                "cpu_arch": 'x86',
-                "cpu_info": 'GenuineIntel family 6 model 22 stepping 1',
-                "cpu_count": 1
-            }
-        )
+        assert 'system_info' in d
+        expected = {
+            "cpu_arch": 'x86',
+            "cpu_info": 'GenuineIntel family 6 model 22 stepping 1',
+            "cpu_count": 1
+        }
+        assert d.system_info == expected
 
     def test_extract_OS_and_CPU_info(self):
         info = ['OS', 'Windows NT', '5.1.2600 Service Pack 2']
@@ -303,32 +296,28 @@ class TestCase(TestCase):
         bpj._extract_OS_info(info, d)
         info = ['CPU', 'x86', 'GenuineIntel family 6 model 22 stepping 1', 1]
         bpj._extract_CPU_info(info, d)
-        ok_('system_info' in d)
-        eq_(
-            d.system_info,
-            {
-                'os': 'Windows NT',
-                'os_ver': '5.1.2600 Service Pack 2',
-                "cpu_arch": 'x86',
-                "cpu_info": 'GenuineIntel family 6 model 22 stepping 1',
-                "cpu_count": 1
-            }
-        )
+        assert 'system_info' in d
+        expected = {
+            'os': 'Windows NT',
+            'os_ver': '5.1.2600 Service Pack 2',
+            "cpu_arch": 'x86',
+            "cpu_info": 'GenuineIntel family 6 model 22 stepping 1',
+            "cpu_count": 1
+        }
+        assert d.system_info == expected
 
     def test_extract_crash_info(self):
         info = ['Crash', 'EXCEPTION_ACCESS_VIOLATION_READ', '0x676c', 1]
         d = DotDict()
         crashing_thread = bpj._extract_crash_info(info, d)
-        ok_('crash_info' in d)
-        eq_(
-            d.crash_info,
-            {
-                "type": 'EXCEPTION_ACCESS_VIOLATION_READ',
-                "crash_address": '0x676c',
-                "crashing_thread": 1
-            }
-        )
-        eq_(crashing_thread, 1)
+        assert 'crash_info' in d
+        expected = {
+            "type": 'EXCEPTION_ACCESS_VIOLATION_READ',
+            "crash_address": '0x676c',
+            "crashing_thread": 1
+        }
+        assert d.crash_info == expected
+        assert crashing_thread == 1
 
     def test_extract_module_info(self):
         info = ['Module', 'firefox.exe', '24.0.0.4925', 'firefox.pdb',
@@ -336,20 +325,18 @@ class TestCase(TestCase):
                 '0x004e0fff', '1']
         d = DotDict()
         bpj._extract_module_info(info, d, 17)
-        ok_('modules' in d)
-        ok_(len(d.modules), 1)
-        eq_(d.main_module, 17)
-        eq_(
-            d.modules[0],
-            {
-                "filename": 'firefox.exe',
-                "version": '24.0.0.4925',
-                "debug_file": 'firefox.pdb',
-                "debug_id": '9FFDDF56AADE45988C759EF5ABAE53862',
-                "base_addr": '0x00400000',
-                "end_addr": '0x004e0fff',
-            }
-        )
+        assert 'modules' in d
+        assert len(d.modules) == 1
+        assert d.main_module == 17
+        expected = {
+            "filename": 'firefox.exe',
+            "version": '24.0.0.4925',
+            "debug_file": 'firefox.pdb',
+            "debug_id": '9FFDDF56AADE45988C759EF5ABAE53862',
+            "base_addr": '0x00400000',
+            "end_addr": '0x004e0fff',
+        }
+        assert d.modules[0] == expected
 
     def test_extract_module_info_not_main(self):
         info = ['Module', 'firefloosy.exe', '24.0.0.4925', 'firefox.pdb',
@@ -357,66 +344,60 @@ class TestCase(TestCase):
                 '0x004e0fff', '0']
         d = DotDict()
         bpj._extract_module_info(info, d, 17)
-        ok_('modules' in d)
-        ok_(len(d.modules), 1)
-        ok_('main_module' not in d)
-        eq_(
-            d.modules[0],
-            {
-                "filename": 'firefloosy.exe',
-                "version": '24.0.0.4925',
-                "debug_file": 'firefox.pdb',
-                "debug_id": '9FFDDF56AADE45988C759EF5ABAE53862',
-                "base_addr": '0x00400000',
-                "end_addr": '0x004e0fff',
-            }
-        )
+        assert 'modules' in d
+        assert len(d.modules) == 1
+        assert 'main_module' not in d
+        expected = {
+            "filename": 'firefloosy.exe',
+            "version": '24.0.0.4925',
+            "debug_file": 'firefox.pdb',
+            "debug_id": '9FFDDF56AADE45988C759EF5ABAE53862',
+            "base_addr": '0x00400000',
+            "end_addr": '0x004e0fff',
+        }
+        assert d.modules[0] == expected
 
     def test_extract_frame_inf(self):
         info = ['0', '12', 'msvcr100.dll', '_callthreadstartex',
                 'f:\\src\\threadex.c', '314', '0x6']
         d = DotDict()
         bpj._extract_frame_info(info, d)
-        ok_('threads' in d)
-        eq_(len(d.threads), 1)
-        eq_(
-            d.threads[0],
-            {
-                "frame_count": 1,
-                "frames": [
-                    {
-                        "frame": 12,
-                        "module": 'msvcr100.dll',
-                        "function": '_callthreadstartex',
-                        "file": 'f:\\src\\threadex.c',
-                        "line": 314,
-                    }
-                ]
-            }
-        )
+        assert 'threads' in d
+        assert len(d.threads) == 1
+        expected = {
+            "frame_count": 1,
+            "frames": [
+                {
+                    "frame": 12,
+                    "module": 'msvcr100.dll',
+                    "function": '_callthreadstartex',
+                    "file": 'f:\\src\\threadex.c',
+                    "line": 314,
+                }
+            ]
+        }
+        assert d.threads[0] == expected
 
     def test_extract_frame_info_frames_missing(self):
         info = ['4', '12', 'msvcr100.dll', '_callthreadstartex',
                 'f:\\src\\threadex.c', '314', '0x6']
         d = DotDict()
         bpj._extract_frame_info(info, d)
-        ok_('threads' in d)
-        eq_(len(d.threads), 5)
-        eq_(
-            d.threads[4],
-            {
-                "frame_count": 1,
-                "frames": [
-                    {
-                        "frame": 12,
-                        "module": 'msvcr100.dll',
-                        "function": '_callthreadstartex',
-                        "file": 'f:\\src\\threadex.c',
-                        "line": 314,
-                    }
-                ]
-            }
-        )
+        assert 'threads' in d
+        assert len(d.threads) == 5
+        expected = {
+            "frame_count": 1,
+            "frames": [
+                {
+                    "frame": 12,
+                    "module": 'msvcr100.dll',
+                    "function": '_callthreadstartex',
+                    "file": 'f:\\src\\threadex.c',
+                    "line": 314,
+                }
+            ]
+        }
+        assert d.threads[4] == expected
 
     def test_pipe_dump_to_json_dump(self):
         pipe_dump = [
@@ -446,4 +427,4 @@ class TestCase(TestCase):
             "1|1|lars_crash.dll|ha_ha2|no source|0|0x5|0x1|0x3",
         ]
         json_dump = bpj.pipe_dump_to_json_dump(pipe_dump)
-        eq_(json_dump, cannonical_json_dump)
+        assert json_dump == cannonical_json_dump

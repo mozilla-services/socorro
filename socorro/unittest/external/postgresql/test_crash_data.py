@@ -4,20 +4,18 @@
 
 import os
 
-from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
 from mock import Mock
+import pytest
 
 from socorro.lib import (
     MissingArgumentError,
     ResourceNotFound,
     ResourceUnavailable
 )
+from socorro.unittest.external.postgresql.test_crashstorage import a_processed_crash
 from socorro.external.postgresql import crash_data, crashstorage
 from socorro.unittest.testbase import TestCase
-from socorro.unittest.external.postgresql.test_crashstorage import (
-    a_processed_crash
-)
 
 
 class TestIntegrationPostgresCrashData(TestCase):
@@ -153,7 +151,7 @@ class TestIntegrationPostgresCrashData(TestCase):
                 'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'
             }
             res = service.get(**params)
-            eq_(res, res_expected)
+            assert res == res_expected
 
             # get a processed crash
             params['datatype'] = 'processed'
@@ -165,70 +163,54 @@ class TestIntegrationPostgresCrashData(TestCase):
             })
             res = service.get(**params)
 
-            eq_(res['name'], 'Peter')
-            ok_('url' not in res)
-            ok_('email' not in res)
-            ok_('user_id' not in res)
-            ok_('exploitability' not in res)
+            assert res['name'] == 'Peter'
+            assert 'url' not in res
+            assert 'email' not in res
+            assert 'user_id' not in res
+            assert 'exploitability' not in res
 
             # get a unredacted processed crash
             params['datatype'] = 'unredacted'
             res = service.get(**params)
 
-            eq_(res['name'], 'Peter')
-            ok_('url' in res)
-            ok_('email' in res)
-            ok_('user_id' in res)
-            ok_('exploitability' in res)
+            assert res['name'] == 'Peter'
+            assert 'url' in res
+            assert 'email' in res
+            assert 'user_id' in res
+            assert 'exploitability' in res
 
-            eq_(res['email'], 'peter@fake.org')
+            assert res['email'] == 'peter@fake.org'
 
             # missing parameters
-            assert_raises(
-                MissingArgumentError,
-                service.get
-            )
-            assert_raises(
-                MissingArgumentError,
-                service.get,
-                **{'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'}
-            )
+            with pytest.raises(MissingArgumentError):
+                service.get()
+            with pytest.raises(MissingArgumentError):
+                service.get(uuid='114559a5-d8e6-428c-8b88-1c1f22120314')
 
             # crash cannot be found
-            assert_raises(
-                ResourceNotFound,
-                service.get,
-                **{
-                    'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130504',
-                    'datatype': 'processed'
-                }
-            )
+            with pytest.raises(ResourceNotFound):
+                service.get(
+                    uuid='c44245f4-c93b-49b8-86a2-c15dc2130504',
+                    datatype='processed'
+                )
+
             # crash cannot be found
-            assert_raises(
-                ResourceNotFound,
-                service.get,
-                **{
-                    'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130504',
-                    'datatype': 'unredacted'
-                }
-            )
+            with pytest.raises(ResourceNotFound):
+                service.get(
+                    uuid='c44245f4-c93b-49b8-86a2-c15dc2130504',
+                    datatype='unredacted'
+                )
 
             # not yet available crash
-            assert_raises(
-                ResourceUnavailable,
-                service.get,
-                **{
-                    'uuid': '58727744-12f5-454a-bcf5-f688a2120821',
-                    'datatype': 'processed'
-                }
-            )
+            with pytest.raises(ResourceUnavailable):
+                service.get(
+                    uuid='58727744-12f5-454a-bcf5-f688a2120821',
+                    datatype='processed'
+                )
 
             # not yet available crash
-            assert_raises(
-                ResourceUnavailable,
-                service.get,
-                **{
-                    'uuid': '58727744-12f5-454a-bcf5-f688a2120821',
-                    'datatype': 'unredacted'
-                }
-            )
+            with pytest.raises(ResourceUnavailable):
+                service.get(
+                    uuid='58727744-12f5-454a-bcf5-f688a2120821',
+                    datatype='unredacted'
+                )

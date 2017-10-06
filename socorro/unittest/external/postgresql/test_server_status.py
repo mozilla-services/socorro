@@ -4,11 +4,8 @@
 
 import contextlib
 
-from nose.tools import eq_
-
 from socorro.external.postgresql import server_status
-
-from unittestbase import PostgreSQLTestCase
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 @contextlib.contextmanager
@@ -71,4 +68,4 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
             "schema_revision": "aaaaaaaaaaaa",
         }
 
-        eq_(res, res_expected)
+        assert res == res_expected

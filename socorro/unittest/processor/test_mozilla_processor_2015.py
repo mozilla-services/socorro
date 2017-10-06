@@ -1,10 +1,7 @@
-import ujson
-
 from configman import ConfigurationManager
 from configman.dotdict import DotDict
-
 from mock import Mock, patch
-from nose.tools import eq_, ok_
+import ujson
 
 from socorro.processor.mozilla_processor_2015 import (
     MozillaProcessorAlgorithm2015
@@ -98,10 +95,12 @@ class TestMozillaProcessorAlgorithm2015(TestCase):
             DotDict()
         )
 
-        ok_(processed_crash.success)
-        eq_(processed_crash.processor_notes,
+        assert processed_crash.success
+        expected = (
             'dwight; MozillaProcessorAlgorithm2015; '
             'SignatureTool: signature truncated due to length; '
-            'SignatureTool: signature truncated due to length')
-        ok_(processed_crash.signature.startswith('shutdownhang'))
-        eq_(len(processed_crash.signature), 255)
+            'SignatureTool: signature truncated due to length'
+        )
+        assert processed_crash.processor_notes == expected
+        assert processed_crash.signature.startswith('shutdownhang')
+        assert len(processed_crash.signature) == 255
