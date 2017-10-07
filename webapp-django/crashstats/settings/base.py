@@ -97,9 +97,6 @@ INSTALLED_APPS = (
 )
 
 
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-
-
 MIDDLEWARE_CLASSES = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
