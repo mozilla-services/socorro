@@ -33,11 +33,7 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.lib.task_manager import respond_to_SIGTERM
-from socorro.app.generic_app import App, main  # main not used here, but
-                                               # is imported from generic_app
-                                               # into this scope to offer to
-                                               # apps that derive from the
-                                               # class defined here.
+from socorro.app.socorro_app import App
 
 
 class FetchTransformSaveApp(App):

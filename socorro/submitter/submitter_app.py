@@ -15,10 +15,8 @@ from os import (
 
 from configman import Namespace
 
-from socorro.app.fetch_transform_save_app import (
-    FetchTransformSaveWithSeparateNewCrashSourceApp,
-    main
-)
+from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
+from socorro.app.socorro_app import main
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     FileDumpsMapping,
