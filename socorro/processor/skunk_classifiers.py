@@ -251,8 +251,8 @@ class SkunkClassificationRule(Rule):
         """
         try:
             if (
-                dump_name == 'upload_file_minidump_plugin'
-                and processed_crash['process_type'] == 'plugin'
+                dump_name == 'upload_file_minidump_plugin' and
+                processed_crash['process_type'] == 'plugin'
             ):
                 a_json_dump = processed_crash['json_dump']
             else:
