@@ -88,13 +88,8 @@ class CountStackWalkerTimeoutKills(CountAnythingRuleBase):
     )
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        # override me to check any condition within a raw, processed crash
-        # or even the state of the processor itself from the proc_meta
-        return reduce(
-            lambda x, y: x or "SIGKILL" in y,
-            proc_meta.processor_notes,
-            False
-        )
+        # Only run the action if "SIGKILL" is in the processor notes
+        return any(['SIGKILL' in note for note in proc_meta.processor_notes])
 
 
 class CountStackWalkerFailures(CountAnythingRuleBase):
@@ -106,10 +101,5 @@ class CountStackWalkerFailures(CountAnythingRuleBase):
     )
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        # override me to check any condition within a raw, processed crash
-        # or even the state of the processor itself from the proc_meta
-        return reduce(
-            lambda x, y: x or "MDSW failed" in y,
-            proc_meta.processor_notes,
-            False
-        )
+        # Only run the action if "MDSW failed" is in the processor notes
+        return any(['MDSW failed' in note for note in proc_meta.processor_notes])
