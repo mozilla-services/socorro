@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import datetime
 
-from socorro.app.generic_app import App, main
+from socorro.app.socorro_app import App, main
 
 from configman import Namespace
 

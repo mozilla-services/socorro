@@ -162,8 +162,8 @@ class OutOfDateClassifier(SupportClassificationRule):
     def _predicate(self, raw_crash, raw_dumps, processed_crash, processor):
         try:
             return (
-                raw_crash.ProductName == 'Firefox'
-                and normalize(raw_crash.Version) < self.out_of_date_threshold
+                raw_crash.ProductName == 'Firefox' and
+                normalize(raw_crash.Version) < self.out_of_date_threshold
             )
         except AttributeError:
             try:
@@ -272,7 +272,6 @@ class OutOfDateClassifier(SupportClassificationRule):
         )
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
-        crashed_version = normalize(raw_crash.Version)
         if "Win" in processed_crash["json_dump"]["system_info"]['os']:
             return self._windows_action(
                 raw_crash,
