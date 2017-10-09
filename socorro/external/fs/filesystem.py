@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import errno
 import os
 from os.path import curdir
-import errno
 
 
 def cleanEmptySubdirectories(topLimit, leafPath, osModule=os):
@@ -17,12 +17,12 @@ def cleanEmptySubdirectories(topLimit, leafPath, osModule=os):
        never removed)
      """
     opath = os.path.normpath(leafPath)  # allows relative paths to work
-    topLimit = os.path.split(os.path.normpath(topLimit))[1]  # allows name or
-                                                             # path
-    if not topLimit in opath:
+    # allows name or path
+    topLimit = os.path.split(os.path.normpath(topLimit))[1]
+    if topLimit not in opath:
         raise OSError(
-          errno.ENOENT,
-          '%s not on path to %s' % (topLimit, leafPath)
+            errno.ENOENT,
+            '%s not on path to %s' % (topLimit, leafPath)
         )
     while True:
         path, tail = os.path.split(opath)
@@ -49,13 +49,13 @@ def visitPath(rootDir, fullPath, visit, osModule=os):
     # ?Optimization option: Memoize visited paths to avoid them? How to deal
     with prefix paths?
     """
-    fpath = os.path.normpath(fullPath)  # allows relative paths to work as
-                                        # expected
+    # allows relative paths to work as expected
+    fpath = os.path.normpath(fullPath)
     root = os.path.normpath(rootDir)
     if not fpath.startswith(root):
         raise OSError(
-          errno.ENOENT,
-          '%s not on path to %s' % (rootDir, fullPath)
+            errno.ENOENT,
+            '%s not on path to %s' % (rootDir, fullPath)
         )
     pathParts = fpath[len(os.sep) + len(root):].split(os.sep)
     visit(root)
@@ -85,15 +85,17 @@ def makedirs(name, mode=0777, osModule=os):
         head, tail = os.path.split(head)
     if head and tail and not os.path.exists(head):
         makedirs(head, mode)
-        if tail == curdir:           # xxx/newdir/. exists if xxx/newdir exists
+        # xxx/newdir/. exists if xxx/newdir exists
+        if tail == curdir:
             return
     try:
         osModule.mkdir(name, mode)
     except OSError as e:
-        #be happy if someone already created the path
+        # be happy if someone already created the path
         if e.errno != errno.EEXIST:
             raise
-        else:  # it might be an existing non-directory
+        else:
+            # it might be an existing non-directory
             if not osModule.path.isdir(name):
                 raise OSError(errno.ENOTDIR, "Not a directory: '%s'" % name)
 
@@ -119,13 +121,14 @@ def defaultAcceptanceFunction(dummy):
     return True
 
 
+# FIXME(willkg): This is only used in the submtter. We should delete it or rewrite with os.walk.
 def findFileGenerator(
-  rootDirectory,
-  acceptanceFunction=defaultAcceptanceFunction,
-  directoryAcceptanceFunction=defaultAcceptanceFunction,
-  directorySortFunction=cmp,
-  maxDepth=100000,
-  **kwargs
+    rootDirectory,
+    acceptanceFunction=defaultAcceptanceFunction,
+    directoryAcceptanceFunction=defaultAcceptanceFunction,
+    directorySortFunction=cmp,
+    maxDepth=100000,
+    **kwargs
 ):
     """This function returns a generator that walks a filesystem tree.  It
     applies a user supplied function to each file that it encounters.  It only
@@ -136,18 +139,18 @@ def findFileGenerator(
     """
     if 0 >= maxDepth:
         return
+    keep_dir = directoryAcceptanceFunction
     for aCurrentDirectoryItem in [
-      (rootDirectory, x, os.path.join(rootDirectory, x))
-        for x in sorted(os.listdir(rootDirectory), directorySortFunction)
+            (rootDirectory, x, os.path.join(rootDirectory, x))
+            for x in sorted(os.listdir(rootDirectory), directorySortFunction)
     ]:
-        if (os.path.isdir(aCurrentDirectoryItem[2])
-            and directoryAcceptanceFunction(aCurrentDirectoryItem)):
+        if (os.path.isdir(aCurrentDirectoryItem[2]) and keep_dir(aCurrentDirectoryItem)):
             for aSubdirectoryItem in findFileGenerator(
-              aCurrentDirectoryItem[2],
-              acceptanceFunction,
-              directoryAcceptanceFunction,
-              directorySortFunction,
-              maxDepth=maxDepth - 1
+                aCurrentDirectoryItem[2],
+                acceptanceFunction,
+                directoryAcceptanceFunction,
+                directorySortFunction,
+                maxDepth=maxDepth - 1
             ):
                 yield aSubdirectoryItem
         if acceptanceFunction(aCurrentDirectoryItem):

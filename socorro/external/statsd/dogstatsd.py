@@ -12,7 +12,7 @@ class StatsClient(object):
     def __init__(self, host, port, prefix):
         statsd.host = host
         statsd.port = port
-        self.prefix =  prefix
+        self.prefix = prefix
 
     def incr(self, name):
         return statsd.increment(name)
