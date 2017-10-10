@@ -19,6 +19,9 @@ from socorro.scripts import WrappedTextHelpFormatter
 
 DESCRIPTION = """
 Sends specified crashes for reprocessing
+
+This requires SOCORRO_REPROCESS_API_TOKEN to be set in the environment to a valid API token.
+
 """
 
 DEFAULT_HOST = 'https://crash-stats.mozilla.com'
