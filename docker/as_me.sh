@@ -10,9 +10,20 @@
 # Usage:
 #
 #     ./docker/as_me.sh scripts/fetch_crash_data.py . crashid
+#
+# Takes a --container CONTAINER argument for specifying a container other than
+# processor.
 
 set -e
 
 HOSTUSER=$(id -u):$(id -g)
 
-docker-compose run -u "${HOSTUSER}" processor $@
+if [[ $1 == "--container" ]]; then
+    shift;
+    CONTAINER=$1
+    shift;
+else
+    CONTAINER=processor
+fi
+
+docker-compose run -u "${HOSTUSER}" ${CONTAINER} $@
