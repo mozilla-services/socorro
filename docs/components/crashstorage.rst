@@ -277,12 +277,6 @@ Which classes can be used together
 Cannot mix *LegacyRadix* and *Radix* in one system which runs more than one app
 and shares a filesystem.
 
-Inside submitter_app.py:
-
-* `SubmitterCrashStorageDestination`, `SubmitterFileSystemWalkerSource` and
-  `SamplingCrashStorageSource` can't be used with other crash storage sources
-  because they are not API compatible for things like `get_raw_crash`.
-
 
 Potential Edicts
 ================
