@@ -52,9 +52,7 @@ my.env:
 
 dockerbuild: my.env
 	${DC} build base
-	${DC} build processor
-	${DC} build webapp
-	${DC} build crontabber
+	${DC} build processor webapp crontabber docs
 	touch .docker-build
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
@@ -72,7 +70,7 @@ dockertestshell: my.env
 	./docker/run_tests_in_docker.sh --shell
 
 dockerdocs: my.env
-	./docker/run_build_docs.sh
+	./docker/as_me.sh --container docs ./docker/run_build_docs.sh
 
 dockerupdatedata: my.env
 	./docker/run_update_data.sh
