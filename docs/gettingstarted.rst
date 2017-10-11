@@ -259,11 +259,14 @@ General architecture
       subgraph stores {
          rank=same;
 
-         aws [shape=tab, label="S3", style=filled, fillcolor=gray];
          postgres [shape=tab, label="Postgres", style=filled, fillcolor=gray];
          elasticsearch [shape=tab, label="Elasticsearch", style=filled, fillcolor=gray];
          telemetry [shape=tab, label="Telemetry (S3)", style=filled, fillcolor=gray];
+      }
+
+      subgraph stores2 {
          rabbitmq [shape=tab, label="RMQ", style=filled, fillcolor=gray];
+         aws [shape=tab, label="S3", style=filled, fillcolor=gray];
       }
 
       subgraph processing {
@@ -289,17 +292,20 @@ General architecture
       aws -> webapp [label="load raw,processed"];
       elasticsearch -> webapp [label="search"];
 
+      postgres -> crontabber;
+      elasticsearch -> crontabber;
+
       { rank=min; client; }
    }
 
+
+Arrows direction represents the flow of interesting information (crashes,
+authentication assertions, cached values), not trivia like acks.
 
 .. Warning::
 
    August 17th, 2017. Everything below this point needs to be updated.
 
-
-Arrows direction represents the flow of interesting information (crashes,
-authentication assertions, cached values), not trivia like acks.
 
 
 Top-level folders
