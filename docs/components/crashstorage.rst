@@ -270,15 +270,6 @@ Which classes are used with which _app
   `socorro.external.fs`, `socorro.external.rabbitmq`, and
   `socorro.external.postgresql`.
 
-* `socorro.middleware.middleware_app`: In production: `socorro.external.boto`.
-  In testing: we use `socorro.external.fs` and `socorro.external.postgresql`.
-
-* `socorro.collector.submitter_app`: Defines it's own storage classes:
-  `SubmitterFileSystemWalkerSource`, `SubmitterCrashStorageDestination` defined
-  inside the app. Also has `SamplingCrashStorageSource` does a query to
-  PostgreSQL to get a list of crashstorage ids and uses any other crashstorage
-  as a source for the raw crashes that it pulls.
-
 
 Which classes can be used together
 ==================================
