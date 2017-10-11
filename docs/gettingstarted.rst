@@ -242,12 +242,61 @@ environment, put it in ``my.env``.
 General architecture
 ====================
 
+.. graphviz::
+
+   digraph G {
+      rankdir=LR;
+
+      client [shape=box3d, label="firefox"];
+
+      subgraph antpig {
+         rank=same;
+
+         antenna [shape=rect, label="antenna"];
+         pigeon [shape=cds, label="pigeon"];
+      }
+
+      subgraph stores {
+         rank=same;
+
+         aws [shape=tab, label="S3", style=filled, fillcolor=gray];
+         postgres [shape=tab, label="Postgres", style=filled, fillcolor=gray];
+         elasticsearch [shape=tab, label="Elasticsearch", style=filled, fillcolor=gray];
+         telemetry [shape=tab, label="Telemetry (S3)", style=filled, fillcolor=gray];
+         rabbitmq [shape=tab, label="RMQ", style=filled, fillcolor=gray];
+      }
+
+      subgraph processing {
+         rank=same;
+
+         processor [shape=rect, label="processor"];
+         crontabber [shape=rect, label="crontabber"];
+      }
+
+      webapp [shape=rect, label="webapp"];
+
+      client -> antenna [label="HTTP"];
+      antenna -> aws [label="save raw"];
+
+      aws -> pigeon [label="S3:PutObject"];
+      pigeon -> rabbitmq [label="crash id for processing"];
+
+      rabbitmq -> processor [label="crash id"];
+      aws -> processor [label="load raw"];
+      processor -> { aws, postgres, elasticsearch, telemetry } [label="save processed"];
+
+      postgres -> webapp;
+      aws -> webapp [label="load raw,processed"];
+      elasticsearch -> webapp [label="search"];
+
+      { rank=min; client; }
+   }
+
+
 .. Warning::
 
    August 17th, 2017. Everything below this point needs to be updated.
 
-
-.. image:: block-diagram.png
 
 Arrows direction represents the flow of interesting information (crashes,
 authentication assertions, cached values), not trivia like acks.
