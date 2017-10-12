@@ -16,6 +16,6 @@ set -e
 while true
 do
     python socorro/submitter/submitter_app.py || true
-    echo "Sleep 1 minutes..."
+    echo "Sleep 1 minute..."
     sleep 60
 done
