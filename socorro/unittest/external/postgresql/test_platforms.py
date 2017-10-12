@@ -2,11 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_
-
 from socorro.external.postgresql.platforms import Platforms
-
-from .unittestbase import PostgreSQLTestCase
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestPlatforms(PostgreSQLTestCase):
@@ -71,4 +68,4 @@ class IntegrationTestPlatforms(PostgreSQLTestCase):
             "total": 3
         }
 
-        eq_(res, res_expected)
+        assert res == res_expected

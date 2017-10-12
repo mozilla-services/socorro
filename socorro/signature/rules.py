@@ -10,6 +10,7 @@ import ujson
 
 from socorro import siglists
 from socorro.lib.treelib import tree_get
+from socorro.lib.util import drop_unicode
 
 
 SIGNATURE_MAX_LENGTH = 255
@@ -525,13 +526,24 @@ class AbortSignature(Rule):
             # Recent crash reports added some irrelevant information at the
             # beginning of the abort message. We want to remove that and keep
             # just the actual abort message.
-            abort_message = abort_message.split('###!!! ABORT:', 1)[1].strip()
+            abort_message = abort_message.split('###!!! ABORT:', 1)[1]
 
         if ': file ' in abort_message:
             # Abort messages contain a file name and a line number. Since
             # those are very likely to change between builds, we want to
             # remove those parts from the signature.
-            abort_message = abort_message.split(': file ', 1)[0].strip()
+            abort_message = abort_message.split(': file ', 1)[0]
+
+        if 'unable to find a usable font' in abort_message:
+            # "unable to find a usable font" messages include a parenthesized localized message. We
+            # want to remove that. Bug #1385966
+            open_paren = abort_message.find('(')
+            if open_paren != -1:
+                end_paren = abort_message.rfind(')')
+                if end_paren != -1:
+                    abort_message = abort_message[:open_paren] + abort_message[end_paren + 1:]
+
+        abort_message = drop_unicode(abort_message).strip()
 
         if len(abort_message) > 80:
             abort_message = abort_message[:77] + '...'

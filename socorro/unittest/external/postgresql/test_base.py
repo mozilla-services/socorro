@@ -2,16 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_, assert_raises
+import pytest
 
-from socorro.lib import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.unittest.testbase import TestCase
-
+from socorro.lib import DatabaseError
 from socorro.lib import util
-
-from .unittestbase import PostgreSQLTestCase
+from socorro.unittest.testbase import TestCase
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class TestPostgreSQLBase(TestCase):
@@ -61,8 +59,8 @@ class TestPostgreSQLBase(TestCase):
         products_exp = []
 
         (versions, products) = pgbase.parse_versions(versions_list, products)
-        eq_(versions, versions_list_exp)
-        eq_(products, products_exp)
+        assert versions == versions_list_exp
+        assert products == products_exp
 
         # Test 2: product:version and product only args
         versions_list = ["Firefox:9.0", "Fennec"]
@@ -71,8 +69,8 @@ class TestPostgreSQLBase(TestCase):
         products_exp = ["Fennec"]
 
         (versions, products) = pgbase.parse_versions(versions_list, products)
-        eq_(versions, versions_list_exp)
-        eq_(products, products_exp)
+        assert versions == versions_list_exp
+        assert products == products_exp
 
         # Test 3: product only args
         versions_list = ["Firefox", "Fennec"]
@@ -81,8 +79,8 @@ class TestPostgreSQLBase(TestCase):
         products_exp = ["Firefox", "Fennec"]
 
         (versions, products) = pgbase.parse_versions(versions_list, products)
-        eq_(versions, versions_list_exp)
-        eq_(products, products_exp)
+        assert versions == versions_list_exp
+        assert products == products_exp
 
 
 class IntegrationTestBase(PostgreSQLTestCase):
@@ -93,7 +91,13 @@ class IntegrationTestBase(PostgreSQLTestCase):
         super(IntegrationTestBase, self).setUp()
 
         cursor = self.connection.cursor()
-
+        # NOTE(willkg): Sometimes, there are items in the reports and this causes test_counts to
+        # fail. This truncates it first. It'd be nice to fix whatever is causing this problem,
+        # though.
+        cursor.execute("""
+            TRUNCATE reports CASCADE;
+        """)
+        self.connection.commit()
         cursor.execute("""
             INSERT INTO reports
             (id, date_processed, uuid, url, email, success, addons_checked)
@@ -135,11 +139,9 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # Verify that we've got 'timezone=utc' set
         sql = 'SHOW TIMEZONE'
         results = base.query(sql)
-        ok_(
-            'UTC' in results[0],
-            """Please set PostgreSQL to use the UTC timezone.
-               Documentation on how to do this is included in
-               the INSTALL instructions."""
+        assert 'UTC' in results[0], (
+            'Please set PostgreSQL to use the UTC timezone. Documentation on how to do this is '
+            'included in the installation instructions.'
         )
 
     def test_query(self):
@@ -148,20 +150,21 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # A working query
         sql = 'SELECT * FROM reports'
         results = base.query(sql)
-        eq_(len(results), 2)
-        ok_('http://mywebsite.com' in results[0])
-        ok_('admin@example.com' in results[1])
+        assert len(results) == 2
+        assert 'http://mywebsite.com' in results[0]
+        assert 'admin@example.com' in results[1]
 
         # A working query with parameters
         sql = 'SELECT * FROM reports WHERE url=%(url)s'
         params = {'url': 'http://mywebsite.com'}
         results = base.query(sql, params)
-        eq_(len(results), 1)
-        ok_('http://mywebsite.com' in results[0])
+        assert len(results) == 1
+        assert 'http://mywebsite.com' in results[0]
 
         # A failing query
         sql = 'SELECT FROM reports LIMIT notanumber'
-        assert_raises(DatabaseError, base.query, sql)
+        with pytest.raises(DatabaseError):
+            base.query(sql)
 
     def test_count(self):
         base = PostgreSQLBase(config=self.config)
@@ -169,14 +172,15 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # A working count
         sql = 'SELECT count(*) FROM reports'
         count = base.count(sql)
-        eq_(count, 2)
+        assert count == 2
 
         # A working count with parameters
         sql = 'SELECT count(*) FROM reports WHERE url=%(url)s'
         params = {'url': 'http://mywebsite.com'}
         count = base.count(sql, params)
-        eq_(count, 1)
+        assert count == 1
 
         # A failing count
         sql = 'SELECT count(`invalid_field_name`) FROM reports'
-        assert_raises(DatabaseError, base.count, sql)
+        with pytest.raises(DatabaseError):
+            base.count(sql)

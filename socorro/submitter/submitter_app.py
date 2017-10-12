@@ -5,20 +5,14 @@
 """This app will submit crashes to a socorro collector"""
 
 
-import time
 import json
-
-from os import (
-    path,
-    listdir
-)
+from os import path, listdir
+import time
 
 from configman import Namespace
 
-from socorro.app.fetch_transform_save_app import (
-    FetchTransformSaveWithSeparateNewCrashSourceApp,
-    main
-)
+from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
+from socorro.app.socorro_app import main
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     FileDumpsMapping,
@@ -62,7 +56,7 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             quit_check_callback
         )
 
-    def get_raw_crash(self, (prefix, path_tuple)):
+    def get_raw_crash(self, prefix, path_tuple):
         """default implemntation of fetching a raw_crash
 
         parameters:
@@ -73,7 +67,7 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
         with open(path_tuple[0]) as raw_crash_fp:
             return DotDict(json.load(raw_crash_fp))
 
-    def get_unredacted_processed(self, (prefix, path_tuple)):
+    def get_unredacted_processed(self, prefix, path_tuple):
         """default implemntation of fetching a processed_crash
 
         parameters:
@@ -146,8 +140,8 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             prefix = path.splitext(a_file_name)[0]
             crash_pathnames = [raw_crash_pathname]
             for dumpfilename in listdir(a_path):
-                if (dumpfilename.startswith(prefix) and
-                    dumpfilename.endswith(self.config.dump_suffix)):
+                expected_suffix = self.config.dump_suffix
+                if dumpfilename.startswith(prefix) and dumpfilename.endswith(expected_suffix):
                     crash_pathnames.append(
                         path.join(a_path, dumpfilename)
                     )
@@ -156,15 +150,6 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             # case however, we have only pathnames to work with. So we return
             # this (args, kwargs) form instead
             yield (((prefix, crash_pathnames), ), {})
-
-
-# this class was relocated to a more appropriate module and given a new name.
-# This import is offered for backwards compatibilty.  Note, that there has also
-# been an internal change to the required config, with the source
-# implementation moved into a namespace
-from socorro.external.postgresql.new_crash_source import (
-    DBCrashStorageWrapperNewCrashSource as DBSamplingCrashSource
-)
 
 
 class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
@@ -224,7 +209,7 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
         """
         if self.config.submitter.dry_run:
-            print crash_id
+            print(crash_id)
         else:
             raw_crash = self.source.get_raw_crash(crash_id)
             dumps = self.source.get_raw_dumps_as_files(crash_id)

@@ -1,19 +1,19 @@
-.. _generic_app-chapter:
+.. _socorro_app-chapter:
 
-====================================================
-How generic app and an example works using configman
-====================================================
+============================================
+How app and an example works using configman
+============================================
 
 The minimum app
 ===============
 
 To illustrate the example, let's look at an example of an app that uses
-``generic_app`` to leverage ``configman`` to run. Let's look at
+``socorro_app`` to leverage ``configman`` to run. Let's look at
 `weeklyReportsPartitions.py
 <https://github.com/mozilla/socorro/blob/master/socorro/cron/weeklyReportsPartitions.py>`_
 
-As you can see, it's a subclass of the `socorro.app.generic_app.App
-<https://github.com/mozilla/socorro/blob/master/socorro/app/generic_app.py>`_
+As you can see, it's a subclass of the `socorro.app.socorro_app.App
+<https://github.com/mozilla/socorro/blob/master/socorro/app/socorro_app.py>`_
 class which is a the-least-you-need wrapper for a minimal app. As you can see,
 it takes care of logging and executing your ``main`` function.
 
@@ -89,7 +89,7 @@ that depend on each other and uses functions in there to get its stuff together.
 How to override where config files are read
 ===========================================
 
-``generic_app`` supports multiple ways of picking up config files. The most
+``socorro_app`` supports multiple ways of picking up config files. The most
 basic option is the `--admin.conf=` option. E.g.::
 
   python myapp.py --admin.conf=/path/to/my.ini

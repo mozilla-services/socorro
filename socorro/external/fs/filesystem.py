@@ -156,4 +156,4 @@ def findFileGenerator(
 
 if __name__ == "__main__":
     for path, name, pathname in findFileGenerator("."):
-        print pathname
+        print(pathname)

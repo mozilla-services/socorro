@@ -6,6 +6,7 @@ import datetime
 import json
 
 import mock
+import pytest
 
 from socorro.lib.util import DotDict
 from socorro.external.boto.connection_context import (
@@ -573,7 +574,7 @@ class MultiplePathsTestCase(MultiplePathsBase):
         )
         mocked_get_key.return_value = None
 
-        with self.assertRaises(KeyNotFound):
+        with pytest.raises(KeyNotFound):
             connection_source.fetch(
                 'fff13cf0-5671-4496-ab89-47a922141114',
                 'raw_crash'

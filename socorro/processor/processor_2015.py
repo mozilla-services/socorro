@@ -85,8 +85,7 @@ def rule_sets_from_string(rule_sets_as_string):
         required_config = Namespace()
 
         names = []
-        for (name, tag, rule_set_class_str, action_str, default_rules_str) \
-            in rule_sets:
+        for (name, tag, rule_set_class_str, action_str, default_rules_str) in rule_sets:
             names.append(name)
             required_config.namespace(name)
             required_config[name].add_option(

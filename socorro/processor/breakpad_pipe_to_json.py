@@ -81,7 +81,6 @@ def pipe_dump_to_json_dump(pipe_dump_iterable):
     json_dump = DotDict()
     crashing_thread = None
     module_counter = 0
-    thread_counter = 0
     for a_line in pipe_dump_iterable:
         parts = a_line.split('|')
         if parts[0] == 'OS':
@@ -95,7 +94,7 @@ def pipe_dump_to_json_dump(pipe_dump_iterable):
             module_counter += 1
         else:
             try:
-                thread_number = int(parts[0])
+                int(parts[0])
             except (ValueError, IndexError):
                 continue  # unknow line type, ignore it
             _extract_frame_info(parts, json_dump)
@@ -198,7 +197,7 @@ def _extract_frame_info(frame_line, json_dump):
     thread_number = _get_int(frame_line, 0, None)
     if thread_number is None:
         return
-    if thread_number >=len(json_dump.threads):
+    if thread_number >= len(json_dump.threads):
         # threads are supposed to arrive in order.  We've not seen this thread
         # before, fill in a new entry in the 'threads' section of the json_dump
         # making sure that intervening missing threads have empty thread data

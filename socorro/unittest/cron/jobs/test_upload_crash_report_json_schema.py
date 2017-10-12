@@ -2,17 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from crontabber.app import CronTabber
 import mock
 
-from nose.tools import ok_
-
-from crontabber.app import CronTabber
+from socorro.schemas import CRASH_REPORT_JSON_SCHEMA_AS_STRING
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
-from socorro.schemas import CRASH_REPORT_JSON_SCHEMA_AS_STRING
 
 
 class TestUploadCrashReportJSONSchemaCronApp(IntegrationTestBase):
@@ -36,9 +33,9 @@ class TestUploadCrashReportJSONSchemaCronApp(IntegrationTestBase):
 
             information = self._load_structure()
             app_name = 'upload-crash-report-json-schema'
-            ok_(information[app_name])
-            ok_(not information[app_name]['last_error'])
-            ok_(information[app_name]['last_success'])
+            assert information[app_name]
+            assert not information[app_name]['last_error']
+            assert information[app_name]['last_success']
 
         key.set_contents_from_string.assert_called_with(
             CRASH_REPORT_JSON_SCHEMA_AS_STRING

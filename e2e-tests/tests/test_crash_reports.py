@@ -15,7 +15,8 @@ class TestCrashReports:
     _expected_products = [
         'Firefox',
         'Thunderbird',
-        'FennecAndroid']
+        'FennecAndroid',
+        'SeaMonkey']
 
     @pytest.mark.nondestructive
     def test_that_bugzilla_link_contain_current_site(self, base_url, selenium):
@@ -31,14 +32,6 @@ class TestCrashReports:
         assert 'Exploitable Crashes' not in csp.header.report_list
         csp.selenium.get(base_url + self._exploitability_url)
         assert 'Login Required' in csp.page_heading
-
-    @pytest.mark.nondestructive
-    @pytest.mark.xfail(reason="bug 1351757: Cease exposing SeaMonkey and bug 1292594: Fennec shouldn't be an option")
-    def test_that_products_are_sorted_correctly(self, base_url, selenium):
-        csp = CrashStatsHomePage(selenium, base_url).open()
-        products = csp.header.product_list
-
-        assert self._expected_products == products, 'Expected products not in the product dropdown'
 
     @pytest.mark.nondestructive
     @pytest.mark.parametrize('product', _expected_products)

@@ -4,23 +4,19 @@
 
 import datetime
 
-from nose.tools import eq_, assert_raises
+import pytest
 
-from socorro.lib import MissingArgumentError
-from socorro.lib.datetimeutil import UTC
 from socorro.external.postgresql.signature_first_date import (
     SignatureFirstDate,
 )
+from socorro.lib import MissingArgumentError
+from socorro.lib.datetimeutil import UTC
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
-from .unittestbase import PostgreSQLTestCase
 
-
-# =============================================================================
 class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
-    """Test socorro.external.postgresql.signature_first_date
-    .SignatureFirstDate class. """
+    """Test socorro.external.postgresql.signature_first_date.SignatureFirstDate class. """
 
-    # -------------------------------------------------------------------------
     def _insert_test_data(self):
         cursor = self.connection.cursor()
 
@@ -45,7 +41,6 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
 
         self.connection.commit()
 
-    # -------------------------------------------------------------------------
     def _delete_test_data(self):
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -54,29 +49,23 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
         """)
         self.connection.commit()
 
-    # -------------------------------------------------------------------------
     def setUp(self):
-        """Set up this test class by populating the signatures table with fake
-        data. """
+        """Set up this test class by populating the signatures table with fake data.
+
+        """
         super(IntegrationTestSignatureFirstDate, self).setUp()
         self._insert_test_data()
 
-    # -------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         self._delete_test_data()
         super(IntegrationTestSignatureFirstDate, self).tearDown()
 
-    # -------------------------------------------------------------------------
     def test_get(self):
         api = SignatureFirstDate(config=self.config)
 
-        # .....................................................................
         # Test 1: a valid signature
-        params = {
-            "signatures": "hey"
-        }
-        res = api.get(**params)
+        res = api.get(signatures='hey')
         res_expected = {
             "hits": [
                 {
@@ -90,15 +79,11 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
             ],
             "total": 1
         }
-        eq_(res['total'], res_expected['total'])
-        eq_(res, res_expected)
+        assert res['total'] == res_expected['total']
+        assert res == res_expected
 
-        # .....................................................................
         # Test 2: several signatures
-        params = {
-            "signatures": ["hey", "i_just_met_you()"]
-        }
-        res = api.get(**params)
+        res = api.get(signatures=["hey", "i_just_met_you()"])
         res_expected = {
             "hits": [
                 {
@@ -120,24 +105,17 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
             ],
             "total": 2
         }
+        assert res['total'] == res_expected['total']
+        assert res == res_expected
 
-        eq_(res['total'], res_expected['total'])
-        eq_(res, res_expected)
-
-        # .....................................................................
         # Test 3: a non-existent signature
-        params = {
-            "signatures": "unknown"
-        }
-        res = api.get(**params)
+        res = api.get(signatures='unknown')
         res_expected = {
             "hits": [],
             "total": 0
         }
+        assert res == res_expected
 
-        eq_(res, res_expected)
-
-        # .....................................................................
         # Test 4: missing argument
-        params = {}
-        assert_raises(MissingArgumentError, api.get, **params)
+        with pytest.raises(MissingArgumentError):
+            api.get()

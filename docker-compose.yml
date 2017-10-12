@@ -10,6 +10,15 @@ services:
       dockerfile: ./docker/Dockerfile
     image: local/socorro_base
 
+  # Docs building container
+  docs:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.docs
+    image: local/socorro_docs
+    volumes:
+      - .:/app
+
   # Processor app
   processor:
     build:

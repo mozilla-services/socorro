@@ -4,12 +4,11 @@
 
 import datetime
 
-from nose.tools import eq_, assert_raises
+import pytest
 
 from socorro.lib import MissingArgumentError
 from socorro.external.postgresql.adi import ADI
-
-from unittestbase import PostgreSQLTestCase
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestADI(PostgreSQLTestCase):
@@ -128,7 +127,7 @@ class IntegrationTestADI(PostgreSQLTestCase):
         cursor.execute('select count(*) from product_adu')
         count, = cursor.fetchone()
         # expect there to be 2 * 2 * 2 rows of product_adu
-        assert count == 8, count
+        assert count == 8
 
     def tearDown(self):
         self._truncate()
@@ -146,10 +145,9 @@ class IntegrationTestADI(PostgreSQLTestCase):
 
     def test_get(self):
         impl = ADI(config=self.config)
-        assert_raises(
-            MissingArgumentError,
-            impl.get
-        )
+        with pytest.raises(MissingArgumentError):
+            impl.get()
+
         start = self.date - datetime.timedelta(days=1)
         end = self.date
         stats = impl.get(
@@ -159,8 +157,8 @@ class IntegrationTestADI(PostgreSQLTestCase):
             versions=['42'],
             platforms=['Linux', 'Windows'],
         )
-        eq_(stats['hits'], [])
-        eq_(stats['total'], 0)
+        assert stats['hits'] == []
+        assert stats['total'] == 0
 
         stats = impl.get(
             start_date=start,
@@ -169,14 +167,16 @@ class IntegrationTestADI(PostgreSQLTestCase):
             versions=['40.0'],
             platforms=['Linux', 'Windows'],
         )
-        eq_(stats['total'], 1)
+        assert stats['total'] == 1
+
         hit, = stats['hits']
-        eq_(hit, {
+        expected = {
             'adi_count': 64L + 16L,
             'date': start.date(),
             'version': '40.0',
             'build_type': 'release'
-        })
+        }
+        assert hit == expected
 
         stats = impl.get(
             start_date=start,
@@ -185,14 +185,15 @@ class IntegrationTestADI(PostgreSQLTestCase):
             versions=['39.0b'],
             platforms=['Linux', 'Windows'],
         )
-        eq_(stats['total'], 1)
+        assert stats['total'] == 1
         hit, = stats['hits']
-        eq_(hit, {
+        expected = {
             'adi_count': 4 + 1L,
             'date': start.date(),
             'version': '39.0b1',
             'build_type': 'release'
-        })
+        }
+        assert hit == expected
 
         stats = impl.get(
             start_date=start,
@@ -201,4 +202,4 @@ class IntegrationTestADI(PostgreSQLTestCase):
             versions=['39.0b', '40.0'],
             platforms=['Linux', 'Windows'],
         )
-        eq_(stats['total'], 2)
+        assert stats['total'] == 2

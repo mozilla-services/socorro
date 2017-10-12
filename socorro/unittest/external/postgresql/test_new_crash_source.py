@@ -2,25 +2,23 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from itertools import izip_longest
 from datetime import date
-
-from mock import Mock
-from nose.tools import eq_, ok_
+from itertools import izip_longest
 
 from configman.dotdict import DotDict as ConfigmanDotDict
+from mock import Mock
 
-from socorro.unittest.testbase import TestCase
 from socorro.external.postgresql.new_crash_source import (
     PGQueryNewCrashSource,
     DBCrashStorageWrapperNewCrashSource,
     PGPVNewCrashSource
 )
-from socorro.lib.util import DotDict as SocorroDotDict
 from socorro.external.crashstorage_base import (
     FileDumpsMapping,
     MemoryDumpsMapping
 )
+from socorro.lib.util import DotDict as SocorroDotDict
+from socorro.unittest.testbase import TestCase
 
 
 class NewCrashSourceTestBase(TestCase):
@@ -52,8 +50,8 @@ class TestPGQueryNewCrashSource(NewCrashSourceTestBase):
         crash_source.close()
 
         # this is what should have happened
-        ok_(crash_source.config is config)
-        eq_(crash_source.name, 'fred')
+        assert crash_source.config is config
+        assert crash_source.name == 'fred'
         config.database_class.assert_called_once_with(config)
         config.transaction_executor_class.assert_called_once_with(
             config,
@@ -72,14 +70,9 @@ class TestPGQueryNewCrashSource(NewCrashSourceTestBase):
             self.expected_sequence,
             crash_source())
         ):
-            eq_(exp, actual)
+            assert exp == actual
 
-        eq_(
-            i,
-            4,
-            'there should have been exactly 5 iterations, instead: %d'
-            % (i + 1)
-        )
+        assert i == 4
 
 
 class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
@@ -102,7 +95,7 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         db_sampling.close()
 
         # this is what should have happened
-        ok_(db_sampling.config is config)
+        assert db_sampling.config is config
         config.database_class.assert_called_once_with(config)
         config.transaction_executor_class.assert_called_once_with(
             config,
@@ -125,14 +118,9 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
             self.expected_sequence,
             db_sampling.new_crashes())
         ):
-            eq_(exp, actual)
+            assert exp == actual
 
-        eq_(
-            i,
-            4,
-            'there should have been exactly 5 iterations, instead: %d'
-            % (i + 1)
-        )
+        assert i == 4
 
     def test_get_raw_crash(self):
         config = self.get_standard_config()
@@ -151,7 +139,7 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         raw_crash = db_sampling.get_raw_crash(crash_id)
 
         # this is what should have happened
-        ok_(fake_raw_crash is raw_crash)
+        assert fake_raw_crash is raw_crash
         db_sampling._implementation.get_raw_crash.assert_called_with(crash_id)
 
     def test_get_raw_dump(self):
@@ -164,13 +152,10 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         db_sampling._implementation.get_raw_dump = mocked_get_raw_dump
 
         # the call to be tested
-        raw_dump = db_sampling.get_raw_dump(
-            crash_id,
-            'fred'
-        )
+        raw_dump = db_sampling.get_raw_dump(crash_id, 'fred')
 
         # this is what should have happened
-        ok_(fake_dump is raw_dump)
+        assert fake_dump is raw_dump
         db_sampling._implementation.get_raw_dump.assert_called_with(
             crash_id,
             'fred'
@@ -192,7 +177,7 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         raw_dumps = db_sampling.get_raw_dumps(crash_id)
 
         # this is what should have happened
-        ok_(fake_raw_dumps is raw_dumps)
+        assert fake_raw_dumps is raw_dumps
         db_sampling._implementation.get_raw_dumps.assert_called_with(crash_id)
 
     def test_get_raw_dumps_as_files(self):
@@ -206,16 +191,14 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
                 '.upload_file_minidump.TEMPORARY.dump'
         })
         mocked_get_raw_dumps_as_files = Mock(return_value=fake_dumps_as_files)
-        db_sampling._implementation.get_raw_dumps_as_files = \
-            mocked_get_raw_dumps_as_files
+        db_sampling._implementation.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
 
         # the call to be tested
         raw_dumps_as_files = db_sampling.get_raw_dumps_as_files(crash_id)
 
         # this is what should have happened
-        ok_(fake_dumps_as_files is raw_dumps_as_files)
-        db_sampling._implementation.get_raw_dumps_as_files \
-            .assert_called_with(crash_id)
+        assert fake_dumps_as_files is raw_dumps_as_files
+        db_sampling._implementation.get_raw_dumps_as_files.assert_called_with(crash_id)
 
     def test_get_processed(self):
         config = self.get_standard_config()
@@ -234,7 +217,7 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         processed = db_sampling.get_processed(crash_id)
 
         # this is what should have happened
-        ok_(fake_processed is processed)
+        assert fake_processed is processed
         db_sampling._implementation.get_processed.assert_called_with(crash_id)
 
     def test_get_unredacted_processed(self):
@@ -248,16 +231,14 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         })
 
         mocked_get_processed = Mock(return_value=fake_processed)
-        db_sampling._implementation.get_unredacted_processed = \
-            mocked_get_processed
+        db_sampling._implementation.get_unredacted_processed = mocked_get_processed
 
         # the call to be tested
         processed = db_sampling.get_unredacted_processed(crash_id)
 
         # this is what should have happened
-        ok_(fake_processed is processed)
-        db_sampling._implementation.get_unredacted_processed \
-            .assert_called_with(crash_id)
+        assert fake_processed is processed
+        db_sampling._implementation.get_unredacted_processed.assert_called_with(crash_id)
 
     def test_remove(self):
         config = self.get_standard_config()
@@ -268,8 +249,7 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         db_sampling.remove(crash_id)
 
         # this is what should have happened
-        db_sampling._implementation.remove \
-            .assert_called_with(crash_id)
+        db_sampling._implementation.remove.assert_called_with(crash_id)
 
     def test_save_raw_crash(self):
         config = self.get_standard_config()
@@ -323,12 +303,11 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         )
 
         # this is what should have happened
-        db_sampling._implementation.save_raw_crash_with_file_dumps \
-            .assert_called_once_with(
-                fake_raw_crash,
-                fake_dumps_as_files,
-                crash_id
-            )
+        db_sampling._implementation.save_raw_crash_with_file_dumps.assert_called_once_with(
+            fake_raw_crash,
+            fake_dumps_as_files,
+            crash_id
+        )
 
     def test_save_processed(self):
         config = self.get_standard_config()
@@ -375,13 +354,12 @@ class TestDBSamplingCrashStorageWrapper(NewCrashSourceTestBase):
         )
 
         # this is what should have happened
-        db_sampling._implementation.save_raw_and_processed \
-            .assert_called_once_with(
-                fake_raw_crash,
-                fake_dumps_as_files,
-                fake_processed,
-                crash_id
-            )
+        db_sampling._implementation.save_raw_and_processed.assert_called_once_with(
+            fake_raw_crash,
+            fake_dumps_as_files,
+            fake_processed,
+            crash_id
+        )
 
 
 class TestPGPVNewCrashSource(NewCrashSourceTestBase):
@@ -410,7 +388,7 @@ class TestPGPVNewCrashSource(NewCrashSourceTestBase):
         a_new_crash_source.close()
 
         # this is what should have happened
-        ok_(a_new_crash_source.config is config)
+        assert a_new_crash_source.config is config
         config.database_class.assert_called_once_with(config)
         config.transaction_executor_class.assert_called_once_with(
             config,
@@ -418,15 +396,11 @@ class TestPGPVNewCrashSource(NewCrashSourceTestBase):
             quit_check_callback=None
         )
         a_new_crash_source.database.close.assert_called_once_with()
-        eq_(
-            a_new_crash_source.data,
-            (
-                date(2015, 10, 18),
-                date(2015, 10, 19),
-                date(2015, 10, 18),
-            )
+        expected = (
+            date(2015, 10, 18),
+            date(2015, 10, 19),
+            date(2015, 10, 18),
         )
-        eq_(
-            a_new_crash_source.crash_id_query,
-            config.crash_id_query
-        )
+
+        assert a_new_crash_source.data == expected
+        assert a_new_crash_source.crash_id_query == config.crash_id_query

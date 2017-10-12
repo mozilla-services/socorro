@@ -4,7 +4,6 @@
 
 import os
 import json
-from nose.tools import eq_, ok_
 
 from socorro.processor.rules.memory_report_extraction import (
     MemoryReportExtraction,
@@ -40,7 +39,7 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash['json_dump'] = {'pid': 42}
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(predicate_result)
+        assert predicate_result
 
     def test_predicate_no_match(self):
         config = self.get_config()
@@ -49,17 +48,17 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash = {}
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert not predicate_result
 
         processed_crash['memory_report'] = {}
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert not predicate_result
 
         processed_crash['json_dump'] = {
             'pid': None,
         }
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert not predicate_result
 
     def test_predicate_failure_bad_unrecognizable(self):
         config = self.get_config()
@@ -72,7 +71,7 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash['json_dump'] = {'pid': 11620}
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
-        ok_(not predicate_result)
+        assert not predicate_result
 
     def test_action_success(self):
         config = self.get_config()
@@ -85,8 +84,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash['json_dump'] = {'pid': 11620}
 
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(action_result)
-        ok_('memory_measures' in processed_crash)
+        assert action_result
+        assert 'memory_measures' in processed_crash
 
         expected_res = {
             'explicit': 232227872,
@@ -106,14 +105,14 @@ class TestMemoryReportExtraction(TestCase):
             'vsize': 1481437184,
             'vsize_max_contiguous': 2834628,
         }
-        eq_(processed_crash['memory_measures'], expected_res)
+        assert processed_crash['memory_measures'] == expected_res
 
         # Test with a different pid.
         processed_crash['json_dump']['pid'] = 11717
 
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(action_result)
-        ok_('memory_measures' in processed_crash)
+        assert action_result
+        assert 'memory_measures' in processed_crash
 
         expected_res = {
             'explicit': 20655576,
@@ -133,7 +132,7 @@ class TestMemoryReportExtraction(TestCase):
             'vsize': 905883648,
             'vsize_max_contiguous': 5824618,
         }
-        eq_(processed_crash['memory_measures'], expected_res)
+        assert processed_crash['memory_measures'] == expected_res
 
     def test_action_failure_bad_kind(self):
         config = self.get_config()
@@ -146,8 +145,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash['json_dump'] = {'pid': 11620}
 
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(not action_result)
-        ok_('memory_measures' not in processed_crash)
+        assert not action_result
+        assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(
             'Unable to extract measurements from memory report: '
@@ -165,8 +164,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash['json_dump'] = {'pid': 11620}
 
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(not action_result)
-        ok_('memory_measures' not in processed_crash)
+        assert not action_result
+        assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(
             'Unable to extract measurements from memory report: '
@@ -184,8 +183,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash['json_dump'] = {'pid': 12345}
 
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(not action_result)
-        ok_('memory_measures' not in processed_crash)
+        assert not action_result
+        assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(
             'Unable to extract measurements from memory report: '
@@ -203,8 +202,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash['json_dump'] = {'pid': 11620}
 
         action_result = rule.action({}, {}, processed_crash, {})
-        ok_(not action_result)
-        ok_('memory_measures' not in processed_crash)
+        assert not action_result
+        assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(
             'Unable to extract measurements from memory report: '
