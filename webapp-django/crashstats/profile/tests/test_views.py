@@ -1,5 +1,4 @@
 import pyquery
-from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 
@@ -50,7 +49,7 @@ class TestViews(BaseTestViews):
 
         # Test that the user must be signed in.
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         self.assertRedirects(
             response,
             reverse('crashstats:login') + '?next=%s' % url
@@ -61,10 +60,10 @@ class TestViews(BaseTestViews):
 
         # Test with results and check email is there.
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('1234abcd-ef56-7890-ab12-abcdef130801' in response.content)
-        ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
-        ok_('test@example.com' in response.content)
+        assert response.status_code == 200
+        assert '1234abcd-ef56-7890-ab12-abcdef130801' in response.content
+        assert '1234abcd-ef56-7890-ab12-abcdef130802' in response.content
+        assert 'test@example.com' in response.content
 
         SuperSearchUnredacted.implementation().get.side_effect = (
             mocked_supersearch_get_no_data
@@ -72,9 +71,9 @@ class TestViews(BaseTestViews):
 
         # Test with no results.
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('test@example.com' in response.content)
-        ok_('no crash report' in response.content)
+        assert response.status_code == 200
+        assert 'test@example.com' in response.content
+        assert 'no crash report' in response.content
 
         # Make some permissions.
         self._create_group_with_permission(
@@ -89,23 +88,23 @@ class TestViews(BaseTestViews):
 
         # Test permissions.
         response = self.client.get(url)
-        ok_(PERMISSIONS['view_pii'] in response.content)
-        ok_(PERMISSIONS['view_exploitability'] in response.content)
+        assert PERMISSIONS['view_pii'] in response.content
+        assert PERMISSIONS['view_exploitability'] in response.content
         doc = pyquery.PyQuery(response.content)
         for row in doc('table.permissions tbody tr'):
             cells = []
             for td in doc('td', row):
                 cells.append(td.text.strip())
             if cells[0] == PERMISSIONS['view_pii']:
-                eq_(cells[1], 'No')
+                assert cells[1] == 'No'
             elif cells[0] == PERMISSIONS['view_exploitability']:
-                eq_(cells[1], 'Yes!')
+                assert cells[1] == 'Yes!'
 
         # If the user ceases to be active, this page should redirect instead
         user.is_active = False
         user.save()
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         self.assertRedirects(
             response,
             reverse('crashstats:login') + '?next=%s' % url
@@ -117,19 +116,19 @@ class TestViews(BaseTestViews):
         that template has a link to the profile page."""
         url = reverse('home:home', args=('WaterWolf',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         profile_url = reverse('profile:profile')
-        ok_(profile_url not in response.content)
+        assert profile_url not in response.content
 
         # Render again when signed in
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_(profile_url in response.content)
+        assert response.status_code == 200
+        assert profile_url in response.content
 
         # Render again when no longer an active user
         user.is_active = False
         user.save()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_(profile_url not in response.content)
+        assert response.status_code == 200
+        assert profile_url not in response.content
