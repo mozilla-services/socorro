@@ -209,10 +209,11 @@ class FaviconTestViews(DjangoTestCase):
         response = self.client.get('/favicon.ico')
         assert response.status_code == 200
         # the content type is dependent on the OS
-        assert response['Content-Type'] in (
+        expected = (
             'image/x-icon',  # most systems
             'image/vnd.microsoft.icon'  # jenkins for example
         )
+        assert response['Content-Type'] in expected
 
 
 class BaseTestViews(DjangoTestCase):
