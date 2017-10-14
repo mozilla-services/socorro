@@ -1,5 +1,3 @@
-from nose.tools import eq_, ok_
-
 from django.contrib.auth.models import ContentType, Permission
 
 from crashstats.base.tests.testbase import DjangoTestCase
@@ -15,8 +13,8 @@ class TestForms(DjangoTestCase):
             'in_database_name': 'foo',
             'form_field_choices': 'a, b,c , ',
         })
-        ok_(form.is_valid())
-        eq_(form.cleaned_data['form_field_choices'], ['a', 'b', 'c'])
+        assert form.is_valid()
+        assert form.cleaned_data['form_field_choices'] == ['a', 'b', 'c']
 
         # Test permissions are correctly filtered.
         appname = 'crashstats'
@@ -36,8 +34,5 @@ class TestForms(DjangoTestCase):
             'in_database_name': 'foo',
             'permissions_needed': 'crashstats.view_foobar, crashstats.unknown',
         })
-        ok_(form.is_valid())
-        eq_(
-            form.cleaned_data['permissions_needed'],
-            ['crashstats.view_foobar']
-        )
+        assert form.is_valid()
+        assert form.cleaned_data['permissions_needed'] == ['crashstats.view_foobar']
