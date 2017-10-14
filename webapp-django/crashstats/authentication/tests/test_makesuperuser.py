@@ -1,8 +1,8 @@
 import contextlib
 from StringIO import StringIO
 
-from nose.tools import ok_, assert_raises
 import mock
+import pytest
 
 from django.contrib.auth.models import User
 from django.core.management.base import CommandError
@@ -35,9 +35,9 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         buffer = StringIO()
         with redirect_stdout(buffer):
             cmd.handle(emailaddress=['BOB@mozilla.com'])
-        ok_('bob@mozilla.com is now a superuser' in buffer.getvalue())
+        assert 'bob@mozilla.com is now a superuser' in buffer.getvalue()
         # reload
-        ok_(User.objects.get(pk=bob.pk, is_superuser=True))
+        assert User.objects.get(pk=bob.pk, is_superuser=True)
 
     def test_make_already_user(self):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
@@ -47,9 +47,9 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         buffer = StringIO()
         with redirect_stdout(buffer):
             cmd.handle(emailaddress=['BOB@mozilla.com'])
-        ok_('bob@mozilla.com was already a superuser' in buffer.getvalue())
+        assert 'bob@mozilla.com was already a superuser' in buffer.getvalue()
         # reload
-        ok_(User.objects.get(pk=bob.pk, is_superuser=True))
+        assert User.objects.get(pk=bob.pk, is_superuser=True)
 
     def test_make_two_user_superuser(self):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
@@ -60,8 +60,8 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         buffer = StringIO()
         with redirect_stdout(buffer):
             cmd.handle(emailaddress=['BOB@mozilla.com', 'oTTo@mozilla.com'])
-        ok_(User.objects.get(pk=bob.pk, is_superuser=True))
-        ok_(User.objects.get(pk=otto.pk, is_superuser=True))
+        assert User.objects.get(pk=bob.pk, is_superuser=True)
+        assert User.objects.get(pk=otto.pk, is_superuser=True)
 
     def test_nonexisting_user(self):
         cmd = makesuperuser.Command()
@@ -69,8 +69,8 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         email = 'neverheardof@mozilla.com'
         with redirect_stdout(buffer):
             cmd.handle(emailaddress=[email])
-        ok_(User.objects.get(email=email, is_superuser=True))
-        ok_('{} is now a superuser'.format(email) in buffer.getvalue())
+        assert User.objects.get(email=email, is_superuser=True)
+        assert '{} is now a superuser'.format(email) in buffer.getvalue()
 
     @mock.patch(
         'crashstats.authentication.management.commands.makesuperuser.'
@@ -84,7 +84,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         with redirect_stdout(buffer):
             cmd.handle(emailaddress=[])
         # reload
-        ok_(User.objects.get(email='bob@mozilla.com', is_superuser=True))
+        assert User.objects.get(email='bob@mozilla.com', is_superuser=True)
 
     @mock.patch(
         'crashstats.authentication.management.commands.makesuperuser.'
@@ -93,8 +93,5 @@ class TestMakeSuperuserCommand(DjangoTestCase):
     )
     def test_with_raw_input_but_empty(self, mocked_raw_input):
         cmd = makesuperuser.Command()
-        assert_raises(
-            CommandError,
-            cmd.handle,
-            emailaddress=[]
-        )
+        with pytest.raises(CommandError):
+            cmd.handle(emailaddress=[])
