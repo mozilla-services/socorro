@@ -1,5 +1,4 @@
 import mock
-from nose.tools import eq_, ok_
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.api.cleaner import Cleaner, SmartWhitelistMatcher
@@ -30,7 +29,7 @@ class TestCleaner(TestCase):
                  'bar': 5},
             ]
         }
-        eq_(data, expect)
+        assert data == expect
 
     @mock.patch('warnings.warn')
     def test_simplest_case_with_warning(self, p_warn):
@@ -75,7 +74,7 @@ class TestCleaner(TestCase):
                 'bar': 8,
             },
         }
-        eq_(data, expect)
+        assert data == expect
 
     def test_simple_list(self):
         whitelist = ('foo', 'bar')
@@ -103,7 +102,7 @@ class TestCleaner(TestCase):
                 'bar': 8,
             },
         ]
-        eq_(data, expect)
+        assert data == expect
 
     def test_plain_dict(self):
         whitelist = ('foo', 'bar')
@@ -118,7 +117,7 @@ class TestCleaner(TestCase):
             'foo': 1,
             'bar': 2,
         }
-        eq_(data, expect)
+        assert data == expect
 
     def test_dict_data_with_lists(self):
         whitelist = {
@@ -152,7 +151,7 @@ class TestCleaner(TestCase):
                 ]
             }
         }
-        eq_(data, expect)
+        assert data == expect
 
     def test_all_dict_data_deeper(self):
         whitelist = {Cleaner.ANY: {Cleaner.ANY: ('foo', 'bar')}}
@@ -206,7 +205,7 @@ class TestCleaner(TestCase):
                 }
             },
         }
-        eq_(data, expect)
+        assert data == expect
 
     def test_with_scrubber_cleaning(self):
         whitelist = {'hits': ('foo', 'bar', 'baz')}
@@ -240,7 +239,7 @@ class TestCleaner(TestCase):
                  'baz': "talk to bill@gates.com"},
             ]
         }
-        eq_(data, expect)
+        assert data == expect
 
 
 class TestSmartWhitelistMatcher(TestCase):
@@ -248,9 +247,9 @@ class TestSmartWhitelistMatcher(TestCase):
     def test_basic_in(self):
         whitelist = ['some', 'thing*']
         matcher = SmartWhitelistMatcher(whitelist)
-        ok_('some' in matcher)
-        ok_('something' not in matcher)
-        ok_('awesome' not in matcher)
-        ok_('thing' in matcher)
-        ok_('things' in matcher)
-        ok_('nothing' not in matcher)
+        assert 'some' in matcher
+        assert 'something' not in matcher
+        assert 'awesome' not in matcher
+        assert 'thing' in matcher
+        assert 'things' in matcher
+        assert 'nothing' not in matcher
