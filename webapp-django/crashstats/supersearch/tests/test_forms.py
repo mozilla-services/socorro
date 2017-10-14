@@ -1,5 +1,3 @@
-from nose.tools import eq_, ok_
-
 from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import forms
 from crashstats.supersearch.tests.common import (
@@ -70,12 +68,14 @@ class TestForms(TestCase):
         form = get_new_form({
             'product': 'WaterWolf'
         })
-        ok_(not form.is_valid())  # expect values as lists
+        # expect values as lists
+        assert not form.is_valid()
 
         form = get_new_form({
             'date': '2012-01-16 12:23:34324234'
         })
-        ok_(not form.is_valid())  # invalid datetime
+        # invalid datetime
+        assert not form.is_valid()
 
         # Test all valid data
         form = get_new_form({
@@ -87,16 +87,16 @@ class TestForms(TestCase):
             'reason': ['some reason'],
             'build_id': '<20200101344556',
         })
-        ok_(form.is_valid(), form.errors)
+        assert form.is_valid()
 
         # Verify admin restricted fields are not accepted
         form = get_new_form({
             'email': 'something',
             'exploitability': 'high'
         })
-        ok_(form.is_valid(), form.errors)
-        ok_('email' not in form.fields)
-        ok_('exploitability' not in form.fields)
+        assert form.is_valid()
+        assert 'email' not in form.fields
+        assert 'exploitability' not in form.fields
 
     def test_search_form_with_admin_mode(self):
 
@@ -120,12 +120,14 @@ class TestForms(TestCase):
         form = get_new_form({
             'product': 'WaterWolf'
         })
-        ok_(not form.is_valid())  # expect values as lists
+        # expect values as lists
+        assert not form.is_valid()
 
         form = get_new_form({
             'date': '2012-01-16 12:23:34324234'
         })
-        ok_(not form.is_valid())  # invalid datetime
+        # invalid datetime
+        assert not form.is_valid()
 
         # Test all valid data
         form = get_new_form({
@@ -140,12 +142,12 @@ class TestForms(TestCase):
             'url': ['$http://'],
             'exploitability': ['high', 'medium'],
         })
-        ok_(form.is_valid(), form.errors)
+        assert form.is_valid()
 
         # Verify admin restricted fields are accepted
-        ok_('email' in form.fields)
-        ok_('url' in form.fields)
-        ok_('exploitability' in form.fields)
+        assert 'email' in form.fields
+        assert 'url' in form.fields
+        assert 'exploitability' in form.fields
 
     def test_get_fields_list(self):
 
@@ -170,7 +172,7 @@ class TestForms(TestCase):
         assert form.is_valid()
 
         fields = form.get_fields_list()
-        ok_('version' in fields)
+        assert 'version' in fields
 
         # Verify there's only one occurence of the version.
-        eq_(fields['version']['values'].count('20.0'), 1)
+        assert fields['version']['values'].count('20.0') == 1
