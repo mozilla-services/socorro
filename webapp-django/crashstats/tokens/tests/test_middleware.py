@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from nose.tools import eq_, ok_, assert_raises
+import pytest
 
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
@@ -24,11 +24,8 @@ class TestMiddleware(DjangoTestCase):
 
     def test_impropertly_configured(self):
         request = RequestFactory().get('/')
-        assert_raises(
-            ImproperlyConfigured,
-            self.middleware.process_request,
-            request
-        )
+        with pytest.raises(ImproperlyConfigured):
+            self.middleware.process_request(request)
 
     def _get_request(self, **headers):
         # boilerplate stuff
@@ -40,16 +37,16 @@ class TestMiddleware(DjangoTestCase):
 
     def test_no_token_key(self):
         request = self._get_request()
-        eq_(self.middleware.process_request(request), None)
+        assert self.middleware.process_request(request) is None
 
     def test_non_existant_token_key(self):
         request = self._get_request(HTTP_AUTH_TOKEN='xxx')
 
         response = self.middleware.process_request(request)
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
         # the response content will be JSON
         result = json.loads(response.content)
-        eq_(result['error'], 'API Token not matched')
+        assert result['error'] == 'API Token not matched'
 
     def test_expired_token(self):
         user = User.objects.create(username='peterbe')
@@ -63,9 +60,9 @@ class TestMiddleware(DjangoTestCase):
         request = self._get_request(HTTP_AUTH_TOKEN=token.key)
 
         response = self.middleware.process_request(request)
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
         result = json.loads(response.content)
-        eq_(result['error'], 'API Token found but expired')
+        assert result['error'] == 'API Token found but expired'
 
     def test_token_valid(self):
         user = User.objects.create(username='peterbe')
@@ -75,8 +72,8 @@ class TestMiddleware(DjangoTestCase):
         request = self._get_request(HTTP_AUTH_TOKEN=token.key)
 
         response = self.middleware.process_request(request)
-        eq_(response, None)
-        eq_(request.user, user)
+        assert response is None
+        assert request.user == user
 
     def test_token_permissions(self):
         user = User.objects.create(username='peterbe')
@@ -101,9 +98,9 @@ class TestMiddleware(DjangoTestCase):
         request = self._get_request(HTTP_AUTH_TOKEN=token.key)
         # do the magic to the request
         self.middleware.process_request(request)
-        eq_(request.user, user)
-        ok_(request.user.has_perm('crashstats.play'))
-        ok_(not request.user.has_perm('crashstats.fire'))
+        assert request.user == user
+        assert request.user.has_perm('crashstats.play')
+        assert not request.user.has_perm('crashstats.fire')
 
     def test_token_on_inactive_user(self):
         user = User.objects.create(username='peterbe')
@@ -115,6 +112,6 @@ class TestMiddleware(DjangoTestCase):
         request = self._get_request(HTTP_AUTH_TOKEN=token.key)
 
         response = self.middleware.process_request(request)
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
         result = json.loads(response.content)
-        eq_(result['error'], 'User of API token not active')
+        assert result['error'] == 'User of API token not active'
