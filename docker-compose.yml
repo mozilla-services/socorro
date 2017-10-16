@@ -87,8 +87,12 @@ services:
   # -----------------------------
 
   # https://hub.docker.com/r/mozilla/antenna/
+  #
   # This seems weird, but for the purposes of Socorro, we should treat
   # it as an external service.
+  #
+  # This uses the development ./bin/run_web.sh script from the Antenna
+  # container since that creates a bucket before running Antenna.
   antenna:
     image: mozilla/antenna:latest
     environment:
@@ -101,6 +105,7 @@ services:
       - CRASHSTORAGE_BUCKET_NAME=dev_bucket
     ports:
       - "8888:8000"
+    command: ./bin/run_web.sh
 
   # https://hub.docker.com/r/kamon/grafana_graphite/
   # username: admin, password: admin
