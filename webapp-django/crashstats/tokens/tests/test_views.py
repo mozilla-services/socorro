@@ -1,5 +1,4 @@
 import pyquery
-from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
@@ -38,7 +37,7 @@ class TestViews(BaseTestViews):
 
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         user.is_active = False
         user.save()
@@ -52,10 +51,10 @@ class TestViews(BaseTestViews):
         url = reverse('tokens:home')
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # which choices you have depend in your owned permissions
         doc = pyquery.PyQuery(response.content)
-        eq_(len(doc('#id_permissions')), 0)
+        assert len(doc('#id_permissions')) == 0
 
         p1 = self._make_permission('Make a mess', 'make-mess')
         p2 = self._make_permission('Clean Things', 'cool-things')
@@ -70,10 +69,10 @@ class TestViews(BaseTestViews):
         assert user.has_perm('crashstats.%s' % p3.codename)
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # which choices you have depend in your owned permissions
         doc = pyquery.PyQuery(response.content)
-        eq_(len(doc('#id_permissions option')), 2)
+        assert len(doc('#id_permissions option')) == 2
 
     def test_generate_new_token(self):
         url = reverse('tokens:home')
@@ -95,18 +94,18 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, {
             'notes': ' Some notes ',
         })
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         token, = models.Token.objects.all()
-        eq_(token.notes, 'Some notes')
-        eq_(token.permissions.all().count(), 0)
+        assert token.notes == 'Some notes'
+        assert token.permissions.all().count() == 0
         token.delete()
 
         # The 'notes' field can't been too long
         response = self.client.post(url, {
             'notes': 'X' * 10000,
         })
-        eq_(response.status_code, 200)
-        ok_('Text too long' in response.content)
+        assert response.status_code == 200
+        assert 'Text too long' in response.content
 
         group = Group.objects.create(name='Cool people')
         group.permissions.add(p1)
@@ -119,20 +118,20 @@ class TestViews(BaseTestViews):
         })
         # Because you tried to assign this token permissions you
         # don't have.
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         response = self.client.post(url, {
             'notes': ' Some notes ',
             'permissions': [p1.pk, p3.pk]
         })
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         token, = models.Token.objects.active().filter(user=user)
-        eq_(set(token.permissions.all()), set([p1, p3]))
+        assert set(token.permissions.all()) == set([p1, p3])
 
         # this should be listed on the home page now
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('data-key="{}"'.format(token.key) in response.content)
+        assert response.status_code == 200
+        assert 'data-key="{}"'.format(token.key) in response.content
 
     def test_delete_token(self):
         user = self._login()
@@ -148,13 +147,13 @@ class TestViews(BaseTestViews):
         url = reverse('tokens:delete_token', args=(token1.pk,))
         # Just like a good logout endpoint, shouldn't be able to GET there.
         response = self.client.get(url)
-        eq_(response.status_code, 405)
+        assert response.status_code == 405
         # It has to be post.
         response = self.client.post(url)
-        eq_(response.status_code, 302)
-        ok_(not models.Token.objects.filter(notes='Some note'))
+        assert response.status_code == 302
+        assert not models.Token.objects.filter(notes='Some note')
 
         # but you can't delete someone elses
         url = reverse('tokens:delete_token', args=(token_other_user.pk,))
         response = self.client.post(url)
-        eq_(response.status_code, 404)
+        assert response.status_code == 404

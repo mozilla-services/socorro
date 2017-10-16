@@ -1,7 +1,5 @@
 import datetime
 
-from nose.tools import eq_, ok_
-
 from django.utils import timezone
 from django.contrib.auth.models import User, Permission, Group
 from django.conf import settings
@@ -18,19 +16,16 @@ class TestModels(DjangoTestCase):
             user=bob,
             notes='Some notes'
         )
-        eq_(len(token.key), 32)
+        assert len(token.key) == 32
 
         now = timezone.now()
         future = now + datetime.timedelta(
             days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS
         )
-        eq_(
-            token.expires.strftime('%Y%m%d%H%M'),
-            future.strftime('%Y%m%d%H%M')
-        )
+        assert token.expires.strftime('%Y%m%d%H%M') == future.strftime('%Y%m%d%H%M')
 
         # using __repr__ shouldn't reveal the key
-        ok_(token.key not in repr(token))
+        assert token.key not in repr(token)
 
     def test_token_manager(self):
         bob = User.objects.create(username='bob')
@@ -45,8 +40,8 @@ class TestModels(DjangoTestCase):
             notes='First one',
             expires=now
         )
-        eq_(models.Token.objects.all().count(), 2)
-        eq_(models.Token.objects.active().count(), 1)
+        assert models.Token.objects.all().count() == 2
+        assert models.Token.objects.active().count() == 1
 
     def test_is_expired(self):
         bob = User.objects.create(username='bob')
@@ -54,12 +49,12 @@ class TestModels(DjangoTestCase):
             user=bob,
             notes='Some notes'
         )
-        ok_(not token.is_expired)
+        assert not token.is_expired
         now = timezone.now()
         yesterday = now - datetime.timedelta(days=1)
         token.expires = yesterday
         token.save()
-        ok_(token.is_expired)
+        assert token.is_expired
 
     def test_api_token_losing_permissions(self):
         bob = User.objects.create(username='bob')
@@ -82,6 +77,6 @@ class TestModels(DjangoTestCase):
 
         # reload the token
         token = models.Token.objects.get(id=token.id)
-        ok_(permission not in token.permissions.all())
+        assert permission not in token.permissions.all()
         # it should still have this one though
-        ok_(permission2 in token.permissions.all())
+        assert permission2 in token.permissions.all()
