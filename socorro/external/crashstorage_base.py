@@ -15,8 +15,7 @@ import datetime
 from socorro.lib.util import DotDict as SocorroDotDict
 
 from configman import Namespace, RequiredConfig
-from configman.converters import classes_in_namespaces_converter, \
-                                 class_converter
+from configman.converters import classes_in_namespaces_converter, class_converter
 from configman.dotdict import DotDict as ConfigmanDotDict
 
 
@@ -483,16 +482,16 @@ class PolyCrashStorage(CrashStorageBase):
     """
     required_config = Namespace()
     required_config.add_option(
-      'storage_classes',
-      doc='a comma delimited list of storage classes',
-      default='',
-      from_string_converter=classes_in_namespaces_converter(
-          template_for_namespace='storage%d',
-          name_of_class_option='crashstorage_class',
-          instantiate_classes=False,  # we instantiate manually for thread
-                                      # safety
-      ),
-      likely_to_be_changed=True,
+        'storage_classes',
+        doc='a comma delimited list of storage classes',
+        default='',
+        from_string_converter=classes_in_namespaces_converter(
+            template_for_namespace='storage%d',
+            name_of_class_option='crashstorage_class',
+            # we instantiate manually for thread safety
+            instantiate_classes=False,
+        ),
+        likely_to_be_changed=True,
     )
 
     def __init__(self, config, quit_check_callback=None):
@@ -510,15 +509,13 @@ class PolyCrashStorage(CrashStorageBase):
 
         """
         super(PolyCrashStorage, self).__init__(config, quit_check_callback)
-        self.storage_namespaces = \
-          config.storage_classes.subordinate_namespace_names
+        self.storage_namespaces = config.storage_classes.subordinate_namespace_names
         self.stores = ConfigmanDotDict()
         for a_namespace in self.storage_namespaces:
-            self.stores[a_namespace] = \
-              config[a_namespace].crashstorage_class(
-                                      config[a_namespace],
-                                      quit_check_callback
-                                 )
+            self.stores[a_namespace] = config[a_namespace].crashstorage_class(
+                config[a_namespace],
+                quit_check_callback
+            )
 
     def close(self):
         """iterate through the subordinate crash stores and close them.
@@ -643,17 +640,17 @@ class FallbackCrashStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.primary = Namespace()
     required_config.primary.add_option(
-      'storage_class',
-      doc='storage class for primary storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for primary storage',
+        default='',
+        from_string_converter=class_converter
     )
     required_config.fallback = Namespace()
     required_config.fallback.add_option(
-      'storage_class',
-      doc='storage class for fallback storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for fallback storage',
+        default='',
+        from_string_converter=class_converter
     )
 
     def __init__(self, config, quit_check_callback=None):
@@ -911,23 +908,23 @@ class PrimaryDeferredStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.primary = Namespace()
     required_config.primary.add_option(
-      'storage_class',
-      doc='storage class for primary storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for primary storage',
+        default='',
+        from_string_converter=class_converter
     )
     required_config.deferred = Namespace()
     required_config.deferred.add_option(
-      'storage_class',
-      doc='storage class for deferred storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for deferred storage',
+        default='',
+        from_string_converter=class_converter
     )
     required_config.add_option(
-      'deferral_criteria',
-      doc='criteria for deferring a crash',
-      default='lambda crash: crash.get("legacy_processing")',
-      from_string_converter=eval
+        'deferral_criteria',
+        doc='criteria for deferring a crash',
+        default='lambda crash: crash.get("legacy_processing")',
+        from_string_converter=eval
     )
 
     def __init__(self, config, quit_check_callback=None):
@@ -1058,10 +1055,10 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
     required_config = Namespace()
     required_config.processed = Namespace()
     required_config.processed.add_option(
-      'storage_class',
-      doc='storage class for processed storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for processed storage',
+        default='',
+        from_string_converter=class_converter
     )
 
     def __init__(self, config, quit_check_callback=None):

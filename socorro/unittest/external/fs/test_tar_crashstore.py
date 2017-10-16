@@ -12,9 +12,9 @@ from mock import Mock
 from socorro.external.fs.crashstorage import (
     TarFileWritingCrashStore,
     TarFileSequentialReadingCrashStore,
-    dates_to_strings_for_json
 )
 from socorro.external.crashstorage_base import Redactor
+from socorro.lib.datetimeutil import JsonDTISOEncoder
 from socorro.unittest.testbase import TestCase
 
 TEMP_DIR = tempfile.gettempdir()
@@ -64,7 +64,7 @@ class TestTarFileWritingCrashStorage(TestCase):
         }
         processed_crash_as_str = json.dumps(
             processed_crash,
-            default=dates_to_strings_for_json
+            cls=JsonDTISOEncoder
         )
 
         # the call to be tested

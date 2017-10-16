@@ -84,10 +84,7 @@ class StatsdCounter(StatsdEnabledBase):
         super(StatsdCounter, self).__init__(config, quit_check_callback)
 
     def _incr(self, name):
-        if (
-            self.config.statsd_host
-            and name in self.config.active_list
-        ):
+        if self.config.statsd_host and name in self.config.active_list:
             counter_name = self._make_name(name)
             self.statsd.incr(counter_name)
 
@@ -130,10 +127,7 @@ class StatsdBenchmarkingWrapper(StatsdEnabledBase):
     def __getattr__(self, attr):
         # allow any AttributeError to propagate outward
         wrapped_attr = getattr(self.wrapped_object, attr)
-        if (
-            self.config.statsd_host
-            and attr in self.config.active_list
-        ):
+        if self.config.statsd_host and attr in self.config.active_list:
             def benchmarker(*args, **kwargs):
                 start_time = self.start_timer()
                 result = wrapped_attr(*args, **kwargs)
