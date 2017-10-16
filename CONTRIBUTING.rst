@@ -100,8 +100,8 @@ Style nits should be covered by linting as much as possible.
 Code reviews should review the changes in the context of the rest of the system.
 
 
-Dependencies
-============
+Python Dependencies
+===================
 
 Dependencies for all parts Socorro are in ``requirements.txt``. They need to be
 pinned and hashed. Use `hashin <https://pypi.python.org/pypi/hashin>`_.
@@ -109,6 +109,24 @@ pinned and hashed. Use `hashin <https://pypi.python.org/pypi/hashin>`_.
 For example, to add ``foobar`` version 5::
 
   hashin -r requirements.txt foobar==5
+
+Then rebuild your docker environment::
+
+  make dockerbuild
+
+If there are problems, it'll tell you.
+
+
+JavaScript Dependencies
+=======================
+
+Frontend dependencies for the webapp are in ``webapp-django/package.json``. They
+must be pinned and included in
+`package-lock.json <https://docs.npmjs.com/files/package-locks>`_.
+
+You can add new dependencies using ``npm`` (you must use version 5 or higher):
+
+  npm install --save-exact foobar@1.0.0
 
 Then rebuild your docker environment::
 

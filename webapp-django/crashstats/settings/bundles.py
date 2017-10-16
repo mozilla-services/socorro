@@ -1,5 +1,28 @@
 from __future__ import print_function
 
+# This determines what files are copied from npm libraries into the
+# static root when collectstatic runs.
+# The keys are library names (from webapp-django/package.json) and the
+# values are a list of fnmatch patterns to match files to copy.
+NPM_FILE_PATTERNS = {
+    'jquery-ui': ['ui/*', 'themes/base/*'],
+    'flatpickr': ['dist/*'],
+    'Select2': ['*'],
+    'metrics-graphics': ['dist/*'],
+    'font-awesome': ['css/*', 'fonts/*'],
+    'tablesorter': ['dist/*'],
+    'd3': ['*.js'],
+    'jssha': ['src/*.js'],
+    'qs': ['dist/*'],
+    'moment': ['moment.js'],
+    'filesize': ['lib/*'],
+    'underscore': ['*.js'],
+    'd3-sankey': ['build/*'],
+    'jquery-jsonview': ['dist/*'],
+    'ace-builds': ['src/*'],
+    'jquery': ['dist/*'],
+}
+
 #
 # CSS
 #
@@ -7,20 +30,25 @@ from __future__ import print_function
 PIPELINE_CSS = {
     'search': {
         'source_filenames': (
-            'crashstats/css/lib/flatpickr.dark.min.css',
+            'flatpickr/dist/themes/dark.css',
             'supersearch/css/search.less',
         ),
         'output_filename': 'css/search.min.css',
     },
     'select2': {
         'source_filenames': (
-            'crashstats/js/lib/select2/select2.css',
+            'Select2/select2.css',
         ),
         'output_filename': 'css/select2.min.css',
     },
     'jquery_ui': {
         'source_filenames': (
-            'crashstats/css/lib/jquery-ui.css',
+            'jquery-ui/themes/base/core.css',
+            'jquery-ui/themes/base/sortable.css',
+            'jquery-ui/themes/base/datepicker.css',
+            'jquery-ui/themes/base/tabs.css',
+
+            # Custom theme
             'crashstats/css/lib/jquery-ui.structure.css',
             'crashstats/css/lib/jquery-ui.theme.css',
         ),
@@ -34,7 +62,7 @@ PIPELINE_CSS = {
     },
     'metricsgraphics': {
         'source_filenames': (
-            'crashstats/css/lib/metricsgraphics.css',
+            'metrics-graphics/dist/metricsgraphics.css',
             'crashstats/css/metricsgraphics_custom.css',
         ),
         'output_filename': 'css/metricsgraphics.min.css',
@@ -97,7 +125,7 @@ PIPELINE_CSS = {
     },
     'manage:home': {
         'source_filenames': (
-            'crashstats/css/lib/font-awesome/css/font-awesome.css',
+            'font-awesome/css/font-awesome.css',
             'crashstats/css/fonts.less',
             'manage/css/home.less',
         ),
@@ -147,7 +175,7 @@ PIPELINE_CSS = {
     },
     'tablesorter': {
         'source_filenames': (
-            'tablesorter/css/theme.default.min.css',
+            'tablesorter/dist/css/theme.default.min.css',
         ),
         'output_filename': 'js/tablesorter.min.css',
     },
@@ -168,7 +196,7 @@ PIPELINE_JS = {
     },
     'date_filters': {
         'source_filenames': (
-            'crashstats/js/lib/flatpickr.min.js',
+            'flatpickr/dist/flatpickr.min.js',
             'supersearch/js/socorro/date_filters.js',
         ),
         'output_filename': 'js/date-filters.min.js',
@@ -187,13 +215,18 @@ PIPELINE_JS = {
     },
     'd3': {
         'source_filenames': (
-            'crashstats/js/lib/d3.min.js',
+            'd3/d3.min.js',
         ),
         'output_filename': 'js/d3.min.js',
     },
     'jquery_ui': {
         'source_filenames': (
-            'crashstats/js/jquery/plugins/jquery-ui.js',
+            'jquery-ui/ui/core.js',
+            'jquery-ui/ui/widget.js',
+            'jquery-ui/ui/mouse.js',
+            'jquery-ui/ui/sortable.js',
+            'jquery-ui/ui/datepicker.js',
+            'jquery-ui/ui/tabs.js',
         ),
         'output_filename': 'js/jquery-ui.min.js',
     },
@@ -206,27 +239,26 @@ PIPELINE_JS = {
     'correlation': {
         'source_filenames': (
             'crashstats/js/polyfill/fetch.js',
-            'crashstats/js/polyfill/es6-promise.auto.min.js',
-            'crashstats/js/lib/sha1.js',
+            'jssha/src/sha1.js',
             'crashstats/js/socorro/correlation.js',
         ),
         'output_filename': 'js/correlation.min.js',
     },
     'metricsgraphics': {
         'source_filenames': (
-            'crashstats/js/lib/metricsgraphics.min.js',
+            'metrics-graphics/dist/metricsgraphics.min.js',
         ),
         'output_filename': 'js/metricsgraphics.min.js',
     },
     'select2': {
         'source_filenames': (
-            'crashstats/js/lib/select2/select2.js',
+            'Select2/select2.js',
         ),
         'output_filename': 'js/select2.min.js',
     },
     'tablesorter': {
         'source_filenames': (
-            'tablesorter/js/jquery.tablesorter.js',
+            'tablesorter/dist/js/jquery.tablesorter.js',
         ),
         'output_filename': 'js/jquery-tablesorter.min.js',
     },
@@ -244,10 +276,10 @@ PIPELINE_JS = {
     },
     'crashstats_base': {
         'source_filenames': (
-            'crashstats/js/jquery/jquery-2.0.3.min.js',
+            'jquery/dist/jquery.min.js',
             'crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js',
-            'crashstats/js/lib/qs.js',
-            'crashstats/js/lib/moment.min.js',
+            'qs/dist/qs.js',
+            'moment/moment.js',
             'crashstats/js/socorro/timeutils.js',
             'crashstats/js/socorro/oauth2.js',
             'crashstats/js/socorro/nav.js',
@@ -257,7 +289,7 @@ PIPELINE_JS = {
     },
     'api_documentation': {
         'source_filenames': (
-            'api/js/lib/filesize.min.js',
+            'filesize/lib/filesize.js',
             'api/js/testdrive.js'
         ),
         'output_filename': 'js/api-documentation.min.js',
@@ -270,8 +302,8 @@ PIPELINE_JS = {
     },
     'crontabber_state': {
         'source_filenames': (
-            'crashstats/js/underscore-min.js',
-            'crashstats/js/lib/sankey.js',
+            'underscore/underscore-min.js',
+            'd3-sankey/build/d3-sankey.js',
             'crashstats/js/socorro/crontabber_state.js',
         ),
         'output_filename': 'js/crontabber-state.min.js',
@@ -284,7 +316,7 @@ PIPELINE_JS = {
     },
     'jsonview': {
         'source_filenames': (
-            'jsonview/jquery.jsonview.js',
+            'jquery-jsonview/dist/jquery.jsonview.js',
         ),
         'output_filename': 'js/jsonview.min.js',
     },
@@ -378,9 +410,9 @@ PIPELINE_JS = {
     },
     'search_custom': {
         'source_filenames': (
-            'supersearch/js/lib/ace/ace.js',
-            'supersearch/js/lib/ace/theme-monokai.js',
-            'supersearch/js/lib/ace/mode-json.js',
+            'ace-builds/src/ace.js',
+            'ace-builds/src/theme-monokai.js',
+            'ace-builds/src/mode-json.js',
             'supersearch/js/socorro/search_custom.js',
         ),
         'output_filename': 'js/search-custom.min.js',

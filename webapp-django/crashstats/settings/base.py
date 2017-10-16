@@ -9,7 +9,7 @@ from pkg_resources import resource_string
 import dj_database_url
 from decouple import config, Csv
 
-from bundles import PIPELINE_CSS, PIPELINE_JS
+from bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
 
 
 ROOT = os.path.abspath(
@@ -433,6 +433,7 @@ SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'npm.finders.NpmFinder',
     'pipeline.finders.PipelineFinder',
     # Make sure this comes last!
     'crashstats.base.finders.LeftoverPipelineFinder',
@@ -472,6 +473,8 @@ PIPELINE = {
     # the rendered HTML, so just let it raise plain python exceptions.
     'SHOW_ERRORS_INLINE': False,
 }
+
+NPM_ROOT_PATH = config('NPM_ROOT_PATH', ROOT)
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
 # FIXME remove this default when we are out of PHX
