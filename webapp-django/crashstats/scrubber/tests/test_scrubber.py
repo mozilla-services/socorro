@@ -1,5 +1,3 @@
-from nose.tools import eq_, ok_
-
 from crashstats.base.tests.testbase import TestCase
 from crashstats import scrubber
 
@@ -9,16 +7,16 @@ class TestScrubber(TestCase):
     def test_scrub_string_email(self):
         data = 'this is my email me@example.org!'
         res = scrubber.scrub_string(data, scrubber.EMAIL)
-        eq_(res, 'this is my email !')
+        assert res == 'this is my email !'
 
     def test_scrub_string_url(self):
         data = 'this is my Web site http://example.org/?param=12 !'
         res = scrubber.scrub_string(data, scrubber.URL)
-        eq_(res, 'this is my Web site  !')
+        assert res == 'this is my Web site  !'
 
         data = 'link www.example.org/?param=12'
         res = scrubber.scrub_string(data, scrubber.URL)
-        eq_(res, 'link ')
+        assert res == 'link '
 
     def test_scrub_dict_remove_fields_in_place(self):
         data = {
@@ -26,7 +24,7 @@ class TestScrubber(TestCase):
             'text': 'hello'
         }
         scrubber.scrub_dict(data, remove_fields=['email'])
-        eq_(data, {'text': 'hello'})
+        assert data == {'text': 'hello'}
 
     def test_scrub_dict_remove_fields_copy(self):
         data = {
@@ -35,9 +33,9 @@ class TestScrubber(TestCase):
         }
         res = scrubber.scrub_dict(data, remove_fields=['email'],
                                   make_copy=True)
-        eq_(res, {'text': 'hello'})
-        ok_('email' in data)
-        ok_('text' in data)
+        assert res == {'text': 'hello'}
+        assert 'email' in data
+        assert 'text' in data
 
     def test_scrub_dict_replace_fields(self):
         data = {
@@ -45,7 +43,7 @@ class TestScrubber(TestCase):
             'text': 'hello'
         }
         res = scrubber.scrub_dict(data, replace_fields=[('email', 'scrubbed')])
-        eq_(res, {'email': 'scrubbed', 'text': 'hello'})
+        assert res == {'email': 'scrubbed', 'text': 'hello'}
 
     def test_scrub_dict_clean_fields(self):
         data = {
@@ -59,11 +57,11 @@ class TestScrubber(TestCase):
             data,
             clean_fields=[('text', scrubber.EMAIL), ('text', scrubber.URL)]
         )
-        ok_('email' in data)
-        ok_('text' in data)
-        ok_('email address' in data['text'])
-        ok_('me@example.org' not in data['text'])
-        ok_('http://www.example.org/' not in data['text'])
+        assert 'email' in data
+        assert 'text' in data
+        assert 'email address' in data['text']
+        assert 'me@example.org' not in data['text']
+        assert 'http://www.example.org/' not in data['text']
 
     def test_scrub_data(self):
         data = [
@@ -80,7 +78,7 @@ class TestScrubber(TestCase):
         ]
         copy = data[:]
         scrubber.scrub_data(data)
-        eq_(data, copy)
+        assert data == copy
 
         scrubber.scrub_data(
             data,
@@ -88,9 +86,9 @@ class TestScrubber(TestCase):
             replace_fields=[('email', 'NO EMAIL'), ('url', 'NO URL')],
             clean_fields=[('text', scrubber.EMAIL), ('text', scrubber.URL)]
         )
-        eq_(len(data), 2)
-        eq_(data[0]['email'], 'NO EMAIL')
-        eq_(data[1]['url'], 'NO URL')
-        ok_('age' not in data[0])
-        ok_('age' not in data[1])
-        ok_('www.example.org' not in data[0]['text'])
+        assert len(data) == 2
+        assert data[0]['email'] == 'NO EMAIL'
+        assert data[1]['url'] == 'NO URL'
+        assert 'age' not in data[0]
+        assert 'age' not in data[1]
+        assert 'www.example.org' not in data[0]['text']

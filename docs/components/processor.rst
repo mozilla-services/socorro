@@ -179,6 +179,41 @@ For example::
    Processing will fail unless the crash data is in the S3 container first!
 
 
+Example using all the scripts
+-----------------------------
+
+Let's process crashes for Firefox from yesterday. We'd do this::
+
+  # Start bash in the processor container as me
+  $ docker/as_me.sh bash
+
+  # Generate a file of crashids--one per line
+  (container) $ scripts/fetch_crashids.py > crashids.txt
+
+  # Pull raw crash data from -prod for each crash id and put it in the
+  # "crashdata" directory on the host
+  (container) $ cat crashids.txt | scripts/fetch_crash_data.py ./crashdata
+
+  # Create a dev_bucket in localstack-s3
+  (container) $ scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+
+  # Copy that data from the host into the localstack-s3 container
+  (container) $ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
+
+  # Add all the crash ids to the queue
+  (container) $ cat crashids.txt | scripts/add_crashid_to_queue.py socorro.normal
+
+  # Then exit the container and process all that stuff
+  (container) $ exit
+  $ docker-compose up processor
+
+
+.. Note::
+
+   That's a lot of commands. Definitely worth writing shell scripts to automate
+   this for your specific needs.
+
+
 Processing crashes from Antenna
 ===============================
 
