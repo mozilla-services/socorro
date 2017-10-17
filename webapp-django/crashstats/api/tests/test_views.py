@@ -363,7 +363,7 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         dump = json.loads(response.content)
         assert 'id' in dump
-        assert 'URL' not in dump  # right?
+        assert 'URL' not in dump
         assert 'AsyncShutdownTimeout' in dump
         assert 'BIOS_Manufacturer' in dump
         assert 'upload_file_minidump_browser' in dump
