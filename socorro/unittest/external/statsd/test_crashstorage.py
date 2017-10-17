@@ -6,7 +6,6 @@ from datetime import datetime
 
 from configman.dotdict import DotDict
 from mock import patch, call, Mock
-import pytest
 
 from socorro.external.statsd.crashstorage import (
     StatsdCrashStorage,

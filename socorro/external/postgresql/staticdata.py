@@ -1,3 +1,5 @@
+# flake8: noqa
+
 """
 Static data for Socorro - basic information that Socorro expects to be
 present in the database in order to function correctly.
@@ -220,7 +222,7 @@ class ProductBuildTypes(BaseTable):
         'product_name', 'build_type', 'throttle'
     ]
     rows = [
-        ['Firefox', 'esr', '1.0',],
+        ['Firefox', 'esr', '1.0'],
         ['Firefox', 'aurora', '1.0'],
         ['Firefox', 'beta', '1.0'],
         ['Firefox', 'release', '0.1'],

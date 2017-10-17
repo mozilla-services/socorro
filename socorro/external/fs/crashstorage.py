@@ -24,14 +24,8 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping
 )
 from socorro.lib.ooid import dateFromOoid, depthFromOoid
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now, JsonDTISOEncoder
 from socorro.lib.util import DotDict
-
-
-def dates_to_strings_for_json(obj):
-    if isinstance(obj, datetime.datetime):
-        return obj.isoformat()
-    return json.JSONEncoder.default(self, obj)
 
 
 @contextmanager
@@ -127,7 +121,7 @@ class FSRadixTreeStorage(CrashStorageBase):
                 os.makedirs(self.config.fs_root)
         except OSError:
             self.logger.info("didn't make directory: %s " %
-                self.config.fs_root)
+                             self.config.fs_root)
 
     @staticmethod
     def _cleanup_empty_dirs(base, leaf):
@@ -188,8 +182,6 @@ class FSRadixTreeStorage(CrashStorageBase):
             except OSError:
                 # probably already created, ignore
                 pass
-                #self.logger.debug("could not make directory: %s" %
-                    #self.config.fs_root)
 
             for fn, contents in files.iteritems():
                 with open(os.sep.join([parent_dir, fn]), 'wb') as f:
@@ -200,7 +192,7 @@ class FSRadixTreeStorage(CrashStorageBase):
         processed_crash = processed_crash.copy()
         f = StringIO()
         with closing(gzip.GzipFile(mode='wb', fileobj=f)) as fz:
-            json.dump(processed_crash, fz, default=dates_to_strings_for_json)
+            json.dump(processed_crash, fz, cls=JsonDTISOEncoder)
         self._save_files(crash_id, {
             crash_id + self.config.jsonz_file_suffix: f.getvalue()
         })
@@ -238,13 +230,15 @@ class FSRadixTreeStorage(CrashStorageBase):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
-        dump_paths = [os.sep.join([parent_dir, dump_file_name])
-                      for dump_file_name in os.listdir(parent_dir)
-                      if dump_file_name.startswith(crash_id) and
-                         dump_file_name.endswith(self.config.dump_file_suffix)]
+        dump_paths = [
+            os.sep.join([parent_dir, dump_file_name])
+            for dump_file_name in os.listdir(parent_dir)
+            if (dump_file_name.startswith(crash_id) and
+                dump_file_name.endswith(self.config.dump_file_suffix))
+        ]
         # we want to return a name/pathname mapping for the raw dumps
         return FileDumpsMapping(zip(self._dump_names_from_paths(dump_paths),
-                           dump_paths))
+                                    dump_paths))
 
     def get_raw_dumps(self, crash_id):
         file_dump_mapping = self.get_raw_dumps_as_files(crash_id)
@@ -285,16 +279,15 @@ class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
                            [self.config.name_branch_base] +
                            self._get_radix(crash_id))
 
-
     def remove(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
 
-        removal_candidates = [os.sep.join([parent_dir,
-                                           crash_id + '.json'])] + \
-                             list(self.get_raw_dumps_as_files(crash_id)
-                                  .values())
+        removal_candidates = (
+            [os.sep.join([parent_dir, crash_id + '.json'])] +
+            list(self.get_raw_dumps_as_files(crash_id).values())
+        )
 
         for cand in removal_candidates:
             try:
@@ -400,8 +393,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
         now = utc_now()
         return ["%02d" % now.hour,
                 "%02d_%02d" % (now.minute,
-                               now.second //
-                                   self.config.minute_slice_interval)]
+                               now.second // self.config.minute_slice_interval)]
 
     def _create_name_to_date_symlink(self, crash_id, slot):
         """we traverse the path back up from date/slot... to make a link:
@@ -443,8 +435,6 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
         except OSError:
             # probably already created, ignore
             pass
-            #self.logger.debug("could not make directory: %s" %
-                #parent_dir)
 
         with using_umask(self.config.umask):
             # If we've saved a crash with this crash_id before, then we'll kick
@@ -468,8 +458,8 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
             # up for us.
             os.unlink(os.sep.join([dated_path, crash_id]))
         except OSError:
-            pass  # we might be trying to remove a visited crash and that's
-                  # okay
+            # we might be trying to remove a visited crash and that's okay
+            pass
 
         # Now we actually remove the crash.
         super(FSDatedRadixTreeStorage, self).remove(crash_id)
@@ -726,7 +716,7 @@ class TarFileWritingCrashStore(CrashStorageBase):
     def save_processed(self, processed_crash):
         processed_crash_as_string = json.dumps(
             processed_crash,
-            default=dates_to_strings_for_json
+            cls=JsonDTISOEncoder
         )
         crash_id = processed_crash["crash_id"]
 
@@ -764,12 +754,6 @@ class TarFileSequentialReadingCrashStore(CrashStorageBase):
         default='gzip',
         from_string_converter=class_converter
     )
-
-    @staticmethod
-    def stringify_datetimes(obj):
-        if isinstance(obj, datetime.date):
-            return obj.iso_format()
-        return json.JSONEncoder.default(self, obj)
 
     def _create_tarfile(self):
         """subclasses that have a different way of openning or creating

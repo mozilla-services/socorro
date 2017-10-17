@@ -5,8 +5,6 @@
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from functools import partial
-
 
 class FSNewCrashSource(RequiredConfig):
     """An iterable of crashes from file sytem classes"""
@@ -43,7 +41,7 @@ class FSNewCrashSource(RequiredConfig):
                 (a_crash_id,), {}
             )
 
-    new_crashes =  __iter__
+    new_crashes = __iter__
 
     def __call__(self):
         return self.__iter__()

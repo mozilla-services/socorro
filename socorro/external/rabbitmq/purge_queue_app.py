@@ -16,8 +16,7 @@ class PurgeRabbitMQQueueApp(App):
     required_config = Namespace()
     required_config.add_option(
         'rabbitmq_class',
-        default=
-            'socorro.external.rabbitmq.connection_context.ConnectionContext',
+        default='socorro.external.rabbitmq.connection_context.ConnectionContext',
         doc='the class responsible for connecting to RabbitMQ',
         from_string_converter=class_converter,
         reference_value_from='resource.rabbitmq',
