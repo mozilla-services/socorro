@@ -16,8 +16,6 @@ argparse==1.2.1 \
 mock==0.8.0 \
     --hash=sha256:96fa4def4e80200be827c3f51147dd7b3fa8873b9207e3325d47ba45bf29a5c1 \
     --hash=sha256:e904edfb90da84129c06252cd3a05f90b4eebc1bb5b85ee96e56ff6cf69438d5
-nose==1.3.0 \
-    --hash=sha256:4e63cc3325de75cf98ffad40be72fa69753de824695173178f74c034fe4f5260
 poster==0.8.1 \
     --hash=sha256:af5bf45da4a916db2b638cffd9e9d6668b33020e2b8ca9f864db79b49331c6ff
 sqlalchemy-citext==1.0-2 \

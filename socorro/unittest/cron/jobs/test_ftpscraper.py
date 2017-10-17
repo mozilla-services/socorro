@@ -7,13 +7,13 @@ from functools import wraps
 import json
 
 from crontabber.app import CronTabber
-from crontabber.tests.base import TestCaseBase
 import mock
 import requests
 import pytest
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
+from socorro.unittest.cron.crontabber_tests_base import TestCaseBase
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.lib.util import DotDict
 from socorro.unittest.cron.setup_configman import (
