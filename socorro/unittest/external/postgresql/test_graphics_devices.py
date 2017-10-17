@@ -142,7 +142,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
         api = GraphicsDevices(config=self.config)
         res = api.post(data=payload)
-        assert res == True
+        assert res is True
 
         cursor = self.connection.cursor()
         cursor.execute("""

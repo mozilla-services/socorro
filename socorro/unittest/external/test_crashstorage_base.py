@@ -252,8 +252,9 @@ class TestBase(TestCase):
             assert [exc[0] for exc in x] == expected
             assert 1 not in x
             assert str(x[0][1]) == 'dwight'
-            assert (
-                all(sample in str(x) for sample in ['hell', 'NameError', 'KeyError', 'AttributeError'])
+            assert all(
+                sample in str(x)
+                for sample in ['hell', 'NameError', 'KeyError', 'AttributeError']
             )
 
             x[0] = x[1]
@@ -325,10 +326,11 @@ class TestBase(TestCase):
             dump = '5432'
             processed_crash = {'ooid': 'aoeu', 'product': 33}
 
+            expected = Exception('this is messed up')
             poly_store.stores['storage1'].save_raw_crash = Mock()
-            poly_store.stores['storage1'].save_raw_crash.side_effect = Exception('this is messed up')
+            poly_store.stores['storage1'].save_raw_crash.side_effect = expected
             poly_store.stores['storage2'].save_processed = Mock()
-            poly_store.stores['storage2'].save_processed.side_effect = Exception('this is messed up')
+            poly_store.stores['storage2'].save_processed.side_effect = expected
 
             with pytest.raises(PolyStorageError):
                 poly_store.save_raw_crash(raw_crash, dump, '')

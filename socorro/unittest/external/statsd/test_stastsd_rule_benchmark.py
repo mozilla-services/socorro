@@ -2,15 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from datetime import datetime
-
 from configman.dotdict import DotDict
 from mock import patch, call, Mock
 import pytest
 
 from socorro.external.statsd.dogstatsd import StatsClient
+from socorro.external.statsd.statsd_base import StatsdBenchmarkingWrapper
 from socorro.external.statsd.statsd_rule_benchmark import (
-    StatsdRuleBenchmarkWrapper,
     CountAnythingRuleBase,
     CountStackWalkerTimeoutKills,
     CountStackWalkerFailures,
@@ -35,12 +33,12 @@ class TestStatsdCounterRule(TestCase):
         config.rules_list.class_list = [
             (
                 'RuleTestLaughable',
-                StatsdRuleBenchmarkWrapper,
+                StatsdBenchmarkingWrapper,
                 'RuleTestLaughable'
             ),
             (
                 'RuleTestDangerous',
-                StatsdRuleBenchmarkWrapper,
+                StatsdBenchmarkingWrapper,
                 'RuleTestDangerous'
             )
         ]
@@ -69,9 +67,9 @@ class TestStatsdCounterRule(TestCase):
         config = self.setup_config('processor')
         trs = transform_rules.TransformRuleSystem(config)
 
-        assert isinstance(trs.rules[0], StatsdRuleBenchmarkWrapper)
+        assert isinstance(trs.rules[0], StatsdBenchmarkingWrapper)
         assert isinstance(trs.rules[0].wrapped_object, RuleTestLaughable)
-        assert isinstance(trs.rules[1], StatsdRuleBenchmarkWrapper)
+        assert isinstance(trs.rules[1], StatsdBenchmarkingWrapper)
         assert isinstance(trs.rules[1].wrapped_object, RuleTestDangerous)
 
         with patch('socorro.external.statsd.statsd_base.datetime'):
