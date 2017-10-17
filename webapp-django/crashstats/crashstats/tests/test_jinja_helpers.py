@@ -2,8 +2,6 @@ import datetime
 import time
 import urlparse
 
-from nose.tools import eq_, ok_
-
 from django.core.cache import cache
 from django.utils.safestring import SafeText
 
@@ -27,15 +25,15 @@ class TestTimestampToDate(TestCase):
         timestamp = time.time()
         date = datetime.datetime.fromtimestamp(timestamp)
         output = timestamp_to_date(int(timestamp))
-        ok_(date.strftime('%Y-%m-%d %H:%M:%S') in output)
-        ok_('%Y-%m-%d %H:%M:%S' in output)
+        assert date.strftime('%Y-%m-%d %H:%M:%S') in output
+        assert '%Y-%m-%d %H:%M:%S' in output
 
         # Test missing and bogus values.
         output = timestamp_to_date(None)
-        eq_(output, '')
+        assert output == ''
 
         output = timestamp_to_date('abc')
-        eq_(output, '')
+        assert output == ''
 
 
 class TestTimeTag(TestCase):
@@ -44,42 +42,46 @@ class TestTimeTag(TestCase):
         date = datetime.datetime(2000, 1, 2, 3, 4, 5)
         output = time_tag(date)
 
-        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+        expected = '<time datetime="{}" class="ago">{}</time>'.format(
             date.isoformat(),
             date.strftime('%a, %b %d %H:%M %Z')
-        ))
+        )
+        assert output == expected
 
     def test_time_tag_with_date(self):
         date = datetime.date(2000, 1, 2)
         output = time_tag(date)
 
-        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+        expected = '<time datetime="{}" class="ago">{}</time>'.format(
             date.isoformat(),
             date.strftime('%a, %b %d %H:%M %Z')
-        ))
+        )
+        assert output == expected
 
     def test_time_tag_future(self):
         date = datetime.datetime(2000, 1, 2, 3, 4, 5)
         output = time_tag(date, future=True)
 
-        eq_(output, '<time datetime="{}" class="in">{}</time>'.format(
+        expected = '<time datetime="{}" class="in">{}</time>'.format(
             date.isoformat(),
             date.strftime('%a, %b %d %H:%M %Z')
-        ))
+        )
+        assert output == expected
 
     def test_time_tag_invalid_date(self):
         output = time_tag('junk')
-        eq_(output, 'junk')
+        assert output == 'junk'
 
     def test_parse_with_unicode_with_timezone(self):
         # See https://bugzilla.mozilla.org/show_bug.cgi?id=1300921
         date = u'2016-09-07T00:38:42.630775+00:00'
         output = time_tag(date)
 
-        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+        expected = '<time datetime="{}" class="ago">{}</time>'.format(
             '2016-09-07T00:38:42.630775+00:00',
             'Wed, Sep 07 00:38 +00:00'
-        ))
+        )
+        assert output == expected
 
 
 class TestRecursiveStateFilter(TestCase):
@@ -91,33 +93,29 @@ class TestRecursiveStateFilter(TestCase):
             'appX': {'key': 'valueX'},
         }
         apps = recursive_state_filter(state, None)
-        eq_(
-            apps,
-            [
-                ('app1', {'key': 'value1'}),
-                ('appX', {'key': 'valueX'})
-            ]
-        )
+        expected = [
+            ('app1', {'key': 'value1'}),
+            ('appX', {'key': 'valueX'})
+        ]
+        assert apps == expected
 
         apps = recursive_state_filter(state, 'app1')
-        eq_(
-            apps,
-            [
-                ('app2', {'key': 'value2', 'depends_on': ['app1']}),
-            ]
-        )
+        expected = [
+            ('app2', {'key': 'value2', 'depends_on': ['app1']}),
+        ]
+        assert apps == expected
 
         apps = recursive_state_filter(state, 'XXXX')
-        eq_(apps, [])
+        assert apps == []
 
 
 class TestBugzillaLink(TestCase):
 
     def test_show_bug_link_no_cache(self):
         output = show_bug_link(123)
-        ok_('data-id="123"' in output)
-        ok_('bug-link-without-data' in output)
-        ok_('bug-link-with-data' not in output)
+        assert 'data-id="123"' in output
+        assert 'bug-link-without-data' in output
+        assert 'bug-link-with-data' not in output
 
     def test_show_bug_link_with_cache(self):
         cache_key = 'buginfo:456'
@@ -128,12 +126,12 @@ class TestBugzillaLink(TestCase):
         }
         cache.set(cache_key, data, 5)
         output = show_bug_link(456)
-        ok_('data-id="456"' in output)
-        ok_('bug-link-without-data' not in output)
-        ok_('bug-link-with-data' in output)
-        ok_('data-resolution="MESSEDUP"' in output)
-        ok_('data-status="CONFUSED"' in output)
-        ok_('data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output)
+        assert 'data-id="456"' in output
+        assert 'bug-link-without-data' not in output
+        assert 'bug-link-with-data' in output
+        assert 'data-resolution="MESSEDUP"' in output
+        assert 'data-status="CONFUSED"' in output
+        assert 'data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output
 
 
 class TestBugzillaSubmitURL(TestCase):
@@ -154,17 +152,17 @@ class TestBugzillaSubmitURL(TestCase):
     def test_basic_url(self):
         report = self._create_report(os_name='Windows')
         url = bugzilla_submit_url(report, 'Plugin')
-        ok_(url.startswith('https://bugzilla.mozilla.org/enter_bug.cgi?'))
+        assert url.startswith('https://bugzilla.mozilla.org/enter_bug.cgi?')
         qs = self._extract_query_string(url)
-        ok_('00000000-0000-0000-0000-000000000000' in qs['comment'][0])
-        eq_(qs['cf_crash_signature'], ['[@ $&#;deadbeef]'])
-        eq_(qs['format'], ['__default__'])
-        eq_(qs['product'], ['Plugin'])
-        eq_(qs['rep_platform'], ['x86'])
-        eq_(qs['short_desc'], ['Crash in $&#;deadbeef'])
-        eq_(qs['keywords'], ['crash'])
-        eq_(qs['op_sys'], ['Windows'])
-        eq_(qs['bug_severity'], ['critical'])
+        assert '00000000-0000-0000-0000-000000000000' in qs['comment'][0]
+        assert qs['cf_crash_signature'] == ['[@ $&#;deadbeef]']
+        assert qs['format'] == ['__default__']
+        assert qs['product'] == ['Plugin']
+        assert qs['rep_platform'] == ['x86']
+        assert qs['short_desc'] == ['Crash in $&#;deadbeef']
+        assert qs['keywords'] == ['crash']
+        assert qs['op_sys'] == ['Windows']
+        assert qs['bug_severity'] == ['critical']
 
     def test_truncate_short_desc(self):
         report = self._create_report(
@@ -173,8 +171,8 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
-        eq_(len(qs['short_desc'][0]), 255)
-        ok_(qs['short_desc'][0].endswith('...'))
+        assert len(qs['short_desc'][0]) == 255
+        assert qs['short_desc'][0].endswith('...')
 
     def test_corrected_os_version_name(self):
         report = self._create_report(
@@ -183,7 +181,7 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
-        eq_(qs['op_sys'], ['Windows 10'])
+        assert qs['op_sys'] == ['Windows 10']
 
         # os_name if the os_pretty_version is there, but empty
         report = self._create_report(
@@ -192,7 +190,7 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
-        eq_(qs['op_sys'], ['Windoooosws'])
+        assert qs['op_sys'] == ['Windoooosws']
 
         # 'OS X <Number>' becomes 'Mac OS X'
         report = self._create_report(
@@ -201,7 +199,7 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
-        eq_(qs['op_sys'], ['Mac OS X'])
+        assert qs['op_sys'] == ['Mac OS X']
 
         # 'Windows 8.1' becomes 'Windows 8'
         report = self._create_report(
@@ -210,7 +208,7 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
-        eq_(qs['op_sys'], ['Windows 8'])
+        assert qs['op_sys'] == ['Windows 8']
 
         # 'Windows Unknown' becomes plain 'Windows'
         report = self._create_report(
@@ -219,7 +217,7 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
-        eq_(qs['op_sys'], ['Windows'])
+        assert qs['op_sys'] == ['Windows']
 
     def test_with_os_name_is_null(self):
         """Some processed crashes haev a os_name but it's null.
@@ -230,7 +228,7 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
-        ok_('op_sys' not in qs)
+        assert 'op_sys' not in qs
 
     def test_with_unicode_signature(self):
         """The jinja helper bugzilla_submit_url should work when
@@ -245,36 +243,36 @@ class TestBugzillaSubmitURL(TestCase):
         )
         url = bugzilla_submit_url(report, 'Core')
         # Most important that it should work
-        ok_('Crash+in+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing' in url)
+        assert 'Crash+in+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing' in url
 
 
 class TestReplaceBugzillaLinks(TestCase):
     def test_simple(self):
         text = 'foo https://bugzilla.mozilla.org/show_bug.cgi?id=1129515 bar'
         res = replace_bugzilla_links(text)
-        eq_(
-            res,
+        expected = (
             'foo <a href="https://bugzilla.mozilla.org/show_bug.cgi?id='
             '1129515">Bug 1129515</a> bar'
         )
+        assert res == expected
 
     def test_url_http(self):
         text = 'hey http://bugzilla.mozilla.org/show_bug.cgi?id=1129515#c5 ho'
         res = replace_bugzilla_links(text)
-        eq_(
-            res,
+        expected = (
             'hey <a href="http://bugzilla.mozilla.org/show_bug.cgi?id='
             '1129515#c5">Bug 1129515</a> ho'
         )
+        assert res == expected
 
     def test_url_with_hash(self):
         text = 'hey https://bugzilla.mozilla.org/show_bug.cgi?id=1129515#c5 ho'
         res = replace_bugzilla_links(text)
-        eq_(
-            res,
+        expected = (
             'hey <a href="https://bugzilla.mozilla.org/show_bug.cgi?id='
             '1129515#c5">Bug 1129515</a> ho'
         )
+        assert res == expected
 
     def test_several_urls(self):
         text = '''hey, I https://bugzilla.mozilla.org/show_bug.cgi?id=43 met
@@ -283,114 +281,108 @@ class TestReplaceBugzillaLinks(TestCase):
         https://bugzilla.mozilla.org/show_bug.cgi?id=7845 so call me maybe
         '''
         res = replace_bugzilla_links(text)
-        ok_('Bug 43' in res)
-        ok_('Bug 40878' in res)
-        ok_('Bug 7845' in res)
+        assert 'Bug 43' in res
+        assert 'Bug 40878' in res
+        assert 'Bug 7845' in res
 
     def test_several_with_unsafe_html(self):
         text = '''malicious <script></script> tag
         for https://bugzilla.mozilla.org/show_bug.cgi?id=43
         '''
         res = replace_bugzilla_links(text)
-        ok_('</script>' not in res)
-        ok_('Bug 43' in res)
-        ok_('</a>' in res)
+        assert '</script>' not in res
+        assert 'Bug 43' in res
+        assert '</a>' in res
 
 
 class TesDigitGroupSeparator(TestCase):
 
     def test_basics(self):
-        eq_(digitgroupseparator(None), None)
-        eq_(digitgroupseparator(1000), '1,000')
-        eq_(digitgroupseparator(-1000), '-1,000')
-        eq_(digitgroupseparator(1000000L), '1,000,000')
+        assert digitgroupseparator(None) is None
+        assert digitgroupseparator(1000) == '1,000'
+        assert digitgroupseparator(-1000) == '-1,000'
+        assert digitgroupseparator(1000000L) == '1,000,000'
 
 
 class TestHumanizers(TestCase):
 
     def test_show_duration(self):
         html = show_duration(59)
-        ok_(isinstance(html, SafeText))
-        eq_(
-            html,
-            '59 seconds'
-        )
+        assert isinstance(html, SafeText)
+        assert html == '59 seconds'
 
         html = show_duration(150)
-        ok_(isinstance(html, SafeText))
-        eq_(
-            html,
+        assert isinstance(html, SafeText)
+        expected = (
             '150 seconds <span class="humanized" title="150 seconds">'
             '(2 minutes and 30 seconds)</span>'
         )
+        assert html == expected
 
         # if the number is digit but a string it should work too
         html = show_duration('1500')
-        eq_(
-            html,
+        expected = (
             '1,500 seconds <span class="humanized" title="1,500 seconds">'
             '(25 minutes)</span>'
         )
+        assert html == expected
 
     def test_show_duration_different_unit(self):
         html = show_duration(150, unit='cool seconds')
-        ok_(isinstance(html, SafeText))
-        eq_(
-            html,
+        assert isinstance(html, SafeText)
+        expected = (
             '150 cool seconds '
             '<span class="humanized" title="150 cool seconds">'
             '(2 minutes and 30 seconds)</span>'
         )
+        assert html == expected
 
     def test_show_duration_failing(self):
         html = show_duration(None)
-        eq_(html, None)
+        assert html is None
         html = show_duration('not a number')
-        eq_(html, 'not a number')
+        assert html == 'not a number'
 
     def test_show_duration_safety(self):
         html = show_duration('<script>')
-        ok_(not isinstance(html, SafeText))
-        eq_(html, '<script>')
+        assert not isinstance(html, SafeText)
+        assert html == '<script>'
 
         html = show_duration(150, unit='<script>')
-        ok_(isinstance(html, SafeText))
-        eq_(
-            html,
+        assert isinstance(html, SafeText)
+        expected = (
             '150 &lt;script&gt; '
             '<span class="humanized" title="150 &lt;script&gt;">'
             '(2 minutes and 30 seconds)</span>'
         )
+        assert html == expected
 
     def test_show_filesize(self):
         html = show_filesize(100)
-        ok_(isinstance(html, SafeText))
-        eq_(
-            html,
-            '100 bytes'
-        )
+        assert isinstance(html, SafeText)
+        assert html == '100 bytes'
 
         html = show_filesize(10000)
-        ok_(isinstance(html, SafeText))
-        eq_(
-            html,
+        assert isinstance(html, SafeText)
+        expected = (
             '10,000 bytes '
             '<span class="humanized" title="10,000 bytes">'
             '(9.77 KB)</span>'
         )
+        assert html == expected
 
         html = show_filesize('10000')
-        ok_(isinstance(html, SafeText))
-        eq_(
-            html,
+        assert isinstance(html, SafeText)
+        expected = (
             '10,000 bytes '
             '<span class="humanized" title="10,000 bytes">'
             '(9.77 KB)</span>'
         )
+        assert html == expected
 
     def test_show_filesize_failing(self):
         html = show_filesize(None)
-        eq_(html, None)
+        assert html is None
 
         html = show_filesize('junk')
-        eq_(html, 'junk')
+        assert html == 'junk'

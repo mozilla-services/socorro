@@ -4,8 +4,6 @@ from cStringIO import StringIO
 from unittest import TestCase
 import json
 
-from nose.tools import eq_, ok_
-
 from django.http import HttpResponse
 from django.test.client import RequestFactory
 
@@ -27,7 +25,7 @@ class TestUtils(TestCase):
         ]
 
         for i, d in enumerate(utils.daterange(start_date, end_date, format)):
-            eq_(d, expected[i])
+            assert d == expected[i]
 
     def test_enhance_frame(self):
         vcs_mappings = {
@@ -59,7 +57,7 @@ class TestUtils(TestCase):
             'signature': 'Func(A* a, B b)',
             'module': 'bad.dll',
         }
-        eq_(actual, expected)
+        assert actual == expected
 
         # Now with a file that has VCS info but isn't in vcs_mappings.
         actual = {
@@ -79,7 +77,7 @@ class TestUtils(TestCase):
             'signature': 'Func',
             'module': 'bad.dll',
         }
-        eq_(actual, expected)
+        assert actual == expected
 
         # Test with no VCS info at all.
         actual = {
@@ -99,7 +97,7 @@ class TestUtils(TestCase):
             'signature': 'Func',
             'module': 'bad.dll',
         }
-        eq_(actual, expected)
+        assert actual == expected
 
         # Test with no source info at all.
         actual = {
@@ -115,7 +113,7 @@ class TestUtils(TestCase):
             'signature': 'Func',
             'module': 'bad.dll',
         }
-        eq_(actual, expected)
+        assert actual == expected
 
         # Test with no function info.
         actual = {
@@ -131,7 +129,7 @@ class TestUtils(TestCase):
             'module': 'bad.dll',
             'module_offset': '0x123',
         }
-        eq_(actual, expected)
+        assert actual == expected
 
         # Test with no module info.
         actual = {
@@ -145,7 +143,7 @@ class TestUtils(TestCase):
             'signature': '@0x1234',
             'offset': '0x1234',
         }
-        eq_(actual, expected)
+        assert actual == expected
 
     def test_enhance_frame_s3_generated_sources(self):
         """Test a specific case when the frame references a S3 vcs
@@ -192,16 +190,17 @@ class TestUtils(TestCase):
         })
         # There's a new key in the frame now. This is what's used in the
         # <a href> in the HTML.
-        ok_(frame['source_link'])
-        eq_(
-            frame['source_link'],
+        assert frame['source_link']
+        expected = (
             'https://example.com/36d62ce2ec2925f4a13e44fe534b246c23b4b3d540788'
             '4d3bbfc9b0d9aebe4929985935ae582704c06e994ece0d1e76528ff1edf4543e4'
             '00d0aaa8f7251b15ca/ipc/ipdl/PCompositorBridgeChild.cpp#L-1495'
         )
+        assert frame['source_link'] == expected
+
         # And that links text is the frame's 'file' but without the 128 char
         # sha.
-        eq_(frame['file'], 'ipc/ipdl/PCompositorBridgeChild.cpp')
+        assert frame['file'] == 'ipc/ipdl/PCompositorBridgeChild.cpp'
 
     def test_enhance_json_dump(self):
         vcs_mappings = {
@@ -281,7 +280,7 @@ class TestUtils(TestCase):
                                         'annotate/rev/dname/fname#l576'),
                         'file': 'dname/fname',
                         'line': 576}]}]}
-        eq_(actual, expected)
+        assert actual == expected
 
     def test_parse_dump(self):
         dump = (
@@ -386,7 +385,7 @@ class TestUtils(TestCase):
 
         # the default line length for assert would be too short to be useful
         self.maxDiff = None
-        eq_(actual, expected)
+        assert actual == expected
 
     def test_parse_dump_invalid_frames(self):
         """What's special about this one is that the dump is bad in that
@@ -478,40 +477,40 @@ class TestUtils(TestCase):
 
         # the default line length for assert would be too short to be useful
         self.maxDiff = None
-        eq_(actual, expected)
+        assert actual == expected
 
     def test_find_crash_id(self):
         # A good string, no prefix
         input_str = '1234abcd-ef56-7890-ab12-abcdef130802'
         crash_id = utils.find_crash_id(input_str)
-        eq_(crash_id, input_str)
+        assert crash_id == input_str
 
         # A good string, with prefix
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef130802'
         crash_id = utils.find_crash_id(input_str)
-        eq_(crash_id, '1234abcd-ef56-7890-ab12-abcdef130802')
+        assert crash_id == '1234abcd-ef56-7890-ab12-abcdef130802'
 
         # A good looking string but not a real day
         input_str = '1234abcd-ef56-7890-ab12-abcdef130230'  # Feb 30th 2013
-        ok_(not utils.find_crash_id(input_str))
+        assert not utils.find_crash_id(input_str)
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef130230'
-        ok_(not utils.find_crash_id(input_str))
+        assert not utils.find_crash_id(input_str)
 
         # A bad string, one character missing
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef12345'
-        ok_(not utils.find_crash_id(input_str))
+        assert not utils.find_crash_id(input_str)
 
         # A bad string, one character not allowed
         input_str = 'bp-1234abcd-ef56-7890-ab12-abcdef12345g'
-        ok_(not utils.find_crash_id(input_str))
+        assert not utils.find_crash_id(input_str)
 
         # Close but doesn't end with 6 digits
         input_str = 'f48e9617-652a-11dd-a35a-001a4bd43ed6'
-        ok_(not utils.find_crash_id(input_str))
+        assert not utils.find_crash_id(input_str)
 
         # A random string that does not match
         input_str = 'somerandomstringthatdoesnotmatch'
-        ok_(not utils.find_crash_id(input_str))
+        assert not utils.find_crash_id(input_str)
 
     def test_unicode_writer(self):
         out = StringIO()
@@ -524,12 +523,12 @@ class TestUtils(TestCase):
         ])
 
         result = out.getvalue()
-        ok_(isinstance(result, str))
+        assert isinstance(result, str)
         u_result = unicode(result, 'utf-8')
-        ok_('abc,' in u_result)
-        ok_(u'\xe4\xc3,' in u_result)
-        ok_('123,' in u_result)
-        ok_('1.23' in u_result)
+        assert 'abc,' in u_result
+        assert u'\xe4\xc3,' in u_result
+        assert '123,' in u_result
+        assert '1.23' in u_result
 
     def test_json_view_basic(self):
         request = RequestFactory().get('/')
@@ -539,9 +538,9 @@ class TestUtils(TestCase):
 
         func = utils.json_view(func)
         response = func(request)
-        ok_(isinstance(response, HttpResponse))
-        eq_(json.loads(response.content), {'one': 'One'})
-        eq_(response.status_code, 200)
+        assert isinstance(response, HttpResponse)
+        assert json.loads(response.content) == {'one': 'One'}
+        assert response.status_code == 200
 
     def test_json_view_indented(self):
         request = RequestFactory().get('/?pretty=print')
@@ -551,9 +550,9 @@ class TestUtils(TestCase):
 
         func = utils.json_view(func)
         response = func(request)
-        ok_(isinstance(response, HttpResponse))
-        eq_(json.dumps({'one': 'One'}, indent=2), response.content)
-        eq_(response.status_code, 200)
+        assert isinstance(response, HttpResponse)
+        assert json.dumps({'one': 'One'}, indent=2) == response.content
+        assert response.status_code == 200
 
     def test_json_view_already_httpresponse(self):
         request = RequestFactory().get('/')
@@ -563,9 +562,9 @@ class TestUtils(TestCase):
 
         func = utils.json_view(func)
         response = func(request)
-        ok_(isinstance(response, HttpResponse))
-        eq_(response.content, 'something')
-        eq_(response.status_code, 200)
+        assert isinstance(response, HttpResponse)
+        assert response.content == 'something'
+        assert response.status_code == 200
 
     def test_json_view_custom_status(self):
         request = RequestFactory().get('/')
@@ -575,6 +574,6 @@ class TestUtils(TestCase):
 
         func = utils.json_view(func)
         response = func(request)
-        ok_(isinstance(response, HttpResponse))
-        eq_(json.loads(response.content), {'one': 'One'})
-        eq_(response.status_code, 403)
+        assert isinstance(response, HttpResponse)
+        assert json.loads(response.content) == {'one': 'One'}
+        assert response.status_code == 403
