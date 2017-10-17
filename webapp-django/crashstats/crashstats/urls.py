@@ -105,8 +105,7 @@ urlpatterns = patterns(
     url(
         r'^status/$',
         RedirectView.as_view(
-            pattern_name='monitoring:index',
-            permanent=not settings.DEBUG,
+            pattern_name='monitoring:index'
         ),
         name='status_redirect',
     ),

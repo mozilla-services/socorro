@@ -66,7 +66,6 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'django_nose',
     'session_csrf',
 
     # Application base, containing global templates.
@@ -96,9 +95,6 @@ INSTALLED_APPS = (
     'eventlog',
     'django_jinja',
 )
-
-
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 
 MIDDLEWARE_CLASSES = (

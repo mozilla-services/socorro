@@ -10,6 +10,15 @@ services:
       dockerfile: ./docker/Dockerfile
     image: local/socorro_base
 
+  # Docs building container
+  docs:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.docs
+    image: local/socorro_docs
+    volumes:
+      - .:/app
+
   # Processor app
   processor:
     build:
@@ -73,13 +82,36 @@ services:
     volumes:
       - .:/app
 
+  # Submitter app
+  #
+  # NOTE(willkg): This app runs only in -prod and lets us slurp crashes from
+  # -prod to -stage. This service is here so we can test changes to the
+  # submitter, but you should probably never need to run this in your local
+  # development environment. It does configuration differently than all the
+  # other services because otherwise we end up with conflicts with things
+  # we care about.
+  submitter:
+    image: local/socorro_processor
+    env_file:
+      - docker/config/local_dev_submitter.env
+      - my.env
+    depends_on:
+      - rabbitmq
+    command: ["/app/docker/run_submitter.sh"]
+    volumes:
+      - .:/app
+
   # -----------------------------
   # External services
   # -----------------------------
 
   # https://hub.docker.com/r/mozilla/antenna/
+  #
   # This seems weird, but for the purposes of Socorro, we should treat
   # it as an external service.
+  #
+  # This uses the development ./bin/run_web.sh script from the Antenna
+  # container since that creates a bucket before running Antenna.
   antenna:
     image: mozilla/antenna:latest
     environment:
@@ -92,6 +124,7 @@ services:
       - CRASHSTORAGE_BUCKET_NAME=dev_bucket
     ports:
       - "8888:8000"
+    command: ./bin/run_web.sh
 
   # https://hub.docker.com/r/kamon/grafana_graphite/
   # username: admin, password: admin

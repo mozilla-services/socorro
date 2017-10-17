@@ -384,7 +384,7 @@ class BaseTable(object):
         buildids = []
         days = days or self.days
         if channel == 'Nightly' or channel == 'Aurora':
-            for day in xrange(0, self.days):
+            for day in range(0, self.days):
                 buildids.append(self.buildid(fragment, days=day))
         else:
             buildids.append(self.buildid(fragment))
@@ -425,7 +425,7 @@ class BaseTable(object):
 
                     amt = 1
 
-                    for i in xrange(amt):
+                    for i in range(amt):
                         url = weighted_choice(self.urls)
                         install_age = '1234'
                         last_crash = '1234'

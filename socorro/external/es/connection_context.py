@@ -103,8 +103,7 @@ class ConnectionContext(RequiredConfig):
             elasticsearch.Elasticsearch(
                 hosts=self.config.elasticsearch_urls,
                 timeout=timeout,
-                connection_class=\
-                    elasticsearch.connection.RequestsHttpConnection
+                connection_class=elasticsearch.connection.RequestsHttpConnection
             )
         )
 
