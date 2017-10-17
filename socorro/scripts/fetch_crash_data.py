@@ -47,7 +47,7 @@ def create_dir_if_needed(d):
 
 
 def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
-    """Fetch crash data and save to correct place
+    """Fetch crash data and save to correct place on the file system
 
     http://antenna.readthedocs.io/en/latest/architecture.html#aws-s3-file-hierarchy
 
