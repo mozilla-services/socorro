@@ -24,3 +24,49 @@ class WrappedTextHelpFormatter(argparse.HelpFormatter):
                 parts[i] = super(WrappedTextHelpFormatter, self)._fill_text(part, width, indent)
 
         return '\n\n'.join(parts)
+
+
+class FlagAction(argparse.Action):
+    """Facilitates --flag, --no-flag arguments
+
+    Usage::
+
+        parser.add_argument(
+            '--flag', '--no-flag', action=FlagAction, default=True,
+            help='whether to enable flag'
+        )
+
+
+    Which allows you to do::
+
+        $ command
+        $ command --flag
+        $ command --no-flag
+
+
+    And the help works nicely, too::
+
+        $ command --help
+        ...
+        optional arguments:
+           --flag, --no-flag  whether to enable flag
+
+    """
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        # Validate option strings--we should have a no- option for every option
+        options = [opt.strip('-') for opt in option_strings]
+
+        yes_options = [opt for opt in options if not opt.startswith('no-')]
+        no_options = [opt[3:] for opt in options if opt.startswith('no-')]
+
+        if sorted(yes_options) != sorted(no_options):
+            raise ValueError('There should be one --no option for every option value.')
+
+        super(FlagAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if option_string.startswith('--no'):
+            value = False
+        else:
+            value = True
+        setattr(namespace, self.dest, value)

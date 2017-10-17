@@ -13,7 +13,7 @@ import sys
 import requests
 
 from socorro.lib.datetimeutil import JsonDTEncoder
-from socorro.scripts import WrappedTextHelpFormatter
+from socorro.scripts import FlagAction, WrappedTextHelpFormatter
 
 
 DESCRIPTION = """
@@ -47,7 +47,12 @@ def create_dir_if_needed(d):
         os.makedirs(d)
 
 
-def fetch_crash(outputdir, api_token, crash_id):
+def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
+    """Fetch crash data and save to correct place on the file system
+
+    http://antenna.readthedocs.io/en/latest/architecture.html#aws-s3-file-hierarchy
+
+    """
     if api_token:
         headers = {
             'Auth-Token': api_token
@@ -56,7 +61,6 @@ def fetch_crash(outputdir, api_token, crash_id):
         headers = {}
 
     # Fetch raw crash metadata
-    print('Fetching %s' % crash_id)
     resp = requests.get(
         HOST + '/api/RawCrash/',
         params={
@@ -70,55 +74,53 @@ def fetch_crash(outputdir, api_token, crash_id):
 
     raw_crash = resp.json()
 
-    # Fetch dumps
-    dumps = {}
-    dump_names = raw_crash.get('dump_checksums', {}).keys()
-    for dump_name in dump_names:
-        print('Fetching %s -> %s' % (crash_id, dump_name))
-        if dump_name == 'upload_file_minidump':
-            dump_name = 'dump'
-
-        resp = requests.get(
-            HOST + '/api/RawCrash/',
-            params={
-                'crash_id': crash_id,
-                'format': 'raw',
-                'name': dump_name
-            },
-            headers=headers,
-        )
-
-        if resp.status_code != 200:
-            raise Exception('Something unexpected happened. status_code %s, content %s' % (
-                resp.status_code, resp.content)
-            )
-
-        dumps[dump_name] = resp.content
-
-    # Save everything to file system in the right place
-    # http://antenna.readthedocs.io/en/latest/architecture.html#aws-s3-file-hierarchy
-
     # Save raw crash to file system
     fn = os.path.join(outputdir, 'v2', 'raw_crash', crash_id[0:3], '20' + crash_id[-6:], crash_id)
     create_dir_if_needed(os.path.dirname(fn))
     with open(fn, 'w') as fp:
         json.dump(raw_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
 
-    # Save dump_names to file system
-    fn = os.path.join(outputdir, 'v1', 'dump_names', crash_id)
-    create_dir_if_needed(os.path.dirname(fn))
-    with open(fn, 'w') as fp:
-        json.dump(dumps.keys(), fp)
+    if fetchdumps:
+        # Fetch dumps
+        dumps = {}
+        dump_names = raw_crash.get('dump_checksums', {}).keys()
+        for dump_name in dump_names:
+            print('Fetching %s -> %s' % (crash_id, dump_name))
+            if dump_name == 'upload_file_minidump':
+                dump_name = 'dump'
 
-    # Save dumps to file system
-    for dump_name, data in dumps.items():
-        if dump_name == 'upload_file_minidump':
-            dump_name = 'dump'
+            resp = requests.get(
+                HOST + '/api/RawCrash/',
+                params={
+                    'crash_id': crash_id,
+                    'format': 'raw',
+                    'name': dump_name
+                },
+                headers=headers,
+            )
 
-        fn = os.path.join(outputdir, 'v1', dump_name, crash_id)
+            if resp.status_code != 200:
+                raise Exception('Something unexpected happened. status_code %s, content %s' % (
+                    resp.status_code, resp.content)
+                )
+
+            dumps[dump_name] = resp.content
+
+        # Save dump_names to file system
+        fn = os.path.join(outputdir, 'v1', 'dump_names', crash_id)
         create_dir_if_needed(os.path.dirname(fn))
-        with open(fn, 'wb') as fp:
-            fp.write(data)
+        with open(fn, 'w') as fp:
+            json.dump(dumps.keys(), fp)
+
+        # Save dumps to file system
+        for dump_name, data in dumps.items():
+            if dump_name == 'upload_file_minidump':
+                dump_name = 'dump'
+
+            fn = os.path.join(outputdir, 'v1', dump_name, crash_id)
+            create_dir_if_needed(os.path.dirname(fn))
+            with open(fn, 'wb') as fp:
+                fp.write(data)
 
 
 def main(argv):
@@ -128,6 +130,11 @@ def main(argv):
         description=DESCRIPTION.strip(),
         epilog=EPILOG.strip(),
     )
+    parser.add_argument(
+        '--dumps', '--no-dumps', dest='fetchdumps', action=FlagAction, default=True,
+        help='whether or not to save dumps'
+    )
+
     parser.add_argument('outputdir', help='directory to place crash data in')
     parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
 
@@ -153,6 +160,6 @@ def main(argv):
         crash_id = crash_id.strip()
 
         print('Working on %s...' % crash_id)
-        fetch_crash(outputdir, api_token, crash_id)
+        fetch_crash(args.fetchdumps, outputdir, api_token, crash_id)
 
     return 0
