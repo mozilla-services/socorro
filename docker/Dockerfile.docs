@@ -1,5 +1,7 @@
 FROM local/socorro_base
 
+ENV CONTAINERNAME docs
+
 # Install graphviz
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y graphviz
 

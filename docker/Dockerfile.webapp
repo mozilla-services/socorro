@@ -7,6 +7,8 @@ ENV LESS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.
 ENV UGLIFYJS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/uglifyjs
 ENV CSSMIN_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/cssmin
 
+ENV CONTAINERNAME webapp
+
 COPY . /app/
 
 RUN cd /app/webapp-django/ && npm install -g
