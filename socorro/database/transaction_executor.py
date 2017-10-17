@@ -84,9 +84,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     def responsive_sleep(self, seconds, wait_reason=''):
         """Sleep for the specified number of seconds, logging every
         'wait_log_interval' seconds with progress info."""
-        for x in xrange(int(seconds)):
-            if (self.config.wait_log_interval and
-                not x % self.config.wait_log_interval):
+        for x in range(int(seconds)):
+            if self.config.wait_log_interval and not x % self.config.wait_log_interval:
                 self.config.logger.debug(
                     '%s: %dsec of %dsec' % (wait_reason, x, seconds)
                 )
@@ -152,13 +151,12 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
             self.responsive_sleep(
                 wait_in_seconds,
                 'waiting for retry after failure in %s transaction' %
-                    self.connection_source_type,
+                self.connection_source_type,
             )
         raise
 
 
-class TransactionExecutorWithLimitedBackoff(
-                                       TransactionExecutorWithInfiniteBackoff):
+class TransactionExecutorWithLimitedBackoff(TransactionExecutorWithInfiniteBackoff):
     # the `is_infinite` flag is informative for uses of this class
     is_infinite = False
 
