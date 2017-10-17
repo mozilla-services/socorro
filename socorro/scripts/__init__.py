@@ -53,6 +53,15 @@ class FlagAction(argparse.Action):
 
     """
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        # Validate option strings--we should have a no- option for every option
+        options = [opt.strip('-') for opt in option_strings]
+
+        yes_options = [opt for opt in options if not opt.startswith('no-')]
+        no_options = [opt[3:] for opt in options if opt.startswith('no-')]
+
+        if sorted(yes_options) != sorted(no_options):
+            raise ValueError('There should be one --no option for every option value.')
+
         super(FlagAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
