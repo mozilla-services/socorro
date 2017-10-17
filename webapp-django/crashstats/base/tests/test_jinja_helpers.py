@@ -1,5 +1,3 @@
-from nose.tools import eq_
-
 from django.test.client import RequestFactory
 from django.core.urlresolvers import reverse
 
@@ -16,76 +14,76 @@ class TestChangeURL(TestCase):
         context = {}
         context['request'] = RequestFactory().get('/')
         result = change_query_string(context)
-        eq_(result, '/')
+        assert result == '/'
 
     def test_with_path_no_query_string(self):
         context = {}
         context['request'] = RequestFactory().get('/page/')
         result = change_query_string(context)
-        eq_(result, '/page/')
+        assert result == '/page/'
 
     def test_with_query_string(self):
         context = {}
         context['request'] = RequestFactory().get('/page/?foo=bar&bar=baz')
         result = change_query_string(context)
-        eq_(result, '/page/?foo=bar&bar=baz')
+        assert result == '/page/?foo=bar&bar=baz'
 
     def test_add_query_string(self):
         context = {}
         context['request'] = RequestFactory().get('/page/')
         result = change_query_string(context, foo='bar')
-        eq_(result, '/page/?foo=bar')
+        assert result == '/page/?foo=bar'
 
     def test_change_query_string(self):
         context = {}
         context['request'] = RequestFactory().get('/page/?foo=bar')
         result = change_query_string(context, foo='else')
-        eq_(result, '/page/?foo=else')
+        assert result == '/page/?foo=else'
 
     def test_remove_query_string(self):
         context = {}
         context['request'] = RequestFactory().get('/page/?foo=bar')
         result = change_query_string(context, foo=None)
-        eq_(result, '/page/')
+        assert result == '/page/'
 
     def test_remove_leave_some(self):
         context = {}
         context['request'] = RequestFactory().get('/page/?foo=bar&other=thing')
         result = change_query_string(context, foo=None)
-        eq_(result, '/page/?other=thing')
+        assert result == '/page/?other=thing'
 
     def test_change_query_without_base(self):
         context = {}
         context['request'] = RequestFactory().get('/page/?foo=bar')
         result = change_query_string(context, foo='else', _no_base=True)
-        eq_(result, '?foo=else')
+        assert result == '?foo=else'
 
 
 class TestURL(TestCase):
 
     def test_basic(self):
         output = url('crashstats:login')
-        eq_(output, reverse('crashstats:login'))
+        assert output == reverse('crashstats:login')
 
         # now with a arg
         output = url('home:home', 'Firefox')
-        eq_(output, reverse('home:home', args=('Firefox',)))
+        assert output == reverse('home:home', args=('Firefox',))
 
         # now with a kwarg
         output = url('home:home', product='Waterfox')
-        eq_(output, reverse('home:home', args=('Waterfox',)))
+        assert output == reverse('home:home', args=('Waterfox',))
 
     def test_arg_cleanup(self):
         output = url('home:home', 'Firefox\n')
-        eq_(output, reverse('home:home', args=('Firefox',)))
+        assert output == reverse('home:home', args=('Firefox',))
 
         output = url('home:home', product='\tWaterfox')
-        eq_(output, reverse('home:home', args=('Waterfox',)))
+        assert output == reverse('home:home', args=('Waterfox',))
 
         # this is something we've seen in the "wild"
         output = url('home:home', u'Winterfox\\\\nn')
-        eq_(output, reverse('home:home', args=('Winterfoxnn',)))
+        assert output == reverse('home:home', args=('Winterfoxnn',))
 
         # check that it works if left as a byte string too
         output = url('home:home', 'Winterfox\\\\nn')
-        eq_(output, reverse('home:home', args=('Winterfoxnn',)))
+        assert output == reverse('home:home', args=('Winterfoxnn',))

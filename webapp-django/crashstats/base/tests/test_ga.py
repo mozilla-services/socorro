@@ -2,7 +2,6 @@ from functools import wraps
 from uuid import UUID
 
 import mock
-from nose.tools import eq_
 
 from django.test.client import RequestFactory
 from django.conf import settings
@@ -246,24 +245,18 @@ class TestTrackingPageviews(DjangoTestCase):
 
         with self.settings(GOOGLE_ANALYTICS_ID='XYZ-123'):
             response = self.client.get(url, {'product': 'WaterWolf'})
-            eq_(response.status_code, 200)
-            eq_(len(queues), 1)  # the mutable
+            assert response.status_code == 200
+            assert len(queues) == 1  # the mutable
             assert len(gets) == 1
-            eq_(queues[0]['dp'], '/api/ProductBuildTypes/')
-            eq_(
-                queues[0]['dl'],
-                'http://testserver/api/ProductBuildTypes/?product=WaterWolf'
-            )
+            assert queues[0]['dp'] == '/api/ProductBuildTypes/'
+            assert queues[0]['dl'] == 'http://testserver/api/ProductBuildTypes/?product=WaterWolf'
 
             response = self.client.get(url, {'product': '400'})
             assert len(gets) == 2, len(gets)
-            eq_(response.status_code, 400)
-            eq_(len(queues), 2)
-            eq_(queues[1]['dp'], '/api/ProductBuildTypes/')
-            eq_(
-                queues[1]['dl'],
-                'http://testserver/api/ProductBuildTypes/?product=400'
-            )
+            assert response.status_code == 400
+            assert len(queues) == 2
+            assert queues[1]['dp'] == '/api/ProductBuildTypes/'
+            assert queues[1]['dl'] == 'http://testserver/api/ProductBuildTypes/?product=400'
 
             response = self.client.get(
                 url,
@@ -271,8 +264,8 @@ class TestTrackingPageviews(DjangoTestCase):
                 HTTP_REFERER='example.com'
             )
             assert len(gets) == 3, len(gets)
-            eq_(response.status_code, 200)
-            eq_(len(queues), 3)
+            assert response.status_code == 200
+            assert len(queues) == 3
 
             response = self.client.get(
                 url,
@@ -281,5 +274,5 @@ class TestTrackingPageviews(DjangoTestCase):
                 HTTP_HOST='example.com',
             )
             assert len(gets) == 3, len(gets)
-            eq_(response.status_code, 200)
-            eq_(len(queues), 3)  # no increase!
+            assert response.status_code == 200
+            assert len(queues) == 3  # no increase!
