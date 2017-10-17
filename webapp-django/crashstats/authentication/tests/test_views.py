@@ -3,7 +3,6 @@ import json
 import re
 
 import mock
-from nose.tools import eq_, ok_
 from oauth2client import crypt
 
 from django.conf import settings
@@ -35,20 +34,20 @@ class TestOAuth2Views(BaseTestViews):
         url = reverse('auth:oauth2_signout')
         response = self.client.post(url)
         # because you're not signed in
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
 
         self._login()
         # just viewing the page
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         response = self.client.post(url)
-        eq_(response.status_code, 200)
-        ok_(json.loads(response.content)['OK'])
+        assert response.status_code == 200
+        assert json.loads(response.content)['OK']
 
         response = self.client.get(url)
         # because you're not signed in any more
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
 
     def test_oauth2_signin(self):
 
@@ -70,17 +69,17 @@ class TestOAuth2Views(BaseTestViews):
         response = self.client.post(url, {
             'token': '123456789'
         })
-        eq_(response.status_code, 200)
-        ok_(json.loads(response.content)['OK'])
-        ok_(self.client.session.keys())
+        assert response.status_code == 200
+        assert json.loads(response.content)['OK']
+        assert self.client.session.keys()
 
         # it should have created a user
         user = User.objects.get(email='test@example.com')
-        eq_(user.first_name, '')
-        eq_(user.last_name, 'Addams')
-        ok_(user.last_login)
-        ok_(user.date_joined)
-        ok_(not user.has_usable_password())
+        assert user.first_name == ''
+        assert user.last_name == 'Addams'
+        assert user.last_login
+        assert user.date_joined
+        assert not user.has_usable_password()
 
     def test_oauth2_signin_existing_user(self):
         user = User.objects.create(
@@ -106,17 +105,17 @@ class TestOAuth2Views(BaseTestViews):
         response = self.client.post(url, {
             'token': '123456789'
         })
-        eq_(response.status_code, 200)
-        ok_(json.loads(response.content)['OK'])
-        ok_(self.client.session.keys())
+        assert response.status_code == 200
+        assert json.loads(response.content)['OK']
+        assert self.client.session.keys()
 
         # it should have created a user
         user = User.objects.get(id=user.id)
-        eq_(user.first_name, '')
-        eq_(user.last_name, 'Different')
-        ok_(user.last_login)
-        ok_(user.date_joined)
-        ok_(not user.has_usable_password())
+        assert user.first_name == ''
+        assert user.last_name == 'Different'
+        assert user.last_login
+        assert user.date_joined
+        assert not user.has_usable_password()
 
     def test_oauth2_signin_existing_inactive_user(self):
         user = User.objects.create(
@@ -144,7 +143,7 @@ class TestOAuth2Views(BaseTestViews):
         response = self.client.post(url, {
             'token': '123456789'
         })
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
     def test_oauth2_signin_email_not_verified(self):
 
@@ -164,7 +163,7 @@ class TestOAuth2Views(BaseTestViews):
         response = self.client.post(url, {
             'token': '123456789'
         })
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
     def test_oauth2_signin_bad_token(self):
 
@@ -178,7 +177,7 @@ class TestOAuth2Views(BaseTestViews):
         response = self.client.post(url, {
             'token': 'junk'
         })
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
     def test_oauth2_signin_bad_verification_data(self):
 
@@ -201,12 +200,12 @@ class TestOAuth2Views(BaseTestViews):
         response = self.client.post(url, {
             'token': 'bad client id'
         })
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         response = self.client.post(url, {
             'token': 'bad issuer'
         })
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
     def test_signout_meta_tag(self):
         """If the user has been signed in too long, we expect there
@@ -216,18 +215,18 @@ class TestOAuth2Views(BaseTestViews):
         # that you can view whilst being anonymous.
         url = reverse('documentation:home')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         head = response.content.split('</head>')[0]
-        ok_('<meta name="signin"' not in head)
+        assert '<meta name="signin"' not in head
 
         # let's be signed in
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         head = response.content.split('</head>')[0]
         # Still not there because the server does NOT think you need
         # to sign out.
-        ok_('<meta name="signin"' not in head)
+        assert '<meta name="signin"' not in head
 
         # Reload because the fixture user doesn't have a last_login
         # when it's first returned.
@@ -237,9 +236,9 @@ class TestOAuth2Views(BaseTestViews):
         )
         user.save()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         head = response.content.split('</head>')[0]
-        ok_('<meta name="signin" content="signout"' in head)
+        assert '<meta name="signin" content="signout"' in head
 
     def test_signout_meta_tag_inactive_user(self):
         """If you're signed in and view a private page (e.g. the
@@ -253,17 +252,17 @@ class TestOAuth2Views(BaseTestViews):
         url = reverse('documentation:home')
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         head = response.content.split('</head>')[0]
-        ok_('<meta name="signin" content="signout"' not in head)
+        assert '<meta name="signin" content="signout"' not in head
 
         user = User.objects.get(id=user.id)
         user.is_active = False
         user.save()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         head = response.content.split('</head>')[0]
-        ok_('<meta name="signin" content="signout"' in head)
+        assert '<meta name="signin" content="signout"' in head
 
 
 class TestDebugLogin(DjangoTestCase):
@@ -275,29 +274,29 @@ class TestDebugLogin(DjangoTestCase):
             DEBUG=True,
         ):
             response = self.client.get(url)
-            eq_(response.status_code, 200)
-            ok_('data-session-cookie-secure="true"' in response.content)
+            assert response.status_code == 200
+            assert 'data-session-cookie-secure="true"' in response.content
 
     def test_get_cache_value(self):
         url = reverse('auth:debug_login')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # rendering it will set a data-cache-value
         regex = re.compile('data-cache-value="(\d+)"')
         cache_value = regex.findall(response.content)[0]
         response = self.client.get(url, {'test-caching': True})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         structure = json.loads(response.content)
-        eq_(int(cache_value), structure['cache_value'])
+        assert int(cache_value) == structure['cache_value']
 
     def test_get_cookie_value(self):
         url = reverse('auth:debug_login')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # rendering it will set a data-cache-value
         regex = re.compile('data-cookie-value="(\d+)"')
         cookie_value = regex.findall(response.content)[0]
         response = self.client.get(url, {'test-cookie': True})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         structure = json.loads(response.content)
-        eq_(int(cookie_value), structure['cookie_value'])
+        assert int(cookie_value) == structure['cookie_value']
