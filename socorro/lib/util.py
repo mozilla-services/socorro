@@ -12,7 +12,7 @@ import traceback
 
 
 def chunkify(iterable, n):
-    """Return chunks of n length of iterable
+    """Split iterable into chunks of length n
 
     If ``len(iterable) % n != 0``, then the last chunk will have length less than n.
 
