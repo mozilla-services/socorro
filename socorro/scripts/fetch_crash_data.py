@@ -24,7 +24,8 @@ EPILOG = """
 Given one or more crash ids via command line or stdin (one per line), fetches crash data and puts it
 in specified directory.
 
-This requires an auth-token to be in the environment::
+This requires an auth-token to be in the environment in order to download dumps and personally
+identifiable information::
 
     SOCORRO_API_TOKEN=xyz
 
@@ -138,9 +139,12 @@ def main(argv):
         print('%s is not a directory. Please fix. Exiting.' % outputdir)
         return 1
 
+    # Sort out API token existence
     api_token = os.environ.get('SOCORRO_API_TOKEN')
     if api_token:
         print('Using api token: %s%s' % (api_token[:4], 'x' * (len(api_token) - 4)))
+    else:
+        print('No api token provided. Skipping dumps and personally identifiable information.')
 
     # This will pull crash ids from the command line if specified, otherwise it'll pull from stdin
     crashids_iterable = args.crashid or sys.stdin
