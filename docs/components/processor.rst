@@ -104,14 +104,21 @@ You should run this with ``docker/as_me.sh`` so that the files that get saved to
 the file system are owned by the user/group of the account you're using on your
 host.
 
-This script requires that you have a valid API token from the
-crash-stats.mozilla.com environment that has the "View Raw Dumps" permission.
+.. Note::
 
-You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
+   This script requires that you have a valid API token from the
+   crash-stats.mozilla.com environment that has the "View Raw Dumps" permission
+   in order to download personally identifiable information and dumps.
 
-Add the API token value to your ``my.env`` file::
+   You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
 
-    SOCORRO_API_TOKEN=apitokenhere
+   Add the API token value to your ``my.env`` file::
+
+       SOCORRO_API_TOKEN=apitokenhere
+
+   If you don't have an API token, this will download some raw crash
+   information, but it will be redacted.
+
 
 .. Note::
 
