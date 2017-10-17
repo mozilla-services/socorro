@@ -1,6 +1,6 @@
 import copy
 
-from nose.tools import assert_raises
+import pytest
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -24,10 +24,5 @@ class LeftoverPipelineFinder(DjangoTestCase):
             filenames
         )
         with self.settings(PIPELINE=busted_pipeline):
-            assert_raises(
-                ImproperlyConfigured,
-                call_command,
-                'collectstatic',
-                '--noinput',
-                interactive=False,
-            )
+            with pytest.raises(ImproperlyConfigured):
+                call_command('collectstatic', '--noinput', interactive=False)

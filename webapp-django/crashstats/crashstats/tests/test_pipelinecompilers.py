@@ -2,8 +2,6 @@ import os
 import shutil
 import tempfile
 
-from nose.tools import ok_
-
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats.pipelinecompilers import GoogleAnalyticsCompiler
 from crashstats import crashstats
@@ -27,8 +25,8 @@ class TestGoogleAnalyticsCompiler(DjangoTestCase):
 
     def test_match(self):
         compiler = GoogleAnalyticsCompiler(False, None)
-        ok_(compiler.match_file('/foo/google_analytics.js'))
-        ok_(not compiler.match_file('/foo/bar.js'))
+        assert compiler.match_file('/foo/google_analytics.js')
+        assert not compiler.match_file('/foo/bar.js')
 
     def test_compile(self):
         compiler = GoogleAnalyticsCompiler(False, None)
@@ -44,4 +42,4 @@ class TestGoogleAnalyticsCompiler(DjangoTestCase):
             # now the outfile should have been created
             with open(outfile) as f:
                 content = f.read()
-                ok_('UA-12345-6' in content)
+                assert 'UA-12345-6' in content
