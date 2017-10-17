@@ -46,6 +46,7 @@ nsEventQueue::GetEvent
 _NSRaiseError
 nsThread::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
+mozilla::PrioritizedEventQueue<T>::GetEvent
 nsThread::ProcessNextEvent
 NS_ProcessNextEvent
 (Nt|Zw)?WaitForKeyedEvent
