@@ -82,6 +82,25 @@ services:
     volumes:
       - .:/app
 
+  # Submitter app
+  #
+  # NOTE(willkg): This app runs only in -prod and lets us slurp crashes from
+  # -prod to -stage. This service is here so we can test changes to the
+  # submitter, but you should probably never need to run this in your local
+  # development environment. It does configuration differently than all the
+  # other services because otherwise we end up with conflicts with things
+  # we care about.
+  submitter:
+    image: local/socorro_processor
+    env_file:
+      - docker/config/local_dev_submitter.env
+      - my.env
+    depends_on:
+      - rabbitmq
+    command: ["/app/docker/run_submitter.sh"]
+    volumes:
+      - .:/app
+
   # -----------------------------
   # External services
   # -----------------------------
