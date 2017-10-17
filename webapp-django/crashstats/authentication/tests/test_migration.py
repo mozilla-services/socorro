@@ -5,8 +5,6 @@ import os
 import re
 import tempfile
 
-from nose.tools import ok_, eq_
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.management import call_command
@@ -38,7 +36,7 @@ class TestMigrateUsersCSV(DjangoTestCase):
             writer.writerow(['alias@example.com', 'flastname@example.com'])
         try:
             call_command('migrate-users-csv', tmp_csv_file, stdout=out)
-            ok_(not out.getvalue())
+            assert not out.getvalue()
         finally:
             os.remove(tmp_csv_file)
 
@@ -77,14 +75,14 @@ class TestMigrateUsersCSV(DjangoTestCase):
             migrate_users(combos)
 
         # Check the stdout blather
-        ok_(re.findall(
+        assert re.findall(
             'NEED TO MIGRATE Alias@example.com\s+TO Flastname@example.com',
             out.getvalue()
-        ))
-        ok_(re.findall(
+        )
+        assert re.findall(
             'NEED TO MIGRATE Alias2@example.com\s+TO corrected@example.com',
             out.getvalue()
-        ))
+        )
 
         # Should still only be 3 users
         assert User.objects.all().count() == 3
@@ -92,14 +90,14 @@ class TestMigrateUsersCSV(DjangoTestCase):
         # It should have now "copied" all the good stuff of `alias`
         # over to `real`.
         alias = User.objects.get(id=alias.id)  # reload
-        ok_(not alias.is_active)
+        assert not alias.is_active
         real = User.objects.get(id=real.id)
-        ok_(real.is_staff)
-        ok_(real.is_superuser)
-        ok_(cool in real.groups.all())
-        ok_(not_cool in real.groups.all())
-        eq_(real.last_login, today)
+        assert real.is_staff
+        assert real.is_superuser
+        assert cool in real.groups.all()
+        assert not_cool in real.groups.all()
+        assert real.last_login == today
 
         # And the `alias2` user should just simply have its email changed.
-        ok_(not User.objects.filter(email__iexact='alias2@example.com'))
-        ok_(User.objects.filter(email__iexact='corrected@example.com'))
+        assert not User.objects.filter(email__iexact='alias2@example.com')
+        assert User.objects.filter(email__iexact='corrected@example.com')

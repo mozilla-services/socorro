@@ -7,7 +7,6 @@ from django.utils import timezone
 
 import mock
 import pyquery
-from nose.tools import eq_, ok_
 
 from socorro.lib import BadArgumentError, MissingArgumentError
 from crashstats.base.tests.testbase import TestCase
@@ -35,16 +34,16 @@ class TestDedentLeft(TestCase):
 
     def test_dedent_left(self):
         from crashstats.api.views import dedent_left
-        eq_(dedent_left('Hello', 2), 'Hello')
-        eq_(dedent_left('   Hello', 2), ' Hello')
-        eq_(dedent_left('   Hello ', 2), ' Hello ')
+        assert dedent_left('Hello', 2) == 'Hello'
+        assert dedent_left('   Hello', 2) == ' Hello'
+        assert dedent_left('   Hello ', 2) == ' Hello '
 
         text = """Line 1
         Line 2
         Line 3
         """.rstrip()
         # because this code right above is indented with 2 * 4 spaces
-        eq_(dedent_left(text, 8), 'Line 1\nLine 2\nLine 3')
+        assert dedent_left(text, 8) == 'Line 1\nLine 2\nLine 3'
 
 
 class TestDocumentationViews(BaseTestViews):
@@ -61,13 +60,13 @@ class TestDocumentationViews(BaseTestViews):
 
         url = reverse('api:documentation')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         doc = pyquery.PyQuery(response.content)
 
         from crashstats.api import views
         for elt in doc('#mainbody .panel .title h2 a'):
-            ok_(elt.text not in views.BLACKLIST)
+            assert elt.text not in views.BLACKLIST
 
 
 class TestViews(BaseTestViews):
@@ -86,16 +85,16 @@ class TestViews(BaseTestViews):
     def test_invalid_url(self):
         url = reverse('api:model_wrapper', args=('BlaBLabla',))
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_base_classes_raise_not_found(self):
         url = reverse('api:model_wrapper', args=('SocorroMiddleware',))
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        assert response.status_code == 404
 
         url = reverse('api:model_wrapper', args=('ESSocorroMiddleware',))
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_CORS(self):
         """any use of model_wrapper should return a CORS header"""
@@ -110,8 +109,8 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('Status',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        eq_(response['Access-Control-Allow-Origin'], '*')
+        assert response.status_code == 200
+        assert response['Access-Control-Allow-Origin'] == '*'
 
     def test_cache_control(self):
         """successful queries against models with caching should
@@ -133,11 +132,11 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('ProductBuildTypes',))
         response = self.client.get(url, {'product': settings.DEFAULT_PRODUCT})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         assert response['Cache-Control']
-        ok_('private' in response['Cache-Control'])
+        assert 'private' in response['Cache-Control']
         cache_seconds = ProductBuildTypes.cache_seconds
-        ok_('max-age={}'.format(cache_seconds) in response['Cache-Control'])
+        assert 'max-age={}'.format(cache_seconds) in response['Cache-Control']
 
     def test_ProductVersions(self):
 
@@ -157,30 +156,31 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('ProductVersions',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        eq_(dump['total'], 1)
-        eq_(dump['hits'][0], {
+        assert dump['total'] == 1
+        expected = {
             'product': 'Firefox',
             'version': '1.0',
-        })
+        }
+        assert dump['hits'][0] == expected
 
     def test_Platforms(self):
         # note: this gets mocked out in the setUp
         url = reverse('api:model_wrapper', args=('Platforms',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
         # see the setUp for this fixture
-        eq_(dump[0], {'code': 'win', 'name': 'Windows'})
+        assert dump[0] == {'code': 'win', 'name': 'Windows'}
 
     def test_ProcessedCrash(self):
         url = reverse('api:model_wrapper', args=('ProcessedCrash',))
         response = self.client.get(url)
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        assert response.status_code == 400
+        assert response['Content-Type'] == 'application/json; charset=UTF-8'
         dump = json.loads(response.content)
-        ok_(dump['errors']['crash_id'])
+        assert dump['errors']['crash_id']
 
         def mocked_get(**params):
             if 'datatype' in params and params['datatype'] == 'processed':
@@ -224,17 +224,17 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'crash_id': '123',
         })
-        eq_(response.status_code, 200, response.content)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        eq_(dump['uuid'], u'11cb72f5-eb28-41e1-a8e4-849982120611')
-        ok_('upload_file_minidump_flash2' in dump)
-        ok_('url' not in dump)
+        assert dump['uuid'] == u'11cb72f5-eb28-41e1-a8e4-849982120611'
+        assert 'upload_file_minidump_flash2' in dump
+        assert 'url' not in dump
 
     def test_UnredactedCrash(self):
         url = reverse('api:model_wrapper', args=('UnredactedCrash',))
         response = self.client.get(url)
         # because we don't have the sufficient permissions yet to use it
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         user = User.objects.create(username='test')
         self._add_permission(user, 'view_pii')
@@ -253,10 +253,10 @@ class TestViews(BaseTestViews):
         token.permissions.add(view_exploitability_perm)
 
         response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        assert response.status_code == 400
+        assert response['Content-Type'] == 'application/json; charset=UTF-8'
         dump = json.loads(response.content)
-        ok_(dump['errors']['crash_id'])
+        assert dump['errors']['crash_id']
 
         def mocked_get(**params):
             if 'datatype' in params and params['datatype'] == 'unredacted':
@@ -301,11 +301,11 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'crash_id': '123',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        eq_(dump['uuid'], u'11cb72f5-eb28-41e1-a8e4-849982120611')
-        ok_('upload_file_minidump_flash2' in dump)
-        ok_('exploitability' in dump)
+        assert dump['uuid'] == u'11cb72f5-eb28-41e1-a8e4-849982120611'
+        assert 'upload_file_minidump_flash2' in dump
+        assert 'exploitability' in dump
 
     def test_RawCrash(self):
 
@@ -352,29 +352,29 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url)
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        assert response.status_code == 400
+        assert response['Content-Type'] == 'application/json; charset=UTF-8'
         dump = json.loads(response.content)
-        ok_(dump['errors']['crash_id'])
+        assert dump['errors']['crash_id']
 
         response = self.client.get(url, {
             'crash_id': 'abc123'
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        ok_('id' in dump)
-        ok_('URL' not in dump)  # right?
-        ok_('AsyncShutdownTimeout' in dump)
-        ok_('BIOS_Manufacturer' in dump)
-        ok_('upload_file_minidump_browser' in dump)
-        ok_('upload_file_minidump_flash1' in dump)
-        ok_('upload_file_minidump_flash2' in dump)
-        ok_('upload_file_minidump_plugin' in dump)
+        assert 'id' in dump
+        assert 'URL' not in dump
+        assert 'AsyncShutdownTimeout' in dump
+        assert 'BIOS_Manufacturer' in dump
+        assert 'upload_file_minidump_browser' in dump
+        assert 'upload_file_minidump_flash1' in dump
+        assert 'upload_file_minidump_flash2' in dump
+        assert 'upload_file_minidump_plugin' in dump
 
         # `Comments` is scrubbed
-        ok_('I visited' in dump['Comments'])
-        ok_('http://p0rn.com' not in dump['Comments'])
-        ok_('mail@email.com' not in dump['Comments'])
+        assert 'I visited' in dump['Comments']
+        assert 'http://p0rn.com' not in dump['Comments']
+        assert 'mail@email.com' not in dump['Comments']
 
     def test_RawCrash_binary_blob(self):
 
@@ -391,15 +391,15 @@ class TestViews(BaseTestViews):
             'format': 'raw'
         })
         # because we don't have permission
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         response = self.client.get(url, {
             'crash_id': 'abc',
             'format': 'wrong'  # note
         })
         # invalid format
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        assert response.status_code == 400
+        assert response['Content-Type'] == 'application/json; charset=UTF-8'
 
         user = self._login()
         self._add_permission(user, 'view_pii')
@@ -408,7 +408,7 @@ class TestViews(BaseTestViews):
             'format': 'raw'
         })
         # still don't have the right permission
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         self._add_permission(user, 'view_rawdump')
         response = self.client.get(url, {
@@ -416,17 +416,17 @@ class TestViews(BaseTestViews):
             'format': 'raw'
         })
         # finally!
-        eq_(response.status_code, 200)
-        eq_(response['Content-Disposition'], 'attachment; filename="abc.dmp"')
-        eq_(response['Content-Type'], 'application/octet-stream')
+        assert response.status_code == 200
+        assert response['Content-Disposition'] == 'attachment; filename="abc.dmp"'
+        assert response['Content-Type'] == 'application/octet-stream'
 
     def test_Bugs(self):
         url = reverse('api:model_wrapper', args=('Bugs',))
         response = self.client.get(url)
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        assert response.status_code == 400
+        assert response['Content-Type'] == 'application/json; charset=UTF-8'
         dump = json.loads(response.content)
-        ok_(dump['errors']['signatures'])
+        assert dump['errors']['signatures']
 
         def mocked_get_bugs(**options):
             return {
@@ -442,9 +442,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'signatures': 'one & two',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        ok_(dump['hits'])
+        assert dump['hits']
 
     def test_SignaturesForBugs(self):
 
@@ -458,25 +458,25 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
         response = self.client.get(url)
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        assert response.status_code == 400
+        assert response['Content-Type'] == 'application/json; charset=UTF-8'
         dump = json.loads(response.content)
-        ok_(dump['errors']['bug_ids'])
+        assert dump['errors']['bug_ids']
 
         response = self.client.get(url, {
             'bug_ids': '123456789',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        ok_(dump['hits'])
+        assert dump['hits']
 
     def test_NewSignatures(self):
 
         def mocked_supersearch_get(**params):
-            eq_(params['product'], [settings.DEFAULT_PRODUCT])
+            assert params['product'] == [settings.DEFAULT_PRODUCT]
 
             if 'version' in params:
-                eq_(params['version'], ['1.0', '2.0'])
+                assert params['version'] == ['1.0', '2.0']
 
             if 'signature' not in params:
                 # Return a list of signatures.
@@ -506,20 +506,20 @@ class TestViews(BaseTestViews):
 
         # Test we get expected results.
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         res_expected = [
             'ba',
             'zin',
         ]
         res = json.loads(response.content)
-        eq_(res['hits'], res_expected)
+        assert res['hits'] == res_expected
 
         # Test with versions.
         response = self.client.get(url, {
             'version': ['1.0', '2.0']
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         # Test with incorrect arguments.
         response = self.client.get(url, {
@@ -527,11 +527,11 @@ class TestViews(BaseTestViews):
             'end_date': 'not a date',
             'not_after': 'not a date',
         })
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
+        assert response.status_code == 400
+        assert response['Content-Type'] == 'application/json; charset=UTF-8'
         res = json.loads(response.content)
-        ok_('errors' in res)
-        eq_(len(res['errors']), 3)
+        assert 'errors' in res
+        assert len(res['errors']) == 3
 
     def test_Status(self):
 
@@ -545,10 +545,10 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('Status',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        ok_(dump['socorro_revision'])
-        ok_(dump['breakpad_revision'])
+        assert dump['socorro_revision']
+        assert dump['breakpad_revision']
 
     def test_CrontabberState(self):
         # The actual dates dont matter, but it matters that it's a
@@ -583,14 +583,14 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('CrontabberState',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         dump = json.loads(response.content)
-        ok_(dump['state'])
+        assert dump['state']
 
     def test_Field(self):
         url = reverse('api:model_wrapper', args=('Field',))
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        assert response.status_code == 404
 
     def test_hit_or_not_hit_ratelimit(self):
 
@@ -625,7 +625,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('CrontabberState',))
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         with self.settings(
             API_RATE_LIMIT='3/m',
             API_RATE_LIMIT_AUTHENTICATED='6/m'
@@ -635,12 +635,12 @@ class TestViews(BaseTestViews):
             # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
             for __ in range(current_limit * 2):
                 response = self.client.get(url)
-            eq_(response.status_code, 429)
+            assert response.status_code == 429
 
             # But it'll work if you use a different X-Forwarded-For IP
             # because the rate limit is based on your IP address
             response = self.client.get(url, HTTP_X_FORWARDED_FOR='11.11.11.11')
-            eq_(response.status_code, 200)
+            assert response.status_code == 200
 
             user = User.objects.create(username='test')
             token = Token.objects.create(
@@ -649,11 +649,11 @@ class TestViews(BaseTestViews):
             )
 
             response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
-            eq_(response.status_code, 200)
+            assert response.status_code == 200
 
             for __ in range(current_limit):
                 response = self.client.get(url)
-            eq_(response.status_code, 200)
+            assert response.status_code == 200
 
             # But even being signed in has a limit.
             authenticated_limit = 6  # see above mentioned settings override
@@ -662,12 +662,12 @@ class TestViews(BaseTestViews):
                 response = self.client.get(url)
             # Even if you're authenticated - sure the limit is higher -
             # eventually you'll run into the limit there too.
-            eq_(response.status_code, 429)
+            assert response.status_code == 429
 
     def test_SuperSearch(self):
 
         def mocked_supersearch_get(**params):
-            ok_('exploitability' not in params)
+            assert 'exploitability' not in params
 
             restricted_params = (
                 '_facets',
@@ -676,12 +676,12 @@ class TestViews(BaseTestViews):
             )
             for key in restricted_params:
                 if key in params:
-                    ok_('url' not in params[key])
-                    ok_('email' not in params[key])
-                    ok_('_cardinality.email' not in params[key])
+                    assert 'url' not in params[key]
+                    assert 'email' not in params[key]
+                    assert '_cardinality.email' not in params[key]
 
             if 'product' in params:
-                eq_(params['product'], ['WaterWolf', 'NightTrain'])
+                assert params['product'] == ['WaterWolf', 'NightTrain']
 
             return {
                 'hits': [
@@ -705,19 +705,19 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('SuperSearch',))
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         res = json.loads(response.content)
 
-        ok_(res['hits'])
-        ok_(res['facets'])
+        assert res['hits']
+        assert res['facets']
 
         # Verify forbidden fields are not exposed.
-        ok_('email' not in res['hits'])
-        ok_('exploitability' not in res['hits'])
-        ok_('url' not in res['hits'])
+        assert 'email' not in res['hits']
+        assert 'exploitability' not in res['hits']
+        assert 'url' not in res['hits']
 
         # Verify user comments are scrubbed.
-        ok_('thebig@lebowski.net' not in res['hits'][0]['user_comments'])
+        assert 'thebig@lebowski.net' not in res['hits'][0]['user_comments']
 
         # Verify it's not possible to use restricted parameters.
         response = self.client.get(url, {
@@ -730,20 +730,20 @@ class TestViews(BaseTestViews):
                 'url', 'email', 'product', '_cardinality.email'
             ],
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         # Verify values can be lists.
         response = self.client.get(url, {
             'product': ['WaterWolf', 'NightTrain']
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_SuperSearchUnredacted(self):
 
         def mocked_supersearch_get(**params):
-            ok_('exploitability' in params)
+            assert 'exploitability' in params
             if 'product' in params:
-                eq_(params['product'], ['WaterWolf', 'NightTrain'])
+                assert params['product'] == ['WaterWolf', 'NightTrain']
             return {
                 'hits': [
                     {
@@ -768,13 +768,13 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('SuperSearchUnredacted',))
         response = self.client.get(url, {'exploitability': 'high'})
-        eq_(response.status_code, 403)
-        eq_(response['Content-Type'], 'application/json')
+        assert response.status_code == 403
+        assert response['Content-Type'] == 'application/json'
         error = json.loads(response.content)['error']
         permission = Permission.objects.get(
             codename='view_exploitability'
         )
-        ok_(permission.name in error)
+        assert permission.name in error
 
         # Log in to get permissions.
         user = self._login()
@@ -782,26 +782,26 @@ class TestViews(BaseTestViews):
         self._add_permission(user, 'view_exploitability')
 
         response = self.client.get(url, {'exploitability': 'high'})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         res = json.loads(response.content)
 
-        ok_(res['hits'])
-        ok_(res['facets'])
+        assert res['hits']
+        assert res['facets']
 
         # Verify forbidden fields are exposed.
-        ok_('email' in res['hits'][0])
-        ok_('exploitability' in res['hits'][0])
-        ok_('url' in res['hits'][0])
+        assert 'email' in res['hits'][0]
+        assert 'exploitability' in res['hits'][0]
+        assert 'url' in res['hits'][0]
 
         # Verify user comments are not scrubbed.
-        ok_('thebig@lebowski.net' in res['hits'][0]['user_comments'])
+        assert 'thebig@lebowski.net' in res['hits'][0]['user_comments']
 
         # Verify values can be lists.
         response = self.client.get(url, {
             'exploitability': 'high',
             'product': ['WaterWolf', 'NightTrain']
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_change_certain_exceptions_to_bad_request(self):
 
@@ -819,11 +819,11 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('SuperSearch',))
         response = self.client.get(url)
-        eq_(response.status_code, 400)
-        ok_('That was a bad thing to do' in response.content)
+        assert response.status_code == 400
+        assert 'That was a bad thing to do' in response.content
         response = self.client.get(url, {'product': 'foobaz'})
-        eq_(response.status_code, 400)
-        ok_('foobaz' in response.content)
+        assert response.status_code == 400
+        assert 'foobaz' in response.content
 
     def test_Reprocessing(self):
 
@@ -835,13 +835,13 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('Reprocessing',))
         response = self.client.get(url)
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         params = {
             'crash_ids': 'xxxx',
         }
         response = self.client.get(url, params, HTTP_AUTH_TOKEN='somecrap')
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         user = User.objects.create(username='test')
         self._add_permission(user, 'reprocess_crashes')
@@ -858,8 +858,8 @@ class TestViews(BaseTestViews):
         token.permissions.add(perm)
 
         response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
-        eq_(response.status_code, 405)
+        assert response.status_code == 405
 
         response = self.client.post(url, params, HTTP_AUTH_TOKEN=token.key)
-        eq_(response.status_code, 200)
-        eq_(json.loads(response.content), True)
+        assert response.status_code == 200
+        assert json.loads(response.content) is True
