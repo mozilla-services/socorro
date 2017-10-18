@@ -86,8 +86,6 @@ mozilla_processor_rule_sets = [
         "socorro.processor.skunk_classifiers.DontConsiderTheseFilter, "
         "socorro.processor.skunk_classifiers.SetWindowPos, "
         # currently not in use, anticipated to be re-enabled in the future
-        #"socorro.processor.skunk_classifiers.SendWaitReceivePort, "
-        # currently not in use, anticipated to be re-enabled in the future
         #"socorro.processor.skunk_classifiers.Bug811804, "
         # currently not in use, anticipated to be re-enabled in the future
         #"socorro.processor.skunk_classifiers.Bug812318, "

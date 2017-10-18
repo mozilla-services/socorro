@@ -9,7 +9,6 @@ from socorro.processor.skunk_classifiers import (
     SkunkClassificationRule,
     DontConsiderTheseFilter,
     SetWindowPos,
-    SendWaitReceivePort,
     Bug811804,
     Bug812318,
 )
@@ -578,50 +577,6 @@ class TestSetWindowPos(TestCase):
         rc = DotDict()
         rd = {}
         rule = SetWindowPos()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert not action_result
-        assert 'classifications' not in pc
-
-
-class TestSendWaitReceivePort(TestCase):
-
-    def test_action_case_1(self):
-        """success - target found in top 5 frames of stack"""
-        pc = DotDict()
-        f2jd = copy.deepcopy(cannonical_json_dump)
-        pc.upload_file_minidump_flash2 = DotDict()
-        pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2]['function'] = (
-            'NtAlpcSendWaitReceivePort'
-        )
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = SendWaitReceivePort()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert action_result
-        assert 'classifications' in pc
-
-    def test_action_case_2(self):
-        """failure - target not found in top 5 frames of stack"""
-        pc = DotDict()
-        f2jd = copy.deepcopy(cannonical_json_dump)
-        pc.upload_file_minidump_flash2 = DotDict()
-        pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][6]['function'] = (
-            'NtAlpcSendWaitReceivePort'
-        )
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-
-        rule = SendWaitReceivePort()
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         assert not action_result

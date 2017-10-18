@@ -562,34 +562,6 @@ class SetWindowPos(SkunkClassificationRule):
 
 # this rule is no longer in use.  It remains in the codebase for reference
 # for anticipated future resurrection
-class SendWaitReceivePort(SkunkClassificationRule):
-    def version(self):
-        return '0.1'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
-
-        stack = self._get_stack(processed_crash, 'upload_file_minidump_flash2')
-        if stack is False:
-            return False
-
-        if self._stack_contains(
-            stack[:5],
-            'NtAlpcSendWaitReceivePort',
-            processor.c_signature_tool,
-        ):
-            self._add_classification(
-                processed_crash,
-                'NtAlpcSendWaitReceivePort',
-                None,
-                processor.config.logger
-            )
-
-            return True
-        return False
-
-
-# this rule is no longer in use.  It remains in the codebase for reference
-# for anticipated future resurrection
 class Bug811804(SkunkClassificationRule):
     def version(self):
         return '0.1'
@@ -667,7 +639,6 @@ class NullClassification(SkunkClassificationRule):
 default_classifier_rules = (
     (DontConsiderTheseFilter, (), {}, DontConsiderTheseFilter, (), {}),
     (SetWindowPos, (), {}, SetWindowPos, (), {}),
-    #(SendWaitReceivePort, (), {}, SendWaitReceivePort, (), {}),
     #(Bug811804, (), {}, Bug811804, (), {}),
     #(Bug812318, (), {}, Bug812318, (), {}),
     (NullClassification, (), {}, NullClassification, (), {}),
