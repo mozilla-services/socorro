@@ -355,34 +355,6 @@ class TestTransformRules(TestCase):
         assert d == {'one': 1}
         assert quit_check_mock.call_count == 2
 
-    def test_TransformRuleSystem_apply_all_until_predicate_succeeds(self):
-
-        quit_check_mock = Mock()
-
-        def assign_1(s, d):
-            d['one'] = 1
-            return True
-
-        def increment_1(s, d):
-            try:
-                d['one'] += 1
-                return True
-            except KeyError:
-                return False
-
-        some_rules = [(True, '', '', increment_1, '', ''),
-                      (True, '', '', assign_1, '', ''),
-                      (False, '', '', increment_1, '', ''),
-                      (True, '', '', increment_1, '', ''),
-                      ]
-        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
-        rules.load_rules(some_rules)
-        s = {}
-        d = {}
-        rules.apply_until_predicate_succeeds(s, d)
-        assert d == {}
-        assert quit_check_mock.call_count == 1
-
     def test_TransformRuleSystem_apply_all_until_predicate_fails(self):
 
         quit_check_mock = Mock()
