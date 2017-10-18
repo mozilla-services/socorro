@@ -560,68 +560,6 @@ class SetWindowPos(SkunkClassificationRule):
         return False
 
 
-# this rule is no longer in use.  It remains in the codebase for reference
-# for anticipated future resurrection
-class Bug811804(SkunkClassificationRule):
-    def version(self):
-        return '0.1'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
-
-        try:
-            signature = processed_crash.upload_file_minidump_flash2.signature
-        except KeyError:
-            return False
-
-        if (signature == 'hang | NtUserWaitMessage | F34033164'
-                         '________________________________'):
-            self._add_classification(
-                processed_crash,
-                'bug811804-NtUserWaitMessage',
-                None,
-                processor.config.logger
-            )
-            return True
-        return False
-
-
-# this rule is no longer in use.  It remains in the codebase for reference
-# for anticipated future resurrection
-class Bug812318(SkunkClassificationRule):
-    def version(self):
-        return '0.1'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
-        stack = self._get_stack(processed_crash, 'upload_file_minidump_flash2')
-        if stack is False:
-            return False
-
-        primary_found = self._stack_contains(
-            stack[:5],
-            'NtUserPeekMessage',
-            processor.c_signature_tool,
-        )
-        if not primary_found:
-            return False
-
-        secondary_found = self._stack_contains(
-            stack[:5],
-            'F849276792______________________________',
-            processor.c_signature_tool,
-        )
-        if secondary_found:
-            classification = 'bug812318-PeekMessage'
-        else:
-            classification = 'NtUserPeekMessage-other'
-        self._add_classification(
-            processed_crash,
-            classification,
-            None,
-            processor.config.logger
-        )
-        return True
-
-
 class NullClassification(SkunkClassificationRule):
     def version(self):
         return '0.1'
@@ -639,7 +577,5 @@ class NullClassification(SkunkClassificationRule):
 default_classifier_rules = (
     (DontConsiderTheseFilter, (), {}, DontConsiderTheseFilter, (), {}),
     (SetWindowPos, (), {}, SetWindowPos, (), {}),
-    #(Bug811804, (), {}, Bug811804, (), {}),
-    #(Bug812318, (), {}, Bug812318, (), {}),
     (NullClassification, (), {}, NullClassification, (), {}),
 )

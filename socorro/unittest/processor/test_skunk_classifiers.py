@@ -9,8 +9,6 @@ from socorro.processor.skunk_classifiers import (
     SkunkClassificationRule,
     DontConsiderTheseFilter,
     SetWindowPos,
-    Bug811804,
-    Bug812318,
 )
 from socorro.unittest.processor import (
     create_basic_fake_processor,
@@ -577,113 +575,6 @@ class TestSetWindowPos(TestCase):
         rc = DotDict()
         rd = {}
         rule = SetWindowPos()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert not action_result
-        assert 'classifications' not in pc
-
-
-class TestBug811804(TestCase):
-
-    def test_action_success(self):
-        """success - target signature fonud"""
-        pc = DotDict()
-        f2jd = copy.deepcopy(cannonical_json_dump)
-        pc.upload_file_minidump_flash2 = DotDict()
-        pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.signature = \
-            'hang | NtUserWaitMessage | F34033164' \
-            '________________________________'
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = Bug811804()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert action_result
-        assert 'classifications' in pc
-        assert pc.classifications.skunk_works.classification == 'bug811804-NtUserWaitMessage'
-
-    def test_action_failure(self):
-        """success - target signature not found"""
-        pc = DotDict()
-        f2jd = copy.deepcopy(cannonical_json_dump)
-        pc.upload_file_minidump_flash2 = DotDict()
-        pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.signature = 'lars was here'
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = Bug811804()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert not action_result
-        assert 'classifications' not in pc
-
-
-class TestBug812318(TestCase):
-
-    def test_action_case_1(self):
-        """success - both targets found in top 5 frames of stack"""
-        pc = DotDict()
-        f2jd = copy.deepcopy(cannonical_json_dump)
-        pc.upload_file_minidump_flash2 = DotDict()
-        pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1]['function'] = (
-            'NtUserPeekMessage'
-        )
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][2]['function'] = (
-            'F849276792______________________________'
-        )
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = Bug812318()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert action_result
-        assert 'classifications' in pc
-        assert pc.classifications.skunk_works.classification == 'bug812318-PeekMessage'
-
-    def test_action_case_2(self):
-        """success - only 1st target found in top 5 frames of stack"""
-        pc = DotDict()
-        f2jd = copy.deepcopy(cannonical_json_dump)
-        pc.upload_file_minidump_flash2 = DotDict()
-        pc.upload_file_minidump_flash2.json_dump = f2jd
-        pc.upload_file_minidump_flash2.json_dump['crashing_thread']['frames'][1]['function'] = (
-            'NtUserPeekMessage'
-        )
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = Bug812318()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert action_result
-        assert 'classifications' in pc
-        assert pc.classifications.skunk_works.classification == 'NtUserPeekMessage-other'
-
-    def test_action_case_3(self):
-        """failure - no targets found in top 5 frames of stack"""
-        pc = DotDict()
-        f2jd = copy.deepcopy(cannonical_json_dump)
-        pc.upload_file_minidump_flash2 = DotDict()
-        pc.upload_file_minidump_flash2.json_dump = f2jd
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = Bug812318()
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         assert not action_result
