@@ -8,7 +8,6 @@ from socorro.lib.util import DotDict
 from socorro.processor.skunk_classifiers import (
     SkunkClassificationRule,
     DontConsiderTheseFilter,
-    UpdateWindowAttributes,
     SetWindowPos,
     SendWaitReceivePort,
     Bug811804,
@@ -455,64 +454,6 @@ class TestDontConsiderTheseFilter(TestCase):
             test_processed_crash,
             fake_processor
         )
-
-
-class TestUpdateWindowAttributes(TestCase):
-
-    def test_action_success(self):
-        jd = copy.deepcopy(cannonical_json_dump)
-        jd['crashing_thread']['frames'][1]['function'] = (
-            "F_1152915508___________________________________"
-        )
-        jd['crashing_thread']['frames'][3]['function'] = (
-            "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes"
-            "(bool)"
-        )
-
-        jd['crashing_thread']['frames'][5]['function'] = (
-            "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)"
-        )
-
-        pc = DotDict()
-        pc.process_type = 'plugin'
-        pc.json_dump = jd
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = UpdateWindowAttributes()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert action_result
-        assert 'classifications' in pc
-        assert 'skunk_works' in pc['classifications']
-
-    def test_action_wrong_order(self):
-        jd = copy.deepcopy(cannonical_json_dump)
-        jd['crashing_thread']['frames'][4]['function'] = (
-            "F_1152915508___________________________________"
-        )
-        jd['crashing_thread']['frames'][3]['function'] = (
-            "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes"
-            "(bool)"
-        )
-        jd['crashing_thread']['frames'][5]['function'] = (
-            "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)"
-        )
-        pc = DotDict()
-        pc.dump = DotDict()
-        pc.dump.json_dump = jd
-
-        fake_processor = create_basic_fake_processor()
-
-        rc = DotDict()
-        rd = {}
-        rule = UpdateWindowAttributes()
-        action_result = rule.action(rc, rd, pc, fake_processor)
-
-        assert not action_result
-        assert 'classifications' not in pc
 
 
 class TestSetWindowPos(TestCase):

@@ -9,10 +9,7 @@ from socorro.processor.processor_2015 import (
     Processor2015,
     rule_sets_from_string
 )
-from socorro.processor.skunk_classifiers import (
-    SetWindowPos,
-    UpdateWindowAttributes
-)
+from socorro.processor.skunk_classifiers import SetWindowPos
 from socorro.processor.support_classifiers import (
     BitguardClassifier,
     OutOfDateClassifier
@@ -46,8 +43,7 @@ rule_set_02 = [
         'tag2.tag3',
         'socorro.lib.transform_rules.TransformRuleSystem',
         'apply_until_action_succeeds',
-        'socorro.processor.skunk_classifiers.SetWindowPos, '
-        'socorro.processor.skunk_classifiers.UpdateWindowAttributes'
+        'socorro.processor.skunk_classifiers.SetWindowPos'
     ],
 ]
 rule_set_02_str = ujson.dumps(rule_set_02)
@@ -89,8 +85,7 @@ class TestProcessor2015(TestCase):
         assert rc.ruleset02.rule_system_class.default == expected
         assert 'apply_until_action_succeeds' == rc.ruleset02.action.default
         expected = (
-            'socorro.processor.skunk_classifiers.SetWindowPos, '
-            'socorro.processor.skunk_classifiers.UpdateWindowAttributes'
+            'socorro.processor.skunk_classifiers.SetWindowPos'
         )
         assert rc.ruleset02.rules_list.default == expected
 
@@ -118,9 +113,8 @@ class TestProcessor2015(TestCase):
         assert isinstance(p.rule_system.ruleset02, TransformRuleSystem)
         trs = p.rule_system.ruleset02
         assert trs.act == trs.apply_until_action_succeeds
-        assert len(trs.rules) == 2
+        assert len(trs.rules) == 1
         assert isinstance(trs.rules[0], SetWindowPos)
-        assert isinstance(trs.rules[1], UpdateWindowAttributes)
 
     def test_process_crash_no_rules(self):
         cm = ConfigurationManager(

@@ -84,8 +84,6 @@ mozilla_processor_rule_sets = [
         "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_until_action_succeeds",
         "socorro.processor.skunk_classifiers.DontConsiderTheseFilter, "
-        # currently not in use, anticipated to be re-enabled in the future
-        #"socorro.processor.skunk_classifiers.UpdateWindowAttributes, "
         "socorro.processor.skunk_classifiers.SetWindowPos, "
         # currently not in use, anticipated to be re-enabled in the future
         #"socorro.processor.skunk_classifiers.SendWaitReceivePort, "

@@ -473,55 +473,6 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         return True
 
 
-# this rule is no longer in use.  It remains in the codebase for reference
-# for anticipated future resurrection
-class UpdateWindowAttributes(SkunkClassificationRule):
-    def version(self):
-        return '0.1'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
-        try:
-            stack = self._get_stack(processed_crash, 'upload_file_minidump_plugin')
-            if stack is False:
-                return False
-
-            # normalize the stack of the crashing thread
-            # then look for these 3 target frames
-            target_signatures = [
-                "F_1152915508___________________________________",
-                "mozilla::plugins::PluginInstanceChild::UpdateWindowAttributes",
-                "mozilla::ipc::RPCChannel::Call"
-            ]
-
-            current_target_signature = target_signatures.pop(0)
-            for i, a_frame in enumerate(stack):
-                normalized_signature = \
-                    processor.c_signature_tool.normalize_signature(**a_frame)
-                if (current_target_signature in normalized_signature):
-                    current_target_signature = target_signatures.pop(0)
-                    if not target_signatures:
-                        break
-            if target_signatures:
-                return False
-
-            try:
-                classification_data = \
-                    processor.c_signature_tool.normalize_signature(**stack[i + 1])
-            except IndexError:
-                classification_data = None
-
-            self._add_classification(
-                processed_crash,
-                'adbe-3355131',
-                classification_data,
-                processor.config.logger
-            )
-        except Exception as x:
-            print(x)
-
-        return True
-
-
 class SetWindowPos(SkunkClassificationRule):
     required_config = Namespace()
     required_config.add_option(
@@ -715,7 +666,6 @@ class NullClassification(SkunkClassificationRule):
 
 default_classifier_rules = (
     (DontConsiderTheseFilter, (), {}, DontConsiderTheseFilter, (), {}),
-    #(UpdateWindowAttributes, (), {}, UpdateWindowAttributes, (), {}),
     (SetWindowPos, (), {}, SetWindowPos, (), {}),
     #(SendWaitReceivePort, (), {}, SendWaitReceivePort, (), {}),
     #(Bug811804, (), {}, Bug811804, (), {}),
