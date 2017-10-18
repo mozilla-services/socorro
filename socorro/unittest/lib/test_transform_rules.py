@@ -355,28 +355,6 @@ class TestTransformRules(TestCase):
         assert d == {'one': 1}
         assert quit_check_mock.call_count == 2
 
-    def test_is_not_null_predicate(self):
-        assert (
-            transform_rules.is_not_null_predicate(
-                {'alpha': 'hello'}, None, None, None, 'alpha'
-            )
-        )
-        assert not (
-            transform_rules.is_not_null_predicate(
-                {'alpha': 'hello'}, None, None, None, 'beta'
-            )
-        )
-        assert not (
-            transform_rules.is_not_null_predicate(
-                {'alpha': ''}, None, None, None, 'alpha'
-            )
-        )
-        assert not (
-            transform_rules.is_not_null_predicate(
-                {'alpha': None}, None, None, None, 'alpha'
-            )
-        )
-
     def test_rule_simple(self):
         fake_config = DotDict()
         fake_config.logger = Mock()
