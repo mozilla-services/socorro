@@ -438,30 +438,6 @@ class TransformRuleSystem(RequiredConfig):
                 return True
         return False
 
-    def apply_until_predicate_fails(self, *args, **kwargs):
-        """cycle through all rules until a predicate returns False
-
-        returns:
-            False - a predicate ran and it failed
-            None - no predicate ever failed"""
-        for x in self.rules:
-            self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_until_predicate_fails: %s',
-                    to_str(x.__class__)
-                )
-            predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '                           : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
-            if not predicate_result:
-                return False
-        return None
-
     def close(self):
         for a_rule in self.rules:
             try:
