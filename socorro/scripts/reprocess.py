@@ -14,6 +14,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
+from socorro.lib.util import chunkify
 from socorro.scripts import WrappedTextHelpFormatter
 
 
@@ -52,7 +53,6 @@ def main(argv):
 
     args = parser.parse_args(argv)
 
-    # FIXME(willkg): Rethink this?
     api_token = os.environ.get('SOCORRO_REPROCESS_API_TOKEN')
     if not api_token:
         print('You need to set SOCORRO_REPROCESS_API_TOKEN in the environment')
@@ -60,16 +60,32 @@ def main(argv):
 
     url = args.host.rstrip('/') + '/api/Reprocessing/'
 
-    # NOTE(willkg): This will pause until all crash ids are available which won't work for some
-    # situations.
-    crash_ids = list(args.crashid or sys.stdin)
+    if args.crashid:
+        crash_ids = args.crashid
+    elif not sys.stdin.isatty():
+        # If a script is piping to this script, then isatty() returns False. If there is no script
+        # piping to this script, then isatty() returns True and if we do list(sys.stdin), it'll
+        # block waiting for intput.
+        crash_ids = list(sys.stdin)
+    else:
+        crash_ids = []
+
+    # If there are no crashids, then print help and exit
+    if not crash_ids:
+        parser.print_help()
+        return 0
+
     crash_ids = [item.strip() for item in crash_ids]
-    print('Processing %s crashes...' % len(crash_ids))
+
+    print('Sending reprocessing requests to: %s' % url)
+    session = session_with_retries(url)
+
+    print('Reprocessing %s crashes...' % len(crash_ids))
 
     groups = list(chunkify(crash_ids, CHUNK_SIZE))
     for i, group in enumerate(groups):
         print('Processing group... (%s/%s)' % (i + 1, len(groups)))
-        resp = session_with_retries(url).post(
+        resp = session.post(
             url,
             data={'crash_ids': group},
             headers={
@@ -80,6 +96,8 @@ def main(argv):
             print('Got back non-200 status code: %s %s' % (resp.status_code, resp.content))
             continue
 
+        # NOTE(willkg): We sleep here because the webapp has a bunch of rate limiting and we don't
+        # want to trigger that. It'd be nice if we didn't have to do this.
         time.sleep(SLEEP)
 
     print('Done!')
