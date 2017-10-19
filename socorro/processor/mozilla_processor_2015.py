@@ -54,14 +54,6 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
         "socorro.processor.rules.memory_report_extraction.MemoryReportExtraction, "
     ],
-    [   # a set of classifiers for support
-        "support_classifiers",
-        "processor.support_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_until_action_succeeds",
-        "socorro.processor.support_classifiers.BitguardClassifier, "
-        "socorro.processor.support_classifiers.OutOfDateClassifier"
-    ],
     [   # a set of classifiers to help with jit crashes
         "jit_classifiers",
         "processor.jit_classifiers",
@@ -75,17 +67,7 @@ mozilla_processor_rule_sets = [
         'processor.signature',
         'socorro.lib.transform_rules.TransformRuleSystem',
         'apply_all_rules',
-
         'socorro.processor.mozilla_transform_rules.SignatureGeneratorRule, '
-    ],
-    [   # a set of special request classifiers
-        "skunk_classifiers",
-        "processor.skunk_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_until_action_succeeds",
-        "socorro.processor.skunk_classifiers.DontConsiderTheseFilter, "
-        "socorro.processor.skunk_classifiers.SetWindowPos, "
-        "socorro.processor.skunk_classifiers.NullClassification"
     ]
 ]
 
