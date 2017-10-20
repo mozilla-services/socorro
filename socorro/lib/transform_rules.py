@@ -370,7 +370,7 @@ class TransformRuleSystem(RequiredConfig):
                     self.rules.append(
                         a_rule_class(config[ns_name])
                     )
-                except KeyError as x:
+                except KeyError:
                     self.rules.append(
                         a_rule_class(config)
                     )

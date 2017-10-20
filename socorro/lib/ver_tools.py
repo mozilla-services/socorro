@@ -119,7 +119,7 @@ def normalize(version_string, max_version_parts=4):
     for part_count, version_part in enumerate(version_string.split('.')):
         try:
             groups = _version_part_re.match(version_part).groups()
-        except Exception as x:
+        except Exception:
             raise NotAVersionException(version_string)
         version_list.extend(t(x) for x, t in zip(groups, _normalize_fn_list))
     version_list.extend(_padding_list * (max_version_parts - part_count - 1))
