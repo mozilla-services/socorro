@@ -8,7 +8,7 @@ from setuptools import find_packages, setup
 # Prevent spurious errors during `python setup.py test`, a la
 # http://www.eby-sarna.com/pipermail/peak/2010-May/003357.html:
 try:
-    import multiprocessing
+    import multiprocessing  # noqa
 except ImportError:
     pass
 
@@ -63,4 +63,4 @@ setup(
         ('socorro/schemas', glob.glob('socorro/schemas/*.json')),
     ],
 )
-assert glob.glob('socorro/schemas/*.json') # TEMP
+assert glob.glob('socorro/schemas/*.json')  # TEMP
