@@ -132,6 +132,7 @@ nsDependentString::nsDependentString
 nsEventQueue::GetEvent
 nsThread::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
+mozilla::SpinEventLoopUntil<T>
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::.*
 nsINode::Slots
