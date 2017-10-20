@@ -404,11 +404,11 @@ class TestCase(TestCase):
             "OS|Windows NT|5.1.2600 Service Pack 2",
             "CPU|x86|GenuineIntel family 6 model 22 stepping 1|4",
             "Crash|EXCEPTION_ACCESS_VIOLATION_READ|0x676c|0",
-            "Module|firefox.exe|24.0.0.4925|firefox.pdb|9FFDDF56AADE45988C759EF5ABAE53862|0x00400000|0x004e0fff|1",
-            "Module|nss3.dll|24.0.0.4925|nss3.pdb|30EAD90FEEBD495398D46EFA41814E261|0x00a00000|0x00bb5fff|0",
+            "Module|firefox.exe|24.0.0.4925|firefox.pdb|9FFDDF56AADE45988C759EF5ABAE53862|0x00400000|0x004e0fff|1",  # noqa
+            "Module|nss3.dll|24.0.0.4925|nss3.pdb|30EAD90FEEBD495398D46EFA41814E261|0x00a00000|0x00bb5fff|0",  # noqa
             "Module|mozjs.dll||mozjs.pdb|CC7AA5DA1FB144C4B40C2DF1B08709232|0x00bd0000|0x00ef9fff|0",
-            "Module|mozalloc.dll|24.0.0.4925|mozalloc.pdb|F4C1BFD2BA3A487CA37EBF3D7E543F7B1|0x01000000|0x01005fff|0",
-            "Module|gkmedias.dll|24.0.0.4925|gkmedias.pdb|02FE96BEFEAE4570AA12E766CF2C8A361|0x01010000|0x01337fff|0",
+            "Module|mozalloc.dll|24.0.0.4925|mozalloc.pdb|F4C1BFD2BA3A487CA37EBF3D7E543F7B1|0x01000000|0x01005fff|0",  # noqa
+            "Module|gkmedias.dll|24.0.0.4925|gkmedias.pdb|02FE96BEFEAE4570AA12E766CF2C8A361|0x01010000|0x01337fff|0",  # noqa
             "",
             "0|0|mozjs.dll|bogus_sig_1|jsinferinlines.h:17666746e8cc|1321|0x0",
             "0|1|mozjs.dll|bogus_sig_2|jsobj.cpp:17666746e8cc|1552|0x2d",

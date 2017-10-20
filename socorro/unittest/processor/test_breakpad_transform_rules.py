@@ -520,14 +520,16 @@ class TestExternalProcessRule(TestCase):
 class TestDumpLookupExternalRule(TestCase):
 
     def test_default_parameters(self):
-        assert DumpLookupExternalRule.required_config.dump_field.default == 'upload_file_minidump'
-        assert DumpLookupExternalRule.required_config.dump_field is not ExternalProcessRule.required_config.dump_field
-        assert DumpLookupExternalRule.required_config.command_pathname.default == '/data/socorro/stackwalk/bin/dump-lookup'
-        assert DumpLookupExternalRule.required_config.command_pathname is not ExternalProcessRule.required_config.command_pathname
-        assert DumpLookupExternalRule.required_config.result_key.default == 'dump_lookup'
-        assert DumpLookupExternalRule.required_config.result_key is not ExternalProcessRule.required_config.result_key
-        assert DumpLookupExternalRule.required_config.return_code_key.default == 'dump_lookup_return_code'
-        assert DumpLookupExternalRule.required_config.return_code_key is not ExternalProcessRule.required_config.return_code_key
+        config = DumpLookupExternalRule.required_config
+
+        assert config.dump_field.default == 'upload_file_minidump'
+        assert config.dump_field is not ExternalProcessRule.required_config.dump_field
+        assert config.command_pathname.default == '/data/socorro/stackwalk/bin/dump-lookup'
+        assert config.command_pathname is not ExternalProcessRule.required_config.command_pathname
+        assert config.result_key.default == 'dump_lookup'
+        assert config.result_key is not ExternalProcessRule.required_config.result_key
+        assert config.return_code_key.default == 'dump_lookup_return_code'
+        assert config.return_code_key is not ExternalProcessRule.required_config.return_code_key
 
 
 class TestBreakpadTransformRule2015(TestCase):
