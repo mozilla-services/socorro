@@ -209,6 +209,7 @@ def main(args):
                 'ipc_channel_error': raw_crash.get('ipc_channel_error', None),
                 'additional_minidumps': raw_crash.get('additional_minidumps', None),
                 'IPCMessageName': raw_crash.get('IPCMessageName', None),
+                'MozCrashReason': raw_crash.get('MozCrashReason', None),
             }
 
             resp = fetch('/ProcessedCrash/', crash_id, api_token)

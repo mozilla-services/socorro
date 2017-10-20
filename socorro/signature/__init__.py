@@ -21,6 +21,7 @@ from socorro.signature.rules import (
     SigTrim,
     SigTrunc,
     SignatureJitCategory,
+    SignatureParentIDNotEqualsChildID,
 )
 
 
@@ -33,9 +34,10 @@ DEFAULT_PIPELINE = [
     SignatureRunWatchDog(),
     SignatureIPCChannelError(),
     SignatureIPCMessageName(),
+    SignatureParentIDNotEqualsChildID(),
+    SignatureJitCategory(),
     SigTrim(),
     SigTrunc(),
-    SignatureJitCategory(),
 ]
 
 
