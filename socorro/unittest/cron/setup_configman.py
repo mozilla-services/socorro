@@ -59,14 +59,6 @@ def get_standard_config_manager(
         argv_source=[]
     )
 
-    # very useful debug
-    #import contextlib
-    #import sys
-    #@contextlib.contextmanager
-    #def stdout_opener():
-        #yield sys.stdout
-    #config_manager.write_conf('conf', stdout_opener)
-
     return config_manager
 
 
