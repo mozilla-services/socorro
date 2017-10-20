@@ -93,7 +93,7 @@ def insert_adu(conn, adu_count, adu_date, product_name, os_name, version_string)
             INSERT INTO product_adu (adu_count, adu_date, os_name, product_version_id)
             VALUES (%s, %s, %s, %s)
         """, (adu_count, adu_date, os_name, product_version_id))
-    except psycopg2.IntegrityError as exc:
+    except psycopg2.IntegrityError:
         # Hitting an IntegrityError here probably means this data is in the table already, so we
         # just skip it.
         pass
