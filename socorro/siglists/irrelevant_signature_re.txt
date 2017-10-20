@@ -53,6 +53,7 @@ NS_ProcessNextEvent
 (Nt|Zw)?WaitForKeyedEvent
 (Nt|Zw)?WaitForSingleObject(Ex)?
 (Nt|Zw)?WaitForMultipleObjects(Ex)?
+NtWaitForAlertByThreadId
 nvmap@0x.*
 org\.mozilla\.f.*-\d\.apk@0x.*
 PR_WaitCondVar
