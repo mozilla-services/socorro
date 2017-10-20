@@ -24,7 +24,7 @@ class TestTaskManager(TestCase):
         assert tm.config == config
         assert tm.logger == self.logger
         assert tm.task_func == default_task_func
-        assert tm.quit == False
+        assert tm.quit is False
 
     def test_executor_identity(self):
         config = DotDict()
