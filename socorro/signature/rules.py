@@ -712,20 +712,6 @@ class SignatureIPCMessageName(Rule):
         return True
 
 
-class SignatureIPCMessageName(Rule):
-    """augments the signature if there is a IPC message name in the crash"""
-
-    def predicate(self, raw_crash, processed_crash):
-        return bool(raw_crash.get('IPCMessageName'))
-
-    def action(self, raw_crash, processed_crash, notes):
-        processed_crash['signature'] = '{} | IPC_Message_Name={}'.format(
-            processed_crash['signature'],
-            raw_crash['IPCMessageName']
-        )
-        return True
-
-
 class SignatureParentIDNotEqualsChildID(Rule):
     """Stomp on the signature if MozCrashReason is parentBuildID != childBuildID
 
@@ -737,7 +723,7 @@ class SignatureParentIDNotEqualsChildID(Rule):
 
     def predicate(self, raw_crash, processed_crash):
         value = 'MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)'
-        return bool(raw_crash.get('MozCrashReason', '') == value)
+        return raw_crash.get('MozCrashReason', '') == value
 
     def action(self, raw_crash, processed_crash, notes):
         notes.append(
@@ -745,8 +731,7 @@ class SignatureParentIDNotEqualsChildID(Rule):
             % processed_crash['signature']
         )
 
-        # This is a failed assertion and the crash reason is the assertion that failed, so we put
-        # "!=" in the signature because that's what caused the assertion failure.
+        # The MozCrashReason lists the assertion that failed, so we put "!=" in the signature
         processed_crash['signature'] = 'parentBuildID != childBuildID'
 
         return True
