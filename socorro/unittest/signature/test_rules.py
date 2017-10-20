@@ -25,6 +25,7 @@ from socorro.signature.rules import (
     SigTrunc,
     SignatureShutdownTimeout,
     SignatureIPCMessageName,
+    SignatureParentIDNotEqualsChildID,
 )
 
 
@@ -1771,3 +1772,37 @@ class TestSignatureIPCMessageName:
         action_result = rule.action(raw_crash, processed_crash, [])
         assert action_result is True
         assert processed_crash['signature'] == 'fooo::baar | IPC_Message_Name=foo, bar'
+
+
+class TestSignatureParentIDNotEqualsChildID:
+
+    def test_predicate_no_match(self):
+        rule = SignatureParentIDNotEqualsChildID()
+
+        raw_crash = {}
+        predicate_result = rule.predicate(raw_crash, {})
+        assert predicate_result is False
+
+        raw_crash['MozCrashReason'] = ''
+        predicate_result = rule.predicate(raw_crash, {})
+        assert predicate_result is False
+
+    def test_success(self):
+        rule = SignatureParentIDNotEqualsChildID()
+
+        raw_crash = {
+            'MozCrashReason': 'MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)'
+        }
+        processed_crash = {
+            'signature': 'fooo::baar'
+        }
+        notes = []
+
+        predicate_result = rule.predicate(raw_crash, processed_crash)
+        assert predicate_result is True
+
+        action_result = rule.action(raw_crash, processed_crash, notes)
+        assert action_result is True
+        assert processed_crash['signature'] == 'parentBuildID != childBuildID'
+        expected = 'Signature replaced with MozCrashAssert, was: "fooo::baar"'
+        assert notes[0] == expected
