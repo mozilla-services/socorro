@@ -9,13 +9,9 @@ from socorro.processor.processor_2015 import (
     Processor2015,
     rule_sets_from_string
 )
-from socorro.processor.skunk_classifiers import (
-    SetWindowPos,
-    UpdateWindowAttributes
-)
-from socorro.processor.support_classifiers import (
-    BitguardClassifier,
-    OutOfDateClassifier
+from socorro.processor.general_transform_rules import (
+    CPUInfoRule,
+    OSInfoRule
 )
 from socorro.unittest.testbase import TestCase
 
@@ -26,31 +22,11 @@ rule_set_01 = [
         'tag0.tag1',
         'socorro.lib.transform_rules.TransformRuleSystem',
         'apply_all_rules',
-        'socorro.processor.support_classifiers.BitguardClassifier, '
-        'socorro.processor.support_classifiers.OutOfDateClassifier'
+        'socorro.processor.general_transform_rules.CPUInfoRule, '
+        'socorro.processor.general_transform_rules.OSInfoRule '
     ]
 ]
 rule_set_01_str = ujson.dumps(rule_set_01)
-
-rule_set_02 = [
-    [
-        'ruleset01',
-        'tag0.tag1',
-        'socorro.lib.transform_rules.TransformRuleSystem',
-        'apply_all_rules',
-        'socorro.processor.support_classifiers.BitguardClassifier, '
-        'socorro.processor.support_classifiers.OutOfDateClassifier'
-    ],
-    [
-        'ruleset02',
-        'tag2.tag3',
-        'socorro.lib.transform_rules.TransformRuleSystem',
-        'apply_until_action_succeeds',
-        'socorro.processor.skunk_classifiers.SetWindowPos, '
-        'socorro.processor.skunk_classifiers.UpdateWindowAttributes'
-    ],
-]
-rule_set_02_str = ujson.dumps(rule_set_02)
 
 
 class TestProcessor2015(TestCase):
@@ -63,41 +39,15 @@ class TestProcessor2015(TestCase):
         assert rc.ruleset01.rule_system_class.default == expected
         assert 'apply_all_rules' == rc.ruleset01.action.default
         expected = (
-            'socorro.processor.support_classifiers.BitguardClassifier, '
-            'socorro.processor.support_classifiers.OutOfDateClassifier'
+            'socorro.processor.general_transform_rules.CPUInfoRule, '
+            'socorro.processor.general_transform_rules.OSInfoRule '
         )
         assert rc.ruleset01.rules_list.default == expected
-
-    def test_rule_sets_from_string_2(self):
-        rule_set_config = rule_sets_from_string(rule_set_02_str)
-        rc = rule_set_config.get_required_config()
-
-        assert 'ruleset01' in rc
-        assert 'tag0.tag1' == rc.ruleset01.tag.default
-        expected = 'socorro.lib.transform_rules.TransformRuleSystem'
-        assert rc.ruleset01.rule_system_class.default == expected
-        assert 'apply_all_rules' == rc.ruleset01.action.default
-        expected = (
-            'socorro.processor.support_classifiers.BitguardClassifier, '
-            'socorro.processor.support_classifiers.OutOfDateClassifier'
-        )
-        assert rc.ruleset01.rules_list.default == expected
-
-        assert 'ruleset02' in rc
-        assert 'tag2.tag3' == rc.ruleset02.tag.default
-        expected = 'socorro.lib.transform_rules.TransformRuleSystem'
-        assert rc.ruleset02.rule_system_class.default == expected
-        assert 'apply_until_action_succeeds' == rc.ruleset02.action.default
-        expected = (
-            'socorro.processor.skunk_classifiers.SetWindowPos, '
-            'socorro.processor.skunk_classifiers.UpdateWindowAttributes'
-        )
-        assert rc.ruleset02.rules_list.default == expected
 
     def test_Processor2015_init(self):
         cm = ConfigurationManager(
             definition_source=Processor2015.get_required_config(),
-            values_source_list=[{'rule_sets': rule_set_02_str}],
+            values_source_list=[{'rule_sets': rule_set_01_str}],
         )
         config = cm.get_config()
         config.logger = Mock()
@@ -105,22 +55,14 @@ class TestProcessor2015(TestCase):
         p = Processor2015(config)
 
         assert isinstance(p.rule_system, DotDict)
-        assert len(p.rule_system) == 2
+        assert len(p.rule_system) == 1
         assert 'ruleset01' in p.rule_system
         assert isinstance(p.rule_system.ruleset01, TransformRuleSystem)
         trs = p.rule_system.ruleset01
         assert trs.act == trs.apply_all_rules
         assert len(trs.rules) == 2
-        assert isinstance(trs.rules[0], BitguardClassifier)
-        assert isinstance(trs.rules[1], OutOfDateClassifier)
-
-        assert 'ruleset02' in p.rule_system
-        assert isinstance(p.rule_system.ruleset02, TransformRuleSystem)
-        trs = p.rule_system.ruleset02
-        assert trs.act == trs.apply_until_action_succeeds
-        assert len(trs.rules) == 2
-        assert isinstance(trs.rules[0], SetWindowPos)
-        assert isinstance(trs.rules[1], UpdateWindowAttributes)
+        assert isinstance(trs.rules[0], CPUInfoRule)
+        assert isinstance(trs.rules[1], OSInfoRule)
 
     def test_process_crash_no_rules(self):
         cm = ConfigurationManager(
