@@ -414,30 +414,6 @@ class TransformRuleSystem(RequiredConfig):
                 )
         return True
 
-    def apply_until_action_succeeds(self, *args, **kwargs):
-        """cycle through all rules until an action is run and succeeds
-
-        returns:
-           True - if an action is run and succeeds
-           False - if no action succeeds"""
-        for x in self.rules:
-            self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_until_action_succeeds: %s',
-                    to_str(x.__class__)
-                )
-            predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '                           : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
-            if action_result:
-                return True
-        return False
-
     def close(self):
         for a_rule in self.rules:
             try:
