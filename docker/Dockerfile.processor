@@ -7,6 +7,8 @@ COPY ./minidump-stackwalk/ /tmp/minidump-stackwalk/
 COPY ./docker/set_up_stackwalk.sh /tmp
 RUN /tmp/set_up_stackwalk.sh
 
+ENV CONTAINERNAME processor
+
 COPY . /app/
 
 USER app

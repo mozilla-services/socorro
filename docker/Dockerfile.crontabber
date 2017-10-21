@@ -1,5 +1,7 @@
 FROM local/socorro_base
 
+ENV CONTAINERNAME crontabber
+
 COPY . /app/
 
 USER app
