@@ -386,12 +386,6 @@ class TransformRuleSystem(RequiredConfig):
             TransformRule(*x, config=self.config) for x in an_iterable
         ]
 
-    def append_rules(self, an_iterable):
-        """add rules to the TransformRuleSystem"""
-        self.rules.extend(
-            TransformRule(*x, config=self.config) for x in an_iterable
-        )
-
     def apply_all_rules(self, *args, **kwargs):
         """cycle through all rules and apply them all without regard to
         success or failure

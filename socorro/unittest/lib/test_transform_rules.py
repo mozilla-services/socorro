@@ -288,17 +288,6 @@ class TestTransformRules(TestCase):
                                                     False, (), {}))]
         assert rules.rules == expected
 
-    def test_TransformRuleSystem_append_rules(self):
-        rules = transform_rules.TransformRuleSystem()
-        some_rules = [(True, '', '', True, '', ''),
-                      (False, '', '', False, '', '')]
-        rules.append_rules(some_rules)
-        expected = [transform_rules.TransformRule(*(True, (), {},
-                                                    True, (), {})),
-                    transform_rules.TransformRule(*(False, (), {},
-                                                    False, (), {}))]
-        assert rules.rules == expected
-
     def test_TransformRuleSystem_apply_all_rules(self):
 
         quit_check_mock = Mock()
