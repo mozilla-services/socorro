@@ -10,8 +10,10 @@ Abort
 .*alloc_impl
 alloc::oom::default_oom_handler
 alloc::oom::oom
+AppleIntelHD3000GraphicsGLDriver.*
 _alloca_probe.*
 __android_log_assert
+__assert_rtn
 arena_.*
 BaseGetNamedObjectDirectory
 .*calloc
@@ -179,6 +181,7 @@ SECKEY_.*
 __security_check_cookie
 send
 setjmp
+_sigtramp
 sigblock
 sigprocmask
 SocketAccept
