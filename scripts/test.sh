@@ -108,7 +108,7 @@ $ENV $FS_RESOURCES $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHON
 
 # test webapp
 pushd webapp-django
-$PYTEST
+PYTHONPATH=.. $PYTEST
 popd
 
 # lint puppet manifests; bug 976639
