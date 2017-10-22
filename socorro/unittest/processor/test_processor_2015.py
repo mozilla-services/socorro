@@ -19,9 +19,6 @@ from socorro.unittest.testbase import TestCase
 rule_set_01 = [
     [
         'ruleset01',
-        'tag0.tag1',
-        'socorro.lib.transform_rules.TransformRuleSystem',
-        'apply_all_rules',
         'socorro.processor.general_transform_rules.CPUInfoRule, '
         'socorro.processor.general_transform_rules.OSInfoRule '
     ]
@@ -34,10 +31,6 @@ class TestProcessor2015(TestCase):
         rule_set_config = rule_sets_from_string(rule_set_01_str)
         rc = rule_set_config.get_required_config()
         assert 'ruleset01' in rc
-        assert 'tag0.tag1' == rc.ruleset01.tag.default
-        expected = 'socorro.lib.transform_rules.TransformRuleSystem'
-        assert rc.ruleset01.rule_system_class.default == expected
-        assert 'apply_all_rules' == rc.ruleset01.action.default
         expected = (
             'socorro.processor.general_transform_rules.CPUInfoRule, '
             'socorro.processor.general_transform_rules.OSInfoRule '
@@ -59,7 +52,6 @@ class TestProcessor2015(TestCase):
         assert 'ruleset01' in p.rule_system
         assert isinstance(p.rule_system.ruleset01, TransformRuleSystem)
         trs = p.rule_system.ruleset01
-        assert trs.act == trs.apply_all_rules
         assert len(trs.rules) == 2
         assert isinstance(trs.rules[0], CPUInfoRule)
         assert isinstance(trs.rules[1], OSInfoRule)

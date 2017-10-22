@@ -11,11 +11,10 @@ import ujson
 
 from configman import Namespace, RequiredConfig
 from configman.dotdict import DotDict as OrderedDotDict
-from configman.converters import (
-    str_to_python_object,
-)
+# from configman.converters import str_to_python_object
 from socorro.lib.converters import str_to_classes_in_namespaces_converter
 from socorro.lib.datetimeutil import utc_now
+from socorro.lib.transform_rules import TransformRuleSystem
 from socorro.lib.util import DotDict
 
 
@@ -41,23 +40,14 @@ from socorro.lib.util import DotDict
 default_rule_set = [
     [   # rules to change the internals of the raw crash
         "raw_transform",  # name of the rule
-        "processor.json_rewrite",  # a tag in a dotted-form
-        "socorro.lib.transform_rules.TransformRuleSystem",  # rule set class
-        "apply_all_rules",  # rule set class method to apply rules
         ""  # comma delimited list of fully qualified rule class names
     ],
     [   # rules to transform a raw crash into a processed crash
         "raw_to_processed_transform",
-        "processer.raw_to_processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
         ""
     ],
     [   # post processing of the processed crash
         "processed_transform",
-        "processer.processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
         ""
     ],
 ]
@@ -85,30 +75,10 @@ def rule_sets_from_string(rule_sets_as_string):
         required_config = Namespace()
 
         names = []
-        for (name, tag, rule_set_class_str, action_str, default_rules_str) in rule_sets:
+        for (name, default_rules_str) in rule_sets:
             names.append(name)
             required_config.namespace(name)
-            required_config[name].add_option(
-                name='tag',
-                doc='the lookup tag associated with this rule set',
-                default=tag
-            )
-            required_config[name].add_option(
-                name='rule_system_class',
-                default=rule_set_class_str,
-                doc='the fully qualified name of the rule system class',
-                from_string_converter=str_to_python_object,
-                likely_to_be_changed=True,
-            )
-            required_config[name].add_option(
-                name='action',
-                default=action_str,
-                doc=(
-                    'the name of the rule set method to run to processes '
-                    'these rules'
-                ),
-                likely_to_be_changed=True,
-            )
+
             required_config[name].add_option(
                 name='rules_list',
                 doc='a list of fully qualified class names for the rules',
@@ -166,7 +136,7 @@ class Processor2015(RequiredConfig):
                 a_rule_set_name
             )
             self.rule_system[a_rule_set_name] = (
-                config[a_rule_set_name].rule_system_class(
+                TransformRuleSystem(
                     config[a_rule_set_name],
                     self.quit_check
                 )
@@ -223,7 +193,7 @@ class Processor2015(RequiredConfig):
                 # for each rule set, invoke the 'act' method - this method
                 # will be the method specified in fourth element of the
                 # rule set configuration list.
-                a_rule_set.act(
+                a_rule_set.apply_all_rules(
                     raw_crash,
                     raw_dumps,
                     processed_crash,

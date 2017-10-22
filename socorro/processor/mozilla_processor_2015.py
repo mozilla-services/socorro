@@ -12,9 +12,6 @@ from socorro.processor.processor_2015 import Processor2015
 mozilla_processor_rule_sets = [
     [   # rules to change the internals of the raw crash
         "raw_transform",
-        "processor.json_rewrite",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
         "socorro.processor.mozilla_transform_rules.ProductRewrite,"
         "socorro.processor.mozilla_transform_rules.ESRVersionRewrite,"
         "socorro.processor.mozilla_transform_rules.PluginContentURL,"
@@ -22,9 +19,6 @@ mozilla_processor_rule_sets = [
     ],
     [   # rules to transform a raw crash into a processed crash
         "raw_to_processed_transform",
-        "processer.raw_to_processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
         "socorro.processor.general_transform_rules.IdentifierRule, "
         "socorro.processor.breakpad_transform_rules.BreakpadStackwalkerRule2015, "
         "socorro.processor.mozilla_transform_rules.ProductRule, "
@@ -39,9 +33,6 @@ mozilla_processor_rule_sets = [
     ],
     [   # post processing of the processed crash
         "processed_transform",
-        "processer.processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.CrashingThreadRule, "
         "socorro.processor.general_transform_rules.CPUInfoRule, "
         "socorro.processor.general_transform_rules.OSInfoRule, "
@@ -56,17 +47,11 @@ mozilla_processor_rule_sets = [
     ],
     [   # a set of classifiers to help with jit crashes
         "jit_classifiers",
-        "processor.jit_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.JitCrashCategorizeRule, "
     ],
     [
         # generate signature now that we've done all the processing it depends on
         'generate_signature',
-        'processor.signature',
-        'socorro.lib.transform_rules.TransformRuleSystem',
-        'apply_all_rules',
         'socorro.processor.mozilla_transform_rules.SignatureGeneratorRule, '
     ]
 ]

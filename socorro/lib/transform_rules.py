@@ -361,8 +361,6 @@ class TransformRuleSystem(RequiredConfig):
             config.chatty_rules = False
         self.config = config
         if "rules_list" in config:
-            self.tag = config.tag
-            self.act = getattr(self, config.action)
             list_of_rules = config.rules_list.class_list
 
             for a_rule_class_name, a_rule_class, ns_name in list_of_rules:
