@@ -415,6 +415,7 @@ int main(int argc, char** argv)
       if (p && (p - line == 8 || p - line == 16) && !strstr(line, "<.data>:")) {
         frame.instruction = strtoull(line, nullptr, 16);
         symbolizer.FillSourceLineInfo(module_list,
+                                      NULL, // unloaded_modules
                                       &system_info,
                                       &frame);
         print_frame(frame, last_frame);
