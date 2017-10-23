@@ -7,6 +7,7 @@
 @0x[1-9a-fA-F]
 __aeabi_fcmpgt.*
 ashmem
+__assert_rtn
 app_process@0x.*
 AppleIntelHD3000GraphicsGLDriver@.*
 core\.odex@0x.*
@@ -73,6 +74,8 @@ rtc::FatalMessage.*
 RtlpAdjustHeapLookasideDepth
 RtlSleepConditionVariableCS
 RtlSleepConditionVariableSRW
+_sigtramp
+__sigtramp
 SleepConditionVariableCS
 SleepConditionVariableSRW
 std::_Atomic_fetch_add_4

@@ -12,7 +12,6 @@ alloc::oom::default_oom_handler
 alloc::oom::oom
 _alloca_probe.*
 __android_log_assert
-__assert_rtn
 arena_.*
 BaseGetNamedObjectDirectory
 .*calloc
@@ -28,9 +27,6 @@ core::str::slice_error_fail
 CrashInJS
 CreateFileMappingA
 __delayLoadHelper2
-_dispatch_barrier_sync_f_invoke
-_dispatch_client_callout
-_dispatch_source_merge_mach_msg_direct
 dlmalloc
 dlmalloc_trim
 dvm.*
@@ -44,9 +40,6 @@ free_impl
 GCGraphBuilder::NoteXPCOMChild
 gfxPlatform::Init
 getanswer
-gleCmdProcessor
-glGenTextures_ExecThread
-glIsTexture_Exec
 HandleInvalidParameter
 HeapFree
 huge_dalloc
@@ -188,8 +181,6 @@ send
 setjmp
 sigblock
 sigprocmask
-_sigtramp
-__sigtramp
 SocketAccept
 SocketAcceptRead
 SocketAvailable
