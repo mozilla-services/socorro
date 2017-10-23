@@ -4,7 +4,7 @@
 
 import pytest
 
-from socorro.lib.util import drop_unicode
+from socorro.lib.util import chunkify, drop_unicode
 
 
 @pytest.mark.parametrize('text, expected', [
@@ -20,3 +20,17 @@ from socorro.lib.util import drop_unicode
 ])
 def test_drop_unicode(text, expected):
     assert drop_unicode(text) == expected
+
+
+def test_chunkify():
+    # chunking nothing yields nothing.
+    assert list(chunkify([], 1)) == []
+
+    # chunking list where len(list) < n
+    assert list(chunkify([1], 10)) == [(1,)]
+
+    # chunking a list where len(list) == n
+    assert list(chunkify([1, 2], 2)) == [(1, 2)]
+
+    # chunking list where len(list) > n
+    assert list(chunkify([1, 2, 3, 4, 5], 2)) == [(1, 2), (3, 4), (5,)]
