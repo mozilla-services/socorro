@@ -19,6 +19,7 @@ dalvik-mark-stack
 data@app@org\.mozilla\.f.*-\d\.apk@classes\.dex@0x.*
 .*FNODOBFM
 framework\.odex@0x.*
+GetLCIDFromLangListNodeWithLICCheck
 gfxPlatform::GetPlatform
 google_breakpad::ExceptionHandler::HandleInvalidParameter.*
 KiFastSystemCallRet
