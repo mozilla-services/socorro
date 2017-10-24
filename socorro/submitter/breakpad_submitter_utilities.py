@@ -7,11 +7,24 @@ import urllib2
 
 from configman import Namespace
 import poster
+import requests
 
 from socorro.external.crashstorage_base import CrashStorageBase
 
 
 poster.streaminghttp.register_openers()
+
+
+def parse_urls(url_string):
+    """Return urls to POST to
+
+    :arg string url_string: the "urls" config value
+
+    :returns: list of url strings to POST to
+
+    """
+    urls = [url.strip() for url in url_string.split(',') if url.strip()]
+    return urls
 
 
 class BreakpadPOSTDestination(CrashStorageBase):
@@ -30,7 +43,7 @@ class BreakpadPOSTDestination(CrashStorageBase):
         POST to a collector
 
         """
-        urls = self.config.urls.split(',')
+        urls = parse_urls(self.config.urls)
 
         try:
             # Create raw crash with file pointers to minidumps for poster to pull from
@@ -45,12 +58,20 @@ class BreakpadPOSTDestination(CrashStorageBase):
             # Build the payload
             datagen, headers = poster.encode.multipart_encode(raw_crash)
 
+            # requests.post expects a string or buffer, so we run out the datagen
+            # part generator
+            payload = ''.join(datagen)
+
             # Submit payload to all urls
             for url in urls:
-                request = urllib2.Request(url, datagen, headers)
-                submission_response = urllib2.urlopen(request).read().strip()
+                resp = requests.post(
+                    url,
+                    headers=headers,
+                    data=payload
+                )
                 self.config.logger.debug(
-                    'submitted %s to %s; response %s', uuid, url, submission_response
+                    'submitted %s to %s; response %s: %s',
+                    uuid, url, resp.status_code, resp.content
                 )
 
         finally:
