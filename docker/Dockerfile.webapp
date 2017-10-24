@@ -1,17 +1,25 @@
 FROM local/socorro_base
 
-# Install nodejs and npm
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y npm nodejs nodejs-legacy
+# Install nodejs and npm from Nodesource's 8.x branch
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y curl
+RUN curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
+    echo 'deb https://deb.nodesource.com/node_8.x jessie main' > /etc/apt/sources.list.d/nodesource.list && \
+    echo 'deb-src https://deb.nodesource.com/node_8.x jessie main' >> /etc/apt/sources.list.d/nodesource.list
+RUN DEBIAN_FRONTEND=noninteractive apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
 
-ENV LESS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/lessc
-ENV UGLIFYJS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/uglifyjs
-ENV CSSMIN_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/cssmin
+COPY ./webapp-django/package.json /webapp-frontend-deps/package.json
+COPY ./webapp-django/package-lock.json /webapp-frontend-deps/package-lock.json
+RUN cd /webapp-frontend-deps/ && npm install
 
 ENV CONTAINERNAME webapp
 
 COPY . /app/
 
-RUN cd /app/webapp-django/ && npm install -g
+ENV LESS_BINARY /webapp-frontend-deps/node_modules/.bin/lessc
+ENV UGLIFYJS_BINARY /webapp-frontend-deps/node_modules/.bin/uglifyjs
+ENV CSSMIN_BINARY /webapp-frontend-deps/node_modules/.bin/cssmin
+ENV NPM_ROOT_PATH /webapp-frontend-deps/
 
 # Run collectstatic in container which puts files in the default place for
 # static files.
