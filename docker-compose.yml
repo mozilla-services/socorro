@@ -97,6 +97,7 @@ services:
       - my.env
     depends_on:
       - rabbitmq
+      - localstack-s3
     command: ["/app/docker/run_submitter.sh"]
     volumes:
       - .:/app
@@ -122,6 +123,10 @@ services:
       - CRASHSTORAGE_ACCESS_KEY=foo
       - CRASHSTORAGE_SECRET_ACCESS_KEY=foo
       - CRASHSTORAGE_BUCKET_NAME=dev_bucket
+    depends_on:
+      - localstack-s3
+    expose:
+      - 8000
     ports:
       - "8888:8000"
     command: ./bin/run_web.sh
