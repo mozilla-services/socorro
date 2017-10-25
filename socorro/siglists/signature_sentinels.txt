@@ -5,5 +5,6 @@
 # Note: no regular expressions here.
 
 _purecall
+_sigtramp
 Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash
 google_breakpad::ExceptionHandler::HandleInvalidParameter
