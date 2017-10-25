@@ -4,8 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""This app will submit crashes to a socorro collector"""
-
+"""This app submits crashes to a Socorro collector"""
 
 import time
 
