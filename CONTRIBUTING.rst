@@ -154,7 +154,7 @@ Running tests
 
 The tests in ``socorro/unittests/`` use `pytest <https://pytest.org/>`_.
 
-The tests in ``webapp-django/`` use `Nose <https://nose.readthedocs.io/>`_.
+The tests in ``webapp-django/`` use `pytest <https://pytest.org/>`_.
 
 To run the tests, do::
 

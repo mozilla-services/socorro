@@ -45,7 +45,6 @@ setup(
             'socorro = socorro.app.socorro_app:SocorroWelcomeApp.run'
         ],
     },
-    test_suite='nose.collector',
     zip_safe=False,
     data_files=[
         ('socorro/external/postgresql/raw_sql/procs',
