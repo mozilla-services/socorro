@@ -14,7 +14,6 @@ from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
     ExternalProcessRule,
-    DumpLookupExternalRule,
     JitCrashCategorizeRule
 )
 from socorro.unittest.testbase import TestCase
@@ -515,21 +514,6 @@ class TestExternalProcessRule(TestCase):
             'json: Expected String or Unicode',
         ]
         assert processor_meta.processor_notes == expected
-
-
-class TestDumpLookupExternalRule(TestCase):
-
-    def test_default_parameters(self):
-        config = DumpLookupExternalRule.required_config
-
-        assert config.dump_field.default == 'upload_file_minidump'
-        assert config.dump_field is not ExternalProcessRule.required_config.dump_field
-        assert config.command_pathname.default == '/data/socorro/stackwalk/bin/dump-lookup'
-        assert config.command_pathname is not ExternalProcessRule.required_config.command_pathname
-        assert config.result_key.default == 'dump_lookup'
-        assert config.result_key is not ExternalProcessRule.required_config.result_key
-        assert config.return_code_key.default == 'dump_lookup_return_code'
-        assert config.return_code_key is not ExternalProcessRule.required_config.return_code_key
 
 
 class TestBreakpadTransformRule2015(TestCase):

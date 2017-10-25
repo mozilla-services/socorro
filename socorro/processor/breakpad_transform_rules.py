@@ -195,59 +195,6 @@ class ExternalProcessRule(Rule):
         return True
 
 
-class DumpLookupExternalRule(ExternalProcessRule):
-
-    required_config = Namespace()
-    required_config.add_option(
-        'dump_field',
-        doc='the default name of a dump',
-        default='upload_file_minidump',
-    )
-    required_config.add_option(
-        'processor_symbols_pathname_list',
-        doc='comma or space separated list of symbol files just as for '
-        'minidump_stackwalk (quote paths with embedded spaces)',
-        default='/mnt/socorro/symbols/symbols_ffx,'
-        '/mnt/socorro/symbols/symbols_sea,'
-        '/mnt/socorro/symbols/symbols_tbrd,'
-        '/mnt/socorro/symbols/symbols_sbrd,'
-        '/mnt/socorro/symbols/symbols_os',
-        from_string_converter=_create_symbol_path_str
-    )
-    required_config.command_pathname = change_default(
-        ExternalProcessRule,
-        'command_pathname',
-        '/data/socorro/stackwalk/bin/dump-lookup'
-    )
-    required_config.command_line = change_default(
-        ExternalProcessRule,
-        'command_line',
-        'timeout -s KILL 30 {command_pathname} '
-        '{dumpfile_pathname} '
-        '{processor_symbols_pathname_list} '
-        '2>/dev/null'
-    )
-    required_config.result_key = change_default(
-        ExternalProcessRule,
-        'result_key',
-        'dump_lookup'
-    )
-    required_config.return_code_key = change_default(
-        ExternalProcessRule,
-        'return_code_key',
-        'dump_lookup_return_code'
-    )
-
-    def _predicate(
-        self,
-        raw_crash,
-        raw_dumps,
-        processed_crash,
-        processor_meta
-    ):
-        return 'create_dump_lookup' in raw_crash
-
-
 class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
     required_config = Namespace()
