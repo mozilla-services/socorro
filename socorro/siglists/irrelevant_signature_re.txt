@@ -23,8 +23,6 @@ data@app@org\.mozilla\.f.*-\d\.apk@classes\.dex@0x.*
 framework\.odex@0x.*
 GetLCIDFromLangListNodeWithLICCheck
 gfxPlatform::GetPlatform
-glFlush_ExecThread
-glDrawArrays.*
 google_breakpad::CrashGenerationClient::RequestDumpForException
 google_breakpad::ExceptionHandler::SignalHandler
 google_breakpad::ExceptionHandler::WriteMinidumpWithException
