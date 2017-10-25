@@ -113,7 +113,7 @@ class TestConverters(TestCase):
                 'socorro.unittest.lib.test_converters.Foo, '
                 'socorro.unittest.lib.test_converters.Foo'
             ),
-            from_string_converter= str_to_classes_in_namespaces_converter(
+            from_string_converter=str_to_classes_in_namespaces_converter(
                 '%(name)s_%(index)02d'
             )
         )

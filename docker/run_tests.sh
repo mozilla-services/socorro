@@ -25,16 +25,10 @@ DATABASE_URL=${database_url:-"postgres://postgres:aPassword@postgresql:5432/soco
 ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
 
 export PYTHONPATH=/app/:$PYTHONPATH
+FLAKE8="$(which flake8)"
 PYTEST="$(which pytest)"
 ALEMBIC="$(which alembic)"
 SETUPDB="$(which python) /app/socorro/external/postgresql/setupdb_app.py"
-
-# FIXME(willkg): Tests fail if /app/config/alembic.ini doesn't exist. But
-# hit permission error when creating it.
-# Create necessary .ini files
-#if [ ! -f /app/config/alembic.ini ]; then
-#    cp /app/config/alembic.ini-dist /app/config/alembic.ini
-#fi
 
 # Verify we have __init__.py files everywhere we need them
 errors=0
@@ -76,11 +70,14 @@ $SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.stderr_erro
 $ALEMBIC -c "${alembic_config}" downgrade -1
 $ALEMBIC -c "${alembic_config}" upgrade heads
 
+# Run linting
+$FLAKE8
+
 # Run tests
 $PYTEST
 
-# Collect static and then test webapp
+# Collect static and then run py.test in the webapp
 pushd webapp-django
 python manage.py collectstatic --noinput
-./bin/ci.sh --docker
+$PYTEST
 popd

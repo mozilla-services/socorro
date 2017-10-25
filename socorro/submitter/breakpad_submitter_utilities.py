@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import os
-import urllib2
 
 from configman import Namespace
 import poster

@@ -1203,7 +1203,7 @@ class TestPluginContentURL(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert raw_crash.URL ==  "http://google.com"
+        assert raw_crash.URL == "http://google.com"
 
         # processed_crash should be unchanged
         assert processed_crash == DotDict()
@@ -1342,12 +1342,14 @@ class TestFlashVersionRule(TestCase):
         rule = FlashVersionRule(config)
 
         assert rule._get_flash_version(filename='NPSWF32_1_2_3.dll', version='1.2.3') == '1.2.3'
-        assert rule._get_flash_version(filename='NPSWF32_1_2_3.dll') ==  '1.2.3'
+        assert rule._get_flash_version(filename='NPSWF32_1_2_3.dll') == '1.2.3'
 
-        assert rule._get_flash_version(filename='FlashPlayerPlugin_2_3_4.exe', version='2.3.4') == '2.3.4'
+        data = rule._get_flash_version(filename='FlashPlayerPlugin_2_3_4.exe', version='2.3.4')
+        assert data == '2.3.4'
         assert rule._get_flash_version(filename='FlashPlayerPlugin_2_3_4.exe') == '2.3.4'
 
-        assert rule._get_flash_version(filename='libflashplayer3.4.5.so', version='3.4.5') == '3.4.5'
+        data = rule._get_flash_version(filename='libflashplayer3.4.5.so', version='3.4.5')
+        assert data == '3.4.5'
         assert rule._get_flash_version(filename='libflashplayer3.4.5.so') == '3.4.5'
 
         assert rule._get_flash_version(filename='Flash Player-', version='4.5.6') == '4.5.6'
@@ -1438,7 +1440,7 @@ class TestWinsock_LSPRule(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.Winsock_LSP == None
+        assert processed_crash.Winsock_LSP is None
 
         # raw_crash should be unchanged
         assert raw_crash == expected_raw_crash

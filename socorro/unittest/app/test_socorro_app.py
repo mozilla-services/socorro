@@ -72,14 +72,14 @@ class TestSocorroApp(TestCase):
         assert SomeOtherApp.values_source_list == []
 
     def test_do_run(self):
-        config = DotDict()
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal') as s:
+            with mock.patch('socorro.app.socorro_app.signal'):
                 class SomeOtherApp(SocorroApp):
-                    app_name='SomeOtherApp'
-                    app_verision='1.2.3'
-                    app_description='a silly app'
+                    app_name = 'SomeOtherApp'
+                    app_verision = '1.2.3'
+                    app_description = 'a silly app'
+
                     def main(self):
                         expected = cm.return_value.context.return_value.__enter__.return_value
                         assert self.config is expected
@@ -101,14 +101,14 @@ class TestSocorroApp(TestCase):
                 assert result == 17
 
     def test_do_run_with_alternate_class_path(self):
-        config = DotDict()
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal') as s:
+            with mock.patch('socorro.app.socorro_app.signal'):
                 class SomeOtherApp(SocorroApp):
-                    app_name='SomeOtherApp'
-                    app_verision='1.2.3'
-                    app_description='a silly app'
+                    app_name = 'SomeOtherApp'
+                    app_verision = '1.2.3'
+                    app_description = 'a silly app'
+
                     def main(self):
                         expected = cm.return_value.context.return_value.__enter__.return_value
                         assert self.config is expected
@@ -131,14 +131,14 @@ class TestSocorroApp(TestCase):
                 assert result == 17
 
     def test_do_run_with_alternate_values_source_list(self):
-        config = DotDict()
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal') as s:
+            with mock.patch('socorro.app.socorro_app.signal'):
                 class SomeOtherApp(SocorroApp):
-                    app_name='SomeOtherApp'
-                    app_verision='1.2.3'
-                    app_description='a silly app'
+                    app_name = 'SomeOtherApp'
+                    app_verision = '1.2.3'
+                    app_description = 'a silly app'
+
                     def main(self):
                         expected = cm.return_value.context.return_value.__enter__.return_value
                         assert self.config is expected
