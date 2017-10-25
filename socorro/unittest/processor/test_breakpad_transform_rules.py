@@ -11,7 +11,6 @@ from mock import Mock, patch
 
 from socorro.lib.util import DotDict
 from socorro.processor.breakpad_transform_rules import (
-    BreakpadStackwalkerRule,
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
     ExternalProcessRule,
@@ -20,9 +19,9 @@ from socorro.processor.breakpad_transform_rules import (
 )
 from socorro.unittest.testbase import TestCase
 
-
+example_uuid = '00000000-0000-0000-0000-000002140504'
 canonical_standard_raw_crash = DotDict({
-    "uuid": '00000000-0000-0000-0000-000002140504',
+    "uuid": example_uuid,
     "InstallTime": "1335439892",
     "AdapterVendorID": "0x1002",
     "TotalVirtualMemory": "4294836224",
@@ -191,12 +190,6 @@ cannonical_stackwalker_output = {
 cannonical_stackwalker_output_str = ujson.dumps(cannonical_stackwalker_output)
 
 
-class MyBreakpadStackwalkerRule(BreakpadStackwalkerRule):
-    @contextmanager
-    def _temp_raw_crash_json_file(self, raw_crash, crash_id):
-        yield "%s.json" % raw_crash.uuid
-
-
 class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
@@ -210,20 +203,14 @@ class TestBreakpadTransformRule(TestCase):
         config.logger = Mock()
         config.chatty = True
         config.dump_field = 'upload_file_minidump'
-        config.stackwalk_command_line = (
-            'timeout -s KILL 30 $minidump_stackwalk_pathname '
-            '--raw-json $rawfilePathname $dumpfilePathname '
-            '$processor_symbols_pathname_list 2>/dev/null'
+        config.command_line = (
+            BreakpadStackwalkerRule2015.required_config .command_line.default
         )
-        config.minidump_stackwalk_pathname = '/bin/stackwalker'
-        config.processor_symbols_pathname_list = (
-            '/mnt/socorro/symbols/symbols_ffx,'
-            '/mnt/socorro/symbols/symbols_sea,'
-            '/mnt/socorro/symbols/symbols_tbrd,'
-            '/mnt/socorro/symbols/symbols_sbrd,'
-            '/mnt/socorro/symbols/symbols_os'
-        )
+        config.command_pathname = '/bin/stackwalker'
+        config.public_symbols_url = 'https://localhost'
+        config.private_symbols_url = 'https://localhost'
         config.symbol_cache_path = '/mnt/socorro/symbols'
+        config.temporary_file_system_storage_path = '/tmp'
         return config
 
     def get_basic_processor_meta(self):
@@ -250,7 +237,7 @@ class TestBreakpadTransformRule(TestCase):
         )
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule = MyBreakpadStackwalkerRule(config)
+        rule = MyBreakpadStackwalkerRule2015(config)
 
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -274,7 +261,7 @@ class TestBreakpadTransformRule(TestCase):
         mocked_subprocess_handle.stdout.read.return_value = '{}'
         mocked_subprocess_handle.wait.return_value = 124
 
-        rule = MyBreakpadStackwalkerRule(config)
+        rule = MyBreakpadStackwalkerRule2015(config)
 
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -300,7 +287,7 @@ class TestBreakpadTransformRule(TestCase):
         mocked_subprocess_handle.stdout.read.return_value = int
         mocked_subprocess_handle.wait.return_value = -1
 
-        rule = MyBreakpadStackwalkerRule(config)
+        rule = MyBreakpadStackwalkerRule2015(config)
 
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -310,8 +297,13 @@ class TestBreakpadTransformRule(TestCase):
         assert processed_crash.mdsw_status_string == "unknown error"
         assert not processed_crash.success
         expected = [
-            "MDSW output failed in json: Expected String or Unicode",
-            "MDSW failed on 'upload_file_minidump': unknown error"
+            '/bin/stackwalker output failed in json: Expected String or Unicode',
+            (
+                'MDSW failed on \'timeout -s KILL 30 /bin/stackwalker --raw-json '
+                '00000000-0000-0000-0000-000002140504.json --symbols-url https://localhost '
+                '--symbols-url https://localhost --symbols-cache /mnt/socorro/symbols '
+                'a_fake_dump.dump 2>/dev/null\': unknown error'
+            )
         ]
         assert processor_meta.processor_notes == expected
 
@@ -319,31 +311,19 @@ class TestBreakpadTransformRule(TestCase):
     def test_temp_file_context(self, mocked_unlink):
         config = self.get_basic_config()
 
-        rule = BreakpadStackwalkerRule(config)
-        with rule._temp_file_context('foo.TEMPORARY.txt'):
+        rule = BreakpadStackwalkerRule2015(config)
+        with rule._temp_raw_crash_json_file('foo.json', example_uuid):
             pass
-        mocked_unlink.assert_called_once_with('foo.TEMPORARY.txt')
-        mocked_unlink.reset_mock()
-
-        with rule._temp_file_context('foo.txt'):
-            pass
-        assert mocked_unlink.call_count == 0
+        mocked_unlink.assert_called_once_with('/tmp/%s.MainThread.TEMPORARY.json' % example_uuid)
         mocked_unlink.reset_mock()
 
         try:
-            with rule._temp_file_context('foo.TEMPORARY.txt'):
+            with rule._temp_raw_crash_json_file('foo.json', example_uuid):
                 raise KeyError('oops')
         except KeyError:
             pass
-        mocked_unlink.assert_called_once_with('foo.TEMPORARY.txt')
+        mocked_unlink.assert_called_once_with('/tmp/%s.MainThread.TEMPORARY.json' % example_uuid)
         mocked_unlink.reset_mock()
-
-        try:
-            with rule._temp_file_context('foo.txt'):
-                raise KeyError('oops')
-        except KeyError:
-            pass
-        assert mocked_unlink.call_count == 0
 
 
 class TestCrashingThreadRule(TestCase):
