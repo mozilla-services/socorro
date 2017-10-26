@@ -22,7 +22,7 @@ APP_GID="10001"
 
 # Use the same image we use for building docker images because it'll be cached
 # already
-BASEIMAGENAME="python:2.7.13-slim"
+BASEIMAGENAME="python:2.7.14-slim"
 
 # Start services in background (this is idempotent)
 echo "Starting services in the background..."
