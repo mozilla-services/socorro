@@ -76,7 +76,10 @@ class ExternalProcessRule(Rule):
     )
     required_config.add_option(
         'command_line',
-        doc='the template for the command to invoke the external program',
+        doc=(
+            'the template for the command to invoke the external program; uses Python format '
+            'syntax'
+        ),
         default=(
             'timeout -s KILL 30 {command_pathname} 2>/dev/null'
         ),
@@ -196,7 +199,7 @@ class ExternalProcessRule(Rule):
 
 
 class BreakpadStackwalkerRule2015(ExternalProcessRule):
-
+    """Executes the minidump stackwalker external process and puts output in processed crash"""
     required_config = Namespace()
     required_config.add_option(
         name='public_symbols_url',
@@ -213,23 +216,41 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
     required_config.command_line = change_default(
         ExternalProcessRule,
         'command_line',
-        'timeout -s KILL 30 {command_pathname} '
+        'timeout -s KILL {kill_timeout} {command_pathname} '
         '--raw-json {raw_crash_pathname} '
         '--symbols-url {public_symbols_url} '
         '--symbols-url {private_symbols_url} '
         '--symbols-cache {symbol_cache_path} '
+        '--symbols-tmp {symbol_tmp_path} '
         '{dump_file_pathname} '
-        '2>/dev/null'
+        '2> /dev/null'
     )
     required_config.command_pathname = change_default(
         ExternalProcessRule,
         'command_pathname',
+        # NOTE(willkg): This is the path for the RPM-based Socorro deploy. When
+        # we switch to Docker, we should change this.
         '/data/socorro/stackwalk/bin/stackwalker',
     )
     required_config.add_option(
+        'kill_timeout',
+        doc='amount of time to let mdsw run before declaring it hung',
+        default=600
+    )
+    required_config.add_option(
+        'symbol_tmp_path',
+        doc=(
+            'directory to use as temp space for downloading symbols--must be on '
+            'the same filesystem as symbols-cache'
+        ),
+        default=os.path.join(tempfile.gettempdir(), 'symbols-tmp'),
+    ),
+    required_config.add_option(
         'symbol_cache_path',
-        doc='the path where the symbol cache is found, this location must be '
-        'readable and writeable (quote path with embedded spaces)',
+        doc=(
+            'the path where the symbol cache is found, this location must be '
+            'readable and writeable (quote path with embedded spaces)'
+        ),
         default=os.path.join(tempfile.gettempdir(), 'symbols'),
     )
     required_config.add_option(

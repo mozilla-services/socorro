@@ -396,10 +396,12 @@ class TestBreakpadTransformRule2015(TestCase):
         config.command_line = (
             BreakpadStackwalkerRule2015.required_config .command_line.default
         )
+        config.kill_timeout = 5
         config.command_pathname = '/bin/stackwalker'
         config.public_symbols_url = 'https://localhost'
         config.private_symbols_url = 'https://localhost'
         config.symbol_cache_path = '/mnt/socorro/symbols'
+        config.symbol_tmp_path = '/mnt/socorro/symbols'
         config.temporary_file_system_storage_path = '/tmp'
         return config
 
@@ -486,17 +488,18 @@ class TestBreakpadTransformRule2015(TestCase):
         assert processed_crash.mdsw_return_code == -1
         assert processed_crash.mdsw_status_string == "unknown error"
         assert not processed_crash.success
+        command_line = config.command_line.format(
+            **dict(
+                config,
+                raw_crash_pathname=(
+                    '/tmp/00000000-0000-0000-0000-000002140504.MainThread.TEMPORARY.json'
+                ),
+                dump_file_pathname='a_fake_dump.dump'
+            )
+        )
         expected = [
-            "{command_pathname} output failed in json: Expected String "
-            "or Unicode".format(
-                **config
-            ),
-            "MDSW failed on 'timeout -s KILL 30 /bin/stackwalker "
-            "--raw-json /tmp/00000000-0000-0000-0000-000002140504."
-            "MainThread.TEMPORARY.json --symbols-url https://localhost "
-            "--symbols-url https://localhost "
-            "--symbols-cache /mnt/socorro/symbols a_fake_dump.dump "
-            "2>/dev/null': unknown error"
+            '%s output failed in json: Expected String or Unicode' % config.command_pathname,
+            'MDSW failed on \'%s\': unknown error' % command_line
         ]
         assert processor_meta.processor_notes == expected
 
