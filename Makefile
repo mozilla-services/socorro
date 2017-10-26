@@ -30,9 +30,6 @@ clean:
 breakpad:
 	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
-json_enhancements_pg_extension: bootstrap
-	./scripts/json-enhancements.sh
-
 
 # Docker related rules
 
