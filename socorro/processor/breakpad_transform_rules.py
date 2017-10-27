@@ -315,6 +315,29 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
         return stackwalker_data, return_code
 
+    def expand_commandline(self, dump_file_pathname, raw_crash_pathname):
+        """Expands the command line parameters and returns the final command line"""
+
+        # NOTE(willkg): If we ever add new configuration variables, we'll need
+        # to add them here, too, otherwise they won't get expanded in the
+        # command line.
+
+        params = {
+            # These come from config
+            'kill_timeout': self.config.kill_timeout,
+            'command_pathname': self.config.command_pathname,
+            'public_symbols_url': self.config.public_symbols_url,
+            'private_symbols_url': self.config.private_symbols_url,
+            'symbol_cache_path': self.config.symbol_cache_path,
+            'symbol_tmp_path': self.config.symbol_tmp_path,
+
+            # These are calculated
+            'dump_file_pathname': dump_file_pathname,
+            'raw_crash_pathname': raw_crash_pathname
+        }
+
+        return self.config.command_line.format(**params)
+
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if 'additional_minidumps' not in processed_crash:
             processed_crash.additional_minidumps = []
@@ -337,21 +360,18 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
                     # dumps not intended for the stackwalker are ignored
                     continue
 
-                dump_pathname = raw_dumps[dump_name]
+                dump_file_pathname = raw_dumps[dump_name]
 
                 if self.config.chatty:
                     self.config.logger.debug(
                         "BreakpadStackwalkerRule2015: %s, %s",
                         dump_name,
-                        dump_pathname
+                        dump_file_pathname
                     )
 
-                command_line = self.config.command_line.format(
-                    **dict(
-                        self.config,
-                        dump_file_pathname=dump_pathname,
-                        raw_crash_pathname=raw_crash_pathname
-                    )
+                command_line = self.expand_commandline(
+                    dump_file_pathname=dump_file_pathname,
+                    raw_crash_pathname=raw_crash_pathname
                 )
 
                 stackwalker_data, return_code = self._execute_external_process(

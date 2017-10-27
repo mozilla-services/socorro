@@ -488,13 +488,10 @@ class TestBreakpadTransformRule2015(TestCase):
         assert processed_crash.mdsw_return_code == -1
         assert processed_crash.mdsw_status_string == "unknown error"
         assert not processed_crash.success
-        command_line = config.command_line.format(
-            **dict(
-                config,
-                raw_crash_pathname=(
-                    '/tmp/00000000-0000-0000-0000-000002140504.MainThread.TEMPORARY.json'
-                ),
-                dump_file_pathname='a_fake_dump.dump'
+        command_line = rule.expand_commandline(
+            dump_file_pathname='a_fake_dump.dump',
+            raw_crash_pathname=(
+                '/tmp/00000000-0000-0000-0000-000002140504.MainThread.TEMPORARY.json'
             )
         )
         expected = [
