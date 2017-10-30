@@ -12,8 +12,18 @@ $(function () {
      */
     window.DateFilters = (function () {
         var filters = {
-            from: $('.datetime-picker.date_from').flatpickr(),
-            to: $('.datetime-picker.date_to').flatpickr(),
+            from: $('.datetime-picker.date_from').flatpickr({
+                onChange: function (dateObjs) {
+                    removeSelectedShortcut();
+                    filters.to.set('minDate', dateObjs[0]);
+                },
+            }),
+            to: $('.datetime-picker.date_to').flatpickr({
+                onChange: function (dateObjs) {
+                    removeSelectedShortcut();
+                    filters.from.set('maxDate', dateObjs[0]);
+                },
+            }),
         };
 
         function setDate(key, value) {
@@ -31,15 +41,6 @@ $(function () {
         // Limit filters based on the other filter's value.
         filters.to.set('minDate', getDate('from'));
         filters.from.set('maxDate', getDate('to'));
-
-        filters.from.config.onChange = function (dateObj) {
-            removeSelectedShortcut();
-            filters.to.set('minDate', dateObj);
-        };
-        filters.to.config.onChange = function (dateObj) {
-            removeSelectedShortcut();
-            filters.from.set('maxDate', dateObj);
-        };
 
         // Enable the date filters range shortcuts.
         $('.date-shortcuts').on('click', 'a', function (e) {
