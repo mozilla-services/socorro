@@ -3,7 +3,6 @@
 # variables.
 
 import os
-import logging
 from pkg_resources import resource_string
 
 import dj_database_url
@@ -177,18 +176,33 @@ TEMPLATES = [
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
-LOG_LEVEL = logging.INFO
+LOGGING_LEVEL = config('LOGGING_LEVEL', 'INFO')
 
-HAS_SYSLOG = True  # XXX needed??
-
-LOGGING_CONFIG = None
-
-# This disables all mail_admins on all django.request errors.
-# We can do this because we use Sentry now instead
 LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': LOGGING_LEVEL,
+            'class': 'logging.StreamHandler',
+        },
+    },
     'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': LOGGING_LEVEL,
+        },
+        # This disables all mail_admins on all django.request errors because we
+        # use Sentry for that
         'django.request': {
-            'handlers': []
+            'handlers': ['console'],
+        },
+        'py.warnings': {
+            'handlers': ['console'],
+        },
+        'crashstats': {
+            'handlers': ['console'],
+            'level': LOGGING_LEVEL,
         }
     }
 }
@@ -359,9 +373,6 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-# import logging
-# LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
-
 # When you don't have permission to upload Symbols you might be confused
 # what to do next. On the page that explains that you don't have permission
 # there's a chance to put a link
@@ -479,15 +490,6 @@ NPM_ROOT_PATH = config('NPM_ROOT_PATH', ROOT)
 # Make this unique, and don't share it with anybody.  It cannot be blank.
 # FIXME remove this default when we are out of PHX
 SECRET_KEY = config('SECRET_KEY', 'this must be changed!!')
-
-# Log settings
-
-# Make this unique to your project.
-SYSLOG_TAG = config('SYSLOG_TAG', 'http_app_playdoh')
-
-# Common Event Format logging parameters
-CEF_PRODUCT = config('CEF_PRODUCT', 'Playdoh')
-CEF_VENDOR = config('CEF_VENDOR', 'Mozilla')
 
 # If you intend to run WITHOUT HTTPS, such as local development,
 # then set this to False
