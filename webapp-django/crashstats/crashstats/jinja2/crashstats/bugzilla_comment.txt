@@ -1,0 +1,18 @@
+{# This is a Jinja2 template for Bugzilla bugs filed from the Socorro interface.
+   See crashstats.templatetags.jinja_helpers.bugzilla_submit_url. #}
+{%- macro frame_source(frame) -%}
+  {{ frame.file if frame.file }}{{ ':%s'|format(frame.line) if frame.line }}
+{%- endmacro -%}
+
+This bug was filed from the Socorro interface and is
+report bp-{{ uuid }}.
+=============================================================
+
+{% if parsed_dump.threads and crashing_thread is not none -%}
+Top 10 frames of crashing thread:
+
+{% for frame in parsed_dump.threads[crashing_thread].frames[:10] -%}
+{{ frame.frame }} {{ frame.module }} {{ frame.signature|remove_signature_arguments }} {{ frame_source(frame) }}
+{% endfor %}
+=============================================================
+{% endif %}

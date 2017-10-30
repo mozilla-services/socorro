@@ -6,12 +6,12 @@ import urllib
 import isodate
 import jinja2
 import humanfriendly
-
 from django_jinja import library
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.template import engines
+from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_str
 
@@ -222,8 +222,13 @@ def read_crash_column(crash, column_key):
     return crash.get(column_key, '')
 
 
+@library.filter
+def remove_signature_arguments(signature):
+    return re.sub(r'\(.*\)', '', signature)
+
+
 @library.global_function
-def bugzilla_submit_url(report, bug_product):
+def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
@@ -239,6 +244,12 @@ def bugzilla_submit_url(report, bug_product):
     elif op_sys in ('Windows Unknown', 'Windows 2000'):
         op_sys = 'Windows'
 
+    comment = render_to_string('crashstats/bugzilla_comment.txt', {
+        'uuid': report['uuid'],
+        'parsed_dump': parsed_dump,
+        'crashing_thread': crashing_thread,
+    })
+
     kwargs = {
         'bug_severity': 'critical',
         'keywords': 'crash',
@@ -247,15 +258,7 @@ def bugzilla_submit_url(report, bug_product):
         'rep_platform': report['cpu_name'],
         'cf_crash_signature': '[@ {}]'.format(smart_str(report['signature'])),
         'short_desc': 'Crash in {}'.format(smart_str(report['signature'])),
-        'comment': (
-            'This bug was filed from the Socorro interface and is \n'
-            'report bp-{}.\n'
-            '{}'
-            '\n'
-        ).format(
-            report['uuid'],
-            '=' * 61
-        ),
+        'comment': comment,
     }
 
     # some special keys have to be truncated to make Bugzilla happy

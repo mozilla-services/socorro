@@ -136,6 +136,9 @@ class TestBugzillaLink(TestCase):
 
 class TestBugzillaSubmitURL(TestCase):
 
+    PARSED_DUMP = {}
+    CRASHING_THREAD = 0
+
     @staticmethod
     def _create_report(**overrides):
         default = {
@@ -151,7 +154,7 @@ class TestBugzillaSubmitURL(TestCase):
 
     def test_basic_url(self):
         report = self._create_report(os_name='Windows')
-        url = bugzilla_submit_url(report, 'Plugin')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Plugin')
         assert url.startswith('https://bugzilla.mozilla.org/enter_bug.cgi?')
         qs = self._extract_query_string(url)
         assert '00000000-0000-0000-0000-000000000000' in qs['comment'][0]
@@ -169,7 +172,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windows',
             signature='x' * 1000
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert len(qs['short_desc'][0]) == 255
         assert qs['short_desc'][0].endswith('...')
@@ -179,7 +182,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windoooosws',
             os_pretty_version='Windows 10',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windows 10']
 
@@ -188,7 +191,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windoooosws',
             os_pretty_version='',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windoooosws']
 
@@ -197,7 +200,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='OS X',
             os_pretty_version='OS X 11.1',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Mac OS X']
 
@@ -206,7 +209,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windows NT',
             os_pretty_version='Windows 8.1',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windows 8']
 
@@ -215,7 +218,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windows NT',
             os_pretty_version='Windows Unknown',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windows']
 
@@ -226,7 +229,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name=None,
             signature='java.lang.IllegalStateException',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert 'op_sys' not in qs
 
@@ -241,7 +244,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name=None,
             signature=u'YouTube\u2122 No Buffer (Stop Auto-playing)',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         # Most important that it should work
         assert 'Crash+in+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing' in url
 
