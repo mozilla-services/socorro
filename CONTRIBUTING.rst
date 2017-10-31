@@ -117,11 +117,20 @@ For example, to add ``foobar`` version 5::
 
   hashin -r requirements/default.txt foobar==5
 
+If ``foobar`` has any dependencies that would also be installed, you must add
+them to the constraints file::
+
+  hashin -r requirements/constraints.txt bazzbiff==4.0
+
 Then rebuild your docker environment::
 
   make dockerbuild
 
 If there are problems, it'll tell you.
+
+.. note:: If you're unsure what dependencies to add to the constraints file,
+   the error from running ``make dockerbuild`` should include a list of
+   dependencies that were missing, including their version numbers and hashes.
 
 
 JavaScript Dependencies
