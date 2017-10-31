@@ -76,7 +76,10 @@ class ExternalProcessRule(Rule):
     )
     required_config.add_option(
         'command_line',
-        doc='the template for the command to invoke the external program',
+        doc=(
+            'the template for the command to invoke the external program; uses Python format '
+            'syntax'
+        ),
         default=(
             'timeout -s KILL 30 {command_pathname} 2>/dev/null'
         ),
@@ -195,61 +198,8 @@ class ExternalProcessRule(Rule):
         return True
 
 
-class DumpLookupExternalRule(ExternalProcessRule):
-
-    required_config = Namespace()
-    required_config.add_option(
-        'dump_field',
-        doc='the default name of a dump',
-        default='upload_file_minidump',
-    )
-    required_config.add_option(
-        'processor_symbols_pathname_list',
-        doc='comma or space separated list of symbol files just as for '
-        'minidump_stackwalk (quote paths with embedded spaces)',
-        default='/mnt/socorro/symbols/symbols_ffx,'
-        '/mnt/socorro/symbols/symbols_sea,'
-        '/mnt/socorro/symbols/symbols_tbrd,'
-        '/mnt/socorro/symbols/symbols_sbrd,'
-        '/mnt/socorro/symbols/symbols_os',
-        from_string_converter=_create_symbol_path_str
-    )
-    required_config.command_pathname = change_default(
-        ExternalProcessRule,
-        'command_pathname',
-        '/data/socorro/stackwalk/bin/dump-lookup'
-    )
-    required_config.command_line = change_default(
-        ExternalProcessRule,
-        'command_line',
-        'timeout -s KILL 30 {command_pathname} '
-        '{dumpfile_pathname} '
-        '{processor_symbols_pathname_list} '
-        '2>/dev/null'
-    )
-    required_config.result_key = change_default(
-        ExternalProcessRule,
-        'result_key',
-        'dump_lookup'
-    )
-    required_config.return_code_key = change_default(
-        ExternalProcessRule,
-        'return_code_key',
-        'dump_lookup_return_code'
-    )
-
-    def _predicate(
-        self,
-        raw_crash,
-        raw_dumps,
-        processed_crash,
-        processor_meta
-    ):
-        return 'create_dump_lookup' in raw_crash
-
-
 class BreakpadStackwalkerRule2015(ExternalProcessRule):
-
+    """Executes the minidump stackwalker external process and puts output in processed crash"""
     required_config = Namespace()
     required_config.add_option(
         name='public_symbols_url',
@@ -266,23 +216,41 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
     required_config.command_line = change_default(
         ExternalProcessRule,
         'command_line',
-        'timeout -s KILL 30 {command_pathname} '
+        'timeout -s KILL {kill_timeout} {command_pathname} '
         '--raw-json {raw_crash_pathname} '
         '--symbols-url {public_symbols_url} '
         '--symbols-url {private_symbols_url} '
         '--symbols-cache {symbol_cache_path} '
+        '--symbols-tmp {symbol_tmp_path} '
         '{dump_file_pathname} '
-        '2>/dev/null'
+        '2> /dev/null'
     )
     required_config.command_pathname = change_default(
         ExternalProcessRule,
         'command_pathname',
+        # NOTE(willkg): This is the path for the RPM-based Socorro deploy. When
+        # we switch to Docker, we should change this.
         '/data/socorro/stackwalk/bin/stackwalker',
     )
     required_config.add_option(
+        'kill_timeout',
+        doc='amount of time to let mdsw run before declaring it hung',
+        default=600
+    )
+    required_config.add_option(
+        'symbol_tmp_path',
+        doc=(
+            'directory to use as temp space for downloading symbols--must be on '
+            'the same filesystem as symbols-cache'
+        ),
+        default=os.path.join(tempfile.gettempdir(), 'symbols-tmp'),
+    ),
+    required_config.add_option(
         'symbol_cache_path',
-        doc='the path where the symbol cache is found, this location must be '
-        'readable and writeable (quote path with embedded spaces)',
+        doc=(
+            'the path where the symbol cache is found, this location must be '
+            'readable and writeable (quote path with embedded spaces)'
+        ),
         default=os.path.join(tempfile.gettempdir(), 'symbols'),
     )
     required_config.add_option(
@@ -347,6 +315,29 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
         return stackwalker_data, return_code
 
+    def expand_commandline(self, dump_file_pathname, raw_crash_pathname):
+        """Expands the command line parameters and returns the final command line"""
+
+        # NOTE(willkg): If we ever add new configuration variables, we'll need
+        # to add them here, too, otherwise they won't get expanded in the
+        # command line.
+
+        params = {
+            # These come from config
+            'kill_timeout': self.config.kill_timeout,
+            'command_pathname': self.config.command_pathname,
+            'public_symbols_url': self.config.public_symbols_url,
+            'private_symbols_url': self.config.private_symbols_url,
+            'symbol_cache_path': self.config.symbol_cache_path,
+            'symbol_tmp_path': self.config.symbol_tmp_path,
+
+            # These are calculated
+            'dump_file_pathname': dump_file_pathname,
+            'raw_crash_pathname': raw_crash_pathname
+        }
+
+        return self.config.command_line.format(**params)
+
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if 'additional_minidumps' not in processed_crash:
             processed_crash.additional_minidumps = []
@@ -369,21 +360,18 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
                     # dumps not intended for the stackwalker are ignored
                     continue
 
-                dump_pathname = raw_dumps[dump_name]
+                dump_file_pathname = raw_dumps[dump_name]
 
                 if self.config.chatty:
                     self.config.logger.debug(
                         "BreakpadStackwalkerRule2015: %s, %s",
                         dump_name,
-                        dump_pathname
+                        dump_file_pathname
                     )
 
-                command_line = self.config.command_line.format(
-                    **dict(
-                        self.config,
-                        dump_file_pathname=dump_pathname,
-                        raw_crash_pathname=raw_crash_pathname
-                    )
+                command_line = self.expand_commandline(
+                    dump_file_pathname=dump_file_pathname,
+                    raw_crash_pathname=raw_crash_pathname
                 )
 
                 stackwalker_data, return_code = self._execute_external_process(
