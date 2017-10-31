@@ -14,7 +14,7 @@ source "$VIRTUAL_ENV/bin/activate"
 # install dev + prod dependencies
 ${VIRTUAL_ENV}/bin/python tools/pipstrap.py
 
-${VIRTUAL_ENV}/bin/pip install --require-hashes -r requirements.txt
+${VIRTUAL_ENV}/bin/pip install --require-hashes -r requirements/default.txt -c requirements/constraints.txt
 
 if [ -n "${SOCORRO_DEVELOPMENT_ENV+1}" ]; then
     # install development egg in local virtualenv
