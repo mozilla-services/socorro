@@ -55,12 +55,13 @@ pipeline {
   }
   post {
     failure {
-      mail(
-        body: "${BUILD_URL}",
-        from: "firefox-test-engineering@mozilla.com",
-        replyTo: "firefox-test-engineering@mozilla.com",
-        subject: "Build failed in Jenkins: ${JOB_NAME} #${BUILD_NUMBER}",
-        to: "fte-ci@mozilla.com")
+      emailext(
+        attachLog: true,
+        attachmentsPattern: 'results/py27.html',
+        body: '$BUILD_URL\n\n$FAILED_TESTS',
+        replyTo: '$DEFAULT_REPLYTO',
+        subject: '$DEFAULT_SUBJECT',
+        to: '$DEFAULT_RECIPIENTS')
     }
     changed {
       ircNotification('#breakpad')
