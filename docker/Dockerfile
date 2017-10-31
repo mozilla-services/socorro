@@ -8,9 +8,9 @@ COPY ./docker/set_up_ubuntu.sh /tmp/
 RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
 
 # Install Socorro Python requirements
-COPY ./requirements.txt /app/requirements.txt
+COPY ./requirements /app/requirements
 RUN pip install -U 'pip>=8' && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements/default.txt -c requirements/constraints.txt
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1

@@ -103,12 +103,19 @@ Code reviews should review the changes in the context of the rest of the system.
 Python Dependencies
 ===================
 
-Dependencies for all parts Socorro are in ``requirements.txt``. They need to be
-pinned and hashed. Use `hashin <https://pypi.python.org/pypi/hashin>`_.
+Python dependencies for all parts of Socorro are split between two files:
+
+1. ``requirements/default.txt``, containing dependencies that Socorro uses
+   directly.
+2. ``requirements/constraints.txt``, containing dependencies required by the
+   dependencies in ``default.txt`` that Socorro does not use directly.
+
+Dependencies in both files must be pinned and hashed. Use
+`hashin <https://pypi.python.org/pypi/hashin>`_.
 
 For example, to add ``foobar`` version 5::
 
-  hashin -r requirements.txt foobar==5
+  hashin -r requirements/default.txt foobar==5
 
 Then rebuild your docker environment::
 
