@@ -590,6 +590,7 @@
 
                     {% if parsed_dump.threads %}
                     <div id="frames">
+                        {% if crashing_thread is not none %}
                         <h2>Crashing Thread ({{ crashing_thread }}){% if parsed_dump.threads[crashing_thread].thread_name %}, Name: {{ parsed_dump.threads[crashing_thread].thread_name }}{% endif %}</h2>
                         <table class="data-table">
                             <thead>
@@ -624,12 +625,12 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-
                         <p>
                             <a href="#allthreads" data-show="Show other threads" data-hide="Hide other threads">Show other threads</a>
                         </p>
+                        {% endif %}
 
-                        <div id="allthreads">
+                        <div id="allthreads" class="{{ 'hidden' if crashing_thread is not none }}">
                             {% for thread in parsed_dump.threads %}
                             {% if thread.thread != crashing_thread %}
                             <h2>Thread {{ thread.thread }}{% if thread.thread_name %}, Name: {{ thread.thread_name }}{% endif %}</h2>

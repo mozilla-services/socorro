@@ -871,15 +871,7 @@ def report_index(request, crash_id, default_context=None):
         context['raw_stackwalker_output'] = 'No dump available'
         parsed_dump = {}
 
-    # If the parsed_dump lacks a `parsed_dump.crash_info.crashing_thread`
-    # we can't loop over the frames :(
-    crashing_thread = parsed_dump.get('crash_info', {}).get('crashing_thread')
-    if crashing_thread is None:
-        # the template does a big `{% if parsed_dump.threads %}`
-        parsed_dump['threads'] = None
-    else:
-        context['crashing_thread'] = crashing_thread
-
+    context['crashing_thread'] = parsed_dump.get('crash_info', {}).get('crashing_thread')
     if context['report']['signature'].startswith('shutdownhang'):
         # For shutdownhang signatures, we want to use thread 0 as the
         # crashing thread, because that's the thread that actually contains
