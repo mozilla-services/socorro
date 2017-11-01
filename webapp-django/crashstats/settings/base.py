@@ -192,8 +192,6 @@ LOGGING = {
             'handlers': ['console'],
             'level': LOGGING_LEVEL,
         },
-        # This disables all mail_admins on all django.request errors because we
-        # use Sentry for that
         'django.request': {
             'handlers': ['console'],
         },
