@@ -1759,6 +1759,56 @@ class TestViews(BaseTestViews):
         assert 'Crashing Thread (2)' not in response.content
         assert 'Crashing Thread (0)' in response.content
 
+    def test_report_index_with_no_crashing_thread(self):
+        """If the json_dump has no crashing thread available, do not display a
+        specific crashing thread, but instead display all threads.
+
+        """
+        json_dump = {
+            'crash_info': {},
+            'status': 'OK',
+            'threads': [
+                {'frame_count': 0, 'frames': []},
+                {'frame_count': 0, 'frames': []},
+                {'frame_count': 0, 'frames': []},
+            ],
+            'modules': [],
+        }
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                crash['signature'] = 'foo::bar()'
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        assert 'Crashing Thread' not in response.content
+        assert 'Thread 0' in response.content
+        assert 'Thread 1' in response.content
+        assert 'Thread 2' in response.content
+
     def test_report_index_with_telemetry_environment(self):
 
         def mocked_raw_crash_get(**params):
