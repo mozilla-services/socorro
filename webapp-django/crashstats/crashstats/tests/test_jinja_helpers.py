@@ -1,6 +1,7 @@
 import datetime
 import time
 import urlparse
+from urllib import quote_plus
 
 from django.core.cache import cache
 from django.utils.safestring import SafeText
@@ -136,12 +137,16 @@ class TestBugzillaLink(TestCase):
 
 class TestBugzillaSubmitURL(TestCase):
 
+    EMPTY_PARSED_DUMP = {}
+    CRASHING_THREAD = 0
+
     @staticmethod
     def _create_report(**overrides):
         default = {
             'signature': '$&#;deadbeef',
             'uuid': '00000000-0000-0000-0000-000000000000',
-            'cpu_name': 'x86'
+            'cpu_name': 'x86',
+            'os_name': None,
         }
         return dict(default, **overrides)
 
@@ -149,9 +154,37 @@ class TestBugzillaSubmitURL(TestCase):
     def _extract_query_string(url):
         return urlparse.parse_qs(urlparse.urlparse(url).query)
 
+    @staticmethod
+    def _create_frame(
+        frame=1,
+        module='fake_module',
+        signature='fake_signature',
+        file='fake.cpp',
+        line=1,
+    ):
+        return {
+            'frame': frame,
+            'module': module,
+            'signature': signature,
+            'file': file,
+            'line': line,
+        }
+
+    @staticmethod
+    def _create_thread(frames=None):
+        return {
+            'frames': frames or []
+        }
+
+    @staticmethod
+    def _create_dump(threads=None):
+        return {
+            'threads': threads or []
+        }
+
     def test_basic_url(self):
         report = self._create_report(os_name='Windows')
-        url = bugzilla_submit_url(report, 'Plugin')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Plugin')
         assert url.startswith('https://bugzilla.mozilla.org/enter_bug.cgi?')
         qs = self._extract_query_string(url)
         assert '00000000-0000-0000-0000-000000000000' in qs['comment'][0]
@@ -169,7 +202,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windows',
             signature='x' * 1000
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert len(qs['short_desc'][0]) == 255
         assert qs['short_desc'][0].endswith('...')
@@ -179,7 +212,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windoooosws',
             os_pretty_version='Windows 10',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windows 10']
 
@@ -188,7 +221,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windoooosws',
             os_pretty_version='',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windoooosws']
 
@@ -197,7 +230,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='OS X',
             os_pretty_version='OS X 11.1',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Mac OS X']
 
@@ -206,7 +239,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windows NT',
             os_pretty_version='Windows 8.1',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windows 8']
 
@@ -215,7 +248,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name='Windows NT',
             os_pretty_version='Windows Unknown',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert qs['op_sys'] == ['Windows']
 
@@ -226,7 +259,7 @@ class TestBugzillaSubmitURL(TestCase):
             os_name=None,
             signature='java.lang.IllegalStateException',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         qs = self._extract_query_string(url)
         assert 'op_sys' not in qs
 
@@ -241,9 +274,109 @@ class TestBugzillaSubmitURL(TestCase):
             os_name=None,
             signature=u'YouTube\u2122 No Buffer (Stop Auto-playing)',
         )
-        url = bugzilla_submit_url(report, 'Core')
+        url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         # Most important that it should work
         assert 'Crash+in+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing' in url
+
+    def test_comment(self):
+        report = self._create_report()
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(),  # Empty thread 0
+            self._create_thread(frames=[
+                self._create_frame(frame=0),
+                self._create_frame(frame=1),
+                self._create_frame(frame=2),
+            ]),
+        ])
+        url = bugzilla_submit_url(report, parsed_dump, 1, 'Core')
+
+        assert quote_plus('bp-' + report['uuid']) in url
+        assert quote_plus('Top 3 frames of crashing thread:') in url
+
+        frame1 = parsed_dump['threads'][1]['frames'][1]
+        assert quote_plus('1 {module} {signature} {file}:{line}'.format(**frame1)) in url
+
+    def test_comment_no_threads(self):
+        """If parsed_dump has no threads available, do not output any
+        frames.
+
+        """
+        report = self._create_report()
+        url = bugzilla_submit_url(report, {}, 0, 'Core')
+        assert quote_plus('frames of crashing thread:') not in url
+
+    def test_comment_more_than_ten_frames(self):
+        """If the crashing thread has more than ten frames, only display
+        the top ten.
+
+        """
+        report = self._create_report()
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(frames=[self._create_frame(frame=frame) for frame in range(10)] + [
+                self._create_frame(frame=10, module='do_not_include')
+            ])
+        ])
+        url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
+        assert quote_plus('do_not_include') not in url
+
+    def test_comment_remove_arguments(self):
+        """If a frame signature includes function arguments, remove
+        them.
+
+        """
+        report = self._create_report()
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(frames=[
+                self._create_frame(
+                    frame=0,
+                    module='test_module',
+                    signature='foo::bar(char* x, int y)',
+                    file='foo.cpp',
+                    line=7,
+                ),
+            ])
+        ])
+        url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
+        assert quote_plus('0 test_module foo::bar foo.cpp:7') in url
+
+    def test_comment_missing_line(self):
+        """If a frame signature is missing a line number, do not include
+        it.
+
+        """
+        report = self._create_report()
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(frames=[
+                self._create_frame(
+                    frame=0,
+                    module='test_module',
+                    signature='foo::bar(char* x, int y)',
+                    file='foo.cpp',
+                    line=None,
+                ),
+            ])
+        ])
+        url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
+        assert quote_plus('0 test_module foo::bar foo.cpp\n') in url
+
+    def test_comment_missing_file(self):
+        """If a frame signature is missing file info, do not include it.
+
+        """
+        report = self._create_report()
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(frames=[
+                self._create_frame(
+                    frame=0,
+                    module='test_module',
+                    signature='foo::bar(char* x, int y)',
+                    file=None,
+                    line=None,
+                ),
+            ])
+        ])
+        url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
+        assert quote_plus('0 test_module foo::bar \n') in url
 
 
 class TestReplaceBugzillaLinks(TestCase):
