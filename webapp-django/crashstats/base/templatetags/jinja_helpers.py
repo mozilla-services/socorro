@@ -107,7 +107,9 @@ def is_dangerous_cpu(cpu_info):
     # for ease of find by users.
     return (
         cpu_info.startswith('AuthenticAMD family 20 model 1') or
-        cpu_info.startswith('AuthenticAMD family 20 model 2')
+        cpu_info.startswith('AuthenticAMD family 20 model 2') or
+        cpu_info.startswith('family 20 model 1') or
+        cpu_info.startswith('family 20 model 2')
     )
 
 
