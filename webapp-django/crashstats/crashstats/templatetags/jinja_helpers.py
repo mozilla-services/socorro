@@ -222,11 +222,6 @@ def read_crash_column(crash, column_key):
     return crash.get(column_key, '')
 
 
-@library.filter
-def remove_signature_arguments(signature):
-    return re.sub(r'\(.*\)', '', signature)
-
-
 @library.global_function
 def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
@@ -244,10 +239,13 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     elif op_sys in ('Windows Unknown', 'Windows 2000'):
         op_sys = 'Windows'
 
+    crashing_thread_frames = None
+    if parsed_dump.get('threads') and crashing_thread is not None:
+        crashing_thread_frames = bugzilla_thread_frames(parsed_dump['threads'][crashing_thread])
+
     comment = render_to_string('crashstats/bugzilla_comment.txt', {
         'uuid': report['uuid'],
-        'parsed_dump': parsed_dump,
-        'crashing_thread': crashing_thread,
+        'crashing_thread_frames': crashing_thread_frames,
     })
 
     kwargs = {
@@ -274,6 +272,30 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
 
     url += '?' + urllib.urlencode(kwargs, True)
     return url
+
+
+def bugzilla_thread_frames(thread):
+    """Extract frame info for the top frames of a crashing thread to be
+    included in the Bugzilla summary when reporting the crash.
+
+    """
+    frames = []
+    for frame in thread['frames'][:10]:  # Max 10 frames
+        # Source is an empty string if data isn't available
+        source = frame.get('file') or ''
+        if frame.get('line'):
+            source += ':{}'.format(frame['line'])
+
+        # Remove function arguments
+        signature = re.sub(r'\(.*\)', '', frame['signature'])
+
+        frames.append({
+            'frame': frame['frame'],
+            'module': frame['module'],
+            'signature': signature,
+            'source': source,
+        })
+    return frames
 
 
 @library.filter
