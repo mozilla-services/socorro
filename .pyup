@@ -1,0 +1,9 @@
+schedule: "every month"
+search: False
+requirements:
+  - requirements/default.txt:
+      update: all
+      pin: true
+  - docs/requirements.txt
+      update: all
+      pin: true
