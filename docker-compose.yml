@@ -31,7 +31,7 @@ services:
       - docker/config/processor.env
       - my.env
     depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
+      - statsd
       - localstack-s3
       - postgresql
       - elasticsearch
@@ -51,7 +51,7 @@ services:
       - docker/config/webapp.env
       - my.env
     depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
+      - statsd
       - localstack-s3
       - postgresql
       - elasticsearch
@@ -131,12 +131,15 @@ services:
       - "8888:8000"
     command: ./bin/run_web.sh
 
-  # https://hub.docker.com/r/kamon/grafana_graphite/
-  # username: admin, password: admin
+  # https://hub.docker.com/r/hopsoft/graphite-statsd/
   statsd:
-    image: kamon/grafana_graphite
+    image: hopsoft/graphite-statsd
     ports:
-      - "8080:3000"  # grafana port
+      - "8080:80"
+      - "2003-2004:2003-2004"
+      - "2023-2024:2023-2024"
+      - "8125:8125/udp"
+      - "8126:8126"
 
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
