@@ -13,7 +13,9 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
+
 from socorro.external.crashstorage_base import CrashIDNotFound
+
 from socorro.lib.util import DotDict
 from socorro.lib import raven_client
 
@@ -357,7 +359,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     def close(self):
-        """when  the processor shutsdown, this function cleans up"""
+        """when the processor shutsdown, this function cleans up"""
         try:
             self.companion_process.close()
         except AttributeError:

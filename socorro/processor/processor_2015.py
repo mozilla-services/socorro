@@ -39,17 +39,40 @@ from socorro.lib.util import DotDict
 #               socorro.lib.transform_rules.Rule
 default_rule_set = [
     [   # rules to change the internals of the raw crash
-        "raw_transform",  # name of the rule
-        ""  # comma delimited list of fully qualified rule class names
-    ],
-    [   # rules to transform a raw crash into a processed crash
         "raw_to_processed_transform",
-        ""
-    ],
-    [   # post processing of the processed crash
-        "processed_transform",
-        ""
-    ],
+        "socorro.processor.mozilla_transform_rules.ProductRewrite,"
+        "socorro.processor.mozilla_transform_rules.ESRVersionRewrite,"
+        "socorro.processor.mozilla_transform_rules.PluginContentURL,"
+        "socorro.processor.mozilla_transform_rules.PluginUserComment,"
+        # rules to transform a raw crash into a processed crash
+        "socorro.processor.general_transform_rules.IdentifierRule, "
+        "socorro.processor.breakpad_transform_rules.BreakpadStackwalkerRule2015, "
+        "socorro.processor.mozilla_transform_rules.ProductRule, "
+        "socorro.processor.mozilla_transform_rules.UserDataRule, "
+        "socorro.processor.mozilla_transform_rules.EnvironmentRule, "
+        "socorro.processor.mozilla_transform_rules.PluginRule, "
+        "socorro.processor.mozilla_transform_rules.AddonsRule, "
+        "socorro.processor.mozilla_transform_rules.DatesAndTimesRule, "
+        "socorro.processor.mozilla_transform_rules.OutOfMemoryBinaryRule, "
+        "socorro.processor.mozilla_transform_rules.JavaProcessRule, "
+        "socorro.processor.mozilla_transform_rules.Winsock_LSPRule, "
+        # post processing of the processed crash
+        "socorro.processor.breakpad_transform_rules.CrashingThreadRule, "
+        "socorro.processor.general_transform_rules.CPUInfoRule, "
+        "socorro.processor.general_transform_rules.OSInfoRule, "
+        "socorro.processor.mozilla_transform_rules.BetaVersionRule, "
+        "socorro.processor.mozilla_transform_rules.ExploitablityRule, "
+        "socorro.processor.mozilla_transform_rules.AuroraVersionFixitRule, "
+        "socorro.processor.mozilla_transform_rules.FlashVersionRule, "
+        "socorro.processor.mozilla_transform_rules.OSPrettyVersionRule, "
+        "socorro.processor.mozilla_transform_rules.TopMostFilesRule, "
+        "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
+        "socorro.processor.rules.memory_report_extraction.MemoryReportExtraction, "
+        # a set of classifiers to help with jit crashes
+        "socorro.processor.breakpad_transform_rules.JitCrashCategorizeRule, "
+        # generate signature now that we've done all the processing it depends on
+        'socorro.processor.mozilla_transform_rules.SignatureGeneratorRule, '
+    ]
 ]
 
 # rules come into Socorro via Configman.  Configman defines them as strings
@@ -76,6 +99,7 @@ def rule_sets_from_string(rule_sets_as_string):
 
         names = []
         for (name, default_rules_str) in rule_sets:
+            #name = "raw_to_processed_transform"
             names.append(name)
             required_config.namespace(name)
 
@@ -83,9 +107,7 @@ def rule_sets_from_string(rule_sets_as_string):
                 name='rules_list',
                 doc='a list of fully qualified class names for the rules',
                 default=default_rules_str,
-                from_string_converter=str_to_classes_in_namespaces_converter(
-                    name_of_class_option='rule_class'
-                ),
+                from_string_converter=str_to_classes_in_namespaces_converter(),
                 likely_to_be_changed=True,
             )
 

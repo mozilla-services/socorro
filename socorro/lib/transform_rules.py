@@ -12,9 +12,6 @@ from configman.dotdict import DotDict
 from configman.converters import to_str
 
 from socorro.lib import raven_client
-from socorro.lib.converters import (
-    str_to_classes_in_namespaces_converter,
-)
 
 
 # support methods
@@ -340,8 +337,7 @@ class TransformRuleSystem(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         name='rules_list',
-        default=[],
-        from_string_converter=str_to_classes_in_namespaces_converter()
+        default=[]
     )
     required_config.add_option(
         'chatty_rules',
