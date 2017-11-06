@@ -45,8 +45,9 @@ raven==6.1.0 \
 requests==2.18.4 \
     --hash=sha256:6a1b267aa90cac58ac3a765d067950e7dbbf75b1da07e895d1f594193a40a38b \
     --hash=sha256:9c443e7324ba5b85070c4a818ade28bfabedf16ea10206da1132edaa6dda237e
-statsd==2.1.2 \
-    --hash=sha256:45db168312a6820fd78697c7b6fd0196f3af922c8ebc88540edd0d6fafed554d
+statsd==3.2.1 \
+    --hash=sha256:7aff40c6cdda703193fac6231410c6c0ad5939ce053a168016501e982c755c84 \
+    --hash=sha256:3fa92bf0192af926f7a0d9be031fe3fd0fbaa1992d42cf2f07e68f76ac18288e
 ujson==1.35 \
     --hash=sha256:f66073e5506e91d204ab0c614a148d5aa938bdbf104751be66f8ad7a222f5f86
 python-dateutil==2.4.2 \
