@@ -79,9 +79,9 @@ Django==1.8.18 \
     --hash=sha256:c7611cdd5e2539a443b7960c7cafd867d986c2720a1b44808deaa60ce3da50c7
 eventlog==0.8.0 \
     --hash=sha256:8935e34589a6549b2dce6eeffae40d22739eb55b6a994a30f66a428d6f98b813
-flake8==3.4.1 \
-    --hash=sha256:f1a9d8886a9cbefb52485f4f4c770832c7fb569c084a9a314fb1eaa37c0c2c86 \
-    --hash=sha256:c20044779ff848f67f89c56a0e4624c04298cd476e25253ac0c36f910a1a11d8
+flake8==3.5.0 \
+    --hash=sha256:c7841163e2b576d435799169b78703ad6ac1bbb0f199994fc05f700b2a90ea37 \
+    --hash=sha256:7253265f7abd8b313e3892944044a365e3f4ac3fcdcfb4298f55ee9ddf188ba0
 python-decouple==2.3 \
     --hash=sha256:b9fbf747fa8e711d330f2f436b9b2ecf5eed9eb67a637ca81abcd11c2abedec8
 dj-database-url==0.3.0 \
