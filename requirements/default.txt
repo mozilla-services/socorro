@@ -154,8 +154,8 @@ django-session-csrf==0.7.1 \
 # the 'linux2' is for TravisCI
 pyinotify==0.9.6 ; sys_platform == 'linux' or sys_platform == 'linux2' \
     --hash=sha256:9c998a5d7606ca835065cdabc013ae6c66eb9ea76a00a1e3bc6e0cfe2b4f71f4
-django-jinja==2.1.2 \
-    --hash=sha256:fc2b6a65201b27711e800eb2e1262ff42a32f027bd2267e34121f1bd2bd6b933
+django-jinja==2.4.0 \
+    --hash=sha256:67d0c77da305013c09f5bc6a45deda8dd66936b94d6548fd893d7ac2dfcafe6e
 humanfriendly==1.44.7 \
     --hash=sha256:fcee758612edc6fead9b8fd1d5a473eab2c3a84cf8766f3ce70862ccd35e8a64
 jsonschema==2.5.1 \
