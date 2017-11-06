@@ -2,9 +2,8 @@ Mako==1.0.7 \
     --hash=sha256:4e02fde57bd4abb5ec400181e4c314f56ac3e49ba4fb8b0d50bba18cb27d25ae
 MarkupSafe==1.0 \
     --hash=sha256:a6be69091dac236ea9c6bc7d012beab42010fa914c459791d627dad4910eb665
-python-editor==0.5 \
-    --hash=sha256:f65c033ede0758663b9ff6a29d702f0b09198ad7c4ef96c9d37ccdfbf7bbf6fa \
-    --hash=sha256:1184f947a0f5cfa0f9528766280ac90e8a07cbf43bedda17a4672e22cf91794e
+python-editor==1.0.3 \
+    --hash=sha256:a3c066acee22a1c94f63938341d4fb374e3fdd69366ed6603d7b24bed1efc565
 configobj==4.7.2 \
     --hash=sha256:515ff923462592e8321df8b48c47e3428f8d406ee22b8de77bef969d1af11171
 simplejson==3.9.0 \
