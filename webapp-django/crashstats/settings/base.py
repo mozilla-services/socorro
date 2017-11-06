@@ -124,12 +124,12 @@ MIDDLEWARE_CLASSES = (
 
 _CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.media',
-    'django.core.context_processors.request',
+    'django.template.context_processors.debug',
+    'django.template.context_processors.media',
+    'django.template.context_processors.request',
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.request',
+    'django.template.context_processors.request',
     'crashstats.authentication.context_processors.oauth2',
     'crashstats.base.context_processors.debug',
     'crashstats.status.context_processors.status_message',
