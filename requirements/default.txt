@@ -189,8 +189,8 @@ pytest==3.2.3 \
 pytest-wholenodeid==0.2 \
     --hash=sha256:6bc4edaf560c8b45ac4669bb8b99d8fbbb7f6e5af8dc7727200cd4d3ef4668c2 \
     --hash=sha256:bdcb4df88ca182a19752ef95150c0881deaafc2c593ef67c61515894e5309206
-pytest-env==0.6.0 \
-    --hash=sha256:f4d61885b0befcb474e73e775597a798bd37808f8856ebb624b0822f054f6c0c
+pytest-env==0.6.2 \
+    --hash=sha256:7e94956aef7f2764f3c147d216ce066bf6c42948bb9e293169b1b1c880a580c2
 pytest-catchlog==1.2.2 \
     --hash=sha256:4be15dc5ac1750f83960897f591453040dff044b5966fe24a91c2f7d04ecfcf0 \
     --hash=sha256:a692966da726b918197cabd20dc0ad4da5503fbdc99baaa192e62579c8a45773
