@@ -2,9 +2,9 @@ SQLAlchemy==1.1.15 \
     --hash=sha256:8b79a5ed91cdcb5abe97b0045664c55c140aec09e5dd5c01303e23de5fe7a95a
 alembic==0.9.6 \
     --hash=sha256:042851ebe9efa07be6dc1395b1793b6c1d8964a39b73a0ce1649e2bcd41ea732
-mock==0.8.0 \
-    --hash=sha256:96fa4def4e80200be827c3f51147dd7b3fa8873b9207e3325d47ba45bf29a5c1 \
-    --hash=sha256:e904edfb90da84129c06252cd3a05f90b4eebc1bb5b85ee96e56ff6cf69438d5
+mock==2.0.0 \
+    --hash=sha256:5ce3c71c5545b472da17b72268978914d0252980348636840bd34a00b5cc96c1 \
+    --hash=sha256:b158b6df76edd239b8208d481dc46b6afd45a846b7812ff0ce58971cf5bc8bba
 poster==0.8.1 \
     --hash=sha256:af5bf45da4a916db2b638cffd9e9d6668b33020e2b8ca9f864db79b49331c6ff
 uWSGI==2.0.12 \
