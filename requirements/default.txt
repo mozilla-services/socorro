@@ -1,7 +1,7 @@
 SQLAlchemy==1.1.15 \
     --hash=sha256:8b79a5ed91cdcb5abe97b0045664c55c140aec09e5dd5c01303e23de5fe7a95a
-alembic==0.8.4 \
-    --hash=sha256:8507fc12ccc99321da2fa117dde4b5d8664ff5ef017df7ce5e7e5051901a624a
+alembic==0.9.6 \
+    --hash=sha256:042851ebe9efa07be6dc1395b1793b6c1d8964a39b73a0ce1649e2bcd41ea732
 mock==0.8.0 \
     --hash=sha256:96fa4def4e80200be827c3f51147dd7b3fa8873b9207e3325d47ba45bf29a5c1 \
     --hash=sha256:e904edfb90da84129c06252cd3a05f90b4eebc1bb5b85ee96e56ff6cf69438d5
