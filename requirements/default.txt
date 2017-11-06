@@ -140,8 +140,8 @@ datadog==0.16.0 \
 freezegun==0.3.9 \
     --hash=sha256:8842688de9497c82ecb40c30274ecc676e97ac78765b0ade105a97063d5b7a11 \
     --hash=sha256:783ccccd7f60968bfe49ad9e114c18ea2b63831faaaf61c1f1f71ddfde1c0eee
-newrelic==2.56.0.42 \
-    --hash=sha256:b58014aa5640e3456ea7dbf33f151a1c4b9df47289768730c0a03061a4713865
+newrelic==2.96.0.80 \
+    --hash=sha256:fc7125f3caed2b678c884468c1416ab87e7150ede0d46c738fca08d88c8bd008
 contextlib2==0.4.0 \
     --hash=sha256:55a5dc78f7a742a0e756645134ffb39bbe11da0fea2bc0f7070d40dac208b732
 django-pipeline==1.6.9 \
