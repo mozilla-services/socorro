@@ -105,7 +105,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         result = function(connection, *args, **kwargs)
                         connection.commit()
                         return result
-                    except:
+                    except Exception:
                         connection.rollback()
                         raise
 
