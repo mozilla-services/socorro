@@ -132,9 +132,9 @@ flake8==3.5.0 \
     --hash=sha256:7253265f7abd8b313e3892944044a365e3f4ac3fcdcfb4298f55ee9ddf188ba0
 python-decouple==3.1 \
     --hash=sha256:1317df14b43efee4337a4aa02914bf004f010cd56d6c4bd894e6474ec8c4fe2d
-dj-database-url==0.3.0 \
-    --hash=sha256:f2e273ed34acbb560962d5cf12917936d8df02297df09bd3089b8546d4584138 \
-    --hash=sha256:ca01768fdecde134301f3170743226f60edff5c3935f12437378ebd911506353
+dj-database-url==0.4.2 \
+    --hash=sha256:e16d94c382ea0564c48038fa7fe8d9c890ef1ab1a8ec4cb48e732c124b9482fd \
+    --hash=sha256:a6832d8445ee9d788c5baa48aef8130bf61fdc442f7d9a548424d25cd85c9f08
 datadog==0.16.0 \
     --hash=sha256:9ce3c3c4080f6dcb9c799d3d9e43ea3ed61132599d0e9143954d35ae9578a2d1
 freezegun==0.3.6 \
