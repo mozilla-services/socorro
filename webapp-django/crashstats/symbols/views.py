@@ -2,6 +2,7 @@ import gzip
 import os
 import mimetypes
 import fnmatch
+import re
 from functools import wraps
 from cStringIO import StringIO
 from zipfile import BadZipfile
@@ -21,12 +22,37 @@ from django.core.exceptions import ImproperlyConfigured
 import boto
 import boto.s3.connection
 import boto.exception
+import markus
 
 from crashstats.crashstats.decorators import login_required
 from crashstats.tokens.models import Token
 from . import models
 from . import forms
 from . import utils
+
+
+metrics = markus.get_metrics('symbols.upload')
+
+
+BAD_CHAR_REGEXP = re.compile(r'[^0-9a-zA-Z\.-]')
+
+
+def _sanitize_email(email):
+    """Gross sanitization of email address so we can use it as a datadog incr tag value
+
+    This converts any non-alphanumeric character to ``_``.
+
+    :arg str email:
+
+    :returns: sanitized email value
+
+    """
+    # First convert from unicode to str dropping any non-ascii characters
+    if isinstance(email, unicode):
+        email = email.encode('ascii', 'ignore')
+
+    # Second, drop any bad characters
+    return BAD_CHAR_REGEXP.sub('', email)
 
 
 def api_login_required(view_func):
@@ -256,6 +282,7 @@ def web_upload(request):
                     symbols_upload.filename
                 )
             )
+            metrics.incr('web_upload', tags=['email:%s' % _sanitize_email(request.user.email)])
             return redirect('symbols:home')
     else:
         form = forms.UploadForm()
@@ -327,6 +354,7 @@ def upload(request):
         bucket_location
     )
 
+    metrics.incr('api_upload', tags=['email:%s' % _sanitize_email(request.user.email)])
     return http.HttpResponse('OK', status=201)
 
 

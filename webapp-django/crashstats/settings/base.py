@@ -34,6 +34,8 @@ DEBUG_PROPAGATE_EXCEPTIONS = config(
     cast=bool
 )
 
+# Whether or not we're running in the local development environment
+LOCAL_DEV_ENV = config('LOCAL_DEV_ENV', False, cast=bool)
 
 SITE_ID = 1
 
