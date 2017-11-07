@@ -198,6 +198,10 @@ LOGGING = {
         'py.warnings': {
             'handlers': ['console'],
         },
+        'markus': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
         'crashstats': {
             'handlers': ['console'],
             'level': LOGGING_LEVEL,
