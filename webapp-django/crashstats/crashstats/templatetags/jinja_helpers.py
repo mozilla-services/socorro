@@ -287,11 +287,11 @@ def bugzilla_thread_frames(thread):
             source += ':{}'.format(frame['line'])
 
         # Remove function arguments
-        signature = re.sub(r'\(.*\)', '', frame['signature'])
+        signature = re.sub(r'\(.*\)', '', frame.get('signature', ''))
 
         frames.append({
-            'frame': frame['frame'],
-            'module': frame['module'],
+            'frame': frame.get('frame', '?'),
+            'module': frame.get('module', ''),
             'signature': signature,
             'source': source,
         })
