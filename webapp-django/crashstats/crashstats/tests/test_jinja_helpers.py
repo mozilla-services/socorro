@@ -340,10 +340,7 @@ class TestBugzillaSubmitURL(TestCase):
         assert quote_plus('0 test_module foo::bar foo.cpp:7') in url
 
     def test_comment_missing_line(self):
-        """If a frame signature is missing a line number, do not include
-        it.
-
-        """
+        """If a frame is missing a line number, do not include it."""
         report = self._create_report()
         parsed_dump = self._create_dump(threads=[
             self._create_thread(frames=[
@@ -360,9 +357,7 @@ class TestBugzillaSubmitURL(TestCase):
         assert quote_plus('0 test_module foo::bar foo.cpp\n') in url
 
     def test_comment_missing_file(self):
-        """If a frame signature is missing file info, do not include it.
-
-        """
+        """If a frame is missing file info, do not include it."""
         report = self._create_report()
         parsed_dump = self._create_dump(threads=[
             self._create_thread(frames=[
@@ -377,6 +372,16 @@ class TestBugzillaSubmitURL(TestCase):
         ])
         url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
         assert quote_plus('0 test_module foo::bar \n') in url
+
+    def test_comment_missing_everything(self):
+        """If a frame is missing everything, do not throw an error."""
+        report = self._create_report()
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(frames=[
+                {},
+            ])
+        ])
+        bugzilla_submit_url(report, parsed_dump, 0, 'Core')
 
 
 class TestReplaceBugzillaLinks(TestCase):
