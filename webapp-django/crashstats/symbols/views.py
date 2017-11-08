@@ -34,7 +34,7 @@ from . import utils
 metrics = markus.get_metrics('symbols.upload')
 
 
-BAD_CHAR_REGEXP = re.compile(r'[^0-9a-zA-Z\.-]')
+BAD_CHAR_REGEXP = re.compile(r'[^0-9a-zA-Z\._-]')
 
 
 def _sanitize_email(email):
@@ -52,7 +52,7 @@ def _sanitize_email(email):
         email = email.encode('ascii', 'ignore')
 
     # Second, drop any bad characters
-    return BAD_CHAR_REGEXP.sub('', email)
+    return BAD_CHAR_REGEXP.sub('_', email)
 
 
 def api_login_required(view_func):
