@@ -49,9 +49,9 @@ statsd==2.1.2 \
     --hash=sha256:45db168312a6820fd78697c7b6fd0196f3af922c8ebc88540edd0d6fafed554d
 ujson==1.35 \
     --hash=sha256:f66073e5506e91d204ab0c614a148d5aa938bdbf104751be66f8ad7a222f5f86
-python-dateutil==2.4.2 \
-    --hash=sha256:3e95445c1db500a344079a47b171c45ef18f57d188dffdb0e4165c71bea8eb3d \
-    --hash=sha256:2ae63cf475f0bd049b722fac20813d62aedc14957dd5a3bf00d120d2b5404460
+python-dateutil==2.6.1 \
+    --hash=sha256:95511bae634d69bc7329ba55e646499a842bc4ec342ad54a8cdb65645a0aad3c \
+    --hash=sha256:891c38b2a02f5bb1be3e4793866c8df49c7d19baabf9c1bad62547e0b4866aca
 crontabber==0.18.1 \
     --hash=sha256:da4b6d06b4955ed3439a3d5ccc09cb1b3fa644d11d6222c55611c1c64be5323d \
     --hash=sha256:dfe4086a23928647bb021ba0a8bf3e7bb9e86792042506dcca5040061b310d3e
