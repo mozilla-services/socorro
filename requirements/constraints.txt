@@ -5,8 +5,8 @@ MarkupSafe==0.15 \
 python-editor==0.5 \
     --hash=sha256:f65c033ede0758663b9ff6a29d702f0b09198ad7c4ef96c9d37ccdfbf7bbf6fa \
     --hash=sha256:1184f947a0f5cfa0f9528766280ac90e8a07cbf43bedda17a4672e22cf91794e
-configobj==4.7.2 \
-    --hash=sha256:515ff923462592e8321df8b48c47e3428f8d406ee22b8de77bef969d1af11171
+configobj==5.0.6 \
+    --hash=sha256:a2f5650770e1c87fb335af19a9b7eb73fc05ccf22144eb68db7d00cd2bcb0902
 simplejson==3.9.0 \
     --hash=sha256:2b59c8b5c647ca1acdb7e8708fb31b8752905880f4b1a8f5b2003576fff85944 \
     --hash=sha256:b67392710365511b301cf304d2b5bf5c77a87d32da6dcdc0f23b8f0cdfca551c \
