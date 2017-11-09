@@ -15,7 +15,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.utils import timezone
 
-from eventlog.models import log, Log
+from pinax.eventlog.models import log, Log
 
 from crashstats.crashstats.models import (
     ProductVersions,
