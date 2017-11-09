@@ -16,8 +16,9 @@ pipeline {
     timeout(time: 1, unit: 'HOURS')
   }
   environment {
+    PYTEST_PROCESSES = "${PYTEST_PROCESSES ?: "auto"}"
     PYTEST_ADDOPTS =
-    "-n=10 " +
+    "-n=${PYTEST_PROCESSES} " +
     "--tb=short " +
     "--color=yes " +
     "--driver=SauceLabs " +
