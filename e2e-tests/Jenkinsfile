@@ -23,7 +23,7 @@ pipeline {
     "--driver=SauceLabs " +
     "--variables=capabilities.json"
     PULSE = credentials('PULSE')
-    SAUCELABS_API_KEY = credentials('SAUCELABS_API_KEY')
+    SAUCELABS = credentials('SAUCELABS')
   }
   stages {
     stage('Lint') {
