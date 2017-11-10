@@ -505,7 +505,7 @@ class TestHumanizers(TestCase):
         expected = (
             '10,000 bytes '
             '<span class="humanized" title="10,000 bytes">'
-            '(9.77 KB)</span>'
+            '(10 KB)</span>'
         )
         assert html == expected
 
@@ -514,7 +514,7 @@ class TestHumanizers(TestCase):
         expected = (
             '10,000 bytes '
             '<span class="humanized" title="10,000 bytes">'
-            '(9.77 KB)</span>'
+            '(10 KB)</span>'
         )
         assert html == expected
 
