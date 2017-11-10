@@ -227,7 +227,7 @@ class TestViews(BaseTestViews):
             return User.objects.create(
                 username=username,
                 email=username + '@example.com',
-                last_login=datetime.datetime.utcnow(),
+                last_login=timezone.now(),
                 **kwargs
             )
 
