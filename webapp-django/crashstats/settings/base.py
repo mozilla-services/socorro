@@ -122,6 +122,14 @@ MIDDLEWARE_CLASSES = (
 )
 
 
+# Allow inactive users to authenticate
+# FIXME(Osmose): Remove this and the auto-logout code in favor of
+# the default backend, which does not authenticate inactive users.
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.AllowAllUsersModelBackend',
+)
+
+
 _CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
     'django.template.context_processors.debug',
