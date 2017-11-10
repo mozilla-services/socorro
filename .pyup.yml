@@ -4,6 +4,6 @@ requirements:
   - requirements/default.txt:
       update: all
       pin: true
-  - docs/requirements.txt
+  - docs/requirements.txt:
       update: all
       pin: true
