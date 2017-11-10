@@ -19,12 +19,12 @@ handler404 = 'crashstats.base.views.handler404'
 
 
 urlpatterns = [
-    url(r'^(?P<path>contribute\.json)$', serve,
-     {'document_root': os.path.join(settings.ROOT, '..')}),
-    url(r'^(?P<path>favicon\.ico)$', serve,
-     {'document_root': os.path.join(
-         settings.ROOT, 'crashstats', 'base', 'static', 'img'
-     )}),
+    url(r'^(?P<path>contribute\.json)$', serve, {
+        'document_root': os.path.join(settings.ROOT, '..'),
+    }),
+    url(r'^(?P<path>favicon\.ico)$', serve, {
+        'document_root': os.path.join(settings.ROOT, 'crashstats', 'base', 'static', 'img'),
+    }),
     url(r'', include(urls, namespace='crashstats')),
     url(r'', include(supersearch_urls)),
     url(r'^signature/', include(
