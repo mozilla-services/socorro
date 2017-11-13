@@ -16,7 +16,7 @@ from django.conf import settings
 from crashstats.tokens.models import Token
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.symbols import models
-from crashstats.symbols.views import _sanitize_email, check_symbols_archive_content
+from crashstats.symbols.views import check_symbols_archive_content
 
 from .base import (
     ZIP_FILE,
@@ -29,19 +29,6 @@ from crashstats.symbols.views import (
     unpack_and_upload,
     get_bucket_name_and_location,
 )
-
-
-@pytest.mark.parametrize('email, expected', [
-    ('', ''),
-
-    # Test non-ascii characters get dropped
-    (u'\u018ajoe@example.com', 'joe_example.com'),
-
-    # Test bad characters get converted to _
-    ('foo@example.com', 'foo_example.com'),
-])
-def test_sanitize_email(email, expected):
-    assert _sanitize_email(email) == expected
 
 
 class EmptyFile(object):
