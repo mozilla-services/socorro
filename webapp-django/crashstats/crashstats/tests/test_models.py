@@ -646,3 +646,53 @@ class TestModels(DjangoTestCase):
         # Note that it doesn't raise an error if
         # the PriorityjobRabbitMQCrashStore choses NOT to queue it.
         assert not api.post(crash_ids='bad-crash-id')
+
+    def test_CrontabberState(self):
+        api = models.CrontabberState()
+
+        def mocked_get(*args, **kwargs):
+            return {
+                'state': {
+                    'missing-symbols': {
+                        'next_run': '2017-11-14T01:45:36.563151+00:00',
+                        'depends_on': [],
+                        'last_run': '2017-11-14T01:40:36.563151+00:00',
+                        'last_success': '2017-11-06T02:30:11.567874+00:00',
+                        'error_count': 506,
+                        'last_error': {
+                            'traceback': 'TRACEBACK HERE',
+                            'type': '<class \'boto.exception.S3ResponseError\'>',
+                            'value': 'EXCEPTION VALUE HERE'
+                        },
+                        'ongoing': None,
+                        'first_run': '2016-06-22T17:55:05.196209+00:00'
+                    },
+                }
+            }
+        models.CrontabberState.implementation().get.side_effect = (
+            mocked_get
+        )
+
+        resp = api.get()
+
+        # Verify that the response redacts the last_error.traceback and
+        # last_error.value and otherwise maintains the expected shape
+        expected_resp = {
+            'state': {
+                'missing-symbols': {
+                    'next_run': '2017-11-14T01:45:36.563151+00:00',
+                    'depends_on': [],
+                    'last_run': '2017-11-14T01:40:36.563151+00:00',
+                    'last_success': '2017-11-06T02:30:11.567874+00:00',
+                    'error_count': 506,
+                    'last_error': {
+                        'traceback': 'See error logging system.',
+                        'type': '<class \'boto.exception.S3ResponseError\'>',
+                        'value': 'See error logging system.'
+                    },
+                    'ongoing': None,
+                    'first_run': '2016-06-22T17:55:05.196209+00:00'
+                },
+            }
+        }
+        assert resp == expected_resp
