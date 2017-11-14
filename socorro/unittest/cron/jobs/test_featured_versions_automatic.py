@@ -2,11 +2,8 @@ import datetime
 import json
 
 import mock
-from crontabber.app import CronTabber
 
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.lib.datetimeutil import utc_now
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.external.postgresql.dbapi2_util import (
@@ -179,14 +176,12 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
         self.conn.commit()
 
     def _setup_config_manager(self):
-        return get_config_manager_for_crontabber(
-            jobs=(
-                'socorro.cron.jobs.featured_versions_automatic'
-                '.FeaturedVersionsAutomaticCronApp|1d'
+        return super(IntegrationTestFeaturedVersionsAutomatic, self)._setup_config_manager(
+            jobs_string=(
+                'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1d'
             ),
-            overrides={
-                'crontabber.class-FeaturedVersionsAutomaticCronApp'
-                '.api_endpoint_url': (
+            extra_value_source={
+                'crontabber.class-FeaturedVersionsAutomaticCronApp.api_endpoint_url': (
                     'https://example.com/{product}_versions.json'
                 ),
             }
@@ -254,7 +249,7 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -294,7 +289,7 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
         rget.side_effect = mocked_get
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()

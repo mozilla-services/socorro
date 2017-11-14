@@ -3,23 +3,19 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from crontabber import base
-from crontabber.app import CronTabber
 import mock
 
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs import matviews
 from socorro.lib.datetimeutil import utc_now
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
 class TestMatviews(IntegrationTestBase):
 
     def _setup_config_manager(self, jobs):
-
-        return get_config_manager_for_crontabber(
-            jobs=jobs,
+        return super(TestMatviews, self)._setup_config_manager(
+            jobs_string=jobs
         )
 
     def setUp(self):
@@ -103,7 +99,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -143,7 +139,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -165,7 +161,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -179,7 +175,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()

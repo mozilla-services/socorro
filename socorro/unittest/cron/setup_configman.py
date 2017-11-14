@@ -6,7 +6,7 @@ from mock import Mock
 
 from collections import Sequence
 
-from socorro.cron.crontabber_app import CronTabber
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.lib.util import SilentFakeLogger
 
 from configman import (
@@ -69,15 +69,15 @@ def get_config_manager_for_crontabber(
 ):
     if isinstance(more_definitions, Sequence):
         more_definitions = more_definitions.append(
-            CronTabber.get_required_config()
+            CronTabberApp.get_required_config()
         )
     elif more_definitions is not None:
         more_definitions = [
             more_definitions,
-            CronTabber.get_required_config()
+            CronTabberApp.get_required_config()
         ]
     else:
-        more_definitions = [CronTabber.get_required_config()]
+        more_definitions = [CronTabberApp.get_required_config()]
 
     local_overrides = {
         'logger': Mock(),

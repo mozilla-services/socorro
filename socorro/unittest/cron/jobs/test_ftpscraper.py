@@ -6,16 +6,16 @@ import datetime
 from functools import wraps
 import json
 
-from crontabber.app import CronTabber
 import mock
 import requests
 import pytest
 
-from socorro.lib.datetimeutil import utc_now
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs import ftpscraper
+from socorro.lib.datetimeutil import utc_now
+from socorro.lib.util import DotDict
 from socorro.unittest.cron.crontabber_tests_base import TestCaseBase
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.lib.util import DotDict
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
@@ -361,9 +361,9 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         # Set a completely bogus looking base_url so it can never
         # accidentally work if the network request mocking leaks
         base_url = 'https://archive.muzilla.hej/pub/'
-        return get_config_manager_for_crontabber(
-            jobs='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
-            overrides={
+        return super(TestIntegrationFTPScraper, self)._setup_config_manager(
+            jobs_string='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
+            extra_value_source={
                 'crontabber.class-FTPScraperCronApp.products': 'firefox',
                 'crontabber.class-FTPScraperCronApp.base_url': base_url,
             }
@@ -633,7 +633,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
 
         config_manager = self._setup_config_manager_firefox()
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
