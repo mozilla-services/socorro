@@ -939,6 +939,23 @@ class CrontabberState(SocorroMiddleware):
     # will never contain PII
     API_WHITELIST = None
 
+    def get(self, *args, **kwargs):
+        resp = super(CrontabberState, self).get(*args, **kwargs)
+        apps = resp['state']
+
+        # Redact last_error data so it doesn't bleed infrastructure info into
+        # the world
+        for name, state in apps.items():
+            if state.get('last_error'):
+                # NOTE(willkg): The structure of last_error is defined in
+                # crontabber in crontabber/app.py.
+                state['last_error'] = {
+                    'traceback': 'See error logging system.',
+                    'value': 'See error logging system.',
+                    'type': state['last_error'].get('type', 'Unknown')
+                }
+        return resp
+
 
 class BugzillaBugInfo(SocorroCommon):
 
