@@ -3,6 +3,8 @@ import shutil
 import tempfile
 
 from boto.s3.connection import OrdinaryCallingFormat
+import markus
+from markus.testing import MetricsMock
 import mock
 import pytest
 
@@ -220,14 +222,15 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        # now we can post
-        with self.settings(SYMBOLS_MIME_OVERRIDES={'jpeg': 'text/plain'}):
-            with open(ZIP_FILE) as file_object:
-                response = self.client.post(
-                    url,
-                    {'file': file_object}
-                )
-                assert response.status_code == 302
+        with MetricsMock() as metrics_mock:
+            # now we can post
+            with self.settings(SYMBOLS_MIME_OVERRIDES={'jpeg': 'text/plain'}):
+                with open(ZIP_FILE) as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file': file_object}
+                    )
+                    assert response.status_code == 302
 
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
         assert symbol_upload.filename == os.path.basename(ZIP_FILE)
@@ -254,6 +257,11 @@ class TestViews(BaseTestViews):
             (settings.SYMBOLS_BUCKET_DEFAULT_NAME, settings.SYMBOLS_BUCKET_DEFAULT_LOCATION)
         ]
         assert self.created_buckets == expected
+
+        # Verify it generated the metrics we need
+        assert metrics_mock.has_record(
+            markus.INCR, 'symbols.upload.web_upload', 1, tags=['email:test_example.com']
+        )
 
     def test_web_upload_different_bucket_by_wildcard(self):
         url = reverse('symbols:web_upload')
@@ -658,7 +666,8 @@ class TestViews(BaseTestViews):
         assert 'Now that you have an actively working' in response.content
 
     def test_upload(self):
-        user = User.objects.create(username='user')
+        """Verify API symbols upload"""
+        user = User.objects.create(username='user', email='test@example.com')
         self._add_permission(user, 'upload_symbols')
         token = Token.objects.create(
             user=user,
@@ -671,42 +680,43 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 405
 
-        with self.settings(MEDIA_ROOT=self.tmp_dir):
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    # note! No HTTP_AUTH_TOKEN
-                )
-                assert response.status_code == 403
+        with MetricsMock() as metrics_mock:
+            with self.settings(MEDIA_ROOT=self.tmp_dir):
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        # note! No HTTP_AUTH_TOKEN
+                    )
+                    assert response.status_code == 403
 
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    HTTP_AUTH_TOKEN=''
-                )
-                assert response.status_code == 403
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        HTTP_AUTH_TOKEN=''
+                    )
+                    assert response.status_code == 403
 
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    HTTP_AUTH_TOKEN='somejunk'
-                )
-                assert response.status_code == 403
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        HTTP_AUTH_TOKEN='somejunk'
+                    )
+                    assert response.status_code == 403
 
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    HTTP_AUTH_TOKEN=token.key
-                )
-                assert response.status_code == 201
-                symbol_upload = models.SymbolsUpload.objects.get(user=user)
-                assert symbol_upload.filename == 'file.zip'
-                assert symbol_upload.size
-                assert symbol_upload.content
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        HTTP_AUTH_TOKEN=token.key
+                    )
+                    assert response.status_code == 201
+                    symbol_upload = models.SymbolsUpload.objects.get(user=user)
+                    assert symbol_upload.filename == 'file.zip'
+                    assert symbol_upload.size
+                    assert symbol_upload.content
 
         # This should have made one S3 connection
         connection_parameters, = self.connection_parameters
@@ -743,6 +753,12 @@ class TestViews(BaseTestViews):
         # But if you do it properly there's header information in the
         # string which is a couple of extra bytes.
         assert len(self.uploaded_keys[key]) == 488
+
+        # Verify it generated the metrics we need--since only one POST was
+        # successful, then there's only one incr record
+        assert metrics_mock.has_record(
+            markus.INCR, 'symbols.upload.api_upload', 1, tags=['email:test_example.com']
+        )
 
     def test_upload_without_multipart_file(self):
         user = User.objects.create(username='user')

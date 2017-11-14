@@ -21,12 +21,17 @@ from django.core.exceptions import ImproperlyConfigured
 import boto
 import boto.s3.connection
 import boto.exception
+import markus
+from markus.utils import generate_tag
 
 from crashstats.crashstats.decorators import login_required
 from crashstats.tokens.models import Token
 from . import models
 from . import forms
 from . import utils
+
+
+metrics = markus.get_metrics('symbols.upload')
 
 
 def api_login_required(view_func):
@@ -256,6 +261,7 @@ def web_upload(request):
                     symbols_upload.filename
                 )
             )
+            metrics.incr('web_upload', tags=[generate_tag('email', request.user.email)])
             return redirect('symbols:home')
     else:
         form = forms.UploadForm()
@@ -327,6 +333,7 @@ def upload(request):
         bucket_location
     )
 
+    metrics.incr('api_upload', tags=[generate_tag('email', request.user.email)])
     return http.HttpResponse('OK', status=201)
 
 
