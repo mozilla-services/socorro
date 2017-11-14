@@ -7,7 +7,7 @@ python-editor==1.0.3 \
 configobj==5.0.6 \
     --hash=sha256:a2f5650770e1c87fb335af19a9b7eb73fc05ccf22144eb68db7d00cd2bcb0902
 simplejson==3.1.3 \
-    --hash=sha256:941a25bbb00b021dbe026b94278d9fab9f4655e11ab76eb3f022a9ee097f0478
+    --hash=sha256:941a25bbb00b021dbe026b94278d9fab9f4655e11ab76eb3f022a9ee097f0478 # pyup:ignore
 six==1.11.0 \
     --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9
