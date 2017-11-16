@@ -3,33 +3,23 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-from crontabber.app import CronTabber
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 
 
 class TestWeeklyReportsPartitions(IntegrationTestBase):
 
-    @classmethod
-    def get_standard_config(cls):
-        return get_config_manager_for_crontabber().get_config()
-
     def _setup_config_manager(self):
-        super(TestWeeklyReportsPartitions, self)._setup_config_manager
-        return get_config_manager_for_crontabber(
-            jobs=(
-                'socorro.cron.jobs.weekly_reports_partitions.'
-                'WeeklyReportsPartitionsCronApp|1d'
+        return super(TestWeeklyReportsPartitions, self)._setup_config_manager(
+            jobs_string=(
+                'socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|1d'
             ),
         )
 
     def test_run_weekly_reports_partitions(self):
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()

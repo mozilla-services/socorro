@@ -2,21 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from crontabber.app import CronTabber
-
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 
 
 class TestDropOldPartitions(IntegrationTestBase):
 
     def _setup_config_manager(self):
-        super(TestDropOldPartitions, self)._setup_config_manager
-        return get_config_manager_for_crontabber(
-            jobs='socorro.cron.jobs.drop_old_partitions.'
-            'DropOldPartitionsCronApp|1m',
+        return super(TestDropOldPartitions, self)._setup_config_manager(
+            jobs_string='socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|1m'
         )
 
     def setUp(self):
@@ -63,7 +57,7 @@ class TestDropOldPartitions(IntegrationTestBase):
         # Run the crontabber job to remove the test table.
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
         # Basic assertion test of stored procedure.

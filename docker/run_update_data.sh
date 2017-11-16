@@ -13,17 +13,17 @@ CACHEDIR=/app/.cache/ftpscraper
 
 # Fetch and update release information for these products (comma-delimited)
 PRODUCTS="firefox,mobile"
-CRONTABBER="docker-compose run crontabber python socorro/cron/crontabber_app.py"
+CRONTABBERCMD="./scripts/socorro crontabber"
 
 
 # Fetch release data -- do it as the user so it can cache things
-docker-compose run -u "${HOSTUSER}" crontabber python socorro/cron/crontabber_app.py \
+docker-compose run -u "${HOSTUSER}" crontabber ${CRONTABBERCMD} \
                --job=ftpscraper \
                --crontabber.class-FTPScraperCronApp.cachedir=${CACHEDIR} \
                --crontabber.class-FTPScraperCronApp.products=${PRODUCTS}
 
 # Update featured versions data based on release data
-${CRONTABBER} --job=featured-versions-automatic \
+docker-compose run crontabber ${CRONTABBERCMD} --job=featured-versions-automatic \
               --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
 
 # Fetch normalization data for versions we know about

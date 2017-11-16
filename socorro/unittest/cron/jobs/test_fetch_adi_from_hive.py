@@ -6,14 +6,11 @@
 import contextlib
 import datetime
 
-from crontabber.app import CronTabber
 import mock
 
-from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs.fetch_adi_from_hive import NoRowsWritten
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
 class TestFetchADIFromHive(IntegrationTestBase):
@@ -61,12 +58,11 @@ class TestFetchADIFromHive(IntegrationTestBase):
         super(TestFetchADIFromHive, self).tearDown()
 
     def _setup_config_manager(self, overrides=None):
-        return get_config_manager_for_crontabber(
-            jobs=(
-                'socorro.cron.jobs.fetch_adi_from_hive'
-                '.FetchADIFromHiveCronApp|1d'
+        return super(TestFetchADIFromHive, self)._setup_config_manager(
+            jobs_string=(
+                'socorro.cron.jobs.fetch_adi_from_hive.FetchADIFromHiveCronApp|1d'
             ),
-            overrides=overrides,
+            extra_value_source=overrides,
         )
 
     @mock.patch('socorro.cron.jobs.fetch_adi_from_hive.pyhs2')
@@ -138,7 +134,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             .cursor.return_value.__iter__ = return_test_data
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -325,7 +321,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             .cursor.return_value.__iter__ = return_test_data
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -361,7 +357,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             .cursor.return_value.__iter__ = return_test_data
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -395,10 +391,9 @@ class TestFetchADIFromHive(IntegrationTestBase):
 class TestFAKEFetchADIFromHive(IntegrationTestBase):
 
     def _setup_config_manager(self):
-        return get_config_manager_for_crontabber(
-            jobs=(
-                'socorro.cron.jobs.fetch_adi_from_hive'
-                '.FAKEFetchADIFromHiveCronApp|1d'
+        return super(TestFAKEFetchADIFromHive, self)._setup_config_manager(
+            jobs_string=(
+                'socorro.cron.jobs.fetch_adi_from_hive.FAKEFetchADIFromHiveCronApp|1d'
             ),
         )
 
@@ -406,7 +401,7 @@ class TestFAKEFetchADIFromHive(IntegrationTestBase):
         config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()

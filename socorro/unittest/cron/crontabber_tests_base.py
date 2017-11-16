@@ -20,6 +20,8 @@ import configman
 from crontabber import app
 from crontabber.generic_app import environment
 
+from socorro.cron.crontabber_app import CronTabberApp
+
 
 class TestCaseBase(unittest.TestCase):
 
@@ -46,7 +48,7 @@ class TestCaseBase(unittest.TestCase):
 
         """
         mock_logging = mock.Mock()
-        required_config = app.CronTabber.get_required_config()
+        required_config = CronTabberApp.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         value_source = [
@@ -108,7 +110,7 @@ class IntegrationTestCaseBase(TestCaseBase):
     def get_standard_config(cls):
         config_manager = configman.ConfigurationManager(
             # [cls.required_config],
-            [app.CronTabber.get_required_config(),
+            [CronTabberApp.get_required_config(),
              app.JobStateDatabase.get_required_config()],
             values_source_list=[
                 configman.ConfigFileFutureProxy,

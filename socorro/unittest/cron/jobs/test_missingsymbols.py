@@ -3,12 +3,9 @@ import datetime
 from cStringIO import StringIO
 
 import mock
-from crontabber.app import CronTabber
 
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 
 
 class TestMissingSymbolsCronApp(IntegrationTestBase):
@@ -98,14 +95,12 @@ class TestMissingSymbolsCronApp(IntegrationTestBase):
         super(TestMissingSymbolsCronApp, self).tearDown()
 
     def _setup_config_manager(self, days_to_keep=None):
-        super(TestMissingSymbolsCronApp, self)._setup_config_manager
-        return get_config_manager_for_crontabber(
-            jobs=(
+        return super(TestMissingSymbolsCronApp, self)._setup_config_manager(
+            jobs_string=(
                 'socorro.cron.jobs.missingsymbols.MissingSymbolsCronApp|1d'
             ),
-            overrides={
-                'crontabber.class-MissingSymbolsCronApp'
-                '.boto_class': self.mock_boto_class
+            extra_value_source={
+                'crontabber.class-MissingSymbolsCronApp.boto_class': self.mock_boto_class
             },
         )
 
@@ -119,7 +114,7 @@ class TestMissingSymbolsCronApp(IntegrationTestBase):
         # Run the crontabber job to remove the test table.
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
         # Basic assertion test of stored procedure.
