@@ -100,16 +100,6 @@ urlpatterns = [
             permanent=perm_legacy_redirect
         )),
 
-    # Redirect deleted status page to monitoring page.
-    url(
-        r'^status/$',
-        RedirectView.as_view(
-            pattern_name='monitoring:index',
-            permanent=perm_legacy_redirect
-        ),
-        name='status_redirect',
-    ),
-
     # handle old-style URLs
     url(r'^products/(?P<product>\w+)/$',
         RedirectView.as_view(

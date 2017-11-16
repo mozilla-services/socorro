@@ -1307,12 +1307,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 302
         assert response['location'].endswith(target)
 
-    def test_status_redirect(self):
-        response = self.client.get(reverse('crashstats:status_redirect'))
-        correct_url = reverse('monitoring:index')
-        assert response.status_code == 301
-        assert response['location'].endswith(correct_url)
-
     def test_status_revision(self):
         def mocked_get(**options):
             return SAMPLE_STATUS
