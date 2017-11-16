@@ -44,9 +44,6 @@ class DjangoTestCase(django.test.TestCase):
             # string 'MagicMock' in it no matter which class it came from.
             klass.implementation().__class__.__name__ = klass.__name__
 
-    def shortDescription(self):
-        return None
-
     def _login(
         self,
         email='test@example.com',
