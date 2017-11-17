@@ -21,7 +21,6 @@ class TestForms(DjangoTestCase):
         ct, __ = ContentType.objects.get_or_create(
             model='',
             app_label=appname,
-            defaults={'name': appname}
         )
         permission, __ = Permission.objects.get_or_create(
             codename='view_foobar',

@@ -1,10 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from . import views
 
 
-urlpatterns = patterns(
-    '',  # prefix
+urlpatterns = [
     url(
         '^_debug_login/$',
         views.debug_login,
@@ -20,4 +19,4 @@ urlpatterns = patterns(
         views.oauth2_signin,
         name='oauth2_signin'
     ),
-)
+]

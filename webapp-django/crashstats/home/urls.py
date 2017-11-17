@@ -1,10 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(
         r'^product/(?P<product>\w+)$',
         views.home,
@@ -20,4 +19,4 @@ urlpatterns = patterns(
         r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)$',
         views.LegacyHomeRedirectView.as_view()
     ),
-)
+]

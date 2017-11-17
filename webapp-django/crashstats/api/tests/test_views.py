@@ -300,7 +300,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {
             'crash_id': '123',
-        })
+        }, HTTP_AUTH_TOKEN=token.key)
         assert response.status_code == 200
         dump = json.loads(response.content)
         assert dump['uuid'] == u'11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -634,7 +634,7 @@ class TestViews(BaseTestViews):
             # Double to avoid
             # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
             for __ in range(current_limit * 2):
-                response = self.client.get(url)
+                response = self.client.get(url, HTTP_X_FORWARDED_FOR='12.12.12.12')
             assert response.status_code == 429
 
             # But it'll work if you use a different X-Forwarded-For IP

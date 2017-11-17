@@ -15,7 +15,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.utils import timezone
 
-from eventlog.models import log, Log
+from pinax.eventlog.models import log, Log
 
 from crashstats.crashstats.models import (
     ProductVersions,
@@ -39,8 +39,8 @@ def notice_change(before, after):
     assert before.__class__ == after.__class__
     changes = {}
     if isinstance(before, User) or isinstance(before, Group):
-        for fieldname in before._meta.get_all_field_names():
-
+        for field in before._meta.get_fields():
+            fieldname = getattr(field, 'attname', field.name)
             v1 = getattr(before, fieldname, None)
             v2 = getattr(after, fieldname, None)
             if hasattr(v1, 'all'):

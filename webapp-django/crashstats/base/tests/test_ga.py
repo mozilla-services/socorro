@@ -243,7 +243,10 @@ class TestTrackingPageviews(DjangoTestCase):
 
         url = reverse('api:model_wrapper', args=('ProductBuildTypes',))
 
-        with self.settings(GOOGLE_ANALYTICS_ID='XYZ-123'):
+        with self.settings(
+            GOOGLE_ANALYTICS_ID='XYZ-123',
+            ALLOWED_HOSTS=['testserver', 'example.com']
+        ):
             response = self.client.get(url, {'product': 'WaterWolf'})
             assert response.status_code == 200
             assert len(queues) == 1  # the mutable

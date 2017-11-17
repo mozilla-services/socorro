@@ -48,7 +48,7 @@ with open(filename, "r") as sql:
             dates = date_reg_exp.findall(line)
             ds = datetime.datetime.strptime(dates[0], '%Y-%m-%d').date()
             partition = dsToWeeklyPartition(dates[0])
-        except:
+        except ValueError:
             # Skip non-data lines
             continue
 

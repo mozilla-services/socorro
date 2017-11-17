@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$',
         views.index,
         name='index'),
@@ -16,4 +15,4 @@ urlpatterns = patterns(
     url(r'^healthcheck/$',
         views.healthcheck,
         name='healthcheck'),
-)
+]
