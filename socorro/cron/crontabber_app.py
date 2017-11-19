@@ -45,8 +45,10 @@ DEFAULT_JOBS_BASE = [
 
 DEFAULT_JOBS = ', '.join(DEFAULT_JOBS_BASE)
 STAGE_JOBS = ', '.join(
-    DEFAULT_JOBS_BASE +
-    ['socorro.cron.jobs.fetch_adi_from_hive.FAKEFetchADIFromHiveCronApp|1d']
+    DEFAULT_JOBS_BASE + [
+        'socorro.cron.jobs.fetch_adi_from_hive.FAKEFetchADIFromHiveCronApp|1d',
+        'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
+    ]
 )
 
 
