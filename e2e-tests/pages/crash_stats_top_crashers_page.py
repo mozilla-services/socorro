@@ -7,8 +7,8 @@
 import random
 
 from pypom import Region
-from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 
 from pages.base_page import CrashStatsBasePage
 

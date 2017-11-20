@@ -4,9 +4,8 @@
 
 from collections import defaultdict
 
-import requests
 import pytest
-
+import requests
 
 # Because there are so few crashes for these products, instead of
 # looking for crashes from the *active* versions, we'll for any
