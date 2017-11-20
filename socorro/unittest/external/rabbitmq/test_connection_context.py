@@ -86,7 +86,7 @@ class TestConnectionContext(TestCase):
                 virtual_host=conn_context_functor.config.virtual_host,
                 credentials=mocked_pika_module.credentials.PlainCredentials.return_value
             )
-            mocked_pika_module.BlockingConnection.assert_called_one_with(
+            mocked_pika_module.BlockingConnection.assert_called_once_with(
                 mocked_pika_module.ConnectionParameters.return_value
             )
             assert isinstance(conn, Connection)

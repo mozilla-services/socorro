@@ -70,7 +70,7 @@ class ReprocessCrashlistApp(App):
                     config.rabbitmq_user,
                     config.rabbitmq_password))
             )
-        except:
+        except Exception:
             logging.error("Failed to connect")
             raise
         self.connection = connection

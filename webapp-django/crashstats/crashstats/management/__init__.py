@@ -1,12 +1,8 @@
 from django.contrib.auth.models import Permission
-from django.db.models.signals import post_syncdb
+from django.db.models.signals import post_migrate
 from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
 
-# Import the specific models we need to wait for to have been
-# sync'ed by Django
-import django.contrib.auth.models
-import django.contrib.contenttypes.models
 
 # Note! When referring to these in code, you'll have to use the
 # prefix 'crashstats'. So template code looks like this for example:
@@ -26,12 +22,12 @@ PERMISSIONS = {
 
 # internal use to know when all interesting models have been synced
 _senders_left = [
-    django.contrib.auth.models,
-    django.contrib.contenttypes.models
+    'django.contrib.auth',
+    'django.contrib.contenttypes'
 ]
 
 
-@receiver(post_syncdb)
+@receiver(post_migrate)
 def setup_custom_permissions_and_groups(sender, **kwargs):
     """
     When you `./manage.py syncdb` every installed app gets synced.
@@ -45,8 +41,8 @@ def setup_custom_permissions_and_groups(sender, **kwargs):
     them in this context.
     """
     if _senders_left:
-        if sender in _senders_left:
-            _senders_left.remove(sender)
+        if sender.name in _senders_left:
+            _senders_left.remove(sender.name)
 
         if _senders_left:
             return
@@ -56,7 +52,6 @@ def setup_custom_permissions_and_groups(sender, **kwargs):
         ct, __ = ContentType.objects.get_or_create(
             model='',
             app_label=appname,
-            defaults={'name': appname}
         )
         for codename, name in PERMISSIONS.items():
             try:

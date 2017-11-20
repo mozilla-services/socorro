@@ -230,6 +230,20 @@ class ProductBuildTypes(BaseTable):
     ]
 
 
+class ProductProductIDMap(BaseTable):
+    table = 'product_productid_map'
+    columns = [
+        'product_name', 'productid', 'rewrite', 'version_began'
+    ]
+    rows = [
+        ['Fennec', '{a23983c0-fd0e-11dc-95ff-0800200c9a66}', 'f', '0.1'],
+        ['FennecAndroid', '{aa3c5121-dab2-40e2-81ca-7ea25febc110}', 't', '0.1'],
+        ['Firefox', '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}', 'f', '0.7'],
+        ['Thunderbird', '{3550f703-e582-4d05-9a08-453d09bdfdc6}', 'f', '0.3'],
+        ['SeaMonkey', '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}', 'f', '1.0a'],
+    ]
+
+
 # DEPRECATED
 class ProductReleaseChannels(BaseTable):
     table = 'product_release_channels'
@@ -282,4 +296,5 @@ tables = [OSNames, OSNameMatches, ProcessTypes, ReleaseChannels,
           ReleaseChannelMatches, UptimeLevels, WindowsVersions,
           OSVersions, ReleaseRepositories,
           CrashTypes, ReportPartitionInfo,
-          Products, ProductBuildTypes, ProductReleaseChannels, SpecialProductPlatforms]
+          Products, ProductBuildTypes, ProductReleaseChannels,
+          ProductProductIDMap, SpecialProductPlatforms]

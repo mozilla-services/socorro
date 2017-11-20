@@ -93,7 +93,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
     'waffle',
-    'eventlog',
+    'pinax.eventlog',
     'django_jinja',
 )
 
@@ -122,14 +122,22 @@ MIDDLEWARE_CLASSES = (
 )
 
 
+# Allow inactive users to authenticate
+# FIXME(Osmose): Remove this and the auto-logout code in favor of
+# the default backend, which does not authenticate inactive users.
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.AllowAllUsersModelBackend',
+)
+
+
 _CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.media',
-    'django.core.context_processors.request',
+    'django.template.context_processors.debug',
+    'django.template.context_processors.media',
+    'django.template.context_processors.request',
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.request',
+    'django.template.context_processors.request',
     'crashstats.authentication.context_processors.oauth2',
     'crashstats.base.context_processors.debug',
     'crashstats.status.context_processors.status_message',

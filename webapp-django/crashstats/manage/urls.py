@@ -1,10 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url('^$',
         views.home,
         name='home'),
@@ -75,4 +74,4 @@ urlpatterns = patterns(
         views.reprocessing,
         name='reprocessing'),
 
-)
+]

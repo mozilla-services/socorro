@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.views.generic import RedirectView
 from django.conf import settings
 
@@ -12,8 +12,7 @@ version = r'/versions/(?P<version>[;\w\.()]+)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 
-urlpatterns = patterns(
-    '',  # prefix
+urlpatterns = [
     url('^robots\.txt$',
         views.robots_txt,
         name='robots_txt'),
@@ -101,15 +100,6 @@ urlpatterns = patterns(
             permanent=perm_legacy_redirect
         )),
 
-    # Redirect deleted status page to monitoring page.
-    url(
-        r'^status/$',
-        RedirectView.as_view(
-            pattern_name='monitoring:index'
-        ),
-        name='status_redirect',
-    ),
-
     # handle old-style URLs
     url(r'^products/(?P<product>\w+)/$',
         RedirectView.as_view(
@@ -126,4 +116,4 @@ urlpatterns = patterns(
             url='/home/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
-)
+]

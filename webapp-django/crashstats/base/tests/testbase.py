@@ -1,9 +1,9 @@
 import inspect
+import unittest
 
 import mock
 
 import django.test
-import django.utils.unittest
 from django.contrib.auth.models import User
 
 import crashstats.crashstats.models
@@ -21,7 +21,7 @@ for module in (crashstats.crashstats.models, crashstats.supersearch.models):
                 classes_with_implementation.append(klass)
 
 
-class TestCase(django.utils.unittest.TestCase):
+class TestCase(unittest.TestCase):
 
     def shortDescription(self):
         return None
@@ -43,9 +43,6 @@ class DjangoTestCase(django.test.TestCase):
             # If we don't do this the cache key will always have the
             # string 'MagicMock' in it no matter which class it came from.
             klass.implementation().__class__.__name__ = klass.__name__
-
-    def shortDescription(self):
-        return None
 
     def _login(
         self,

@@ -1,8 +1,7 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from . import views
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^search/$',
         views.search,
         name='supersearch.search'),
@@ -18,4 +17,4 @@ urlpatterns = patterns(
     url(r'^search/fields/$',
         views.search_fields,
         name='supersearch.search_fields'),
-)
+]

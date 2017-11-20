@@ -126,7 +126,7 @@ def oauth2_signin(request):
             first_name=idinfo.get('given_name', ''),
             last_name=idinfo.get('family_name', ''),
         )
-    user.backend = 'django.contrib.auth.backends.ModelBackend'
+    user.backend = 'django.contrib.auth.backends.AllowAllUsersModelBackend'
     request.user = user
     auth.login(request, user)
 

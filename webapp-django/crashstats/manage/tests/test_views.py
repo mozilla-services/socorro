@@ -9,9 +9,9 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
-from eventlog.models import Log
 import mock
 import pytest
+from pinax.eventlog.models import Log
 
 from crashstats.status.models import StatusMessage
 from crashstats.symbols.models import SymbolsUpload
@@ -227,7 +227,7 @@ class TestViews(BaseTestViews):
             return User.objects.create(
                 username=username,
                 email=username + '@example.com',
-                last_login=datetime.datetime.utcnow(),
+                last_login=timezone.now(),
                 **kwargs
             )
 
