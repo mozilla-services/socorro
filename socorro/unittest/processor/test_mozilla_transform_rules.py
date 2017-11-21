@@ -32,6 +32,7 @@ from socorro.processor.mozilla_transform_rules import (
     TopMostFilesRule,
     MissingSymbolsRule,
     BetaVersionRule,
+    AuroraVersionFixitRule,
     OSPrettyVersionRule,
     ThemePrettyNameRule,
 )
@@ -1762,6 +1763,38 @@ class TestBetaVersion(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '3.0b1'
         assert len(processor_meta.processor_notes) == 0
+
+
+class TestAuroraVersionFixitRule:
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = False
+        return config
+
+    def test_predicate(self):
+        rule = AuroraVersionFixitRule(self.get_basic_config())
+
+        # No BuildID and wrong BuildID lead to False
+        assert rule._predicate({}, {}, {}, {}) is False
+        assert rule._predicate({'BuildID': 'ou812'}, {}, {}, {}) is False
+
+        # Correct BuildID leads to True
+        assert rule._predicate({'BuildID': '20170612224034'}, {}, {}, {}) is True
+
+    def test_action(self):
+        rule = AuroraVersionFixitRule(self.get_basic_config())
+
+        raw_crash = {
+            # This is the build id for Firefox aurora 55.0b1
+            'BuildID': '20170612224034'
+        }
+        processed_crash = {}
+
+        # The AuroraVersionFixitRule changes the version for the
+        # processed_crash in place for a known set of build ids
+        assert rule._action(raw_crash, {}, processed_crash, {}) is True
+        assert processed_crash['version'] == '55.0b1'
 
 
 class TestOsPrettyName(TestCase):
