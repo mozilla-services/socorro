@@ -69,8 +69,25 @@ jobs:
             DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               bin/ci/deploy-dockerhub.sh latest
-              bin/ci/deploy-dockerhub.sh "circle_build_$CIRCLE_BUILD_NUM"
             fi
             if [ -n "${CIRCLE_TAG}" ]; then
               bin/ci/deploy-dockerhub.sh "$CIRCLE_TAG"
             fi
+
+workflows:
+  version: 2
+
+  # workflow jobs are _not_ run in tag builds by default
+  # we use filters to whitelist jobs that should be run for tags
+
+  # workflow jobs are run in _all_ branch builds by default
+  # we use filters to blacklist jobs that shouldn't be run for a branch
+
+  # see: https://circleci.com/docs/2.0/workflows/#git-tag-job-execution
+
+  build-test-push:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
