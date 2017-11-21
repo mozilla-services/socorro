@@ -677,8 +677,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
 }
 
 
-CRASH_ANALYSIS_URL = 'https://crash-analysis.mozilla.com/crash_analysis/'
-
 # At what point do we consider crontabber to be stale.
 # Ie. if it hasn't run for a certain number of minutes we'd consider
 # that a failing situation and it'll trigger monitoring.
