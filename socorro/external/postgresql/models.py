@@ -217,24 +217,6 @@ ischema_names['build_type_enum'] = build_type_enum
 ###############################
 
 
-class EmailCampaignsContact(DeclarativeBase):
-    __tablename__ = 'email_campaigns_contacts'
-
-    # column definitions
-    email_campaigns_id = Column(
-        u'email_campaigns_id', INTEGER(), ForeignKey('email_campaigns.id'))
-    email_contacts_id = Column(
-        u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id'))
-    status = Column(u'status', TEXT(), nullable=False,
-                    server_default='stopped')
-
-    __mapper_args__ = {"primary_key": (email_campaigns_id, email_contacts_id)}
-    __table_args__ = (
-        Index('email_campaigns_contacts_mapping_unique',
-              email_campaigns_id, email_contacts_id, unique=True),
-    )
-
-
 class Tcbs(DeclarativeBase):
     __tablename__ = 'tcbs'
 
@@ -633,60 +615,6 @@ class Domain(DeclarativeBase):
     domain_id = Column(u'domain_id', INTEGER(),
                        primary_key=True, nullable=False)
     first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-
-
-class EmailCampaign(DeclarativeBase):
-    __tablename__ = 'email_campaigns'
-
-    # column definitions
-    author = Column(u'author', TEXT(), nullable=False)
-    body = Column(u'body', TEXT(), nullable=False)
-    date_created = Column(u'date_created', TIMESTAMP(
-        timezone=True), nullable=False, server_default=text('NOW()'))
-    email_count = Column(u'email_count', INTEGER(), server_default=text('0'))
-    end_date = Column(u'end_date', TIMESTAMP(timezone=True), nullable=False)
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    product = Column(u'product', TEXT(), nullable=False)
-    signature = Column(u'signature', TEXT(), nullable=False)
-    start_date = Column(u'start_date', TIMESTAMP(timezone=True), nullable=False)
-    status = Column(u'status', TEXT(), nullable=False,
-                    server_default='stopped')
-    subject = Column(u'subject', TEXT(), nullable=False)
-    versions = Column(u'versions', TEXT(), nullable=False)
-
-    __table_args__ = (
-        Index('email_campaigns_product_signature_key', product, signature),
-    )
-
-    # relationship definitions
-    email_contacts = relationship(
-        'EmailContact',
-        primaryjoin='EmailCampaign.id==email_campaigns_contacts.c.email_campaigns_id',
-        secondary='EmailCampaignsContact',
-        secondaryjoin='EmailCampaignsContact.email_contacts_id==EmailContact.id'
-    )
-
-
-class EmailContact(DeclarativeBase):
-    __tablename__ = 'email_contacts'
-
-    # column definitions
-    crash_date = Column(u'crash_date', TIMESTAMP(timezone=True))
-    email = Column(u'email', TEXT(), nullable=False, index=True, unique=True)
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    ooid = Column(u'ooid', TEXT())
-    subscribe_status = Column(
-        u'subscribe_status', BOOLEAN(), server_default=text('True'))
-    subscribe_token = Column(u'subscribe_token', TEXT(),
-                             nullable=False, index=True, unique=True)
-
-    # relationship definitions
-    email_campaigns = relationship(
-        'EmailCampaign',
-        primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id',
-        secondary='EmailCampaignsContact',
-        secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id'
-    )
 
 
 class FlashVersion(DeclarativeBase):
