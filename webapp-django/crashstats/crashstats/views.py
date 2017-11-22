@@ -1,8 +1,9 @@
 import copy
+import gzip
 import json
 import datetime
+import os
 import urllib
-import gzip
 from collections import defaultdict
 from operator import itemgetter
 from io import BytesIO
@@ -1013,6 +1014,16 @@ def status_revision(request):
         models.Status().get()['socorro_revision'],
         content_type='text/plain'
     )
+
+
+def dockerflow_version(requst):
+    path = os.path.join(settings.SOCORRO_ROOT, 'version.json')
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            data = fp.read()
+    else:
+        data = '{}'
+    return http.HttpResponse(data, content_type='text/json')
 
 
 @pass_default_context

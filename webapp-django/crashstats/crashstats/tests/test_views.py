@@ -12,6 +12,7 @@ from cStringIO import StringIO
 import pyquery
 import mock
 
+from django.test import Client
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.conf import settings
@@ -2698,3 +2699,28 @@ class TestViews(BaseTestViews):
             reverse('crashstats:about_throttling'),
             status_code=301
         )
+
+
+class TestDockerflow:
+    def test_version_no_file(self):
+        """Test with no version.json file"""
+        client = Client()
+        resp = client.get(reverse('crashstats:dockerflow_version'))
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'text/json'
+        assert resp.content == '{}'
+
+    def test_version_with_file(self, tmpdir):
+        """Test with a version.json file"""
+        text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
+
+        # Create the version.json file in the tmpdir
+        version_json = tmpdir.join('version.json')
+        version_json.write(text)
+
+        with override_settings(SOCORRO_ROOT=str(tmpdir)):
+            client = Client()
+            resp = client.get(reverse('crashstats:dockerflow_version'))
+            assert resp.status_code == 200
+            assert resp['Content-Type'] == 'text/json'
+            assert resp.content == text

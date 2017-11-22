@@ -18,6 +18,9 @@ ROOT = os.path.abspath(
         '..'
     ))
 
+# The socorro root is one directory above the webapp root
+SOCORRO_ROOT = os.path.dirname(ROOT)
+
 
 def path(*dirs):
     return os.path.join(ROOT, *dirs)
