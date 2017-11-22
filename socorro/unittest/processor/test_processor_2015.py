@@ -65,7 +65,7 @@ stackwalker_output_str = ujson.dumps({
 
 rule_set_01 = [
     [
-        'ruleset01',
+        'transform_rules',
         'socorro.processor.general_transform_rules.CPUInfoRule, '
         'socorro.processor.general_transform_rules.OSInfoRule '
     ]
@@ -77,12 +77,12 @@ class TestProcessor2015(TestCase):
     def test_rule_sets_from_string_1(self):
         rule_set_config = rule_sets_from_string(rule_set_01_str)
         rc = rule_set_config.get_required_config()
-        assert 'ruleset01' in rc
+        assert 'transform_rules' in rc
         expected = (
             'socorro.processor.general_transform_rules.CPUInfoRule, '
             'socorro.processor.general_transform_rules.OSInfoRule '
         )
-        assert rc.ruleset01.rules_list.default == expected
+        assert rc.transform_rules.rules_list.default == expected
 
     def test_Processor2015_init(self):
         cm = ConfigurationManager(
@@ -96,9 +96,9 @@ class TestProcessor2015(TestCase):
 
         assert isinstance(p.rule_system, DotDict)
         assert len(p.rule_system) == 1
-        assert 'ruleset01' in p.rule_system
-        assert isinstance(p.rule_system.ruleset01, TransformRuleSystem)
-        trs = p.rule_system.ruleset01
+        assert 'transform_rules' in p.rule_system
+        assert isinstance(p.rule_system.transform_rules, TransformRuleSystem)
+        trs = p.rule_system.transform_rules
         assert len(trs.rules) == 2
         assert isinstance(trs.rules[0], CPUInfoRule)
         assert isinstance(trs.rules[1], OSInfoRule)

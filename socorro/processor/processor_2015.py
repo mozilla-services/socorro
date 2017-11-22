@@ -150,19 +150,24 @@ class Processor2015(RequiredConfig):
         else:
             self.quit_check = lambda: False
 
-        # here we instantiate the rule sets and their rules.
         self.rule_system = OrderedDotDict()
-        for a_rule_set_name in config.rule_sets.names:
-            self.config.logger.debug(
-                'setting up rule set: %s',
-                a_rule_set_name
+
+        # here we instantiate the rule sets and their rules.
+        if 'transform_rules' not in config:
+            return # no rules
+
+        a_rule_set_name = 'transform_rules'
+        self.config.logger.debug(
+            'setting up rule set: %s',
+            a_rule_set_name
+        )
+        self.rule_system[a_rule_set_name] = (
+            TransformRuleSystem(
+                config[a_rule_set_name],
+                self.quit_check
             )
-            self.rule_system[a_rule_set_name] = (
-                TransformRuleSystem(
-                    config[a_rule_set_name],
-                    self.quit_check
-                )
-            )
+        )
+
 
     def process_crash(self, raw_crash, raw_dumps, processed_crash):
         """Take a raw_crash and its associated raw_dumps and return a
