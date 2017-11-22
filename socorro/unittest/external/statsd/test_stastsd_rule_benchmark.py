@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from configman.dotdict import DotDict
-from mock import patch, call, Mock
+from mock import patch, Mock
 import pytest
 
 from socorro.external.statsd.dogstatsd import StatsClient
@@ -17,11 +17,10 @@ from socorro.unittest.lib.test_transform_rules import (
     RuleTestLaughable,
     RuleTestDangerous
 )
-from socorro.lib import transform_rules
 from socorro.unittest.testbase import TestCase
 
 
-class TestStatsdCounterRule(TestCase):
+class TestStatsdCountAnythingRule(TestCase):
 
     def setup_config(self, prefix=None):
         config = DotDict()
@@ -61,38 +60,6 @@ class TestStatsdCounterRule(TestCase):
         config.RuleTestDangerous.active_list = 'act'
 
         return config
-
-    @patch('socorro.external.statsd.dogstatsd.statsd')
-    def test_apply_all(self, statsd_obj):
-        config = self.setup_config('processor')
-        trs = transform_rules.TransformRuleSystem(config)
-
-        assert isinstance(trs.rules[0], StatsdBenchmarkingWrapper)
-        assert isinstance(trs.rules[0].wrapped_object, RuleTestLaughable)
-        assert isinstance(trs.rules[1], StatsdBenchmarkingWrapper)
-        assert isinstance(trs.rules[1].wrapped_object, RuleTestDangerous)
-
-        with patch('socorro.external.statsd.statsd_base.datetime'):
-            assert trs.rules[0].predicate(None)
-            statsd_obj.timing.has_calls([])
-
-            assert trs.rules[1].action(None)
-            statsd_obj.timing.has_calls([])
-
-            trs.apply_all_rules()
-            statsd_obj.timing.has_calls([
-                call(
-                    'timing.RuleTestLaughable.act',
-                    1000  # 1 second
-                ),
-                call(
-                    'timing.RuleTestDangerous.act',
-                    1000  # 1 second
-                ),
-            ])
-
-
-class TestStatsdCountAnythingRule(TestStatsdCounterRule):
 
     @patch('socorro.external.statsd.dogstatsd.statsd')
     def testCountAnythingRuleBase(self, statsd_obj):
