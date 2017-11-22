@@ -898,6 +898,38 @@ class BetaVersionRule(Rule):
         return True
 
 
+class AuroraVersionFixitRule(Rule):
+    """Starting with Firefox 55, we ditched the aurora channel and converted
+    devedition to its own "product" that are respins of the beta channel
+    builds. These builds still use "aurora" as the release channel.
+
+    However, the devedition .0b1 release needs to be treated as an aurora for
+    Firefox. Because this breaks the invariants of Socorro as well as the laws
+    of physics, we fix these crashes by hand using a processor rule.
+
+    """
+
+    # NOTE(willkg): We'll have to add a build id -> version every time a new one comes
+    # out. Ugh.
+    buildid_to_version = {
+        '20170612224034': '55.0b1',
+        '20170808170225': '56.0b1',
+        '20170917031738': '57.0b1',
+        '20171103003834': '58.0b1',
+    }
+
+    def version(self):
+        return '1.0'
+
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return raw_crash.get('BuildID', '') in self.buildid_to_version
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        real_version = self.buildid_to_version[raw_crash['BuildID']]
+        processed_crash['version'] = real_version
+        return True
+
+
 class OSPrettyVersionRule(Rule):
     required_config = Namespace()
     required_config.add_option(
