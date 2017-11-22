@@ -16,12 +16,16 @@ urlpatterns = [
     url('^robots\.txt$',
         views.robots_txt,
         name='robots_txt'),
+
+    # DEPRECATED(willkg): These next two endpoints should be deprecated in
+    # favor of the dockerflow /__version__ one
     url(r'^status/json/$',
         views.status_json,
         name='status_json'),
     url(r'^status/revision/$',
         views.status_revision,
         name='status_revision'),
+
     url(r'^crontabber-state/$',
         views.crontabber_state,
         name='crontabber_state'),
@@ -55,6 +59,11 @@ urlpatterns = [
     url(r'^about/throttling/$',
         views.about_throttling,
         name='about_throttling'),
+
+    # Dockerflow endpoints
+    url(r'__version__',
+        views.dockerflow_version,
+        name='dockerflow_version'),
 
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
