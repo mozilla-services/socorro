@@ -39,7 +39,7 @@ from socorro.lib.util import DotDict
 #               socorro.lib.transform_rules.Rule
 default_rule_set = [
     [   # rules to change the internals of the raw crash
-        "raw_to_processed_transform",
+        "transform_rules",
         "socorro.processor.mozilla_transform_rules.ProductRewrite,"
         "socorro.processor.mozilla_transform_rules.ESRVersionRewrite,"
         "socorro.processor.mozilla_transform_rules.PluginContentURL,"
