@@ -2702,13 +2702,16 @@ class TestViews(BaseTestViews):
 
 
 class TestDockerflow:
-    def test_version_no_file(self):
+    def test_version_no_file(self, tmpdir):
         """Test with no version.json file"""
-        client = Client()
-        resp = client.get(reverse('crashstats:dockerflow_version'))
-        assert resp.status_code == 200
-        assert resp['Content-Type'] == 'text/json'
-        assert resp.content == '{}'
+        # The tmpdir definitely doesn't have a version.json in it, so we use
+        # that
+        with override_settings(SOCORRO_ROOT=str(tmpdir)):
+            client = Client()
+            resp = client.get(reverse('crashstats:dockerflow_version'))
+            assert resp.status_code == 200
+            assert resp['Content-Type'] == 'text/json'
+            assert resp.content == '{}'
 
     def test_version_with_file(self, tmpdir):
         """Test with a version.json file"""
