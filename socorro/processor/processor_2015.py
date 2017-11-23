@@ -14,7 +14,6 @@ from configman.dotdict import DotDict as OrderedDotDict
 # from configman.converters import str_to_python_object
 from socorro.lib.converters import str_to_classes_in_namespaces_converter
 from socorro.lib.datetimeutil import utc_now
-from socorro.lib.transform_rules import TransformRuleSystem
 from socorro.lib.util import DotDict
 
 
@@ -151,23 +150,28 @@ class Processor2015(RequiredConfig):
             self.quit_check = lambda: False
 
         self.rule_system = OrderedDotDict()
+        self.rules = []
 
         # here we instantiate the rule sets and their rules.
         if 'transform_rules' not in config:
-            return # no rules
+            return  # no rules
 
-        a_rule_set_name = 'transform_rules'
-        self.config.logger.debug(
-            'setting up rule set: %s',
-            a_rule_set_name
-        )
-        self.rule_system[a_rule_set_name] = (
-            TransformRuleSystem(
-                config[a_rule_set_name],
-                self.quit_check
-            )
-        )
+        self.config.logger.debug('setting up transform_rules')
 
+        # begin TRS insert
+        trs_config = config['transform_rules']
+
+        list_of_rules = trs_config.rules_list.class_list
+
+        for a_rule_class_name, a_rule_class, ns_name in list_of_rules:
+            try:
+                self.rules.append(
+                    a_rule_class(trs_config[ns_name])
+                )
+            except KeyError:
+                self.rules.append(
+                    a_rule_class(trs_config)
+                )
 
     def process_crash(self, raw_crash, raw_dumps, processed_crash):
         """Take a raw_crash and its associated raw_dumps and return a
@@ -214,17 +218,13 @@ class Processor2015(RequiredConfig):
                 crash_id
             )
 
-            # apply transformations
-            #    step through each of the rule sets to apply the rules.
-            for a_rule_set_name, a_rule_set in self.rule_system.iteritems():
-                # for each rule set, invoke the 'act' method - this method
-                # will be the method specified in fourth element of the
-                # rule set configuration list.
-                a_rule_set.apply_all_rules(
+            # apply_all_rules
+            for rule in self.rules:
+                predicate_result, action_result = rule.act(
                     raw_crash,
                     raw_dumps,
                     processed_crash,
-                    processor_meta_data,
+                    processor_meta_data
                 )
                 self.quit_check()
 
@@ -276,11 +276,15 @@ class Processor2015(RequiredConfig):
         )
 
     def close(self):
-        for a_rule_set_name, a_rule_set in self.rule_system.iteritems():
-            self.config.logger.debug('closing %s', a_rule_set_name)
-            try:
-                a_rule_set.close()
-            except AttributeError:
-                # guess we don't need to close that rule
-                pass
         self.config.logger.debug('done closing rules')
+        for rule in self.rules:
+            try:
+                self.config.logger.debug('trying to close %s',
+                                         rule.__class__)
+                close_method = rule.close
+            except AttributeError:
+                self.config.logger.debug('%s has no close',
+                                         rule.__class__)
+                # no close method mean no need to close
+                continue
+            close_method()

@@ -4,7 +4,6 @@ from configman import ConfigurationManager
 from configman.dotdict import DotDict
 from mock import Mock, patch
 
-from socorro.lib.transform_rules import TransformRuleSystem
 from socorro.processor.processor_2015 import (
     Processor2015,
     rule_sets_from_string
@@ -95,13 +94,9 @@ class TestProcessor2015(TestCase):
         p = Processor2015(config)
 
         assert isinstance(p.rule_system, DotDict)
-        assert len(p.rule_system) == 1
-        assert 'transform_rules' in p.rule_system
-        assert isinstance(p.rule_system.transform_rules, TransformRuleSystem)
-        trs = p.rule_system.transform_rules
-        assert len(trs.rules) == 2
-        assert isinstance(trs.rules[0], CPUInfoRule)
-        assert isinstance(trs.rules[1], OSInfoRule)
+        assert len(p.rules) == 2
+        assert isinstance(p.rules[0], CPUInfoRule)
+        assert isinstance(p.rules[1], OSInfoRule)
 
     def test_process_crash_no_rules(self):
         cm = ConfigurationManager(
