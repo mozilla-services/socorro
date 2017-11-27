@@ -54,4 +54,4 @@ my.env
 
 # docs things
 docs/_build/
-docs/e2e_readme.md
+docs/tests/e2e_readme.md

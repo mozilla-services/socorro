@@ -9,7 +9,7 @@ cd docs
 # Copy the e2e-test README to this directory because otherwise we can't
 # pull it in because there isn't a way to do a file include for Markdown
 # files.
-cp ../e2e-tests/README.md e2e_readme.md
+cp ../e2e-tests/README.md tests/e2e_readme.md
 
 # Build the docs
 make html
