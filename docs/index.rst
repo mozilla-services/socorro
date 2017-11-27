@@ -45,5 +45,7 @@ Contents
    architecture/*
    components/*
    services/*
+   e2e_readme
+   system_checklist
    deploy
    howto
