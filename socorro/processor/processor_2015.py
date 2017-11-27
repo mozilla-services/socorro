@@ -9,10 +9,9 @@ some small part of the transformation process."""
 
 import ujson
 
-from configman import Namespace, RequiredConfig
+from configman import Namespace, RequiredConfig, class_converter
 from configman.dotdict import DotDict as OrderedDotDict
-# from configman.converters import str_to_python_object
-from socorro.lib.converters import str_to_classes_in_namespaces_converter
+
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
 
@@ -288,3 +287,60 @@ class Processor2015(RequiredConfig):
                 # no close method mean no need to close
                 continue
             close_method()
+
+
+def str_to_classes_in_namespaces_converter():
+
+    def class_list_converter(class_list_str):
+        """This function becomes the actual converter used by configman to
+        take a string and convert it into the nested sequence of Namespaces,
+        one for each class in the list.  It does this by creating a proxy
+        class stuffed with its own 'required_config' that's dynamically
+        generated."""
+        if isinstance(class_list_str, basestring):
+            class_str_list = []
+            for class_str_padded in class_list_str.split(','):
+                class_str = class_str_padded.strip()
+                if class_str:
+                    class_str_list.append(class_str)
+
+        else:
+            raise TypeError('must be derivative of a basestring')
+
+        class InnerClassList(RequiredConfig):
+            """This nested class is a proxy list for the classes.  It collects
+            all the config requirements for the listed classes and places them
+            each into their own Namespace.
+            """
+            # we're dynamically creating a class here.  The following block of
+            # code is actually adding class level attributes to this new class
+
+            # 1st requirement for configman
+            required_config = Namespace()
+
+            # to help the programmer know what Namespaces we added
+            subordinate_namespace_names = []
+
+            # for each class in the class list
+            class_list = []
+            for class_list_element in class_str_list:
+                a_class = class_converter(class_list_element)
+
+                # figure out the Namespace name
+                namespace_name = a_class.__name__
+                class_list.append((namespace_name, a_class, namespace_name))
+                subordinate_namespace_names.append(namespace_name)
+                # create the new Namespace
+                required_config.namespace(namespace_name)
+                a_class_namespace = required_config[namespace_name]
+                a_class_namespace.add_option(
+                    'qualified_class_name',
+                    doc='fully qualified classname',
+                    default=class_list_element,
+                    from_string_converter=class_converter,
+                    likely_to_be_changed=True,
+                )
+
+        return InnerClassList  # result of class_list_converter
+
+    return class_list_converter  # result of classes_in_namespaces_converter
