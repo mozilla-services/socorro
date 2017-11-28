@@ -22,12 +22,13 @@ How to use
 "Significant change" can mean any number of things, so this is just a template.
 You should do the following:
 
-1. Copy and paste the contents of this into a Google doc.
+1. Copy and paste the contents of this into a Google Doc, Etherpad, or
+   whatever system you plan to use to keep track of status and outstanding
+   issues.
 
-2. Go through the Google doc, remove things that don't make sense, and add
-   additional things that are important.
-
-3. Uplift any changes via PR to this document.
+2. Go through what you copy-and-pasted, remove things that don't make sense,
+   and add additional things that are important. (Please uplift any changes
+   via PR to this document that are interesting.)
 
 
 Checklist
