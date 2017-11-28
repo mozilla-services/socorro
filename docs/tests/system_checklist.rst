@@ -50,6 +50,8 @@ Checklist
 
       -stage/-prod:
 
+      1. See Mana
+
     * Alembic migrations
 
       Local dev environment:
@@ -58,6 +60,8 @@ Checklist
       2. "alembic -c docker/config/alembic.ini current"
 
       -stage/-prod:
+
+      1. See Mana
 
 
     Collector (Antenna)
@@ -129,11 +133,7 @@ Checklist
 
     Is the webapp up?
 
-    * Use a browser and check the healthcheck.
-
-      localdev: http://localhost:8000/monitoring/healthcheck/
-      stage: https://crash-stats.allizom.org/monitoring/healthcheck/
-      prod: https://crash-stats.mozilla.com/monitoring/healthcheck/
+    * Use a browser and check the healthcheck (/monitoring/healthcheck)
 
       It should say "ok: true".
 
@@ -158,11 +158,7 @@ Checklist
 
     Is the product home page working?
 
-    * Check the Firefox product home page
-
-      localdev: http://localhost:8000/
-      stage: https://crash-stats.allizom.org/home/product/Firefox
-      prod: https://crash-stats.mozilla.com/home/product/Firefox
+    * Check the Firefox product home page (/ redirects to /home/product/Firefox)
 
     Is super search working?
 
@@ -180,18 +176,11 @@ Checklist
     * Download https://github.com/mozilla/socorro/blob/master/webapp-django/crashstats/symbols/tests/sample.zip
       to disk
     * Log in with a user with permission to upload symbols.
-    * Go to the symbol upload section.
-
-      stage: https://crash-stats.allizom.org/symbols/upload/web/
-      prod: https://crash-stats.mozilla.com/symbols/upload/web/
-
+    * Go to the symbol upload section (/symbols/upload/web)
     * Try to upload the "sample.zip" file.
-    * To verify that it worked, go to the public symbols S3 bucket:
-
-      stage: org.mozilla.crash-stats.staging.symbols-public
-
-      and check that there is a "xpcshell.sym" file in the root with a recent
-      modify date.
+    * To verify that it worked, go to the public symbols S3 bucket and check
+      that there is a "xpcshell.sym" file in the root with a recent modify
+      date.
 
 
     Crontabber
@@ -199,19 +188,11 @@ Checklist
 
     Is crontabber working?
 
-    * Check healthcheck endpoint:
-
-      localdev: http://localhost:8000/monitoring/crontabber/
-      stage: https://crash-stats.allizom.org/monitoring/crontabber/
-      prod: https://crash-stats.mozilla.com/monitoring/crontabber/
+    * Check healthcheck endpoint (/monitoring/crontabber/)
 
       It should say ALLGOOD.
 
-    * Check the webapp crontabber-state page:
-
-      localdev: http://localhost:8000/crontabber-state/
-      stage: https://crash-stats.allizom.org/crontabber-state/
-      prod: https://crash-stats.mozilla.com/crontabber-state/
+    * Check the webapp crontabber-state page (/crontabber-state/)
 
     Is crontabber throwing errors?
 
