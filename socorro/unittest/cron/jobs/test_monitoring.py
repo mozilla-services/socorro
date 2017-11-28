@@ -1,8 +1,9 @@
 import json
-from contextlib import contextmanager, nested
+from contextlib import nested
 
 import pytest
 import mock
+from configman.config_exceptions import OptionError
 from configman.dotdict import DotDict
 
 from socorro.cron.jobs.monitoring import (
@@ -10,21 +11,32 @@ from socorro.cron.jobs.monitoring import (
     DependencySecurityCheckFailed,
     Vulnerability,
 )
-from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
-# Ideally this'd be a pytest yielding fixture, but fixtures aren't easily used
-# with unittest.TestCase subclasses.
-@contextmanager
-def mock_popen(return_code, output='', error_output=''):
+@pytest.fixture
+def app_config(tmpdir):
+    nsp_path = tmpdir.join('nsp')
+    nsp_path.write('fake binary', ensure=True)
+    safety_path = tmpdir.join('safety')
+    safety_path.write('fake binary', ensure=True)
+    return {
+        'nsp_path': nsp_path.strpath,
+        'safety_path': safety_path.strpath,
+    }
+
+
+@pytest.fixture
+def mock_popen():
     popen_patch = mock.patch('socorro.cron.jobs.monitoring.Popen')
     popen = popen_patch.start()
 
-    process = popen.return_value
-    process.returncode = return_code
-    process.communicate.return_value = (output, error_output)
+    def _mock_popen(return_code, output='', error_output=''):
+        process = popen.return_value
+        process.returncode = return_code
+        process.communicate.return_value = (output, error_output)
+        return popen
 
-    yield popen
+    yield _mock_popen
 
     popen_patch.stop()
 
@@ -32,32 +44,32 @@ def mock_popen(return_code, output='', error_output=''):
 # Mocking Popen for multiple calls in a row is kinda hairy, so instead
 # we're testing the separate get_*_vulnerabilities methods and then
 # mocking them to test the main command.
-class TestDependencySecurityCheckCronApp(IntegrationTestBase):
+class TestDependencySecurityCheckCronApp(object):
     def get_app(self, config=None):
         config = DotDict(config or {})
         return DependencySecurityCheckCronApp(config, None)
 
-    def test_get_python_vulnerabilities_none(self):
-        app = self.get_app()
+    def test_get_python_vulnerabilities_none(self, mock_popen, app_config):
+        app = self.get_app(app_config)
+        popen = mock_popen(0)
 
-        with mock_popen(0) as popen:
-            assert app.get_python_vulnerabilities() == []
-            assert popen.call_args[0][0] == ['safety', 'check', '--json']
+        assert app.get_python_vulnerabilities() == []
+        assert popen.call_args[0][0] == [app_config['safety_path'], 'check', '--json']
 
-    def test_get_python_vulnerabilities_failure(self):
+    def test_get_python_vulnerabilities_failure(self, mock_popen, app_config):
         """Handle failures like being unable to connect to the network.
 
         """
-        app = self.get_app()
-
+        app = self.get_app(app_config)
         error_output = 'pretend-im-a-traceback'
-        with mock_popen(1, error_output='pretend-im-a-traceback'):
-            with pytest.raises(DependencySecurityCheckFailed) as err:
-                app.get_python_vulnerabilities()
-            assert err.value.args[0] == error_output
+        mock_popen(1, error_output='pretend-im-a-traceback')
 
-    def test_get_python_vulnerabilities_found(self):
-        app = self.get_app()
+        with pytest.raises(DependencySecurityCheckFailed) as err:
+            app.get_python_vulnerabilities()
+        assert err.value.args[0] == error_output
+
+    def test_get_python_vulnerabilities_found(self, mock_popen, app_config):
+        app = self.get_app(app_config)
 
         # See https://github.com/pyupio/safety#--json for an example
         # of safety's JSON output
@@ -77,65 +89,59 @@ class TestDependencySecurityCheckCronApp(IntegrationTestBase):
                 '123',
             ],
         ])
+        mock_popen(255, output=output)
 
-        with mock_popen(255, output=output):
-            assert set(app.get_python_vulnerabilities()) == set([
-                Vulnerability(
-                    type='python',
-                    dependency='mylibrary',
-                    installed_version='0.9.0',
-                    affected_versions='<1.0.0',
-                    description='This is an error',
-                ),
-                Vulnerability(
-                    type='python',
-                    dependency='otherlib',
-                    installed_version='1.4.0',
-                    affected_versions='<2.0.0',
-                    description='This is also an error',
-                ),
-            ])
+        assert set(app.get_python_vulnerabilities()) == set([
+            Vulnerability(
+                type='python',
+                dependency='mylibrary',
+                installed_version='0.9.0',
+                affected_versions='<1.0.0',
+                description='This is an error',
+            ),
+            Vulnerability(
+                type='python',
+                dependency='otherlib',
+                installed_version='1.4.0',
+                affected_versions='<2.0.0',
+                description='This is also an error',
+            ),
+        ])
 
-    def test_get_python_vulnerabilities_cannot_parse_output(self):
-        app = self.get_app()
+    def test_get_python_vulnerabilities_cannot_parse_output(self, mock_popen, app_config):
+        app = self.get_app(app_config)
         output = '{invalid5:52"json2'
+        mock_popen(255, output=output)
 
-        with mock_popen(255, output=output):
-            with pytest.raises(DependencySecurityCheckFailed) as err:
-                app.get_python_vulnerabilities()
-            assert err.value.args[0] == 'Could not parse pyup safety output'
+        with pytest.raises(DependencySecurityCheckFailed) as err:
+            app.get_python_vulnerabilities()
+        assert err.value.args[0] == 'Could not parse pyup safety output'
 
-    def test_get_javascript_vulnerabilities_none(self):
-        app = self.get_app({
-            'node_modules': '/fake/node_modules',
-        })
+    def test_get_javascript_vulnerabilities_none(self, mock_popen, app_config):
+        app = self.get_app(app_config)
+        popen = mock_popen(0)
 
-        with mock_popen(0) as popen:
-            assert app.get_javascript_vulnerabilities() == []
-            assert popen.call_args[0][0] == [
-                '/fake/node_modules/.bin/nsp',
-                'check',
-                '--reporter=json',
-            ]
+        assert app.get_javascript_vulnerabilities() == []
+        assert popen.call_args[0][0] == [
+            app_config['nsp_path'],
+            'check',
+            '--reporter=json',
+        ]
 
-    def test_get_javascript_vulnerabilities_failure(self):
+    def test_get_javascript_vulnerabilities_failure(self, mock_popen, app_config):
         """Handle failures like being unable to connect to the network.
 
         """
-        app = self.get_app({
-            'node_modules': '/fake/node_modules',
-        })
-
+        app = self.get_app(app_config)
         error_output = 'pretend-im-a-traceback'
-        with mock_popen(5, error_output='pretend-im-a-traceback'):
-            with pytest.raises(DependencySecurityCheckFailed) as err:
-                app.get_javascript_vulnerabilities()
-            assert err.value.args[0] == error_output
+        mock_popen(5, error_output='pretend-im-a-traceback')
 
-    def test_get_javascript_vulnerabilities_found(self):
-        app = self.get_app({
-            'node_modules': '/fake/node_modules',
-        })
+        with pytest.raises(DependencySecurityCheckFailed) as err:
+            app.get_javascript_vulnerabilities()
+        assert err.value.args[0] == error_output
+
+    def test_get_javascript_vulnerabilities_found(self, mock_popen, app_config):
+        app = self.get_app(app_config)
 
         # Adapated from nsp output for a jquery issue
         output = json.dumps([
@@ -180,39 +186,67 @@ class TestDependencySecurityCheckCronApp(IntegrationTestBase):
                 'advisory': 'https://nodesecurity.io/advisories/327',
             },
         ])
+        mock_popen(1, output=output)
 
-        with mock_popen(1, output=output):
-            assert set(app.get_javascript_vulnerabilities()) == set([
-                Vulnerability(
-                    type='javascript',
-                    dependency='mylibrary',
-                    installed_version='0.9.0',
-                    affected_versions='<1.0.0',
-                    description='https://nodesecurity.io/advisories/328',
-                ),
-                Vulnerability(
-                    type='javascript',
-                    dependency='otherlib',
-                    installed_version='1.4.0',
-                    affected_versions='<2.0.0',
-                    description='https://nodesecurity.io/advisories/327',
-                ),
-            ])
+        assert set(app.get_javascript_vulnerabilities()) == set([
+            Vulnerability(
+                type='javascript',
+                dependency='mylibrary',
+                installed_version='0.9.0',
+                affected_versions='<1.0.0',
+                description='https://nodesecurity.io/advisories/328',
+            ),
+            Vulnerability(
+                type='javascript',
+                dependency='otherlib',
+                installed_version='1.4.0',
+                affected_versions='<2.0.0',
+                description='https://nodesecurity.io/advisories/327',
+            ),
+        ])
 
-    def test_get_javascript_vulnerabilities_cannot_parse_output(self):
-        app = self.get_app({
-            'node_modules': '/fake/node_modules',
-        })
+    def test_get_javascript_vulnerabilities_cannot_parse_output(self, mock_popen, app_config):
+        app = self.get_app(app_config)
         output = '{invalid5:52"json2'
+        mock_popen(1, output=output)
 
-        with mock_popen(1, output=output):
-            with pytest.raises(DependencySecurityCheckFailed) as err:
-                app.get_javascript_vulnerabilities()
-            assert err.value.args[0] == 'Could not parse nsp output'
+        with pytest.raises(DependencySecurityCheckFailed) as err:
+            app.get_javascript_vulnerabilities()
+        assert err.value.args[0] == 'Could not parse nsp output'
 
-    def test_run_log(self):
+    def test_run_option_validation(self, tmpdir, app_config):
+        tmpdir.join('directory').mkdir()
+        tmpdir.join('binary').write('fake binary')
+
+        for option in ('nsp_path', 'safety_path'):
+            config = app_config.copy()
+
+            # Error if the config option is missing
+            del config[option]
+            app = self.get_app(config)
+            with pytest.raises(OptionError):
+                app.validate_options()
+
+            # Error if the config option points to a nonexistant file
+            config[option] = tmpdir.join('does.not.exist').strpath
+            app = self.get_app(config)
+            with pytest.raises(OptionError):
+                app.validate_options()
+
+            # Error if the config option points to a directory
+            config[option] = tmpdir.join('directory').strpath
+            app = self.get_app(config)
+            with pytest.raises(OptionError):
+                app.validate_options()
+
+            # No error if the config option points to an existing file
+            config[option] = tmpdir.join('binary').strpath
+            app = self.get_app(config)
+            app.validate_options()
+
+    def test_run_log(self, app_config):
         """Alert via logging if there's no Sentry DSN configured."""
-        app = self.get_app()
+        app = self.get_app(app_config)
         vuln = Vulnerability(
             type='python',
             dependency='mylibrary',
@@ -231,12 +265,11 @@ class TestDependencySecurityCheckCronApp(IntegrationTestBase):
             app.run()
             app.alert_log.assert_called_with([vuln])
 
-    def test_run_raven(self):
+    def test_run_raven(self, app_config):
         """Alert via Raven if there's a Sentry DSN configured."""
         dsn = 'https://foo:bar@example.com/123456'
-        app = self.get_app({
-            'sentry.dsn': dsn,
-        })
+        app_config['sentry.dsn'] = dsn
+        app = self.get_app(app_config)
         vuln = Vulnerability(
             type='python',
             dependency='mylibrary',
