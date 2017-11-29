@@ -113,6 +113,7 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         client.captureMessage('Dependency security check failed')
 
     def alert_log(self, vulnerabilities):
+        self.config.logger.error('Vulnerabilities found in dependencies!')
         for vuln in vulnerabilities:
             self.config.logger.error('%s: %s' % (vuln.key, vuln.summary))
 

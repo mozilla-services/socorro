@@ -77,3 +77,6 @@ dockerrun: my.env
 
 dockerstop: my.env
 	${DC} stop
+
+dockerdependencycheck: my.env
+	${DC} run crontabber ./docker/run_dependency_checks.sh
