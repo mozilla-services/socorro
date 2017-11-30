@@ -1,4 +1,5 @@
 import json
+import os
 from contextlib import nested
 
 import pytest
@@ -15,14 +16,13 @@ from socorro.cron.jobs.monitoring import (
 
 @pytest.fixture
 def app_config(tmpdir):
-    nsp_path = tmpdir.join('nsp')
-    nsp_path.write('fake binary', ensure=True)
-    safety_path = tmpdir.join('safety')
-    safety_path.write('fake binary', ensure=True)
-    return {
-        'nsp_path': nsp_path.strpath,
-        'safety_path': safety_path.strpath,
-    }
+    config = {}
+    for key in ('nsp_path', 'safety_path', 'package_json_path'):
+        path = tmpdir.join(key)
+        path.write('fake file', ensure=True)
+        config[key] = path.strpath
+
+    return config
 
 
 @pytest.fixture
@@ -127,6 +127,7 @@ class TestDependencySecurityCheckCronApp(object):
             'check',
             '--reporter=json',
         ]
+        assert popen.call_args[1]['cwd'] == os.path.dirname(app_config['package_json_path'])
 
     def test_get_javascript_vulnerabilities_failure(self, mock_popen, app_config):
         """Handle failures like being unable to connect to the network.
@@ -214,35 +215,32 @@ class TestDependencySecurityCheckCronApp(object):
             app.get_javascript_vulnerabilities()
         assert err.value.args[0] == 'Could not parse nsp output'
 
-    def test_run_option_validation(self, tmpdir, app_config):
+    @pytest.mark.parametrize('option', ('nsp_path', 'safety_path', 'package_json_path'))
+    def test_run_option_validation(self, option, tmpdir, app_config):
+        # Error if the config option is missing
+        del app_config[option]
+        app = self.get_app(app_config)
+        with pytest.raises(OptionError):
+            app.validate_options()
+
+        # Error if the config option points to a nonexistant file
+        app_config[option] = tmpdir.join('does.not.exist').strpath
+        app = self.get_app(app_config)
+        with pytest.raises(OptionError):
+            app.validate_options()
+
+        # Error if the config option points to a directory
+        app_config[option] = tmpdir.join('directory').strpath
+        app = self.get_app(app_config)
+        with pytest.raises(OptionError):
+            app.validate_options()
+
+        # No error if the config option points to an existing file
         tmpdir.join('directory').mkdir()
         tmpdir.join('binary').write('fake binary')
-
-        for option in ('nsp_path', 'safety_path'):
-            config = app_config.copy()
-
-            # Error if the config option is missing
-            del config[option]
-            app = self.get_app(config)
-            with pytest.raises(OptionError):
-                app.validate_options()
-
-            # Error if the config option points to a nonexistant file
-            config[option] = tmpdir.join('does.not.exist').strpath
-            app = self.get_app(config)
-            with pytest.raises(OptionError):
-                app.validate_options()
-
-            # Error if the config option points to a directory
-            config[option] = tmpdir.join('directory').strpath
-            app = self.get_app(config)
-            with pytest.raises(OptionError):
-                app.validate_options()
-
-            # No error if the config option points to an existing file
-            config[option] = tmpdir.join('binary').strpath
-            app = self.get_app(config)
-            app.validate_options()
+        app_config[option] = tmpdir.join('binary').strpath
+        app = self.get_app(app_config)
+        app.validate_options()
 
     def test_run_log(self, app_config):
         """Alert via logging if there's no Sentry DSN configured."""
