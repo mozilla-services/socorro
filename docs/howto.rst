@@ -2,6 +2,16 @@
 How to
 ======
 
+Run security checks for dependencies
+====================================
+
+You can run the crontabber job that checks for security vulnerabilities locally:
+
+::
+
+   make dockerdependencycheck
+
+
 .. Warning::
 
    August 17th, 2017: Everything below this point is outdated.
