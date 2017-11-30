@@ -27,7 +27,7 @@ This requires SOCORRO_REPROCESS_API_TOKEN to be set in the environment to a vali
 
 DEFAULT_HOST = 'https://crash-stats.mozilla.com'
 CHUNK_SIZE = 50
-SLEEP = 1
+SLEEP_DEFAULT = 1
 
 
 def session_with_retries(url):
@@ -47,6 +47,12 @@ def main(argv):
         formatter_class=WrappedTextHelpFormatter,
         prog=os.path.basename(__file__),
         description=DESCRIPTION.strip(),
+    )
+    parser.add_argument(
+        '--sleep',
+        help='how long in seconds to sleep before submitting the next group',
+        type=int,
+        default=SLEEP_DEFAULT
     )
     parser.add_argument('--host', help='host for system to reprocess in', default=DEFAULT_HOST)
     parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
@@ -80,11 +86,13 @@ def main(argv):
     print('Sending reprocessing requests to: %s' % url)
     session = session_with_retries(url)
 
-    print('Reprocessing %s crashes...' % len(crash_ids))
+    print('Reprocessing %s crashes sleeping %s seconds between groups...' % (
+        len(crash_ids), args.sleep
+    ))
 
     groups = list(chunkify(crash_ids, CHUNK_SIZE))
     for i, group in enumerate(groups):
-        print('Processing group... (%s/%s)' % (i + 1, len(groups)))
+        print('Processing group ending with %s ... (%s/%s)' % (group[-1], i + 1, len(groups)))
         resp = session.post(
             url,
             data={'crash_ids': group},
@@ -98,6 +106,6 @@ def main(argv):
 
         # NOTE(willkg): We sleep here because the webapp has a bunch of rate limiting and we don't
         # want to trigger that. It'd be nice if we didn't have to do this.
-        time.sleep(SLEEP)
+        time.sleep(args.sleep)
 
     print('Done!')
