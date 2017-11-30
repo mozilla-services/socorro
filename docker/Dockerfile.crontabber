@@ -1,8 +1,8 @@
-FROM local/socorro_base
+# Derived from the webapp so that crontabber has access to the webapp's
+# node dependencies.
+FROM local/socorro_webapp
 
 ENV CONTAINERNAME crontabber
-
-COPY . /app/
 
 USER app
 
