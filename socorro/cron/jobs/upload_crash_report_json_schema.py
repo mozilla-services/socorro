@@ -69,7 +69,7 @@ class UploadCrashReportJSONSchemaCronApp(BaseCronApp):
         connection = connection_context._connect()
         bucket_name = self.get_bucket_name()
         self.config.logger.info(
-            'Using %s for TelemetryBotoS3CrashStorage bucket', bucket_name
+            'Using %s for S3 bucket', bucket_name
         )
         bucket = connection_context._get_bucket(connection, bucket_name)
         key = bucket.get_key(self.config.json_filename)
