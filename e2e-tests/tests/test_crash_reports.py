@@ -27,7 +27,7 @@ class TestCrashReports:
         assert 'bug_file_loc=%s%s' % (base_url, path) in urllib.unquote(csp.link_to_bugzilla)
 
     @pytest.mark.nondestructive
-    def test_that_exploitable_crash_report_not_displayed_for_not_logged_in_users(self, base_url, selenium):
+    def test_that_exploitable_crash_report_is_not_displayed_for_logged_out_users(self, base_url, selenium):
         csp = CrashStatsHomePage(selenium, base_url).open()
         assert 'Exploitable Crashes' not in csp.header.report_list
         csp.selenium.get(base_url + self._exploitability_url)
