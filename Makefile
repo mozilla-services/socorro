@@ -49,7 +49,8 @@ my.env:
 
 dockerbuild: my.env
 	${DC} build base
-	${DC} build processor webapp crontabber docs
+	${DC} build webapp # crontabber is based off of the webapp image
+	${DC} build processor crontabber docs
 	touch .docker-build
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
