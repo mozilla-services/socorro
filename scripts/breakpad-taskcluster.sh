@@ -68,8 +68,3 @@ python tooltool.py -m releng.manifest fetch gcc.tar.xz
 export CC=`pwd`/gcc/bin/gcc
 export CXX=`pwd`/gcc/bin/g++
 export PATH=`pwd`/gcc/bin:$PATH
-
-# Defer to the build-breakpad.sh script to do the actual build once the
-# environment is set up.
-curl "https://raw.githubusercontent.com/${SOCORRO_FORK:=mozilla/socorro}/${SOCORRO_BRANCH:=master}/scripts/build-breakpad.sh" > build-breakpad.sh
-bash build-breakpad.sh

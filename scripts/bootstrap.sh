@@ -22,8 +22,9 @@ if [ -n "${SOCORRO_DEVELOPMENT_ENV+1}" ]; then
 fi
 
 if [ "`uname -sm`" == "Linux x86_64" ]; then
-  # pull pre-built, known version of breakpad
-  wget -N --quiet 'https://index.taskcluster.net/v1/task/project.socorro.breakpad.v1.builds.linux64.latest/artifacts/public/breakpad.tar.gz'
+  # pull pre-built, known version of breakpa
+  BREAKPAD_REV="$(cat $(pwd)/breakpad_rev.txt)"
+  wget -N --quiet 'https://index.taskcluster.net/v1/task/project.socorro.breakpad.v1.builds.linux64.$BREAKPAD_REV/artifacts/public/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
   rm -rf stackwalk
   mv breakpad stackwalk
