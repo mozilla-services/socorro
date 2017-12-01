@@ -1,0 +1,42 @@
+version: 0
+
+metadata:
+  name: Socorro
+  description: Socorro CI Tasks
+  owner: "{{ event.head.user.email }}"
+  source: "{{ event.head.repo.url }}"
+
+tasks:
+  - metadata:
+      name: socorro:decision
+      description: Socorro decision task
+      owner: "{{ event.head.user.email }}"
+      source: "{{ event.head.repo.url }}"
+    provisionerId: "{{ taskcluster.docker.provisionerId }}"
+    workerType: "{{ taskcluster.docker.workerType }}"
+    scopes:
+      - queue:create-task:aws-provisioner-v1/github-worker
+      - queue:create-task:aws-provisioner-v1/gecko-misc
+    payload:
+      env:
+      maxRunTime: 300 # 5 minutes
+      image: taskcluster/decision:2.0.0@sha256:4039fd878e5700b326d4a636e28c595c053fbcb53909c1db84ad1f513cf644ef
+      features:
+        taskclusterProxy: true
+      command:
+        - "/bin/bash"
+        - "-c"
+        - >-
+          git clone $GITHUB_HEAD_REPO_URL socorro &&
+          pushd socorro &&
+          git checkout $GITHUB_HEAD_SHA &&
+          popd &&
+          python socorro/scripts/taskclister_decision.py
+    extra:
+      github:
+        env: true
+        events:
+          - pull_request.opened
+          - pull_request.synchronize
+          - push
+          - release
