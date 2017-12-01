@@ -133,8 +133,8 @@ python-decouple==3.1 \
 dj-database-url==0.4.2 \
     --hash=sha256:e16d94c382ea0564c48038fa7fe8d9c890ef1ab1a8ec4cb48e732c124b9482fd \
     --hash=sha256:a6832d8445ee9d788c5baa48aef8130bf61fdc442f7d9a548424d25cd85c9f08
-datadog==0.16.0 \
-    --hash=sha256:9ce3c3c4080f6dcb9c799d3d9e43ea3ed61132599d0e9143954d35ae9578a2d1
+datadog==0.17.0 \
+    --hash=sha256:7c65dbf28407d603c34b18b452d9cd08eadfbb3464debba42057b4f9449b8d15
 freezegun==0.3.9 \
     --hash=sha256:8842688de9497c82ecb40c30274ecc676e97ac78765b0ade105a97063d5b7a11 \
     --hash=sha256:783ccccd7f60968bfe49ad9e114c18ea2b63831faaaf61c1f1f71ddfde1c0eee
