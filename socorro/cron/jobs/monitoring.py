@@ -14,9 +14,6 @@ from crontabber.base import BaseCronApp
 from socorro.lib import raven_client
 
 
-PROJECT_ROOT = dirname(dirname(dirname(dirname(__file__))))
-
-
 VulnerabilityBase = namedtuple('Vulnerability', (
     'type',
     'dependency',
@@ -54,6 +51,8 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         Path to the nsp binary for checking Node dependencies.
     crontabber.class-DependencySecurityCheckCronApp.safety_path
         Path to the PyUp Safety binary for checking Python dependencies.
+    crontabber.class-DependencySecurityCheckCronApp.package_json_path
+        Path to the package.json file to run nsp against.
     secrets.sentry.dsn
         If specified, vulnerabilities will be reported to Sentry instead
         of logged to the console.
@@ -75,6 +74,10 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         'safety_path',
         doc='Path to the PyUp safety binary',
     )
+    required_config.add_option(
+        'package_json_path',
+        doc='Path to the package.json file to run nsp against',
+    )
 
     def run(self):
         self.validate_options()
@@ -92,8 +95,8 @@ class DependencySecurityCheckCronApp(BaseCronApp):
                 self.alert_log(vulnerabilities)
 
     def validate_options(self):
-        # Validate binary path options
-        for option in ('nsp_path', 'safety_path'):
+        # Validate file path options
+        for option in ('nsp_path', 'safety_path', 'package_json_path'):
             value = self.config.get(option)
             if not value:
                 raise OptionError('Required option "%s" is empty' % option)
@@ -171,7 +174,7 @@ class DependencySecurityCheckCronApp(BaseCronApp):
             stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
-            cwd=os.path.join(PROJECT_ROOT, 'webapp-django'),
+            cwd=dirname(self.config.package_json_path),
         )
         output, error_output = process.communicate()
         if process.returncode == 0:
