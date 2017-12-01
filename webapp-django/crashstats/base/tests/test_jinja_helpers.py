@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from crashstats.base.tests.testbase import TestCase
 from crashstats.base.templatetags.jinja_helpers import (
     change_query_string,
+    is_dangerous_cpu,
     url
 )
 
@@ -87,3 +88,16 @@ class TestURL(TestCase):
         # check that it works if left as a byte string too
         output = url('home:home', 'Winterfox\\\\nn')
         assert output == reverse('home:home', args=('Winterfoxnn',))
+
+
+class TestIsDangerousCPU:
+
+    def test_false(self):
+        assert is_dangerous_cpu(None, None) is False
+        assert is_dangerous_cpu(None, 'family 20 model 1') is False
+
+    def test_true(self):
+        assert is_dangerous_cpu(None, 'AuthenticAMD family 20 model 1') is True
+        assert is_dangerous_cpu(None, 'AuthenticAMD family 20 model 2') is True
+        assert is_dangerous_cpu('amd64', 'family 20 model 1') is True
+        assert is_dangerous_cpu('amd64', 'family 20 model 2') is True
