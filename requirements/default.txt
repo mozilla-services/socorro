@@ -83,9 +83,9 @@ psycopg2==2.7.3.2 \
 elasticsearch==6.0.0 \
     --hash=sha256:f8b9910ac0e336422c3c488ff53f21ba4c39f46e76b9cf1f81257d02052667c9 \
     --hash=sha256:9fd6fe01d5f992666674f6089ff2ec4917ec64ed7dcd7e109cdf95f406303809 # pyup:ignore
-elasticsearch-dsl==0.0.11 \
-    --hash=sha256:663fb62ad39200c7d903e973aa0aa693578613264d83796455cbf4cd172bd878 \
-    --hash=sha256:59a76c4142478a1952bba6f9a9ca4fc7b029afb619e8ffcf0d135ce37ea692da # pyup:ignore
+elasticsearch-dsl==5.3.0 \
+    --hash=sha256:de5fd68901c5b94e51e2ae4e8ad6f618b22665d89794d96f9b6b763986665527 \
+    --hash=sha256:de81b2322cde9bf1171c8a41d80596cdadd433b88b93daa09060af3a512523a7 # pyup:ignore
 raven==6.3.0 \
     --hash=sha256:cb644fb12ee886a341041dcd533540dfc82619a50bf0b7c587af070054bd2c7f \
     --hash=sha256:f3e465a545dcdb6a387d1fcb199d08f786ba3732d7ce6aa681718b04da6aedf1
