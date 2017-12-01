@@ -310,7 +310,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         # command line.
 
         symbols_urls = ' '.join([
-            '--symbols-url %s' % url.strip()
+            '--symbols-url "%s"' % url.strip()
             for url in self.config.symbols_urls
         ])
 
