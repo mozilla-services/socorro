@@ -26,9 +26,9 @@ BASEIMAGENAME="python:2.7.14-slim"
 
 # Start services in background (this is idempotent)
 echo "Starting services in the background..."
-${DC} up -d elasticsearch
-${DC} up -d postgresql
-${DC} up -d rabbitmq
+${DC} -p ci up -d elasticsearch
+${DC} -p ci up -d postgresql
+${DC} -p ci up -d rabbitmq
 
 # If we're running a shell, then we start up a test container with . mounted
 # to /app.
@@ -40,7 +40,7 @@ if [ "$1" == "--shell" ]; then
            --user "${APP_UID}" \
            --volume "$(pwd)":/app \
            --workdir /app \
-           --network socorro_default \
+           --network ci_default \
            --link socorro_elasticsearch_1 \
            --link socorro_postgresql_1 \
            --link socorro_rabbitmq_1 \
@@ -94,7 +94,7 @@ else
            --user "${APP_UID}" \
            --volumes-from socorro-repo \
            --workdir /app \
-           --network socorro_default \
+           --network ci_default \
            --link socorro_elasticsearch_1 \
            --link socorro_postgresql_1 \
            --link socorro_rabbitmq_1 \
@@ -105,3 +105,5 @@ else
 
     echo "Done!"
 fi
+
+${DC} -p ci stop
