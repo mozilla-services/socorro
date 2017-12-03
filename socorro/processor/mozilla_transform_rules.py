@@ -392,22 +392,25 @@ class OutOfMemoryBinaryRule(Rule):
 
 
 class ProductRewrite(Rule):
+    """This rule rewrites the product name for products that fail to report
+    a useful product name
+    """
+
+    PRODUCT_MAP = {
+        "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
+    }
+
     def __init__(self, config):
         super(ProductRewrite, self).__init__(config)
-        self.product_map = {
-            "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
-            "{99bceaaa-e3c6-48c1-b981-ef9b46b67d60}": "MetroFirefox",
-            "{webapprt@mozilla.org}": "WebappRuntime",
-        }
 
     def version(self):
-        return '1.1'
+        return '2.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-            return raw_crash.get('ProductID') in self.product_map
+            return raw_crash.get('ProductID') in self.PRODUCT_MAP
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        raw_crash['ProductName'] = self.product_map.get(raw_crash['ProductID'])
+        raw_crash['ProductName'] = self.PRODUCT_MAP.get(raw_crash['ProductID'])
         return True
 
 
