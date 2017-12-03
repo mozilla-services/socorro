@@ -22,7 +22,6 @@ from socorro.processor.mozilla_transform_rules import (
     JavaProcessRule,
     OutOfMemoryBinaryRule,
     ProductRewrite,
-    setup_product_id_map,
     ESRVersionRewrite,
     PluginContentURL,
     PluginUserComment,
@@ -996,50 +995,11 @@ class TestProductRewrite(TestCase):
 
         return processor_meta
 
-    def test_setup_product_id_map(self):
-        # does it even instantiate?
-        config = self.get_basic_config()
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
-        config.transaction_executor_class.return_value.return_value = (
-            ('FennecAndroid', '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}', True),
-            ('Chrome', '{ec8030f7-c20a-464f-9b0e-13b3a9e97384}', True),
-            ('Safari', '{ec8030f7-c20a-464f-9b0e-13c3a9e97384}', True),
-        )
-
-        product_id_map = setup_product_id_map(
-            config,
-            config,
-            []
-        )
-
-        expected = {
-            '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}': {
-                'product_name': 'FennecAndroid',
-                'rewrite': True,
-            },
-            '{ec8030f7-c20a-464f-9b0e-13b3a9e97384}': {
-                'product_name': 'Chrome',
-                'rewrite': True,
-            },
-            '{ec8030f7-c20a-464f-9b0e-13c3a9e97384}': {
-                'product_name': 'Safari',
-                'rewrite': True,
-            },
-        }
-        assert product_id_map == expected
-
     def test_everything_we_hoped_for(self):
         config = self.get_basic_config()
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
-        config.transaction_executor_class.return_value.return_value = (
-            ('FennecAndroid', '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}', True),
-            ('Chrome', '{ec8030f7-c20a-464f-9b0e-13b3a9e97384}', True),
-            ('Safari', '{ec8030f7-c20a-464f-9b0e-13c3a9e97384}', True),
-        )
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash['ProductID'] = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}'
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = self.get_basic_processor_meta()
@@ -1056,13 +1016,6 @@ class TestProductRewrite(TestCase):
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
         config = self.get_basic_config()
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
-        config.transaction_executor_class.return_value.return_value = (
-            ('FennecAndroid', '{ec8030f7-c20a-464f-9b0e-13d3a9e97384}', True),
-            ('Chrome', '{ec8030f7-c20a-464f-9b0e-13b3a9e97384}', True),
-            ('Safari', '{ec8030f7-c20a-464f-9b0e-13c3a9e97384}', True),
-        )
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
