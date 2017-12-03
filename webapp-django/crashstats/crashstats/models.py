@@ -24,7 +24,6 @@ import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
-import socorro.external.postgresql.product_id_map
 import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.server_status
 import socorro.external.postgresql.releases
@@ -1128,16 +1127,6 @@ class ProductBuildTypes(SocorroMiddleware):
 
     API_WHITELIST = (
         'hits',
-    )
-
-
-class ProductIDMap(SocorroMiddleware):
-    cache_seconds = 1
-
-    API_WHITELIST = None
-
-    implementation = (
-        socorro.external.postgresql.product_id_map.ProductIDMap
     )
 
 
