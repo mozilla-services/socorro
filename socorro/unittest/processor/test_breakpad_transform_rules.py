@@ -398,8 +398,7 @@ class TestBreakpadTransformRule2015(TestCase):
         )
         config.kill_timeout = 5
         config.command_pathname = '/bin/stackwalker'
-        config.public_symbols_url = 'https://localhost'
-        config.private_symbols_url = 'https://localhost'
+        config.symbols_urls = 'https://localhost'
         config.symbol_cache_path = '/mnt/socorro/symbols'
         config.symbol_tmp_path = '/mnt/socorro/symbols'
         config.temporary_file_system_storage_path = '/tmp'

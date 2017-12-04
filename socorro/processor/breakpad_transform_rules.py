@@ -8,19 +8,13 @@ from contextlib import contextmanager, closing
 from collections import Mapping
 
 from configman import Namespace
+from configman.converters import str_to_list
 from configman.dotdict import DotDict as ConfigmanDotDict
 
 from socorro.lib.converters import change_default
 
 from socorro.lib.util import DotDict
 from socorro.lib.transform_rules import Rule
-
-
-def _create_symbol_path_str(input_str):
-    symbols_sans_commas = input_str.replace(',', ' ')
-    quoted_symbols_list = ['"%s"' % x.strip()
-                           for x in symbols_sans_commas.split()]
-    return ' '.join(quoted_symbols_list)
 
 
 class CrashingThreadRule(Rule):
@@ -202,15 +196,10 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
     """Executes the minidump stackwalker external process and puts output in processed crash"""
     required_config = Namespace()
     required_config.add_option(
-        name='public_symbols_url',
-        doc='url of the public symbol server',
-        default="https://localhost",
-        likely_to_be_changed=True
-    )
-    required_config.add_option(
-        name='private_symbols_url',
-        doc='url of the private symbol server',
-        default="https://localhost",
+        name='symbols_urls',
+        doc='comma delimited ordered list of urls for symbol lookup',
+        default='https://localhost',
+        from_string_converter=str_to_list,
         likely_to_be_changed=True
     )
     required_config.command_line = change_default(
@@ -218,8 +207,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         'command_line',
         'timeout -s KILL {kill_timeout} {command_pathname} '
         '--raw-json {raw_crash_pathname} '
-        '--symbols-url {public_symbols_url} '
-        '--symbols-url {private_symbols_url} '
+        '{symbols_urls} '
         '--symbols-cache {symbol_cache_path} '
         '--symbols-tmp {symbol_tmp_path} '
         '{dump_file_pathname} '
@@ -317,25 +305,27 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
     def expand_commandline(self, dump_file_pathname, raw_crash_pathname):
         """Expands the command line parameters and returns the final command line"""
-
         # NOTE(willkg): If we ever add new configuration variables, we'll need
         # to add them here, too, otherwise they won't get expanded in the
         # command line.
+
+        symbols_urls = ' '.join([
+            '--symbols-url "%s"' % url.strip()
+            for url in self.config.symbols_urls
+        ])
 
         params = {
             # These come from config
             'kill_timeout': self.config.kill_timeout,
             'command_pathname': self.config.command_pathname,
-            'public_symbols_url': self.config.public_symbols_url,
-            'private_symbols_url': self.config.private_symbols_url,
             'symbol_cache_path': self.config.symbol_cache_path,
             'symbol_tmp_path': self.config.symbol_tmp_path,
+            'symbols_urls': symbols_urls,
 
             # These are calculated
             'dump_file_pathname': dump_file_pathname,
             'raw_crash_pathname': raw_crash_pathname
         }
-
         return self.config.command_line.format(**params)
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
