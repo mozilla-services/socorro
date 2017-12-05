@@ -383,6 +383,26 @@ class TestBugzillaSubmitURL(TestCase):
         ])
         bugzilla_submit_url(report, parsed_dump, 0, 'Core')
 
+    def test_comment_no_html_escaping(self):
+        """If a frame contains <, >, &, or ", they should not be HTML
+        escaped in the comment body.
+
+        """
+        report = self._create_report()
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(frames=[
+                self._create_frame(
+                    frame=0,
+                    module='&test_module',
+                    signature='foo<char>::bar(char* x, int y)',
+                    file='"foo".cpp',
+                    line=7,
+                ),
+            ])
+        ])
+        url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
+        assert quote_plus('0 &test_module foo<char>::bar "foo".cpp:7') in url
+
 
 class TestReplaceBugzillaLinks(TestCase):
     def test_simple(self):
