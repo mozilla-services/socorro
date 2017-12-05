@@ -142,6 +142,7 @@ nsObjCExceptionLogAbort
 nsRefPtr.*
 NSS.*
 nss.*
+nsStringBuffer::FromDataCanaryCheckFailed
 nsTArray<.*
 nsTArray_base<.*
 nsTArray_Impl<.*
