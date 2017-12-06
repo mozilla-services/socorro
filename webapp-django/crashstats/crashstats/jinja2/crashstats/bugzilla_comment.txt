@@ -8,7 +8,7 @@ report bp-{{ uuid }}.
 Top {{ crashing_thread_frames|length }} frames of crashing thread:
 
 {% for frame in crashing_thread_frames -%}
-{{ frame.frame }} {{ frame.module }} {{ frame.signature }} {{ frame.source }}
+{{ frame.frame|safe}} {{ frame.module|safe }} {{ frame.signature|safe }} {{ frame.source|safe }}
 {% endfor %}
 =============================================================
 {% endif %}
