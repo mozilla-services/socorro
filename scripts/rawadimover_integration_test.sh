@@ -7,7 +7,11 @@
 # This is an integration test for the RawADIMoverCronApp. This test
 # must be run by hand in a local development environment.
 #
-# To run it, do:
+# To run it, first add this to your ``my.env`` file:
+#
+# crontabber.jobs=socorro.cron.crontabber_app.STAGE_NEW_JOBS
+#
+# Then do:
 #
 # ./scripts/rawadimover_integration_test.sh
 #
