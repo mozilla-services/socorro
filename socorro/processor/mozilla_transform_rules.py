@@ -400,9 +400,6 @@ class ProductRewrite(Rule):
         "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
     }
 
-    def __init__(self, config):
-        super(ProductRewrite, self).__init__(config)
-
     def version(self):
         return '2.0'
 
@@ -868,101 +865,73 @@ class AuroraVersionFixitRule(Rule):
 
 
 class OSPrettyVersionRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
+    '''This rule attempts to extract the most useful, singular, human
+    understandable field for operating system version. This should always be
+    attempted.
+    '''
 
-    def __init__(self, config):
-        super(OSPrettyVersionRule, self).__init__(config)
-        database = config.database_class(config)
-        self.transaction = config.transaction_executor_class(
-            config,
-            database,
-        )
-        self._windows_versions = self._get_windows_versions()
+    WINDOWS_VERSIONS = {
+        '3.5': 'Windows NT',
+        '4.0': 'Windows NT',
+        '4.1': 'Windows 98',
+        '4.9': 'Windows Me',
+        '5.0': 'Windows 2000',
+        '5.1': 'Windows XP',
+        '5.2': 'Windows Server 2003',
+        '6.0': 'Windows Vista',
+        '6.1': 'Windows 7',
+        '6.2': 'Windows 8',
+        '6.3': 'Windows 8.1',
+        '10.0': 'Windows 10',
+    }
 
     def version(self):
-        return '1.0'
+        return '2.0'
 
-    def _get_windows_versions(self):
-        sql = """
-            SELECT windows_version_name, major_version, minor_version
-            FROM windows_versions
-        """
-        results = self.transaction(
-            execute_query_fetchall,
-            sql,
-        )
-        versions = {}
-        for (version, major, minor) in results:
-            key = '%s.%s' % (major, minor)
-            versions[key] = version
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        # we will overwrite this field with the current best option
+        # in stages, as we divine a better name
+        processed_crash['os_pretty_version'] = None
 
-        return versions
+        pretty_name = processed_crash.get('os_name')
+        if not isinstance(pretty_name, basestring):
+            # This data is bogus or isn't there, there's nothing we can do.
+            return True
 
-    def _get_pretty_os_version(self, processed_crash):
-        try:
-            pretty_name = processed_crash['os_name']
-        except KeyError:
-            # There is nothing we can do if the `os_name` is missing.
-            return None
-
-        if not isinstance(processed_crash.os_name, basestring):
-            # This data is bogus, there's nothing we can do.
-            return None
+        # at this point, os_name is the best info we have
+        processed_crash['os_pretty_version'] = pretty_name
 
         if not processed_crash.get('os_version'):
-            # The version number is missing, there's nothing to do.
-            return pretty_name
+            # The version number is missing, there's nothing more to do.
+            return True
 
         version_split = processed_crash.os_version.split('.')
 
         if len(version_split) < 2:
-            # The version number is invalid, there's nothing to do.
-            return pretty_name
+            # The version number is invalid, there's nothing more to do.
+            return True
 
         major_version = int(version_split[0])
         minor_version = int(version_split[1])
 
         if processed_crash.os_name.lower().startswith('windows'):
-            # Get corresponding Windows version.
-            key = '%s.%s' % (major_version, minor_version)
-            if key in self._windows_versions:
-                pretty_name = self._windows_versions[key]
-            else:
-                pretty_name = 'Windows Unknown'
+            processed_crash['os_pretty_version'] = self.WINDOWS_VERSIONS.get(
+                '%s.%s' % (major_version, minor_version),
+                'Windows Unknown'
+            )
+            return True
 
-        elif processed_crash.os_name == 'Mac OS X':
+        if processed_crash.os_name == 'Mac OS X':
             if (
                 major_version >= 10 and
                 major_version < 11 and
-                minor_version >= 0 and
-                minor_version < 20
+                minor_version >= 0
             ):
                 pretty_name = 'OS X %s.%s' % (major_version, minor_version)
             else:
                 pretty_name = 'OS X Unknown'
 
-        return pretty_name
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash['os_pretty_version'] = self._get_pretty_os_version(
-            processed_crash
-        )
+        processed_crash['os_pretty_version'] = pretty_name
         return True
 
 
