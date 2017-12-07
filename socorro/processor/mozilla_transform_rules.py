@@ -391,89 +391,26 @@ class OutOfMemoryBinaryRule(Rule):
         return True
 
 
-def setup_product_id_map(config, local_config, args_unused):
-    database_connection = local_config.database_class(local_config)
-    transaction = local_config.transaction_executor_class(
-        local_config,
-        database_connection
-    )
-    sql = (
-        "SELECT product_name, productid, rewrite FROM "
-        "product_productid_map WHERE rewrite IS TRUE"
-    )
-    product_mappings = transaction(
-        execute_query_fetchall,
-        sql
-    )
-    product_id_map = {}
-    for product_name, productid, rewrite in product_mappings:
-        product_id_map[productid] = {
-            'product_name': product_name,
-            'rewrite': rewrite
-        }
-    return product_id_map
-
-
 class ProductRewrite(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
+    """This rule rewrites the product name for products that fail to report
+    a useful product name
+    """
 
-    required_config.add_aggregation(
-        'product_id_map',
-        setup_product_id_map
-    )
+    PRODUCT_MAP = {
+        "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
+    }
 
     def __init__(self, config):
         super(ProductRewrite, self).__init__(config)
-        self.product_id_map = setup_product_id_map(
-            config,
-            config,
-            None
-        )
 
     def version(self):
-        return '1.0'
+        return '2.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            return raw_crash['ProductID'] in self.product_id_map
-        except KeyError:
-            # no ProductID
-            return False
+            return raw_crash.get('ProductID') in self.PRODUCT_MAP
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        try:
-            product_id = raw_crash['ProductID']
-        except KeyError:
-            self.config.logger.debug('ProductID not in json_doc')
-            return False
-        old_product_name = raw_crash['ProductName']
-        new_product_name = (
-            self.product_id_map[product_id]['product_name']
-        )
-        raw_crash['ProductName'] = new_product_name
-        self.config.logger.debug(
-            'product name changed from %s to %s based '
-            'on productID %s',
-            old_product_name,
-            new_product_name,
-            product_id
-        )
+        raw_crash['ProductName'] = self.PRODUCT_MAP.get(raw_crash['ProductID'])
         return True
 
 
