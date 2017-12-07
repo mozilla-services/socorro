@@ -3,34 +3,29 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import time
-import ujson
+import gzip
 import re
-
 from sys import maxint
-
-from gzip import open as gzip_open
-from ujson import loads as json_loads
+import time
 from urllib import unquote_plus
 
 from configman import Namespace
-from configman.converters import (
-    str_to_python_object,
-)
-
-from socorro.lib.ooid import dateFromOoid
-from socorro.lib.transform_rules import Rule
-from socorro.lib.datetimeutil import (
-    UTC,
-    datetime_from_isodate_string,
-    datestring_to_weekly_partition
-)
-from socorro.lib.context_tools import temp_file_context
+from configman.converters import str_to_python_object
+import ujson
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     execute_no_results
 )
+from socorro.lib.context_tools import temp_file_context
+from socorro.lib.datetimeutil import (
+    UTC,
+    datetime_from_isodate_string,
+    datestring_to_weekly_partition
+)
+from socorro.lib.ooid import dateFromOoid
+from socorro.lib.transform_rules import Rule
+from socorro.signature import SignatureGenerator
 
 
 class ProductRule(Rule):
@@ -352,7 +347,7 @@ class OutOfMemoryBinaryRule(Rule):
             return {"ERROR": error_message}
 
         try:
-            fd = gzip_open(dump_pathname, "rb")
+            fd = gzip.open(dump_pathname, "rb")
         except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
@@ -368,7 +363,7 @@ class OutOfMemoryBinaryRule(Rule):
                 )
                 return error_out(error_message)
 
-            memory_info = json_loads(memory_info_as_string)
+            memory_info = ujson.loads(memory_info_as_string)
         except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
@@ -396,89 +391,26 @@ class OutOfMemoryBinaryRule(Rule):
         return True
 
 
-def setup_product_id_map(config, local_config, args_unused):
-    database_connection = local_config.database_class(local_config)
-    transaction = local_config.transaction_executor_class(
-        local_config,
-        database_connection
-    )
-    sql = (
-        "SELECT product_name, productid, rewrite FROM "
-        "product_productid_map WHERE rewrite IS TRUE"
-    )
-    product_mappings = transaction(
-        execute_query_fetchall,
-        sql
-    )
-    product_id_map = {}
-    for product_name, productid, rewrite in product_mappings:
-        product_id_map[productid] = {
-            'product_name': product_name,
-            'rewrite': rewrite
-        }
-    return product_id_map
-
-
 class ProductRewrite(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
+    """This rule rewrites the product name for products that fail to report
+    a useful product name
+    """
 
-    required_config.add_aggregation(
-        'product_id_map',
-        setup_product_id_map
-    )
+    PRODUCT_MAP = {
+        "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
+    }
 
     def __init__(self, config):
         super(ProductRewrite, self).__init__(config)
-        self.product_id_map = setup_product_id_map(
-            config,
-            config,
-            None
-        )
 
     def version(self):
-        return '1.0'
+        return '2.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            return raw_crash['ProductID'] in self.product_id_map
-        except KeyError:
-            # no ProductID
-            return False
+            return raw_crash.get('ProductID') in self.PRODUCT_MAP
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        try:
-            product_id = raw_crash['ProductID']
-        except KeyError:
-            self.config.logger.debug('ProductID not in json_doc')
-            return False
-        old_product_name = raw_crash['ProductName']
-        new_product_name = (
-            self.product_id_map[product_id]['product_name']
-        )
-        raw_crash['ProductName'] = new_product_name
-        self.config.logger.debug(
-            'product name changed from %s to %s based '
-            'on productID %s',
-            old_product_name,
-            new_product_name,
-            product_id
-        )
+        raw_crash['ProductName'] = self.PRODUCT_MAP.get(raw_crash['ProductID'])
         return True
 
 
@@ -903,6 +835,38 @@ class BetaVersionRule(Rule):
         return True
 
 
+class AuroraVersionFixitRule(Rule):
+    """Starting with Firefox 55, we ditched the aurora channel and converted
+    devedition to its own "product" that are respins of the beta channel
+    builds. These builds still use "aurora" as the release channel.
+
+    However, the devedition .0b1 release needs to be treated as an aurora for
+    Firefox. Because this breaks the invariants of Socorro as well as the laws
+    of physics, we fix these crashes by hand using a processor rule.
+
+    """
+
+    # NOTE(willkg): We'll have to add a build id -> version every time a new one comes
+    # out. Ugh.
+    buildid_to_version = {
+        '20170612224034': '55.0b1',
+        '20170808170225': '56.0b1',
+        '20170917031738': '57.0b1',
+        '20171103003834': '58.0b1',
+    }
+
+    def version(self):
+        return '1.0'
+
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return raw_crash.get('BuildID', '') in self.buildid_to_version
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        real_version = self.buildid_to_version[raw_crash['BuildID']]
+        processed_crash['version'] = real_version
+        return True
+
+
 class OSPrettyVersionRule(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -1048,4 +1012,25 @@ class ThemePrettyNameRule(Rule):
                     )
             elif addon in self.conversions:
                 addons[index] = self.conversions[addon]
+        return True
+
+
+class SignatureGeneratorRule(Rule):
+    """Generates a Socorro crash signature"""
+
+    def __init__(self, config):
+        super(SignatureGeneratorRule, self).__init__(config)
+        try:
+            sentry_dsn = self.config.sentry.dsn
+        except KeyError:
+            # DotDict raises a KeyError when things are missing
+            sentry_dsn = None
+
+        self.generator = SignatureGenerator(sentry_dsn=sentry_dsn)
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        # Generate a crash signature and capture the signature and notes
+        ret = self.generator.generate(raw_crash, processed_crash)
+        processed_crash['signature'] = ret['signature']
+        processor_meta['processor_notes'].extend(ret['notes'])
         return True

@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.views.generic import RedirectView
 from django.conf import settings
 
@@ -12,17 +12,20 @@ version = r'/versions/(?P<version>[;\w\.()]+)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 
-urlpatterns = patterns(
-    '',  # prefix
+urlpatterns = [
     url('^robots\.txt$',
         views.robots_txt,
         name='robots_txt'),
+
+    # DEPRECATED(willkg): These next two endpoints should be deprecated in
+    # favor of the dockerflow /__version__ one
     url(r'^status/json/$',
         views.status_json,
         name='status_json'),
     url(r'^status/revision/$',
         views.status_revision,
         name='status_revision'),
+
     url(r'^crontabber-state/$',
         views.crontabber_state,
         name='crontabber_state'),
@@ -56,6 +59,11 @@ urlpatterns = patterns(
     url(r'^about/throttling/$',
         views.about_throttling,
         name='about_throttling'),
+
+    # Dockerflow endpoints
+    url(r'__version__',
+        views.dockerflow_version,
+        name='dockerflow_version'),
 
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
@@ -101,16 +109,6 @@ urlpatterns = patterns(
             permanent=perm_legacy_redirect
         )),
 
-    # Redirect deleted status page to monitoring page.
-    url(
-        r'^status/$',
-        RedirectView.as_view(
-            pattern_name='monitoring:index',
-            permanent=not settings.DEBUG,
-        ),
-        name='status_redirect',
-    ),
-
     # handle old-style URLs
     url(r'^products/(?P<product>\w+)/$',
         RedirectView.as_view(
@@ -127,4 +125,4 @@ urlpatterns = patterns(
             url='/home/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
-)
+]

@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_
-
 from socorro.external.fs.fs_new_crash_source import (
     FSNewCrashSource
 )
@@ -29,21 +27,21 @@ class TestConnection(TestCase):
     """Test FSNewCrashSource class. """
 
     def _setup_config(self):
-        config = DotDict();
+        config = DotDict()
         config.crashstorage_class = FakeCrashStore
         return config
 
     def test_constructor(self):
         config = self._setup_config()
         ncs = FSNewCrashSource(config, name="ignored_processor_name")
-        ok_(isinstance(ncs.crash_store, FakeCrashStore))
-        ok_(ncs.crash_store.config is config)
+        assert isinstance(ncs.crash_store, FakeCrashStore)
+        assert ncs.crash_store.config is config
 
     def test__iter__(self):
         config = self._setup_config()
         ncs = FSNewCrashSource(config)
         for i, (args, kwargs) in zip(range(10), ncs()):
             crash_id = args[0]
-            eq_(str(i), crash_id)
-            eq_(kwargs, {})
-        eq_(i, 9)
+            assert str(i) == crash_id
+            assert kwargs == {}
+        assert i == 9

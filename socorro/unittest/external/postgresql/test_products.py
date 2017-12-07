@@ -3,12 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-from nose.tools import eq_, ok_
 
 from socorro.external.postgresql.products import ProductVersions
 from socorro.lib import datetimeutil
-
-from .unittestbase import PostgreSQLTestCase
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestProductVersionsBase(PostgreSQLTestCase):
@@ -210,12 +208,9 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
             "total": 1
         }
 
-        eq_(res['total'], res_expected['total'])
-        eq_(
-            sorted(res['hits'][0]),
-            sorted(res_expected['hits'][0])
-        )
-        eq_(res['hits'], res_expected['hits'])
+        assert res['total'] == res_expected['total']
+        assert sorted(res['hits'][0]) == sorted(res_expected['hits'][0])
+        assert res['hits'] == res_expected['hits']
 
     def test_get_with_one_product_multiple_versions(self):
         productversions = ProductVersions(config=self.config)
@@ -255,13 +250,10 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
             "total": 2
         }
 
-        eq_(res['total'], res_expected['total'])
-        eq_(
-            sorted(res['hits'][0]),
-            sorted(res_expected['hits'][0])
-        )
-        eq_(res['hits'][0], res_expected['hits'][0])
-        eq_(res['hits'][1], res_expected['hits'][1])
+        assert res['total'] == res_expected['total']
+        assert sorted(res['hits'][0]) == sorted(res_expected['hits'][0])
+        assert res['hits'][0] == res_expected['hits'][0]
+        assert res['hits'][1] == res_expected['hits'][1]
 
     def test_get_no_parameter_returning_all(self):
         productversions = ProductVersions(config=self.config)
@@ -335,35 +327,34 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
             "total": 5
         }
 
-        eq_(res['total'], res_expected['total'])
+        assert res['total'] == res_expected['total']
         assert res['total'] == len(res['hits'])
         # same keys
         keys = set(res['hits'][0].keys())
         expected_keys = set(res_expected['hits'][0].keys())
-        eq_(keys, expected_keys)
-        eq_(len(res['hits']), len(res_expected['hits']))
-        eq_(res['hits'], res_expected['hits'])
+        assert keys == expected_keys
+        assert res['hits'] == res_expected['hits']
 
     def test_filter_by_featured(self):
         productversions = ProductVersions(config=self.config)
 
         res = productversions.get(is_featured=True)
-        eq_(len(res['hits']), 1)
-        eq_(res['total'], 1)
-        ok_(all(x['is_featured'] for x in res['hits']))
+        assert len(res['hits']) == 1
+        assert res['total'] == 1
+        assert all(x['is_featured'] for x in res['hits'])
         res = productversions.get(is_featured=False)
-        eq_(res['total'], 4)
-        eq_(len(res['hits']), 4)
-        ok_(all(not x['is_featured'] for x in res['hits']))
+        assert res['total'] == 4
+        assert len(res['hits']) == 4
+        assert all(not x['is_featured'] for x in res['hits'])
 
     def test_filter_by_start_date(self):
         productversions = ProductVersions(config=self.config)
         now = self.now.date()
 
         res = productversions.get(start_date='>=' + now.isoformat())
-        eq_(res['total'], 4)
+        assert res['total'] == 4
         res = productversions.get(start_date='<' + now.isoformat())
-        eq_(res['total'], 1)
+        assert res['total'] == 1
 
     def test_filter_by_end_date(self):
         productversions = ProductVersions(config=self.config)
@@ -371,9 +362,9 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         nextweek = now + datetime.timedelta(days=7)
 
         res = productversions.get(end_date='=' + nextweek.isoformat())
-        eq_(res['total'], 3)
+        assert res['total'] == 3
         for hit in res['hits']:
-            eq_(hit['end_date'], nextweek)
+            assert hit['end_date'] == nextweek
 
     def test_filter_by_active(self):
         productversions = ProductVersions(config=self.config)
@@ -381,7 +372,7 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         nextweek = now + datetime.timedelta(days=7)
 
         res = active_results = productversions.get(active=True)
-        eq_(res['total'], 4)
+        assert res['total'] == 4
         res_expected = {
             "hits":
                 [
@@ -432,40 +423,34 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
                 ],
             "total": 3
         }
-        eq_(res['hits'][0], res_expected['hits'][0])
-        eq_(res['hits'][1], res_expected['hits'][1])
-        eq_(res['hits'][2], res_expected['hits'][2])
-        eq_(res['hits'][3], res_expected['hits'][3])
+        assert res['hits'][0] == res_expected['hits'][0]
+        assert res['hits'][1] == res_expected['hits'][1]
+        assert res['hits'][2] == res_expected['hits'][2]
+        assert res['hits'][3] == res_expected['hits'][3]
         for hit in res['hits']:
-            ok_(hit['end_date'] >= now, hit)
+            assert hit['end_date'] >= now
 
         res = not_active_results = productversions.get(active=False)
-        eq_(res['total'], 1)
+        assert res['total'] == 1
 
         both_results = productversions.get()
-        eq_(
-            both_results['total'],
-            active_results['total'] + not_active_results['total']
-        )
+        assert both_results['total'] == active_results['total'] + not_active_results['total']
 
     def test_filter_by_is_rapid_beta(self):
         productversions = ProductVersions(config=self.config)
 
         res = true_results = productversions.get(is_rapid_beta=True)
-        eq_(res['total'], 1)
+        assert res['total'] == 1
         for hit in res['hits']:
-            ok_(hit['is_rapid_beta'])
+            assert hit['is_rapid_beta']
 
         res = false_results = productversions.get(is_rapid_beta=False)
-        eq_(res['total'], 4)
+        assert res['total'] == 4
         for hit in res['hits']:
-            ok_(not hit['is_rapid_beta'])
+            assert not hit['is_rapid_beta']
 
         both_results = productversions.get()
-        eq_(
-            both_results['total'],
-            true_results['total'] + false_results['total']
-        )
+        assert both_results['total'] == true_results['total'] + false_results['total']
 
     def test_filter_by_build_type(self):
         productversions = ProductVersions(config=self.config)
@@ -473,22 +458,19 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         res = productversions.get(
             build_type=['Beta'],
         )
-        eq_(res['total'], 1)
+        assert res['total'] == 1
         for hit in res['hits']:
-            eq_(hit['build_type'], 'Beta')
+            assert hit['build_type'] == 'Beta'
 
         res = productversions.get(
             build_type=['JUNK'],
         )
-        eq_(res['total'], 0)
+        assert res['total'] == 0
 
     def test_post(self):
         products = ProductVersions(config=self.config)
 
-        ok_(products.post(
-            product='KillerApp',
-            version='1.0',
-        ))
+        assert products.post(product='KillerApp', version='1.0')
 
         # let's check certain things got written to certain tables
         cursor = self.connection.cursor()
@@ -500,14 +482,11 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
                 ('KillerApp',)
             )
             product_name, = cursor.fetchone()
-            eq_(product_name, 'KillerApp')
+            assert product_name, 'KillerApp'
         finally:
             self.connection.rollback()
 
     def test_post_bad_product_name(self):
         products = ProductVersions(config=self.config)
 
-        ok_(not products.post(
-            product='Spaces not allowed',
-            version='',
-        ))
+        assert not products.post(product='Spaces not allowed', version='')

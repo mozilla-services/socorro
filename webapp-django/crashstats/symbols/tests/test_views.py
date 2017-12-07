@@ -2,9 +2,11 @@ import os
 import shutil
 import tempfile
 
-from nose.tools import eq_, ok_, assert_raises
-import mock
 from boto.s3.connection import OrdinaryCallingFormat
+import markus
+from markus.testing import MetricsMock
+import mock
+import pytest
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
@@ -118,14 +120,8 @@ class TestViews(BaseTestViews):
 
     def test_unpack_and_upload_misconfigured(self):
         with self.settings(SYMBOLS_BUCKET_DEFAULT_LOCATION=None):
-            assert_raises(
-                ImproperlyConfigured,
-                unpack_and_upload,
-                [],
-                None,
-                'some-name',
-                None
-            )
+            with pytest.raises(ImproperlyConfigured):
+                unpack_and_upload([], None, 'some-name', None)
 
     def test_check_symbols_archive_content(self):
         content = """
@@ -138,20 +134,20 @@ class TestViews(BaseTestViews):
         disallowed = ('Two', '2')
         with self.settings(DISALLOWED_SYMBOLS_SNIPPETS=disallowed):
             error = check_symbols_archive_content(content.strip())
-            ok_(error)
-            ok_('Two' in error)
+            assert error
+            assert 'Two' in error
 
         # match nothing
         disallowed = ('evil', 'Bad')
         with self.settings(DISALLOWED_SYMBOLS_SNIPPETS=disallowed):
             error = check_symbols_archive_content(content.strip())
-            ok_(not error)
+            assert not error
 
     def test_home(self):
         self._create_group_with_permission('upload_symbols')
         url = reverse('symbols:home')
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         self.assertRedirects(
             response,
             reverse('crashstats:login') + '?next=%s' % url
@@ -159,7 +155,7 @@ class TestViews(BaseTestViews):
         user = self._login()
         with self.settings(SYMBOLS_PERMISSION_HINT_LINK=None):
             response = self.client.get(url)
-            eq_(response.status_code, 200)
+            assert response.status_code == 200
 
         link = {
             'url': 'https://bugzilla.mozilla.org',
@@ -167,16 +163,16 @@ class TestViews(BaseTestViews):
         }
         with self.settings(SYMBOLS_PERMISSION_HINT_LINK=link):
             response = self.client.get(url)
-            eq_(response.status_code, 200)
+            assert response.status_code == 200
 
-            ok_(link['url'] in response.content)
-            ok_(link['label'] in response.content)
+            assert link['url'] in response.content
+            assert link['label'] in response.content
 
         # The access should disappear if you cease to be active
         user.is_active = False
         user.save()
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         self.assertRedirects(
             response,
             reverse('crashstats:login') + '?next=%s' % url
@@ -201,27 +197,21 @@ class TestViews(BaseTestViews):
         )
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_(
-            reverse('symbols:content', args=(upload1.pk,))
-            in response.content
-        )
-        ok_(
-            reverse('symbols:content', args=(upload2.pk,))
-            in response.content
-        )
+        assert response.status_code == 200
+        assert reverse('symbols:content', args=(upload1.pk,)) in response.content
+        assert reverse('symbols:content', args=(upload2.pk,)) in response.content
 
     def test_web_upload(self):
         url = reverse('symbols:web_upload')
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         self.assertRedirects(
             response,
             reverse('crashstats:login') + '?next=%s' % url
         )
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         self.assertRedirects(
             response,
             reverse('crashstats:login') + '?next=%s' % url
@@ -230,20 +220,21 @@ class TestViews(BaseTestViews):
         self._add_permission(user, 'upload_symbols')
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
-        # now we can post
-        with self.settings(SYMBOLS_MIME_OVERRIDES={'jpeg': 'text/plain'}):
-            with open(ZIP_FILE) as file_object:
-                response = self.client.post(
-                    url,
-                    {'file': file_object}
-                )
-                eq_(response.status_code, 302)
+        with MetricsMock() as metrics_mock:
+            # now we can post
+            with self.settings(SYMBOLS_MIME_OVERRIDES={'jpeg': 'text/plain'}):
+                with open(ZIP_FILE) as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file': file_object}
+                    )
+                    assert response.status_code == 302
 
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
-        eq_(symbol_upload.filename, os.path.basename(ZIP_FILE))
-        ok_(symbol_upload.size)
+        assert symbol_upload.filename == os.path.basename(ZIP_FILE)
+        assert symbol_upload.size
         # We expect the content to be a `+` because it was new,
         # followed by the bucket name, followed by a comma, followed
         # by the symbols prefix + filename.
@@ -257,17 +248,20 @@ class TestViews(BaseTestViews):
             settings.SYMBOLS_FILE_PREFIX,
             'xpcshell.sym'
         )
-        eq_(symbol_upload.content, line)
-        eq_(symbol_upload.content_type, 'text/plain')
-        ok_(self.uploaded_keys)
+        assert symbol_upload.content == line
+        assert symbol_upload.content_type == 'text/plain'
+        assert self.uploaded_keys
         # the mocked key object should have its content_type set too
-        eq_(self.created_keys[0].content_type, 'text/plain')
-        eq_(self.created_buckets, [
-            (
-                settings.SYMBOLS_BUCKET_DEFAULT_NAME,
-                settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
-            )
-        ])
+        assert self.created_keys[0].content_type == 'text/plain'
+        expected = [
+            (settings.SYMBOLS_BUCKET_DEFAULT_NAME, settings.SYMBOLS_BUCKET_DEFAULT_LOCATION)
+        ]
+        assert self.created_buckets == expected
+
+        # Verify it generated the metrics we need
+        assert metrics_mock.has_record(
+            markus.INCR, 'symbols.upload.web_upload', 1, tags=['email:test_example.com']
+        )
 
     def test_web_upload_different_bucket_by_wildcard(self):
         url = reverse('symbols:web_upload')
@@ -285,11 +279,11 @@ class TestViews(BaseTestViews):
                     url,
                     {'file': file_object}
                 )
-                eq_(response.status_code, 302)
+                assert response.status_code == 302
 
             symbol_upload = models.SymbolsUpload.objects.get(user=user)
-            eq_(symbol_upload.filename, os.path.basename(ZIP_FILE))
-            ok_(symbol_upload.size)
+            assert symbol_upload.filename == os.path.basename(ZIP_FILE)
+            assert symbol_upload.size
             line = "+%s,%s/%s\n" % (
                 'my-special-bucket-name',
                 settings.SYMBOLS_FILE_PREFIX,
@@ -300,13 +294,11 @@ class TestViews(BaseTestViews):
                 settings.SYMBOLS_FILE_PREFIX,
                 'xpcshell.sym'
             )
-            eq_(symbol_upload.content, line)
-            eq_(self.created_buckets, [
-                (
-                    'my-special-bucket-name',
-                    settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
-                )
-            ])
+            assert symbol_upload.content == line
+            expected = [
+                ('my-special-bucket-name', settings.SYMBOLS_BUCKET_DEFAULT_LOCATION)
+            ]
+            assert self.created_buckets == expected
 
     def test_get_bucket_name_and_location(self):
 
@@ -318,13 +310,8 @@ class TestViews(BaseTestViews):
         result = get_bucket_name_and_location(
             _User('user@example.com')
         )
-        eq_(
-            result,
-            (
-                settings.SYMBOLS_BUCKET_DEFAULT_NAME,
-                settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
-            )
-        )
+        expected = (settings.SYMBOLS_BUCKET_DEFAULT_NAME, settings.SYMBOLS_BUCKET_DEFAULT_LOCATION)
+        assert result == expected
 
         exceptions = {'user@example.com': 'my-bucket'}
         with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exceptions):
@@ -332,19 +319,19 @@ class TestViews(BaseTestViews):
             result = get_bucket_name_and_location(
                 _User('user@example.com')
             )
-            eq_(result[0], 'my-bucket')
+            assert result[0] == 'my-bucket'
 
             # a failing match
             result = get_bucket_name_and_location(
                 _User('other_user@example.com')
             )
-            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+            assert result[0] == settings.SYMBOLS_BUCKET_DEFAULT_NAME
 
             # a case insensitive match
             result = get_bucket_name_and_location(
                 _User('UsEr@example.COM')
             )
-            eq_(result[0], 'my-bucket')
+            assert result[0] == 'my-bucket'
 
         # now with wildcards
         exceptions = {'*@example.com': 'my-bucket'}
@@ -353,19 +340,19 @@ class TestViews(BaseTestViews):
             result = get_bucket_name_and_location(
                 _User('user@example.com')
             )
-            eq_(result[0], 'my-bucket')
+            assert result[0] == 'my-bucket'
 
             # a failing match
             result = get_bucket_name_and_location(
                 _User('user@example.biz')
             )
-            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+            assert result[0] == settings.SYMBOLS_BUCKET_DEFAULT_NAME
 
             # a case insensitive match
             result = get_bucket_name_and_location(
                 _User('UsEr@example.COM')
             )
-            eq_(result[0], 'my-bucket')
+            assert result[0] == 'my-bucket'
 
         # now with wildcards inside the email
         exceptions = {'start*@example.com': 'my-bucket'}
@@ -374,19 +361,19 @@ class TestViews(BaseTestViews):
             result = get_bucket_name_and_location(
                 _User('user@example.com')
             )
-            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+            assert result[0] == settings.SYMBOLS_BUCKET_DEFAULT_NAME
 
             # a failing match containing 'start'
             result = get_bucket_name_and_location(
                 _User('notstarting@example.com')
             )
-            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+            assert result[0] == settings.SYMBOLS_BUCKET_DEFAULT_NAME
 
             # a good match and case insensitive
             result = get_bucket_name_and_location(
                 _User('STARter@example.COM')
             )
-            eq_(result[0], 'my-bucket')
+            assert result[0] == 'my-bucket'
 
     def test_web_upload_different_bucket_by_user_different_location(self):
         url = reverse('symbols:web_upload')
@@ -401,11 +388,11 @@ class TestViews(BaseTestViews):
                     url,
                     {'file': file_object}
                 )
-                eq_(response.status_code, 302)
+                assert response.status_code == 302
 
             symbol_upload = models.SymbolsUpload.objects.get(user=user)
-            eq_(symbol_upload.filename, os.path.basename(ZIP_FILE))
-            ok_(symbol_upload.size)
+            assert symbol_upload.filename == os.path.basename(ZIP_FILE)
+            assert symbol_upload.size
             line = "+%s,%s/%s\n" % (
                 'my-special-bucket-name',
                 settings.SYMBOLS_FILE_PREFIX,
@@ -416,13 +403,11 @@ class TestViews(BaseTestViews):
                 settings.SYMBOLS_FILE_PREFIX,
                 'xpcshell.sym'
             )
-            eq_(symbol_upload.content, line)
-            eq_(self.created_buckets, [
-                (
-                    'my-special-bucket-name',
-                    'us-north-1'
-                )
-            ])
+            assert symbol_upload.content == line
+            expected = [
+                ('my-special-bucket-name', 'us-north-1')
+            ]
+            assert self.created_buckets == expected
 
     def test_upload_different_bucket_by_user_different_location(self):
         url = reverse('symbols:upload')
@@ -445,10 +430,10 @@ class TestViews(BaseTestViews):
                     {'file.zip': file_object},
                     HTTP_AUTH_TOKEN=token.key
                 )
-                eq_(response.status_code, 201)
+                assert response.status_code == 201
 
             symbol_upload = models.SymbolsUpload.objects.get(user=user)
-            eq_(symbol_upload.filename, 'file.zip')
+            assert symbol_upload.filename == 'file.zip'
             line = "+%s,%s/%s\n" % (
                 'my-special-bucket-name',
                 settings.SYMBOLS_FILE_PREFIX,
@@ -459,13 +444,11 @@ class TestViews(BaseTestViews):
                 settings.SYMBOLS_FILE_PREFIX,
                 'xpcshell.sym'
             )
-            eq_(symbol_upload.content, line)
-            eq_(self.created_buckets, [
-                (
-                    'my-special-bucket-name',
-                    'us-north-1'
-                )
-            ])
+            assert symbol_upload.content == line
+            expected = [
+                ('my-special-bucket-name', 'us-north-1')
+            ]
+            assert self.created_buckets == expected
 
     def test_web_upload_existing_upload(self):
         """what if the file already is uploaded"""
@@ -483,7 +466,7 @@ class TestViews(BaseTestViews):
                 url,
                 {'file': file_object}
             )
-            eq_(response.status_code, 302)
+            assert response.status_code == 302
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
         # Now we expect it to be a prefixed with a `=` because it's not
         # new and thus didn't cause an upload.
@@ -497,12 +480,9 @@ class TestViews(BaseTestViews):
             settings.SYMBOLS_FILE_PREFIX,
             'xpcshell.sym'
         )
-        eq_(symbol_upload.content, line)
+        assert symbol_upload.content == line
         # only the xpcshell.sym was uploaded
-        eq_(
-            self.uploaded_keys.keys(),
-            ['%s/xpcshell.sym' % (settings.SYMBOLS_FILE_PREFIX,)]
-        )
+        assert self.uploaded_keys.keys() == ['%s/xpcshell.sym' % (settings.SYMBOLS_FILE_PREFIX,)]
 
     def test_web_upload_existing_upload_but_different_size(self):
         """what if the file already is uploaded"""
@@ -521,7 +501,7 @@ class TestViews(BaseTestViews):
                 url,
                 {'file': file_object}
             )
-            eq_(response.status_code, 302)
+            assert response.status_code == 302
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
         # Now we expect it to be a prefixed with a `=` because it's not
         # new and thus didn't cause an upload.
@@ -535,8 +515,8 @@ class TestViews(BaseTestViews):
             settings.SYMBOLS_FILE_PREFIX,
             'xpcshell.sym'
         )
-        eq_(symbol_upload.content, line)
-        ok_(key_name in self.uploaded_keys)
+        assert symbol_upload.content == line
+        assert key_name in self.uploaded_keys
 
     def test_web_upload_disallowed_content(self):
         url = reverse('symbols:web_upload')
@@ -552,8 +532,8 @@ class TestViews(BaseTestViews):
                     url,
                     {'file': file_object}
                 )
-                eq_(response.status_code, 400)
-                ok_('flag' in response.content)
+                assert response.status_code == 400
+                assert 'flag' in response.content
 
     def test_web_upload_tar_gz_file(self):
         url = reverse('symbols:web_upload')
@@ -566,12 +546,12 @@ class TestViews(BaseTestViews):
                 url,
                 {'file': file_object}
             )
-            eq_(response.status_code, 302)
+            assert response.status_code == 302
 
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
-        eq_(symbol_upload.filename, os.path.basename(TARGZ_FILE))
-        ok_(symbol_upload.size)
-        ok_(symbol_upload.content)
+        assert symbol_upload.filename == os.path.basename(TARGZ_FILE)
+        assert symbol_upload.size
+        assert symbol_upload.content
 
     def test_web_upload_tgz_file(self):
         url = reverse('symbols:web_upload')
@@ -584,12 +564,12 @@ class TestViews(BaseTestViews):
                 url,
                 {'file': file_object}
             )
-            eq_(response.status_code, 302)
+            assert response.status_code == 302
 
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
-        eq_(symbol_upload.filename, os.path.basename(TGZ_FILE))
-        ok_(symbol_upload.size)
-        ok_(symbol_upload.content)
+        assert symbol_upload.filename == os.path.basename(TGZ_FILE)
+        assert symbol_upload.size
+        assert symbol_upload.content
 
     def test_web_upload_tar_file(self):
         url = reverse('symbols:web_upload')
@@ -602,12 +582,12 @@ class TestViews(BaseTestViews):
                 url,
                 {'file': file_object}
             )
-            eq_(response.status_code, 302)
+            assert response.status_code == 302
 
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
-        eq_(symbol_upload.filename, os.path.basename(TAR_FILE))
-        ok_(symbol_upload.size)
-        ok_(symbol_upload.content)
+        assert symbol_upload.filename == os.path.basename(TAR_FILE)
+        assert symbol_upload.size
+        assert symbol_upload.content
 
         assert self.uploaded_keys
 
@@ -620,8 +600,8 @@ class TestViews(BaseTestViews):
                 url,
                 {'file': file_object}
             )
-            eq_(response.status_code, 200)
-            ok_('Unrecognized file' in response.content)
+            assert response.status_code == 200
+            assert 'Unrecognized file' in response.content
 
         assert not models.SymbolsUpload.objects.all()
         assert not self.uploaded_keys
@@ -644,8 +624,8 @@ class TestViews(BaseTestViews):
                 url,
                 {'file': file_object}
             )
-            eq_(response.status_code, 400)
-            ok_('File is not a zip file' in response.content)
+            assert response.status_code == 400
+            assert 'File is not a zip file' in response.content
 
         assert not models.SymbolsUpload.objects.all()
         assert not self.uploaded_keys
@@ -653,35 +633,27 @@ class TestViews(BaseTestViews):
     def test_api_upload_about(self):
         url = reverse('symbols:api_upload')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # When you're anonymous it talks about you needing to have a
         # an API Token to upload.
-        ok_(
-            'To be able to upload symbols you need to have an' in
-            response.content
-        )
+        assert 'To be able to upload symbols you need to have an' in response.content
 
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         # If you're viewing the page, authenticated but without the
         # necessary permission to generate an API Token with this
         # permission.
-        ok_(
-            'You do not have permission to generate an API Token' in
-            response.content
-        )
+        assert 'You do not have permission to generate an API Token' in response.content
         self._add_permission(user, 'upload_symbols')
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # You now have the permission to do so but you haven't generated
         # an API token yet. Encourge them to do so.
-        ok_(
-            'To be able to upload by a script, using the API, '
-            'you need to generate an' in response.content
-        )
+        expected = 'To be able to upload by a script, using the API, you need to generate an'
+        assert expected in response.content
         token = Token.objects.create(
             user=user,
         )
@@ -690,11 +662,12 @@ class TestViews(BaseTestViews):
         )
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('Now that you have an actively working' in response.content)
+        assert response.status_code == 200
+        assert 'Now that you have an actively working' in response.content
 
     def test_upload(self):
-        user = User.objects.create(username='user')
+        """Verify API symbols upload"""
+        user = User.objects.create(username='user', email='test@example.com')
         self._add_permission(user, 'upload_symbols')
         token = Token.objects.create(
             user=user,
@@ -705,79 +678,87 @@ class TestViews(BaseTestViews):
 
         url = reverse('symbols:upload')
         response = self.client.get(url)
-        eq_(response.status_code, 405)
+        assert response.status_code == 405
 
-        with self.settings(MEDIA_ROOT=self.tmp_dir):
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    # note! No HTTP_AUTH_TOKEN
-                )
-                eq_(response.status_code, 403)
+        with MetricsMock() as metrics_mock:
+            with self.settings(MEDIA_ROOT=self.tmp_dir):
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        # note! No HTTP_AUTH_TOKEN
+                    )
+                    assert response.status_code == 403
 
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    HTTP_AUTH_TOKEN=''
-                )
-                eq_(response.status_code, 403)
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        HTTP_AUTH_TOKEN=''
+                    )
+                    assert response.status_code == 403
 
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    HTTP_AUTH_TOKEN='somejunk'
-                )
-                eq_(response.status_code, 403)
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        HTTP_AUTH_TOKEN='somejunk'
+                    )
+                    assert response.status_code == 403
 
-            with open(ZIP_FILE, 'rb') as file_object:
-                response = self.client.post(
-                    url,
-                    {'file.zip': file_object},
-                    HTTP_AUTH_TOKEN=token.key
-                )
-                eq_(response.status_code, 201)
-                symbol_upload = models.SymbolsUpload.objects.get(user=user)
-                eq_(symbol_upload.filename, 'file.zip')
-                ok_(symbol_upload.size)
-                ok_(symbol_upload.content)
+                with open(ZIP_FILE, 'rb') as file_object:
+                    response = self.client.post(
+                        url,
+                        {'file.zip': file_object},
+                        HTTP_AUTH_TOKEN=token.key
+                    )
+                    assert response.status_code == 201
+                    symbol_upload = models.SymbolsUpload.objects.get(user=user)
+                    assert symbol_upload.filename == 'file.zip'
+                    assert symbol_upload.size
+                    assert symbol_upload.content
 
         # This should have made one S3 connection
         connection_parameters, = self.connection_parameters
         args, kwargs = connection_parameters
         region, = args
         assert region
-        eq_(region, settings.SYMBOLS_BUCKET_DEFAULT_LOCATION)
-        eq_(kwargs['aws_access_key_id'], settings.AWS_ACCESS_KEY)
-        eq_(kwargs['aws_secret_access_key'], settings.AWS_SECRET_ACCESS_KEY)
-        ok_(isinstance(kwargs['calling_format'], OrdinaryCallingFormat))
+        assert region == settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
+        assert kwargs['aws_access_key_id'] == settings.AWS_ACCESS_KEY
+        assert kwargs['aws_secret_access_key'] == settings.AWS_SECRET_ACCESS_KEY
+        assert isinstance(kwargs['calling_format'], OrdinaryCallingFormat)
 
         # the ZIP_FILE contains a file called south-africa-flag.jpeg
         key = os.path.join(
             settings.SYMBOLS_FILE_PREFIX,
             'south-africa-flag.jpeg'
         )
-        ok_(self.uploaded_keys[key])
-        eq_(self.uploaded_headers[key], {'Content-Type': 'image/jpeg'})
+        assert self.uploaded_keys[key]
+        assert self.uploaded_headers[key] == {'Content-Type': 'image/jpeg'}
 
         # and a file called xpcshell.sym
         key = os.path.join(
             settings.SYMBOLS_FILE_PREFIX,
             'xpcshell.sym'
         )
-        ok_(self.uploaded_keys[key])
-        eq_(self.uploaded_headers[key], {
+        assert self.uploaded_keys[key]
+        expected = {
             'Content-Type': 'text/plain',
             'Content-Encoding': 'gzip'
-        })
+        }
+        assert self.uploaded_headers[key] == expected
         # The sample.zip file contains the file xpcshell.sym and it's
         # 1156 bytes when un-archived. Just gzip'in the content of the
         # file will yield a file that is 476 bytes.
         # But if you do it properly there's header information in the
         # string which is a couple of extra bytes.
-        eq_(len(self.uploaded_keys[key]), 488)
+        assert len(self.uploaded_keys[key]) == 488
+
+        # Verify it generated the metrics we need--since only one POST was
+        # successful, then there's only one incr record
+        assert metrics_mock.has_record(
+            markus.INCR, 'symbols.upload.api_upload', 1, tags=['email:test_example.com']
+        )
 
     def test_upload_without_multipart_file(self):
         user = User.objects.create(username='user')
@@ -791,7 +772,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('symbols:upload')
         response = self.client.post(url, HTTP_AUTH_TOKEN=token.key)
-        eq_(response.status_code, 400)
+        assert response.status_code == 400
 
     def test_upload_disallowed_content(self):
         user = User.objects.create(username='user')
@@ -814,11 +795,11 @@ class TestViews(BaseTestViews):
                     {'file.zip': file_object},
                     HTTP_AUTH_TOKEN=token.key
                 )
-            eq_(response.status_code, 400)
-            ok_('flag' in response.content)
+            assert response.status_code == 400
+            assert 'flag' in response.content
 
         # nothing should have been sent to S3
-        ok_(not self.uploaded_keys)
+        assert not self.uploaded_keys
 
     def test_upload_empty_file(self):
         user = User.objects.create(username='user')
@@ -832,7 +813,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('symbols:upload')
         response = self.client.get(url)
-        eq_(response.status_code, 405)
+        assert response.status_code == 405
 
         with self.settings(MEDIA_ROOT=self.tmp_dir):
             response = self.client.post(
@@ -840,10 +821,10 @@ class TestViews(BaseTestViews):
                 {'file.zip': EmptyFile('file.zip')},
                 HTTP_AUTH_TOKEN=token.key
             )
-        eq_(response.status_code, 400)
+        assert response.status_code == 400
 
         # nothing should have been sent to S3
-        ok_(not self.uploaded_keys)
+        assert not self.uploaded_keys
 
     def test_preview(self):
         user = User.objects.create_user('test', 'test@example.com', 'secret')
@@ -857,16 +838,16 @@ class TestViews(BaseTestViews):
 
         url = reverse('symbols:content', args=(upload.pk,))
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         self.assertRedirects(
             response,
             reverse('crashstats:login') + '?next=%s' % url
         )
         assert self.client.login(username='test', password='secret')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        eq_(response.content, 'Content')
-        eq_(response['Content-Type'], 'text/plain')
+        assert response.status_code == 200
+        assert response.content == 'Content'
+        assert response['Content-Type'] == 'text/plain'
 
         # log in as someone else
         user = User.objects.create_user(
@@ -874,10 +855,10 @@ class TestViews(BaseTestViews):
         )
         assert self.client.login(username='else', password='secret')
         response = self.client.get(url)
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
 
         user.is_superuser = True
         user.save()
         assert self.client.login(username='else', password='secret')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200

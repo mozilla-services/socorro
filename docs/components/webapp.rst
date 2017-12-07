@@ -40,8 +40,6 @@ Then you can start and stop the webapp, adjust files, and debug.
    https://docs.docker.com/compose/extends/
 
 
-FIXME(willkg): Review everything after this line.
-
 
 Setting up authentication and a superuser
 =========================================
@@ -70,12 +68,17 @@ need to get a set of oauth credentials.
 
 2. Create a project
 
-3. Set up credentials (note: no trailing slash on the JS origin, but a trailing slash on the callback url)
+3. Set up credentials:
 
-   :authorized js origin: http://localhost:8000
-   :callback url: http://localhost:8000/oauth2/signin/
+   * authorized js origin: ``http://localhost:8000``
+   * callback url: ``http://localhost:8000/oauth2/signin/``
 
-4. Open ``webapp-django/.env`` in an editor and add these lines::
+   .. Note::
+
+      There is no trailing slash on the JS origin, but there is a trailing slash
+      on the callback url.
+
+4. Open ``my.env`` in an editor and change these lines::
 
        OAUTH2_CLIENT_ID=<client id>
        OAUTH2_CLIENT_SECRET=<secret>
@@ -83,10 +86,15 @@ need to get a set of oauth credentials.
    where ``<client id>`` is the oauth client id and ``<secret>`` is the oauth
    client secret that you got from step 3
 
-5. If you see a "Signed in to Google, but unable to sign in on the server." with a 403 CSRF error, mark the callback url as csrf_exempt
-   e.g. with `this patch <https://github.com/g-k/socorro/commit/2afeb8d44a485d2936f0f9a06fa3572d5baea6d6#diff-2fef780ed0ba541e7eb26fd5c32022f4>`_
+5. If you see a "Signed in to Google, but unable to sign in on the server." with
+   a 403 CSRF error, mark the callback url as csrf_exempt e.g. with `this patch
+   <https://github.com/g-k/socorro/commit/2afeb8d44a485d2936f0f9a06fa3572d5baea6d6#diff-2fef780ed0ba541e7eb26fd5c32022f4>`_
 
 After that, Google Sign-In should work.
+
+.. Warning::
+
+   August 17th, 2017: Everything below this point is outdated.
 
 
 About Permissions, User and Groups
@@ -210,3 +218,38 @@ with stack traces by adding this to
       ('Your Name', 'your_email@domain.com'),
   )
   MANAGERS = ADMINS
+
+
+Running Web App in a Prod-like Way
+==================================
+
+When you run ``docker-compose up webapp`` in the local development environment,
+it starts the web app using Django's ``runserver`` command. ``DEBUG=True`` is
+set in the ``docker/config/never_on_a_server.env`` file, so static assets are
+automatically served from within the individual Django apps rather than serving
+the minified and concatenated static assets you'd get in a production-like
+environment.
+
+If you want to run the web app in a more "prod-like manner", you want to run the
+webapp using ``uwsgi`` and with ``DEBUG=False``. Here's how you do that.
+
+First start a ``bash`` shell with service ports::
+
+  $ docker-compose run --service-ports webapp bash
+
+Then compile the static assets::
+
+  app@...:/app$ cd webapp-django/
+  app@...:/app/webapp-django$ ./manage.py collectstatic --noinput
+  app@...:/app/webapp-django$ cd ..
+
+Now run the webapp with ``uwsgi`` and ``DEBUG=False``::
+
+  app@...:/app$ DEBUG=False bash docker/run_webapp.sh
+
+You will now be able to open ``http://localhost:8000`` on the host and if you
+view the source you see that the minified and concatenated static assets are
+served instead.
+
+Because static assets are compiled, if you change JS or CSS files, you'll need
+to re-run ``./manage.py collectstatic``.

@@ -1,7 +1,5 @@
 import os
 
-from nose.tools import ok_
-
 from django.contrib.auth.models import User
 
 from crashstats.base.tests.testbase import DjangoTestCase
@@ -19,4 +17,4 @@ class TestModels(DjangoTestCase):
             size=12345,
             content='Content'
         )
-        ok_(os.path.basename(ZIP_FILE) in repr(upload))
+        assert os.path.basename(ZIP_FILE) in repr(upload)

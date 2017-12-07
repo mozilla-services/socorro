@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import datetime
+import errno
 import os.path
-import os, errno
+import os
 import re
 import sys
 
@@ -10,10 +11,12 @@ import sys
 def mkdir_p(path):
     try:
         os.makedirs(path)
-    except OSError as exc: # Python >2.5
+    except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
-        else: raise
+        else:
+            raise
+
 
 def dsToWeeklyPartition(ds):
     d = datetime.datetime.strptime(ds, '%Y-%m-%d').date()
@@ -45,7 +48,7 @@ with open(filename, "r") as sql:
             dates = date_reg_exp.findall(line)
             ds = datetime.datetime.strptime(dates[0], '%Y-%m-%d').date()
             partition = dsToWeeklyPartition(dates[0])
-        except:
+        except ValueError:
             # Skip non-data lines
             continue
 

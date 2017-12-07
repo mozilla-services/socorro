@@ -221,7 +221,7 @@
                                 <th scope="row">Build Architecture Info</th>
                                 <td>
                                     {% if report.cpu_info %}
-                                        {% if is_dangerous_cpu(report.cpu_info) %}
+                                        {% if is_dangerous_cpu(report.cpu_name, report.cpu_info) %}
                                             <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="warning" title="Possible AMD CPU bug related crash report" />
                                         {% endif %}
                                         {{ report.cpu_info }}
@@ -590,6 +590,7 @@
 
                     {% if parsed_dump.threads %}
                     <div id="frames">
+                        {% if crashing_thread is not none %}
                         <h2>Crashing Thread ({{ crashing_thread }}){% if parsed_dump.threads[crashing_thread].thread_name %}, Name: {{ parsed_dump.threads[crashing_thread].thread_name }}{% endif %}</h2>
                         <table class="data-table">
                             <thead>
@@ -624,12 +625,12 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-
                         <p>
                             <a href="#allthreads" data-show="Show other threads" data-hide="Hide other threads">Show other threads</a>
                         </p>
+                        {% endif %}
 
-                        <div id="allthreads">
+                        <div id="allthreads" class="{{ 'hidden' if crashing_thread is not none }}">
                             {% for thread in parsed_dump.threads %}
                             {% if thread.thread != crashing_thread %}
                             <h2>Thread {{ thread.thread }}{% if thread.thread_name %}, Name: {{ thread.thread_name }}{% endif %}</h2>
@@ -707,7 +708,7 @@
                                     {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
                                 {% endif %}
                                 <a
-                                    href="{{ bugzilla_submit_url(report, bug_product) }}"
+                                    href="{{ bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product) }}"
                                     target="_blank">{{ bug_product }}</a>
                             {% endfor %}
                         </p>

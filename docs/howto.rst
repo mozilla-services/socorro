@@ -2,6 +2,21 @@
 How to
 ======
 
+Run security checks for dependencies
+====================================
+
+You can run the crontabber job that checks for security vulnerabilities locally:
+
+::
+
+   make dockerdependencycheck
+
+
+.. Warning::
+
+   August 17th, 2017: Everything below this point is outdated.
+
+
 Populate PostgreSQL Database
 ============================
 
@@ -30,14 +45,7 @@ Populate Elasticsearch database
 
    See the chapter about :ref:`elasticsearch-chapter` for more information.
 
-First you need to setup your Elasticsearch database:
-
-::
-
-   cd scripts && python ./setup_supersearch_app.py
-
-
-Then, and once you have populated your PostgreSQL database with "fake data",
+Once you have populated your PostgreSQL database with "fake data",
 you can migrate that data into Elasticsearch:
 
 ::

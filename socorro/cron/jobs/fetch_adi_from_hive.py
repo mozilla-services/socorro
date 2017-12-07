@@ -2,6 +2,24 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+Detailed documentation on columns avaiable from our Hive system at:
+https://intranet.mozilla.org/Metrics/Blocklist
+
+Columns being queried are:
+
+* report_date
+* product_name
+* product_os_platform
+* product_os_version
+* product_version
+* build
+* build_channel
+* product_guid
+* count
+
+"""
+
 import codecs
 import datetime
 import urllib2
@@ -21,22 +39,6 @@ from socorro.external.postgresql.dbapi2_util import execute_no_results
 class NoRowsWritten(Exception):
     pass
 
-
-"""
- Detailed documentation on columns avaiable from our Hive system at:
- https://intranet.mozilla.org/Metrics/Blocklist
-
- Columns being queried are:
-    report_date
-    product_name
-    product_os_platform
-    product_os_version
-    product_version
-    build
-    build_channel
-    product_guid
-    count
-"""
 
 _QUERY = """
     select

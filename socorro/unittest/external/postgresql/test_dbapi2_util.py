@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mock import Mock, MagicMock
-from nose.tools import eq_, ok_, assert_raises
+import pytest
 
 from socorro.external.postgresql import dbapi2_util
 from socorro.unittest.testbase import TestCase
@@ -21,9 +21,9 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         r = dbapi2_util.single_value_sql(conn, "select 17")
-        eq_(r, 17)
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+        assert r == 17
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with('select 17', None)
 
     def test_single_value_sql2(self):
@@ -36,8 +36,8 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         dbapi2_util.single_value_sql(conn, "select 17", (1, 2, 3))
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with('select 17', (1, 2, 3))
 
     def test_single_value_sql3(self):
@@ -49,13 +49,11 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        assert_raises(dbapi2_util.SQLDidNotReturnSingleValue,
-                      dbapi2_util.single_value_sql,
-                      conn,
-                      "select 17",
-                      (1, 2, 3))
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+        with pytest.raises(dbapi2_util.SQLDidNotReturnSingleValue):
+            dbapi2_util.single_value_sql(conn, 'select 17', (1, 2, 3))
+
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with('select 17', (1, 2, 3))
 
     def test_single_row_sql1(self):
@@ -68,9 +66,9 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         r = dbapi2_util.single_row_sql(conn, "select 17, 22")
-        eq_(r, (17, 22))
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+        assert r == (17, 22)
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with('select 17, 22', None)
 
     def test_single_value_sql5(self):
@@ -83,8 +81,8 @@ class TestDBAPI2Helper(TestCase):
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
         dbapi2_util.single_row_sql(conn, "select 17, 22", (1, 2, 3))
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
 
     def test_single_value_sql4(self):
@@ -96,13 +94,10 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        assert_raises(dbapi2_util.SQLDidNotReturnSingleRow,
-                      dbapi2_util.single_row_sql,
-                      conn,
-                      "select 17, 22",
-                      (1, 2, 3))
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+        with pytest.raises(dbapi2_util.SQLDidNotReturnSingleRow):
+            dbapi2_util.single_row_sql(conn, 'select 17, 22', (1, 2, 3))
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
 
     def test_execute_query1(self):
@@ -128,9 +123,9 @@ class TestDBAPI2Helper(TestCase):
             expected
         )
         for x, y in zipped:
-            eq_(x, y)
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+            assert x == y
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with("select * from somewhere",
                                                  None)
 
@@ -153,9 +148,9 @@ class TestDBAPI2Helper(TestCase):
                                                     "select * from somewhere"),
                      expected)
         for x, y in zipped:
-            eq_(x, y)
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+            assert x == y
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with("select * from somewhere",
                                                  None)
 
@@ -171,8 +166,8 @@ class TestDBAPI2Helper(TestCase):
             "insert into table (a, b, c) values (%s, %s, %s)",
             (1, 2, 3)
         )
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
+        assert conn.cursor.call_count == 1
+        assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with(
             "insert into table (a, b, c) values (%s, %s, %s)",
             (1, 2, 3)
@@ -197,12 +192,12 @@ class TestDBAPI2Helper(TestCase):
             [Description('first_name'), Description('last_name')]
         )
         zipped = sequence.zipped()
-        ok_(isinstance(zipped, list))
-        eq_(zipped[0], {'first_name': 'Peter', 'last_name': 'Bengtsson'})
-        eq_(zipped[1], {'first_name': 'Lars', 'last_name': 'Lohn'})
+        assert isinstance(zipped, list)
+        assert zipped[0] == {'first_name': 'Peter', 'last_name': 'Bengtsson'}
+        assert zipped[1] == {'first_name': 'Lars', 'last_name': 'Lohn'}
 
         # __len__
-        eq_(len(zipped), 2)
+        assert len(zipped) == 2
 
         # __iter__
         first = second = None
@@ -212,19 +207,19 @@ class TestDBAPI2Helper(TestCase):
             elif second is None:
                 second = item
         assert first and second
-        eq_(first, ['Peter', 'Bengtsson'])
-        eq_(second, ['Lars', 'Lohn'])
+        assert first == ['Peter', 'Bengtsson']
+        assert second == ['Lars', 'Lohn']
 
         # __getitem__
         second = sequence[1]
-        eq_(second, ['Lars', 'Lohn'])
+        assert second == ['Lars', 'Lohn']
 
         # __contains__
-        ok_(['Peter', 'Bengtsson'] in sequence)
+        assert ['Peter', 'Bengtsson'] in sequence
 
         # __str__
         expect = str([
             ['Peter', 'Bengtsson'],
             ['Lars', 'Lohn']
         ])
-        eq_(str(sequence), expect)
+        assert str(sequence) == expect

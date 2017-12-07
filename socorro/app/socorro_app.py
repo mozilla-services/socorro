@@ -76,7 +76,7 @@ from configman.converters import py_obj_to_str
 from configman.value_sources import type_handler_dispatch
 # register our new type handler with configman
 type_handler_dispatch[ApplicationDefaultsProxy].append(
-   socorro.app.for_application_defaults
+    socorro.app.for_application_defaults
 )
 
 # create the app default proxy object
@@ -520,8 +520,8 @@ class SocorroWelcomeApp(SocorroApp):
 
     def main(self):
         if (
-            self.config.application
-            and self.config.application.__name__ is not self.__class__.__name__
+            self.config.application and
+            self.config.application.__name__ is not self.__class__.__name__
         ):
             requested_app = self.config.application(self.config)
             # this is where an app that was requested through the use of the
@@ -529,7 +529,7 @@ class SocorroWelcomeApp(SocorroApp):
             #requested_app.config_manager = self.config_manager
             return requested_app.main()
         else:
-            print (
+            print(
                 "Welcome to Socorro.  To configure Socorro, please see "
                 "https://socorro.readthedocs.io/\n"
                 "use --help with this app to see what you can do here"
@@ -555,6 +555,7 @@ def main(app_class, config_path=None, values_source_list=None):
         config_path=config_path,
         values_source_list=values_source_list
     )
+
 
 if __name__ == '__main__':
     main(SocorroWelcomeApp)

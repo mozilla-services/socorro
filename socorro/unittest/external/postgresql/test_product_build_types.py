@@ -2,12 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, assert_raises
+import pytest
 
-from socorro.lib import MissingArgumentError
 from socorro.external.postgresql.product_build_types import ProductBuildTypes
-
-from .unittestbase import PostgreSQLTestCase
+from socorro.lib import MissingArgumentError
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
@@ -89,22 +88,18 @@ class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
                 'beta': 1.0,
             }
         }
-        eq_(res, res_expected)
+        assert res == res_expected
 
         # Test: find no match for unrecognized product
         res = product_build_types.get(product='Neverheardof')
         res_expected = {
             'hits': {}
         }
-        eq_(res, res_expected)
+        assert res == res_expected
 
         # Test: missing product parameter
-        assert_raises(
-            MissingArgumentError,
-            product_build_types.get,
-        )
-        assert_raises(
-            MissingArgumentError,
-            product_build_types.get,
-            product=''
-        )
+        with pytest.raises(MissingArgumentError):
+            product_build_types.get()
+
+        with pytest.raises(MissingArgumentError):
+            product_build_types.get(product='')

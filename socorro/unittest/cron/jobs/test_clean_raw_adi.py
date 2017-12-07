@@ -1,27 +1,17 @@
 import datetime
 
-from nose.tools import eq_
-from crontabber.app import CronTabber
-
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.lib.datetimeutil import utc_now
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 
 
 class TestCleanRawADICronApp(IntegrationTestBase):
 
     def _setup_config_manager(self, days_to_keep=None):
-        super(TestCleanRawADICronApp, self)._setup_config_manager
-        return get_config_manager_for_crontabber(
-            jobs=(
-                'socorro.cron.jobs.clean_raw_adi.'
-                'CleanRawADICronApp|1d'
-            ),
-            overrides={
-                'crontabber.class-CleanRawADICronApp'
-                '.days_to_keep': days_to_keep
+        return super(TestCleanRawADICronApp, self)._setup_config_manager(
+            jobs_string='socorro.cron.jobs.clean_raw_adi.CleanRawADICronApp|1d',
+            extra_value_source={
+                'crontabber.class-CleanRawADICronApp.days_to_keep': days_to_keep
             },
         )
 
@@ -54,7 +44,7 @@ class TestCleanRawADICronApp(IntegrationTestBase):
         # Run the crontabber job to remove the test table.
         config_manager = self._setup_config_manager(days_to_keep=1)
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
         # Basic assertion test of stored procedure.
@@ -69,4 +59,4 @@ class TestCleanRawADICronApp(IntegrationTestBase):
         """)
         result, = cur.fetchall()
         report_date = result[0]
-        eq_(report_date, second)
+        assert report_date == second

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """
 Fetches normalization data.
 
@@ -19,7 +23,10 @@ import requests
 
 
 # NOTE(willkg): These platforms come from the -prod data.
-PLATFORMS = ['Mac OS X', 'Linux', 'Windows', 'Unknown']
+PLATFORMS = {
+    'default': ['Mac OS X', 'Linux', 'Windows', 'Unknown'],
+    'fennecandroid': ['Linux']
+}
 
 
 def fetch_data_from_api(endpoint, product, platform, versions, start_date, end_date):
@@ -86,7 +93,7 @@ def insert_adu(conn, adu_count, adu_date, product_name, os_name, version_string)
             INSERT INTO product_adu (adu_count, adu_date, os_name, product_version_id)
             VALUES (%s, %s, %s, %s)
         """, (adu_count, adu_date, os_name, product_version_id))
-    except psycopg2.IntegrityError as exc:
+    except psycopg2.IntegrityError:
         # Hitting an IntegrityError here probably means this data is in the table already, so we
         # just skip it.
         pass
@@ -163,10 +170,20 @@ def main(args):
     )
 
     for product in args.products.split(','):
+
+        # NOTE(willkg): The build files put FennecAndroid things in "mobile", so ftpscraper uses
+        # "mobile" instead of "FennecAndroid". We should do the translation here because it makes
+        # using this script and that one together easier.
+        if product == 'mobile':
+            product = 'FennecAndroid'
+
         # Fetch versions from the product_versions table that we should pull data for
         versions = get_versions(conn, product)
+        if not versions:
+            print('ERROR: No versions to fetch for %s. That seems bad. Exiting.' % product)
+            return 1
 
-        for platform in PLATFORMS:
+        for platform in PLATFORMS.get(product.lower(), PLATFORMS['default']):
             print('Fetching data for (%s, %s, %s)...' % (product, versions, platform))
             adu_data = fetch_data_from_api(
                 endpoint=args.endpoint,
@@ -176,7 +193,7 @@ def main(args):
                 start_date=start_date,
                 end_date=end_date
             )
-
+            print('%d data points to add' % len(adu_data))
             for hit in adu_data:
                 insert_adu(
                     conn=conn,

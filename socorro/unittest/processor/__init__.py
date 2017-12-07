@@ -1,7 +1,7 @@
 import mock
 
 from socorro.lib.util import DotDict
-from socorro.processor.signature_utilities import CSignatureTool
+from socorro.signature.rules import CSignatureTool
 
 
 csig_config = DotDict()

@@ -21,12 +21,17 @@ from django.core.exceptions import ImproperlyConfigured
 import boto
 import boto.s3.connection
 import boto.exception
+import markus
+from markus.utils import generate_tag
 
 from crashstats.crashstats.decorators import login_required
 from crashstats.tokens.models import Token
 from . import models
 from . import forms
 from . import utils
+
+
+metrics = markus.get_metrics('symbols.upload')
 
 
 def api_login_required(view_func):
@@ -67,12 +72,26 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
                 "Setting %s must be set" % key
             )
 
-    conn = boto.s3.connect_to_region(
-        bucket_location,
-        aws_access_key_id=settings.AWS_ACCESS_KEY,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
-    )
+    params = {
+        'aws_access_key_id': settings.AWS_ACCESS_KEY,
+        'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+        'calling_format': boto.s3.connection.OrdinaryCallingFormat(),
+    }
+
+    if settings.AWS_HOST and settings.AWS_PORT:
+        # NOTE(willkg): If AWS_HOST and AWS_PORT are defined, then this is a local dev environment
+        # and we need to connect to a local S3 instead of the AWS S3. In a server environment, these
+        # variables should not be set.
+        params.update({
+            'host': settings.AWS_HOST,
+            'port': settings.AWS_PORT,
+            'is_secure': settings.AWS_SECURE,
+        })
+        conn = boto.connect_s3(**params)
+
+    else:
+        conn = boto.s3.connect_to_region(bucket_location, **params)
+
     assert bucket_name
 
     bucket = conn.lookup(bucket_name)
@@ -242,6 +261,7 @@ def web_upload(request):
                     symbols_upload.filename
                 )
             )
+            metrics.incr('web_upload', tags=[generate_tag('email', request.user.email)])
             return redirect('symbols:home')
     else:
         form = forms.UploadForm()
@@ -313,6 +333,7 @@ def upload(request):
         bucket_location
     )
 
+    metrics.incr('api_upload', tags=[generate_tag('email', request.user.email)])
     return http.HttpResponse('OK', status=201)
 
 

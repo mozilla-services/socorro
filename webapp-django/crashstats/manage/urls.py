@@ -1,10 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url('^$',
         views.home,
         name='home'),
@@ -38,24 +37,9 @@ urlpatterns = patterns(
     url('^symbols-uploads/data/$',
         views.symbols_uploads_data,
         name='symbols_uploads_data'),
-    url('^supersearch-fields/$',
-        views.supersearch_fields,
-        name='supersearch_fields'),
     url('^supersearch-fields/missing/$',
         views.supersearch_fields_missing,
         name='supersearch_fields_missing'),
-    url('^supersearch-field/$',
-        views.supersearch_field,
-        name='supersearch_field'),
-    url('^supersearch-field/create/$',
-        views.supersearch_field_create,
-        name='supersearch_field_create'),
-    url('^supersearch-field/update/$',
-        views.supersearch_field_update,
-        name='supersearch_field_update'),
-    url('^supersearch-field/delete/$',
-        views.supersearch_field_delete,
-        name='supersearch_field_delete'),
     url('^products/$',
         views.products,
         name='products'),
@@ -90,4 +74,4 @@ urlpatterns = patterns(
         views.reprocessing,
         name='reprocessing'),
 
-)
+]

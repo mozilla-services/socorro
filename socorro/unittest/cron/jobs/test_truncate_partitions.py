@@ -2,21 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_
-from crontabber.app import CronTabber
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 
 
 class TestTruncatePartitions(IntegrationTestBase):
 
     def _setup_config_manager(self):
-        super(TestTruncatePartitions, self)._setup_config_manager
-        return get_config_manager_for_crontabber(
-            jobs='socorro.cron.jobs.truncate_partitions.'
-            'TruncatePartitionsCronApp|1m',
+        return super(TestTruncatePartitions, self)._setup_config_manager(
+            jobs_string='socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|1m'
         )
 
     def setUp(self):
@@ -58,20 +52,20 @@ class TestTruncatePartitions(IntegrationTestBase):
         """
         cur.execute(statement)
         result = cur.fetchone()
-        eq_(result[0], 2L)
-        # need to get out of this transaction to
-        # allow crontabber to acquire a lock
+        assert result[0] == 2L
+
+        # need to get out of this transaction to allow crontabber to acquire a lock
         self.conn.commit()
 
         # Run the crontabber job to remove the test table.
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
         # Basic assertion test of stored procedure.
         information = self._load_structure()
-        print information['truncate-partitions']['last_error']
+        print(information['truncate-partitions']['last_error'])
         assert information['truncate-partitions']
         assert not information['truncate-partitions']['last_error']
         assert information['truncate-partitions']['last_success']
@@ -82,4 +76,4 @@ class TestTruncatePartitions(IntegrationTestBase):
         """
         cur.execute(statement)
         result = cur.fetchone()
-        eq_(result[0], 0)
+        assert result[0] == 0

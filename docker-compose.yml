@@ -10,6 +10,15 @@ services:
       dockerfile: ./docker/Dockerfile
     image: local/socorro_base
 
+  # Docs building container
+  docs:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.docs
+    image: local/socorro_docs
+    volumes:
+      - .:/app
+
   # Processor app
   processor:
     build:
@@ -17,10 +26,12 @@ services:
       dockerfile: ./docker/Dockerfile.processor
     image: local/socorro_processor
     env_file:
-      - docker/config/docker_common.env
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
       - docker/config/processor.env
+      - my.env
     depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
+      - statsd
       - localstack-s3
       - postgresql
       - elasticsearch
@@ -35,14 +46,17 @@ services:
       dockerfile: ./docker/Dockerfile.webapp
     image: local/socorro_webapp
     env_file:
-      - docker/config/docker_common.env
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
       - docker/config/webapp.env
+      - my.env
     depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
+      - statsd
       - localstack-s3
       - postgresql
       - elasticsearch
       - rabbitmq
+      - memcached
     command: ["/app/docker/run_webapp.sh", "--dev"]
     ports:
       - "8000:8000"
@@ -56,8 +70,10 @@ services:
       dockerfile: ./docker/Dockerfile.crontabber
     image: local/socorro_crontabber
     env_file:
-      - docker/config/docker_common.env
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
       - docker/config/crontabber.env
+      - my.env
     depends_on:
       - localstack-s3
       - postgresql
@@ -66,16 +82,64 @@ services:
     volumes:
       - .:/app
 
+  # Submitter app
+  #
+  # NOTE(willkg): This app runs only in -prod and lets us slurp crashes from
+  # -prod to -stage. This service is here so we can test changes to the
+  # submitter, but you should probably never need to run this in your local
+  # development environment. It does configuration differently than all the
+  # other services because otherwise we end up with conflicts with things
+  # we care about.
+  submitter:
+    image: local/socorro_processor
+    env_file:
+      - docker/config/local_dev_submitter.env
+      - my.env
+    depends_on:
+      - rabbitmq
+      - localstack-s3
+    command: ["/app/docker/run_submitter.sh"]
+    volumes:
+      - .:/app
+
   # -----------------------------
   # External services
   # -----------------------------
 
-  # https://hub.docker.com/r/kamon/grafana_graphite/
-  # username: admin, password: admin
-  statsd:
-    image: kamon/grafana_graphite
+  # https://hub.docker.com/r/mozilla/antenna/
+  #
+  # This seems weird, but for the purposes of Socorro, we should treat
+  # it as an external service.
+  #
+  # This uses the development ./bin/run_web.sh script from the Antenna
+  # container since that creates a bucket before running Antenna.
+  antenna:
+    image: mozilla/antenna:latest
+    environment:
+      - LOGGING_LEVEL=INFO
+      - CRASHSTORAGE_CLASS=antenna.ext.s3.crashstorage.S3CrashStorage
+      - CRASHSTORAGE_ENDPOINT_URL=http://localstack-s3:5000
+      - CRASHSTORAGE_REGION=us-west-2
+      - CRASHSTORAGE_ACCESS_KEY=foo
+      - CRASHSTORAGE_SECRET_ACCESS_KEY=foo
+      - CRASHSTORAGE_BUCKET_NAME=dev_bucket
+    depends_on:
+      - localstack-s3
+    expose:
+      - 8000
     ports:
-      - "8080:3000"  # grafana port
+      - "8888:8000"
+    command: ./bin/run_web.sh
+
+  # https://hub.docker.com/r/hopsoft/graphite-statsd/
+  statsd:
+    image: hopsoft/graphite-statsd
+    ports:
+      - "8080:80"
+      - "2003-2004:2003-2004"
+      - "2023-2024:2023-2024"
+      - "8125:8125/udp"
+      - "8126:8126"
 
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
@@ -105,10 +169,16 @@ services:
   # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake S3
   localstack-s3:
-    image: localstack/localstack:0.7.3
+    image: localstack/localstack:0.7.4
     environment:
       - SERVICES=s3:5000
-      - DEFAULT_REGION=us-east-1
+      - DEFAULT_REGION=us-west-2
       - HOSTNAME=localstack-s3
     ports:
       - "5000:5000"
+
+  # https://hub.docker.com/_/memcached/
+  memcached:
+    image: memcached:1.5.1
+    ports:
+      - "11211:11211"

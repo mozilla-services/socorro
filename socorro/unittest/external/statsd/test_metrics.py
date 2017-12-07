@@ -2,21 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from mock import patch, call, Mock
-from nose.tools import eq_, ok_, assert_raises
-from socorro.unittest.testbase import TestCase
-
-from datetime import datetime
-
 from configman.dotdict import DotDict
+from mock import patch, call, Mock
 import statsd
 
-from socorro.external.statsd.crashstorage import (
-    StatsdCrashStorage,
-    StatsdBenchmarkingCrashStorage,
-)
 from socorro.external.statsd import dogstatsd
 from socorro.external.statsd.metrics import StatsdMetrics
+from socorro.unittest.testbase import TestCase
 
 
 class TestStatsdMetrics(TestCase):

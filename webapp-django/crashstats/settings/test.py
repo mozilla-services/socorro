@@ -1,15 +1,8 @@
 """
-When you run tests with `./manage.py test` these settings are ALWAYS
-imported last and overrides any other base or environment variable
-settings.
-
-The purpose of this is to guarantee that certain settings are always
-set for test suite runs no matter what you do on the local system.
-
-Ultimately, it helps make sure you never actually use real URLs. For
-example, if a test incorrectly doesn't mock `requests.get()` for
-example, it shouldn't actually try to reach out to a real valid URL.
+Settings for running tests. These override settings in base.py.
 """
+
+from crashstats.settings.base import *  # noqa
 
 CACHE_IMPLEMENTATION_FETCHES = True
 
@@ -25,6 +18,8 @@ MWARE_BASE_URL = 'http://shouldnotactuallybeused.com'
 
 STATSD_CLIENT = 'django_statsd.clients.null'
 
+SECRET_KEY = 'fakekey'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -35,6 +30,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'crashstats'
     }
 }
 
@@ -57,6 +53,8 @@ AWS_SECRET_ACCESS_KEY = 'anything'
 SYMBOLS_BUCKET_DEFAULT_NAME = 'my-lovely-bucket'
 SYMBOLS_FILE_PREFIX = 'v99'
 SYMBOLS_BUCKET_DEFAULT_LOCATION = 'us-west-2'
+# We want AWS to use connect_to_region, so we make AWS_HOST an empty string
+AWS_HOST = ''
 
 
 # So it never ever actually uses a real ElasticSearch server
@@ -68,11 +66,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
     }
 }
 
-
-# Make sure we never actually hit a real URL when testing the
-# Crash-analysis monitoring.
-CRASH_ANALYSIS_URL = 'https://crashanalysis.m.c/something/'
-CRASH_ANALYSIS_MONITOR_DAYS_BACK = 2
 
 # During testing, if mocking isn't done right, we never want to
 # accidentally send data to Google Analytics.

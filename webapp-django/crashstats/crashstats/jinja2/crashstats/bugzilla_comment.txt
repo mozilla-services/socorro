@@ -1,0 +1,14 @@
+{# This is a Jinja2 template for Bugzilla bugs filed from the Socorro interface.
+   See crashstats.templatetags.jinja_helpers.bugzilla_submit_url. #}
+This bug was filed from the Socorro interface and is
+report bp-{{ uuid }}.
+=============================================================
+
+{% if crashing_thread_frames -%}
+Top {{ crashing_thread_frames|length }} frames of crashing thread:
+
+{% for frame in crashing_thread_frames -%}
+{{ frame.frame|safe}} {{ frame.module|safe }} {{ frame.signature|safe }} {{ frame.source|safe }}
+{% endfor %}
+=============================================================
+{% endif %}

@@ -6,7 +6,7 @@ import datetime
 import json
 
 import requests_mock
-from nose.tools import assert_raises, eq_, ok_
+import pytest
 
 from socorro.lib import BadArgumentError, datetimeutil, search_common
 from socorro.unittest.external.es.base import (
@@ -46,7 +46,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ]
 
         res = self.api.get_indices(dates)
-        eq_(res, ['socorro_integration_test_reports'])
+        assert res == ['socorro_integration_test_reports']
 
         config = self.get_base_config(es_index='socorro_%Y%W')
         api = SuperSearchWithFields(config=config)
@@ -57,7 +57,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ]
 
         res = api.get_indices(dates)
-        eq_(res, ['socorro_200052', 'socorro_200101'])
+        assert res == ['socorro_200052', 'socorro_200101']
 
         dates = [
             search_common.SearchParam('date', now, '<'),
@@ -65,13 +65,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ]
 
         res = api.get_indices(dates)
-        eq_(
-            res,
-            [
-                'socorro_200049', 'socorro_200050', 'socorro_200051',
-                'socorro_200052', 'socorro_200101'
-            ]
-        )
+        expected = [
+            'socorro_200049', 'socorro_200050', 'socorro_200051', 'socorro_200052',
+            'socorro_200101'
+        ]
+        assert res == expected
 
     @minimum_es_version('1.0')
     def test_get(self):
@@ -91,28 +89,25 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             'date', 'build_id', 'platform', 'signature', 'write_combine_size'
         ])
 
-        ok_('hits' in res)
-        ok_('total' in res)
-        ok_('facets' in res)
+        assert 'hits' in res
+        assert 'total' in res
+        assert 'facets' in res
 
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['signature'] == 'js::break_your_browser'
 
-        eq_(res['facets'].keys(), ['signature'])
-        eq_(
-            res['facets']['signature'][0],
-            {'term': 'js::break_your_browser', 'count': 1}
-        )
+        assert res['facets'].keys() == ['signature']
+        assert res['facets']['signature'][0] == {'term': 'js::break_your_browser', 'count': 1}
 
         # Test fields are being renamed.
-        ok_('date' in res['hits'][0])  # date_processed -> date
-        ok_('build_id' in res['hits'][0])  # build -> build_id
-        ok_('platform' in res['hits'][0])  # os_name -> platform
+        assert 'date' in res['hits'][0]  # date_processed -> date
+        assert 'build_id' in res['hits'][0]  # build -> build_id
+        assert 'platform' in res['hits'][0]  # os_name -> platform
 
         # Test namespaces are correctly removed.
         # processed_crash.json_dump.write_combine_size > write_combine_size
-        ok_('write_combine_size' in res['hits'][0])
+        assert 'write_combine_size' in res['hits'][0]
 
     @minimum_es_version('1.0')
     def test_get_with_root_field(self):
@@ -130,16 +125,16 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             'date', 'signature', 'removed_fields'
         ], _facets=['removed_fields'])
 
-        ok_('removed_fields' in res['hits'][0])
-        eq_(res['hits'][0]['removed_fields'], 'foo bar')
+        assert 'removed_fields' in res['hits'][0]
+        assert res['hits'][0]['removed_fields'] == 'foo bar'
 
-        ok_('removed_fields' in res['facets'])
-        eq_(len(res['facets']['removed_fields']), 2)
+        assert 'removed_fields' in res['facets']
+        assert len(res['facets']['removed_fields']) == 2
 
     @minimum_es_version('1.0')
     def test_get_with_bad_results_number(self):
         """Run a very basic test, just to see if things work. """
-        with assert_raises(BadArgumentError):
+        with pytest.raises(BadArgumentError):
             self.api.get(_columns=['date'], _results_number=-1)
 
     @minimum_es_version('1.0')
@@ -166,25 +161,25 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             product='WaterWolf'  # has terms
         )
 
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['product'], 'WaterWolf')
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['product'] == 'WaterWolf'
 
         # Not a term that exists.
         res = self.api.get(
             product='!WaterWolf'  # does not have terms
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
-        eq_(res['hits'][0]['product'], 'NightTrain')
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
+        assert res['hits'][0]['product'] == 'NightTrain'
 
         # A term that does not exist.
         res = self.api.get(
             product='EarthRacoon'  # has terms
         )
 
-        eq_(res['total'], 0)
+        assert res['total'] == 0
 
         # A phrase instead of a term.
         res = self.api.get(
@@ -192,10 +187,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['app_notes'],
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_('that I used' in hit['app_notes'])
+            assert 'that I used' in hit['app_notes']
 
     @minimum_es_version('1.0')
     def test_get_with_string_operators(self):
@@ -226,62 +221,62 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             signature='~js'  # contains
         )
 
-        eq_(res['total'], 3)
-        eq_(len(res['hits']), 3)
+        assert res['total'] == 3
+        assert len(res['hits']) == 3
         for hit in res['hits']:
-            ok_('js' in hit['signature'])
+            assert 'js' in hit['signature']
 
-        ok_('signature' in res['facets'])
-        eq_(len(res['facets']['signature']), 3)
+        assert 'signature' in res['facets']
+        assert len(res['facets']['signature']) == 3
         for facet in res['facets']['signature']:
-            ok_('js' in facet['term'])
-            eq_(facet['count'], 1)
+            assert 'js' in facet['term']
+            assert facet['count'] == 1
 
         res = self.api.get(
             signature='!~js'  # does not contain
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_('js' not in hit['signature'])
+            assert 'js' not in hit['signature']
 
-        ok_('signature' in res['facets'])
-        eq_(len(res['facets']['signature']), 2)
+        assert 'signature' in res['facets']
+        assert len(res['facets']['signature']) == 2
         for facet in res['facets']['signature']:
-            ok_('js' not in facet['term'])
-            eq_(facet['count'], 1)
+            assert 'js' not in facet['term']
+            assert facet['count'] == 1
 
         # Test the "starts with" operator.
         res = self.api.get(
             signature='^js'  # starts with
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_(hit['signature'].startswith('js'))
+            assert hit['signature'].startswith('js')
 
-        ok_('signature' in res['facets'])
-        eq_(len(res['facets']['signature']), 2)
+        assert 'signature' in res['facets']
+        assert len(res['facets']['signature']) == 2
         for facet in res['facets']['signature']:
-            ok_(facet['term'].startswith('js'))
-            eq_(facet['count'], 1)
+            assert facet['term'].startswith('js')
+            assert facet['count'] == 1
 
         res = self.api.get(
             signature='!^js'  # does not start with
         )
 
-        eq_(res['total'], 3)
-        eq_(len(res['hits']), 3)
+        assert res['total'] == 3
+        assert len(res['hits']) == 3
         for hit in res['hits']:
-            ok_(not hit['signature'].startswith('js'))
+            assert not hit['signature'].startswith('js')
 
-        ok_('signature' in res['facets'])
-        eq_(len(res['facets']['signature']), 3)
+        assert 'signature' in res['facets']
+        assert len(res['facets']['signature']) == 3
         for facet in res['facets']['signature']:
-            ok_(not facet['term'].startswith('js'))
-            eq_(facet['count'], 1)
+            assert not facet['term'].startswith('js')
+            assert facet['count'] == 1
 
         # Test the "ends with" operator.
         res = self.api.get(
@@ -289,69 +284,66 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
         # Those operators are case-sensitive, so here we expect only 1 result.
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['signature'] == 'js::break_your_browser'
 
-        ok_('signature' in res['facets'])
-        eq_(len(res['facets']['signature']), 1)
-        eq_(
-            res['facets']['signature'][0],
-            {'term': 'js::break_your_browser', 'count': 1}
-        )
+        assert 'signature' in res['facets']
+        assert len(res['facets']['signature']) == 1
+        assert res['facets']['signature'][0] == {'term': 'js::break_your_browser', 'count': 1}
 
         res = self.api.get(
             signature='$rowser'  # ends with
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_(hit['signature'].endswith('rowser'))
+            assert hit['signature'].endswith('rowser')
 
-        ok_('signature' in res['facets'])
-        eq_(len(res['facets']['signature']), 2)
+        assert 'signature' in res['facets']
+        assert len(res['facets']['signature']) == 2
         for facet in res['facets']['signature']:
-            ok_(facet['term'].endswith('rowser'))
-            eq_(facet['count'], 1)
+            assert facet['term'].endswith('rowser')
+            assert facet['count'] == 1
 
         res = self.api.get(
             signature='!$rowser'  # does not end with
         )
 
-        eq_(res['total'], 3)
-        eq_(len(res['hits']), 3)
+        assert res['total'] == 3
+        assert len(res['hits']) == 3
         for hit in res['hits']:
-            ok_(not hit['signature'].endswith('rowser'))
+            assert not hit['signature'].endswith('rowser')
 
-        ok_('signature' in res['facets'])
-        eq_(len(res['facets']['signature']), 3)
+        assert 'signature' in res['facets']
+        assert len(res['facets']['signature']) == 3
         for facet in res['facets']['signature']:
-            ok_(not facet['term'].endswith('rowser'))
-            eq_(facet['count'], 1)
+            assert not facet['term'].endswith('rowser')
+            assert facet['count'] == 1
 
         # Test the "regex" operator.
         res = self.api.get(
             signature='@mozilla::.*::function'  # regex
         )
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['signature'], 'mozilla::js::function')
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['signature'] == 'mozilla::js::function'
 
         res = self.api.get(
             signature='@f.."(bar)"'  # regex
         )
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['signature'], 'foo(bar)')
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['signature'] == 'foo(bar)'
 
         res = self.api.get(
             signature='!@mozilla::.*::function'  # regex
         )
-        eq_(res['total'], 4)
-        eq_(len(res['hits']), 4)
+        assert res['total'] == 4
+        assert len(res['hits']) == 4
         for hit in res['hits']:
-            ok_(hit['signature'] != 'mozilla::js::function')
+            assert hit['signature'] != 'mozilla::js::function'
 
     @minimum_es_version('1.0')
     def test_get_with_range_operators(self):
@@ -375,19 +367,19 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['build_id'],
         )
 
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['build_id'], 2000)
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['build_id'] == 2000
 
         res = self.api.get(
             build_id='!2000',  # does not have terms
             _columns=['build_id'],
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_(hit['build_id'] != 2000)
+            assert hit['build_id'] != 2000
 
         # Test the "greater than" operator.
         res = self.api.get(
@@ -395,9 +387,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['build_id'],
         )
 
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['build_id'], 2001)
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['build_id'] == 2001
 
         # Test the "greater than or equal" operator.
         res = self.api.get(
@@ -405,10 +397,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['build_id'],
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_(hit['build_id'] >= 2000)
+            assert hit['build_id'] >= 2000
 
         # Test the "lower than" operator.
         res = self.api.get(
@@ -416,9 +408,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['build_id'],
         )
 
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
-        eq_(res['hits'][0]['build_id'], 1999)
+        assert res['total'] == 1
+        assert len(res['hits']) == 1
+        assert res['hits'][0]['build_id'] == 1999
 
         # Test the "lower than or equal" operator.
         res = self.api.get(
@@ -426,10 +418,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['build_id'],
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_(hit['build_id'] <= 2000)
+            assert hit['build_id'] <= 2000
 
     @minimum_es_version('1.0')
     def test_get_with_bool_operators(self):
@@ -473,19 +465,19 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['accessibility'],
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
         for hit in res['hits']:
-            ok_(hit['accessibility'])
+            assert hit['accessibility']
 
         res = self.api.get(
             accessibility='!__true__',  # is false
             _columns=['accessibility'],
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
-        ok_(not res['hits'][0]['accessibility'])
+        assert res['total'] == 2
+        assert len(res['hits']) == 2
+        assert not res['hits'][0]['accessibility']
 
     @minimum_es_version('1.0')
     def test_get_with_combined_operators(self):
@@ -525,38 +517,29 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get(
             signature=['js', '~::'],
         )
-        eq_(res['total'], 3)
-        eq_(
-            sorted([x['signature'] for x in res['hits']]),
-            sorted([sigs[0], sigs[1], sigs[2]])
-        )
+        assert res['total'] == 3
+        assert sorted([x['signature'] for x in res['hits']]), sorted([sigs[0], sigs[1], sigs[2]])
 
         res = self.api.get(
             signature=['js', '~::'],
             product=['Unknown'],
         )
-        eq_(res['total'], 0)
-        eq_(len(res['hits']), 0)
+        assert res['total'] == 0
+        assert len(res['hits']) == 0
 
         res = self.api.get(
             signature=['js', '~::'],
             product=['WaterWolf', 'EarthRacoon'],
         )
-        eq_(res['total'], 3)
-        eq_(
-            sorted([x['signature'] for x in res['hits']]),
-            sorted([sigs[0], sigs[1], sigs[2]])
-        )
+        assert res['total'] == 3
+        assert sorted([x['signature'] for x in res['hits']]) == sorted([sigs[0], sigs[1], sigs[2]])
 
         res = self.api.get(
             signature=['js', '~::'],
             app_notes=['foo bar'],
         )
-        eq_(res['total'], 2)
-        eq_(
-            sorted([x['signature'] for x in res['hits']]),
-            sorted([sigs[0], sigs[1]])
-        )
+        assert res['total'] == 2
+        assert sorted([x['signature'] for x in res['hits']]) == sorted([sigs[0], sigs[1]])
 
     @minimum_es_version('1.0')
     def test_get_with_pagination(self):
@@ -571,32 +554,32 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             '_results_number': '10',
         }
         res = self.api.get(**kwargs)
-        eq_(res['total'], number_of_crashes)
-        eq_(len(res['hits']), 10)
+        assert res['total'] == number_of_crashes
+        assert len(res['hits']) == 10
 
         kwargs = {
             '_results_number': '10',
             '_results_offset': '10',
         }
         res = self.api.get(**kwargs)
-        eq_(res['total'], number_of_crashes)
-        eq_(len(res['hits']), 10)
+        assert res['total'] == number_of_crashes
+        assert len(res['hits']) == 10
 
         kwargs = {
             '_results_number': '10',
             '_results_offset': '15',
         }
         res = self.api.get(**kwargs)
-        eq_(res['total'], number_of_crashes)
-        eq_(len(res['hits']), 6)
+        assert res['total'] == number_of_crashes
+        assert len(res['hits']) == 6
 
         kwargs = {
             '_results_number': '10',
             '_results_offset': '30',
         }
         res = self.api.get(**kwargs)
-        eq_(res['total'], number_of_crashes)
-        eq_(len(res['hits']), 0)
+        assert res['total'] == number_of_crashes
+        assert len(res['hits']) == 0
 
     @minimum_es_version('1.0')
     def test_get_with_sorting(self):
@@ -619,20 +602,20 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         self.refresh_index()
 
         res = self.api.get(_sort='product')
-        ok_(res['total'] > 0)
+        assert res['total'] > 0
 
         last_item = ''
         for hit in res['hits']:
-            ok_(last_item <= hit['product'], (last_item, hit['product']))
+            assert last_item <= hit['product']
             last_item = hit['product']
 
         # Descending order.
         res = self.api.get(_sort='-product')
-        ok_(res['total'] > 0)
+        assert res['total'] > 0
 
         last_item = 'zzzzz'
         for hit in res['hits']:
-            ok_(last_item >= hit['product'], (last_item, hit['product']))
+            assert last_item >= hit['product']
             last_item = hit['product']
 
         # Several fields.
@@ -640,7 +623,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _sort=['product', 'platform'],
             _columns=['product', 'platform'],
         )
-        ok_(res['total'] > 0)
+        assert res['total'] > 0
 
         last_product = ''
         last_platform = ''
@@ -648,21 +631,15 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             if hit['product'] != last_product:
                 last_platform = ''
 
-            ok_(last_product <= hit['product'], (last_product, hit['product']))
+            assert last_product <= hit['product']
             last_product = hit['product']
 
-            ok_(
-                last_platform <= hit['platform'],
-                (last_platform, hit['platform'])
-            )
+            assert last_platform <= hit['platform']
             last_platform = hit['platform']
 
-        # Invalid field.
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _sort='something',
-        )  # `something` is invalid
+        # Invalid field--"something" is invalid
+        with pytest.raises(BadArgumentError):
+            self.api.get(_sort='something')
 
     @minimum_es_version('1.0')
     def test_get_with_facets(self):
@@ -710,21 +687,21 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
-        ok_('signature' in res['facets'])
+        assert 'facets' in res
+        assert 'signature' in res['facets']
 
         expected_terms = [
             {'term': 'js::break_your_browser', 'count': 3},
             {'term': 'foo(bar)', 'count': 1},
         ]
-        eq_(res['facets']['signature'], expected_terms)
+        assert res['facets']['signature'] == expected_terms
 
-        ok_('platform' in res['facets'])
+        assert 'platform' in res['facets']
         expected_terms = [
             {'term': 'Linux', 'count': 3},
             {'term': 'Windows NT', 'count': 1},
         ]
-        eq_(res['facets']['platform'], expected_terms)
+        assert res['facets']['platform'] == expected_terms
 
         # Test one facet with filters
         kwargs = {
@@ -733,11 +710,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('product' in res['facets'])
+        assert 'product' in res['facets']
         expected_terms = [
             {'term': 'WaterWolf', 'count': 2},
         ]
-        eq_(res['facets']['product'], expected_terms)
+        assert res['facets']['product'] == expected_terms
 
         # Test one facet with a different filter
         kwargs = {
@@ -746,14 +723,14 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('product' in res['facets'])
+        assert 'product' in res['facets']
 
         expected_terms = [
             {'term': 'EarthRacoon', 'count': 1},
             {'term': 'NightTrain', 'count': 1},
             {'term': 'WaterWolf', 'count': 1},
         ]
-        eq_(res['facets']['product'], expected_terms)
+        assert res['facets']['product'] == expected_terms
 
         # Test the number of results.
         kwargs = {
@@ -761,8 +738,8 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('version' in res['facets'])
-        eq_(len(res['facets']['version']), 50)  # 50 is the default value
+        assert 'version' in res['facets']
+        assert len(res['facets']['version']) == 50  # 50 is the default value
 
         # Test with a different number of facets results.
         kwargs = {
@@ -771,8 +748,8 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('version' in res['facets'])
-        eq_(len(res['facets']['version']), 20)
+        assert 'version' in res['facets']
+        assert len(res['facets']['version']) == 20
 
         kwargs = {
             '_facets': ['version'],
@@ -780,25 +757,18 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('version' in res['facets'])
-        eq_(len(res['facets']['version']), number_of_crashes)
+        assert 'version' in res['facets']
+        assert len(res['facets']['version']) == number_of_crashes
 
         # Test errors
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _facets=['unknownfield']
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(_facets=['unknownfield'])
 
     @minimum_es_version('1.0')
     def test_get_with_too_many_facets(self):
         # Some crazy big number
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _facets=['signature'],
-            _facets_size=999999,
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(_facets=['signature'], _facets_size=999999)
 
         # 10,000 is the max,
         # should not raise an error
@@ -855,10 +825,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             '_facets_size': 0
         }
         res = self.api.get(**kwargs)
-        eq_(res['facets'], {})
+        assert res['facets'] == {}
         # hits should still work as normal
-        ok_(res['hits'])
-        eq_(len(res['hits']), res['total'])
+        assert res['hits']
+        assert len(res['hits']) == res['total']
 
     @minimum_es_version('1.0')
     def test_get_with_cardinality(self):
@@ -906,9 +876,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
-        ok_('cardinality_platform' in res['facets'])
-        eq_(res['facets']['cardinality_platform'], {'value': 2})
+        assert 'facets' in res
+        assert 'cardinality_platform' in res['facets']
+        assert res['facets']['cardinality_platform'] == {'value': 2}
 
         # Test more distinct values.
         kwargs = {
@@ -916,9 +886,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
-        ok_('cardinality_version' in res['facets'])
-        eq_(res['facets']['cardinality_version'], {'value': 51})
+        assert 'facets' in res
+        assert 'cardinality_version' in res['facets']
+        assert res['facets']['cardinality_version'] == {'value': 51}
 
         # Test as a level 2 aggregation.
         kwargs = {
@@ -926,17 +896,14 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
-        ok_('signature' in res['facets'])
+        assert 'facets' in res
+        assert 'signature' in res['facets']
         for facet in res['facets']['signature']:
-            ok_('cardinality_platform' in facet['facets'])
+            assert 'cardinality_platform' in facet['facets']
 
         # Test errors
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _facets=['_cardinality.unknownfield']
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(_facets=['_cardinality.unknownfield'])
 
     @minimum_es_version('1.0')
     def test_get_with_sub_aggregations(self):
@@ -990,8 +957,8 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
-        ok_('signature' in res['facets'])
+        assert 'facets' in res
+        assert 'signature' in res['facets']
 
         expected_terms = [
             {
@@ -1039,7 +1006,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             },
         ]
-        eq_(res['facets']['signature'], expected_terms)
+        assert res['facets']['signature'] == expected_terms
 
         # Test a different field.
         kwargs = {
@@ -1047,8 +1014,8 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
-        ok_('platform' in res['facets'])
+        assert 'facets' in res
+        assert 'platform' in res['facets']
 
         expected_terms = [
             {
@@ -1084,7 +1051,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             },
         ]
-        eq_(res['facets']['platform'], expected_terms)
+        assert res['facets']['platform'] == expected_terms
 
         # Test one facet with filters
         kwargs = {
@@ -1093,7 +1060,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('signature' in res['facets'])
+        assert 'signature' in res['facets']
         expected_terms = [
             {
                 'term': 'js::break_your_browser',
@@ -1108,7 +1075,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             },
         ]
-        eq_(res['facets']['signature'], expected_terms)
+        assert res['facets']['signature'] == expected_terms
 
         # Test one facet with a different filter
         kwargs = {
@@ -1117,7 +1084,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('signature' in res['facets'])
+        assert 'signature' in res['facets']
 
         expected_terms = [
             {
@@ -1149,7 +1116,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             },
         ]
-        eq_(res['facets']['signature'], expected_terms)
+        assert res['facets']['signature'] == expected_terms
 
         # Test the number of results.
         kwargs = {
@@ -1158,11 +1125,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('signature' in res['facets'])
-        ok_('version' in res['facets']['signature'][0]['facets'])
+        assert 'signature' in res['facets']
+        assert 'version' in res['facets']['signature'][0]['facets']
 
         version_sub_facet = res['facets']['signature'][0]['facets']['version']
-        eq_(len(version_sub_facet), 50)  # 50 is the default
+        assert len(version_sub_facet) == 50  # 50 is the default
 
         # Test with a different number of facets results.
         kwargs = {
@@ -1172,11 +1139,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('signature' in res['facets'])
-        ok_('version' in res['facets']['signature'][0]['facets'])
+        assert 'signature' in res['facets']
+        assert 'version' in res['facets']['signature'][0]['facets']
 
         version_sub_facet = res['facets']['signature'][0]['facets']['version']
-        eq_(len(version_sub_facet), 20)
+        assert len(version_sub_facet) == 20
 
         kwargs = {
             '_aggs.signature': ['version'],
@@ -1186,7 +1153,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get(**kwargs)
 
         version_sub_facet = res['facets']['signature'][0]['facets']['version']
-        eq_(len(version_sub_facet), number_of_crashes)
+        assert len(version_sub_facet) == number_of_crashes
 
         # Test with a third level aggregation.
         kwargs = {
@@ -1194,13 +1161,13 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('product' in res['facets'])
+        assert 'product' in res['facets']
         product_facet = res['facets']['product']
         for pf in product_facet:
-            ok_('version' in pf['facets'])
+            assert 'version' in pf['facets']
             version_facet = pf['facets']['version']
             for vf in version_facet:
-                ok_('cardinality_signature' in vf['facets'])
+                assert 'cardinality_signature' in vf['facets']
 
         # Test with a fourth level aggregation.
         kwargs = {
@@ -1208,25 +1175,22 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('product' in res['facets'])
+        assert 'product' in res['facets']
         product_facet = res['facets']['product']
         for pf in product_facet:
-            ok_('version' in pf['facets'])
+            assert 'version' in pf['facets']
             version_facet = pf['facets']['version']
             for vf in version_facet:
-                ok_('platform' in vf['facets'])
+                assert 'platform' in vf['facets']
                 platform_facet = vf['facets']['platform']
                 for lf in platform_facet:
-                    ok_('cardinality_signature' in lf['facets'])
+                    assert 'cardinality_signature' in lf['facets']
 
         # Test errors
         args = {}
         args['_aggs.signature'] = ['unknownfield']
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            **args
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(**args)
 
     @minimum_es_version('1.0')
     def test_get_with_date_histogram(self):
@@ -1279,8 +1243,8 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
-        ok_('histogram_date' in res['facets'])
+        assert 'facets' in res
+        assert 'histogram_date' in res['facets']
 
         def dt_to_midnight(date):
             return date.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1353,7 +1317,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             }
         ]
-        eq_(res['facets']['histogram_date'], expected_terms)
+        assert res['facets']['histogram_date'] == expected_terms
 
         # Test one facet with filters
         kwargs = {
@@ -1362,7 +1326,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('histogram_date' in res['facets'])
+        assert 'histogram_date' in res['facets']
         expected_terms = [
             {
                 'term': yesterday_str,
@@ -1389,7 +1353,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             },
         ]
-        eq_(res['facets']['histogram_date'], expected_terms)
+        assert res['facets']['histogram_date'] == expected_terms
 
         # Test one facet with a different filter
         kwargs = {
@@ -1398,7 +1362,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('histogram_date' in res['facets'])
+        assert 'histogram_date' in res['facets']
 
         expected_terms = [
             {
@@ -1438,7 +1402,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             }
         ]
-        eq_(res['facets']['histogram_date'], expected_terms)
+        assert res['facets']['histogram_date'] == expected_terms
 
         # Test the number of results.
         kwargs = {
@@ -1447,11 +1411,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('histogram_date' in res['facets'])
-        ok_('version' in res['facets']['histogram_date'][0]['facets'])
+        assert 'histogram_date' in res['facets']
+        assert 'version' in res['facets']['histogram_date'][0]['facets']
 
         version_facet = res['facets']['histogram_date'][0]['facets']['version']
-        eq_(len(version_facet), 50)  # 50 is the default
+        assert len(version_facet) == 50  # 50 is the default
 
         # Test with a different number of facets results.
         kwargs = {
@@ -1461,11 +1425,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('histogram_date' in res['facets'])
-        ok_('version' in res['facets']['histogram_date'][0]['facets'])
+        assert 'histogram_date' in res['facets']
+        assert 'version' in res['facets']['histogram_date'][0]['facets']
 
         version_facet = res['facets']['histogram_date'][0]['facets']['version']
-        eq_(len(version_facet), 20)
+        assert len(version_facet) == 20
 
         kwargs = {
             '_histogram.date': ['version'],
@@ -1475,16 +1439,13 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get(**kwargs)
 
         version_facet = res['facets']['histogram_date'][0]['facets']['version']
-        eq_(len(version_facet), number_of_crashes)
+        assert len(version_facet) == number_of_crashes
 
         # Test errors
         args = {}
         args['_histogram.date'] = ['unknownfield']
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            **args
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(**args)
 
     @minimum_es_version('1.0')
     def test_get_with_date_histogram_with_bad_interval(self):
@@ -1500,7 +1461,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             self.api.get(**kwargs)
             raise AssertionError('The line above is supposed to error out')
         except BadArgumentError as exception:
-            eq_(exception.param, '_histogram_interval.date')
+            assert exception.param == '_histogram_interval.date'
 
     @minimum_es_version('1.0')
     def test_get_with_number_histogram(self):
@@ -1563,7 +1524,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('facets' in res)
+        assert 'facets' in res
 
         expected_terms = [
             {
@@ -1629,7 +1590,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             }
         ]
-        eq_(res['facets']['histogram_build_id'], expected_terms)
+        assert res['facets']['histogram_build_id'] == expected_terms
 
         # Test one facet with filters
         kwargs = {
@@ -1664,7 +1625,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             },
         ]
-        eq_(res['facets']['histogram_build_id'], expected_terms)
+        assert res['facets']['histogram_build_id'] == expected_terms
 
         # Test one facet with a different filter
         kwargs = {
@@ -1711,7 +1672,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 }
             }
         ]
-        eq_(res['facets']['histogram_build_id'], expected_terms)
+        assert res['facets']['histogram_build_id'] == expected_terms
 
         # Test the number of results.
         kwargs = {
@@ -1720,12 +1681,12 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('version' in res['facets']['histogram_build_id'][0]['facets'])
+        assert 'version' in res['facets']['histogram_build_id'][0]['facets']
 
         version_facet = (
             res['facets']['histogram_build_id'][0]['facets']['version']
         )
-        eq_(len(version_facet), 50)  # 50 is the default
+        assert len(version_facet) == 50  # 50 is the default
 
         # Test with a different number of facets results.
         kwargs = {
@@ -1735,12 +1696,12 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('version' in res['facets']['histogram_build_id'][0]['facets'])
+        assert 'version' in res['facets']['histogram_build_id'][0]['facets']
 
         version_facet = (
             res['facets']['histogram_build_id'][0]['facets']['version']
         )
-        eq_(len(version_facet), 20)
+        assert len(version_facet) == 20
 
         kwargs = {
             '_histogram.build_id': ['version'],
@@ -1752,16 +1713,13 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         version_facet = (
             res['facets']['histogram_build_id'][0]['facets']['version']
         )
-        eq_(len(version_facet), number_of_crashes)
+        assert len(version_facet) == number_of_crashes
 
         # Test errors
         args = {}
         args['_histogram.build_id'] = ['unknownfield']
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            **args
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(**args)
 
     @minimum_es_version('1.0')
     def test_get_with_columns(self):
@@ -1779,9 +1737,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('signature' in res['hits'][0])
-        ok_('platform' in res['hits'][0])
-        ok_('date' not in res['hits'][0])
+        assert 'signature' in res['hits'][0]
+        assert 'platform' in res['hits'][0]
+        assert 'date' not in res['hits'][0]
 
         # Test a synonyme field returns the correct name.
         kwargs = {
@@ -1789,8 +1747,8 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('product_2' in res['hits'][0])
-        ok_('product' not in res['hits'][0])
+        assert 'product_2' in res['hits'][0]
+        assert 'product' not in res['hits'][0]
 
         # Test with 2 synonyme fields.
         kwargs = {
@@ -1798,20 +1756,15 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        ok_('product_2' in res['hits'][0])
-        ok_('product' in res['hits'][0])
+        assert 'product_2' in res['hits'][0]
+        assert 'product' in res['hits'][0]
 
         # Test errors
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _columns=['unknownfield']
-        )
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _columns=['fake_field']
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(_columns=['unknownfield'])
+
+        with pytest.raises(BadArgumentError):
+            self.api.get(_columns=['fake_field'])
 
     @minimum_es_version('1.0')
     def test_get_with_beta_version(self):
@@ -1841,10 +1794,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        eq_(res['total'], 2)
+        assert res['total'] == 2
 
         for hit in res['hits']:
-            ok_('4.0b' in hit['version'])
+            assert '4.0b' in hit['version']
 
     def test_get_against_nonexistent_index(self):
         config = self.get_base_config(es_index='socorro_test_reports_%W')
@@ -1854,48 +1807,42 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         res = api.get(**params)
-        eq_(res['total'], 0)
-        eq_(len(res['hits']), 0)
-        eq_(len(res['errors']), 3)  # 3 weeks are missing
+        assert res['total'] == 0
+        assert len(res['hits']) == 0
+        assert len(res['errors']) == 3  # 3 weeks are missing
 
     def test_get_too_large_date_range(self):
         # this is a whole year apart
         params = {
             'date': ['>2000-01-01T00:00:00', '<2001-01-10T00:00:00']
         }
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            **params
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(**params)
 
     def test_get_return_query_mode(self):
         res = self.api.get(
             signature='js',
             _return_query=True
         )
-        ok_('query' in res)
-        ok_('indices' in res)
+        assert 'query' in res
+        assert 'indices' in res
 
         query = res['query']
-        ok_('query' in query)
-        ok_('aggs' in query)
-        ok_('size' in query)
+        assert 'query' in query
+        assert 'aggs' in query
+        assert 'size' in query
 
     @minimum_es_version('1.0')
     def test_get_with_zero(self):
         res = self.api.get(
             _results_number=0,
         )
-        eq_(len(res['hits']), 0)
+        assert len(res['hits']) == 0
 
     @minimum_es_version('1.0')
     def test_get_with_too_many(self):
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _results_number=1001,
-        )
+        with pytest.raises(BadArgumentError):
+            self.api.get(_results_number=1001)
 
     @minimum_es_version('1.0')
     @requests_mock.Mocker(real_http=True)
@@ -1933,7 +1880,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
         res = self.api.get()
-        ok_('errors' in res)
+        assert 'errors' in res
 
         errors_exp = [
             {
@@ -1942,7 +1889,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 'shards_count': 1,
             }
         ]
-        eq_(res['errors'], errors_exp)
+        assert res['errors'] == errors_exp
 
         # Test with several failures.
         es_results = {
@@ -1989,7 +1936,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
         res = self.api.get()
-        ok_('errors' in res)
+        assert 'errors' in res
 
         errors_exp = [
             {
@@ -2003,4 +1950,4 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 'shards_count': 1,
             },
         ]
-        eq_(res['errors'], errors_exp)
+        assert res['errors'] == errors_exp

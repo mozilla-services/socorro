@@ -2,12 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_, assert_raises
+import pytest
 
-from socorro.lib import MissingArgumentError
 from socorro.external.postgresql.bugs import Bugs
-
-from .unittestbase import PostgreSQLTestCase
+from socorro.lib import MissingArgumentError
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestBugs(PostgreSQLTestCase):
@@ -21,14 +20,6 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         cursor = self.connection.cursor()
 
         # Insert data
-        cursor.execute("""
-            INSERT INTO bugs VALUES
-            (1),
-            (2),
-            (3),
-            (4);
-        """)
-
         cursor.execute("""
             INSERT INTO bug_associations
             (signature, bug_id)
@@ -57,7 +48,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE bug_associations, bugs
+            TRUNCATE bug_associations
             CASCADE
         """)
         self.connection.commit()
@@ -84,12 +75,10 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             ],
             "total": 2
         }
-        eq_(res['total'], res_expected['total'])
+        assert res['total'] == res_expected['total']
         # by convert the hits to sets we can be certain order doesn't matter
-        eq_(
-            set([(x['id'], x['signature']) for x in res['hits']]),
-            set([(x['id'], x['signature']) for x in res_expected['hits']])
-        )
+        expected = set([(x['id'], x['signature']) for x in res_expected['hits']])
+        assert set([(x['id'], x['signature']) for x in res['hits']]) == expected
 
         # Test 2: several signatures with bugs
         params = {
@@ -118,11 +107,9 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             "total": 4
         }
 
-        eq_(res['total'], res_expected['total'])
-        eq_(
-            set([(x['id'], x['signature']) for x in res['hits']]),
-            set([(x['id'], x['signature']) for x in res_expected['hits']])
-        )
+        assert res['total'] == res_expected['total']
+        expected = set([(x['id'], x['signature']) for x in res_expected['hits']])
+        assert set([(x['id'], x['signature']) for x in res['hits']]) == expected
 
         # Test 3: a signature without bugs
         params = {
@@ -134,11 +121,11 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             "total": 0
         }
 
-        eq_(res, res_expected)
+        assert res == res_expected
 
         # Test 4: missing argument
-        params = {}
-        assert_raises(MissingArgumentError, bugs.get, **params)
+        with pytest.raises(MissingArgumentError):
+            bugs.get()
 
         # Test 5: search by bug_ids argument
         params = {
@@ -156,7 +143,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             ],
             'total': 3
         }
-        eq_(res['total'], res_expected['total'])
+        assert res['total'] == res_expected['total']
         assert len(res['hits']) == len(res_expected['hits'])
         for row in res_expected['hits']:
-            ok_(row in res['hits'])
+            assert row in res['hits']

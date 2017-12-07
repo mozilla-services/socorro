@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import ok_
-
 from socorro.external.es.index_creator import IndexCreator
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
@@ -27,10 +25,8 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
             {'foo': 'bar'}
         )
 
-        ok_(
-            self.index_client.exists(
-                self.config.elasticsearch.elasticsearch_index
-            )
+        assert self.index_client.exists(
+            self.config.elasticsearch.elasticsearch_index
         )
 
     def test_create_socorro_index(self):
@@ -39,8 +35,6 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
             self.config.elasticsearch.elasticsearch_index
         )
 
-        ok_(
-            self.index_client.exists(
-                self.config.elasticsearch.elasticsearch_index
-            )
+        assert self.index_client.exists(
+            self.config.elasticsearch.elasticsearch_index
         )

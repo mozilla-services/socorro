@@ -4,7 +4,6 @@ import datetime
 import glob
 import os
 import os.path
-import subprocess
 import sys
 
 if len(sys.argv) != 2:
@@ -48,6 +47,6 @@ for filename in glob.glob(os.path.join(partition_dir, "*")):
 
 if len(errors) > 1:
     print "FAILED: some files returned errors:", str(errors)
-    return 1
+    sys.exit(1)
 
-return 0
+sys.exit(0)

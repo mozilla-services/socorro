@@ -118,7 +118,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         self._save_plugins(connection, processed_crash, report_id)
 
     def _save_processed_report(self, connection, processed_crash):
-        """ Here we INSERT or UPDATE a row in the reports table.
+        """Here we INSERT or UPDATE a row in the reports table.
         This is the first stop before imported data gets into our normalized
         batch reporting (next table: reports_clean).
 
@@ -143,6 +143,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         _save_processed_crash(), but is much simpler seeming because there are
         far fewer columns being passed into the parameterized query.
         """
+
         column_list = []
         placeholder_list = []
         # create a list of values to go into the reports table
@@ -215,7 +216,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         content, maybe even Jetpack... This indicates which process was the
         crashing process.
             plugin - When set to plugin, the jsonDocument MUST calso contain
-                     PluginFilename, PluginName, and PluginVersion
+                     PluginFilename and PluginName
         """
         process_type = processed_crash['process_type']
         if not process_type:
@@ -228,7 +229,6 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
             try:
                 plugin_filename = processed_crash['PluginFilename']
                 plugin_name = processed_crash['PluginName']
-                plugin_version = processed_crash['PluginVersion']
             except KeyError as x:
                 self.config.logger.error(
                     'the crash is missing a required field: %s', str(x)
@@ -238,54 +238,19 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
                                'where filename = %s '
                                'and name = %s')
             try:
-                plugin_id = single_value_sql(connection,
-                                             find_plugin_sql,
-                                             (plugin_filename,
-                                              plugin_name))
+                single_value_sql(
+                    connection,
+                    find_plugin_sql,
+                    (plugin_filename, plugin_name)
+                )
             except SQLDidNotReturnSingleValue:
                 insert_plugsins_sql = ("insert into plugins (filename, name) "
                                        "values (%s, %s) returning id")
-                plugin_id = single_value_sql(connection,
-                                             insert_plugsins_sql,
-                                             (plugin_filename,
-                                              plugin_name))
-            crash_id = processed_crash['uuid']
-            table_suffix = self._table_suffix_for_crash_id(crash_id)
-            plugin_reports_table_name = 'plugins_reports_%s' % table_suffix
-
-            # why are we deleting first?  This might be a reprocessing job and
-            # the plugins_reports data might already be in the table: a
-            # straight insert might fail.  Why not check to see if there is
-            # data already there and then just not insert if data is there?
-            # We may be reprocessing to deal with missing plugin_reports data,
-            # so just because there is already data there doesn't mean that we
-            # can skip this. What about using "upsert" sql - that would be fine
-            # and result in one fewer round trip between client and database,
-            # but "upsert" sql is opaque and not easy to understand at a
-            # glance.  This was faster to implement.  What about using
-            # "transaction check points"?  Too many round trips between the
-            # client and the server.
-            plugins_reports_delete_sql = (
-                'delete from %s where report_id = %%s'
-                % plugin_reports_table_name
-            )
-            execute_no_results(connection,
-                               plugins_reports_delete_sql,
-                               (report_id,))
-
-            plugins_reports_insert_sql = (
-                'insert into %s '
-                '    (report_id, plugin_id, date_processed, version) '
-                'values '
-                '    (%%s, %%s, %%s, %%s)' % plugin_reports_table_name
-            )
-            values_tuple = (report_id,
-                            plugin_id,
-                            processed_crash['date_processed'],
-                            plugin_version)
-            execute_no_results(connection,
-                               plugins_reports_insert_sql,
-                               values_tuple)
+                execute_no_results(
+                    connection,
+                    insert_plugsins_sql,
+                    (plugin_filename, plugin_name)
+                )
 
     @staticmethod
     def _table_suffix_for_crash_id(crash_id):

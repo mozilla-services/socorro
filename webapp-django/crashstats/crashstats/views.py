@@ -1,8 +1,9 @@
 import copy
+import gzip
 import json
 import datetime
+import os
 import urllib
-import gzip
 from collections import defaultdict
 from operator import itemgetter
 from io import BytesIO
@@ -871,15 +872,7 @@ def report_index(request, crash_id, default_context=None):
         context['raw_stackwalker_output'] = 'No dump available'
         parsed_dump = {}
 
-    # If the parsed_dump lacks a `parsed_dump.crash_info.crashing_thread`
-    # we can't loop over the frames :(
-    crashing_thread = parsed_dump.get('crash_info', {}).get('crashing_thread')
-    if crashing_thread is None:
-        # the template does a big `{% if parsed_dump.threads %}`
-        parsed_dump['threads'] = None
-    else:
-        context['crashing_thread'] = crashing_thread
-
+    context['crashing_thread'] = parsed_dump.get('crash_info', {}).get('crashing_thread')
     if context['report']['signature'].startswith('shutdownhang'):
         # For shutdownhang signatures, we want to use thread 0 as the
         # crashing thread, because that's the thread that actually contains
@@ -1021,6 +1014,16 @@ def status_revision(request):
         models.Status().get()['socorro_revision'],
         content_type='text/plain'
     )
+
+
+def dockerflow_version(requst):
+    path = os.path.join(settings.SOCORRO_ROOT, 'version.json')
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            data = fp.read()
+    else:
+        data = '{}'
+    return http.HttpResponse(data, content_type='text/json')
 
 
 @pass_default_context

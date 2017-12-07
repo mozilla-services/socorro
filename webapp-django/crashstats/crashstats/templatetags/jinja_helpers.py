@@ -6,12 +6,12 @@ import urllib
 import isodate
 import jinja2
 import humanfriendly
-
 from django_jinja import library
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.template import engines
+from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_str
 
@@ -223,7 +223,7 @@ def read_crash_column(crash, column_key):
 
 
 @library.global_function
-def bugzilla_submit_url(report, bug_product):
+def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
@@ -239,6 +239,15 @@ def bugzilla_submit_url(report, bug_product):
     elif op_sys in ('Windows Unknown', 'Windows 2000'):
         op_sys = 'Windows'
 
+    crashing_thread_frames = None
+    if parsed_dump.get('threads') and crashing_thread is not None:
+        crashing_thread_frames = bugzilla_thread_frames(parsed_dump['threads'][crashing_thread])
+
+    comment = render_to_string('crashstats/bugzilla_comment.txt', {
+        'uuid': report['uuid'],
+        'crashing_thread_frames': crashing_thread_frames,
+    })
+
     kwargs = {
         'bug_severity': 'critical',
         'keywords': 'crash',
@@ -247,15 +256,7 @@ def bugzilla_submit_url(report, bug_product):
         'rep_platform': report['cpu_name'],
         'cf_crash_signature': '[@ {}]'.format(smart_str(report['signature'])),
         'short_desc': 'Crash in {}'.format(smart_str(report['signature'])),
-        'comment': (
-            'This bug was filed from the Socorro interface and is \n'
-            'report bp-{}.\n'
-            '{}'
-            '\n'
-        ).format(
-            report['uuid'],
-            '=' * 61
-        ),
+        'comment': comment,
     }
 
     # some special keys have to be truncated to make Bugzilla happy
@@ -271,6 +272,30 @@ def bugzilla_submit_url(report, bug_product):
 
     url += '?' + urllib.urlencode(kwargs, True)
     return url
+
+
+def bugzilla_thread_frames(thread):
+    """Extract frame info for the top frames of a crashing thread to be
+    included in the Bugzilla summary when reporting the crash.
+
+    """
+    frames = []
+    for frame in thread['frames'][:10]:  # Max 10 frames
+        # Source is an empty string if data isn't available
+        source = frame.get('file') or ''
+        if frame.get('line'):
+            source += ':{}'.format(frame['line'])
+
+        # Remove function arguments
+        signature = re.sub(r'\(.*\)', '', frame.get('signature', ''))
+
+        frames.append({
+            'frame': frame.get('frame', '?'),
+            'module': frame.get('module', ''),
+            'signature': signature,
+            'source': source,
+        })
+    return frames
 
 
 @library.filter

@@ -19,7 +19,6 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
-import socorro.external.postgresql.crashes
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
@@ -631,6 +630,7 @@ class ProcessedCrash(SocorroMiddleware):
         'addons',
         'json_dump',
         'upload_file_minidump_*',
+        'mdsw_status_string',
     )
 
     # Same as for RawCrash, we supplement with the existing list, on top
@@ -939,6 +939,23 @@ class CrontabberState(SocorroMiddleware):
     # will never contain PII
     API_WHITELIST = None
 
+    def get(self, *args, **kwargs):
+        resp = super(CrontabberState, self).get(*args, **kwargs)
+        apps = resp['state']
+
+        # Redact last_error data so it doesn't bleed infrastructure info into
+        # the world
+        for name, state in apps.items():
+            if state.get('last_error'):
+                # NOTE(willkg): The structure of last_error is defined in
+                # crontabber in crontabber/app.py.
+                state['last_error'] = {
+                    'traceback': 'See error logging system.',
+                    'value': 'See error logging system.',
+                    'type': state['last_error'].get('type', 'Unknown')
+                }
+        return resp
+
 
 class BugzillaBugInfo(SocorroCommon):
 
@@ -1076,32 +1093,6 @@ class GraphicsDevices(SocorroMiddleware):
                 names[key] = name_pair
 
         return names
-
-
-class AduBySignature(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.crashes.AduBySignature
-
-    deprecation_warning = (
-        'This endpoint is deprecated and will soon cease to exist.\n'
-        'Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1380761'
-    )
-
-    required_params = (
-        'product_name',
-        'signature',
-        'channel',
-    )
-
-    possible_params = (
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
 
 
 class ADI(SocorroMiddleware):

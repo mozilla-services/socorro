@@ -45,5 +45,6 @@ Contents
    architecture/*
    components/*
    services/*
+   tests/*
    deploy
    howto

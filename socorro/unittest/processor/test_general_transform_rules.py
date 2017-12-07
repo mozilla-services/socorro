@@ -4,18 +4,17 @@
 
 import copy
 
-from nose.tools import eq_, ok_
+from configman.dotdict import DotDict as CDotDict
 from mock import Mock
 
-from configman.dotdict import DotDict as CDotDict
-
-from socorro.unittest.testbase import TestCase
 from socorro.lib.util import DotDict
 from socorro.processor.general_transform_rules import (
     IdentifierRule,
     CPUInfoRule,
     OSInfoRule,
 )
+from socorro.unittest.testbase import TestCase
+
 
 canonical_standard_raw_crash = DotDict({
     "uuid": '00000000-0000-0000-0000-000002140504',
@@ -129,11 +128,11 @@ class TestIdentifierRule(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        eq_(processed_crash.crash_id, "00000000-0000-0000-0000-000002140504")
-        eq_(processed_crash.uuid, "00000000-0000-0000-0000-000002140504")
+        assert processed_crash.crash_id == "00000000-0000-0000-0000-000002140504"
+        assert processed_crash.uuid == "00000000-0000-0000-0000-000002140504"
 
         # raw crash should be unchanged
-        eq_(raw_crash, canonical_standard_raw_crash)
+        assert raw_crash == canonical_standard_raw_crash
 
     def test_stuff_missing(self):
         config = self.get_basic_config()
@@ -156,10 +155,10 @@ class TestIdentifierRule(TestCase):
             processor_meta
         )
 
-        eq_(result, (True, False))
+        assert result == (True, False)
 
         # raw crash should be unchanged
-        eq_(raw_crash, expected_raw_crash)
+        assert raw_crash == expected_raw_crash
 
 
 class TestCPUInfoRule(TestCase):
@@ -266,11 +265,11 @@ class TestOSInfoRule(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        eq_(processed_crash.os_name, "Windows NT")
-        eq_(processed_crash.os_version, "6.1.7601 Service Pack 1")
+        assert processed_crash.os_name == "Windows NT"
+        assert processed_crash.os_version == "6.1.7601 Service Pack 1"
 
         # raw crash should be unchanged
-        eq_(raw_crash, canonical_standard_raw_crash)
+        assert raw_crash == canonical_standard_raw_crash
 
     def test_stuff_missing(self):
         config = self.get_basic_config()
@@ -290,7 +289,7 @@ class TestOSInfoRule(TestCase):
         expected = DotDict()
         expected.os_version = ''
         expected.os_name = ''
-        eq_(processed_crash, expected)
+        assert processed_crash == expected
 
         # raw crash should be unchanged
-        eq_(raw_crash, canonical_standard_raw_crash)
+        assert raw_crash == canonical_standard_raw_crash

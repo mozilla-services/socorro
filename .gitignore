@@ -16,7 +16,6 @@ socorro/unittest/database/logs/
 socorro/unittest/testlib/logs/
 stackwalk/
 exploitable/
-docs/_build/
 *~
 coverage.xml
 .coverage
@@ -51,3 +50,8 @@ e2e-tests/.cache/
 .docker-build
 .cache/
 docker-compose.override.yml
+my.env
+
+# docs things
+docs/_build/
+docs/tests/e2e_readme.md

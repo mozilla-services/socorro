@@ -2,10 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_
-
 from configman import ConfigurationManager, RequiredConfig, Namespace
 from configman.converters import to_str
+import pytest
 
 from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
@@ -86,20 +85,15 @@ class TestConverters(TestCase):
             'socorro.unittest.lib.test_converters.Bar'
         )
         result = converter_fn(class_list_str)
-        self.assertTrue(hasattr(result, 'required_config'))
+        assert hasattr(result, 'required_config')
         req = result.required_config
-        self.assertEqual(len(req), 2)
-        self.assertTrue('class_Foo' in req)
-        self.assertEqual(len(req.class_Foo), 1)
-        self.assertTrue('class_Bar' in req)
-        self.assertEqual(len(req.class_Bar), 1)
-        self.assertEqual(
-            sorted([x.strip() for x in class_list_str.split(',')]),
-            sorted([
-                x.strip() for x in
-                to_str(result).strip("'").split(',')
-            ])
-        )
+        assert len(req) == 2
+        assert 'class_Foo' in req
+        assert len(req.class_Foo) == 1
+        assert 'class_Bar' in req
+        assert len(req.class_Bar) == 1
+        expected = sorted([x.strip() for x in to_str(result).strip("'").split(',')])
+        assert sorted([x.strip() for x in class_list_str.split(',')]) == expected
 
     def test_classes_in_namespaces_converter_2(self):
         converter_fn = str_to_classes_in_namespaces_converter(
@@ -107,7 +101,8 @@ class TestConverters(TestCase):
         )
         class_sequence = (Foo, Bar)
         # ought to raise TypeError because 'class_sequence' is not a string
-        self.assertRaises(TypeError, converter_fn, class_sequence)
+        with pytest.raises(TypeError):
+            converter_fn(class_sequence)
 
     def test_classes_in_namespaces_converter_3(self):
         n = Namespace()
@@ -118,7 +113,7 @@ class TestConverters(TestCase):
                 'socorro.unittest.lib.test_converters.Foo, '
                 'socorro.unittest.lib.test_converters.Foo'
             ),
-            from_string_converter= str_to_classes_in_namespaces_converter(
+            from_string_converter=str_to_classes_in_namespaces_converter(
                 '%(name)s_%(index)02d'
             )
         )
@@ -126,10 +121,10 @@ class TestConverters(TestCase):
         cm = ConfigurationManager(n, argv_source=[])
         config = cm.get_config()
 
-        self.assertEqual(len(config.kls_list.subordinate_namespace_names), 3)
-        self.assertTrue('Foo_00' in config)
-        self.assertTrue('Foo_01' in config)
-        self.assertTrue('Foo_02' in config)
+        assert len(config.kls_list.subordinate_namespace_names) == 3
+        assert 'Foo_00' in config
+        assert 'Foo_01' in config
+        assert 'Foo_02' in config
 
     def test_classes_in_namespaces_converter_4(self):
         n = Namespace()
@@ -160,12 +155,11 @@ class TestConverters(TestCase):
         )
         config = cm.get_config()
 
-
-        self.assertEqual(len(config.kls_list.subordinate_namespace_names), 4)
+        assert len(config.kls_list.subordinate_namespace_names) == 4
         for x in config.kls_list.subordinate_namespace_names:
-            self.assertTrue(x in config)
-        self.assertEqual(config.Alpha_00.a, 21)
-        self.assertEqual(config.Beta_01.b, 38)
+            assert x in config
+        assert config.Alpha_00.a == 21
+        assert config.Beta_01.b == 38
 
     def test_classes_in_namespaces_converter_5(self):
         n = Namespace()
@@ -196,13 +190,13 @@ class TestConverters(TestCase):
         )
         config = cm.get_config()
 
-        self.assertEqual(len(config.kls_list.subordinate_namespace_names), 4)
+        assert len(config.kls_list.subordinate_namespace_names) == 4
         for i, (a_class_name, a_class, ns_name) in (
             enumerate(config.kls_list.class_list)
         ):
-            self.assertTrue(isinstance(a_class_name, str))
-            self.assertEqual(a_class_name, a_class.__name__)
-            self.assertEqual(ns_name, "%s_%02d" % (a_class_name, i))
+            assert isinstance(a_class_name, str)
+            assert a_class_name == a_class.__name__
+            assert ns_name == "%s_%02d" % (a_class_name, i)
 
     def test_change_default(self):
         class Alpha(RequiredConfig):
@@ -219,15 +213,6 @@ class TestConverters(TestCase):
             '29300'
         )
 
-        ok_(
-            a_new_option_with_a_new_default
-            is not Alpha.required_config.an_option
-        )
-        eq_(
-            a_new_option_with_a_new_default.default,
-            '29300'
-        )
-        eq_(
-            Alpha.required_config.an_option.default,
-            19
-        )
+        assert a_new_option_with_a_new_default is not Alpha.required_config.an_option
+        assert a_new_option_with_a_new_default.default == '29300'
+        assert Alpha.required_config.an_option.default == 19

@@ -60,21 +60,6 @@ IF reportsclean THEN
 END IF;
 
 
-CREATE TEMPORARY TABLE temp_signature_summaries (name TEXT)
-ON COMMIT DROP;
-
-INSERT INTO temp_signature_summaries
-    VALUES
-        ('signature_summary_products')
-        ,('signature_summary_installations')
-        ,('signature_summary_uptime')
-        ,('signature_summary_os')
-        ,('signature_summary_process_type')
-        ,('signature_summary_architecture')
-        ,('signature_summary_flash_version')
-        ,('signature_summary_device')
-;
-
 -- loop through the days, backfilling one at a time
 WHILE thisday <= lastday LOOP
     RAISE INFO 'backfilling other matviews for %',thisday;
@@ -100,14 +85,6 @@ WHILE thisday <= lastday LOOP
     PERFORM backfill_android_devices(thisday);
     RAISE INFO 'graphics_devices';
     PERFORM backfill_graphics_devices(thisday);
-    RAISE INFO 'crash_adu_by_build_signature';
-    PERFORM backfill_crash_adu_by_build_signature(thisday);
-    FOR tablename in SELECT name from temp_signature_summaries LOOP
-        RAISE INFO 'signature summary - %', tablename;
-        PERFORM backfill_named_table(tablename, thisday);
-    END LOOP;
-    RAISE INFO 'gccrashes';
-    PERFORM backfill_gccrashes(thisday, check_period);
     thisday := thisday + 1;
 
 END LOOP;
@@ -115,8 +92,6 @@ END LOOP;
 -- finally rank_compare, which doesn't need to be filled in for each day
 RAISE INFO 'rank_compare';
 PERFORM backfill_rank_compare(lastday);
-
-DROP TABLE temp_signature_summaries;
 
 RETURN true;
 END; $$;

@@ -1,3 +1,5 @@
+# flake8: noqa
+
 """
 Static data for Socorro - basic information that Socorro expects to be
 present in the database in order to function correctly.
@@ -123,6 +125,7 @@ class ReleaseRepositories(BaseTable):
         ['mozilla-aurora-android-api-15'],
         ['mozilla-beta-android-api-15'],
         ['mozilla-release-android-api-15'],
+        ['mozilla-central-android-api-16'],
         ['mozilla-esr38'],
         ['mozilla-esr45'],
         ['comm-esr38'],
@@ -147,69 +150,56 @@ class CrashTypes(BaseTable):
 
 class ReportPartitionInfo(BaseTable):
     table = 'report_partition_info'
-    columns = ['table_name', 'build_order', 'keys', 'indexes',
-               'fkeys', 'partition_column', 'timetype']
-    rows = [['reports', '1', '{id,uuid}',
-             '{date_processed,hangid,"product,version",reason,signature,url}',
-             '{}', 'date_processed', 'TIMESTAMPTZ'],
-            ['plugins_reports', '2', '{"report_id,plugin_id"}',
-             '{"report_id,date_processed"}',
-             ('{"(plugin_id) REFERENCES plugins(id)","(report_id)'
-              ' REFERENCES reports_WEEKNUM(id)"}'),
-             'date_processed', 'TIMESTAMPTZ'],
-            ['extensions', '3', '{"report_id,extension_key"}',
-             '{"report_id,date_processed"}',
-             '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
-             'date_processed', 'TIMESTAMPTZ'],
-            ['raw_crashes', '4', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ'],
-            ['processed_crashes', '5', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ'],
-            ['signature_summary_products', '6',
-             '{"signature_id,product_name,version_string,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_installations', '7',
-             '{"signature_id,product_name,version_string,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_uptime', '8',
-             '{"signature_id,product_name,version_string,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_os', '9',
-             '{"signature_id,os_version_string,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_process_type', '10',
-             '{"signature_id,process_type,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_architecture', '11',
-             '{"signature_id,architecture,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_flash_version', '12',
-             '{"signature_id,flash_version,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['signature_summary_device', '13',
-             '{"signature_id,android_device_id,product_version_id,report_date"}',
-             '{}',
-             '{}',
-             'report_date', 'DATE'],
-            ['missing_symbols', '14',
-             '{}',
-             '{}',
-             '{}',
-             'date_processed', 'DATE']]
+    columns = [
+        'table_name', 'build_order', 'keys', 'indexes', 'fkeys', 'partition_column', 'timetype'
+    ]
+    rows = [
+        (
+            'reports',
+            '1',
+            '{id,uuid}',
+            '{date_processed,hangid,"product,version",reason,signature,url}',
+            '{}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'extensions',
+            '3',
+            '{"report_id,extension_key"}',
+            '{"report_id,date_processed"}',
+            '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'raw_crashes',
+            '4',
+            '{uuid}',
+            '{date_processed}',
+            '{}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'processed_crashes',
+            '12',
+            '{uuid}',
+            '{date_processed}',
+            '{}',
+            'date_processed',
+            'TIMESTAMPTZ'
+        ),
+        (
+            'missing_symbols',
+            '13',
+            '{}',
+            '{}',
+            '{}',
+            'date_processed',
+            'DATE'
+        ),
+    ]
 
 
 class Products(BaseTable):
@@ -232,11 +222,25 @@ class ProductBuildTypes(BaseTable):
         'product_name', 'build_type', 'throttle'
     ]
     rows = [
-        ['Firefox', 'esr', '1.0',],
+        ['Firefox', 'esr', '1.0'],
         ['Firefox', 'aurora', '1.0'],
         ['Firefox', 'beta', '1.0'],
         ['Firefox', 'release', '0.1'],
         ['Firefox', 'nightly', '1.0'],
+    ]
+
+
+class ProductProductIDMap(BaseTable):
+    table = 'product_productid_map'
+    columns = [
+        'product_name', 'productid', 'rewrite', 'version_began'
+    ]
+    rows = [
+        ['Fennec', '{a23983c0-fd0e-11dc-95ff-0800200c9a66}', 'f', '0.1'],
+        ['FennecAndroid', '{aa3c5121-dab2-40e2-81ca-7ea25febc110}', 't', '0.1'],
+        ['Firefox', '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}', 'f', '0.7'],
+        ['Thunderbird', '{3550f703-e582-4d05-9a08-453d09bdfdc6}', 'f', '0.3'],
+        ['SeaMonkey', '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}', 'f', '1.0a'],
     ]
 
 
@@ -278,7 +282,12 @@ class SpecialProductPlatforms(BaseTable):
         ['android-arm', 'mozilla-central-android-api-15', 'nightly', 'mobile', 'FennecAndroid', '37.0'],
         ['android-arm', 'mozilla-aurora-android-api-15', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
         ['android-arm', 'mozilla-beta-android-api-15', 'beta', 'mobile', 'FennecAndroid', '37.0'],
-        ['android-arm', 'mozilla-release-android-api-15', 'release', 'mobile', 'FennecAndroid', '37.0']
+        ['android-arm', 'mozilla-release-android-api-15', 'release', 'mobile', 'FennecAndroid', '37.0'],
+
+        # FennecAndroid 56+
+        ['android-arm', 'mozilla-central-android-api-16', 'nightly', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-beta-android-api-16', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
+        ['android-arm', 'mozilla-release-android-api-16', 'aurora', 'mobile', 'FennecAndroid', '37.0'],
     ]
 
 
@@ -287,4 +296,5 @@ tables = [OSNames, OSNameMatches, ProcessTypes, ReleaseChannels,
           ReleaseChannelMatches, UptimeLevels, WindowsVersions,
           OSVersions, ReleaseRepositories,
           CrashTypes, ReportPartitionInfo,
-          Products, ProductBuildTypes, ProductReleaseChannels, SpecialProductPlatforms]
+          Products, ProductBuildTypes, ProductReleaseChannels,
+          ProductProductIDMap, SpecialProductPlatforms]

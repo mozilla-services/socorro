@@ -143,9 +143,28 @@ def uuid_to_date(uuid, century='20'):
 
 
 class JsonDTEncoder(json.JSONEncoder):
+    """JSON encoder that handles datetimes
+
+    >>> json.dumps(some_data, cls=JsonDTEncoder)
+    ...
+
+    """
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
+        return json.JSONEncoder.default(self, obj)
+
+
+class JsonDTISOEncoder(json.JSONEncoder):
+    """JSON encoder that handles datetimes by encoding to isoformat
+
+    >>> json.dumps(some_data, cls=JsonDTISOEncoder)
+    ...
+
+    """
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
 
 

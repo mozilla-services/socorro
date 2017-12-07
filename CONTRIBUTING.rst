@@ -100,15 +100,49 @@ Style nits should be covered by linting as much as possible.
 Code reviews should review the changes in the context of the rest of the system.
 
 
-Dependencies
-============
+Python Dependencies
+===================
 
-Dependencies for all parts Socorro are in ``requirements.txt``. They need to be
-pinned and hashed. Use `hashin <https://pypi.python.org/pypi/hashin>`_.
+Python dependencies for all parts of Socorro are split between two files:
+
+1. ``requirements/default.txt``, containing dependencies that Socorro uses
+   directly.
+2. ``requirements/constraints.txt``, containing dependencies required by the
+   dependencies in ``default.txt`` that Socorro does not use directly.
+
+Dependencies in both files must be pinned and hashed. Use
+`hashin <https://pypi.python.org/pypi/hashin>`_.
 
 For example, to add ``foobar`` version 5::
 
-  hashin -r requirements.txt foobar==5
+  hashin -r requirements/default.txt foobar==5
+
+If ``foobar`` has any dependencies that would also be installed, you must add
+them to the constraints file::
+
+  hashin -r requirements/constraints.txt bazzbiff==4.0
+
+Then rebuild your docker environment::
+
+  make dockerbuild
+
+If there are problems, it'll tell you.
+
+.. note:: If you're unsure what dependencies to add to the constraints file,
+   the error from running ``make dockerbuild`` should include a list of
+   dependencies that were missing, including their version numbers and hashes.
+
+
+JavaScript Dependencies
+=======================
+
+Frontend dependencies for the webapp are in ``webapp-django/package.json``. They
+must be pinned and included in
+`package-lock.json <https://docs.npmjs.com/files/package-locks>`_.
+
+You can add new dependencies using ``npm`` (you must use version 5 or higher):
+
+  npm install --save-exact foobar@1.0.0
 
 Then rebuild your docker environment::
 
@@ -136,7 +170,7 @@ Running tests
 
 The tests in ``socorro/unittests/`` use `pytest <https://pytest.org/>`_.
 
-The tests in ``webapp-django/`` use `Nose <https://nose.readthedocs.io/>`_.
+The tests in ``webapp-django/`` use `pytest <https://pytest.org/>`_.
 
 To run the tests, do::
 

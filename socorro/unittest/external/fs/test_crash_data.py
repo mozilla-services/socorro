@@ -7,7 +7,7 @@ import tempfile
 
 from configman import ConfigurationManager, Namespace
 from mock import Mock
-from nose.tools import eq_, assert_raises
+import pytest
 
 from socorro.lib import (
     MissingArgumentError,
@@ -111,7 +111,7 @@ class IntegrationTestCrashData(TestCase):
                             'application/octet-stream')
             res = service.get(**params)
 
-            eq_(res, res_expected)
+            assert res == res_expected
 
             # Test 2: get a raw crash
             params['datatype'] = 'meta'
@@ -122,7 +122,7 @@ class IntegrationTestCrashData(TestCase):
             }
             res = service.get(**params)
 
-            eq_(res, res_expected)
+            assert res == res_expected
 
             # Test 3: get a processed crash
             params['datatype'] = 'processed'
@@ -133,7 +133,7 @@ class IntegrationTestCrashData(TestCase):
             }
             res = service.get(**params)
 
-            eq_(res, res_expected)
+            assert res == res_expected
 
             # Test 3a: get a unredacted processed crash
             params['datatype'] = 'unredacted'
@@ -145,64 +145,45 @@ class IntegrationTestCrashData(TestCase):
             }
             res = service.get(**params)
 
-            eq_(res, res_expected)
+            assert res == res_expected
 
             # Test 4: missing parameters
-            assert_raises(
-                MissingArgumentError,
-                service.get
-            )
-            assert_raises(
-                MissingArgumentError,
-                service.get,
-                **{'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'}
-            )
+            with pytest.raises(MissingArgumentError):
+                service.get()
+            with pytest.raises(MissingArgumentError):
+                service.get(uuid='114559a5-d8e6-428c-8b88-1c1f22120314')
 
             # Test 5: crash cannot be found
-            assert_raises(
-                ResourceNotFound,
-                service.get,
-                **{
-                    'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130504',
-                    'datatype': 'processed'
-                }
-            )
+            with pytest.raises(ResourceNotFound):
+                service.get(
+                    uuid='c44245f4-c93b-49b8-86a2-c15dc2130504',
+                    datatype='processed'
+                )
+
             # Test 5a: crash cannot be found
-            assert_raises(
-                ResourceNotFound,
-                service.get,
-                **{
-                    'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130504',
-                    'datatype': 'unredacted'
-                }
-            )
+            with pytest.raises(ResourceNotFound):
+                service.get(
+                    uuid='c44245f4-c93b-49b8-86a2-c15dc2130504',
+                    datatype='unredacted'
+                )
 
             # Test 6: not yet available crash
-            assert_raises(
-                ResourceUnavailable,
-                service.get,
-                **{
-                    'uuid': '58727744-12f5-454a-bcf5-f688a2120821',
-                    'datatype': 'processed'
-                }
-            )
+            with pytest.raises(ResourceUnavailable):
+                service.get(
+                    uuid='58727744-12f5-454a-bcf5-f688a2120821',
+                    datatype='processed'
+                )
 
             # Test 6a: not yet available crash
-            assert_raises(
-                ResourceUnavailable,
-                service.get,
-                **{
-                    'uuid': '58727744-12f5-454a-bcf5-f688a2120821',
-                    'datatype': 'unredacted'
-                }
-            )
+            with pytest.raises(ResourceUnavailable):
+                service.get(
+                    uuid='58727744-12f5-454a-bcf5-f688a2120821',
+                    datatype='unredacted'
+                )
 
             # Test 7: raw crash cannot be found
-            assert_raises(
-                ResourceNotFound,
-                service.get,
-                **{
-                    'uuid': 'c44245f4-c93b-49b8-86a2-c15dc2130505',
-                    'datatype': 'raw'
-                }
-            )
+            with pytest.raises(ResourceNotFound):
+                service.get(
+                    uuid='c44245f4-c93b-49b8-86a2-c15dc2130505',
+                    datatype='raw'
+                )

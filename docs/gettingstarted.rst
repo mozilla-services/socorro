@@ -12,120 +12,300 @@ If you're interested in running Socorro in a server environment, then check out
 Quickstart
 ==========
 
-1. Install `Docker <https://docs.docker.com/engine/installation/>`_.
+1. Install required software: Docker, docker-compose (1.10+), make, and git.
 
-2. Install `docker-compose <https://docs.docker.com/compose/install/>`_. You need
-   1.10 or higher.
+   **Linux**:
 
-   .. Note::
+       Use your package manager.
 
-      It helps to add an alias to your shell::
+   **OSX**:
 
-        alias dc=docker-compose
+       Install `Docker for Mac <https://docs.docker.com/docker-for-mac/>`_ which
+       will install Docker and docker-compose.
 
-      because it's way easier to type "dc" and I do it a lot.
+       Use `homebrew <https://brew.sh>`_ to install make and git::
 
-3. Install `make <https://www.gnu.org/software/make/>`_ using either your
-   system's package manager (Linux) or homebrew (OSX).
+         $ brew install make git
 
-   FIXME(willkg): Windows instructions?
+   **Other**:
 
-4. From the root of this repository, run::
+       Install `Docker <https://docs.docker.com/engine/installation/>`_.
+
+       Install `docker-compose <https://docs.docker.com/compose/install/>`_. You need
+       1.10 or higher.
+
+       Install `make <https://www.gnu.org/software/make/>`_.
+
+       Install `git <https://git-scm.com/>`_.
+
+2. Clone the repository so you have a copy on your host machine. Instructions
+   are `on GitHub <https://github.com/mozilla-services/socorro>`_.
+
+3. From the root of this repository, run::
 
      $ make dockerbuild
 
-   That will build the containers required for development: test, processor, and
-   webapp.
+   That will build the Docker images required for development: processor,
+   webapp, and crontabber.
 
-5. Then you need to set up Postgres and Elasticssearch. To do that, run::
+   Each of these images covers a single Socorro component: processor, webapp,
+   and crontabber.
+
+4. Then you need to set up the Postgres database and Elasticssearch. To do that,
+   run::
 
      $ make dockersetup
 
+   This creates the Postgres database and sets up tables, stored procedures,
+   integrity rules, types, and a bunch of other things. It also adds a bunch of
+   static data to lookup tables.
 
-   You can run ``make dockersetup`` any time you want to wipe the database, pick
-   up changes in static data, stored procedures, types, migrations, etc.
+   For Elasticsearch, it sets up Supersearch fields and the index for raw and
+   processed crash data.
 
-   .. Warning::
+   You can run ``make dockersetup`` any time you want to wipe the Postgres
+   database and Elasticsearch to pick up changes to those storage systems or
+   reset your environment.
 
-      This is a work in progress and might be fussy about some things.
+5. Then you need to pull in product release and some other data that makes
+   Socorro go.
 
-      Pull requests welcome!
+   To do that, run::
+
+     $ make dockerupdatedata
+
+   This adds data that changes day-to-day. Things like product builds and
+   normalization data.
+
+   Depending on what you're working on, you might want to run this weekly or
+   maybe even daily.
 
 
 At this point, you should have a basic functional Socorro development
 environment.
 
+See :ref:`gettingstarted-chapter-updating` for how to maintain and update your
+environment.
+
+See :ref:`gettingstarted-chapter-configuration` for how configuration works and
+about ``my.env``.
+
 See :ref:`webapp-chapter` for additional setup and running the webapp.
 
 See :ref:`processor-chapter` for additional setup and running the processor.
 
+See :ref:`crontabber-chapter` for additional setup and running crontabber.
+
+
+.. _gettingstarted-chapter-updating:
 
 Updating data in a dev environment
 ==================================
 
-Wiping the db
--------------
+Updating the code
+-----------------
 
-Any time you want to wipe the database and start over, run ``make dockersetup``.
+Any time you want to update the code in the repostory, run something like this from
+the master branch::
+
+  $ git pull
+
+
+It depends on what you're working on and the state of things.
+
+After you do that, you'll need to update other things.
+
+If there were changes to the requirements files or setup scripts, you'll need to
+build new images::
+
+  $ make dockerbuild
+
+
+If there were changes to the database tables, stored procedures, types,
+migrations, or anything like that, you'll need to wipe the Postgres database and
+Elasticsearch::
+
+  $ make dockersetup
+
+
+After doing that, you'll definitely want to update data::
+
+  $ make dockerupdatedata
+
+
+Wiping the database
+-------------------
+
+Any time you want to wipe the database and start over, run::
+
+  $ make dockersetup
 
 
 Updating release data
 ---------------------
 
-Data on releases comes from running ftpscraper. After you run ftpscraper, you
+Release data and comes from running ftpscraper. After you run ftpscraper, you
 have to run featured-versions-automatic which will update the featured versions
-list.
+list. Additionally, there's other data that changes day-to-day that you need to
+pick up in order for some views in the webapp to work well.
 
-We put all that in a single shell script.
+Updating that data is done with a single make rule.
 
 Run::
 
   $ make dockerupdatedata
 
 
-.. Warning::
+.. Note::
 
    This can take a long while to run and if you're running it against an
    existing database, then ftpscraper will "catch up" since the last time it ran
    which can take a long time, maybe hours.
 
+   If you don't have anything in the database that you need, then it might be
+   better to wipe the database and start over.
 
-General architecture
-====================
 
-.. image:: block-diagram.png
-
-Arrows direction represents the flow of interesting information (crashes,
-authentication assertions, cached values), not trivia like acks.
-
+.. _gettingstarted-chapter-configuration:
 
 Configuration
--------------
+=============
 
 All configuration is done with ENV files located in ``/app/docker/config/``.
 
-Each service uses ``docker_common.env`` and then a service-specific ENV file.
+``local_dev.env``
+    This holds *secrets* and *environment-specific configuration* required
+    to get services to work in a Docker-based local development environment.
 
-``docker_common.env``
-    This holds secrets and environment-specific configuration required
-    to get services to work in a docker environment for local development.
+    This should **NOT** be used for server environments, but you could base
+    configuration for a server environment on this file.
 
-    This should NOT be used for server environments.
+``never_on_a_server.env``
+    This holds a few environment variables that override secure defaults and are
+    explicitly for a local development environment.
+
+    **These should never show up in a server environment.**
+
+``processor.env``, ``crontabber.env``, and ``webapp.env``
+    These configuration files hold *behavioral configuration* for these three
+    components for all environments--local development and servers.
+
+    For example, if you want to add a new destination crash store to the system,
+    you'd add it to ``processor.env``.
 
 ``test.env``
     This holds configuration specific to running the tests. It has some
     configuration value overrides because the tests are "interesting".
 
-``processor.env`` and ``webapp.env``
-    These configuration files hold behavioral configuration for these two things
-    that work across ALL environments--local development and servers.
+``my.env``
+    This file lets you override any environment variables set in other ENV files
+    as well as set variables that are specific to your instance.
 
-    For example, if you want to add a new destination crash store to the system,
-    you'd add it to ``processor.env``.
+    It is your personal file for your specific development environment--it
+    doesn't get checked into version control.
+
+    The template for this is in ``docker/config/my.env.dist``.
 
 
-In this way, we have behavioral configuration versioned alongside code changes
-and we can more easily push and revert changes.
+In this way:
+
+1. environmental configuration which covers secrets, hosts, ports, and
+   infrastructure-specific things can be set up for every environment
+
+2. behavioral configuration which covers how the code behaves and which classes
+   it uses is versioned alongside the code making it easy to deploy and revert
+   behavioral changes with the code depending on them
+
+3. ``my.env`` lets you set configuration specific to your development
+   environment as well as override any configuration and is not checked into
+   version control
+
+
+See the ``docker-compose.yml`` file for order of precedence and which EMV files
+are used for which component container.
+
+
+Setting configuration specific to your local dev environment
+------------------------------------------------------------
+
+There are some variables you need to set that are specific to your local dev
+environment. Put them in ``my.env``.
+
+
+Overriding configuration
+------------------------
+
+If you want to override configuration temporarily for your local development
+environment, put it in ``my.env``.
+
+
+General architecture
+====================
+
+.. graphviz::
+
+   digraph G {
+      rankdir=LR;
+
+      client [shape=box3d, label="firefox"];
+
+      subgraph antpig {
+         rank=same;
+
+         antenna [shape=rect, label="antenna"];
+         pigeon [shape=cds, label="pigeon"];
+      }
+
+      subgraph stores {
+         rank=same;
+
+         postgres [shape=tab, label="Postgres", style=filled, fillcolor=gray];
+         elasticsearch [shape=tab, label="Elasticsearch", style=filled, fillcolor=gray];
+         telemetry [shape=tab, label="Telemetry (S3)", style=filled, fillcolor=gray];
+      }
+
+      subgraph stores2 {
+         rabbitmq [shape=tab, label="RMQ", style=filled, fillcolor=gray];
+         aws [shape=tab, label="S3", style=filled, fillcolor=gray];
+      }
+
+      subgraph processing {
+         rank=same;
+
+         processor [shape=rect, label="processor"];
+         crontabber [shape=rect, label="crontabber"];
+      }
+
+      webapp [shape=rect, label="webapp"];
+
+      client -> antenna [label="HTTP"];
+      antenna -> aws [label="save raw"];
+
+      aws -> pigeon [label="S3:PutObject"];
+      pigeon -> rabbitmq [label="crash id for processing"];
+
+      rabbitmq -> processor [label="crash id"];
+      aws -> processor [label="load raw"];
+      processor -> { aws, postgres, elasticsearch, telemetry } [label="save processed"];
+
+      postgres -> webapp;
+      aws -> webapp [label="load raw,processed"];
+      elasticsearch -> webapp [label="search"];
+
+      postgres -> crontabber;
+      elasticsearch -> crontabber;
+
+      { rank=min; client; }
+   }
+
+
+Arrows direction represents the flow of interesting information (crashes,
+authentication assertions, cached values), not trivia like acks.
+
+.. Warning::
+
+   August 17th, 2017. Everything below this point needs to be updated.
+
 
 
 Top-level folders

@@ -22,7 +22,7 @@ APP_GID="10001"
 
 # Use the same image we use for building docker images because it'll be cached
 # already
-BASEIMAGENAME="python:2.7.13-slim"
+BASEIMAGENAME="python:2.7.14-slim"
 
 # Start services in background (this is idempotent)
 echo "Starting services in the background..."
@@ -44,7 +44,8 @@ if [ "$1" == "--shell" ]; then
            --link socorro_elasticsearch_1 \
            --link socorro_postgresql_1 \
            --link socorro_rabbitmq_1 \
-           --env-file ./docker/config/docker_common.env \
+           --env-file ./docker/config/local_dev.env \
+           --env-file ./docker/config/never_on_a_server.env \
            --env-file ./docker/config/test.env \
            --tty \
            --interactive \
@@ -97,7 +98,8 @@ else
            --link socorro_elasticsearch_1 \
            --link socorro_postgresql_1 \
            --link socorro_rabbitmq_1 \
-           --env-file ./docker/config/docker_common.env \
+           --env-file ./docker/config/local_dev.env \
+           --env-file ./docker/config/never_on_a_server.env \
            --env-file ./docker/config/test.env \
            local/socorro_webapp /app/docker/run_tests.sh
 

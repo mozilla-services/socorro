@@ -7,8 +7,16 @@ COPY ./minidump-stackwalk/ /tmp/minidump-stackwalk/
 COPY ./docker/set_up_stackwalk.sh /tmp
 RUN /tmp/set_up_stackwalk.sh
 
+ENV CONTAINERNAME processor
+
 COPY . /app/
 
 USER app
+
+RUN mkdir -p /tmp/symbols/cache
+RUN mkdir -p /tmp/symbols/tmp
+
+# Install aws cli using --user so it doesn't mess with Socorro requirements
+RUN /app/docker/set_up_awscli.sh
 
 CMD ["/app/docker/run_processor.sh"]

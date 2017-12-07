@@ -2,12 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, assert_raises
+import pytest
 
 from socorro.lib import MissingArgumentError
 from socorro.external.postgresql.graphics_devices import GraphicsDevices
-
-from .unittestbase import PostgreSQLTestCase
+from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
 
 class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
@@ -52,7 +51,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
             'hits': [],
             'total': 0
         }
-        eq_(res, res_expected)
+        assert res == res_expected
 
         # insert something similar
         self._insert(
@@ -82,7 +81,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
             }],
             'total': 1
         }
-        eq_(res, res_expected)
+        assert res == res_expected
 
         # Test with several values.
         params = {
@@ -113,37 +112,23 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
             ],
             'total': 3
         }
-        eq_(res, res_expected)
+        assert res == res_expected
 
     def test_get_missing_arguments(self):
         """on .get() the adapter_hex and the vendor_hex is mandatory"""
         api = GraphicsDevices(config=self.config)
-        assert_raises(
-            MissingArgumentError,
-            api.get
-        )
-        assert_raises(
-            MissingArgumentError,
-            api.get,
-            adapter_hex='something'
-        )
-        assert_raises(
-            MissingArgumentError,
-            api.get,
-            vendor_hex='something'
-        )
-        assert_raises(
-            MissingArgumentError,
-            api.get,
-            vendor_hex='something',
-            adapter_hex=''  # empty!
-        )
-        assert_raises(
-            MissingArgumentError,
-            api.get,
-            vendor_hex='',  # empty!
-            adapter_hex='something'
-        )
+        with pytest.raises(MissingArgumentError):
+            api.get()
+        with pytest.raises(MissingArgumentError):
+            api.get(adapter_hex='something')
+        with pytest.raises(MissingArgumentError):
+            api.get(vendor_hex='something')
+        with pytest.raises(MissingArgumentError):
+            # adapter_hex is empty!
+            api.get(vendor_hex='something', adapter_hex='')
+        with pytest.raises(MissingArgumentError):
+            # vender_hex is empty!
+            api.get(vendor_hex='', adapter_hex='something')
 
     def test_post_insert(self):
         payload = [
@@ -157,7 +142,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
         api = GraphicsDevices(config=self.config)
         res = api.post(data=payload)
-        eq_(res, True)
+        assert res is True
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -170,7 +155,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         for row in cursor.fetchall():
             expect.append(dict(zip(keys, row)))
 
-        eq_(expect, payload)
+        assert expect == payload
 
     def test_post_update(self):
         self._insert(
@@ -190,7 +175,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
         api = GraphicsDevices(config=self.config)
         res = api.post(data=payload)
-        eq_(res, True)
+        assert res is True
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -203,7 +188,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         for row in cursor.fetchall():
             expect.append(dict(zip(keys, row)))
 
-        eq_(expect, payload)
+        assert expect == payload
 
     def test_post_upsert(self):
         """on .post() every item you send in the payload causes an upsert"""
@@ -245,7 +230,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
         api = GraphicsDevices(config=self.config)
         res = api.post(data=payload)
-        eq_(res, True)
+        assert res is True
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -258,7 +243,7 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         for row in cursor.fetchall():
             expect.append(dict(zip(keys, row)))
 
-        eq_(expect, payload)
+        assert expect == payload
 
     def test_post_fail(self):
         payload = [
@@ -268,4 +253,4 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         ]
         api = GraphicsDevices(config=self.config)
         res = api.post(data=payload)
-        eq_(res, False)
+        assert res is False

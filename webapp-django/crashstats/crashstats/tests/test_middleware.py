@@ -1,5 +1,3 @@
-from nose.tools import eq_
-
 from django.test.client import RequestFactory
 
 from crashstats.base.tests.testbase import DjangoTestCase
@@ -13,7 +11,7 @@ class TestSetRemoteAddrFromForwardedFor(DjangoTestCase):
         middleware = SetRemoteAddrFromForwardedFor()
         request = RequestFactory().get('/')
         response = middleware.process_request(request)
-        eq_(response, None)
+        assert response is None
 
     def test_happy_path(self):
         """the first (comma separated) IP in HTTP_X_FORWARDED_FOR should
@@ -24,5 +22,5 @@ class TestSetRemoteAddrFromForwardedFor(DjangoTestCase):
             'REMOTE_ADDR': '123.123.123.123',
         }).get('/')
         response = middleware.process_request(request)
-        eq_(response, None)
-        eq_(request.META['REMOTE_ADDR'], '245.245.245.245')
+        assert response is None
+        assert request.META['REMOTE_ADDR'] == '245.245.245.245'

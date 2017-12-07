@@ -6,7 +6,7 @@ import pika
 import logging
 
 from configman import Namespace
-from socorro.app.generic_app import App, main  # main not used here, but
+from socorro.app.socorro_app import App, main
 
 
 # To run this script in production:
@@ -70,7 +70,7 @@ class ReprocessCrashlistApp(App):
                     config.rabbitmq_user,
                     config.rabbitmq_password))
             )
-        except:
+        except Exception:
             logging.error("Failed to connect")
             raise
         self.connection = connection

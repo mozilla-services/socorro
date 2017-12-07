@@ -5,6 +5,7 @@ echo "this is test.sh"
 source scripts/defaults
 
 PYTEST="$VIRTUAL_ENV/bin/pytest"
+FLAKE8="$VIRTUAL_ENV/bin/flake8"
 SETUPDB="$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py"
 JENKINS_CONF=jenkins.py.dist
 
@@ -99,12 +100,15 @@ PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --dropdb 
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini downgrade -1
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade heads
 
+# run flake8
+$FLAKE8
+
 # run tests
 $ENV $FS_RESOURCES $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $PYTEST
 
 # test webapp
 pushd webapp-django
-./bin/ci.sh
+PYTHONPATH=.. $PYTEST
 popd
 
 # lint puppet manifests; bug 976639

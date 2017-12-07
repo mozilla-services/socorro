@@ -89,11 +89,6 @@ class CrashStatsBasePage(Page):
             select = Select(element)
             return select.first_selected_option.text
 
-        @property
-        def product_list(self):
-            element = self.find_element(*self._product_select_locator)
-            return [option.text for option in Select(element).options]
-
         def select_product(self, application):
             '''
                 Select the Mozilla Product you want to report on

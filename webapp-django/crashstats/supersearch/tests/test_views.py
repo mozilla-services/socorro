@@ -4,7 +4,6 @@ import re
 
 import mock
 import pyquery
-from nose.tools import eq_, ok_
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -26,9 +25,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url_custom)
         # By default, it's available, but it redirects because
         # you're not signed in.
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         response = self.client.get(url_query)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
 
         # disable it
         switch = Switch.objects.create(
@@ -37,57 +36,57 @@ class TestViews(BaseTestViews):
         )
 
         response = self.client.get(url_custom)
-        eq_(response.status_code, 404)
+        assert response.status_code == 404
         response = self.client.get(url_query)
-        eq_(response.status_code, 404)
+        assert response.status_code == 404
 
         # leave it but disable the disabling switch
         switch.active = False
         switch.save()
         response = self.client.get(url_custom)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         response = self.client.get(url_query)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
 
     def test_search(self):
         self._login()
         url = reverse('supersearch.search')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('Run a search to get some results' in response.content)
+        assert response.status_code == 200
+        assert 'Run a search to get some results' in response.content
 
         # Check the simplified filters are there.
         for field in settings.SIMPLE_SEARCH_FIELDS:
-            ok_(field.capitalize().replace('_', ' ') in response.content)
+            assert field.capitalize().replace('_', ' ') in response.content
 
     def test_search_fields(self):
 
         user = self._login()
         url = reverse('supersearch.search_fields')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('WaterWolf' in response.content)
-        ok_('SeaMonkey' in response.content)
-        ok_('NightTrain' in response.content)
+        assert response.status_code == 200
+        assert 'WaterWolf' in response.content
+        assert 'SeaMonkey' in response.content
+        assert 'NightTrain' in response.content
 
         content = json.loads(response.content)
-        ok_('signature' in content)  # It contains at least one known field.
+        assert 'signature' in content  # It contains at least one known field.
 
         # Verify non-exposed fields are not listed.
-        ok_('a_test_field' not in content)
+        assert 'a_test_field' not in content
 
         # Verify fields with permissions are not listed.
-        ok_('exploitability' not in content)
+        assert 'exploitability' not in content
 
         # Verify fields with permissions are listed.
         group = self._create_group_with_permission('view_exploitability')
         user.groups.add(group)
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         content = json.loads(response.content)
 
-        ok_('exploitability' in content)
+        assert 'exploitability' in content
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_search_results(self, cpost):
@@ -254,80 +253,80 @@ class TestViews(BaseTestViews):
             url,
             {'product': 'WaterWolf'}
         )
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # Test results are existing
-        ok_('table id="reports-list"' in response.content)
-        ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
-        ok_('mySignatureIsCool' in response.content)
-        ok_('mineIsCoolerThanYours' in response.content)
-        ok_('EMPTY' in response.content)
-        ok_('aaaaaaaaaaaaa1' in response.content)
-        ok_('888981' in response.content)
-        ok_('Linux' in response.content)
-        ok_('2017-01-31 23:12:57' in response.content)
+        assert 'table id="reports-list"' in response.content
+        assert 'nsASDOMWindowEnumerator::GetNext()' in response.content
+        assert 'mySignatureIsCool' in response.content
+        assert 'mineIsCoolerThanYours' in response.content
+        assert 'EMPTY' in response.content
+        assert 'aaaaaaaaaaaaa1' in response.content
+        assert '888981' in response.content
+        assert 'Linux' in response.content
+        assert '2017-01-31 23:12:57' in response.content
         # Test facets are existing
-        ok_('table id="facets-list-' in response.content)
+        assert 'table id="facets-list-' in response.content
         # Test bugs are existing
-        ok_('<th scope="col">Bugs</th>' in response.content)
-        ok_('123456' in response.content)
+        assert '<th scope="col">Bugs</th>' in response.content
+        assert '123456' in response.content
         # Test links on terms are existing
-        ok_('product=%3DWaterWolf' in response.content)
+        assert 'product=%3DWaterWolf' in response.content
 
         # Test with empty results
         response = self.client.get(url, {
             'product': 'NightTrain',
             'date': '2012-01-01'
         })
-        eq_(response.status_code, 200)
-        ok_('table id="reports-list"' not in response.content)
-        ok_('No results were found' in response.content)
+        assert response.status_code == 200
+        assert 'table id="reports-list"' not in response.content
+        assert 'No results were found' in response.content
 
         # Test with a signature param
         response = self.client.get(
             url,
             {'signature': '~nsASDOMWindowEnumerator'}
         )
-        eq_(response.status_code, 200)
-        ok_('table id="reports-list"' in response.content)
-        ok_('nsASDOMWindowEnumerator::GetNext()' in response.content)
-        ok_('123456' in response.content)
+        assert response.status_code == 200
+        assert 'table id="reports-list"' in response.content
+        assert 'nsASDOMWindowEnumerator::GetNext()' in response.content
+        assert '123456' in response.content
 
         # Test with a different facet
         response = self.client.get(
             url,
             {'_facets': 'build_id', 'product': 'SeaMonkey'}
         )
-        eq_(response.status_code, 200)
-        ok_('table id="reports-list"' in response.content)
-        ok_('table id="facets-list-' in response.content)
-        ok_('888981' in response.content)
+        assert response.status_code == 200
+        assert 'table id="reports-list"' in response.content
+        assert 'table id="facets-list-' in response.content
+        assert '888981' in response.content
         # Bugs should not be there, they appear only in the signature facet
-        ok_('<th>Bugs</th>' not in response.content)
-        ok_('123456' not in response.content)
+        assert '<th>Bugs</th>' not in response.content
+        assert '123456' not in response.content
 
         # Test with a different columns list
         response = self.client.get(
             url,
             {'_columns': ['build_id', 'platform'], 'product': 'WaterWolf'}
         )
-        eq_(response.status_code, 200)
-        ok_('table id="reports-list"' in response.content)
-        ok_('table id="facets-list-' in response.content)
+        assert response.status_code == 200
+        assert 'table id="reports-list"' in response.content
+        assert 'table id="facets-list-' in response.content
         # The build and platform appear
-        ok_('888981' in response.content)
-        ok_('Linux' in response.content)
+        assert '888981' in response.content
+        assert 'Linux' in response.content
         # The crash id is always shown
-        ok_('aaaaaaaaaaaaa1' in response.content)
+        assert 'aaaaaaaaaaaaa1' in response.content
         # The version and date do not appear
-        ok_('1.0' not in response.content)
-        ok_('2017' not in response.content)
+        assert '1.0' not in response.content
+        assert '2017' not in response.content
 
         # Test missing parameters don't raise an exception.
         response = self.client.get(
             url,
             {'product': 'WaterWolf', 'date': '', 'build_id': ''}
         )
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_search_results_ratelimited(self):
 
@@ -349,9 +348,9 @@ class TestViews(BaseTestViews):
             params,
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
-        eq_(response.status_code, 429)
-        eq_(response.content, 'Too Many Requests')
-        eq_(response['content-type'], 'text/plain')
+        assert response.status_code == 429
+        assert response.content == 'Too Many Requests'
+        assert response['content-type'] == 'text/plain'
 
     def test_search_results_badargumenterror(self):
 
@@ -369,10 +368,10 @@ class TestViews(BaseTestViews):
             params,
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
-        eq_(response.status_code, 400)
-        eq_(response['content-type'], 'text/html; charset=utf-8')
-        ok_('<script>' not in response.content)
-        ok_('&lt;script&gt;' in response.content)
+        assert response.status_code == 400
+        assert response['content-type'] == 'text/html; charset=utf-8'
+        assert '<script>' not in response.content
+        assert '&lt;script&gt;' in response.content
 
     def test_search_results_admin_mode(self):
         """Test that an admin can see more fields, and that a non-admin cannot.
@@ -473,16 +472,16 @@ class TestViews(BaseTestViews):
             }
         )
 
-        eq_(response.status_code, 200)
-        ok_('Email' in response.content)
-        ok_('bob@example.org' in response.content)
-        ok_('Url facet' in response.content)
-        ok_('http://example.org' in response.content)
-        ok_('Version' in response.content)
-        ok_('1.0' in response.content)
+        assert response.status_code == 200
+        assert 'Email' in response.content
+        assert 'bob@example.org' in response.content
+        assert 'Url facet' in response.content
+        assert 'http://example.org' in response.content
+        assert 'Version' in response.content
+        assert '1.0' in response.content
 
         # Without the correct permission the user cannot see exploitability.
-        ok_('Exploitability' not in response.content)
+        assert 'Exploitability' not in response.content
 
         exp_group = self._create_group_with_permission('view_exploitability')
         user.groups.add(exp_group)
@@ -495,10 +494,10 @@ class TestViews(BaseTestViews):
             }
         )
 
-        eq_(response.status_code, 200)
-        ok_('Email' in response.content)
-        ok_('Exploitability' in response.content)
-        ok_('high' in response.content)
+        assert response.status_code == 200
+        assert 'Email' in response.content
+        assert 'Exploitability' in response.content
+        assert 'high' in response.content
 
         # Logged out user, cannot see the email field
         self._logout()
@@ -510,32 +509,32 @@ class TestViews(BaseTestViews):
             }
         )
 
-        eq_(response.status_code, 200)
-        ok_('Email' not in response.content)
-        ok_('bob@example.org' not in response.content)
-        ok_('Url facet' not in response.content)
-        ok_('http://example.org' not in response.content)
-        ok_('Version' in response.content)
-        ok_('1.0' in response.content)
+        assert response.status_code == 200
+        assert 'Email' not in response.content
+        assert 'bob@example.org' not in response.content
+        assert 'Url facet' not in response.content
+        assert 'http://example.org' not in response.content
+        assert 'Version' in response.content
+        assert '1.0' in response.content
 
     def test_search_results_parameters(self):
 
         def mocked_supersearch_get(**params):
             # Verify that all expected parameters are in the URL.
-            ok_('product' in params)
-            ok_('WaterWolf' in params['product'])
-            ok_('NightTrain' in params['product'])
+            assert 'product' in params
+            assert 'WaterWolf' in params['product']
+            assert 'NightTrain' in params['product']
 
-            ok_('address' in params)
-            ok_('0x0' in params['address'])
-            ok_('0xa' in params['address'])
+            assert 'address' in params
+            assert '0x0' in params['address']
+            assert '0xa' in params['address']
 
-            ok_('reason' in params)
-            ok_('^hello' in params['reason'])
-            ok_('$thanks' in params['reason'])
+            assert 'reason' in params
+            assert '^hello' in params['reason']
+            assert '$thanks' in params['reason']
 
-            ok_('java_stack_trace' in params)
-            ok_('Exception' in params['java_stack_trace'])
+            assert 'java_stack_trace' in params
+            assert 'Exception' in params['java_stack_trace']
 
             return {
                 "hits": [],
@@ -557,7 +556,7 @@ class TestViews(BaseTestViews):
                 'java_stack_trace': 'Exception',
             }
         )
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_search_results_pagination(self):
         """Test that the pagination of results works as expected.
@@ -568,7 +567,7 @@ class TestViews(BaseTestViews):
 
             # Make sure a negative page does not lead to negative offset value.
             # But instead it is considered as the page 1 and thus is not added.
-            eq_(params.get('_results_offset'), 0)
+            assert params.get('_results_offset') == 0
 
             hits = []
             for i in range(140):
@@ -602,28 +601,25 @@ class TestViews(BaseTestViews):
             }
         )
 
-        eq_(response.status_code, 200)
-        ok_('140' in response.content)
+        assert response.status_code == 200
+        assert '140' in response.content
 
         # Check that the pagination URL contains all three expected parameters.
         doc = pyquery.PyQuery(response.content)
         next_page_url = str(doc('.pagination a').eq(0))
-        ok_('_facets=platform' in next_page_url)
-        ok_('_columns=version' in next_page_url)
-        ok_('page=2' in next_page_url)
-        ok_('#crash-reports' in next_page_url)
+        assert '_facets=platform' in next_page_url
+        assert '_columns=version' in next_page_url
+        assert 'page=2' in next_page_url
+        assert '#crash-reports' in next_page_url
 
         # Verify white spaces are correctly encoded.
-        ok_(
-            # Note we use `quote` and not `quote_plus`, so white spaces are
-            # turned into '%20' instead of '+'.
-            urllib.quote('hang | nsASDOMWindowEnumerator::GetNext()')
-            in next_page_url
-        )
+        # Note we use `quote` and not `quote_plus`, so white spaces are
+        # turned into '%20' instead of '+'.
+        assert urllib.quote('hang | nsASDOMWindowEnumerator::GetNext()') in next_page_url
 
         # Test that a negative page value does not break it.
         response = self.client.get(url, {'page': '-1'})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
     def create_custom_query_perm(self):
         user = self._login()
@@ -642,13 +638,13 @@ class TestViews(BaseTestViews):
         url = reverse('supersearch.search_custom')
 
         response = self.client.get(url)
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
 
         self.create_custom_query_perm()
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('Run a search to get some results' in response.content)
+        assert response.status_code == 200
+        assert 'Run a search to get some results' in response.content
 
     def test_search_custom(self):
 
@@ -663,16 +659,16 @@ class TestViews(BaseTestViews):
 
         url = reverse('supersearch.search_custom')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('Run a search to get some results' in response.content)
+        assert response.status_code == 200
+        assert 'Run a search to get some results' in response.content
 
     def test_search_custom_parameters(self):
         self.create_custom_query_perm()
 
         def mocked_supersearch_get(**params):
-            ok_('_return_query' in params)
-            ok_('signature' in params)
-            eq_(params['signature'], ['nsA'])
+            assert '_return_query' in params
+            assert 'signature' in params
+            assert params['signature'] == ['nsA']
 
             return {
                 "query": {"query": None},
@@ -685,17 +681,17 @@ class TestViews(BaseTestViews):
 
         url = reverse('supersearch.search_custom')
         response = self.client.get(url, {'signature': 'nsA'})
-        eq_(response.status_code, 200)
-        ok_('Run a search to get some results' in response.content)
-        ok_('{&#34;query&#34;: null}' in response.content)
-        ok_('socorro200000' in response.content)
-        ok_('socorro200001' in response.content)
+        assert response.status_code == 200
+        assert 'Run a search to get some results' in response.content
+        assert '{&#34;query&#34;: null}' in response.content
+        assert 'socorro200000' in response.content
+        assert 'socorro200001' in response.content
 
     def test_search_query(self):
         self.create_custom_query_perm()
 
         def mocked_query_get(**params):
-            ok_('query' in params)
+            assert 'query' in params
 
             return {"hits": []}
 
@@ -705,13 +701,13 @@ class TestViews(BaseTestViews):
 
         url = reverse('supersearch.search_query')
         response = self.client.post(url, {'query': '{"query": {}}'})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         content = json.loads(response.content)
-        ok_('hits' in content)
-        eq_(content['hits'], [])
+        assert 'hits' in content
+        assert content['hits'] == []
 
         # Test a failure.
         response = self.client.post(url)
-        eq_(response.status_code, 400)
-        ok_('query' in response.content)
+        assert response.status_code == 400
+        assert 'query' in response.content

@@ -46,6 +46,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.general_transform_rules.CPUInfoRule, "
         "socorro.processor.general_transform_rules.OSInfoRule, "
         "socorro.processor.mozilla_transform_rules.BetaVersionRule, "
+        "socorro.processor.mozilla_transform_rules.AuroraVersionFixitRule, "
         "socorro.processor.mozilla_transform_rules.ExploitablityRule, "
         "socorro.processor.mozilla_transform_rules.FlashVersionRule, "
         "socorro.processor.mozilla_transform_rules.OSPrettyVersionRule, "
@@ -53,24 +54,6 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.MissingSymbolsRule, "
         "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
         "socorro.processor.rules.memory_report_extraction.MemoryReportExtraction, "
-        "socorro.processor.signature_utilities.SignatureGenerationRule,"
-        "socorro.processor.signature_utilities.StackwalkerErrorSignatureRule, "
-        "socorro.processor.signature_utilities.OOMSignature, "
-        "socorro.processor.signature_utilities.AbortSignature, "
-        "socorro.processor.signature_utilities.SignatureShutdownTimeout, "
-        "socorro.processor.signature_utilities.SignatureRunWatchDog, "
-        "socorro.processor.signature_utilities.SignatureIPCChannelError, "
-        "socorro.processor.signature_utilities.SignatureIPCMessageName, "
-        "socorro.processor.signature_utilities.SigTrim, "
-        "socorro.processor.signature_utilities.SigTrunc, "
-    ],
-    [   # a set of classifiers for support
-        "support_classifiers",
-        "processor.support_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_until_action_succeeds",
-        "socorro.processor.support_classifiers.BitguardClassifier, "
-        "socorro.processor.support_classifiers.OutOfDateClassifier"
     ],
     [   # a set of classifiers to help with jit crashes
         "jit_classifiers",
@@ -78,24 +61,14 @@ mozilla_processor_rule_sets = [
         "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.JitCrashCategorizeRule, "
-        "socorro.processor.signature_utilities.SignatureJitCategory, "
     ],
-    [   # a set of special request classifiers
-        "skunk_classifiers",
-        "processor.skunk_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_until_action_succeeds",
-        "socorro.processor.skunk_classifiers.DontConsiderTheseFilter, "
-        # currently not in use, anticipated to be re-enabled in the future
-        #"socorro.processor.skunk_classifiers.UpdateWindowAttributes, "
-        "socorro.processor.skunk_classifiers.SetWindowPos, "
-        # currently not in use, anticipated to be re-enabled in the future
-        #"socorro.processor.skunk_classifiers.SendWaitReceivePort, "
-        # currently not in use, anticipated to be re-enabled in the future
-        #"socorro.processor.skunk_classifiers.Bug811804, "
-        # currently not in use, anticipated to be re-enabled in the future
-        #"socorro.processor.skunk_classifiers.Bug812318, "
-        "socorro.processor.skunk_classifiers.NullClassification"
+    [
+        # generate signature now that we've done all the processing it depends on
+        'generate_signature',
+        'processor.signature',
+        'socorro.lib.transform_rules.TransformRuleSystem',
+        'apply_all_rules',
+        'socorro.processor.mozilla_transform_rules.SignatureGeneratorRule, '
     ]
 ]
 

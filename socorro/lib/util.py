@@ -2,10 +2,54 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import print_function
+
+from itertools import islice
 import logging
 import sys
 import threading
 import traceback
+
+
+def chunkify(iterable, n):
+    """Split iterable into chunks of length n
+
+    If ``len(iterable) % n != 0``, then the last chunk will have length less than n.
+
+    Example:
+
+    >>> chunkify([1, 2, 3, 4, 5], 2)
+    [(1, 2), (3, 4), (5,)]
+
+    :arg iterable: the iterable
+    :arg n: the chunk length
+
+    :returns: generator of chunks from the iterable
+
+    """
+    iterable = iter(iterable)
+    while 1:
+        t = tuple(islice(iterable, n))
+        if t:
+            yield t
+        else:
+            return
+
+
+def drop_unicode(text):
+    """Takes a text and drops all unicode characters
+
+    :arg str/unicode text: the text to fix
+
+    :returns: text with all unicode characters dropped
+
+    """
+    if isinstance(text, str):
+        # Convert any str to a unicode so that we can convert it back and drop any non-ascii
+        # characters
+        text = text.decode('unicode_escape')
+
+    return text.encode('ascii', 'ignore')
 
 
 class FakeLogger(object):
@@ -27,7 +71,7 @@ class FakeLogger(object):
         return '%s %s' % (level, message)
 
     def log(self, *args, **kwargs):
-        print >>sys.stderr, self.create_log_message(*args)
+        print(self.create_log_message(*args), file=sys.stderr)
 
     def debug(self, *args, **kwargs):
         self.log(logging.DEBUG, *args)
@@ -129,7 +173,7 @@ def report_exception_and_continue(logger=FakeLogger(), loggingLevel=logging.ERRO
         finally:
             logging_report_lock.release()
     except Exception as x:
-        print >>sys.stderr, x
+        print(x, file=sys.stderr)
 
 
 # utilities

@@ -12,10 +12,8 @@ import collections
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorro.app.fetch_transform_save_app import (
-    FetchTransformSaveWithSeparateNewCrashSourceApp,
-    main
-)
+from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
+from socorro.app.socorro_app import main
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib.util import DotDict
 from socorro.lib import raven_client
@@ -175,7 +173,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                     )
             else:
                 self.config.logger.warning(
-                    'Raven DSN is not configured and an exception happened'
+                    'Sentry DSN is not configured and an exception happened'
                 )
 
             # Why not just do `raise exception`?

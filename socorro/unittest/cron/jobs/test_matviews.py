@@ -2,26 +2,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
-from nose.tools import ok_
-
-from crontabber.app import CronTabber
 from crontabber import base
+import mock
+
+from socorro.cron.crontabber_app import CronTabberApp
+from socorro.cron.jobs import matviews
 from socorro.lib.datetimeutil import utc_now
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-
-from socorro.cron.jobs import matviews
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 
 
 class TestMatviews(IntegrationTestBase):
 
     def _setup_config_manager(self, jobs):
-
-        return get_config_manager_for_crontabber(
-            jobs=jobs,
+        return super(TestMatviews, self)._setup_config_manager(
+            jobs_string=jobs
         )
 
     def setUp(self):
@@ -105,7 +99,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -145,7 +139,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -156,15 +150,9 @@ class TestMatviews(IntegrationTestBase):
                              'build-adu-matview',
                              'graphics-device-matview',):
 
-                ok_(app_name in information, app_name)
-                ok_(
-                    not information[app_name]['last_error'],
-                    app_name
-                )
-                ok_(
-                    information[app_name]['last_success'],
-                    app_name
-                )
+                assert app_name in information
+                assert not information[app_name]['last_error']
+                assert information[app_name]['last_success']
 
     def test_reports_clean_with_dependency(self):
         config_manager = self._setup_config_manager(
@@ -173,7 +161,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -187,7 +175,7 @@ class TestMatviews(IntegrationTestBase):
         )
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()

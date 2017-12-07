@@ -4,12 +4,11 @@
 
 import time
 
-import mock
-from nose.tools import eq_, ok_, assert_raises
-from psycopg2 import OperationalError
-
 from configman import ConfigurationManager
 from configman.dotdict import DotDict
+import mock
+from psycopg2 import OperationalError
+import pytest
 
 from socorro.database.transaction_executor import (
     TransactionExecutorWithLimitedBackoff,
@@ -20,6 +19,7 @@ from socorro.external.postgresql.crashstorage import (
     PostgreSQLCrashStorage,
 )
 from socorro.unittest.testbase import TestCase
+
 
 empty_tuple = ()
 
@@ -197,7 +197,7 @@ class TestPostgresBasicCrashStorage(TestCase):
         with config_manager.context() as config:
             crashstorage = PostgreSQLBasicCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
-            ok_(isinstance(database, mock.Mock))
+            assert isinstance(database, mock.Mock)
 
             broken_processed_crash = {
                 "product": "Peter",
@@ -206,9 +206,8 @@ class TestPostgresBasicCrashStorage(TestCase):
                 "submitted_timestamp": time.time(),
                 "unknown_field": 'whatever'
             }
-            assert_raises(KeyError,
-                          crashstorage.save_processed,
-                          broken_processed_crash)
+            with pytest.raises(KeyError):
+                crashstorage.save_processed(broken_processed_crash)
 
     def test_basic_postgres_save_processed_success(self):
         config = DotDict()
@@ -230,17 +229,15 @@ class TestPostgresBasicCrashStorage(TestCase):
         crashstorage = PostgreSQLCrashStorage(config)
         crashstorage.save_processed(a_processed_crash)
 
-        eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
+        assert mocked_database_connection_source.call_count == 1
+        assert mocked_cursor.execute.call_count == 3
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
-            ok_(a_fragment in a_call[0][0])
+            assert a_fragment in a_call[0][0]
 
     def test_basic_postgres_save_processed_success_2(self):
         config = DotDict()
@@ -268,18 +265,16 @@ class TestPostgresBasicCrashStorage(TestCase):
         crashstorage = PostgreSQLCrashStorage(config)
         crashstorage.save_processed(a_processed_crash)
 
-        eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 6)
+        assert mocked_database_connection_source.call_count == 1
+        assert mocked_cursor.execute.call_count == 4
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
             'insert into plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
-            ok_(a_fragment in a_call[0][0])
+            assert a_fragment in a_call[0][0]
 
     def test_basic_postgres_save_processed_success_3_truncations(self):
         config = DotDict()
@@ -301,15 +296,12 @@ class TestPostgresBasicCrashStorage(TestCase):
         crashstorage = PostgreSQLCrashStorage(config)
         crashstorage.save_processed(a_processed_crash_with_everything_too_long)
 
-        eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
-        # check correct fragments
+        assert mocked_database_connection_source.call_count == 1
+        assert mocked_cursor.execute.call_count == 3
 
+        # check correct fragments
         first_call = mocked_cursor.execute.call_args_list[0]
-        eq_(
-            first_call[0][1],
-            a_processed_report_with_everything_truncated * 2
-        )
+        assert first_call[0][1] == a_processed_report_with_everything_truncated * 2
 
     def test_basic_postgres_save_processed_operational_error(self):
 
@@ -341,16 +333,15 @@ class TestPostgresBasicCrashStorage(TestCase):
             crashstorage.database.operational_exceptions = (OperationalError,)
 
             database = crashstorage.database.return_value = mock.MagicMock()
-            ok_(isinstance(database, mock.Mock))
+            assert isinstance(database, mock.Mock)
 
             m = mock.MagicMock()
             m.__enter__.return_value = m
             database = crashstorage.database.return_value = m
             m.cursor.side_effect = OperationalError('bad')
-            assert_raises(OperationalError,
-                          crashstorage.save_processed,
-                          a_processed_crash)
-            eq_(m.cursor.call_count, 3)
+            with pytest.raises(OperationalError):
+                crashstorage.save_processed(a_processed_crash)
+            assert m.cursor.call_count == 3
 
 
 class TestPostgresCrashStorage(TestCase):
@@ -380,9 +371,8 @@ class TestPostgresCrashStorage(TestCase):
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
-            ok_(isinstance(database, mock.Mock))
-
-            ok_('submitted_timestamp' in a_raw_crash)
+            assert isinstance(database, mock.Mock)
+            assert 'submitted_timestamp' in a_raw_crash
 
             m = mock.MagicMock()
             m.__enter__.return_value = m
@@ -392,8 +382,8 @@ class TestPostgresCrashStorage(TestCase):
                 '',
                 "936ce666-ff3b-4c7a-9674-367fe2120408"
             )
-            eq_(m.cursor.call_count, 1)
-            eq_(m.cursor.return_value.__enter__.return_value.execute.call_count, 1)
+            assert m.cursor.call_count == 1
+            assert m.cursor.return_value.__enter__.return_value.execute.call_count == 1
 
             expected_execute_args = ((("""
                 WITH update_raw_crash AS (
@@ -438,8 +428,8 @@ class TestPostgresCrashStorage(TestCase):
                 expeceted_sql = remove_whitespace(expeceted_sql)
                 actual_sql, actual_params = actual[0]
                 actual_sql = remove_whitespace(actual_sql)
-                eq_(expeceted_sql, actual_sql)
-                eq_(expected_params, actual_params)
+                assert expeceted_sql == actual_sql
+                assert expected_params == actual_params
 
     def test_basic_key_error_on_save_processed(self):
 
@@ -463,7 +453,7 @@ class TestPostgresCrashStorage(TestCase):
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
-            ok_(isinstance(database, mock.Mock))
+            assert isinstance(database, mock.Mock)
 
             broken_processed_crash = {
                 "product": "Peter",
@@ -472,9 +462,8 @@ class TestPostgresCrashStorage(TestCase):
                 "submitted_timestamp": time.time(),
                 "unknown_field": 'whatever'
             }
-            assert_raises(KeyError,
-                          crashstorage.save_processed,
-                          broken_processed_crash)
+            with pytest.raises(KeyError):
+                crashstorage.save_processed(broken_processed_crash)
 
     def test_basic_postgres_save_processed_success(self):
         config = DotDict()
@@ -496,18 +485,16 @@ class TestPostgresCrashStorage(TestCase):
         crashstorage = PostgreSQLCrashStorage(config)
         crashstorage.save_processed(a_processed_crash)
 
-        eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
+        assert mocked_database_connection_source.call_count == 1
+        assert mocked_cursor.execute.call_count == 3
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
             'UPDATE processed_crashes_20120402'
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
-            ok_(a_fragment in a_call[0][0])
+            assert a_fragment in a_call[0][0]
 
     def test_basic_postgres_save_processed_success_2(self):
         config = DotDict()
@@ -535,19 +522,17 @@ class TestPostgresCrashStorage(TestCase):
         crashstorage = PostgreSQLCrashStorage(config)
         crashstorage.save_processed(a_processed_crash)
 
-        eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 6)
+        assert mocked_database_connection_source.call_count == 1
+        assert mocked_cursor.execute.call_count == 4
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
             'select id from plugins',
             'insert into plugins',
-            'delete from plugins_reports_20120402',
-            'insert into plugins_reports_20120402',
             'UPDATE processed_crashes_20120402'
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
-            ok_(a_fragment in a_call[0][0])
+            assert a_fragment in a_call[0][0]
 
     def test_basic_postgres_save_processed_success_3_truncations(self):
         config = DotDict()
@@ -569,15 +554,12 @@ class TestPostgresCrashStorage(TestCase):
         crashstorage = PostgreSQLCrashStorage(config)
         crashstorage.save_processed(a_processed_crash_with_everything_too_long)
 
-        eq_(mocked_database_connection_source.call_count, 1)
-        eq_(mocked_cursor.execute.call_count, 5)
+        assert mocked_database_connection_source.call_count == 1
+        assert mocked_cursor.execute.call_count == 3
         # check correct fragments
 
         first_call = mocked_cursor.execute.call_args_list[0]
-        eq_(
-            first_call[0][1],
-            a_processed_report_with_everything_truncated * 2
-        )
+        assert first_call[0][1] == a_processed_report_with_everything_truncated * 2
 
     def test_basic_postgres_save_processed_operational_error(self):
 
@@ -609,16 +591,15 @@ class TestPostgresCrashStorage(TestCase):
             crashstorage.database.operational_exceptions = (OperationalError,)
 
             database = crashstorage.database.return_value = mock.MagicMock()
-            ok_(isinstance(database, mock.Mock))
+            assert isinstance(database, mock.Mock)
 
             m = mock.MagicMock()
             m.__enter__.return_value = m
             database = crashstorage.database.return_value = m
             m.cursor.side_effect = OperationalError('bad')
-            assert_raises(OperationalError,
-                          crashstorage.save_processed,
-                          a_processed_crash)
-            eq_(m.cursor.call_count, 3)
+            with pytest.raises(OperationalError):
+                crashstorage.save_processed(a_processed_crash)
+            assert m.cursor.call_count == 3
 
     def test_get_raw_crash(self):
         mock_logging = mock.Mock()
@@ -656,7 +637,7 @@ class TestPostgresCrashStorage(TestCase):
 
             a_crash = crashstorage.get_raw_crash(a_crash_id)
 
-            ok_(a_crash['uuid'] == a_crash_id)
+            assert a_crash['uuid'] == a_crash_id
             connection.cursor.return_value.__enter__.return_value.execute. \
                 assert_called_with(
                     'select raw_crash from raw_crashes_20120402 where uuid = %s',

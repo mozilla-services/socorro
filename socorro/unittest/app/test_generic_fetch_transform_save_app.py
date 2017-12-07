@@ -2,8 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_, assert_raises
 from mock import Mock
+
+import pytest
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
@@ -26,7 +27,7 @@ class TestFetchTransformSaveApp(TestCase):
                 pass
 
             def _create_iter(self):
-                for x in xrange(5):
+                for x in range(5):
                     yield ((x,), {})
 
             def transform(self, anItem):
@@ -34,28 +35,24 @@ class TestFetchTransformSaveApp(TestCase):
 
         logger = SilentFakeLogger()
         config = DotDict({
-          'logger': logger,
-          'number_of_threads': 2,
-          'maximum_queue_size': 2,
-          'number_of_submissions': 'all',
-          'source': DotDict({'crashstorage_class': None}),
-          'destination': DotDict({'crashstorage_class': None}),
-          'producer_consumer': DotDict({'producer_consumer_class':
-                                          TaskManager,
-                                        'logger': logger,
-                                        'number_of_threads': 1,
-                                        'maximum_queue_size': 1}
-                                      )
+            'logger': logger,
+            'number_of_threads': 2,
+            'maximum_queue_size': 2,
+            'number_of_submissions': 'all',
+            'source': DotDict({'crashstorage_class': None}),
+            'destination': DotDict({'crashstorage_class': None}),
+            'producer_consumer': DotDict({
+                'producer_consumer_class': TaskManager,
+                'logger': logger,
+                'number_of_threads': 1,
+                'maximum_queue_size': 1
+            })
         })
 
         fts_app = TestFTSAppClass(config)
         fts_app.main()
-        ok_(len(fts_app.the_list) == 5,
-                        'expected to do 5 inserts, '
-                          'but %d were done instead' % len(fts_app.the_list))
-        ok_(sorted(fts_app.the_list) == range(5),
-                        'expected %s, but got %s' % (range(5),
-                                                     sorted(fts_app.the_list)))
+        assert len(fts_app.the_list) == 5
+        assert sorted(fts_app.the_list) == range(5)
 
     def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(FetchTransformSaveApp):
@@ -65,19 +62,28 @@ class TestFetchTransformSaveApp(TestCase):
 
         class FakeStorageSource(object):
             def __init__(self, config, quit_check_callback):
-                self.store = DotDict({'1234': DotDict({'ooid': '1234',
-                                                       'Product': 'FireSquid',
-                                                       'Version': '1.0'}),
-                                      '1235': DotDict({'ooid': '1235',
-                                                       'Product': 'ThunderRat',
-                                                       'Version': '1.0'}),
-                                      '1236': DotDict({'ooid': '1236',
-                                                       'Product': 'Caminimal',
-                                                       'Version': '1.0'}),
-                                      '1237': DotDict({'ooid': '1237',
-                                                       'Product': 'Fennicky',
-                                                       'Version': '1.0'}),
-                                     })
+                self.store = DotDict({
+                    '1234': DotDict({
+                        'ooid': '1234',
+                        'Product': 'FireSquid',
+                        'Version': '1.0'
+                    }),
+                    '1235': DotDict({
+                        'ooid': '1235',
+                        'Product': 'ThunderRat',
+                        'Version': '1.0'
+                    }),
+                    '1236': DotDict({
+                        'ooid': '1236',
+                        'Product': 'Caminimal',
+                        'Version': '1.0'
+                    }),
+                    '1237': DotDict({
+                        'ooid': '1237',
+                        'Product': 'Fennicky',
+                        'Version': '1.0'
+                    }),
+                })
                 self.number_of_close_calls = 0
 
             def get_raw_crash(self, ooid):
@@ -109,20 +115,18 @@ class TestFetchTransformSaveApp(TestCase):
 
         logger = SilentFakeLogger()
         config = DotDict({
-          'logger': logger,
-          'number_of_threads': 2,
-          'maximum_queue_size': 2,
-          'number_of_submissions': 'all',
-          'source': DotDict({'crashstorage_class':
-                                 FakeStorageSource}),
-          'destination': DotDict({'crashstorage_class':
-                                     FakeStorageDestination}),
-          'producer_consumer': DotDict({'producer_consumer_class':
-                                          ThreadedTaskManager,
-                                        'logger': logger,
-                                        'number_of_threads': 1,
-                                        'maximum_queue_size': 1}
-                                      )
+            'logger': logger,
+            'number_of_threads': 2,
+            'maximum_queue_size': 2,
+            'number_of_submissions': 'all',
+            'source': DotDict({'crashstorage_class': FakeStorageSource}),
+            'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
+            'producer_consumer': DotDict({
+                'producer_consumer_class': ThreadedTaskManager,
+                'logger': logger,
+                'number_of_threads': 1,
+                'maximum_queue_size': 1
+            })
         })
 
         fts_app = NonInfiniteFTSAppClass(config)
@@ -131,18 +135,16 @@ class TestFetchTransformSaveApp(TestCase):
         source = fts_app.source
         destination = fts_app.destination
 
-        eq_(source.store, destination.store)
-        eq_(len(destination.dumps), 4)
-        eq_(destination.dumps['1237'],
-                         source.get_raw_dumps('1237'))
+        assert source.store == destination.store
+        assert len(destination.dumps) == 4
+        assert destination.dumps['1237'] == source.get_raw_dumps('1237')
         # ensure that each storage system had its close called
-        eq_(source.number_of_close_calls, 1)
-        eq_(destination.number_of_close_calls, 1)
-
+        assert source.number_of_close_calls == 1
+        assert destination.number_of_close_calls == 1
 
     def test_source_iterator(self):
 
-        faked_finished_func =  Mock()
+        faked_finished_func = Mock()
 
         class FakeStorageSource(object):
 
@@ -179,20 +181,18 @@ class TestFetchTransformSaveApp(TestCase):
 
         logger = SilentFakeLogger()
         config = DotDict({
-          'logger': logger,
-          'number_of_threads': 2,
-          'maximum_queue_size': 2,
-          'number_of_submissions': 'forever',
-          'source': DotDict({'crashstorage_class':
-                                 FakeStorageSource}),
-          'destination': DotDict({'crashstorage_class':
-                                     FakeStorageDestination}),
-          'producer_consumer': DotDict({'producer_consumer_class':
-                                          ThreadedTaskManager,
-                                        'logger': logger,
-                                        'number_of_threads': 1,
-                                        'maximum_queue_size': 1}
-                                      )
+            'logger': logger,
+            'number_of_threads': 2,
+            'maximum_queue_size': 2,
+            'number_of_submissions': 'forever',
+            'source': DotDict({'crashstorage_class': FakeStorageSource}),
+            'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
+            'producer_consumer': DotDict({
+                'producer_consumer_class': ThreadedTaskManager,
+                'logger': logger,
+                'number_of_threads': 1,
+                'maximum_queue_size': 1
+            })
         })
 
         fts_app = FetchTransformSaveApp(config)
@@ -200,15 +200,15 @@ class TestFetchTransformSaveApp(TestCase):
         fts_app.destination = FakeStorageDestination
         error_detected = False
         no_finished_function_counter = 0
-        for x, y in zip(xrange(1002), (a for a in fts_app.source_iterator())):
+        for x, y in zip(range(1002), (a for a in fts_app.source_iterator())):
             if x == 0:
                 # the iterator is exhausted on the 1st try and should have
                 # yielded a None before starting over
-                ok_(y is None)
+                assert y is None
             elif x < 1000:
                 if x - 1 != y[0][0] and not error_detected:
                     error_detected = True
-                    eq_(x, y,'iterator fails on iteration %d: %s' % (x, y))
+                    assert x == y, 'iterator fails on iteration %d: %s' % (x, y)
                 # invoke that finished func to ensure that we've got the
                 # right object
                 try:
@@ -218,8 +218,8 @@ class TestFetchTransformSaveApp(TestCase):
             else:
                 if y is not None and not error_detected:
                     error_detected = True
-                    ok_(x is None, 'iterator fails on iteration %d: %s' % (x, y))
-        eq_(faked_finished_func.call_count, 999 - no_finished_function_counter)
+                    assert x is None, 'iterator fails on iteration %d: %s' % (x, y)
+        assert faked_finished_func.call_count == (999 - no_finished_function_counter)
 
     def test_no_source(self):
 
@@ -235,42 +235,50 @@ class TestFetchTransformSaveApp(TestCase):
 
         logger = SilentFakeLogger()
         config = DotDict({
-          'logger': logger,
-          'number_of_threads': 2,
-          'maximum_queue_size': 2,
-          'number_of_submissions': 'forever',
-          'source': DotDict({'crashstorage_class':
-                                 None}),
-          'destination': DotDict({'crashstorage_class':
-                                     FakeStorageDestination}),
-          'producer_consumer': DotDict({'producer_consumer_class':
-                                          ThreadedTaskManager,
-                                        'logger': logger,
-                                        'number_of_threads': 1,
-                                        'maximum_queue_size': 1}
-                                      )
+            'logger': logger,
+            'number_of_threads': 2,
+            'maximum_queue_size': 2,
+            'number_of_submissions': 'forever',
+            'source': DotDict({'crashstorage_class': None}),
+            'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
+            'producer_consumer': DotDict({
+                'producer_consumer_class': ThreadedTaskManager,
+                'logger': logger,
+                'number_of_threads': 1,
+                'maximum_queue_size': 1
+            })
         })
 
         fts_app = FetchTransformSaveApp(config)
 
-        assert_raises(TypeError, fts_app.main)
+        with pytest.raises(TypeError):
+            fts_app.main()
 
     def test_no_destination(self):
         class FakeStorageSource(object):
             def __init__(self, config, quit_check_callback):
-                self.store = DotDict({'1234': DotDict({'ooid': '1234',
-                                                       'Product': 'FireSquid',
-                                                       'Version': '1.0'}),
-                                      '1235': DotDict({'ooid': '1235',
-                                                       'Product': 'ThunderRat',
-                                                       'Version': '1.0'}),
-                                      '1236': DotDict({'ooid': '1236',
-                                                       'Product': 'Caminimal',
-                                                       'Version': '1.0'}),
-                                      '1237': DotDict({'ooid': '1237',
-                                                       'Product': 'Fennicky',
-                                                       'Version': '1.0'}),
-                                     })
+                self.store = DotDict({
+                    '1234': DotDict({
+                        'ooid': '1234',
+                        'Product': 'FireSquid',
+                        'Version': '1.0'
+                    }),
+                    '1235': DotDict({
+                        'ooid': '1235',
+                        'Product': 'ThunderRat',
+                        'Version': '1.0'
+                    }),
+                    '1236': DotDict({
+                        'ooid': '1236',
+                        'Product': 'Caminimal',
+                        'Version': '1.0'
+                    }),
+                    '1237': DotDict({
+                        'ooid': '1237',
+                        'Product': 'Fennicky',
+                        'Version': '1.0'
+                    }),
+                })
 
             def get_raw_crash(self, ooid):
                 return self.store[ooid]
@@ -282,27 +290,23 @@ class TestFetchTransformSaveApp(TestCase):
                 for k in self.store.keys():
                     yield k
 
-
-
         logger = SilentFakeLogger()
         config = DotDict({
-          'logger': logger,
-          'number_of_threads': 2,
-          'maximum_queue_size': 2,
-          'number_of_submissions': 'forever',
-          'source': DotDict({'crashstorage_class':
-                                 FakeStorageSource}),
-          'destination': DotDict({'crashstorage_class':
-                                     None}),
-          'producer_consumer': DotDict({'producer_consumer_class':
-                                          ThreadedTaskManager,
-                                        'logger': logger,
-                                        'number_of_threads': 1,
-                                        'maximum_queue_size': 1}
-                                      )
-
+            'logger': logger,
+            'number_of_threads': 2,
+            'maximum_queue_size': 2,
+            'number_of_submissions': 'forever',
+            'source': DotDict({'crashstorage_class': FakeStorageSource}),
+            'destination': DotDict({'crashstorage_class': None}),
+            'producer_consumer': DotDict({
+                'producer_consumer_class': ThreadedTaskManager,
+                'logger': logger,
+                'number_of_threads': 1,
+                'maximum_queue_size': 1
+            })
         })
 
         fts_app = FetchTransformSaveApp(config)
 
-        assert_raises(TypeError, fts_app.main)
+        with pytest.raises(TypeError):
+            fts_app.main()

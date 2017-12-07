@@ -11,7 +11,9 @@ import urllib2
 
 # Example command-line usage:
 # $ . /etc/socorro/socorrorc
-# $ $PYTHON hive_adi_test.py -d '2015-01-21' -s peach-gw.peach.metrics.scl3.mozilla.com -o /tmp/output_adi.txt
+# $ $PYTHON hive_adi_test.py -d '2015-01-21' -s peach-gw.peach.metrics.scl3.mozilla.com \
+#           -o /tmp/output_adi.txt
+
 
 def main():
 
@@ -96,6 +98,7 @@ def main():
                 )
             )
             f.write("\n")
+
 
 if __name__ == '__main__':
     main()

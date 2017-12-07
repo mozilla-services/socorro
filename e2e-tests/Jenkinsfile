@@ -1,28 +1,30 @@
-@Library('fxtest@1.6') _
-
 /** Desired capabilities */
 def capabilities = [
   browserName: 'Firefox',
-  version: '54.0',
+  version: '57',
   platform: 'Windows 10'
 ]
 
 pipeline {
   agent any
+  libraries {
+    lib('fxtest@1.9')
+  }
   options {
     ansiColor('xterm')
     timestamps()
     timeout(time: 1, unit: 'HOURS')
   }
   environment {
+    PYTEST_PROCESSES = "${PYTEST_PROCESSES ?: "auto"}"
     PYTEST_ADDOPTS =
-    "-n=10 " +
+    "-n=${PYTEST_PROCESSES} " +
     "--tb=short " +
     "--color=yes " +
     "--driver=SauceLabs " +
     "--variables=capabilities.json"
     PULSE = credentials('PULSE')
-    SAUCELABS_API_KEY = credentials('SAUCELABS_API_KEY')
+    SAUCELABS = credentials('SAUCELABS')
   }
   stages {
     stage('Lint') {
@@ -54,12 +56,13 @@ pipeline {
   }
   post {
     failure {
-      mail(
-        body: "${BUILD_URL}",
-        from: "firefox-test-engineering@mozilla.com",
-        replyTo: "firefox-test-engineering@mozilla.com",
-        subject: "Build failed in Jenkins: ${JOB_NAME} #${BUILD_NUMBER}",
-        to: "fte-ci@mozilla.com")
+      emailext(
+        attachLog: true,
+        attachmentsPattern: 'e2e-tests/results/py27.html',
+        body: '$BUILD_URL\n\n$FAILED_TESTS',
+        replyTo: '$DEFAULT_REPLYTO',
+        subject: '$DEFAULT_SUBJECT',
+        to: '$DEFAULT_RECIPIENTS')
     }
     changed {
       ircNotification('#breakpad')

@@ -6,10 +6,10 @@ from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
 
-from crontabber.tests import base
+from socorro.unittest.cron.crontabber_tests_base import IntegrationTestCaseBase
 
 
-class IntegrationTestBase(base.IntegrationTestCaseBase):
+class IntegrationTestBase(IntegrationTestCaseBase):
 
     @classmethod
     def get_standard_config(cls):

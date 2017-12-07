@@ -38,6 +38,7 @@ _files_getaddrinfo
 .*free
 free_impl
 GCGraphBuilder::NoteXPCOMChild
+gfxPlatform::Init
 getanswer
 HandleInvalidParameter
 HeapFree
@@ -76,6 +77,7 @@ memcmp
 __memcmp16
 memcpy
 memmove
+_platform_memmove\$VARIANT\$Haswell
 memset
 mozalloc_abort.*
 mozalloc_handle_oom
@@ -83,9 +85,11 @@ moz_free
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::.*
 mozilla::detail::ConditionVariableImpl::.*
+SleepConditionVariableCS
 SleepConditionVariableSRW
 mozilla::TimeStamp::Now
 GetTickCount64
+mozilla::detail::MutexImpl::.*
 mozilla::detail::nsStringRepr::First
 mozilla::detail::nsStringRepr::Last
 mozilla::ipc::LogicError
@@ -101,6 +105,7 @@ mozilla::ipc::RPCChannel::EnteredCxxStack
 mozilla::ipc::RPCChannel::Send
 mozilla::layers::CompositorD3D11::Failed
 mozilla::layers::CompositorD3D11::HandleError
+mozilla::WrapNotNull<.*
 mozilla.*FatalError
 moz_xmalloc
 moz_xrealloc
@@ -115,6 +120,7 @@ nsAString_internal::Assign.*
 nsACString_internal::BeginWriting
 nsAString_internal::BeginWriting
 nsACString_internal::SetCapacity
+nsTArrayInfallibleAllocator
 NS_strcmp
 nsBaseHashtable<.*>::.*
 nsClassHashtable<.*>::.*
@@ -127,6 +133,7 @@ nsDependentString::nsDependentString
 nsEventQueue::GetEvent
 nsThread::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
+mozilla::SpinEventLoopUntil<T>
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::.*
 nsINode::Slots
@@ -135,6 +142,7 @@ nsObjCExceptionLogAbort
 nsRefPtr.*
 NSS.*
 nss.*
+nsStringBuffer::FromDataCanaryCheckFailed
 nsTArray<.*
 nsTArray_base<.*
 nsTArray_Impl<.*
@@ -197,10 +205,12 @@ SocketWritev
 ssl_.*
 SSL_.*
 std::_Allocate.*
+std::_Hash<T>::.*
 std::list<.*>::.*
 std::panicking::begin_panic<.*>
 std::panicking::rust_panic_with_hook
 std::collections::hash::map::.*
+stdext::hash_map<T>::.*
 strcat
 strncmp
 ssl3_.*

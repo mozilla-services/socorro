@@ -29,7 +29,7 @@ if [[ "$DOCKER_DEPLOY" == "true" ]]; then
     # docker tag and push git branch to dockerhub
     if [ -n "$1" ]; then
         [ "$1" == master ] && TAG=latest || TAG="$1"
-        for image in "socorro_processor" "socorro_webapp"; do
+        for image in "socorro_processor" "socorro_webapp" "socorro_crontabber"; do
             docker tag "local/$image:latest" "mozilla/$image:$TAG" ||
                 (echo "Couldn't tag local/$image:latest as mozilla/$image:$TAG" && false)
             retry 3 docker push "mozilla/$image:$TAG" ||

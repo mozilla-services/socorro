@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(
         r'^supersearch/$',
         views.supersearch_home,
@@ -24,4 +23,4 @@ urlpatterns = patterns(
         views.home,
         name='home',
     ),
-)
+]

@@ -44,14 +44,34 @@ class UploadCrashReportJSONSchemaCronApp(BaseCronApp):
         default='crash_report.json',
         doc="Name of the file/key we're going to upload to"
     )
+    required_config.add_option(
+        'telemetry_bucket_name',
+        default='',
+        reference_value_from='resource.boto',
+        doc='if set, overrides resource_class bucket name'
+    )
+
+    def get_bucket_name(self):
+        if self.config.telemetry_bucket_name:
+            # If we have a telemetry.bucket_name set, then stomp on it with
+            # config.telemetry_bucket_name.
+
+            # FIXME(willkg): It'd be better if we could detect whether the
+            # connection context bucket_name was set at all (it's a default
+            # value, or the value of resource.boto.bucket_name).
+            return self.config.telemetry_bucket_name
+        else:
+            return self.config.bucket_name
 
     def run(self):
         connection_context = self.config.resource_class(self.config)
+
         connection = connection_context._connect()
-        bucket = connection_context._get_bucket(
-            connection,
-            self.config.bucket_name
+        bucket_name = self.get_bucket_name()
+        self.config.logger.info(
+            'Using %s for S3 bucket', bucket_name
         )
+        bucket = connection_context._get_bucket(connection, bucket_name)
         key = bucket.get_key(self.config.json_filename)
         if not key:
             key = bucket.new_key(self.config.json_filename)

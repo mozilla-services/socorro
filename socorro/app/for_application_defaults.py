@@ -43,10 +43,8 @@ class ApplicationDefaultsProxy(object):
         return {
             'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
             'submitter': 'socorro.submitter.submitter_app.SubmitterApp',
-            # crontabber not yet supported in this environment
-            #'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
+            'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
             'processor': 'socorro.processor.processor_app.ProcessorApp',
-            'fetch': 'socorro.external.fetch_app.FetchApp',
             'reprocess_crashlist':
                 'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp',
             'purge_rmq':
