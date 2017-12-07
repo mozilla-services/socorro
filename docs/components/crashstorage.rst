@@ -217,11 +217,6 @@ create migrations.
 This directory contains all of the stored procedures used by PostgreSQL.
 
 
-**socorro.external.postgresql.fakedata**
-
-This is our data generator for testing stored procedures.
-
-
 socorro.external.rabbitmq
 =========================
 

@@ -20,7 +20,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
 
 from socorro.app.socorro_app import App, main
-from socorro.external.postgresql import staticdata, fakedata
+from socorro.external.postgresql import staticdata
 from socorro.external.postgresql.connection_context import (
     get_field_from_pg_database_url
 )
@@ -118,18 +118,6 @@ class SocorroDBApp(App):
     )
 
     required_config.add_option(
-        name='fakedata',
-        default=False,
-        doc='Whether or not to fill the data with synthetic test data',
-    )
-
-    required_config.add_option(
-        name='fakedata_days',
-        default=7,
-        doc='How many days of synthetic test data to generate'
-    )
-
-    required_config.add_option(
         name='alembic_config',
         default=os.path.abspath('config/alembic.ini'),
         doc='Path to alembic configuration file'
@@ -168,42 +156,6 @@ class SocorroDBApp(App):
         for table in staticdata.tables:
             table = table()
             self.bulk_load_table(db, table)
-
-    def generate_fakedata(self, db, fakedata_days):
-        # Set up partitions before loading report data
-        db.session.execute("""
-                SELECT weekly_report_partitions(4, now()-'2 weeks'::interval)
-        """)
-
-        start_date = end_date = None
-        for table in fakedata.tables:
-            table = table(days=fakedata_days)
-
-            if start_date:
-                if start_date > table.start_date:
-                    start_date = table.start_date
-            else:
-                start_date = table.start_date
-
-            if end_date:
-                if end_date < table.start_date:
-                    end_date = table.end_date
-            else:
-                end_date = table.end_date
-
-            self.bulk_load_table(db, table)
-
-        db.session.execute("""
-                SELECT backfill_matviews(cast(:start as DATE),
-                cast(:end as DATE))
-            """, dict(zip(["start", "end"], list((start_date, end_date)))))
-
-        db.session.execute("""
-                UPDATE product_versions
-                SET featured_version = TRUE
-                WHERE version_string IN (:one, :two, :three, :four)
-            """, dict(zip(["one", "two", "three", "four"],
-                      list(fakedata.featured_versions))))
 
     def create_connection_url(self, database_name, username, password):
         """Takes a URL to connect to Postgres and updates database name
@@ -321,8 +273,6 @@ class SocorroDBApp(App):
 
             if not self.config.get('no_staticdata'):
                 self.import_staticdata(db)
-            if self.config['fakedata']:
-                self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
             command.stamp(alembic_cfg, "heads")
             db.session.close()

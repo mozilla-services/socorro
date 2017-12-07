@@ -184,11 +184,11 @@ if [ $? != 0 ]; then
     error $? "Could not pushd /data/socorro"
     PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
         ./socorro/external/postgresql/setupdb_app.py \
-        --database_name=breakpad --fakedata \
+        --database_name=breakpad \
         --database_superusername=postgres \
         --createdb \
         &> /var/log/socorro/setupdb.log
-    error $? "Could not create new fakedata DB `cat /var/log/socorro/setupdb.log`"
+    error $? "Could not create new DB `cat /var/log/socorro/setupdb.log`"
     popd > /dev/null
     error $? "Could not popd"
 else
