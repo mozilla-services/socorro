@@ -625,9 +625,15 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                        <p>
-                            <a href="#allthreads" data-show="Show other threads" data-hide="Hide other threads">Show other threads</a>
-                        </p>
+                        {% if parsed_dump.threads|length == 1 %}
+                            <p>
+                                No more threads to show.
+                            </p>
+                        {% else %}
+                            <p>
+                                <a href="#allthreads" data-show="Show other threads" data-hide="Hide other threads">Show other threads</a>
+                            </p>
+                        {% endif %}
                         {% endif %}
 
                         <div id="allthreads" class="{{ 'hidden' if crashing_thread is not none }}">
