@@ -47,8 +47,6 @@ Run it like this::
 
 Common options listed below::
 
-  --fakedata -- populate the database with preset fixture data
-  --fakedata_days=2 -- the number of days worth of crash data to generate
   --dropdb -- drop a database with the same name as --database_name
 
 
