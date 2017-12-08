@@ -22,7 +22,7 @@ class PostgreSQLAlchemyManager(object):
     """
         Connection management for PostgreSQL using SQLAlchemy
     """
-    def __init__(self, sa_url, logger, autocommit=False, on_heroku=False):
+    def __init__(self, sa_url, logger, autocommit=False):
         self.engine = create_engine(sa_url,
                                     implicit_returning=False,
                                     isolation_level="READ COMMITTED")
@@ -32,14 +32,6 @@ class PostgreSQLAlchemyManager(object):
         self.metadata.bind = self.engine
         self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
-        self.on_heroku = on_heroku
-
-    # decorator for heroku stuff
-    def ignore_if_on_heroku(func):
-        def ignored(self, *args, **kwargs):
-            if not self.on_heroku:
-                return func(self, *args, **kwargs)
-        return ignored
 
     def setup_extensions(self):
         self.logger.debug('creating extensions')
@@ -50,7 +42,6 @@ class PostgreSQLAlchemyManager(object):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
 
-    @ignore_if_on_heroku
     def grant_public_schema_ownership(self, username):
         self.logger.debug('granting ownership of public schema')
         self.session.execute(
@@ -91,7 +82,6 @@ class PostgreSQLAlchemyManager(object):
             cursor.copy_from(data, table, columns=columns, sep=sep)
         connection.commit()
 
-    @ignore_if_on_heroku
     def set_default_owner(self, database_name, username):
         self.logger.debug('setting database %s owner to %s' % (
             database_name, username
@@ -100,7 +90,6 @@ class PostgreSQLAlchemyManager(object):
                 ALTER DATABASE %s OWNER TO %s
             """ % (database_name, username))
 
-    @ignore_if_on_heroku
     def set_table_owner(self, owner):
         self.logger.debug('setting all tables owner to %s' % (owner))
         for table in self.metadata.sorted_tables:
@@ -108,7 +97,6 @@ class PostgreSQLAlchemyManager(object):
                     ALTER TABLE %s OWNER TO %s
                 """ % (table, owner))
 
-    @ignore_if_on_heroku
     def set_sequence_owner(self, owner):
         self.logger.debug('setting all sequences owner to %s' % (owner))
         sequences = self.session.execute("""
@@ -125,7 +113,6 @@ class PostgreSQLAlchemyManager(object):
                     ALTER SEQUENCE %s OWNER TO %s
                 """ % (sequence, owner))
 
-    @ignore_if_on_heroku
     def set_type_owner(self, owner):
         self.logger.debug('setting all types owner to %s' % (owner))
         types = self.session.execute("""
@@ -148,7 +135,6 @@ class PostgreSQLAlchemyManager(object):
                     ALTER TYPE %s OWNER to %s
                 """ % (types, owner))
 
-    @ignore_if_on_heroku
     def set_grants(self, config):
         """
         Grant access to configurable roles to all database tables
@@ -283,7 +269,6 @@ class PostgreSQLAlchemyManager(object):
     def min_ver_check(self, version_required):
         return self.version_number() >= version_required
 
-    @ignore_if_on_heroku
     def create_roles(self, config):
         """
             This function creates two roles: breakpad_ro, breakpad_rw
@@ -340,7 +325,6 @@ class PostgreSQLAlchemyManager(object):
     def __exit__(self, *exc_info):
         self.conn.close()
 
-    @ignore_if_on_heroku
     def drop_database(self, database_name):
         self.logger.debug('dropping database %s' % database_name)
         connection = self.engine.connect()
@@ -356,7 +340,6 @@ class PostgreSQLAlchemyManager(object):
                 # already done, no need to rerun
                 self.logger.warning("The DB %s doesn't exist" % database_name)
 
-    @ignore_if_on_heroku
     def create_database(self, database_name):
         self.logger.debug('creating database %s' % database_name)
         connection = self.engine.connect()
