@@ -4,7 +4,7 @@ source scripts/defaults
 
 echo "this is install.sh"
 
-if [ "$BUILD_TYPE" != "tar" ]; then
+if [ "$BUILD_TYPE" != "ci" ]; then
     # create base directories
     mkdir -p $BUILD_DIR/usr/bin
     mkdir -p $BUILD_DIR/etc/socorro
@@ -66,11 +66,6 @@ cp socorro_revision.txt $BUILD_DIR/application/socorro
 cp breakpad_revision.txt $BUILD_DIR/application/socorro
 
 
-if [ "$BUILD_TYPE" == "tar" ]; then
-    pushd $BUILD_DIR/application/scripts/config
-    echo "py config files no longer exist, ignoring"
-    #for file in *.py.dist; do cp $file `basename $file .dist`; done
-    popd
-else
+if [ "$BUILD_TYPE" != "ci" ]; then
     BUILD_DIR=${BUILD_DIR%%/data/socorro}
 fi

@@ -11,7 +11,6 @@ nosetests.xml
 scripts/config/*.py
 socorro/unittest/config/*.py
 socorro-virtualenv
-socorro-vagrant-virtualenv
 socorro/unittest/database/logs/
 socorro/unittest/testlib/logs/
 stackwalk/
@@ -20,9 +19,7 @@ exploitable/
 coverage.xml
 .coverage
 cover/
-.vagrant
 socorro/cron/crontabber.json
-vagrantconfig_local.yaml
 /config/*.ini
 node_modules
 pip-cache
