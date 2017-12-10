@@ -1752,42 +1752,23 @@ class TestAuroraVersionFixitRule:
 
 class TestOsPrettyName(TestCase):
 
-    def get_basic_config(self):
+    def test_everything_we_hoped_for(self):
         config = CDotDict()
         config.logger = Mock()
         config.chatty = False
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
-    def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
 
-        processor_meta = self.get_basic_processor_meta()
-
-        transaction = Mock()
-        config.transaction_executor_class.return_value = transaction
-        transaction.return_value = (
-            ('Windows XP', '5', '0'),
-            ('Windows 8', '8', '11'),
-            ('Windows 10', '10', '2'),
-        )
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
 
         rule = OSPrettyVersionRule(config)
 
         # A known Windows version.
         processed_crash = DotDict()
         processed_crash.os_name = 'Windows NT'
-        processed_crash.os_version = '10.2.11.7600'
+        processed_crash.os_version = '10.0.11.7600'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert 'os_pretty_version' in processed_crash
