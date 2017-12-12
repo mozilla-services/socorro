@@ -79,9 +79,7 @@ def get_config_manager_for_crontabber(
     else:
         more_definitions = [CronTabberApp.get_required_config()]
 
-    local_overrides = {
-        'logger': Mock(),
-    }
+    local_overrides = {}
     if jobs:
         local_overrides['crontabber.jobs'] = jobs
 
