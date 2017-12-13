@@ -1,5 +1,11 @@
 {
   "extends": [
     "config:base"
-  ]
+  ],
+  "schedule": "on the first day of the month",
+  "separateMajorReleases": false,
+  "groupName": "all",
+  "docker": {
+    "enabled":  false
+  }
 }
