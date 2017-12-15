@@ -1,6 +1,8 @@
 import functools
 import urlparse
 
+import markus
+
 from django.http import HttpResponseBadRequest, Http404
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
@@ -10,7 +12,6 @@ from django.contrib.auth.decorators import (
 )
 
 from . import utils
-from crashstats.base import ga
 
 
 def login_required(
@@ -102,6 +103,9 @@ def pass_default_context(view):
     return inner
 
 
+API_METRICS = markus.get_metrics('webapp.api')
+
+
 def track_api_pageview(view):
     @functools.wraps(view)
     def inner(request, *args, **kwargs):
@@ -115,6 +119,9 @@ def track_api_pageview(view):
                 referer_host = urlparse.urlparse(referer).netloc
                 if referer_host == request.META.get('HTTP_HOST'):
                     return response
-            ga.track_api_pageview(request)
+
+            # Drop all the non-alphanumeric bits from the url and then incr that
+            request_path = ''.join([c for c in request.path if c.isalpha()])
+            API_METRICS.incr('pageview', tags=['endpoint:%s' % request_path])
         return response
     return inner

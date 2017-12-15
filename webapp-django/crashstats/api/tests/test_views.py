@@ -5,6 +5,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.utils import timezone
 
+from markus.testing import MetricsMock
 import mock
 import pyquery
 
@@ -164,6 +165,19 @@ class TestViews(BaseTestViews):
             'version': '1.0',
         }
         assert dump['hits'][0] == expected
+
+    def test_metrics_gathering(self):
+        # note: this gets mocked out in the setUp
+        url = reverse('api:model_wrapper', args=('Platforms',))
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
+        assert response.status_code == 200
+        assert metrics_mock.has_record(
+            fun_name='incr',
+            stat='webapp.api.pageview',
+            value=1,
+            tags=['endpoint:apiPlatforms']
+        )
 
     def test_Platforms(self):
         # note: this gets mocked out in the setUp
