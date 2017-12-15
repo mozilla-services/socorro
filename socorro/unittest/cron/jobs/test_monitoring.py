@@ -1,6 +1,5 @@
 import json
 import os
-from contextlib import nested
 
 import pytest
 import mock
@@ -253,15 +252,11 @@ class TestDependencySecurityCheckCronApp(object):
             description='This is an error',
         )
 
-        mocks = [
-            mock.patch.object(app, 'get_python_vulnerabilities', return_value=[vuln]),
-            mock.patch.object(app, 'get_javascript_vulnerabilities', return_value=[]),
-            mock.patch.object(app, 'alert_log'),
-        ]
-
-        with nested(*mocks):
-            app.run()
-            app.alert_log.assert_called_with([vuln])
+        with mock.patch.object(app, 'get_python_vulnerabilities', return_value=[vuln]):
+            with mock.patch.object(app, 'get_javascript_vulnerabilities', return_value=[]):
+                with mock.patch.object(app, 'alert_log'):
+                    app.run()
+                    app.alert_log.assert_called_with([vuln])
 
     def test_run_raven(self, app_config):
         """Alert via Raven if there's a Sentry DSN configured."""
@@ -276,12 +271,8 @@ class TestDependencySecurityCheckCronApp(object):
             description='This is an error',
         )
 
-        mocks = [
-            mock.patch.object(app, 'get_python_vulnerabilities', return_value=[vuln]),
-            mock.patch.object(app, 'get_javascript_vulnerabilities', return_value=[]),
-            mock.patch.object(app, 'alert_sentry'),
-        ]
-
-        with nested(*mocks):
-            app.run()
-            app.alert_sentry.assert_called_with(dsn, [vuln])
+        with mock.patch.object(app, 'get_python_vulnerabilities', return_value=[vuln]):
+            with mock.patch.object(app, 'get_javascript_vulnerabilities', return_value=[]):
+                with mock.patch.object(app, 'alert_sentry'):
+                    app.run()
+                    app.alert_sentry.assert_called_with(dsn, [vuln])

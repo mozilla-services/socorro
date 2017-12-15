@@ -420,8 +420,8 @@ class PolyStorageError(Exception, collections.MutableSequence):
     parameters:
         message - an optional over all error message
     """
-    def __init__(self, message=''):
-        super(PolyStorageError, self).__init__(message)
+    def __init__(self, *args):
+        super(PolyStorageError, self).__init__(*args)
         self.exceptions = []  # the collection
 
     def gather_current_exception(self):
@@ -459,7 +459,7 @@ class PolyStorageError(Exception, collections.MutableSequence):
         self.exceptions.__setitem__(index, value)
 
     def __str__(self):
-        return '%s %s' % (self.message,
+        return '%s %s' % (self.args[0],
                           ','.join(repr(e[1]).encode('ascii', 'ignore')
                                    for e in self.exceptions))
 
