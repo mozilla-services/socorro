@@ -229,9 +229,9 @@ class TestProcessorApp(TestCase):
         assert len(captured_exceptions) == 2
         captured_exception, captured_exception_2 = captured_exceptions
         assert captured_exception.__class__ == NameError
-        assert captured_exception.message == 'waldo'
+        assert captured_exception.args[0] == 'waldo'
         assert captured_exception_2.__class__ == AssertionError
-        assert captured_exception_2.message is False
+        assert captured_exception_2.args[0] is False
 
     @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_misc_error_with_raven_configured_successful(
@@ -275,7 +275,7 @@ class TestProcessorApp(TestCase):
         assert len(captured_exceptions) == 1
         captured_exception, = captured_exceptions
         assert captured_exception.__class__ == ValueError
-        assert captured_exception.message == 'Someone is wrong on the Internet'
+        assert captured_exception.args[0] == 'Someone is wrong on the Internet'
 
     @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_polystorage_error_with_raven_configured_failing(
