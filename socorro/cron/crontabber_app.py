@@ -53,9 +53,11 @@ STAGE_JOBS = ', '.join(
     ]
 )
 
+
 # Jobs that run in the -stage-new environment
 STAGE_NEW_JOBS = ', '.join(
-    DEFAULT_JOBS_BASE + [
+    [job for job in DEFAULT_JOBS_BASE if 'MissingSymbolsCronApp' not in job] +
+    [
         'socorro.cron.jobs.fetch_adi_from_hive.RawADIMoverCronApp|1d'
     ]
 )
