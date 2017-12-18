@@ -40,7 +40,7 @@ from crashstats import scrubber
 from crashstats.base.utils import requests_retry_session
 
 
-logger = logging.getLogger('crashstats_models')
+logger = logging.getLogger('crashstats.models')
 
 
 class DeprecatedModelError(DeprecationWarning):
