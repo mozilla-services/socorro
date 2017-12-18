@@ -29,6 +29,10 @@ urlpatterns = [
     url(r'^crontabber-state/$',
         views.crontabber_state,
         name='crontabber_state'),
+    url(r'^crash-verify/(?P<crash_id>[\w-]+)$',
+        views.crash_verify,
+        name='crash_verify'),
+
     url('^crashes-per-day/$',
         views.crashes_per_day,
         name='crashes_per_day'),

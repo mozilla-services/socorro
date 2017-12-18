@@ -1,7 +1,7 @@
 import copy
+import datetime
 import gzip
 import json
-import datetime
 import os
 import urllib
 from collections import defaultdict
@@ -23,6 +23,7 @@ from django.utils import timezone
 from csp.decorators import csp_update
 
 from socorro.lib import BadArgumentError
+from socorro.lib.ooid import is_crash_id_valid
 from socorro.external.crashstorage_base import CrashIDNotFound
 from . import forms, models, utils
 from .decorators import pass_default_context
@@ -1030,6 +1031,71 @@ def dockerflow_version(requst):
 def crontabber_state(request, default_context=None):
     context = default_context or {}
     return render(request, 'crashstats/crontabber_state.html', context)
+
+
+@utils.json_view
+def crash_verify(request, crash_id):
+    """Given a crash id, checks to see if it's in all the storage destinations
+
+    NOTE(willkg): This works by manually trying to use the access methods that
+    the webapp uses. That is independent of the processor's crash storage
+    destinations.
+
+    If we change the processor destination polycrashstorage configuration or
+    anything about those crashstorage class configurations, we'll need to
+    update that here, too.
+
+    """
+    if not is_crash_id_valid(crash_id):
+        return http.JsonResponse({'error': 'unknown crash id'}, status=400)
+
+    data = {
+        'uuid': crash_id
+    }
+
+    # Check S3 crash bucket for raw and processed crash data
+    raw_api = models.RawCrash()
+    try:
+        raw_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_raw_crash = True
+    except CrashIDNotFound:
+        has_raw_crash = False
+    data['s3_raw_crash'] = has_raw_crash
+
+    processed_api = models.ProcessedCrash()
+    try:
+        processed_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_processed_crash = True
+    except CrashIDNotFound:
+        has_processed_crash = False
+    data['s3_processed_crash'] = has_processed_crash
+
+    # Check S3 telemetry bucket for crash data
+    telemetry_api = models.TelemetryCrash()
+    try:
+        telemetry_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_telemetry_crash = True
+    except CrashIDNotFound:
+        has_telemetry_crash = False
+    data['s3_telemetry_crash'] = has_telemetry_crash
+
+    # Check Elasticsearch for crash data
+    supersearch_api = SuperSearch()
+    params = {
+        'uuid': crash_id
+    }
+    results = supersearch_api.get(**params)
+    hits = [hit for hit in results['hits'] if hit['uuid'] == crash_id]
+    data['elasticsearch_crash'] = (len(hits) == 1)
+
+    # Check Postgres for raw and processed crash data
+    results = models.PostgresRawCrash().get(uuid=crash_id)
+    data['postgres_raw_crash'] = (len(results['hits']) == 1)
+
+    results = models.PostgresProcessedCrash().get(uuid=crash_id)
+    data['postgres_processed_crash'] = (len(results['hits']) == 1)
+
+    return http.HttpResponse(json.dumps(data), content_type='text/json')
 
 
 @pass_default_context

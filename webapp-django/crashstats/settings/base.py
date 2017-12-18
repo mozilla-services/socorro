@@ -655,6 +655,10 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         'boto': {
             'access_key': config('resource.boto.access_key', None),
             'bucket_name': config('resource.boto.bucket_name', 'crashstats'),
+            'telemetry_bucket_name': config(
+                'resource.boto.telemetry_bucket_name',
+                'telemetry_bucket'
+            ),
             'region': config('resource.boto.region', 'us-west-2'),
             'prefix': config('resource.boto.prefix', ''),
             'keybuilder_class': config(
