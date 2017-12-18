@@ -72,7 +72,8 @@ class SimplifiedCrashData(BotoS3CrashStorage):
                 return get(params.uuid, name=params.name)
             else:
                 return get(params.uuid)
-        except CrashIDNotFound:
+        except CrashIDNotFound as cidnf:
+            self.config.logger.error('%s not found: %s' % (params.datatype, cidnf))
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message
             # contains information about buckets and prefix keys.
