@@ -14,11 +14,18 @@ class SetRemoteAddrFromForwardedFor(object):
     anybody can "fake" their IP address. Only use this when you can absolutely
     trust the value of HTTP_X_FORWARDED_FOR.
     """
+    def __init__(self, get_response=None):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        self.process_request(request)
+        return self.get_response(request)
+
     def process_request(self, request):
         try:
             real_ip = request.META['HTTP_X_FORWARDED_FOR']
         except KeyError:
-            return None
+            pass
         else:
             # HTTP_X_FORWARDED_FOR can be a comma-separated list of IPs. The
             # client's IP will be the first one.
@@ -27,8 +34,11 @@ class SetRemoteAddrFromForwardedFor(object):
 
 
 class Pretty400Errors(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-    def process_response(self, request, response):
+    def __call__(self, request):
+        response = self.get_response(request)
 
         if (
             response.status_code == 400 and
