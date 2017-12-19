@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('notes', models.TextField(blank=True)),
                 ('created', models.DateTimeField(default=django.utils.timezone.now)),
                 ('permissions', models.ManyToManyField(to='auth.Permission')),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
             options={
             },

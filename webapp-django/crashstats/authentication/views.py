@@ -62,7 +62,7 @@ def oauth2_signout(request):
     If they arrive here, in any way, and are NOT signed in, redirect
     out.
     """
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return redirect('/')
 
     if request.method == 'POST':

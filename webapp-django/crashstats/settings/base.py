@@ -101,7 +101,7 @@ INSTALLED_APPS = (
 )
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -757,7 +757,7 @@ CSP_IMG_SRC = (
     'https://www.google-analytics.com',
     'data:',  # what jquery.tablesorter.js's CSS uses
 )
-CSP_CHILD_SRC = (
+CSP_FRAME_SRC = (
     "'self'",
     'https://accounts.google.com',  # Google Sign-In uses an iframe
 )

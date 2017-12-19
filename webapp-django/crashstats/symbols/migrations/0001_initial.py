@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('size', models.IntegerField()),
                 ('created', models.DateTimeField(default=django.utils.timezone.now)),
                 ('content_type', models.TextField(null=True)),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
             options={
             },
