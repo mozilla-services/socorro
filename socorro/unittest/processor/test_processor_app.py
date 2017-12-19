@@ -185,125 +185,107 @@ class TestProcessorApp(TestCase):
         )
 
     @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_polystorage_error_with_raven_configured_successful(
-        self,
-        mock_raven,
-    ):
-
-        captured_exceptions = []  # a global
-
+    def test_transform_polystorage_error_with_raven_configured_successful(self, mock_raven):
+        # Mock everything
         def mock_capture_exception(exc_info=None):
-            captured_exceptions.append(exc_info)
             return 'someidentifier'
 
         raven_mock_client = mock.MagicMock()
         raven_mock_client.captureException.side_effect = mock_capture_exception
-
         mock_raven.Client.return_value = raven_mock_client
 
-        config = self.get_standard_config(
-            sentry_dsn='https://abc123@example.com/project'
-        )
+        # Set up a processor and mock out .save_raw_and_processed() with multiple
+        # errors
+        config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({'raw': 'crash'})
         pa.source.get_raw_dumps_as_files.return_value = {}
+
+        expected_exception_1 = NameError('waldo')
+        expected_exception_2 = AssertionError(False)
 
         def mocked_save_raw_and_processed(*_):
             exception = PolyStorageError()
-            exception.exceptions.append(NameError('waldo'))
-            exception.exceptions.append(AssertionError(False))
+            exception.exceptions.append(expected_exception_1)
+            exception.exceptions.append(expected_exception_2)
             raise exception
 
-        pa.destination.save_raw_and_processed.side_effect = (
-            mocked_save_raw_and_processed
-        )
-        # The important thing is that this is the exception that
-        # is raised and not something from the raven error handling.
+        pa.destination.save_raw_and_processed.side_effect = mocked_save_raw_and_processed
+
+        # The important thing is that this is the exception that is raised and
+        # not something from the raven error handling
         with pytest.raises(PolyStorageError):
             pa.transform('mycrashid')
 
+        # Assert that we sent both exceptions to Sentry
+        raven_mock_client.captureException.assert_has_calls([
+            mock.call(expected_exception_1),
+            mock.call(expected_exception_2)
+        ])
+
+        # Assert that the logger logged the appropriate thing
         config.logger.info.assert_called_with(
             'Error captured in Sentry! Reference: someidentifier'
         )
-        assert len(captured_exceptions) == 2
-        captured_exception, captured_exception_2 = captured_exceptions
-        assert captured_exception.__class__ == NameError
-        assert captured_exception.args[0] == 'waldo'
-        assert captured_exception_2.__class__ == AssertionError
-        assert captured_exception_2.args[0] is False
 
     @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_save_error_with_raven_configured_successful(
-        self,
-        mock_raven,
-    ):
-
-        captured_exceptions = []  # a global
-
+    def test_transform_save_error_with_raven_configured_successful(self, mock_raven):
+        # Mock everything
         def mock_capture_exception(exc_info=None):
-            captured_exceptions.append(exc_info)
             return 'someidentifier'
 
         raven_mock_client = mock.MagicMock()
         raven_mock_client.captureException.side_effect = mock_capture_exception
-
         mock_raven.Client.return_value = raven_mock_client
 
-        config = self.get_standard_config(
-            sentry_dsn='https://abc123@example.com/project'
-        )
+        # Set up a processor and mock .save_raw_and_processed() to raise an exception
+        config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({'raw': 'crash'})
         pa.source.get_raw_dumps_as_files.return_value = {}
 
-        def mocked_save_raw_and_processed(*_):
-            raise ValueError('Someone is wrong on the Internet')
+        expected_exception = ValueError('simulated error')
 
-        pa.destination.save_raw_and_processed.side_effect = (
-            mocked_save_raw_and_processed
-        )
-        # The important thing is that this is the exception that
-        # is raised and not something from the raven error handling.
+        def mocked_save_raw_and_processed(*_):
+            raise expected_exception
+
+        pa.destination.save_raw_and_processed.side_effect = mocked_save_raw_and_processed
+
+        # Run .transform() and make sure it raises the ValueError
         with pytest.raises(ValueError):
             pa.transform('mycrashid')
 
+        # Assert that we sent the exception to Sentry
+        raven_mock_client.captureException.assert_called_once_with(expected_exception)
+
+        # Assert that the logger logged the appropriate thing
         config.logger.info.assert_called_with(
             'Error captured in Sentry! Reference: someidentifier'
         )
-        assert len(captured_exceptions) == 1
-        captured_exception, = captured_exceptions
-        assert captured_exception.__class__ == ValueError
-        assert captured_exception.args[0] == 'Someone is wrong on the Internet'
 
     @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_get_error_with_raven_configured_successful(self, mock_raven):
-        # First mock everything so we're not sending real things anywhere
-        captured_exceptions = []  # a global
-
+        # Mock everything
         def mock_capture_exception(exc_info=None):
-            captured_exceptions.append(exc_info)
             return 'someidentifier'
 
         raven_mock_client = mock.MagicMock()
         raven_mock_client.captureException.side_effect = mock_capture_exception
-
         mock_raven.Client.return_value = raven_mock_client
 
-        # Set up a processor and mock .get_raw_crash() in that
-        config = self.get_standard_config(
-            sentry_dsn='https://abc123@example.com/project'
-        )
+        # Set up a processor and mock .get_raw_crash() to raise an exception
+        config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
 
-        def mocked_get_raw_crash(*_):
-            raise ValueError('simulated error')
+        expected_exception = ValueError('simulated error')
 
-        pa.source.get_raw_crash.side_effect = (
-            mocked_get_raw_crash
-        )
+        def mocked_get_raw_crash(*args, **kwargs):
+            raise expected_exception
+
+        pa.source.get_raw_crash.side_effect = mocked_get_raw_crash
 
         # Note that the processor silently ignores .get_raw_crash() and
         # .get_raw_dumps_as_files() errors and only logs stuff with the
@@ -311,13 +293,12 @@ class TestProcessorApp(TestCase):
         pa.transform('mycrashid')
 
         # Assert that the processor sent something to Sentry
+        raven_mock_client.captureException.assert_called_once_with(expected_exception)
+
+        # Assert that the logger logged the appropriate thing
         config.logger.info.assert_called_with(
             'Error captured in Sentry! Reference: someidentifier'
         )
-        assert len(captured_exceptions) == 1
-        captured_exception, = captured_exceptions
-        assert captured_exception.__class__ == ValueError
-        assert captured_exception.args[0] == 'simulated error'
 
     @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_polystorage_error_with_raven_configured_failing(
