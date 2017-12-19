@@ -234,7 +234,7 @@ class TestProcessorApp(TestCase):
         assert captured_exception_2.args[0] is False
 
     @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_misc_error_with_raven_configured_successful(
+    def test_transform_save_error_with_raven_configured_successful(
         self,
         mock_raven,
     ):
@@ -276,6 +276,48 @@ class TestProcessorApp(TestCase):
         captured_exception, = captured_exceptions
         assert captured_exception.__class__ == ValueError
         assert captured_exception.args[0] == 'Someone is wrong on the Internet'
+
+    @mock.patch('socorro.lib.raven_client.raven')
+    def test_transform_get_error_with_raven_configured_successful(self, mock_raven):
+        # First mock everything so we're not sending real things anywhere
+        captured_exceptions = []  # a global
+
+        def mock_capture_exception(exc_info=None):
+            captured_exceptions.append(exc_info)
+            return 'someidentifier'
+
+        raven_mock_client = mock.MagicMock()
+        raven_mock_client.captureException.side_effect = mock_capture_exception
+
+        mock_raven.Client.return_value = raven_mock_client
+
+        # Set up a processor and mock .get_raw_crash() in that
+        config = self.get_standard_config(
+            sentry_dsn='https://abc123@example.com/project'
+        )
+        pa = ProcessorApp(config)
+        pa._setup_source_and_destination()
+
+        def mocked_get_raw_crash(*_):
+            raise ValueError('simulated error')
+
+        pa.source.get_raw_crash.side_effect = (
+            mocked_get_raw_crash
+        )
+
+        # Note that the processor silently ignores .get_raw_crash() and
+        # .get_raw_dumps_as_files() errors and only logs stuff with the
+        # assumption that they're ephemeral
+        pa.transform('mycrashid')
+
+        # Assert that the processor sent something to Sentry
+        config.logger.info.assert_called_with(
+            'Error captured in Sentry! Reference: someidentifier'
+        )
+        assert len(captured_exceptions) == 1
+        captured_exception, = captured_exceptions
+        assert captured_exception.__class__ == ValueError
+        assert captured_exception.args[0] == 'simulated error'
 
     @mock.patch('socorro.lib.raven_client.raven')
     def test_transform_polystorage_error_with_raven_configured_failing(

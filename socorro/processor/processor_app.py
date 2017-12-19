@@ -77,6 +77,43 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             "destination.crashstorage_class": FSDatedPermanentStorage,
         }
 
+    def _capture_error(self, crash_id, exc_type, exc_value, exc_tb):
+        """Capture an error in sentry if able
+
+        The `exc_*` arguments come from calling `sys.exc_info`.
+
+        :arg crash_id: a crash id
+        :arg exc_type: the exc class
+        :arg exc_value: the exception
+        :arg exc_tb: the traceback for the exception
+
+        """
+
+        if self.config.sentry and self.config.sentry.dsn:
+            try:
+                if isinstance(exc_value, collections.Sequence):
+                    # Then it's already an iterable!
+                    exceptions = exc_value
+                else:
+                    exceptions = [exc_value]
+                client = raven_client.get_client(self.config.sentry.dsn)
+                client.context.activate()
+                client.context.merge({'extra': {
+                    'crash_id': crash_id,
+                }})
+                try:
+                    for exception in exceptions:
+                        identifier = client.captureException(exception)
+                        self.config.logger.info(
+                            'Error captured in Sentry! Reference: {}'.format(identifier)
+                        )
+                finally:
+                    client.context.clear()
+            except Exception:
+                self.config.logger.error('Unable to report error with Raven', exc_info=True)
+        else:
+            self.config.logger.warning('Sentry DSN is not configured and an exception happened')
+
     def _transform(self, crash_id):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
@@ -87,12 +124,18 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             raw_crash = self.source.get_raw_crash(crash_id)
             dumps = self.source.get_raw_dumps_as_files(crash_id)
         except CrashIDNotFound:
+            # If the crash isn't found, we just reject it--no need to capture
+            # errors here
             self.processor.reject_raw_crash(
                 crash_id,
                 'this crash cannot be found in raw crash storage'
             )
             return
         except Exception as x:
+            # We don't know what this error is, so we should capture it
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            self._capture_error(crash_id, exc_type, exc_value, exc_tb)
+
             self.config.logger.warning(
                 'error loading crash %s',
                 crash_id,
@@ -134,47 +177,15 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 crash_id
             )
             self.config.logger.info('saved - %s', crash_id)
-        except Exception as exception:
+        except Exception:
             # Immediately capture this as local variables.
             # During this error handling we're going to be using other
             # try:except: constructs (e.g. swallowing raven send errors)
             # so we can't reference `sys.exc_info()` later.
             exc_type, exc_value, exc_tb = sys.exc_info()
 
-            if self.config.sentry and self.config.sentry.dsn:
-                try:
-                    if isinstance(exception, collections.Sequence):
-                        # Then it's already an iterable!
-                        exceptions = exception
-                    else:
-                        exceptions = [exception]
-                    client = raven_client.get_client(self.config.sentry.dsn)
-                    client.context.activate()
-                    client.context.merge({'extra': {
-                        'crash_id': crash_id,
-                    }})
-                    try:
-                        for exception in exceptions:
-                            identifier = client.captureException(
-                                exception
-                            )
-                            self.config.logger.info(
-                                'Error captured in Sentry! '
-                                'Reference: {}'.format(
-                                    identifier
-                                )
-                            )
-                    finally:
-                        client.context.clear()
-                except Exception:
-                    self.config.logger.error(
-                        'Unable to report error with Raven',
-                        exc_info=True,
-                    )
-            else:
-                self.config.logger.warning(
-                    'Sentry DSN is not configured and an exception happened'
-                )
+            # Capture the error
+            self._capture_error(crash_id, exc_type, exc_value, exc_tb)
 
             # Why not just do `raise exception`?
             # Because if we don't do it this way, the eventual traceback
