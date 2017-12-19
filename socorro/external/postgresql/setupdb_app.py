@@ -268,7 +268,6 @@ class SocorroDBApp(App):
             db.commit()
 
             db.create_tables()
-            db.load_raw_sql('views')
             db.commit()
 
             if not self.config.get('no_staticdata'):

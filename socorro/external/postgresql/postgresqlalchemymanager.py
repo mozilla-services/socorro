@@ -234,14 +234,6 @@ class PostgreSQLAlchemyManager(object):
             self.session.execute("GRANT ALL ON SEQUENCE %s TO %s" % (s, rw))
             self.session.execute("GRANT SELECT ON SEQUENCE %s TO %s" % (s, ro))
 
-        # Grants to views
-        views = self.session.execute("""
-                SELECT viewname FROM pg_views WHERE schemaname = 'public'
-            """).fetchall()
-        for v, in views:
-            self.session.execute("GRANT ALL ON TABLE %s TO %s" % (v, rw))
-            self.session.execute("GRANT SELECT ON TABLE %s TO %s" % (v, ro))
-
         self.session.commit()
 
     def commit(self):
