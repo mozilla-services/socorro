@@ -48,7 +48,7 @@ DEFAULT_JOBS = ', '.join(DEFAULT_JOBS_BASE)
 # Jobs that run in the -stage environment
 STAGE_JOBS = ', '.join(
     DEFAULT_JOBS_BASE + [
-        'socorro.cron.jobs.fetch_adi_from_hive.FAKEFetchADIFromHiveCronApp|1d',
+        'socorro.cron.jobs.fetch_adi_from_hive.FAKEFetchADIFromHiveCronApp|1d|08:20',
         'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
     ]
 )
@@ -58,7 +58,7 @@ STAGE_JOBS = ', '.join(
 STAGE_NEW_JOBS = ', '.join(
     [job for job in DEFAULT_JOBS_BASE if 'MissingSymbolsCronApp' not in job] +
     [
-        'socorro.cron.jobs.fetch_adi_from_hive.RawADIMoverCronApp|1d'
+        'socorro.cron.jobs.fetch_adi_from_hive.RawADIMoverCronApp|1d|08:20'
     ]
 )
 
