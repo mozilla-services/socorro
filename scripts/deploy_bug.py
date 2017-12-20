@@ -113,9 +113,11 @@ def main(argv):
     # Print post-deploy steps
     print('After deploy:')
     print()
-    print('1. update -prod admin node')
-    print('2. perform migrations')
-    print('3. verify webapp functionality')
+    print('* update -prod admin node')
+    print('* make configuration changes')
+    print('* perform alembic migrations')
+    print('* perform django migrations')
+    print('* verify webapp functionality')
     print()
 
     # Any additional notes
