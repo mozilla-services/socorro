@@ -36,6 +36,7 @@ dockerbuild: my.env
 # postgres going forward and has the needed environment variables.
 dockersetup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup_postgres.sh
+	${DC} run processor /app/docker/run_recreate_s3_buckets.sh
 
 dockerclean:
 	rm .docker-build
