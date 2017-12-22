@@ -8,21 +8,3 @@ WSGIPythonHome /data/socorro/socorro-virtualenv
     Alias /static/ "/data/socorro/webapp-django/static/"
     WSGIScriptAlias / "/data/socorro/webapp-django/wsgi/socorro-crashstats.py"
 </VirtualHost>
-
-# Middleware, internal-only API
-<VirtualHost *:80>
-    ServerName socorro-api.example.com
-    SetEnv DEFAULT_SOCORRO_CONFIG_PATH /etc/socorro
-    WSGIScriptAlias /bpapi "/data/socorro/application/wsgi/middleware.py"
-    # this service provides access to sensitive data, protect it!
-    <Location /bpapi>
-        Order deny,allow
-        Deny from all
-        AuthType Basic
-        AuthName "Magic Words Please"
-        AuthUserFile /data/socorro/application/.htpasswd
-        #Allow from 10.0.0.x
-        Require valid-user
-        Satisfy Any
-    </Location>
-</VirtualHost>
