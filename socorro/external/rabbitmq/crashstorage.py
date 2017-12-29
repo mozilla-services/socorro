@@ -151,7 +151,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
         """reorganize the the call to rabbitmq basic_get so that it can be
         used by the transaction retry wrapper."""
         things = conn.channel.basic_get(queue=queue)
-        return things
+        return conn.channel, things
 
     def new_crashes(self):
         """This generator fetches crash_ids from RabbitMQ."""
@@ -172,12 +172,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
             self.rabbitmq.config.priority_queue_name,
         ]
         while True:
+            channel, method_frame = None, None
             for queue in queues:
-                method_frame, header_frame, body = self.transaction(
+                channel, (method_frame, header_frame, body) = self.transaction(
                     self._basic_get_transaction,
                     queue=queue
                 )
                 if method_frame and self._suppress_duplicate_jobs(
+                    channel,
                     body,
                     method_frame
                 ):
@@ -190,14 +192,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
             if not method_frame:
                 # there was nothing in the queue - leave the iterator
                 return
-            self.acknowledgement_token_cache[body] = method_frame
+            self.acknowledgement_token_cache[body] = (channel, method_frame)
             yield body
             queues.reverse()
 
     def ack_crash(self, crash_id):
         self.acknowledgment_queue.put(crash_id)
 
-    def _suppress_duplicate_jobs(self, crash_id, acknowledgement_token):
+    def _suppress_duplicate_jobs(self, channel, crash_id, acknowledgement_token):
         """if this crash is in the cache, then it is already in progress
         and this is a duplicate.  Acknowledge it, then return to True
         to let the caller know to skip on to the next crash."""
@@ -208,11 +210,20 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 crash_id
             )
             # ack this
-            self.transaction(
-                self._transaction_ack_crash,
-                crash_id,
-                acknowledgement_token
-            )
+            try:
+                self._ack_crash(
+                    channel,
+                    crash_id,
+                    acknowledgement_token
+                )
+            except Exception:
+                self.config.logger.error(
+                    'RabbitMQCrashStorage tried to acknowledge duplicate crash %s'
+                    ', but failed.',
+                    crash_id,
+                    exc_info=True
+                )
+
             return True
         return False
 
@@ -230,18 +241,16 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 #     crash_id_to_be_acknowledged
                 # )
                 try:
-                    acknowledgement_token = \
+                    channel, acknowledgement_token = \
                         self.acknowledgement_token_cache[
                             crash_id_to_be_acknowledged
                         ]
-                    self.transaction(
-                        self._transaction_ack_crash,
+                    self._ack_crash(
+                        channel,
                         crash_id_to_be_acknowledged,
                         acknowledgement_token
                     )
-                    del self.acknowledgement_token_cache[
-                        crash_id_to_be_acknowledged
-                    ]
+
                 except KeyError:
                     self.config.logger.warning(
                         'RabbitMQCrashStorage tried to acknowledge crash %s'
@@ -255,19 +264,25 @@ class RabbitMQCrashStorage(CrashStorageBase):
                         crash_id_to_be_acknowledged,
                         exc_info=True
                     )
+                finally:
+                    if crash_id_to_be_acknowledged in self.acknowledgement_token_cache:
+                        del self.acknowledgement_token_cache[
+                            crash_id_to_be_acknowledged
+                        ]
 
         except Empty:
             pass  # nothing to do with an empty queue
 
-    def _transaction_ack_crash(
+    def _ack_crash(
         self,
-        connection,
+        channel,
         crash_id,
         acknowledgement_token
     ):
-        connection.channel.basic_ack(
+        channel.basic_ack(
             delivery_tag=acknowledgement_token.delivery_tag
         )
+
         self.config.logger.debug(
             'RabbitMQCrashStorage acking %s with delivery_tag %s',
             crash_id,

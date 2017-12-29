@@ -234,7 +234,7 @@ class TestCrashStorage(TestCase):
         crash_id = 'some-crash-id'
 
         crash_store = RabbitMQCrashStorage(config)
-        crash_store._transaction_ack_crash(connection, crash_id, ack_token)
+        crash_store._ack_crash(connection.channel, crash_id, ack_token)
 
         connection.channel.basic_ack.assert_called_once_with(delivery_tag=1)
 
