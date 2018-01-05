@@ -52,7 +52,6 @@ rsync -a ${VIRTUAL_ENV} $BUILD_DIR
 rsync -a socorro $BUILD_DIR/application
 rsync -a scripts $BUILD_DIR/application
 rsync -a tools $BUILD_DIR/application
-rsync -a sql $BUILD_DIR/application
 rsync -a wsgi $BUILD_DIR/application
 rsync -a stackwalk $BUILD_DIR/
 rsync -a scripts/stackwalk.sh $BUILD_DIR/stackwalk/bin/
