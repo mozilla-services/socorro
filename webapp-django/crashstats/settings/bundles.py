@@ -11,7 +11,7 @@ NPM_FILE_PATTERNS = {
     'metrics-graphics': ['dist/*'],
     'font-awesome': ['css/*', 'fonts/*'],
     'tablesorter': ['dist/*'],
-    'd3': ['*.js'],
+    'd3': ['build/*'],
     'jssha': ['src/*.js'],
     'qs': ['dist/*'],
     'moment': ['moment.js'],
@@ -215,7 +215,7 @@ PIPELINE_JS = {
     },
     'd3': {
         'source_filenames': (
-            'd3/d3.min.js',
+            'd3/build/d3.min.js',
         ),
         'output_filename': 'js/d3.min.js',
     },
