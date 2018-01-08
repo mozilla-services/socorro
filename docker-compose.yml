@@ -160,6 +160,8 @@ services:
   # https://hub.docker.com/_/postgres/
   postgresql:
     image: postgres:9.4
+    ports:
+      - "8574:5432"
     environment:
       # Create the superuser account
       - POSTGRES_USER=postgres
