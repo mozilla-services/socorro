@@ -12,10 +12,6 @@ DEFAULT_PRODUCT = 'WaterWolf'
 # badly mocked never accidentally actually use a real working network address
 BZAPI_BASE_URL = 'https://bugzilla.testrunner/rest'
 
-# by scrubbing this to something unreal, we can be certain the tests never
-# actually go out on the internet when `request.get` should always be mocked
-MWARE_BASE_URL = 'http://shouldnotactuallybeused.com'
-
 STATSD_CLIENT = 'django_statsd.clients.null'
 
 SECRET_KEY = 'fakekey'
