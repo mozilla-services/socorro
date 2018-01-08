@@ -37,6 +37,7 @@ dockerbuild: my.env
 dockersetup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup_postgres.sh
 	${DC} run processor /app/docker/run_recreate_s3_buckets.sh
+	${DC} run processor /app/scripts/socorro clear_es_indices
 
 dockerclean:
 	rm .docker-build

@@ -48,7 +48,10 @@ class ApplicationDefaultsProxy(object):
             'reprocess_crashlist':
                 'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp',
             'purge_rmq':
-            'socorro.external.rabbitmq.purge_queue_app.PurgeRabbitMQQueueApp',
+                'socorro.external.rabbitmq.purge_queue_app.PurgeRabbitMQQueueApp',
+            'clear_es_indices': 'socorro.external.es.clear_indices_app.ClearESIndicesApp',
+            'create_recent_es_indices':
+                'socorro.external.es.create_recent_indices_app.CreateRecentESIndicesApp',
         }
 
 
