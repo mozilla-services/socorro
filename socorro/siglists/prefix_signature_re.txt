@@ -66,6 +66,7 @@ JSAutoCompartment::JSAutoCompartment.*
 JS_DHashTableEnumerate
 JS_DHashTableOperate
 JS_NewStringCopyZ.*
+KiUserExceptionDispatcher
 kill
 __libc_android_abort
 libobjc.A.dylib@0x1568.
