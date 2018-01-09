@@ -50,11 +50,12 @@ class Rule(object):
 
 
 class SignatureTool(object):
-    """this is the base class for signature generation objects.  It defines the
-    basic interface and provides truncation and quoting service.  Any derived
-    classes should implement the '_do_generate' function.  If different
-    truncation or quoting techniques are desired, then derived classes may
-    override the 'generate' function.
+    """Stack walking signature generator base class
+
+    This defines the interface for classes that take a stack and generate a
+    signature from it.
+
+    Subclasses should implement the ``_do_generate`` method.
 
     """
 
@@ -70,9 +71,7 @@ class SignatureTool(object):
         )
         if SIGNATURE_ESCAPE_SINGLE_QUOTE:
             signature = signature.replace("'", "''")
-        if len(signature) > SIGNATURE_MAX_LENGTH:
-            signature = "%s..." % signature[:SIGNATURE_MAX_LENGTH - 3]
-            signature_notes.append('SignatureTool: signature truncated due to length')
+
         return signature, signature_notes
 
     def _do_generate(self, source_list, hang_type, crashed_thread, delimiter):
@@ -382,14 +381,6 @@ class JavaSignatureTool(SignatureTool):
                 (java_exception_class, description_java_method_phrase)
             )
 
-        if len(signature) > SIGNATURE_MAX_LENGTH:
-            signature = delimiter.join(
-                (java_exception_class, java_method)
-            )
-            signature_notes.append(
-                'JavaSignatureTool: dropped Java exception description due to length'
-            )
-
         return signature, signature_notes
 
 
@@ -569,13 +560,16 @@ class SigTrim(Rule):
 
 
 class SigTrunc(Rule):
-    """ensure that the signature is never longer than 255 characters"""
+    """Truncates signatures down to SIGNATURE_MAX_LENGTH characters
+
+    """
 
     def predicate(self, raw_crash, processed_crash):
         return len(processed_crash.get('signature', '')) > 255
 
     def action(self, raw_crash, processed_crash, notes):
         processed_crash['signature'] = "%s..." % processed_crash['signature'][:252]
+        notes.append('SigTrunc: signature truncated due to length')
         return True
 
 

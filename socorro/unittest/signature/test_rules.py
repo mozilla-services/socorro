@@ -163,22 +163,23 @@ class TestCSignatureTool:
         a[5] = a[5] * 70
         a[6] = a[6] * 70
         a[7] = a[7] * 70
-        e = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" \
-            "dddddddddddd " \
-            "| eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" \
-            "eeeeeeeeeeeeee " \
-            "| ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" \
-            "ffffffffffffff | ggggggggggggggggggggggggggggggggg..."
+        expected = (
+            'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd | '
+            'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee | '
+            'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | '
+            'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg'
+        )
         sig, notes = s.generate(a)
-        assert sig == e
-        e = "hang | ddddddddddddddddddddddddddddddddddddddddddddddddddd" \
-            "ddddddddddddddddddd " \
-            "| eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" \
-            "eeeeeeeeeeeeee " \
-            "| ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" \
-            "ffffffffffffff | gggggggggggggggggggggggggg..."
+        assert sig == expected
+        expected = (
+            'hang | '
+            'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd | '
+            'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee | '
+            'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | '
+            'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg'
+        )
         sig, notes = s.generate(a, hang_type=-1)
-        assert sig == e
+        assert sig == expected
 
     def test_generate_3(self):
         """test_generate_3: simple sentinel"""
@@ -278,26 +279,20 @@ class TestJavaSignatureTool:
     def test_generate_signature_4(self):
         j = JavaSignatureTool()
         java_stack_trace = (
-            '   SomeJavaException: %s  \n'
-            'at org.mozilla.lars.myInvention(larsFile.java)' % ('t' * 1000)
+            '   SomeJavaException: t  \nat org.mozilla.lars.myInvention(larsFile.java)'
         )
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
-        assert sig == e
-        e = ['JavaSignatureTool: dropped Java exception description due to length']
-        assert notes == e
+        expected = 'SomeJavaException: t at org.mozilla.lars.myInvention(larsFile.java)'
+        assert sig == expected
 
     def test_generate_signature_4_2(self):
         j = JavaSignatureTool()
         java_stack_trace = (
-            '   SomeJavaException: %s  \n'
-            'at org.mozilla.lars.myInvention(larsFile.java:1234)' % ('t' * 1000)
+            '   SomeJavaException: t  \nat org.mozilla.lars.myInvention(larsFile.java:1234)'
         )
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
-        assert sig == e
-        e = ['JavaSignatureTool: dropped Java exception description due to length']
-        assert notes == e
+        expected = 'SomeJavaException: t at org.mozilla.lars.myInvention(larsFile.java)'
+        assert sig == expected
 
     def test_generate_signature_5(self):
         j = JavaSignatureTool()
@@ -343,18 +338,16 @@ class TestJavaSignatureTool:
     def test_generate_signature_9(self):
         config = DotDict()
         j = JavaSignatureTool(config)
-        java_stack_trace = ('   SomeJavaException: totally made up  \n'
-                            'at org.mozilla.lars.myInvention('
-                            '%slarsFile.java:1234)' % ('t' * 1000))
+        java_stack_trace = (
+            '   SomeJavaException: totally made up  \n'
+            'at org.mozilla.lars.myInvention('
+            'foolarsFile.java:1234)'
+        )
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = ('SomeJavaException: '
-             'at org.mozilla.lars.myInvention('
-             '%s...' % ('t' * 201))
-        assert sig == e
-        e = ['JavaSignatureTool: dropped Java exception description due to '
-             'length',
-             'SignatureTool: signature truncated due to length']
-        assert notes == e
+        expected = (
+            'SomeJavaException: totally made up at org.mozilla.lars.myInvention(foolarsFile.java)'
+        )
+        assert sig == expected
 
     def test_generate_signature_10_no_interference(self):
         """In general addresses of the form @xxxxxxxx are to be replaced with
@@ -972,9 +965,7 @@ class TestSignatureGeneration:
 
         raw_crash = {
             'JavaStackTrace': (
-                '   SomeJavaException: %s  \n'
-                'at org.mozilla.lars.myInvention('
-                'larsFile.java)' % ('t' * 1000)
+                '   SomeJavaException: t  \nat org.mozilla.lars.myInvention(larsFile.java)'
             )
         }
 
@@ -984,10 +975,8 @@ class TestSignatureGeneration:
         # the call to be tested
         assert sgr.action(raw_crash, processed_crash, notes) is True
 
-        expected = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
+        expected = 'SomeJavaException: t at org.mozilla.lars.myInvention(larsFile.java)'
         assert processed_crash['signature'] == expected
-        expected = ['JavaSignatureTool: dropped Java exception description due to length']
-        assert notes == expected
         assert 'proto_signature' not in processed_crash
 
     def test_action_2(self):
