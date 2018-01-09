@@ -18,6 +18,8 @@ BaseGetNamedObjectDirectory
 cert_.*
 CERT_.*
 CFRelease
+chunk_alloc
+chunk_recycle
 _chkstk
 CleanupPerAppKey
 ConditionVariableFallback::wait\(.*\)
@@ -156,6 +158,7 @@ objc_exception_throw
 objc_msgSend
 operator new
 <.*>::operator()
+pages_commit
 PLDHashTable::.*
 PL_.*
 port_.*
