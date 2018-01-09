@@ -25,6 +25,7 @@ core::option::expect_failed
 core::result::unwrap_failed<T>
 core::str::slice_error_fail
 CrashInJS
+CrashReporter::TerminateHandler
 CreateFileMappingA
 __delayLoadHelper2
 dlmalloc
