@@ -314,6 +314,10 @@ class CSignatureTool(SignatureTool):
 class JavaSignatureTool(SignatureTool):
     """This is the signature generation class for Java signatures."""
 
+    # The max length of a java exception description--if it's longer than this,
+    # drop it
+    DESCRIPTION_MAX_LENGTH = 255
+
     java_line_number_killer = re.compile(r'\.java\:\d+\)$')
     java_hex_addr_killer = re.compile(r'@[0-9a-f]{8}')
 
@@ -331,6 +335,7 @@ class JavaSignatureTool(SignatureTool):
                 "EMPTY: Java stack trace not in expected format",
                 signature_notes
             )
+
         try:
             java_exception_class, description = source_list[0].split(':', 1)
             java_exception_class = java_exception_class.strip()
@@ -345,6 +350,7 @@ class JavaSignatureTool(SignatureTool):
             signature_notes.append(
                 'JavaSignatureTool: stack trace line 1 is not in the expected format'
             )
+
         try:
             java_method = re.sub(
                 self.java_line_number_killer,
@@ -357,12 +363,12 @@ class JavaSignatureTool(SignatureTool):
             signature_notes.append('JavaSignatureTool: stack trace line 2 is missing')
             java_method = ''
 
-        # an error in an earlier version of this code resulted in the colon
+        # An error in an earlier version of this code resulted in the colon
         # being left out of the division between the description and the
-        # java_method if the description didn't end with "<addr>".  This code
-        # perpetuates that error while correcting the "<addr>" placement
-        # when it is not at the end of the description.  See Bug 865142 for
-        # a discussion of the issues.
+        # java_method if the description didn't end with "<addr>". This code
+        # perpetuates that error while correcting the "<addr>" placement when
+        # it is not at the end of the description. See Bug 865142 for a
+        # discussion of the issues.
         if description.endswith('<addr>'):
             # at which time the colon placement error is to be corrected
             # just use the following line as the replacement for this entire
@@ -379,6 +385,14 @@ class JavaSignatureTool(SignatureTool):
             signature = self.join_ignore_empty(
                 delimiter,
                 (java_exception_class, description_java_method_phrase)
+            )
+
+        if len(signature) > self.DESCRIPTION_MAX_LENGTH:
+            signature = delimiter.join(
+                (java_exception_class, java_method)
+            )
+            signature_notes.append(
+                'JavaSignatureTool: dropped Java exception description due to length'
             )
 
         return signature, signature_notes

@@ -279,20 +279,26 @@ class TestJavaSignatureTool:
     def test_generate_signature_4(self):
         j = JavaSignatureTool()
         java_stack_trace = (
-            '   SomeJavaException: t  \nat org.mozilla.lars.myInvention(larsFile.java)'
+            '   SomeJavaException: %s \nat org.mozilla.lars.myInvention(larsFile.java)' %
+            ('t' * 1000)
         )
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        expected = 'SomeJavaException: t at org.mozilla.lars.myInvention(larsFile.java)'
+        expected = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         assert sig == expected
+        expected = ['JavaSignatureTool: dropped Java exception description due to length']
+        assert notes == expected
 
     def test_generate_signature_4_2(self):
         j = JavaSignatureTool()
         java_stack_trace = (
-            '   SomeJavaException: t  \nat org.mozilla.lars.myInvention(larsFile.java:1234)'
+            '   SomeJavaException: %s  \nat org.mozilla.lars.myInvention(larsFile.java:1234)' %
+            ('t' * 1000)
         )
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        expected = 'SomeJavaException: t at org.mozilla.lars.myInvention(larsFile.java)'
+        expected = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         assert sig == expected
+        expected = ['JavaSignatureTool: dropped Java exception description due to length']
+        assert notes == expected
 
     def test_generate_signature_5(self):
         j = JavaSignatureTool()
@@ -965,7 +971,8 @@ class TestSignatureGeneration:
 
         raw_crash = {
             'JavaStackTrace': (
-                '   SomeJavaException: t  \nat org.mozilla.lars.myInvention(larsFile.java)'
+                '   SomeJavaException: %s  \nat org.mozilla.lars.myInvention(larsFile.java)' %
+                ('t' * 1000)
             )
         }
 
@@ -975,9 +982,11 @@ class TestSignatureGeneration:
         # the call to be tested
         assert sgr.action(raw_crash, processed_crash, notes) is True
 
-        expected = 'SomeJavaException: t at org.mozilla.lars.myInvention(larsFile.java)'
+        expected = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         assert processed_crash['signature'] == expected
         assert 'proto_signature' not in processed_crash
+        expected = ['JavaSignatureTool: dropped Java exception description due to length']
+        assert notes == expected
 
     def test_action_2(self):
         sgr = SignatureGenerationRule()
