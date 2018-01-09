@@ -25,7 +25,7 @@ from socorro.lib.datetimeutil import (
 )
 from socorro.lib.ooid import dateFromOoid
 from socorro.lib.transform_rules import Rule
-from socorro.signature import SignatureGenerator
+from socorro.signature.generator import SignatureGenerator
 
 
 class ProductRule(Rule):
