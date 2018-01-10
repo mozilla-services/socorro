@@ -12,6 +12,18 @@ You can run the crontabber job that checks for security vulnerabilities locally:
    make dockerdependencycheck
 
 
+Connect to PostgreSQL Database
+==============================
+
+The local development environment's PostgreSQL database exposes itself on a
+non-standard port when run with docker-compose. You can connect to it with
+the client of your choice using the following connection settings:
+
+* Username: ``postgres``
+* Password: ``aPassword``
+* Port: ``8574``
+
+
 .. Warning::
 
    August 17th, 2017: Everything below this point is outdated.
