@@ -101,7 +101,7 @@ INSTALLED_APPS = (
 )
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -654,8 +654,8 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         },
         'boto': {
             'access_key': config('resource.boto.access_key', None),
-            'bucket_name': config(
-                'resource.boto.bucket_name', 'crashstats'),
+            'bucket_name': config('resource.boto.bucket_name', 'crashstats'),
+            'region': config('resource.boto.region', 'us-west-2'),
             'prefix': config('resource.boto.prefix', ''),
             'keybuilder_class': config(
                 'resource.boto.keybuilder_class',
@@ -757,7 +757,7 @@ CSP_IMG_SRC = (
     'https://www.google-analytics.com',
     'data:',  # what jquery.tablesorter.js's CSS uses
 )
-CSP_CHILD_SRC = (
+CSP_FRAME_SRC = (
     "'self'",
     'https://accounts.google.com',  # Google Sign-In uses an iframe
 )

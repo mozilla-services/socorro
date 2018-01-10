@@ -4,7 +4,7 @@ source scripts/defaults
 
 echo "this is install.sh"
 
-if [ "$BUILD_TYPE" != "tar" ]; then
+if [ "$BUILD_TYPE" != "ci" ]; then
     # create base directories
     mkdir -p $BUILD_DIR/usr/bin
     mkdir -p $BUILD_DIR/etc/socorro
@@ -52,7 +52,6 @@ rsync -a ${VIRTUAL_ENV} $BUILD_DIR
 rsync -a socorro $BUILD_DIR/application
 rsync -a scripts $BUILD_DIR/application
 rsync -a tools $BUILD_DIR/application
-rsync -a sql $BUILD_DIR/application
 rsync -a wsgi $BUILD_DIR/application
 rsync -a stackwalk $BUILD_DIR/
 rsync -a scripts/stackwalk.sh $BUILD_DIR/stackwalk/bin/
@@ -66,11 +65,6 @@ cp socorro_revision.txt $BUILD_DIR/application/socorro
 cp breakpad_revision.txt $BUILD_DIR/application/socorro
 
 
-if [ "$BUILD_TYPE" == "tar" ]; then
-    pushd $BUILD_DIR/application/scripts/config
-    echo "py config files no longer exist, ignoring"
-    #for file in *.py.dist; do cp $file `basename $file .dist`; done
-    popd
-else
+if [ "$BUILD_TYPE" != "ci" ]; then
     BUILD_DIR=${BUILD_DIR%%/data/socorro}
 fi

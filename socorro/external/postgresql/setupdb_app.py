@@ -20,7 +20,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
 
 from socorro.app.socorro_app import App, main
-from socorro.external.postgresql import staticdata, fakedata
+from socorro.external.postgresql import staticdata
 from socorro.external.postgresql.connection_context import (
     get_field_from_pg_database_url
 )
@@ -46,12 +46,6 @@ class SocorroDBApp(App):
     metadata = ''
 
     required_config = Namespace()
-
-    required_config.add_option(
-        name='on_heroku',
-        default=False,
-        doc='Setup on a Heroku Postgres instance',
-    )
 
     required_config.add_option(
         'database_class',
@@ -124,18 +118,6 @@ class SocorroDBApp(App):
     )
 
     required_config.add_option(
-        name='fakedata',
-        default=False,
-        doc='Whether or not to fill the data with synthetic test data',
-    )
-
-    required_config.add_option(
-        name='fakedata_days',
-        default=7,
-        doc='How many days of synthetic test data to generate'
-    )
-
-    required_config.add_option(
         name='alembic_config',
         default=os.path.abspath('config/alembic.ini'),
         doc='Path to alembic configuration file'
@@ -174,42 +156,6 @@ class SocorroDBApp(App):
         for table in staticdata.tables:
             table = table()
             self.bulk_load_table(db, table)
-
-    def generate_fakedata(self, db, fakedata_days):
-        # Set up partitions before loading report data
-        db.session.execute("""
-                SELECT weekly_report_partitions(4, now()-'2 weeks'::interval)
-        """)
-
-        start_date = end_date = None
-        for table in fakedata.tables:
-            table = table(days=fakedata_days)
-
-            if start_date:
-                if start_date > table.start_date:
-                    start_date = table.start_date
-            else:
-                start_date = table.start_date
-
-            if end_date:
-                if end_date < table.start_date:
-                    end_date = table.end_date
-            else:
-                end_date = table.end_date
-
-            self.bulk_load_table(db, table)
-
-        db.session.execute("""
-                SELECT backfill_matviews(cast(:start as DATE),
-                cast(:end as DATE))
-            """, dict(zip(["start", "end"], list((start_date, end_date)))))
-
-        db.session.execute("""
-                UPDATE product_versions
-                SET featured_version = TRUE
-                WHERE version_string IN (:one, :two, :three, :four)
-            """, dict(zip(["one", "two", "three", "four"],
-                      list(fakedata.featured_versions))))
 
     def create_connection_url(self, database_name, username, password):
         """Takes a URL to connect to Postgres and updates database name
@@ -294,8 +240,7 @@ class SocorroDBApp(App):
         with PostgreSQLAlchemyManager(
             superuser_normaldb_pg_url,
             self.config.logger,
-            autocommit=False,
-            on_heroku=self.config.on_heroku
+            autocommit=False
         ) as db:
             db.setup_extensions()
             db.grant_public_schema_ownership(self.config.database_username)
@@ -313,8 +258,7 @@ class SocorroDBApp(App):
         with PostgreSQLAlchemyManager(
             normal_user_pg_url,
             self.config.logger,
-            autocommit=False,
-            on_heroku=self.config.on_heroku
+            autocommit=False
         ) as db:
             # Order matters below
             db.turn_function_body_checks_off()
@@ -324,13 +268,10 @@ class SocorroDBApp(App):
             db.commit()
 
             db.create_tables()
-            db.load_raw_sql('views')
             db.commit()
 
             if not self.config.get('no_staticdata'):
                 self.import_staticdata(db)
-            if self.config['fakedata']:
-                self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
             command.stamp(alembic_cfg, "heads")
             db.session.close()
@@ -340,8 +281,7 @@ class SocorroDBApp(App):
         with PostgreSQLAlchemyManager(
             superuser_normaldb_pg_url,
             self.config.logger,
-            autocommit=False,
-            on_heroku=self.config.on_heroku
+            autocommit=False
         ) as db:
             db.set_table_owner(self.config.database_username)
             db.set_default_owner(database_name, self.config.database_username)
@@ -376,15 +316,6 @@ class SocorroDBApp(App):
             self.config.database_password
         )
 
-        # ensure that if on Heroku the the normal_user_pg_url and the
-        # superuser_pg_url are the same
-        if self.config.on_heroku and (normal_user_pg_url != superuser_pg_url):
-            self.config.logger.error(
-                'there is no superuser (%s) when using Heroku',
-                self.config.database_superusername
-            )
-            return 1
-
         # table logging section
         if self.config.unlogged:
             @compiles(CreateTable)
@@ -412,9 +343,7 @@ class SocorroDBApp(App):
 
         # At this point, we're done with setup and we can perform actions requested by the user
 
-        # We can only do the following if the DB is not Heroku
-        # XXX Might add the heroku commands for resetting a DB here
-        if self.config.dropdb and not self.config.on_heroku:
+        if self.config.dropdb:
             # If this doesn't return True (aka everything worked fine), then return exit code 2
             if not self.handle_dropdb(superuser_pg_url, database_name):
                 return 2

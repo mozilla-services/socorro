@@ -20,7 +20,7 @@ if [ ! -d "$BUILD_DIR" ]; then
 fi
 
 echo "> Building Socorro $BUILD_VERSION ..."
-if [ "$BUILD_TYPE" != "tar" ]; then
+if [ "$BUILD_TYPE" == "rpm" ]; then
     fpm -s dir -t $BUILD_TYPE \
         -v $BUILD_VERSION \
         -n "socorro" \

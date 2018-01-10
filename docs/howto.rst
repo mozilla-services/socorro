@@ -24,7 +24,7 @@ Load Socorro schema plus test products:
 
 ::
 
-   socorro setupdb --database_name=breakpad --fakedata --createdb
+   socorro setupdb --database_name=breakpad --createdb
 
 
 Create partitioned tables
