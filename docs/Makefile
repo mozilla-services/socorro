@@ -16,5 +16,10 @@ help:
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
+%: Makefile copyreadme
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Copy the e2e-test README to this directory because otherwise we can't pull it
+# in because there isn't a way to do a file include for Markdown files.
+copyreadme:
+	cp ../e2e-tests/README.md tests/e2e_readme.md
