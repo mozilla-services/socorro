@@ -41,10 +41,11 @@ Contents
 
    gettingstarted
    contributing
-   symbols
+   troubleshooting
    architecture/*
    components/*
    services/*
    tests/*
+   symbols
    deploy
    howto
