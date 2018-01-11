@@ -462,7 +462,7 @@ $(function () {
             y_accessor: 'count',
             axes_not_compact: true,
             utc_time: true,
-            interpolate: 'basic',
+            interpolate: d3.curveLinear,
             area: false,
             legend: versions,
             legend_target: '#homepage-graph-legend',
