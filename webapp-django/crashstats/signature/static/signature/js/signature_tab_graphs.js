@@ -152,7 +152,7 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
         y_accessor: 'count',
         axes_not_compact: true,
         utc_time: true,
-        interpolate: 'basic',
+        interpolate: d3.curveLinear,
         area: false,
         legend: graphData.legend,
         legend_target: '.new-legend',
