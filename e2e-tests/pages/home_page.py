@@ -23,7 +23,8 @@ class CrashStatsHomePage(CrashStatsBasePage):
 
     @property
     def release_channels(self):
-        return [self.ReleaseChannels(self, el) for el in self.find_elements(*self._release_channels_locator)]
+        elements = self.find_elements(*self._release_channels_locator)
+        return [self.ReleaseChannels(self, el) for el in elements]
 
     class ReleaseChannels(Region):
 

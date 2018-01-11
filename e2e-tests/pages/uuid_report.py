@@ -13,7 +13,10 @@ class UUIDReport(CrashStatsBasePage):
 
     # https://crash-stats.mozilla.com/report/index/<UUID>
     _body_uuid_locator = (By.CSS_SELECTOR, '#mainbody #report-header-details code:nth-of-type(1)')
-    _body_signature_locator = (By.CSS_SELECTOR, '#mainbody #report-header-details code:nth-of-type(2)')
+    _body_signature_locator = (
+        By.CSS_SELECTOR,
+        '#mainbody #report-header-details code:nth-of-type(2)',
+    )
 
     _table_locator = (By.CSS_SELECTOR, 'table.data-table')
     _table_uuid_locator = (By.CSS_SELECTOR, '#report-index tbody tr:nth-of-type(2) td')

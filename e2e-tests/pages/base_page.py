@@ -69,7 +69,12 @@ class CrashStatsBasePage(Page):
         def current_versions(self):
             from pages.version import FirefoxVersion
             current_versions = []
-            for element in self.find_element(*self._all_versions_locator).find_elements(*self._current_versions_locator):
+            all_versions_element = self.find_element(*self._all_versions_locator)
+            current_versions_elements = all_versions_element.find_elements(
+                *self._current_versions_locator
+            )
+
+            for element in current_versions_elements:
                 str(current_versions.append(FirefoxVersion(element.text)))
             return current_versions
 
@@ -79,7 +84,9 @@ class CrashStatsBasePage(Page):
                 Return the text in the Version selector
             '''
             versions = []
-            for element in self.find_element(*self._all_versions_locator).find_elements(*self._versions_locator):
+            all_versions_element = self.find_element(*self._all_versions_locator)
+            versions_elements = all_versions_element.find_elements(*self._versions_locator)
+            for element in versions_elements:
                 versions.append(element.text)
             return versions
 
@@ -124,16 +131,20 @@ class CrashStatsBasePage(Page):
 
             if 'Top Crashers' == report_name:
                 from pages.crash_stats_top_crashers_page import CrashStatsTopCrashers
-                return CrashStatsTopCrashers(self.selenium, self.page.base_url).wait_for_page_to_load()
+                page = CrashStatsTopCrashers(self.selenium, self.page.base_url)
+                return page.wait_for_page_to_load()
             elif 'Top Crashers by TopSite' == report_name:
                 from pages.crash_stats_top_crashers_by_site_page import CrashStatsTopCrashersBySite
-                return CrashStatsTopCrashersBySite(self.selenium, self.page.base_url).wait_for_page_to_load()
+                page = CrashStatsTopCrashersBySite(self.selenium, self.page.base_url)
+                return page.wait_for_page_to_load()
             elif 'Crashes per Day' == report_name:
                 from pages.crash_stats_per_day import CrashStatsPerDay
-                return CrashStatsPerDay(self.selenium, self.page.base_url).wait_for_page_to_load()
+                page = CrashStatsPerDay(self.selenium, self.page.base_url)
+                return page.wait_for_page_to_load()
             elif 'Nightly Builds' == report_name:
                 from pages.crash_stats_nightly_builds_page import CrashStatsNightlyBuilds
-                return CrashStatsNightlyBuilds(self.selenium, self.page.base_url).wait_for_page_to_load()
+                page = CrashStatsNightlyBuilds(self.selenium, self.page.base_url)
+                return page.wait_for_page_to_load()
 
         def search_for_crash(self, crash_id_or_signature):
             '''

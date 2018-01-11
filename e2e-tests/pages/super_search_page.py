@@ -15,23 +15,38 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
 
     _page_title = 'Search - Mozilla Crash Reports'
     _page_loaded_locator = (By.CSS_SELECTOR, '#s2id_simple-product input')
-    _advanced_search_loaded_locator = (By.CSS_SELECTOR, '#advanced-search .select2-container-active')
+    _advanced_search_loaded_locator = (
+        By.CSS_SELECTOR,
+        '#advanced-search .select2-container-active',
+    )
     _search_button_locator = (By.ID, 'search-button')
 
     # Simple Search
     _simple_search_product_field_locator = (By.CSS_SELECTOR, '#s2id_simple-product input')
     _simple_search_version_field_locator = (By.CSS_SELECTOR, '#s2id_simple-version input')
     _simple_search_platform_field_locator = (By.CSS_SELECTOR, '#s2id_simple-platform input')
-    _simple_search_platform_text_locator = (By.CSS_SELECTOR, '#s2id_simple-product .select2-choices li div')
+    _simple_search_platform_text_locator = (
+        By.CSS_SELECTOR,
+        '#s2id_simple-product .select2-choices li div',
+    )
 
     # Advanced Search
     _new_line_button_locator = (By.CSS_SELECTOR, 'button.new-line')
     _highlighted_text_locator = (By.CSS_SELECTOR, 'li[class*="highlighted"]')
-    _facet_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(2) span:first-child')
+    _facet_text_locator = (
+        By.CSS_SELECTOR,
+        '#advanced-search fieldset[id="%s"] > div:nth-child(2) span:first-child',
+    )
     _input_locator = (By.CSS_SELECTOR, '#select2-drop.select2-drop-active input')
-    _operator_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(4) span')
-    _match_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search-field input')
-    _match_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(6) div')
+    _operator_text_locator = (
+        By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(4) span',
+    )
+    _match_field_locator = (
+        By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search-field input',
+    )
+    _match_text_locator = (
+        By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(6) div',
+    )
 
     # More options section
     _more_options_locator = (By.CSS_SELECTOR, '.options h4')
@@ -46,7 +61,10 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
     _column_list_locator = (By.CSS_SELECTOR, '#s2id__columns_fake ul li.select2-search-choice')
     _table_row_locator = (By.CSS_SELECTOR, '#reports-list tbody tr')
     _loader_locator = (By.CLASS_NAME, 'loader')
-    _crash_reports_tab_locator = (By.CSS_SELECTOR, '#search_results-nav [href="#crash-reports"] span')
+    _crash_reports_tab_locator = (
+        By.CSS_SELECTOR,
+        '#search_results-nav [href="#crash-reports"] span',
+    )
 
     def wait_for_page_to_load(self):
         super(CrashStatsSuperSearch, self).wait_for_page_to_load()
@@ -101,13 +119,22 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
         self.find_element(*self._highlighted_text_locator).click()
 
     def field(self, line_id):
-        return self.find_element(self._facet_text_locator[0], self._facet_text_locator[1] % line_id).text
+        return self.find_element(
+            self._facet_text_locator[0],
+            self._facet_text_locator[1] % line_id,
+        ).text
 
     def operator(self, line_id):
-        return self.find_element(self._operator_text_locator[0], self._operator_text_locator[1] % line_id).text
+        return self.find_element(
+            self._operator_text_locator[0],
+            self._operator_text_locator[1] % line_id,
+        ).text
 
     def match(self, line_id):
-        return self.find_element(self._match_text_locator[0], self._match_text_locator[1] % line_id).text
+        return self.find_element(
+            self._match_text_locator[0],
+            self._match_text_locator[1] % line_id,
+        ).text
 
     @property
     def error(self):
@@ -178,7 +205,9 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
 
         def is_column_not_present(self, column_name):
             self.wait.until(
-                lambda s: column_name not in self.table_column_names, message='Column %s found in table header.' % column_name)
+                lambda s: column_name not in self.table_column_names,
+                message='Column %s found in table header.' % column_name,
+            )
             return True
 
     class Column(Region):
