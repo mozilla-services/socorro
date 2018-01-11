@@ -15,7 +15,6 @@ from socorro.lib.util import drop_unicode
 
 SIGNATURE_MAX_LENGTH = 255
 MAXIMUM_FRAMES_TO_CONSIDER = 40
-SIGNATURE_ESCAPE_SINGLE_QUOTE = True
 
 
 logger = logging.getLogger(__name__)
@@ -69,8 +68,6 @@ class SignatureTool(object):
             crashed_thread,
             delimiter
         )
-        if SIGNATURE_ESCAPE_SINGLE_QUOTE:
-            signature = signature.replace("'", "''")
 
         return signature, signature_notes
 
