@@ -247,14 +247,14 @@ class TestCSignatureTool:
 
 
 class TestJavaSignatureTool:
-    def test_generate_signature_1(self):
+    def test_bad_stack(self):
         j = JavaSignatureTool()
         java_stack_trace = 17
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         assert sig == "EMPTY: Java stack trace not in expected format"
         assert notes == ['JavaSignatureTool: stack trace not in expected format']
 
-    def test_generate_signature_2(self):
+    def test_basic_stack_frame_with_line_number(self):
         j = JavaSignatureTool()
         java_stack_trace = (
             'SomeJavaException: totally made up  \n'
@@ -265,7 +265,7 @@ class TestJavaSignatureTool:
         assert sig == e
         assert notes == []
 
-    def test_generate_signature_3(self):
+    def test_basic_stack_frame(self):
         j = JavaSignatureTool()
         java_stack_trace = (
             'SomeJavaException: totally made up  \n'
@@ -276,7 +276,7 @@ class TestJavaSignatureTool:
         assert sig == e
         assert notes == []
 
-    def test_generate_signature_4(self):
+    def test_long_exception_description(self):
         j = JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException: %s \nat org.mozilla.lars.myInvention(larsFile.java)' %
@@ -288,7 +288,7 @@ class TestJavaSignatureTool:
         expected = ['JavaSignatureTool: dropped Java exception description due to length']
         assert notes == expected
 
-    def test_generate_signature_4_2(self):
+    def test_long_exception_description_with_line_number(self):
         j = JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException: %s  \nat org.mozilla.lars.myInvention(larsFile.java:1234)' %
@@ -300,7 +300,7 @@ class TestJavaSignatureTool:
         expected = ['JavaSignatureTool: dropped Java exception description due to length']
         assert notes == expected
 
-    def test_generate_signature_5(self):
+    def test_no_description(self):
         j = JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException\n'
@@ -312,7 +312,7 @@ class TestJavaSignatureTool:
         e = ['JavaSignatureTool: stack trace line 1 is not in the expected format']
         assert notes == e
 
-    def test_generate_signature_6(self):
+    def test_frame_with_line_ending_but_missing_second_line(self):
         j = JavaSignatureTool()
         java_stack_trace = 'SomeJavaException: totally made up  \n'
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
@@ -321,7 +321,7 @@ class TestJavaSignatureTool:
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         assert notes == e
 
-    def test_generate_signature_7(self):
+    def test_frame_missing_second_line(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = 'SomeJavaException: totally made up  '
@@ -331,17 +331,7 @@ class TestJavaSignatureTool:
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         assert notes == e
 
-    def test_generate_signature_8(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
-        java_stack_trace = 'SomeJavaException: totally made up  '
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = 'SomeJavaException: totally made up'
-        assert sig == e
-        e = ['JavaSignatureTool: stack trace line 2 is missing']
-        assert notes == e
-
-    def test_generate_signature_9(self):
+    def test_frame_with_leading_whitespace(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = (
@@ -355,10 +345,10 @@ class TestJavaSignatureTool:
         )
         assert sig == expected
 
-    def test_generate_signature_10_no_interference(self):
-        """In general addresses of the form @xxxxxxxx are to be replaced with
-        the literal "<addr>", however in this case, the hex address is not in
-        the expected location and should therefore be left alone"""
+    def test_no_interference(self):
+        # In general addresses of the form ``@xxxxxxxx`` are to be replaced
+        # with the literal ``<addr>``, however in this case, the hex address is
+        # not in the expected location and should therefore be left alone
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = ('SomeJavaException: totally made up  \n'
@@ -371,7 +361,7 @@ class TestJavaSignatureTool:
         assert sig == e
         assert notes == []
 
-    def test_generate_signature_11_replace_address(self):
+    def test_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """
@@ -394,77 +384,15 @@ java.lang.IllegalArgumentException: Given view not a child of android.widget.Abs
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
 \tat dalvik.system.NativeStart.main(Native Method)""".lstrip()
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = ('java.lang.IllegalArgumentException: '
-             'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
-             'at android.view.ViewGroup.updateViewLayout(ViewGroup.java)')
+        e = (
+            'java.lang.IllegalArgumentException: '
+            'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
+            'at android.view.ViewGroup.updateViewLayout(ViewGroup.java)'
+        )
         assert sig == e
         assert notes == []
 
-    def test_generate_signature_12_replace_address(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
-        java_stack_trace = """
-java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
-\tat android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
-\tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
-\tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
-\tat org.mozilla.gecko.gfx.LayerController$2.run(LayerController.java:269)
-\tat android.os.Handler.handleCallback(Handler.java:587)
-\tat android.os.Handler.dispatchMessage(Handler.java:92)
-\tat android.os.Looper.loop(Looper.java:150)
-\tat org.mozilla.gecko.GeckoApp$32.run(GeckoApp.java:1670)
-\tat android.os.Handler.handleCallback(Handler.java:587)
-\tat android.os.Handler.dispatchMessage(Handler.java:92)
-\tat android.os.Looper.loop(Looper.java:150)
-\tat android.app.ActivityThread.main(ActivityThread.java:4293)
-\tat java.lang.reflect.Method.invokeNative(Native Method)
-\tat java.lang.reflect.Method.invoke(Method.java:507)
-\tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
-\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
-\tat dalvik.system.NativeStart.main(Native Method)""".lstrip()
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = ('java.lang.IllegalArgumentException: '
-             'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
-             'at android.view.ViewGroup.updateViewLayout(ViewGroup.java)')
-        assert sig == e
-        assert notes == []
-
-    def test_generate_signature_13_replace_address(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
-        java_stack_trace = """
-java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoConnectivityReceiver@2c004bc8
-\tat android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:628)
-\tat android.app.ContextImpl.unregisterReceiver(ContextImpl.java:1066)
-\tat android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:354)
-\tat org.mozilla.gecko.GeckoConnectivityReceiver.unregisterFor(GeckoConnectivityReceiver.java:92)
-\tat org.mozilla.gecko.GeckoApp.onApplicationPause(GeckoApp.java:2104)
-\tat org.mozilla.gecko.GeckoApplication.onActivityPause(GeckoApplication.java:43)
-\tat org.mozilla.gecko.GeckoActivity.onPause(GeckoActivity.java:24)
-\tat android.app.Activity.performPause(Activity.java:4563)
-\tat android.app.Instrumentation.callActivityOnPause(Instrumentation.java:1195)
-\tat android.app.ActivityThread.performNewIntents(ActivityThread.java:2064)
-\tat android.app.ActivityThread.handleNewIntent(ActivityThread.java:2075)
-\tat android.app.ActivityThread.access$1400(ActivityThread.java:127)
-\tat android.app.ActivityThread$H.handleMessage(ActivityThread.java:1205)
-\tat android.os.Handler.dispatchMessage(Handler.java:99)
-\tat android.os.Looper.loop(Looper.java:137)
-\tat android.app.ActivityThread.main(ActivityThread.java:4441)
-\tat java.lang.reflect.Method.invokeNative(Native Method)
-\tat java.lang.reflect.Method.invoke(Method.java:511)
-\tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:784)
-\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:551)
-\tat dalvik.system.NativeStart.main(Native Method)""".lstrip()  # noqa
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
-        e = ('java.lang.IllegalArgumentException: '
-             'Receiver not registered: '
-             'org.mozilla.gecko.GeckoConnectivityReceiver@<addr>: '
-             'at android.app.LoadedApk.forgetReceiverDispatcher'
-             '(LoadedApk.java)')
-        assert sig == e
-        assert notes == []
-
-    def test_generate_signature_14_replace_address(self):
+    def test_replace_address_with_trailing_text(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """
@@ -494,7 +422,7 @@ android.view.WindowManager$BadTokenException: Unable to add window -- token andr
         assert sig == e
         assert notes == []
 
-    def test_generate_signature_15_replace_address(self):
+    def test_replace_address_trailing_whitespace(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """
