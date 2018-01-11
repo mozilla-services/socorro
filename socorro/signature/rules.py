@@ -574,15 +574,14 @@ class SigTrim(Rule):
 
 
 class SigTrunc(Rule):
-    """Truncates signatures down to SIGNATURE_MAX_LENGTH characters
-
-    """
+    """Truncates signatures down to SIGNATURE_MAX_LENGTH characters"""
 
     def predicate(self, raw_crash, processed_crash):
-        return len(processed_crash.get('signature', '')) > 255
+        return len(processed_crash.get('signature', '')) > SIGNATURE_MAX_LENGTH
 
     def action(self, raw_crash, processed_crash, notes):
-        processed_crash['signature'] = "%s..." % processed_crash['signature'][:252]
+        max_length = SIGNATURE_MAX_LENGTH - 3
+        processed_crash['signature'] = "%s..." % processed_crash['signature'][:max_length]
         notes.append('SigTrunc: signature truncated due to length')
         return True
 
