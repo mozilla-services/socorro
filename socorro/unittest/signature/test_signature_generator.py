@@ -4,7 +4,7 @@
 
 import mock
 
-from socorro.signature import SignatureGenerator
+from socorro.signature.generator import SignatureGenerator
 
 
 class TestSignatureGenerator:
@@ -41,7 +41,7 @@ class TestSignatureGenerator:
 
         assert ret == expected
 
-    @mock.patch('socorro.signature.raven')
+    @mock.patch('socorro.signature.generator.raven')
     def test_sentry_dsn(self, mock_raven):
         class BadRule(object):
             pass

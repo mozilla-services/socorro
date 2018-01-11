@@ -14,7 +14,7 @@ import sys
 import requests
 
 from socorro.lib.treelib import tree_get
-from socorro.signature import SignatureGenerator
+from socorro.signature.generator import SignatureGenerator
 
 
 DESCRIPTION = """

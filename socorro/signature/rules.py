@@ -50,11 +50,12 @@ class Rule(object):
 
 
 class SignatureTool(object):
-    """this is the base class for signature generation objects.  It defines the
-    basic interface and provides truncation and quoting service.  Any derived
-    classes should implement the '_do_generate' function.  If different
-    truncation or quoting techniques are desired, then derived classes may
-    override the 'generate' function.
+    """Stack walking signature generator base class
+
+    This defines the interface for classes that take a stack and generate a
+    signature from it.
+
+    Subclasses should implement the ``_do_generate`` method.
 
     """
 
@@ -70,9 +71,7 @@ class SignatureTool(object):
         )
         if SIGNATURE_ESCAPE_SINGLE_QUOTE:
             signature = signature.replace("'", "''")
-        if len(signature) > SIGNATURE_MAX_LENGTH:
-            signature = "%s..." % signature[:SIGNATURE_MAX_LENGTH - 3]
-            signature_notes.append('SignatureTool: signature truncated due to length')
+
         return signature, signature_notes
 
     def _do_generate(self, source_list, hang_type, crashed_thread, delimiter):
@@ -315,6 +314,10 @@ class CSignatureTool(SignatureTool):
 class JavaSignatureTool(SignatureTool):
     """This is the signature generation class for Java signatures."""
 
+    # The max length of a java exception description--if it's longer than this,
+    # drop it
+    DESCRIPTION_MAX_LENGTH = 255
+
     java_line_number_killer = re.compile(r'\.java\:\d+\)$')
     java_hex_addr_killer = re.compile(r'@[0-9a-f]{8}')
 
@@ -332,6 +335,7 @@ class JavaSignatureTool(SignatureTool):
                 "EMPTY: Java stack trace not in expected format",
                 signature_notes
             )
+
         try:
             java_exception_class, description = source_list[0].split(':', 1)
             java_exception_class = java_exception_class.strip()
@@ -346,6 +350,7 @@ class JavaSignatureTool(SignatureTool):
             signature_notes.append(
                 'JavaSignatureTool: stack trace line 1 is not in the expected format'
             )
+
         try:
             java_method = re.sub(
                 self.java_line_number_killer,
@@ -358,12 +363,12 @@ class JavaSignatureTool(SignatureTool):
             signature_notes.append('JavaSignatureTool: stack trace line 2 is missing')
             java_method = ''
 
-        # an error in an earlier version of this code resulted in the colon
+        # An error in an earlier version of this code resulted in the colon
         # being left out of the division between the description and the
-        # java_method if the description didn't end with "<addr>".  This code
-        # perpetuates that error while correcting the "<addr>" placement
-        # when it is not at the end of the description.  See Bug 865142 for
-        # a discussion of the issues.
+        # java_method if the description didn't end with "<addr>". This code
+        # perpetuates that error while correcting the "<addr>" placement when
+        # it is not at the end of the description. See Bug 865142 for a
+        # discussion of the issues.
         if description.endswith('<addr>'):
             # at which time the colon placement error is to be corrected
             # just use the following line as the replacement for this entire
@@ -382,7 +387,7 @@ class JavaSignatureTool(SignatureTool):
                 (java_exception_class, description_java_method_phrase)
             )
 
-        if len(signature) > SIGNATURE_MAX_LENGTH:
+        if len(signature) > self.DESCRIPTION_MAX_LENGTH:
             signature = delimiter.join(
                 (java_exception_class, java_method)
             )
@@ -569,13 +574,15 @@ class SigTrim(Rule):
 
 
 class SigTrunc(Rule):
-    """ensure that the signature is never longer than 255 characters"""
+    """Truncates signatures down to SIGNATURE_MAX_LENGTH characters"""
 
     def predicate(self, raw_crash, processed_crash):
-        return len(processed_crash.get('signature', '')) > 255
+        return len(processed_crash.get('signature', '')) > SIGNATURE_MAX_LENGTH
 
     def action(self, raw_crash, processed_crash, notes):
-        processed_crash['signature'] = "%s..." % processed_crash['signature'][:252]
+        max_length = SIGNATURE_MAX_LENGTH - 3
+        processed_crash['signature'] = "%s..." % processed_crash['signature'][:max_length]
+        notes.append('SigTrunc: signature truncated due to length')
         return True
 
 
