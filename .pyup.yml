@@ -7,3 +7,6 @@ requirements:
   - docs/requirements.txt:
       update: all
       pin: true
+  - e2e-tests/requirements/default.txt:
+       update: all
+       pin: true
