@@ -24,10 +24,13 @@ Sends specified crashes for reprocessing
 This requires SOCORRO_REPROCESS_API_TOKEN to be set in the environment to a
 valid API token.
 
-Note: If you're reprocessing more than 10,000 crashes, you should use a sleep
-value of 10 seconds. This slows down adding items to the reprocessing queue so
-they're being added roughly at the same rate as they're being processed. This
-way, the queue doesn't back up and the system doesn't start paging people.
+Note: If you're processing more than 10,000 crashes, you should use a sleep
+value that balances the rate of crash ids being added to the queue and the rate
+of crash ids being processed. For example, you could use "--sleep 10" which
+will sleep for 10 seconds between submitting groups of crashes.
+
+Also, if you're processing a lot of crashes, you should let ops know and maybe
+they should increase the number of processor nodes.
 
 """
 
