@@ -64,11 +64,11 @@ This reprocesses crashes all crashes with a specified signature::
 
 .. Warning::
 
-   If you're reprocessing more than 10,000 crashes, make sure to specify the
-   ``--sleep`` argument and use a value like 10 seconds. This will slow down
-   adding items to the reprocessing queue such that the rate of crashes being
-   added is roughly the rate of crashes being processed. Otherwise, you'll
-   exceed our alert triggers for queue sizes and it'll page people.
+   If you're reprocessing more than 10,000 crashes, make sure to add a sleep
+   argument of 10 seconds (``--sleep 10``). This will slow down adding items to
+   the reprocessing queue such that the rate of crashes being added is roughly
+   the rate of crashes being processed. Otherwise, you'll exceed our alert
+   triggers for queue sizes and it'll page people.
 
 
 .. Warning::
