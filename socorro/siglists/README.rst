@@ -30,7 +30,19 @@ When generating a C signature, 5 steps are involved.
    associated code line number added to them, like this: ``signature:42``.
 
 The generated signature is a concatenation of all the accumulated signatures,
-separated with a pipe sign (``|``).
+separated with a pipe sign (``|``), and converted to a regular expression.
+
+Signature generation then uses ``.match()`` to match frames.
+
+Because of that, when changing these lists, make sure you keep the following
+things in mind:
+
+1. Make sure you're using valid regular expression syntax and escape special
+   characters like ``(``, ``)``, ``.``, and ``$``.
+2. There's no need to add a trailing ``.*`` since signature generation uses
+   ``.match()`` which will match from the beginning of the string.
+3. Try to keep it roughly in alphabetical order so as to make it easier to skim
+   through later.
 
 
 Signature Sentinels

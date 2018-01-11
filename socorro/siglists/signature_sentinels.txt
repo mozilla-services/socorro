@@ -2,6 +2,7 @@
 #
 # Signatures that should always be considered top of the stack if present
 # in the stack.
+#
 # Note: no regular expressions here.
 
 _purecall
