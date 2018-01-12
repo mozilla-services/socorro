@@ -9,7 +9,6 @@ from socorro.lib.datetimeutil import utc_now
 from socorro.external.es.index_cleaner import IndexCleaner
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -49,7 +48,6 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
     def get_index_for_date(self, date):
         return date.strftime(self.config.elasticsearch.elasticsearch_index)
 
-    @minimum_es_version('1.0')
     def test_delete_old_indices(self):
         # Create old indices to be deleted.
         self.create_index('test_socorro200142')
@@ -92,7 +90,6 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         assert not self.index_client.exists('test_socorro200000')
         assert not self.index_client.exists('test_socorro200201')
 
-    @minimum_es_version('1.0')
     def test_delete_old_indices_other_indices_are_not_deleted(self):
         """Verify that non-week-based indices are not removed.
         """
@@ -105,7 +102,6 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         # Verify the email index is still there.
         assert self.index_client.exists('socorro_test_temp')
 
-    @minimum_es_version('1.0')
     def test_delete_indices_with_predicate(self):
         self.create_index('test_socorro201801')
         self.create_index('test_socorro201802')
@@ -120,7 +116,6 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         assert not self.index_client.exists('test_socorro201802')
         assert self.index_client.exists('test_socorro_non_week')
 
-    @minimum_es_version('1.0')
     def test_delete_indices_without_predicate(self):
         self.create_index('test_socorro201801')
         self.create_index('test_socorro201802')

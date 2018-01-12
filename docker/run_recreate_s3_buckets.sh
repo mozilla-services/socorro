@@ -11,5 +11,5 @@ set -e
 cd /app
 
 echo "Dropping and recreating S3 bucket..."
-./scripts/socorro_aws_s3.sh rb s3://dev_bucket/ --force || true 2> /dev/null # Ignore if it doesn't exist
+(./scripts/socorro_aws_s3.sh rb s3://dev_bucket/ --force || true) 2> /dev/null # Ignore if it doesn't exist
 ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
