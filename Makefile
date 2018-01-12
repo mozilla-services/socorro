@@ -35,9 +35,7 @@ dockerbuild: my.env
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
 # postgres going forward and has the needed environment variables.
 dockersetup: my.env .docker-build
-	${DC} run webapp /app/docker/run_setup_postgres.sh
-	${DC} run processor /app/docker/run_recreate_s3_buckets.sh
-	${DC} run processor /app/scripts/socorro clear_es_indices
+	${DC} run webapp /app/docker/run_setup.sh
 
 dockerclean:
 	rm .docker-build
