@@ -21,8 +21,8 @@ from socorro.signature.rules import (
     SignatureGenerationRule,
     SignatureJitCategory,
     SignatureRunWatchDog,
-    SigTrim,
-    SigTrunc,
+    SigFixWhitespace,
+    SigTruncate,
     SignatureShutdownTimeout,
     SignatureIPCMessageName,
     SignatureParentIDNotEqualsChildID,
@@ -1277,10 +1277,10 @@ class TestAbortSignature:
         assert processed_crash['signature'] == 'Abort | unknown | hello'
 
 
-class TestSigTrim:
+class TestSigFixWhitespace:
 
     def test_predicate_no_match(self):
-        rule = SigTrim()
+        rule = SigFixWhitespace()
 
         processed_crash = {}
         predicate_result = rule.predicate({}, processed_crash)
@@ -1291,7 +1291,7 @@ class TestSigTrim:
         assert predicate_result is False
 
     def test_predicate(self):
-        rule = SigTrim()
+        rule = SigFixWhitespace()
         processed_crash = {
             'signature': 'fooo::baar'
         }
@@ -1299,12 +1299,38 @@ class TestSigTrim:
         assert predicate_result is True
 
     @pytest.mark.parametrize('signature, expected', [
-        ('all   good', 'all   good'),
-        ('all   good     ', 'all   good'),
-        ('    all   good  ', 'all   good'),
+        ('all   good', 'all good'),
+        ('all   good     ', 'all good'),
+        ('    all   good  ', 'all good'),
     ])
-    def test_action_success(self, signature, expected):
-        rule = SigTrim()
+    def test_leading_trailing_whitespace(self, signature, expected):
+        rule = SigFixWhitespace()
+        processed_crash = {
+            'signature': signature
+        }
+        action_result = rule.action({}, processed_crash, [])
+        assert action_result is True
+        assert processed_crash['signature'] == expected
+
+    @pytest.mark.parametrize('signature, expected', [
+        ('all\tgood', 'all good'),
+        ('all\n\ngood', 'all good'),
+    ])
+    def test_non_space_whitespace(self, signature, expected):
+        rule = SigFixWhitespace()
+        processed_crash = {
+            'signature': signature
+        }
+        action_result = rule.action({}, processed_crash, [])
+        assert action_result is True
+        assert processed_crash['signature'] == expected
+
+    @pytest.mark.parametrize('signature, expected', [
+        ('all   good', 'all good'),
+        ('all  |  good', 'all | good'),
+    ])
+    def test_consecutive_spaces(self, signature, expected):
+        rule = SigFixWhitespace()
         processed_crash = {
             'signature': signature
         }
@@ -1313,10 +1339,10 @@ class TestSigTrim:
         assert processed_crash['signature'] == expected
 
 
-class TestSigTrunc:
+class TestSigTruncate:
 
     def test_predicate_no_match(self):
-        rule = SigTrunc()
+        rule = SigTruncate()
         processed_crash = {
             'signature': '0' * 100
         }
@@ -1324,7 +1350,7 @@ class TestSigTrunc:
         assert predicate_result is False
 
     def test_predicate(self):
-        rule = SigTrunc()
+        rule = SigTruncate()
         processed_crash = {
             'signature': '9' * 256
         }
@@ -1332,7 +1358,7 @@ class TestSigTrunc:
         assert predicate_result is True
 
     def test_action_success(self):
-        rule = SigTrunc()
+        rule = SigTruncate()
         processed_crash = {
             'signature': '9' * 256
         }

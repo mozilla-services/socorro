@@ -18,8 +18,8 @@ from socorro.signature.rules import (
     SignatureRunWatchDog,
     SignatureIPCChannelError,
     SignatureIPCMessageName,
-    SigTrim,
-    SigTrunc,
+    SigFixWhitespace,
+    SigTruncate,
     SignatureJitCategory,
     SignatureParentIDNotEqualsChildID,
 )
@@ -38,8 +38,8 @@ DEFAULT_PIPELINE = [
     SignatureJitCategory(),
 
     # NOTE(willkg): These should always come last and in this order
-    SigTrim(),
-    SigTrunc(),
+    SigFixWhitespace(),
+    SigTruncate(),
 ]
 
 
