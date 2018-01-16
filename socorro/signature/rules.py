@@ -558,19 +558,40 @@ class AbortSignature(Rule):
         return True
 
 
-class SigTrim(Rule):
-    """ensure that the signature never has any leading or trailing white
-    spaces"""
+class SigFixWhitespace(Rule):
+    """Fix whitespace in signatures
+
+    This does the following:
+
+    * trims leading and trailing whitespace
+    * converts all non-space whitespace characters to space
+    * reduce consecutive spaces to a single space
+
+    """
+
+    WHITESPACE_RE = re.compile('\s')
+    CONSECUTIVE_WHITESPACE_RE = re.compile('\s\s+')
 
     def predicate(self, raw_crash, processed_crash):
         return isinstance(processed_crash.get('signature'), basestring)
 
     def action(self, raw_crash, processed_crash, notes):
-        processed_crash['signature'] = processed_crash['signature'].strip()
+        sig = processed_crash['signature']
+
+        # Trim leading and trailing whitespace
+        sig = sig.strip()
+
+        # Convert all non-space whitespace characters into spaces
+        sig = self.WHITESPACE_RE.sub(' ', sig)
+
+        # Reduce consecutive spaces to a single space
+        sig = self.CONSECUTIVE_WHITESPACE_RE.sub(' ', sig)
+
+        processed_crash['signature'] = sig
         return True
 
 
-class SigTrunc(Rule):
+class SigTruncate(Rule):
     """Truncates signatures down to SIGNATURE_MAX_LENGTH characters"""
 
     def predicate(self, raw_crash, processed_crash):
