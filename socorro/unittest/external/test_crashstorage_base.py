@@ -256,9 +256,27 @@ class TestBase(TestCase):
                 sample in str(x)
                 for sample in ['hell', 'NameError', 'KeyError', 'AttributeError']
             )
+            assert (
+                str(x) == "hell,NameError('dwight',),KeyError('wilma',),AttributeError('sarita',)"
+            )
 
             x[0] = x[1]
             assert x[0] == x[1]
+
+    def test_polyerror_str_missing_args(self):
+        p = PolyStorageError()
+        try:
+            try:
+                raise NameError('dwight')
+            except NameError:
+                p.gather_current_exception()
+            try:
+                raise KeyError('wilma')
+            except KeyError:
+                p.gather_current_exception()
+            raise p
+        except PolyStorageError as x:
+            assert str(x) == "NameError('dwight',),KeyError('wilma',)"
 
     def test_poly_crash_storage(self):
         n = Namespace()
