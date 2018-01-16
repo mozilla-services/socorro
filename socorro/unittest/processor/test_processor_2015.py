@@ -198,9 +198,7 @@ class TestProcessor2015(TestCase):
 
         assert processed_crash.success
         expected = (
-            'dwight; Processor2015; '
-            'SignatureTool: signature truncated due to length; '
-            'SignatureTool: signature truncated due to length'
+            'dwight; Processor2015; SigTrunc: signature truncated due to length'
         )
         assert processed_crash.processor_notes == expected
         assert processed_crash.signature.startswith('shutdownhang')
