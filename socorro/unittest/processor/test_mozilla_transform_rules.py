@@ -388,7 +388,6 @@ class TestAddonsRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.collect_addon = True
         config.chatty = False
 
         return config
@@ -983,7 +982,6 @@ class TestProductRewrite(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.collect_addon = True
         config.chatty = False
 
         return config

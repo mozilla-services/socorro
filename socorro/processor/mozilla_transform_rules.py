@@ -131,13 +131,6 @@ class PluginRule(Rule):   # Hangs are here
 
 
 class AddonsRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'collect_addon',
-        doc='boolean indictating if information about add-ons should be '
-        'collected',
-        default=True,
-    )
 
     def version(self):
         return '1.0'
@@ -155,45 +148,35 @@ class AddonsRule(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.addons_checked = None
-        try:
+
+        # it's okay to not have EMCheckCompatibility
+        if 'EMCheckCompatibility' in raw_crash:
             addons_checked_txt = raw_crash.EMCheckCompatibility.lower()
             processed_crash.addons_checked = False
             if addons_checked_txt == 'true':
                 processed_crash.addons_checked = True
-        except KeyError as e:
-            if 'EMCheckCompatibility' not in str(e):
-                raise
-            # it's okay to not have EMCheckCompatibility, other missing things
-            # are bad
 
-        if self.config.chatty:
-            self.config.logger.debug(
-                'AddonsRule: collect_addon: %s',
-                self.config.collect_addon
-            )
-
-        if self.config.collect_addon:
-            original_addon_str = raw_crash.get('Add-ons', '')
-            if not original_addon_str:
-                if self.config.chatty:
-                    self.config.logger.debug(
-                        'AddonsRule: no addons'
-                    )
-                processed_crash.addons = []
-            else:
-                if self.config.chatty:
-                    self.config.logger.debug(
-                        'AddonsRule: trying to split addons'
-                    )
-                processed_crash.addons = [
-                    unquote_plus(self._get_formatted_addon(x))
-                    for x in original_addon_str.split(',')
-                ]
+        original_addon_str = raw_crash.get('Add-ons', '')
+        if not original_addon_str:
             if self.config.chatty:
                 self.config.logger.debug(
-                    'AddonsRule: done: %s',
-                    processed_crash.addons
+                    'AddonsRule: no addons'
                 )
+            processed_crash.addons = []
+        else:
+            if self.config.chatty:
+                self.config.logger.debug(
+                    'AddonsRule: trying to split addons'
+                )
+            processed_crash.addons = [
+                unquote_plus(self._get_formatted_addon(x))
+                for x in original_addon_str.split(',')
+            ]
+        if self.config.chatty:
+            self.config.logger.debug(
+                'AddonsRule: done: %s',
+                processed_crash.addons
+            )
 
         return True
 

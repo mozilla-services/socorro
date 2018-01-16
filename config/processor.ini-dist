@@ -373,9 +373,6 @@
 
 [processor]
 
-    # boolean indictating if information about add-ons should be collected
-    #collect_addon=True
-
     # boolean indictating if information about process type should be collected
     #collect_crash_process=True
 
@@ -549,4 +546,3 @@
     # umask to use for new files
     # see "resource.fs.umask" for the default or override it here
     #umask=18
-
