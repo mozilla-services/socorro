@@ -153,6 +153,11 @@ Checklist
       stage: In IRC: "webqatestbot build socorro.stage.saucelabs"
       prod: In IRC: "webqatestbot build socorro.prod.saucelabs"
 
+    Are there JavaScript errors in the webapp?
+
+    * While checking individual pages below, open the DevTools console and watch
+      for JavaScript errors.
+
     Can we log into the webapp?
 
     * Log in and check the profile page.

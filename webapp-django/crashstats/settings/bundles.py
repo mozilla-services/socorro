@@ -11,7 +11,7 @@ NPM_FILE_PATTERNS = {
     'metrics-graphics': ['dist/*'],
     'font-awesome': ['css/*', 'fonts/*'],
     'tablesorter': ['dist/*'],
-    'd3': ['*.js'],
+    'd3': ['build/*'],
     'jssha': ['src/*.js'],
     'qs': ['dist/*'],
     'moment': ['moment.js'],
@@ -215,7 +215,7 @@ PIPELINE_JS = {
     },
     'd3': {
         'source_filenames': (
-            'd3/d3.min.js',
+            'd3/build/d3.js',
         ),
         'output_filename': 'js/d3.min.js',
     },
@@ -249,7 +249,7 @@ PIPELINE_JS = {
     },
     'metricsgraphics': {
         'source_filenames': (
-            'metrics-graphics/dist/metricsgraphics.min.js',
+            'metrics-graphics/dist/metricsgraphics.js',
         ),
         'output_filename': 'js/metricsgraphics.min.js',
     },
@@ -279,7 +279,7 @@ PIPELINE_JS = {
     },
     'crashstats_base': {
         'source_filenames': (
-            'jquery/dist/jquery.min.js',
+            'jquery/dist/jquery.js',
             'crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js',
             'qs/dist/qs.js',
             'moment/moment.js',

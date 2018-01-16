@@ -35,7 +35,7 @@ $(function() {
             y_accessor: 'ratio',
             axes_not_compact: true,
             utc_time: true,
-            interpolate: 'basic',
+            interpolate: d3.curveLinear,
             area: false,
             legend: legend,
             legend_target: '#crashes-per-adi-legend',

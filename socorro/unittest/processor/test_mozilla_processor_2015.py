@@ -97,9 +97,7 @@ class TestMozillaProcessorAlgorithm2015(TestCase):
 
         assert processed_crash.success
         expected = (
-            'dwight; MozillaProcessorAlgorithm2015; '
-            'SignatureTool: signature truncated due to length; '
-            'SignatureTool: signature truncated due to length'
+            'dwight; MozillaProcessorAlgorithm2015; SigTrunc: signature truncated due to length'
         )
         assert processed_crash.processor_notes == expected
         assert processed_crash.signature.startswith('shutdownhang')

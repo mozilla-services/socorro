@@ -21,7 +21,16 @@ from socorro.scripts import WrappedTextHelpFormatter
 DESCRIPTION = """
 Sends specified crashes for reprocessing
 
-This requires SOCORRO_REPROCESS_API_TOKEN to be set in the environment to a valid API token.
+This requires SOCORRO_REPROCESS_API_TOKEN to be set in the environment to a
+valid API token.
+
+Note: If you're processing more than 10,000 crashes, you should use a sleep
+value that balances the rate of crash ids being added to the queue and the rate
+of crash ids being processed. For example, you could use "--sleep 10" which
+will sleep for 10 seconds between submitting groups of crashes.
+
+Also, if you're processing a lot of crashes, you should let ops know and maybe
+they should increase the number of processor nodes.
 
 """
 
