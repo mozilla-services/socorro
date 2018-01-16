@@ -1299,37 +1299,20 @@ class TestSigFixWhitespace:
         assert predicate_result is True
 
     @pytest.mark.parametrize('signature, expected', [
+        # Leading and trailing whitespace are removed
         ('all   good', 'all good'),
         ('all   good     ', 'all good'),
         ('    all   good  ', 'all good'),
-    ])
-    def test_leading_trailing_whitespace(self, signature, expected):
-        rule = SigFixWhitespace()
-        processed_crash = {
-            'signature': signature
-        }
-        action_result = rule.action({}, processed_crash, [])
-        assert action_result is True
-        assert processed_crash['signature'] == expected
 
-    @pytest.mark.parametrize('signature, expected', [
+        # Non-space whitespace is converted to spaces
         ('all\tgood', 'all good'),
         ('all\n\ngood', 'all good'),
-    ])
-    def test_non_space_whitespace(self, signature, expected):
-        rule = SigFixWhitespace()
-        processed_crash = {
-            'signature': signature
-        }
-        action_result = rule.action({}, processed_crash, [])
-        assert action_result is True
-        assert processed_crash['signature'] == expected
 
-    @pytest.mark.parametrize('signature, expected', [
+        # Multiple consecutive spaces are converted to a single space
         ('all   good', 'all good'),
         ('all  |  good', 'all | good'),
     ])
-    def test_consecutive_spaces(self, signature, expected):
+    def test_whitespace_fixing(self, signature, expected):
         rule = SigFixWhitespace()
         processed_crash = {
             'signature': signature
