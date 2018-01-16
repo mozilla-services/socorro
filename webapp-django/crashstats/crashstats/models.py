@@ -17,17 +17,18 @@ from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
     PriorityjobRabbitMQCrashStore,
 )
-import socorro.external.postgresql.platforms
-import socorro.external.postgresql.bugs
-import socorro.external.postgresql.products
-import socorro.external.postgresql.graphics_devices
-import socorro.external.postgresql.crontabber_state
-import socorro.external.postgresql.adi
-import socorro.external.postgresql.product_build_types
-import socorro.external.postgresql.signature_first_date
-import socorro.external.postgresql.server_status
-import socorro.external.postgresql.releases
 import socorro.external.boto.crash_data
+import socorro.external.postgresql.adi
+import socorro.external.postgresql.bugs
+import socorro.external.postgresql.crash_data
+import socorro.external.postgresql.crontabber_state
+import socorro.external.postgresql.graphics_devices
+import socorro.external.postgresql.platforms
+import socorro.external.postgresql.product_build_types
+import socorro.external.postgresql.products
+import socorro.external.postgresql.releases
+import socorro.external.postgresql.server_status
+import socorro.external.postgresql.signature_first_date
 
 from socorro.app import socorro_app
 
@@ -79,10 +80,15 @@ def config_from_configman():
         'rabbitmq_priority_class',
         default=PriorityjobRabbitMQCrashStore,
     )
-    definition_source.namespace('data')
-    definition_source.data.add_option(
+    definition_source.namespace('crashdata')
+    definition_source.crashdata.add_option(
         'crash_data_class',
         default=socorro.external.boto.crash_data.SimplifiedCrashData,
+    )
+    definition_source.namespace('telemetrydata')
+    definition_source.telemetrydata.add_option(
+        'telemetry_crashstorage',
+        default=socorro.external.boto.crash_data.TelemetryCrashData,
     )
     config = configuration(
         definition_source=definition_source,
@@ -96,7 +102,8 @@ def config_from_configman():
     # same logger as we have here in the webapp.
     config.queuing.logger = logger
     config.priority.logger = logger
-    config.data.logger = logger
+    config.crashdata.logger = logger
+    config.telemetrydata.logger = logger
     return config
 
 
@@ -562,10 +569,40 @@ class Platforms(SocorroMiddleware):
         return super(Platforms, self).get()
 
 
+class PostgresRawCrash(SocorroMiddleware):
+    implementation = socorro.external.postgresql.crash_data.RawCrash
+
+    required_params = (
+        'uuid',
+    )
+
+
+class PostgresProcessedCrash(SocorroMiddleware):
+    implementation = socorro.external.postgresql.crash_data.ProcessedCrash
+
+    required_params = (
+        'uuid',
+    )
+
+
+class TelemetryCrash(SocorroMiddleware):
+    """Model for data we store in the S3 bucket to send to Telemetry"""
+
+    implementation = socorro.external.boto.crash_data.TelemetryCrashData
+    implementation_config_namespace = 'telemetrydata'
+
+    required_params = (
+        'crash_id',
+    )
+    aliases = {
+        'crash_id': 'uuid',
+    }
+
+
 class ProcessedCrash(SocorroMiddleware):
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
-    implementation_config_namespace = 'data'
+    implementation_config_namespace = 'crashdata'
 
     required_params = (
         'crash_id',
@@ -679,7 +716,7 @@ class RawCrash(SocorroMiddleware):
     """
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
-    implementation_config_namespace = 'data'
+    implementation_config_namespace = 'crashdata'
 
     required_params = (
         'crash_id',
