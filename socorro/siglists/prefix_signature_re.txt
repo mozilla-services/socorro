@@ -178,6 +178,7 @@ realloc
 recv
 .*ReentrantMonitor::Wait
 RefPtr
+ReleaseData
 _RTC_Terminate
 Rtl
 _Rtl
