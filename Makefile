@@ -35,7 +35,7 @@ dockerbuild: my.env
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
 # postgres going forward and has the needed environment variables.
 dockersetup: my.env .docker-build
-	${DC} run webapp /app/docker/run_setup_postgres.sh
+	${DC} run webapp /app/docker/run_setup.sh
 
 dockerclean:
 	rm .docker-build

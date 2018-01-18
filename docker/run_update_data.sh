@@ -35,3 +35,6 @@ docker-compose run processor python docker/fetch_normalization_data.py --product
 
 # Create weekly reports
 docker-compose run processor python docker/create_weekly_tables.py
+
+# Create ES indexes for the next few weeks
+docker-compose run processor scripts/socorro create_recent_es_indices

@@ -12,7 +12,7 @@ from socorro.lib.datetimeutil import utc_now
 
 
 class IndexCleaner(RequiredConfig):
-    """Delete old elasticsearch indices from our databases. """
+    """Delete elasticsearch indices from our databases."""
 
     required_config = Namespace()
     required_config.add_option(
@@ -37,11 +37,18 @@ class IndexCleaner(RequiredConfig):
         super(IndexCleaner, self).__init__()
         self.config = config
 
-    def delete_old_indices(self):
-        now = utc_now()
-        policy_delay = datetime.timedelta(weeks=self.config.retention_policy)
-        time_limit = (now - policy_delay).replace(tzinfo=None)
+    def delete_indices(self, predicate=None):
+        """Delete crash indices that match the given predicate.
 
+        :arg callable predicate: A callable of the form
+            ``predicate(index)``, where ``index`` is a string containing
+            the name of the index. If the callable returns true, the
+            index will be deleted.
+
+            The default is None, which deletes all crash indices.
+        :returns: List of indexes that were deleted
+
+        """
         es_class = self.config.elasticsearch.elasticsearch_class(
             self.config.elasticsearch
         )
@@ -52,6 +59,7 @@ class IndexCleaner(RequiredConfig):
 
         aliases = index_client.get_aliases()
 
+        deleted_indices = []
         for index in indices:
             # Some indices look like 'socorro%Y%W_%Y%M%d', but they are
             # aliased to the expected format of 'socorro%Y%W'. In such cases,
@@ -68,13 +76,25 @@ class IndexCleaner(RequiredConfig):
                 # This index doesn't look like a crash index, let's skip it.
                 continue
 
-            # This won't take the week part of our indices into account...
-            index_date = datetime.datetime.strptime(
-                index,
-                self.config.elasticsearch.elasticsearch_index
-            )
-            # So we need to get that differently, and then add it to the date.
-            index_date += datetime.timedelta(weeks=int(index[-2:]))
+            if predicate is None or predicate(index):
+                index_client.delete(index)
+                deleted_indices.append(index)
 
-            if index_date < time_limit:
-                index_client.delete(index)  # Bad index! Go away!
+        return deleted_indices
+
+    def delete_old_indices(self):
+        self.delete_indices(self.is_index_old)
+
+    def is_index_old(self, index):
+        now = utc_now()
+        policy_delay = datetime.timedelta(weeks=self.config.retention_policy)
+        time_limit = (now - policy_delay).replace(tzinfo=None)
+
+        # strptime ignores week numbers if a day isn't specified, so we append
+        # '-1' and '-%w' to specify Monday as the day.
+        index_date = datetime.datetime.strptime(
+            index + '-1',
+            self.config.elasticsearch.elasticsearch_index + '-%w'
+        )
+
+        return index_date < time_limit

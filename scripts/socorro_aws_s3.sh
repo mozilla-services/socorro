@@ -62,4 +62,4 @@ AWSOPTIONS="--endpoint-url=http://${AWS_HOST}:${AWS_PORT}/"
 
 echo "S3 container bucket is ${AWS_BUCKET}"
 
-HOME=/tmp /tmp/.local/bin/aws ${AWSOPTIONS} s3 $@
+HOME=/tmp aws ${AWSOPTIONS} s3 $@
