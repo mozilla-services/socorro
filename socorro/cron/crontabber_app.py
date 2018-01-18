@@ -3,19 +3,23 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import sys
 
 from configman import Namespace, class_converter
 from crontabber.app import (
-    CronTabberBase,
     classes_in_namespaces_converter_with_compression,
+    CronTabberBase,
+    database_transaction,
     get_extra_as_options,
+    JobNotFoundError,
     line_splitter,
     main,
     pipe_splitter,
 )
 
 from socorro.app.socorro_app import App
+from socorro.lib.datetimeutil import utc_now
 
 
 # NOTE(willkg): This is what we have in -prod
@@ -107,6 +111,69 @@ class CronTabberApp(CronTabberBase, App):
         from_string_converter=jobs_converter,
         doc='Crontabber jobs spec or Python dotted path to jobs spec',
     )
+    required_config.add_option(
+        name='mark-success',
+        default='',
+        doc='Mark specified jobs as successful. Comma-separated list of jobs or "all".',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+
+    def get_job_data(self, job_list_string):
+        """Converts job_list_string specification into list of jobs
+
+        :arg str job_list_string: specifies the jobs to return as a comma separated
+            list of app names or description or "all" to return them all
+
+        :returns: list of ``(class_name, job_class)`` tuples
+
+        """
+        class_list = self.config.crontabber.jobs.class_list
+        class_list = self._reorder_class_list(class_list)
+
+        if job_list_string.lower() == 'all':
+            return class_list
+
+        job_list = [item.strip() for item in job_list_string.split(',')]
+
+        job_classes = []
+        for description in job_list:
+            for class_name, job_class in class_list:
+                python_module = job_class.__module__ + '.' + job_class.__name__
+                if description == job_class.app_name or description == python_module:
+                    job_classes.append((class_name, job_class))
+                    break
+            else:
+                raise JobNotFoundError(description)
+        return job_classes
+
+    def mark_success(self, job_list_string):
+        """Mark jobs as successful in crontabber bookkeeping"""
+        job_classes = self.get_job_data(job_list_string)
+        now = utc_now()
+
+        for class_name, job_class in job_classes:
+            app_name = job_class.app_name
+            job_name = job_class.__module__ + '.' + job_class.__name__
+            job_config = self.config.crontabber['class-%s' % class_name]
+            self.config.logger.info('Marking %s (%s) for success...', app_name, job_name)
+            self._log_run(
+                job_class,
+                seconds=0,
+                time_=job_config.time,
+                last_success=now,
+                now=now,
+                exc_type=None,
+                exc_value=None,
+                exc_tb=None
+            )
+            self._remember_success(job_class, success_date=now, duration=0)
+
+    def main(self):
+        if self.config.get('mark-success'):
+            self.mark_success(self.config.get('mark-success'))
+            return 0
+        return super(CronTabberApp, self).main()
 
 
 # NOTE(willkg): We need to "fix" the defaults here rather than use App's
