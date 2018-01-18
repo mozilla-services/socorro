@@ -3,14 +3,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
 import sys
 
 from configman import Namespace, class_converter
 from crontabber.app import (
     classes_in_namespaces_converter_with_compression,
     CronTabberBase,
-    database_transaction,
     get_extra_as_options,
     JobNotFoundError,
     line_splitter,
