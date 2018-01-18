@@ -217,3 +217,6 @@ safety==1.6.1 \
 awscli==1.14.23 \
     --hash=sha256:f8b3bd68260d4e9864982e2beecbd4cbea834702253187e1cf03ffd1c12b6dc3 \
     --hash=sha256:d62012af05ce19764c3c7a8489592edc0fb255f540ad9f69f68fb299236f02b9
+flake8-isort==2.3 \
+    --hash=sha256:6a5716ddf5575b5623f3e124f5662982d33fc9f4f5abda97d490cbcc8936ce33 \
+    --hash=sha256:5faacab560fe1a6b0b2a35d1ef97064a2c227cf34fa46d189a59a1b1c799296d

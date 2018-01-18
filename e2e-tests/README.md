@@ -5,7 +5,14 @@ Continuous Integration
 ----------------------
 This directory holds Socorro client-based end-to-end tests, which is why they're different than the rest of the code in this repository.
 
-To review the specific-Python packages the tests use, please review `tox.ini`.
+To review the specific-Python packages the tests use, please review
+`requirements/default.txt`.
+
+Prerequisites
+-------------
+These tests assume that the following software is installed:
+
+* Pip 8.0.0 or higher
 
 Set up and run Socorro tests
 -----------------------------
@@ -13,7 +20,8 @@ Set up and run Socorro tests
 Review the documentation for [pytest-selenium][pytest-selenium] and decide
 which browser environment you wish to target.
 
-* [Install Tox](https://tox.readthedocs.io/en/latest/install.html)
+* [Install Tox](https://tox.readthedocs.io/en/latest/install.html) (1.6.1 or
+  higher)
 * Run `tox`
 
 An additional constraint for Firefox users: since version 48, Firefox now uses

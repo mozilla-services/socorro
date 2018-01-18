@@ -61,7 +61,10 @@ class TestSuperSearch:
 
         # verify simple search terms have persisted
         assert 'Firefox' == cs_super.selected_products
-        assert cs_super.columns[0].column_name in cs_super.search_results_table_header.table_column_names
+        assert (
+            cs_super.columns[0].column_name in
+            cs_super.search_results_table_header.table_column_names
+        )
 
     @pytest.mark.nondestructive
     def test_search_with_one_line(self, base_url, selenium):
