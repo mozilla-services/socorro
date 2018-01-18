@@ -45,19 +45,22 @@ var format = d3.format(',.0f'),
         return name + ' is working normally.';
     };
 
-var svg = d3.select('#crontabber-chart').append('svg')
+var svg = d3.select('#crontabber-chart')
+    .append('svg')
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
-  .append('g')
-    .attr('transform',
-          'translate(' + margin.left + ',' + margin.top + ')');
+    .append('g')
+    .attr(
+        'transform',
+        'translate(' + margin.left + ',' + margin.top + ')'
+    );
 
 var sankey = d3.sankey()
     .nodeWidth(15)
     .nodePadding(10)
     .size([width, height]);
 
-var path = sankey.link();
+var path = d3.sankeyLinkHorizontal();
 
 function escapeHtml(unsafe) {
     return unsafe
@@ -119,45 +122,49 @@ d3.json('/api/CrontabberState/', function(data) {
         });
     });
 
-    sankey
-        .nodes(nodes)
-        .links(links)
-        .layout(32);
+    var graph = {
+        nodes: nodes,
+        links: links
+    };
+    sankey(graph);
 
-    var link = svg.append('g').selectAll('.link')
+    var link = svg.append('g')
+        .selectAll('path')
         .data(links)
-      .enter().append('path')
+        .enter()
+        .append('path')
         .attr('class', 'link')
         .attr('d', path)
         .style('stroke-width', function(d) {
-            return Math.max(1, d.dy);
+            return Math.max(1, (d.y1 - d.y0));
         })
         .style('stroke', function(d) {
             return d.color = color(d);
         })
-        .sort(function(a, b) { return b.dy - a.dy; });
+        .sort(function(a, b) { return (b.y1 - b.y0) - (a.y1 - a.y0); });
 
     link.append('title')
         .text(title);
 
-    var node = svg.append('g').selectAll('.node')
+    var node = svg.append('g')
+        .selectAll('g')
         .data(nodes)
         .enter()
         .append('g')
         .attr('class', 'node')
         .attr('transform', function(d) {
-            return 'translate(' + d.x + ',' + d.y + ')';
+            return 'translate(' + d.x0 + ',' + d.y0 + ')';
         })
-      .call(d3.behavior.drag()
-        .origin(function(d) { return d; })
-        .on('dragstart', function() {
-            this.parentNode.appendChild(this);
-        })
-        .on('drag', dragmove));
+        .call(d3.drag()
+            .on('start', function() {
+                this.parentNode.appendChild(this);
+            })
+            .on('drag', dragmove)
+        );
 
     node.append('rect')
-        .attr('height', function(d) { return d.dy; })
-        .attr('width', sankey.nodeWidth())
+        .attr('height', function(d) { return d.y1 - d.y0; })
+        .attr('width', function(d) { return d.x1 - d.x0; })
         .style('fill', function(d) {
             return d.color = color(d);
         })
@@ -167,27 +174,27 @@ d3.json('/api/CrontabberState/', function(data) {
         .style('stroke', function(d) {
             return d3.rgb(d.color).darker(2);
         })
-      .append('title')
+        .append('title')
         .text(title)
         .style(color);
 
     node.append('text')
         .attr('x', -6)
-        .attr('y', function(d) { return d.dy / 2; })
+        .attr('y', function(d) { return (d.y1 - d.y0) / 2; })
         .attr('dy', '.35em')
         .attr('text-anchor', 'end')
         .attr('transform', null)
         .text(function(d) { return d.name; })
-      .filter(function(d) { return d.x < width / 2;})
+        .filter(function(d) { return d.x0 < width / 2;})
         .attr('x', 6 + sankey.nodeWidth())
         .attr('text-anchor', 'start');
 
     function dragmove(d) {
-        d.y = Math.max(0, Math.min(height - d.dy, d3.event.y));
+        d.y0 = Math.max(0, Math.min(height - (d.y1 - d.y0), d3.event.y));
         d3.select(this).attr(
             'transform',
-            'translate(' + d.x + ',' + d.y + ')');
-        sankey.relayout();
+            'translate(' + d.x0 + ',' + d.y0 + ')');
+        sankey.update(graph);
         link.attr('d', path);
     }
 
@@ -212,7 +219,7 @@ d3.json('/api/CrontabberState/', function(data) {
 
     thead.append('tr').selectAll('th')
         .data(tableFields)
-      .enter().append('th')
+        .enter().append('th')
         .text(function capitalize(s) {
             return s[0].toUpperCase() + s.slice(1).replace('_', ' ');
         })
