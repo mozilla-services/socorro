@@ -459,9 +459,12 @@ class PolyStorageError(Exception, collections.MutableSequence):
         self.exceptions.__setitem__(index, value)
 
     def __str__(self):
-        return '%s %s' % (self.args[0],
-                          ','.join(repr(e[1]).encode('ascii', 'ignore')
-                                   for e in self.exceptions))
+        output = []
+        if self.args:
+            output.append(self.args[0])
+        for e in self.exceptions:
+            output.append(repr(e[1]).encode('ascii', 'ignore'))
+        return ','.join(output)
 
 
 class PolyCrashStorage(CrashStorageBase):
