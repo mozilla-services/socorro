@@ -27,11 +27,6 @@ pipeline {
     SAUCELABS = credentials('SAUCELABS')
   }
   stages {
-    stage('Lint') {
-      steps {
-        sh "tox -c e2e-tests/tox.ini -e flake8"
-      }
-    }
     stage('Test') {
       steps {
         writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
