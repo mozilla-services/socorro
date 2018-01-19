@@ -144,7 +144,7 @@ services:
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
   elasticsearch:
-    image: elasticsearch:1.4.5
+    image: mozilla/socorro_elasticsearch:1.4.5
     ports:
       - "9200:9200"
       - "9300:9300"
