@@ -181,7 +181,11 @@
                             </tr>
                             <tr title="{{ fields_desc['processed_crash.build'] }}">
                                 <th scope="row">Build ID</th>
-                                <td>{{ report.build }}</td>
+                                <td>
+                                    <a href="https://mozilla-services.github.io/buildhub/?{{ make_query_string(q=report.build) }}">
+                                        {{ report.build }}
+                                    </a>
+                                </td>
                             </tr>
 
                             {# OS #}
