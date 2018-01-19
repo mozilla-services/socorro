@@ -16,7 +16,9 @@ PRODUCTS="firefox,mobile"
 CRONTABBERCMD="./scripts/socorro crontabber"
 
 
-# Fetch release data -- do it as the user so it can cache things
+# Fetch release data -- do it as the user so it can cache things, but reset
+# the ftpscraper job first
+docker-compose run crontabber ${CRONTABBERCMD} --reset-job=ftpscraper
 docker-compose run -u "${HOSTUSER}" crontabber ${CRONTABBERCMD} \
                --job=ftpscraper \
                --crontabber.class-FTPScraperCronApp.cachedir=${CACHEDIR} \
