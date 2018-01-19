@@ -12,10 +12,9 @@ import elasticsearch
 from configman import Namespace
 from configman.converters import class_converter, list_converter
 
-from socorro.external.crashstorage_base import CrashStorageBase
+from socorro.external.crashstorage_base import CrashStorageBase, Redactor
 from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
-from socorro.external.crashstorage_base import Redactor
 
 
 class RawCrashRedactor(Redactor):
@@ -51,6 +50,31 @@ def is_valid_key(key):
 
     """
     return bool(VALID_KEY.match(key))
+
+
+def remove_bad_keys(data):
+    """Removes keys from the top-level of the dict that are bad
+
+    Good keys satisfy the following properties:
+
+    * have one or more characters
+    * are composed of a-zA-Z0-9_-
+
+    Anything else is a bad key and needs to be removed.
+
+    Note: This modifies the data dict in-place and only looks at the top level.
+
+    :arg dict data: the data to remove bad keys from
+
+    """
+    if not data:
+        return
+
+    # Copy the list of things we're iterating over because we're mutating
+    # the dict in place.
+    for key in list(data.keys()):
+        if not is_valid_key(key):
+            del data[key]
 
 
 class ESCrashStorage(CrashStorageBase):
@@ -124,11 +148,25 @@ class ESCrashStorage(CrashStorageBase):
 
         return index
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
-                               crash_id):
-        """This is the only write mechanism that is actually employed in normal
-        usage.
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """Save raw and processed crash data to Elasticsearch
+
+        Note: This is the only write mechanism that is actually employed in
+        normal usage.
+
         """
+
+        # Massage the crash such that the date_processed field is formatted
+        # in the fashion of our established mapping.
+        self.reconstitute_datetimes(processed_crash)
+
+        # Remove bad keys from the raw crash--these keys are essentially
+        # user-provided and can contain junk data
+        remove_bad_keys(raw_crash)
+
+        # Capture crash data size metrics--do this only after we've cleaned up
+        # the crash data
+        self._capture_crash_metrics(raw_crash, processed_crash)
 
         crash_document = {
             'crash_id': crash_id,
@@ -136,6 +174,32 @@ class ESCrashStorage(CrashStorageBase):
             'raw_crash': raw_crash
         }
 
+        self.transaction(
+            self._submit_crash_to_elasticsearch,
+            crash_document=crash_document
+        )
+
+    @staticmethod
+    def reconstitute_datetimes(processed_crash):
+        # FIXME(willkg): These should be specified in super_search_fields.py
+        # and not hard-coded
+        datetime_fields = [
+            'submitted_timestamp',
+            'date_processed',
+            'client_crash_date',
+            'started_datetime',
+            'startedDateTime',
+            'completed_datetime',
+            'completeddatetime',
+        ]
+        for a_key in datetime_fields:
+            if a_key not in processed_crash:
+                continue
+
+            processed_crash[a_key] = string_to_datetime(processed_crash[a_key])
+
+    def _capture_crash_metrics(self, raw_crash, processed_crash):
+        """Capture metrics about crash data being saved to Elasticsearch"""
         # NOTE(willkg): this is a hard-coded keyname to match what the statsdbenchmarkingwrapper
         # produces for processor crashstorage classes. This is only used in that context, so we're
         # hard-coding this now rather than figuring out a better way to carry that name through.
@@ -157,69 +221,10 @@ class ESCrashStorage(CrashStorageBase):
         except Exception:
             # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
             # later.
-            self.config.logger.exception('something went wrong when capturing raw_crash_size')
-
-        self.transaction(
-            self._submit_crash_to_elasticsearch,
-            crash_document=crash_document
-        )
-
-    @staticmethod
-    def reconstitute_datetimes(processed_crash):
-        datetime_fields = [
-            'submitted_timestamp',
-            'date_processed',
-            'client_crash_date',
-            'started_datetime',
-            'startedDateTime',
-            'completed_datetime',
-            'completeddatetime',
-        ]
-        for a_key in datetime_fields:
-            try:
-                processed_crash[a_key] = string_to_datetime(
-                    processed_crash[a_key]
-                )
-            except KeyError:
-                # not there? we don't care
-                pass
-
-    @staticmethod
-    def remove_bad_keys(data):
-        """Removes keys from the top-level of the dict that are bad
-
-        Good keys satisfy the following properties:
-
-        * have one or more characters
-        * are composed of a-zA-Z0-9_-
-
-        Anything else is a bad key and needs to be removed.
-
-        This modifies the data dict in-place and only looks at the top level.
-
-        :arg dict data: the data to remove bad keys from
-
-        """
-        if not data:
-            return
-
-        # Copy the list of things we're iterating over because we're mutating
-        # the dict in place.
-        for key in list(data.keys()):
-            if not is_valid_key(key):
-                del data[key]
+            self.config.logger.exception('something went wrong when capturing processed_crash_size')
 
     def _submit_crash_to_elasticsearch(self, connection, crash_document):
-        """Submit a crash report to elasticsearch.
-        """
-        # Massage the crash such that the date_processed field is formatted
-        # in the fashion of our established mapping.
-        self.reconstitute_datetimes(crash_document['processed_crash'])
-
-        # Remove bad keys from the raw crash.
-        self.remove_bad_keys(crash_document['raw_crash'])
-
-        # Obtain the index name.
+        """Submit a crash report to elasticsearch"""
         es_index = self.get_index_for_crash(
             crash_document['processed_crash']['date_processed']
         )
