@@ -9,6 +9,15 @@ set -e
 # Run scripts for setting up data sources for the local development environment.
 # This assumes that it is running in the webapp docker container.
 
+# Drop and re-create the breakpad database with tables, stored procedures,
+# types, indexes, and keys; also bulk-loads static data for some lookup tables
 /app/docker/run_setup_postgres.sh
+
+# Drop and re-create local S3 buckets
 /app/docker/run_recreate_s3_buckets.sh
+
+# Delete all Elasticsearch indices
 /app/scripts/socorro clear_es_indices
+
+# Initialize the crontabber bookkeeping for all configured jobs to success
+/app/scripts/socorro crontabber --mark-success=all
