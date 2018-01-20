@@ -260,9 +260,8 @@ class Processor2015(RequiredConfig):
             # the processor to be responsive to requests to shut down.
             self.quit_check()
 
-            processor_meta_data.started_timestamp = self._log_job_start(
-                crash_id
-            )
+            start_time = self.config.logger.info("starting job: %s", crash_id)
+            processor_meta_data.started_timestamp = start_time
 
             # apply_all_rules
             for rule in self.rules:
@@ -300,26 +299,15 @@ class Processor2015(RequiredConfig):
         # for backwards compatibility:
         processed_crash.completeddatetime = completed_datetime
 
-        self._log_job_end(
-            processed_crash.success,
+        self.config.logger.info(
+            "finishing %s job: %s",
+            'successful' if processed_crash.success else 'failed',
             crash_id
         )
         return processed_crash
 
     def reject_raw_crash(self, crash_id, reason):
-        self._log_job_start(crash_id)
         self.config.logger.warning('%s rejected: %s', crash_id, reason)
-        self._log_job_end(False, crash_id)
-
-    def _log_job_start(self, crash_id):
-        self.config.logger.info("starting job: %s", crash_id)
-
-    def _log_job_end(self, success, crash_id):
-        self.config.logger.info(
-            "finishing %s job: %s",
-            'successful' if success else 'failed',
-            crash_id
-        )
 
     def close(self):
         self.config.logger.debug('done closing rules')
