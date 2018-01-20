@@ -289,7 +289,7 @@ class Processor2015(RequiredConfig):
         processed_crash.startedDateTime = processed_crash.started_datetime
         processed_crash.signature = 'EMPTY: crash failed to process'
 
-        crash_id = raw_crash.get('uuid', 'unknown')
+        crash_id = raw_crash['uuid']
         try:
             # quit_check calls ought to be scattered around the code to allow
             # the processor to be responsive to requests to shut down.

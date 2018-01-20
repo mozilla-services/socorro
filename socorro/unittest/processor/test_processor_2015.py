@@ -39,6 +39,7 @@ class TestProcessor2015(TestCase):
             OSInfoRule,
         ])
         raw_crash = DotDict()
+        raw_crash.uuid = "1"
         raw_dumps = {}
         processed_crash = DotDict()
         processed_crash.processor_notes = "we've been here before; yep"

@@ -283,8 +283,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             processed_crash = DotDict()
 
         try:
-            if 'uuid' not in raw_crash:
-                raw_crash.uuid = crash_id
             processed_crash = (
                 self.processor.process_crash(
                     raw_crash,
