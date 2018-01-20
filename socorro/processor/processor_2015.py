@@ -345,15 +345,6 @@ class Processor2015(RequiredConfig):
         self.config.logger.warning('%s rejected: %s', crash_id, reason)
 
     def close(self):
-        self.config.logger.debug('done closing rules')
+        self.config.logger.debug('closing rules')
         for rule in self.rules:
-            try:
-                self.config.logger.debug('trying to close %s',
-                                         rule.__class__)
-                close_method = rule.close
-            except AttributeError:
-                self.config.logger.debug('%s has no close',
-                                         rule.__class__)
-                # no close method mean no need to close
-                continue
-            close_method()
+            rule.close()

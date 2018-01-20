@@ -589,11 +589,6 @@ class TestTransformRules(TestCase):
             'socorro.unittest.lib.test_transform_rules.'
             'RuleTestDangerous'
         )
-        config.logger.debug.assert_any_call(
-            '%s has no close',
-            'socorro.unittest.lib.test_transform_rules.'
-            'RuleTestNoCloseMethod'
-        )
 
     def test_rules_close_bubble_close_errors(self):
         config = DotDict()

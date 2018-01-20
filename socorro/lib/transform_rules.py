@@ -186,6 +186,9 @@ class Rule(RequiredConfig):
         else:
             return (False, None)
 
+    def close(self):
+        self.config.logger.debug('null close on rule %s', self.__class__)
+
 
 class TransformRule(Rule):
     """a pairing of two functions with default parameters to be used as
@@ -320,10 +323,6 @@ class TransformRule(Rule):
             return self.__dict__ == another.__dict__
         else:
             return False
-
-    def close(self):
-        self.config.logger.debug('null close on rule %s', self.__class__)
-        pass
 
 
 class TransformRuleSystem(RequiredConfig):
