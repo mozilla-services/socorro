@@ -391,11 +391,6 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         'return_code_key',
         'classifications.jit.category_return_code',
     )
-    required_config.add_option(
-        'threshold',
-        doc="max number of frames until encountering target frame",
-        default=8
-    )
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (

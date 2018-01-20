@@ -529,7 +529,6 @@ class TestJitCrashCategorizeRule(TestCase):
         config.command_pathname = \
             '/data/socorro/stackwalk/bin/jit-crash-categorize'
         config.temporary_file_system_storage_path = '/tmp'
-        config.threshold = 8
         return config
 
     def get_basic_processor_meta(self):
