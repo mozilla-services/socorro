@@ -352,7 +352,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
                 dump_file_pathname = raw_dumps[dump_name]
 
-                if self.config.chatty:
+                if self.config.get('chatty'):
                     self.config.logger.debug(
                         "BreakpadStackwalkerRule2015: %s, %s",
                         dump_name,
