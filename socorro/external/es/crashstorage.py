@@ -13,8 +13,13 @@ from configman import Namespace
 from configman.converters import class_converter, list_converter
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
+from socorro.external.es.super_search_fields import FIELDS
 from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
+
+
+# Maximum size in characters for a keyword field value
+MAX_KEYWORD_FIELD_VALUE_SIZE = 10000
 
 
 class RawCrashRedactor(Redactor):
@@ -75,6 +80,36 @@ def remove_bad_keys(data):
     for key in list(data.keys()):
         if not is_valid_key(key):
             del data[key]
+
+
+def truncate_keyword_field_values(fields, data):
+    """Truncates values of keyword fields greater than 10,000 characters
+
+    Note: This modifies the data dict in-place and only looks at the top level.
+
+    :arg dict fields: the super search fields schema
+    :arg dict data: the data to look through
+
+    """
+    # Go through all the fields marked as keyword and truncate values
+    # if they're too large
+
+    for name, properties in fields.items():
+        field_name = properties.get('in_database_name')
+        storage = properties.get('storage_mapping')
+        if not field_name or not storage:
+            continue
+
+        analyzer = storage.get('analyzer')
+        if analyzer != 'keyword':
+            continue
+
+        value = data.get(field_name)
+        if isinstance(value, basestring) and len(value) > MAX_KEYWORD_FIELD_VALUE_SIZE:
+            data[field_name] = value[:MAX_KEYWORD_FIELD_VALUE_SIZE]
+
+            # FIXME(willkg): When we get metrics throughout the processor, we should
+            # keep track of this with an .incr().
 
 
 class ESCrashStorage(CrashStorageBase):
@@ -163,6 +198,10 @@ class ESCrashStorage(CrashStorageBase):
         # Remove bad keys from the raw crash--these keys are essentially
         # user-provided and can contain junk data
         remove_bad_keys(raw_crash)
+
+        # Truncate values that are too long
+        truncate_keyword_field_values(FIELDS, raw_crash)
+        truncate_keyword_field_values(FIELDS, processed_crash)
 
         # Capture crash data size metrics--do this only after we've cleaned up
         # the crash data
