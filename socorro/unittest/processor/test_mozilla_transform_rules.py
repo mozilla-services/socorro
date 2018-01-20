@@ -156,7 +156,6 @@ class TestProductRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -221,8 +220,6 @@ class TestUserDataRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
-
         return config
 
     def get_basic_processor_meta(self):
@@ -276,7 +273,6 @@ class TestEnvironmentRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -324,7 +320,6 @@ class TestPluginRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -388,7 +383,6 @@ class TestAddonsRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -476,7 +470,6 @@ class TestDatesAndTimesRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -748,7 +741,6 @@ class TestJavaProcessRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -797,7 +789,6 @@ class TestOutOfMemoryBinaryRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -904,7 +895,6 @@ class TestOutOfMemoryBinaryRule(TestCase):
         config = CDotDict()
         config.max_size_uncompressed = 1024
         config.logger = Mock()
-        config.chatty = False
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
@@ -982,7 +972,6 @@ class TestProductRewrite(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -1035,7 +1024,6 @@ class TestESRVersionRewrite(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -1110,7 +1098,6 @@ class TestPluginContentURL(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -1165,7 +1152,6 @@ class TestPluginUserComment(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -1220,7 +1206,6 @@ class TestExploitablityRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         return config
 
@@ -1272,7 +1257,7 @@ class TestFlashVersionRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
+
         config.flash_re = re.compile(
             FlashVersionRule.required_config.flash_re.default
         )
@@ -1347,7 +1332,7 @@ class TestWinsock_LSPRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
+
         return config
 
     def get_basic_processor_meta(self):
@@ -1402,7 +1387,7 @@ class TestTopMostFilesRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
+
         return config
 
     def get_basic_processor_meta(self):
@@ -1513,7 +1498,7 @@ class TestBetaVersion(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
+
         return config
 
     def get_basic_processor_meta(self):
@@ -1626,7 +1611,7 @@ class TestAuroraVersionFixitRule:
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
+
         return config
 
     def test_predicate(self):
@@ -1659,7 +1644,6 @@ class TestOsPrettyName(TestCase):
     def test_everything_we_hoped_for(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1751,7 +1735,7 @@ class TestThemePrettyNameRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = False
+
         return config
 
     def get_basic_processor_meta(self):

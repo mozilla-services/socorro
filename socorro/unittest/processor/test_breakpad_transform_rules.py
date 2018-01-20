@@ -200,7 +200,6 @@ class TestCrashingThreadRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = True
         return config
 
     def get_basic_processor_meta(self):
@@ -255,7 +254,6 @@ class TestExternalProcessRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = True
         config.dump_field = 'upload_file_minidump'
         config.command_line = (
             'timeout -s KILL 30 {command_pathname} '
@@ -391,7 +389,6 @@ class TestBreakpadTransformRule2015(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = True
         config.dump_field = 'upload_file_minidump'
         config.command_line = (
             BreakpadStackwalkerRule2015.required_config .command_line.default
@@ -523,7 +520,6 @@ class TestJitCrashCategorizeRule(TestCase):
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
-        config.chatty = True
         config.dump_field = 'upload_file_minidump'
         config.command_line = (
             JitCrashCategorizeRule.required_config.command_line.default

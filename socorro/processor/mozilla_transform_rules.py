@@ -158,25 +158,12 @@ class AddonsRule(Rule):
 
         original_addon_str = raw_crash.get('Add-ons', '')
         if not original_addon_str:
-            if self.config.chatty:
-                self.config.logger.debug(
-                    'AddonsRule: no addons'
-                )
             processed_crash.addons = []
         else:
-            if self.config.chatty:
-                self.config.logger.debug(
-                    'AddonsRule: trying to split addons'
-                )
             processed_crash.addons = [
                 unquote_plus(self._get_formatted_addon(x))
                 for x in original_addon_str.split(',')
             ]
-        if self.config.chatty:
-            self.config.logger.debug(
-                'AddonsRule: done: %s',
-                processed_crash.addons
-            )
 
         return True
 

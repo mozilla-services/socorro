@@ -319,8 +319,6 @@ class TestTransformRules(TestCase):
     def test_rule_simple(self):
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
 
         r1 = transform_rules.Rule(fake_config)
         assert r1.predicate(None, None, None, None) is True
@@ -350,8 +348,6 @@ class TestTransformRules(TestCase):
     def test_rule_exceptions(self):
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
 
         class BadPredicate(transform_rules.Rule):
 
@@ -418,8 +414,6 @@ class TestTransformRules(TestCase):
 
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
         fake_config.sentry = DotDict()
 
         class SomeError(Exception):
@@ -487,8 +481,6 @@ class TestTransformRules(TestCase):
 
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
         fake_config.sentry = DotDict()
         fake_config.sentry.dsn = (
             'https://6e48583:e484@sentry.example.com/01'
@@ -514,8 +506,6 @@ class TestTransformRules(TestCase):
 
     def test_rules_in_config(self):
         config = DotDict()
-        config.chatty_rules = False
-        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config['RuleTestLaughable.laughable'] = 'wilma'
@@ -543,8 +533,6 @@ class TestTransformRules(TestCase):
     def test_rules_close(self):
         config = DotDict()
         config.logger = Mock().s
-        config.chatty_rules = False
-        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config['RuleTestLaughable.laughable'] = 'wilma'
@@ -572,8 +560,6 @@ class TestTransformRules(TestCase):
     def test_rules_close_if_close_method_available(self):
         config = DotDict()
         config.logger = Mock()
-        config.chatty_rules = False
-        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config.rules_list = DotDict()

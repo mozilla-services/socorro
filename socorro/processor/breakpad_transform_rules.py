@@ -119,11 +119,6 @@ class ExternalProcessRule(Rule):
             return {}
 
     def _execute_external_process(self, command_line, processor_meta):
-        if self.config.get('chatty', False):
-            self.config.logger.debug(
-                "External Command: %s",
-                command_line
-            )
         subprocess_handle = subprocess.Popen(
             command_line,
             shell=True,
@@ -352,13 +347,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
                 dump_file_pathname = raw_dumps[dump_name]
 
-                if self.config.get('chatty'):
-                    self.config.logger.debug(
-                        "BreakpadStackwalkerRule2015: %s, %s",
-                        dump_name,
-                        dump_file_pathname
-                    )
-
                 command_line = self.expand_commandline(
                     dump_file_pathname=dump_file_pathname,
                     raw_crash_pathname=raw_crash_pathname
@@ -408,9 +396,6 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         doc="max number of frames until encountering target frame",
         default=8
     )
-
-    def __init__(self, config):
-        super(JitCrashCategorizeRule, self).__init__(config)
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (
