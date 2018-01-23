@@ -29,7 +29,7 @@ pipeline {
       }
       steps {
         writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
-        sh "pytest e2e-tests" +
+        sh "pytest e2e-tests " +
           "-n=${PYTEST_PROCESSES} " +
           "--tb=short " +
           "--color=yes " +
