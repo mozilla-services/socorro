@@ -27,9 +27,11 @@ class SetRemoteAddrFromForwardedFor(object):
         except KeyError:
             pass
         else:
-            # HTTP_X_FORWARDED_FOR can be a comma-separated list of IPs. The
-            # client's IP will be the first one.
-            real_ip = real_ip.split(',')[0].strip()
+            # HTTP_X_FORWARDED_FOR can be a comma-separated list of IPs.
+            # Production Socorro runs behind an Amazon ELB, which puts
+            # the client IP at the end of the list instead of the
+            # beginning.
+            real_ip = real_ip.split(',')[-1].strip()
             request.META['REMOTE_ADDR'] = real_ip
 
 
