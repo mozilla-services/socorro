@@ -25,6 +25,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     app_name = 'processor'
     app_version = '3.0'
     app_description = __doc__
+    config_module = 'socorro.processor.config'
 
     required_config = Namespace()
     # configuration is broken into three namespaces: processor,

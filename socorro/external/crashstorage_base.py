@@ -15,7 +15,7 @@ import datetime
 from socorro.lib.util import DotDict as SocorroDotDict
 
 from configman import Namespace, RequiredConfig
-from configman.converters import classes_in_namespaces_converter, class_converter
+from configman.converters import class_converter
 from configman.dotdict import DotDict as ConfigmanDotDict
 
 
@@ -467,6 +467,50 @@ class PolyStorageError(Exception, collections.MutableSequence):
         return ','.join(output)
 
 
+class StorageNamespaceList(collections.Sequence):
+    """A sequence of configuration namespaces for crash stores.
+
+    Functionally, this is a list of strings that correspond to a configuration
+    namespace under the key ``destination.{namespace}``. Each entry creates a
+    new crashstorage instance that crashes are saved to.
+
+    We use a custom subclass so that we can add ``self.required_config``, which
+    contains options for each crashstorage class. Doing this lets configman find
+    and include any config options that those classes define via their own
+    ``required_config`` attributes.
+    """
+    def __init__(self, storage_namespaces):
+        self.storage_namespaces = storage_namespaces
+        self.required_config = Namespace()
+
+        for storage_name in storage_namespaces:
+            self.required_config[storage_name] = Namespace()
+            self.required_config[storage_name].add_option(
+                'crashstorage_class',
+                from_string_converter=class_converter,
+            )
+
+    def __len__(self):
+        return len(self.storage_namespaces)
+
+    def __getitem__(self, key):
+        return self.storage_namespaces[key]
+
+    def to_str(self):
+        return ','.join(self.storage_namespaces)
+
+    @classmethod
+    def converter(cls, storage_namespace_list_str):
+        """from_string_converter-compatible factory method.
+
+        parameters:
+            storage_namespace_list_str - comma-separated list of config
+                namespaces containing info about crash storages.
+        """
+        namespaces = [name.strip() for name in storage_namespace_list_str.split(',')]
+        return cls(namespaces)
+
+
 class PolyCrashStorage(CrashStorageBase):
     """a crashstorage implementation that encapsulates a collection of other
     crashstorage instances.  Any save operation applied to an instance of this
@@ -476,24 +520,31 @@ class PolyCrashStorage(CrashStorageBase):
     the 'get' operations.
 
     The contained crashstorage instances are specified in the configuration.
-    Each class specified in the 'storage_classes' config option will be given
-    its own numbered namespace in the form 'storage%d'.  With in the namespace,
-    the class itself will be referred to as just 'store'.  Any configuration
-    requirements within the class 'store' will be isolated within the local
-    namespace.  That allows multiple instances of the same storageclass to
-    avoid name collisions.
+    Each key in the `storage_namespaces`` config option will be used to create
+    a crashstorage instance that this saves to. The keys are namespaces in the
+    config, and any options defined under those namespaces will be isolated
+    within the config passed to the crashstorage instance. For example:
+
+    .. code-block:: ini
+        destination.crashstorage_namespaces=postgres,s3
+
+        destination.postgres.crashstorage_class=module.path.PostgresStorage
+        destination.postgres.my.config=Postgres
+
+        destination.s3.crashstorage_class=module.path.S3Storage
+        destination.s3.my.config=S3
+
+    With this config, there are two crashstorage instances this class will
+    create: one for Postgres, and one for S3. The PostgresStorage instance will
+    see the ``my.config`` option as being set to "Postgres", while the S3Storage
+    instance will see ``my.config`` set to "S3".
     """
     required_config = Namespace()
     required_config.add_option(
-        'storage_classes',
-        doc='a comma delimited list of storage classes',
+        'storage_namespaces',
+        doc='a comma delimited list of storage namespaces',
         default='',
-        from_string_converter=classes_in_namespaces_converter(
-            template_for_namespace='storage%d',
-            name_of_class_option='crashstorage_class',
-            # we instantiate manually for thread safety
-            instantiate_classes=False,
-        ),
+        from_string_converter=StorageNamespaceList.converter,
         likely_to_be_changed=True,
     )
 
@@ -506,13 +557,13 @@ class PolyCrashStorage(CrashStorageBase):
                                   long running operations.
 
         instance variables:
-            self.storage_namespaces - the list of the namespaces inwhich the
+            self.storage_namespaces - the list of the namespaces in which the
                                       subordinate instances are stored.
             self.stores - instances of the subordinate crash stores
 
         """
         super(PolyCrashStorage, self).__init__(config, quit_check_callback)
-        self.storage_namespaces = config.storage_classes.subordinate_namespace_names
+        self.storage_namespaces = config.storage_namespaces
         self.stores = ConfigmanDotDict()
         for a_namespace in self.storage_namespaces:
             self.stores[a_namespace] = config[a_namespace].crashstorage_class(

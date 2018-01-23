@@ -136,6 +136,11 @@ class SocorroApp(RequiredConfig):
     app_version = "1.0"
     app_description = 'base class for app system'
 
+    #: String containing a module import path. The module is used as a
+    #: source for default configuration values. If None, this makes no
+    #: changes to the configuration defaults.
+    config_module = None
+
     required_config = Namespace()
 
     def __init__(self, config):
@@ -202,6 +207,8 @@ class SocorroApp(RequiredConfig):
                 # pull in the application defaults from the 'application'
                 # configman option, once it has been defined
                 application_defaults_proxy,
+                # Get values from the app's config module
+                klass.config_module,
                 # pull in any configuration file
                 ConfigFileFutureProxy,
                 # get values from the environment
@@ -209,6 +216,9 @@ class SocorroApp(RequiredConfig):
                 # use the command line to get the final overriding values
                 command_line
             ]
+
+            # Remove potential None values
+            values_source_list = [x for x in values_source_list if x is not None]
         elif application_defaults_proxy not in values_source_list:
             values_source_list = (
                 [application_defaults_proxy] + values_source_list
