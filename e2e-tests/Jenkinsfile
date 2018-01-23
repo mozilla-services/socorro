@@ -6,7 +6,11 @@ def capabilities = [
 ]
 
 pipeline {
-  agent any
+  agent {
+    dockerfile {
+      dir 'e2e-tests'
+    }
+  }
   libraries {
     lib('fxtest@1.10')
   }
@@ -42,8 +46,8 @@ pipeline {
           stash includes: 'e2e-tests/results/*', name: 'results'
           archiveArtifacts 'e2e-tests/results/*'
           junit 'e2e-tests/results/*.xml'
-          submitToActiveData('e2e-tests/results/py27_raw.txt')
-          submitToTreeherder('socorro', 'e2e', 'End-to-end integration tests', 'e2e-tests/results/*', 'e2e-tests/results/py27_tbpl.txt')
+          submitToActiveData('e2e-tests/results/raw.txt')
+          submitToTreeherder('socorro', 'e2e', 'End-to-end integration tests', 'e2e-tests/results/*', 'e2e-tests/results/tbpl.txt')
         }
       }
     }
@@ -66,7 +70,7 @@ pipeline {
     failure {
       emailext(
         attachLog: true,
-        attachmentsPattern: 'e2e-tests/results/py27.html',
+        attachmentsPattern: 'e2e-tests/results/index.html',
         body: '$BUILD_URL\n\n$FAILED_TESTS',
         replyTo: '$DEFAULT_REPLYTO',
         subject: '$DEFAULT_SUBJECT',
