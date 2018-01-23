@@ -127,6 +127,7 @@ BLACKLIST = (
     # because it's very sensitive and we don't want to expose it
     'Query',
     # because it's an internal thing only
+    'GraphicsDevices',
     'GraphicsReport',
     'Priorityjob',
 )
