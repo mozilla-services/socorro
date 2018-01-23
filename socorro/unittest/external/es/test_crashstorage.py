@@ -11,12 +11,13 @@ import pytest
 
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
-    is_valid_key,
     ESCrashStorage,
     ESCrashStorageRedactedSave,
     ESCrashStorageRedactedJsonDump,
     ESBulkCrashStorage,
+    is_valid_key,
     RawCrashRedactor,
+    truncate_keyword_field_values,
 )
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.unittest.external.es.base import (
@@ -941,3 +942,99 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # a_processed_crash and a_raw_crash, then these numbers will change.
         assert 'call.histogram(\'processor.es.raw_crash_size\', 27)' in mock_calls
         assert 'call.histogram(\'processor.es.processed_crash_size\', 1785)' in mock_calls
+
+
+class Test_truncate_keyword_field_values:
+    @pytest.mark.parametrize('data, expected', [
+        # Top-level, non-basestring values are left alone
+        ({'key': None}, {'key': None}),
+        ({'key': 1}, {'key': 1}),
+
+        # Second-level values are left alone
+        ({'key': {'key': 'a' * 10001}}, {'key': {'key': 'a' * 10001}}),
+
+        # Top-level, basestring values are truncated if > 10,000 characters
+        ({'key': 'a' * 9999}, {'key': 'a' * 9999}),
+        ({'key': 'a' * 10000}, {'key': 'a' * 10000}),
+        ({'key': 'a' * 10001}, {'key': 'a' * 10000}),
+    ])
+    def test_truncate_keyword_field_values(self, data, expected):
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+
+        # Note: data is modified in place
+        truncate_keyword_field_values(fields, data)
+        assert data == expected
+
+    @pytest.mark.parametrize('fields', [
+        # Empty fields leaves data unchanged
+        {},
+
+        # No in_database_name leaves data unchanged
+        {
+            'key': {
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+
+        # No storage_mapping leaves data unchanged
+        {
+            'key': {
+                'in_database_name': 'key',
+            }
+        },
+
+        # Wrong in_database_name leaves data unchanged
+        {
+            'key': {
+                'in_database_name': 'different_key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+
+        # Wrong or missing analyzer leaves data unchanged
+        {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'type': 'string'
+                }
+            }
+        },
+        {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'semicolon_keywords',
+                    'type': 'string'
+                }
+            }
+        },
+    ])
+    def test_fields_handling(self, fields):
+        """Verify truncation only occurs if all requirements are true
+
+        This also verifies that access of FIELDS handles edge cases like
+        missing data.
+
+        """
+        original_data = {
+            'key': 'a' * 10001
+        }
+        data = deepcopy(original_data)
+
+        truncate_keyword_field_values(fields, data)
+        assert original_data == data
