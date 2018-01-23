@@ -6,11 +6,7 @@ def capabilities = [
 ]
 
 pipeline {
-  agent {
-    dockerfile {
-      dir 'e2e-tests'
-    }
-  }
+  agent any
   libraries {
     lib('fxtest@1.10')
   }
@@ -22,7 +18,9 @@ pipeline {
   stages {
     stage('Test') {
       agent {
-        dockerfile true
+        dockerfile {
+          dir 'e2e-tests/'
+        }
       }
       environment {
         PYTEST_PROCESSES = "${PYTEST_PROCESSES ?: "auto"}"
