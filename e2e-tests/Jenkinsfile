@@ -29,7 +29,7 @@ pipeline {
       }
       steps {
         writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
-        sh "pytest e2e-tests " +
+        sh "pytest " +
           "-n=${PYTEST_PROCESSES} " +
           "--tb=short " +
           "--color=yes " +
@@ -37,7 +37,8 @@ pipeline {
           "--variables=e2e-tests/capabilities.json " +
           "--junit-xml=e2e-tests/results/junit.xml --html=e2e-tests/results/index.html --self-contained-html " +
           "--log-raw=e2e-tests/results/raw.txt " +
-          "--log-tbpl=e2e-tests/results/tbpl.txt"
+          "--log-tbpl=e2e-tests/results/tbpl.txt " +
+          "e2e-tests"
       }
       post {
         always {
