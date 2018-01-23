@@ -19,7 +19,6 @@ from socorro.external.es.crashstorage import (
     RawCrashRedactor,
     truncate_keyword_field_values,
 )
-# from socorro.external.es.super_search_fields import FIELDS
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,

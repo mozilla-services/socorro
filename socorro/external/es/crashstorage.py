@@ -83,7 +83,8 @@ def remove_bad_keys(data):
 
 
 def truncate_keyword_field_values(fields, data):
-    """Truncates values of keyword fields greater than 10,000 characters
+    """Truncates values of keyword fields greater than MAX_KEYWORD_FIELD_VALUE_SIZE
+    characters
 
     Note: This modifies the data dict in-place and only looks at the top level.
 
@@ -94,7 +95,7 @@ def truncate_keyword_field_values(fields, data):
     # Go through all the fields marked as keyword and truncate values
     # if they're too large
 
-    for name, properties in fields.items():
+    for properties in fields.values():
         field_name = properties.get('in_database_name')
         storage = properties.get('storage_mapping')
         if not field_name or not storage:
@@ -205,7 +206,7 @@ class ESCrashStorage(CrashStorageBase):
 
         # Capture crash data size metrics--do this only after we've cleaned up
         # the crash data
-        self._capture_crash_metrics(raw_crash, processed_crash)
+        self.capture_crash_metrics(raw_crash, processed_crash)
 
         crash_document = {
             'crash_id': crash_id,
@@ -237,7 +238,7 @@ class ESCrashStorage(CrashStorageBase):
 
             processed_crash[a_key] = string_to_datetime(processed_crash[a_key])
 
-    def _capture_crash_metrics(self, raw_crash, processed_crash):
+    def capture_crash_metrics(self, raw_crash, processed_crash):
         """Capture metrics about crash data being saved to Elasticsearch"""
         # NOTE(willkg): this is a hard-coded keyname to match what the statsdbenchmarkingwrapper
         # produces for processor crashstorage classes. This is only used in that context, so we're
