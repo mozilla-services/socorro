@@ -19,7 +19,7 @@ pipeline {
     stage('Test') {
       agent {
         dockerfile {
-          dir 'e2e-tests/'
+          dir 'e2e-tests'
         }
       }
       environment {
