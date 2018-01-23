@@ -4,53 +4,50 @@
 Elasticsearch
 =============
 
-FIXME(willkg): This needs to be updated, overhauled, and reduced.
-
-
 Features
 ========
 
 Socorro uses Elasticsearch as a back-end for several intensive features in the
-Web app. Here is a list of those features:
+web app. Here is a list of those features:
 
-* Super Search
+* **Super Search**
 
-  * probably the most important one, Super Search is an improved search page
-    that allows users to search through any field they like in the database. It
-    exposes convenient and powerful operators and allows to build complex
-    queries. It is also accessible via the public API, allowing users to build
-    their own tools.
+  Probably the most important one, Super Search is an improved search page
+  that allows users to search through any field they like in the database. It
+  exposes convenient and powerful operators and allows to build complex
+  queries. It is also accessible via the public API, allowing users to build
+  their own tools.
 
-  * Example: https://crash-stats.mozilla.com/search/
+  Example: https://crash-stats.mozilla.com/search/
 
-* Custom Queries
+* **Custom Queries**
 
-  * based on Super Search, this feature allows users to write JSON queries that
-    are executed directly against Elasticsearch. This is a very sensitive
-    feature that gives unrestricted access to your data. Specific permissions
-    are needed for users to have access to it.
+  Based on Super Search, this feature allows users to write JSON queries that
+  are executed directly against Elasticsearch. This is a very sensitive
+  feature that gives unrestricted access to your data. Specific permissions
+  are needed for users to have access to it.
 
-  * Example: nope, this is not publicly accessible :)
+  Example: nope, this is not publicly accessible :)
 
-* Signature Report
+* **Signature Report**
 
-  * a replacement for the old ``/report/list/`` page. It is heavily based
-    on Super Search, and provides useful information about crashes that
-    share a signature. Features include listing crash reports, listing user
-    comments and showing aggregation on any field of the database.
+  A replacement for the old ``/report/list/`` page. It is heavily based
+  on Super Search, and provides useful information about crashes that
+  share a signature. Features include listing crash reports, listing user
+  comments and showing aggregation on any field of the database.
 
-  * Example: https://crash-stats.mozilla.com/signature/?signature=nsTimeout::~nsTimeout%28%29
+  Example: https://crash-stats.mozilla.com/signature/?signature=nsTimeout::~nsTimeout%28%29
 
-* Profile page
+* **Profile page**
 
-  * on the profile page, Super Search is used to show the recent crash
-    reports that contain the user's email address.
+  On the profile page, Super Search is used to show the recent crash
+  reports that contain the user's email address.
 
-  * Example: https://crash-stats.mozilla.com/profile/
+  Example: https://crash-stats.mozilla.com/profile/
 
 
-Supported versions
-==================
+Supported versions of Elasticsearch
+===================================
 
 Socorro currently requires Elasticsearch version 1.4.
 
@@ -58,89 +55,44 @@ Socorro currently requires Elasticsearch version 1.4.
 Configuration
 =============
 
-Back-end common
----------------
+You can see Elasticsearch common options by passing ``--help`` to the
+processor app and looking at the ``resource.elasticsearch`` options like
+this:: 
 
-The back-end configuration files lie in the ``./config/`` folder. All
-Elasticsearch-based services share the same core of options. As for other
-resources, it is recommended to put those options in a single file that you then
-include in other files.
-
-Here are the important options that you might want to change:
-
-+-----------------------------+-----------------------------------------------+
-| Option                      | Description                                   |
-+=============================+===============================================+
-| elasticsearch_urls          | A list of URLs to your Elasticsearch cluster. |
-+-----------------------------+-----------------------------------------------+
-| elasticsearch_index         | The main index used to store crash reports.   |
-|                             | Can be partitioned by date.                   |
-+-----------------------------+-----------------------------------------------+
-| elasticsearch_default_index | The index used by default when no partitioning|
-|                             | is needed.                                    |
-+-----------------------------+-----------------------------------------------+
-
-.. note::
-   There are more options but they should be self-explanatory. You can see them
-   by using the ``--help`` option of any Socorro app that uses Elasticsearch.
-   For example:
-   ``$ python ./socorro/processor/processor_app.py
-   --storage_classes=socorro.external.es.crashstorage.ESCrashStorage --help``
+  $ docker-compose run processor bash
+  app@processor:/app$ python ./socorro/processor/processor_app \
+      --destination.crashstorage_class=socorro.external.es.crashstorage.ESCrashStorage \
+      --help
 
 
-Processors
-----------
+As of this writing, it looks like this::
 
-Open the config file for processors: ``./config/processor.ini``. In the
-``[destination]`` namespace, look for the option called ``storage_classes``.
-That key contains the list of storage systems where the processors will save
-data. Add ``socorro.external.es.crashstorage.\ ESCrashStorage`` to that list to
-make your processors index data in Elasticsearch.
+  --resource.elasticsearch.elasticsearch_class
+    (default: socorro.external.es.connection_context.ConnectionContext)
 
-You will then need to add the specific configuration of Elasticsearch in your
-``processor.ini`` file. You can either edit the file manually to add the correct
-namespace and options, or you can regenerate the config file::
+  --resource.elasticsearch.elasticsearch_connection_wrapper_class
+    a classname for the type of wrapper for ES connections
+    (default: socorro.external.es.connection_context.Connection)
 
-    $ socorro processor --admin.conf=config/processor.ini --admin.dump_conf=config/processor.ini
+  --resource.elasticsearch.elasticsearch_doctype
+    the default doctype to use in elasticsearch
+    (default: crash_reports)
 
-Doing so will add the new Elasticsearch namespace and options to your file,
-filled with default values. You can then change them to fit your needs, or if
-you use a common ini for Elasticsearch, you can replace those options with an
-include::
+  --resource.elasticsearch.elasticsearch_index
+    an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+    (default: socorro%Y%W)
 
-    +include('common_elasticsearch.ini')
+  --resource.elasticsearch.elasticsearch_timeout
+    the time in seconds before a query to elasticsearch fails
+    (default: 30)
 
+  --resource.elasticsearch.elasticsearch_timeout_extended
+    the time in seconds before a query to elasticsearch fails in restricted sections
+    (default: 120)
 
-Front-end
----------
-
-Some of the features based on Elasticsearch are hidden behind switches (using
-django-waffle). You will need to activate those switches depending on the
-features you want to use.
-
-To activate a feature, use the ``manage.py`` tool::
-
-    $ ./webapp-django/manage.py switch <switch-name> [on, off] [--create]
-
-If it's the first time you turn a feature on, you will need to use the
-``--create`` option to create the switch.
-
-Here is a list of the switches you need to turn on to use each feature:
-
-+-----------------------+-----------------------------------------------------+
-| Feature               | Switches                                            |
-+=======================+=====================================================+
-|                       | there is no feature behind waffle at the moment     |
-+-----------------------+-----------------------------------------------------+
-
-Here are features that are enabled by default, that you need to switch if you
-want to *disable* them:
-
-+-----------------------+-----------------------------------------------------+
-| Feature               | Switches                                            |
-+=======================+=====================================================+
-| Custom Queries        | supersearch-custom-query-disabled                   |
-+-----------------------+-----------------------------------------------------+
+  --resource.elasticsearch.elasticsearch_urls
+    the urls to the elasticsearch instances
+    (default: http://elasticsearch:9200)
 
 
 Validate your configuration
@@ -163,74 +115,58 @@ parameter. That should return all the crash reports that were indexed in the
 passed week.
 
 
-Fake data for development
-=========================
-
-If you want to populate your Elasticsearch database with some fake data, the
-recommended way is to first insert fakedata into PostgreSQL and then migrate
-that data over to Elasticsearch. This way you will have consistent data accross
-both databases and will be able to have comparison points.
-
-To insert fake data into PostgreSQL, see :ref:`databasesetup-chapter`.
-
-When that is complete, run the following script to migrate the data from
-PostgreSQL to Elasticsearch::
-
-    $ python socorro/external/postgresql/crash_migration_app.py
-
-
 Master list of fields
 =====================
 
 Super Search, and thus all the features based on it, is powered by a master list
 of fields that tells it what data to expose and how to expose it. That list
-contains data about each field from Elasticsearch that can be manipulated. You
-can add new fields and edit existing ones from the admin zone of the Web app, in
-the Super Search Fields part.
+contains data about each field from Elasticsearch that can be manipulated.
 
-Here is an explanation of each parameter of a field:
+The list is managed in code in ``socorro/external/es/super_search_fields.py``
+as a dict of ``name`` -> ``properties``.
 
-+----------------------+------------------------------------------------------+
-| Parameter            | Description                                          |
-+======================+======================================================+
-| name                 | Name of the field, as exposed in the API.            |
-|                      | Must be unique.                                      |
-+----------------------+------------------------------------------------------+
-| in_database_name     | Name of the field in the database.                   |
-+----------------------+------------------------------------------------------+
-| namespace            | Namespace of the field. Separated with dots.         |
-+----------------------+------------------------------------------------------+
-| description          | Description of the field, for admins only.           |
-+----------------------+------------------------------------------------------+
-| query_type           | Defines operators that can be used in Super Search.  |
-|                      | See details below.                                   |
-+----------------------+------------------------------------------------------+
-| data_validation_type | Defines the validation done on values passed to      |
-|                      | filers of this field in Super Search.                |
-+----------------------+------------------------------------------------------+
-| permissions_needed   | Permissions needed from a user to access this field. |
-+----------------------+------------------------------------------------------+
-| form_field_choices   | Choices offered for filters of that field in the     |
-|                      | Super Search form.                                   |
-+----------------------+------------------------------------------------------+
-| is_exposed           | Is this field exposed as a filter?                   |
-+----------------------+------------------------------------------------------+
-| is_returned          | Is this field returned in results?                   |
-+----------------------+------------------------------------------------------+
-| has_full_version     | Does this field have a full version in Elasticsearch?|
-|                      | Enable only if you use a multitype field in the      |
-|                      | storage mapping.                                     |
-+----------------------+------------------------------------------------------+
-| storage_mapping      | Mapping that is used in Elasticsearch for this field.|
-|                      | See Elasticsearch documentation for more info.       |
-+----------------------+------------------------------------------------------+
+The name of a field is exposed in the Super Search API. This must be unique.
+
+Here is an explanation of each properties of a field:
+
++----------------------+---------------------------------------------------------+
+| Parameter            | Description                                             |
++======================+=========================================================+
+| in_database_name     | Name of the field in the database and in Elasticsearch. |
++----------------------+---------------------------------------------------------+
+| namespace            | Namespace of the field. Separated with dots.            |
++----------------------+---------------------------------------------------------+
+| description          | Description of the field, for admins only.              |
++----------------------+---------------------------------------------------------+
+| query_type           | Defines operators that can be used in Super Search.     |
+|                      | See details below.                                      |
++----------------------+---------------------------------------------------------+
+| data_validation_type | Defines the validation done on values passed to         |
+|                      | filers of this field in Super Search.                   |
++----------------------+---------------------------------------------------------+
+| permissions_needed   | Permissions needed for a user to access this field.     |
++----------------------+---------------------------------------------------------+
+| form_field_choices   | Choices offered for filters of that field in the        |
+|                      | Super Search form.                                      |
++----------------------+---------------------------------------------------------+
+| is_exposed           | Is this field exposed as a filter?                      |
++----------------------+---------------------------------------------------------+
+| is_returned          | Is this field returned in results?                      |
++----------------------+---------------------------------------------------------+
+| has_full_version     | Does this field have a full version in Elasticsearch?   |
+|                      | Enable only if you use a multitype field in the         |
+|                      | storage mapping.                                        |
++----------------------+---------------------------------------------------------+
+| storage_mapping      | Mapping that is used in Elasticsearch for this field.   |
+|                      | See Elasticsearch documentation for more info.          |
++----------------------+---------------------------------------------------------+
 
 Here are the operators that will be available for each ``query_type``. Note that
 each operator automatically has an opposite version (for example, each field
 that has access to the ``contains`` operator also has ``does not contain``).
 
 +----------------------+------------------------------------------------------+
-| Query type           | Operators                                            |
+| Query type value     | Operators                                            |
 +======================+======================================================+
 | enum                 | has terms                                            |
 +----------------------+------------------------------------------------------+
