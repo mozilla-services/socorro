@@ -30,14 +30,14 @@ pipeline {
       steps {
         writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
         sh "pytest " +
-        "-n=${PYTEST_PROCESSES} " +
-        "--tb=short " +
-        "--color=yes " +
-        "--driver=SauceLabs " +
-        "--variables=capabilities.json " +
-        "--junit-xml=e2e-tests/results/junit.xml --html=e2e-tests/results/index.html --self-contained-html " +
-        "--log-raw=e2e-tests/results/raw.txt " +
-        "--log-tbpl=e2e-tests/results/tbpl.txt"
+          "-n=${PYTEST_PROCESSES} " +
+          "--tb=short " +
+          "--color=yes " +
+          "--driver=SauceLabs " +
+          "--variables=capabilities.json " +
+          "--junit-xml=e2e-tests/results/junit.xml --html=e2e-tests/results/index.html --self-contained-html " +
+          "--log-raw=e2e-tests/results/raw.txt " +
+          "--log-tbpl=e2e-tests/results/tbpl.txt"
       }
       post {
         always {
@@ -57,7 +57,7 @@ pipeline {
         allowMissing: false,
         alwaysLinkToLastBuild: true,
         keepAll: true,
-        reportDir: 'results',
+        reportDir: 'e2e-tests/results',
         reportFiles: "index.html",
         reportName: 'HTML Report'])
     }
