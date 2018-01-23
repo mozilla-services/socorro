@@ -8,48 +8,60 @@ def capabilities = [
 pipeline {
   agent any
   libraries {
-    lib('fxtest@1.9')
+    lib('fxtest@1.10')
   }
   options {
     ansiColor('xterm')
     timestamps()
     timeout(time: 1, unit: 'HOURS')
   }
-  environment {
-    PYTEST_PROCESSES = "${PYTEST_PROCESSES ?: "auto"}"
-    PYTEST_ADDOPTS =
-    "-n=${PYTEST_PROCESSES} " +
-    "--tb=short " +
-    "--color=yes " +
-    "--driver=SauceLabs " +
-    "--variables=capabilities.json"
-    PULSE = credentials('PULSE')
-    SAUCELABS = credentials('SAUCELABS')
-  }
   stages {
     stage('Test') {
+      agent {
+        dockerfile true
+      }
+      environment {
+        PYTEST_PROCESSES = "${PYTEST_PROCESSES ?: "auto"}"
+        PULSE = credentials('PULSE')
+        SAUCELABS = credentials('SAUCELABS')
+      }
       steps {
         writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
-        sh "tox -c e2e-tests/tox.ini -e py27"
+        sh "pytest " +
+        "-n=${PYTEST_PROCESSES} " +
+        "--tb=short " +
+        "--color=yes " +
+        "--driver=SauceLabs " +
+        "--variables=capabilities.json"
+        "--junit-xml=e2e-tests/results/junit.xml --html=e2e-tests/results/index.html --self-contained-html " +
+          "--log-raw=e2e-tests/results/raw.txt " +
+          "--log-tbpl=e2e-tests/results/tbpl.txt"
       }
       post {
         always {
+          stash includes: 'e2e-tests/results/*', name: 'results'
           archiveArtifacts 'e2e-tests/results/*'
           junit 'e2e-tests/results/*.xml'
           submitToActiveData('e2e-tests/results/py27_raw.txt')
           submitToTreeherder('socorro', 'e2e', 'End-to-end integration tests', 'e2e-tests/results/*', 'e2e-tests/results/py27_tbpl.txt')
-          publishHTML(target: [
-            allowMissing: false,
-            alwaysLinkToLastBuild: true,
-            keepAll: true,
-            reportDir: 'e2e-tests/results',
-            reportFiles: "py27.html",
-            reportName: 'HTML Report'])
         }
-      }
     }
   }
   post {
+    always {
+      unstash 'results'
+      publishHTML(target: [
+        allowMissing: false,
+        alwaysLinkToLastBuild: true,
+        keepAll: true,
+        reportDir: 'results',
+        reportFiles: "index.html",
+        reportName: 'HTML Report'])
+    }
+    changed {
+      ircNotification('#breakpad')
+      ircNotification('#fx-test-alerts')
+  }
     failure {
       emailext(
         attachLog: true,
@@ -58,10 +70,6 @@ pipeline {
         replyTo: '$DEFAULT_REPLYTO',
         subject: '$DEFAULT_SUBJECT',
         to: '$DEFAULT_RECIPIENTS')
-    }
-    changed {
-      ircNotification('#breakpad')
-      ircNotification('#fx-test-alerts')
     }
   }
 }
