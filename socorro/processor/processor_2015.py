@@ -139,16 +139,13 @@ class Processor2015(RequiredConfig):
         'result_key',
         doc='the key where the external process result should be stored '
             'in the processed crash',
-        default='%s_result' %
-            required_config.command_pathname.default.split('/')[-1]
-            .replace('-', ''),
+        default='stackwalker_result',
     )
     required_config.add_option(
         'return_code_key',
         doc='the key where the external process return code should be stored '
             'in the processed crash',
-        default='%s_return_code' %
-            required_config.command_pathname.default.split('/')[-1],
+        default='stackwalker_return_code',
     )
     required_config.add_option(
         name='symbols_urls',
