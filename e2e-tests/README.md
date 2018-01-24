@@ -69,15 +69,19 @@ important, as it allows your `.saucelabs` file to be accessed by the Docker
 container:
 
 ```bash
-$ docker build -t socorro-tests .
-$ docker run -it \
-  --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
-  socorro-tests --driver SauceLabs
+  $ docker build -t socorro-tests .
+  $ docker run -it \
+    --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
+    socorro-tests pytest --driver SauceLabs
 ```
 
-If you wish to run them against different environments, set `PYTEST_BASE_URL`
-as indicated in the sections above for running tests against localhost or
-production.
+To run them against different environments, such as **production**, change
+the last command, like so:
+```bash
+  $ docker run -it \
+    --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
+    socorro-tests pytest --base-url=https://crash-stats.mozilla.com --driver SauceLabs
+```
 
 ___Running tests using headless Firefox___
 
