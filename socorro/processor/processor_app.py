@@ -111,7 +111,7 @@ CONFIG_DEFAULTS = {
 
     'processor': {
         'processor_class': 'socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015',
-        'raw_to_processed_transform': {
+        'transform_rules': {
             'BreakpadStackwalkerRule2015': {
                 'command_pathname': '/stackwalk/stackwalker',
                 'symbols_urls': ','.join([

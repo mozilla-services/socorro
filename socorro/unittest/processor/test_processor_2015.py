@@ -38,12 +38,15 @@ class TestProcessor2015(TestCase):
             CPUInfoRule,
             OSInfoRule,
         ])
-        raw_crash = DotDict()
-        raw_crash.uuid = "1"
+        raw_crash = DotDict({
+            'uuid': '1'
+        })
         raw_dumps = {}
-        processed_crash = DotDict()
-        processed_crash.processor_notes = "we've been here before; yep"
-        processed_crash.started_datetime = '2014-01-01T00:00:00'
+        processed_crash = DotDict({
+            'processor_notes': 'we\'ve been here before; yep',
+            'started_datetime': '2014-01-01T00:00:00'
+        })
+
         with patch('socorro.processor.processor_2015.utc_now') as faked_utcnow:
             faked_utcnow.return_value = '2015-01-01T00:00:00'
             processed_crash = p.process_crash(

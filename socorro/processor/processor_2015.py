@@ -292,7 +292,10 @@ class Processor2015(RequiredConfig):
             # the processor to be responsive to requests to shut down.
             self.quit_check()
 
-            start_time = self.config.logger.info("starting job: %s", crash_id)
+            start_time = self.config.logger.info(
+                "starting transform for crash: %s",
+                crash_id
+            )
             processor_meta_data.started_timestamp = start_time
 
             # apply_all_rules
@@ -332,7 +335,7 @@ class Processor2015(RequiredConfig):
         processed_crash.completeddatetime = completed_datetime
 
         self.config.logger.info(
-            "finishing %s job: %s",
+            "finishing %s transform for crash: %s",
             'successful' if processed_crash.success else 'failed',
             crash_id
         )
