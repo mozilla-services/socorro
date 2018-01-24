@@ -32,25 +32,22 @@ latest geckodriver release.
 
 If you have multiple versions of Firefox installed, you can specify which to
 use by modifying your [PATH variable][path variable] so that the *directory
-containing the target binary* is prioritised.
+containing the target binary* is prioritized.
 
 ___Running the tests on stage___
 
-	$ tox
+	$ docker build -t socorro-tests .
+  $ docker run -it socorro-tests
 
 ___Running tests against localhost___
 
-	$ export PYTEST_BASE_URL="http://localhost:8000"
-	$ tox -e py27
-
-	$ export PATH=/path/to/firefox:$PATH
-	$ export PYTEST_BASE_URL="http://localhost:8000"
-	$ tox -e py27
+	$ docker build -t socorro-tests .
+	$ docker run -it socorro-tests pytest --base-url "http://localhost:8000"
 
 ___Running tests against production___
 
-	$ export PYTEST_BASE_URL="https://crash-stats.mozilla.com"
-	$ tox -e py27
+	$ docker build -t socorro-tests .
+  $ docker run -it socorro-tests pytest --base-url "https://crash-stats.mozilla.com"
 
 ___Running tests on SauceLabs___
 
@@ -66,9 +63,18 @@ username = <SauceLabs user name>
 key = <SauceLabs API key>
 ```
 
-Then you can run the tests against staging using the following command:
+Then you can run the tests against Sauce Labs using [Docker][] by passing the
+`--driver SauceLabs` argument as shown below. The `--mount` argument is
+important, as it allows your `.saucelabs` file to be accessed by the Docker
+container:
 
-	$ tox -e py27 -- --driver SauceLabs --capability browserName Firefox
+```bash
+$ docker build -t mozillians-tests .
+$ docker run -it \
+  --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
+  mozillians-tests --variables /variables.json \
+  --driver SauceLabs
+```
 
 If you wish to run them against different environments, set `PYTEST_BASE_URL`
 as indicated in the sections above for running tests against localhost or
@@ -143,6 +149,7 @@ they will not be accepted for merging.
 
     $ tox -e py27 -- --driver PhantomJS --driver-path `which phantomjs` ...
 
+[Docker]: https://www.docker.com
 [pytest-selenium]: http://pytest-selenium.readthedocs.org/
 [geckodriver]: https://github.com/mozilla/geckodriver/releases
 [test envs]: http://pytest-selenium.readthedocs.io/en/latest/user_guide.html#specifying-a-browser
