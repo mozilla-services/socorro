@@ -69,11 +69,10 @@ important, as it allows your `.saucelabs` file to be accessed by the Docker
 container:
 
 ```bash
-$ docker build -t mozillians-tests .
+$ docker build -t socorro-tests .
 $ docker run -it \
   --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
-  mozillians-tests --variables /variables.json \
-  --driver SauceLabs
+  socorro-tests --driver SauceLabs
 ```
 
 If you wish to run them against different environments, set `PYTEST_BASE_URL`
