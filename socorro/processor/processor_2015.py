@@ -297,7 +297,7 @@ class Processor2015(RequiredConfig):
 
             # apply_all_rules
             for rule in self.rules:
-                predicate_result, action_result = rule.act(
+                rule.act(
                     raw_crash,
                     raw_dumps,
                     processed_crash,
