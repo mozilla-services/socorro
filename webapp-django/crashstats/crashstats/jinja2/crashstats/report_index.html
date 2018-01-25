@@ -739,6 +739,7 @@
                                 <th scope="col">Version</th>
                                 <th scope="col">Debug Identifier</th>
                                 <th scope="col">Debug Filename</th>
+                                {% if parsed_dump.modules_contains_cert_info %}<th scope="col">Signed By</th>{% endif %}
                             </tr>
                         </thead>
                         <tbody>
@@ -757,6 +758,7 @@
                                 <td>{{ module.version }}</td>
                                 <td>{{ module.debug_id }}</td>
                                 <td>{{ module.debug_file }}</td>
+                                {% if parsed_dump.modules_contains_cert_info %}<td>{% if module.cert_subject %}{{ module.cert_subject }}{% endif %}</td>{% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
