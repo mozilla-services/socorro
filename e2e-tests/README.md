@@ -106,7 +106,8 @@ To run the tests, you will need to have the following installed:
 Then run the tests using the following commands:
 
 ```bash
-	$ pipenv install
+  $ pipenv install requirements/requirements.txt
+  $ pipenv shell
   $ pytest
 ```
 
