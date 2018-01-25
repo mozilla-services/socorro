@@ -99,9 +99,16 @@ command:
 
 	$ export MOZ_HEADLESS=1
 
-Then run the tests using the following command:
+To run the tests, you will need to have the following installed:
+* Python 2.7
+* [Pipenv](https://pipenv.readthedocs.io)
 
-	$ tox -e py27
+Then run the tests using the following commands:
+
+```bash
+	$ pipenv install
+  $ pytest
+```
 
 ___Running specific tests___
 
@@ -112,10 +119,6 @@ You can run tests in a given file::
 You can run tests that match a specific name:
 
     $ docker run -it socorro-tests pytest tests/test_search::TestSuperSearch::test_search_for_unrealistic_data
-
-You can run tests whose names match a specific pattern:
-
-    $ XXXFIXME: test_search
 
 __Output__
 
