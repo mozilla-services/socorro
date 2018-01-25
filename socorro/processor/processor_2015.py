@@ -63,6 +63,43 @@ from socorro.processor.mozilla_transform_rules import (
     Winsock_LSPRule,
 )
 
+DEFAULT_RULES = [
+    # rules to change the internals of the raw crash
+    ProductRewrite,
+    ESRVersionRewrite,
+    PluginContentURL,
+    PluginUserComment,
+    # rules to transform a raw crash into a processed crash
+    IdentifierRule,
+    BreakpadStackwalkerRule2015,
+    ProductRule,
+    UserDataRule,
+    EnvironmentRule,
+    PluginRule,
+    AddonsRule,
+    DatesAndTimesRule,
+    OutOfMemoryBinaryRule,
+    JavaProcessRule,
+    Winsock_LSPRule,
+    # post processing of the processed crash
+    CrashingThreadRule,
+    CPUInfoRule,
+    OSInfoRule,
+    BetaVersionRule,
+    ExploitablityRule,
+    AuroraVersionFixitRule,
+    FlashVersionRule,
+    OSPrettyVersionRule,
+    TopMostFilesRule,
+    MissingSymbolsRule,
+    ThemePrettyNameRule,
+    MemoryReportExtraction,
+    # a set of classifiers to help with jit crashes
+    JitCrashCategorizeRule,
+    # generate signature now that we've done all the processing it depends on
+    SignatureGeneratorRule,
+]
+
 
 default_rule_set = [
     # rules to change the internals of the raw crash
@@ -210,42 +247,7 @@ class Processor2015(RequiredConfig):
         else:
             self.quit_check = lambda: False
 
-        rule_set = rules or [
-            # rules to change the internals of the raw crash
-            ProductRewrite,
-            ESRVersionRewrite,
-            PluginContentURL,
-            PluginUserComment,
-            # rules to transform a raw crash into a processed crash
-            IdentifierRule,
-            BreakpadStackwalkerRule2015,
-            ProductRule,
-            UserDataRule,
-            EnvironmentRule,
-            PluginRule,
-            AddonsRule,
-            DatesAndTimesRule,
-            OutOfMemoryBinaryRule,
-            JavaProcessRule,
-            Winsock_LSPRule,
-            # post processing of the processed crash
-            CrashingThreadRule,
-            CPUInfoRule,
-            OSInfoRule,
-            BetaVersionRule,
-            ExploitablityRule,
-            AuroraVersionFixitRule,
-            FlashVersionRule,
-            OSPrettyVersionRule,
-            TopMostFilesRule,
-            MissingSymbolsRule,
-            ThemePrettyNameRule,
-            MemoryReportExtraction,
-            # a set of classifiers to help with jit crashes
-            JitCrashCategorizeRule,
-            # generate signature now that we've done all the processing it depends on
-            SignatureGeneratorRule,
-        ]
+        rule_set = rules or list(DEFAULT_RULES)
 
         self.rules = []
         for a_rule_class in rule_set:
