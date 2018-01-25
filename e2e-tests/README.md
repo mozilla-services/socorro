@@ -8,21 +8,26 @@ This directory holds Socorro client-based end-to-end tests, which is why they're
 To review the specific-Python packages the tests use, please review
 `requirements/default.txt`.
 
-Prerequisites
--------------
-These tests assume that the following software is installed:
+How to run the tests
+====================
 
-* Pip 8.0.0 or higher
+Clone the repository
+--------------------
+
+If you have cloned this project already, then you can skip this; otherwise
+you'll need to clone this repo using Git. If you do not know how to clone a
+GitHub repository, check out this [help page][git clone] from GitHub.
+
+If you think you would like to contribute to the tests by writing or
+maintaining them in the future, it would be a good idea to create a fork of
+this repository first, and then clone that. GitHub also has great instructions
+for [forking a repository][git fork].
 
 Set up and run Socorro tests
 -----------------------------
 
 Review the documentation for [pytest-selenium][pytest-selenium] and decide
 which browser environment you wish to target.
-
-* [Install Tox](https://tox.readthedocs.io/en/latest/install.html) (1.6.1 or
-  higher)
-* Run `tox`
 
 An additional constraint for Firefox users: since version 48, Firefox now uses
 GeckoDriver and the Marionette-backed WebDriver. You will need to make sure the
@@ -42,19 +47,19 @@ ___Running the tests on stage___
 ___Running tests against localhost___
 
 	$ docker build -t socorro-tests .
-	$ docker run -it socorro-tests pytest --base-url "http://localhost:8000"
+  $ docker run -it socorro-tests pytest --base-url "http://localhost:8000"
 
 ___Running tests against production___
-
-	$ docker build -t socorro-tests .
+```bash
+  $ docker build -t socorro-tests .
   $ docker run -it socorro-tests pytest --base-url "https://crash-stats.mozilla.com"
-
+```
 ___Running tests on SauceLabs___
 
-To use SauceLabs instead of an instance of Firefox running locally, do the following:
+To use Sauce Labs instead of an instance of Firefox running locally, do the following:
 
 Create a text file called `.saucelabs` and put it in your home directory. Get a
-username and key for SauceLabs and then add the following details to the
+username and key for Sauce Labs and then add the following details to the
 `.saucelabs` file:
 
 ```ini
@@ -80,7 +85,7 @@ the last command, like so:
 ```bash
   $ docker run -it \
     --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
-    socorro-tests pytest --base-url=https://crash-stats.mozilla.com --driver SauceLabs
+    socorro-tests pytest --base-url "https://crash-stats.mozilla.com" --driver SauceLabs
 ```
 
 ___Running tests using headless Firefox___
@@ -102,15 +107,15 @@ ___Running specific tests___
 
 You can run tests in a given file::
 
-    $ tox -e py27 -- tests/test_search.py
+    $ docker run -it socorro-tests pytest tests/test_search.py
 
 You can run tests that match a specific name:
 
-    $ tox -e py27 -- -k test_search_for_unrealistic_data
+    $ docker run -it socorro-tests pytest tests/test_search::TestSuperSearch::test_search_for_unrealistic_data
 
 You can run tests whose names match a specific pattern:
 
-    $ tox -e py27 -- -k test_search
+    $ XXXFIXME: test_search
 
 __Output__
 
@@ -138,20 +143,9 @@ If the test run hangs with Firefox open but no URL gets entered in the address
 box, some combinations of the Firefox version, and the Python Selenium bindings
 version may not be compatible. Upgrading each of them to latest often fixes it.
 
-Tips and tricks
----------------
 
-__Use a different driver__
-
-[pytest-selenium] provides the ability to run tests against
-[many other][test envs] browser environments -- consider using a different
-driver executable or external provider.
-
-It is important to note that tests must pass with Firefox driver otherwise
-they will not be accepted for merging.
-
-    $ tox -e py27 -- --driver PhantomJS --driver-path `which phantomjs` ...
-
+[git clone]: https://help.github.com/articles/cloning-a-repository/
+[git fork]: https://help.github.com/articles/fork-a-repo/
 [Docker]: https://www.docker.com
 [pytest-selenium]: http://pytest-selenium.readthedocs.org/
 [geckodriver]: https://github.com/mozilla/geckodriver/releases
