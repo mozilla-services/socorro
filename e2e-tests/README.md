@@ -40,15 +40,15 @@ use by modifying your [PATH variable][path variable] so that the *directory
 containing the target binary* is prioritized.
 
 ___Running the tests on stage___
-
-	$ docker build -t socorro-tests .
+```bash
+  $ docker build -t socorro-tests .
   $ docker run -it socorro-tests
-
+```
 ___Running tests against localhost___
-
-	$ docker build -t socorro-tests .
+```bash
+  $ docker build -t socorro-tests .
   $ docker run -it socorro-tests pytest --base-url "http://localhost:8000"
-
+```
 ___Running tests against production___
 ```bash
   $ docker build -t socorro-tests .
