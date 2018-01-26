@@ -88,6 +88,23 @@ the last command, like so:
     socorro-tests pytest --base-url "https://crash-stats.mozilla.com" --driver SauceLabs
 ```
 
+___Running tests locally___
+
+Install [Pipenv][], and then using it, create a virtual environment with all
+the necessary Python package dependencies. Note that Python 2 is currently
+required for these tests.
+
+```
+$ pip install pipenv
+$ pipenv --two install -r requirements.txt
+```
+
+Then, you can run the tests using Pipenv:
+
+```
+$ pipenv run pytest
+```
+
 ___Running tests using headless Firefox___
 
 To run the tests using a copy of Firefox that can be run in 'headless' mode
