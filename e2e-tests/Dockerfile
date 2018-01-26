@@ -6,7 +6,10 @@ RUN mkdir /opt
 RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories
 RUN apk --no-cache add \
     curl \
-    firefox@testing
+    firefox@testing \
+    msttcorefonts-installer
+
+RUN update-ms-fonts && fc-cache -f
 
 WORKDIR /src
 COPY requirements/requirements.txt /src
