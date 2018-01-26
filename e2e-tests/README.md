@@ -39,22 +39,22 @@ If you have multiple versions of Firefox installed, you can specify which to
 use by modifying your [PATH variable][path variable] so that the *directory
 containing the target binary* is prioritized.
 
-___Running the tests on stage___
+### Running the tests on stage ###
 ```bash
   $ docker build -t socorro-tests .
   $ docker run -it socorro-tests
 ```
-___Running tests against localhost___
+### Running tests against localhost ###
 ```bash
   $ docker build -t socorro-tests .
   $ docker run -it socorro-tests pytest --base-url "http://localhost:8000"
 ```
-___Running tests against production___
+### Running tests against production ###
 ```bash
   $ docker build -t socorro-tests .
   $ docker run -it socorro-tests pytest --base-url "https://crash-stats.mozilla.com"
 ```
-___Running tests on SauceLabs___
+### Running tests on Sauce Labs ###
 
 To use Sauce Labs instead of an instance of Firefox running locally, do the following:
 
@@ -88,7 +88,7 @@ the last command, like so:
     socorro-tests pytest --base-url "https://crash-stats.mozilla.com" --driver SauceLabs
 ```
 
-___Running tests locally___
+### Running tests locally ###
 
 Install [Pipenv][], and then using it, create a virtual environment with all
 the necessary Python package dependencies. Note that Python 2 is currently
@@ -105,7 +105,7 @@ Then, you can run the tests using Pipenv:
 $ pipenv run pytest
 ```
 
-___Running tests using headless Firefox___
+### Running tests using headless Firefox ###
 
 To run the tests using a copy of Firefox that can be run in 'headless' mode
 (meaning with no UI), do the following:
@@ -128,7 +128,7 @@ Then run the tests using the following commands:
   $ pytest
 ```
 
-___Running specific tests___
+### Running specific tests ###
 
 You can run tests in a given file::
 
