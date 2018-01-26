@@ -1,5 +1,6 @@
 import datetime
 import csv
+import sys
 from cStringIO import StringIO
 
 from configman import Namespace
@@ -8,7 +9,7 @@ from crontabber.base import BaseCronApp
 from crontabber.mixins import with_postgres_transactions
 
 from socorro.external.postgresql.missing_symbols import MissingSymbols
-from socorro.app.socorro_app import App, main
+from socorro.app.socorro_app import App
 
 
 @with_postgres_transactions()
@@ -110,5 +111,4 @@ class MissingSymbolsCronAppDryRunner(App):  # pragma: no cover
 
 
 if __name__ == '__main__':  # pragma: no cover
-    import sys
-    sys.exit(main(MissingSymbolsCronAppDryRunner))
+    sys.exit(MissingSymbolsCronAppDryRunner.run())

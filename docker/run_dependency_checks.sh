@@ -8,5 +8,5 @@
 
 set -e
 
-./scripts/socorro crontabber --reset-job=socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp
-./scripts/socorro crontabber --job=socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp
+./socorro/cron/crontabber_app.py --reset-job=socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp
+./socorro/cron/crontabber_app.py --job=socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp

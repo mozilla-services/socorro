@@ -24,7 +24,7 @@ from crontabber.mixins import (
 
 from socorro.cron import buildutil
 
-from socorro.app.socorro_app import App, main
+from socorro.app.socorro_app import App
 from socorro.lib.datetimeutil import string_to_datetime
 
 
@@ -569,4 +569,4 @@ class FTPScraperCronAppDryRunner(App):  # pragma: no cover
 
 
 if __name__ == '__main__':  # pragma: no cover
-    sys.exit(main(FTPScraperCronAppDryRunner))
+    sys.exit(FTPScraperCronAppDryRunner.run())

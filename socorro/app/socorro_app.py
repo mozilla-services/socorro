@@ -507,45 +507,6 @@ class App(SocorroApp):
     )
 
 
-class SocorroWelcomeApp(SocorroApp):
-    required_config = Namespace()
-    required_config.add_option(
-        'application',
-        is_argument=True,
-        doc=(
-            'the name of the app to run (select from: %s)' %
-            ', '.join(sorted(application_defaults_proxy.apps.keys()))
-        ),
-        default=None,
-        # the following setting means this option will NOT be
-        # commented out when configman generates a config file
-        likely_to_be_changed=True,
-        from_string_converter=(
-            application_defaults_proxy.str_to_application_class
-        ),
-    )
-    app_name = "SocorroWelcomeApp"
-    app_version = "1.0"
-    app_description = 'Welcome to Socorro'
-
-    def main(self):
-        if (
-            self.config.application and
-            self.config.application.__name__ is not self.__class__.__name__
-        ):
-            requested_app = self.config.application(self.config)
-            # this is where an app that was requested through the use of the
-            # config parameter 'application' is actually run
-            #requested_app.config_manager = self.config_manager
-            return requested_app.main()
-        else:
-            print(
-                "Welcome to Socorro.  To configure Socorro, please see "
-                "https://socorro.readthedocs.io/\n"
-                "use --help with this app to see what you can do here"
-            )
-
-
 def tear_down_logger(app_name):
     logger = logging.getLogger(app_name)
     # must have a copy of the handlers list since we cannot modify the original
@@ -558,14 +519,3 @@ def tear_down_logger(app_name):
 def _convert_format_string(s):
     """return '%(foo)s %(bar)s' if the input is '{foo} {bar}'"""
     return re.sub('{(\w+)}', r'%(\1)s', s)
-
-
-def main(app_class, config_path=None, values_source_list=None):
-    return app_class.run(
-        config_path=config_path,
-        values_source_list=values_source_list
-    )
-
-
-if __name__ == '__main__':
-    main(SocorroWelcomeApp)

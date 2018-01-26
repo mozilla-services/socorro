@@ -13,7 +13,6 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
-from socorro.app.socorro_app import main
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib.util import DotDict
 from socorro.lib import raven_client
@@ -248,4 +247,4 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
 
 if __name__ == '__main__':
-    main(ProcessorApp)
+    sys.exit(ProcessorApp.run())

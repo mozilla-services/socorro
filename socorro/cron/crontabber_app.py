@@ -12,7 +12,6 @@ from crontabber.app import (
     get_extra_as_options,
     JobNotFoundError,
     line_splitter,
-    main,
     pipe_splitter,
 )
 
@@ -186,4 +185,4 @@ CronTabberApp.required_config.crontabber.job_state_db_class.default.required_con
 
 
 if __name__ == '__main__':
-    sys.exit(main(CronTabberApp))
+    sys.exit(CronTabberApp.run())

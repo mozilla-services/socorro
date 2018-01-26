@@ -26,7 +26,7 @@ while true
 do
     # FIXME(willkg): We don't want crontabber to exit weird and then have that
     # kill the container, but this is a lousy thing to do.
-    ${CMDPREFIX} ./scripts/socorro crontabber || true
+    ${CMDPREFIX} ./socorro/cron/crontabber_app.py || true
     echo "Sleep 5 minutes..."
     sleep 300
 done

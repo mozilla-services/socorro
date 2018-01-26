@@ -13,7 +13,7 @@ CACHEDIR=/app/.cache/ftpscraper
 
 # Fetch and update release information for these products (comma-delimited)
 PRODUCTS="firefox,mobile"
-CRONTABBERCMD="./scripts/socorro crontabber"
+CRONTABBERCMD="./socorro/cron/crontabber_app.py"
 
 
 # Fetch release data -- do it as the user so it can cache things, but reset
@@ -39,4 +39,4 @@ docker-compose run processor python docker/fetch_normalization_data.py --product
 docker-compose run processor python docker/create_weekly_tables.py
 
 # Create ES indexes for the next few weeks
-docker-compose run processor scripts/socorro create_recent_es_indices
+docker-compose run processor socorro/external/es/create_recent_indices_app.py

@@ -12,7 +12,6 @@ import pytest
 from socorro.app.socorro_app import (
     App,
     SocorroApp,
-    main,
 )
 from socorro.app.for_application_defaults import ApplicationDefaultsProxy
 from socorro.unittest.testbase import TestCase
@@ -86,7 +85,7 @@ class TestSocorroApp(TestCase):
                         assert self.config is expected
                         return 17
 
-                result = main(SomeOtherApp)
+                result = SomeOtherApp.run()
                 args = cm.call_args_list
                 args, kwargs = args[0]
                 assert isinstance(args[0], Namespace)
@@ -115,7 +114,7 @@ class TestSocorroApp(TestCase):
                         assert self.config is expected
                         return 17
 
-                result = main(SomeOtherApp, 'my/other/path')
+                result = SomeOtherApp.run('my/other/path')
 
                 args = cm.call_args_list
                 args, kwargs = args[0]
@@ -145,8 +144,7 @@ class TestSocorroApp(TestCase):
                         assert self.config is expected
                         return 17
 
-                result = main(
-                    SomeOtherApp,
+                result = SomeOtherApp.run(
                     config_path='my/other/path',
                     values_source_list=[{"a": 1}, {"b": 2}]
                 )

@@ -1,7 +1,9 @@
+#! /usr/bin/env python
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
 from datetime import date, timedelta
 
 from configman import Namespace, class_converter
@@ -47,3 +49,7 @@ class CreateRecentESIndicesApp(App):
             index_creator.create_socorro_index(index)
 
         return SUCCESS
+
+
+if __name__ == '__main__':
+    sys.exit(CreateRecentESIndicesApp.run())

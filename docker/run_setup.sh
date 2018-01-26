@@ -17,7 +17,7 @@ set -e
 /app/docker/run_recreate_s3_buckets.sh
 
 # Delete all Elasticsearch indices
-/app/scripts/socorro clear_es_indices
+/app/socorro/external/es/clear_indices_app.py
 
 # Initialize the crontabber bookkeeping for all configured jobs to success
-/app/scripts/socorro crontabber --mark-success=all
+/app/socorro/cron/crontabber_app.py --mark-success=all

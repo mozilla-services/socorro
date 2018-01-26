@@ -2,11 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import pika
 import logging
+import sys
 
+import pika
 from configman import Namespace
-from socorro.app.socorro_app import App, main
+
+from socorro.app.socorro_app import App
 
 
 # To run this script in production:
@@ -95,4 +97,4 @@ class ReprocessCrashlistApp(App):
 
 
 if __name__ == '__main__':
-    main(ReprocessCrashlistApp)
+    sys.exit(ReprocessCrashlistApp.run())

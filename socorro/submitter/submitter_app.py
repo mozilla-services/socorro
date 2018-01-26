@@ -6,12 +6,12 @@
 
 """This app submits crashes to a Socorro collector"""
 
+import sys
 import time
 
 from configman import Namespace
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
-from socorro.app.socorro_app import main
 
 
 class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
@@ -85,4 +85,4 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
 
 if __name__ == '__main__':
-    main(SubmitterApp)
+    sys.exit(SubmitterApp.run())
