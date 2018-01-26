@@ -27,7 +27,6 @@ destination = DotDict({
         'transaction_executor_class': (
             'socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
         ),
-        'wrapped_crashstore': 'socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage',
         'wrapped_object_class': 'socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage',
     },
     's3': {
@@ -36,7 +35,6 @@ destination = DotDict({
         'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
         'statsd_prefix': 'processor.s3',
         'use_mapping_file': 'False',
-        'wrapped_crashstore': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
         'wrapped_object_class': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
     },
     'elasticsearch': {
@@ -51,7 +49,6 @@ destination = DotDict({
         ]),
         'statsd_prefix': 'processor.es',
         'use_mapping_file': 'False',
-        'wrapped_crashstore': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
         'wrapped_object_class': 'socorro.external.es.crashstorage.ESCrashStorageRedactedJsonDump',
     },
     'statsd': {
