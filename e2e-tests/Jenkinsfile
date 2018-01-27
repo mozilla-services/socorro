@@ -28,7 +28,6 @@ pipeline {
           "-n=${PYTEST_PROCESSES} " +
           "--tb=short " +
           "--color=yes " +
-          "--driver=SauceLabs " +
           "--variables=e2e-tests/capabilities.json " +
           "--junit-xml=e2e-tests/results/junit.xml --html=e2e-tests/results/index.html --self-contained-html " +
           "--log-raw=e2e-tests/results/raw.txt " +

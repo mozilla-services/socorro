@@ -26,4 +26,4 @@ RUN curl -fsSLo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/r
 
 COPY . /src
 
-CMD pytest
+CMD pytest --driver Firefox
