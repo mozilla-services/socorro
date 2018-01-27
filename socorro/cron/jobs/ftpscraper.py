@@ -16,6 +16,7 @@ from requests.adapters import HTTPAdapter
 
 from configman import Namespace
 from configman.converters import class_converter, str_to_list
+from configman.dotdict import DotDict
 from crontabber.base import BaseCronApp
 from crontabber.mixins import (
     as_backfill_cron_app,
@@ -537,6 +538,12 @@ class FTPScraperCronAppDryRunner(App):  # pragma: no cover
         $ python socorro/cron/jobs/ftpscraper.py --product=mobile,thunderbird
 
     """
+    config_module = 'socorro.cron.jobs.ftpscraper.FTPScraperCronAppDryRunner.application_defaults'
+
+    class application_defaults:
+        database = DotDict({
+            'database_class': mock.MagicMock(),
+        })
 
     required_config = Namespace()
     required_config.add_option(
@@ -551,12 +558,6 @@ class FTPScraperCronAppDryRunner(App):  # pragma: no cover
         doc='bla',
         from_string_converter=class_converter,
     )
-
-    @staticmethod
-    def get_application_defaults():
-        return {
-            'database.database_class': mock.MagicMock()
-        }
 
     def __init__(self, config):
         self.config = config

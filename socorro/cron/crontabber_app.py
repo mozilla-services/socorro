@@ -98,6 +98,7 @@ def jobs_converter(path_or_jobs):
 
 
 class CronTabberApp(CronTabberBase, App):
+    config_module = 'socorro.cron.config'
     required_config = CronTabberBase.required_config.safe_copy()
 
     # Stomp on the existing "crontabber.jobs" configuration with one that can
@@ -171,17 +172,6 @@ class CronTabberApp(CronTabberBase, App):
             self.mark_success(self.config.get('mark-success'))
             return 0
         return super(CronTabberApp, self).main()
-
-
-# NOTE(willkg): We need to "fix" the defaults here rather than use App's
-# get_application_defaults() because that doesn't support nested configuration
-# defaults
-CronTabberApp.required_config.crontabber.database_class.default = (
-    'socorro.external.postgresql.connection_context.ConnectionContext'
-)
-CronTabberApp.required_config.crontabber.job_state_db_class.default.required_config.database_class.default = (  # noqa
-    'socorro.external.postgresql.connection_context.ConnectionContext'
-)
 
 
 if __name__ == '__main__':

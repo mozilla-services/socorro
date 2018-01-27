@@ -52,6 +52,7 @@ class TestCaseBase(unittest.TestCase):
         required_config.add_option('logger', default=mock_logging)
 
         value_source = [
+            CronTabberApp.config_module,
             configman.ConfigFileFutureProxy,
             environment,
             {
@@ -113,6 +114,7 @@ class IntegrationTestCaseBase(TestCaseBase):
             [CronTabberApp.get_required_config(),
              app.JobStateDatabase.get_required_config()],
             values_source_list=[
+                CronTabberApp.config_module,
                 configman.ConfigFileFutureProxy,
                 environment,
             ],

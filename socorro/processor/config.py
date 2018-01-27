@@ -6,6 +6,18 @@ from configman.dotdict import DotDict
 always_ignore_mismatches = True
 
 
+# Inherit config values from FetchTransformSaveApp
+from socorro.app.fetch_transform_save_config import * # NOQA
+
+
+# Crash storage source
+source = DotDict({
+    'benchmark_tag': 'BotoBenchmarkRead',
+    'crashstorage_class': 'socorro.external.crashstorage_base.BenchmarkingCrashStorage',
+    'wrapped_crashstore': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
+})
+
+
 # Crash storage destinations
 destination = DotDict({
     'crashstorage_class': 'socorro.external.crashstorage_base.PolyCrashStorage',

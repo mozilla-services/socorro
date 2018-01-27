@@ -23,11 +23,6 @@ import sys
 import re
 import threading
 
-import socorro.app.for_application_defaults
-from socorro.app.for_application_defaults import (
-    ApplicationDefaultsProxy,
-)
-
 from configman import (
     ConfigurationManager,
     Namespace,
@@ -36,41 +31,8 @@ from configman import (
     environment,
     command_line,
 )
-from configman.converters import py_obj_to_str
+from configman.converters import py_obj_to_str, str_to_python_object
 
-
-# every socorro app has a class method called 'get_application_defaults' from
-# which configman extracts the preferred configuration default values.
-#
-# The Socorro App class hierachy will create a 'values_source_list' with the
-# App's preferred config at the base.  These become the defaults over which
-# the configuration values from config file, environment, and command line are
-# overlaid.
-#
-# In the case where the actual app is not specified until configman is already
-# invoked, application defaults cannot be determined until configman
-# has already started the overlay process.  To resolve this
-# chicken/egg problem, we create a ApplicationDefaultsProxy class that stands
-# in values_source list (the list of places that overlay config values come
-# from).  Since the ApplicationDefaultsProxy also serves as the 'from_string'
-# converter for the Application config option, it can know when the target
-# application has been determined, fetch the defaults.  Since the
-# ApplicationDefaultsProxy object is already in the values source list, it can
-# then start providing overlay values immediately.
-
-# Configman knows nothing about how the ApplicationDefaultsProxy object works,
-# so we must regisiter it as a new values overlay source class.  We do that
-# by manually inserting inserting the new class into Configman's
-# handler/dispatcher.  That object associates config sources with modules that
-# are able to implement Configman's overlay handlers.
-from configman.value_sources import type_handler_dispatch
-# register our new type handler with configman
-type_handler_dispatch[ApplicationDefaultsProxy].append(
-    socorro.app.for_application_defaults
-)
-
-# create the app default proxy object
-application_defaults_proxy = ApplicationDefaultsProxy()
 
 # for use with SIGHUP for apps that run as daemons
 restart = True
@@ -133,15 +95,6 @@ class SocorroApp(RequiredConfig):
         # give a name to this running instance of the program.
         self.app_instance_name = self._app_instance_name()
 
-    @staticmethod
-    def get_application_defaults():
-        """this method allows an app to inject defaults into the configuration
-        that can override defaults not under the direct control of the app.
-        For example, if an app were to use a class that had a config default
-        of X and that was not appropriate as a default for this app, then
-        this method could be used to override that default"""
-        return {}
-
     def main(self):  # pragma: no cover
         """derived classes must override this function with business logic"""
         raise NotImplementedError(
@@ -189,11 +142,6 @@ class SocorroApp(RequiredConfig):
 
         if values_source_list is None:
             values_source_list = [
-                # pull in the application defaults from the 'application'
-                # configman option, once it has been defined
-                application_defaults_proxy,
-                # Get values from the app's config module
-                klass.config_module,
                 # pull in any configuration file
                 ConfigFileFutureProxy,
                 # get values from the environment
@@ -202,12 +150,9 @@ class SocorroApp(RequiredConfig):
                 command_line
             ]
 
-            # Remove potential None values
-            values_source_list = [x for x in values_source_list if x is not None]
-        elif application_defaults_proxy not in values_source_list:
-            values_source_list = (
-                [application_defaults_proxy] + values_source_list
-            )
+        # Pull base set of defaults from the config module if it is specified
+        if klass.config_module is not None:
+            values_source_list.insert(0, klass.config_module)
 
         config_definition = klass.get_required_config()
         if 'application' not in config_definition:
@@ -225,9 +170,7 @@ class SocorroApp(RequiredConfig):
                 # the following setting means this option will NOT be
                 # commented out when configman generates a config file
                 likely_to_be_changed=True,
-                from_string_converter=(
-                    application_defaults_proxy.str_to_application_class
-                ),
+                from_string_converter=str_to_python_object,
             )
             config_definition = application_config
 
