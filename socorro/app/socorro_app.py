@@ -12,16 +12,6 @@ Derived from the base "SocorroApp" is the "App" class.  This class adds logging
 configuration requirements to the application.  App is the class from which
 all the Socorro Apps derive.
 
-Also derived from the base class "SocorroApp" is "SocorroWelcomeApp", an app
-that serves as a dispatcher for all other Socorro apps.  Rather than forcing
-the user to know what and where all the other Socorro apps are, this app adds
-an "application" config requirement as a commandline arguement.  The user may
-specify the app name that they want to run.  Running --help on this app, will
-also list all the Socorro Apps.
-
-If a configuration file exists that includes a not-commented-out 'application'
-parameter, it can be give directly to the "SocorroWelomeApp".  In that case,
-the "SocorroWelcomeApp" becomes the app requested in the config file.
 """
 
 import logging
@@ -104,12 +94,7 @@ def klass_to_pypath(klass):
     module actually had its own real name.  This ends up being very confusing
     to Configman as it tries to refer to a class by its proper module name.
     This function will convert a class into its properly qualified actual
-    pathname.  This method is used when a Socorro app is actually invoked
-    directly through the file in which the App class is defined.  This allows
-    configman to reimport the class under its proper name and treat it as if
-    it had been run through the SocorroWelcomeApp.  In turn, this allows
-    the application defaults to be fetched from the properly imported class
-    in time for configman use that information as value source."""
+    pathname."""
     if klass.__module__ == '__main__':
         module_path = (
             sys.modules['__main__']
@@ -226,10 +211,10 @@ class SocorroApp(RequiredConfig):
 
         config_definition = klass.get_required_config()
         if 'application' not in config_definition:
-            # the application option has not been defined.  This means that
-            # the we're likely trying to run one of the applications directly
-            # rather than through the SocorroWelocomApp.  Add the 'application'
-            # option initialized with the target application as the default.
+            # FIXME(mkelly): We used to have a SocorroWelcomeApp that defined an
+            # "application" option. We no longer have that. This section should
+            # get reworked possibly as part of getting rid of application
+            # defaults.
             application_config = Namespace()
             application_config.add_option(
                 'application',
