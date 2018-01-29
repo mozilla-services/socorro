@@ -837,9 +837,11 @@ class AuroraVersionFixitRule(Rule):
     devedition to its own "product" that are respins of the beta channel
     builds. These builds still use "aurora" as the release channel.
 
-    However, the devedition .0b1 release needs to be treated as an aurora for
-    Firefox. Because this breaks the invariants of Socorro as well as the laws
-    of physics, we fix these crashes by hand using a processor rule.
+    However, the devedition .0b1 and .0b2 releases need to be treated as an
+    "aurora" for Firefox. Because this breaks the invariants of Socorro
+    (channel and version don't match) as well as the laws of physics, we fix
+    these crashes by hand using a processor rule until we have time to swap
+    ftpscraper and all the stored procedures out for buildhub scraper.
 
     """
 
@@ -847,10 +849,15 @@ class AuroraVersionFixitRule(Rule):
     # out. Ugh.
     buildid_to_version = {
         '20170612224034': '55.0b1',
+        '20170615070049': '55.0b2',
         '20170808170225': '56.0b1',
+        '20170810180547': '56.0b2',
         '20170917031738': '57.0b1',
+        '20170921191414': '57.0b2',
         '20171103003834': '58.0b1',
+        '20171109154410': '58.0b2',
         '20180113035635': '59.0b1',
+        '20180117222144': '59.0b2',
     }
 
     def version(self):
