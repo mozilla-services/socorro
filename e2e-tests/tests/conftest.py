@@ -20,10 +20,3 @@ def session_capabilities(pytestconfig, session_capabilities):
     if pytestconfig.getoption('driver') == 'SauceLabs':
         session_capabilities.setdefault('tags', []).append('socorro')
     return session_capabilities
-
-
-@pytest.fixture
-def firefox_options(firefox_options):
-    if os.environ.get('MOZ_HEADLESS') == '1':
-        firefox_options.binary = os.environ.get('MOZ_BINARY_PATH')
-    return firefox_options
