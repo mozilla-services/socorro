@@ -11,10 +11,12 @@ import pytest
 
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
+    convert_booleans,
     ESCrashStorage,
     ESCrashStorageRedactedSave,
     ESCrashStorageRedactedJsonDump,
     ESBulkCrashStorage,
+    get_fields_by_analyzer,
     is_valid_key,
     RawCrashRedactor,
     truncate_keyword_field_values,
@@ -944,6 +946,82 @@ class TestESCrashStorage(ElasticsearchTestCase):
         assert 'call.histogram(\'processor.es.processed_crash_size\', 1785)' in mock_calls
 
 
+class Test_get_fields_by_analyzer:
+    @pytest.mark.parametrize('fields', [
+        # No fields
+        {},
+
+        # No storage_mapping
+        {
+            'key': {
+                'in_database_name': 'key',
+            }
+        },
+
+        # Wrong or missing analyzer
+        {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'type': 'string'
+                }
+            }
+        },
+        {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'semicolon_keywords',
+                    'type': 'string'
+                }
+            }
+        },
+    ])
+    def test_no_match(self, fields):
+        assert get_fields_by_analyzer(fields, 'keyword') == []
+
+    def test_match(self):
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+        assert get_fields_by_analyzer(fields, 'keyword') == [fields['key']]
+
+    def test_caching(self):
+        # Verify caching works
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+        result = get_fields_by_analyzer(fields, 'keyword')
+        second_result = get_fields_by_analyzer(fields, 'keyword')
+        assert id(result) == id(second_result)
+
+        # This is the same data as fields, but a different dict, so it has a
+        # different id and we won't get the cached version
+        second_fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+        third_result = get_fields_by_analyzer(second_fields, 'keyword')
+        assert id(result) != id(third_result)
+
+
 class Test_truncate_keyword_field_values:
     @pytest.mark.parametrize('data, expected', [
         # Top-level, non-basestring values are left alone
@@ -974,9 +1052,6 @@ class Test_truncate_keyword_field_values:
         assert data == expected
 
     @pytest.mark.parametrize('fields', [
-        # Empty fields leaves data unchanged
-        {},
-
         # No in_database_name leaves data unchanged
         {
             'key': {
@@ -984,13 +1059,6 @@ class Test_truncate_keyword_field_values:
                     'analyzer': 'keyword',
                     'type': 'string'
                 }
-            }
-        },
-
-        # No storage_mapping leaves data unchanged
-        {
-            'key': {
-                'in_database_name': 'key',
             }
         },
 
@@ -1004,25 +1072,6 @@ class Test_truncate_keyword_field_values:
                 }
             }
         },
-
-        # Wrong or missing analyzer leaves data unchanged
-        {
-            'key': {
-                'in_database_name': 'key',
-                'storage_mapping': {
-                    'type': 'string'
-                }
-            }
-        },
-        {
-            'key': {
-                'in_database_name': 'key',
-                'storage_mapping': {
-                    'analyzer': 'semicolon_keywords',
-                    'type': 'string'
-                }
-            }
-        },
     ])
     def test_fields_handling(self, fields):
         """Verify truncation only occurs if all requirements are true
@@ -1031,6 +1080,67 @@ class Test_truncate_keyword_field_values:
         missing data.
 
         """
+        original_data = {
+            'key': 'a' * 10001
+        }
+        data = deepcopy(original_data)
+
+        truncate_keyword_field_values(fields, data)
+        assert original_data == data
+
+
+class Test_convert_booleans:
+    @pytest.mark.parametrize('data, expected', [
+        # True-ish values are True
+        ({'key': True}, {'key': True}),
+        ({'key': 'true'}, {'key': True}),
+        ({'key': 1}, {'key': True}),
+        ({'key': '1'}, {'key': True}),
+
+        # Everything else is False
+        ({'key': None}, {'key': False}),
+        ({'key': 0}, {'key': False}),
+        ({'key': '0'}, {'key': False}),
+        ({'key': 'false'}, {'key': False}),
+        ({'key': 'somethingrandom'}, {'key': False}),
+        ({'key': False}, {'key': False}),
+    ])
+    def test_convert_booleans_values(self, data, expected):
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'boolean',
+                }
+            }
+        }
+        # Note: data is modified in place
+        convert_booleans(fields, data)
+        assert data == expected
+
+    @pytest.mark.parametrize('fields', [
+        # No in_database_name leaves data unchanged
+        {
+            'key': {
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+
+        # Wrong in_database_name leaves data unchanged
+        {
+            'key': {
+                'in_database_name': 'different_key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+    ])
+    def test_fields_handling(self, fields):
         original_data = {
             'key': 'a' * 10001
         }
