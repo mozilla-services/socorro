@@ -28,6 +28,7 @@ from crashstats.crashstats.models import (
     Bugs,
     SignaturesByBugs,
 )
+from crashstats.tools.models import CrashStopData
 from crashstats.tokens.models import Token
 
 
@@ -546,6 +547,86 @@ class TestViews(BaseTestViews):
         res = json.loads(response.content)
         assert 'errors' in res
         assert len(res['errors']) == 3
+
+    def test_CrashStopData(self):
+
+        def mocked_get(**params):
+            assert 'signature' in params
+            assert params.get('signature', []) == ['foo::bar()']
+
+            assert 'buildid' in params
+            assert params.get('buildid', []) == ['20180116123456']
+
+            assert 'product' in params
+            assert params.get('product', []) == ['Firefox']
+
+            assert 'channel' in params
+            assert params.get('channel', []) == ['release']
+
+            return {'signature': [
+                {
+                    'count': 4,
+                    'term': 'foo::bar()',
+                    'facets': {
+                        'product': [
+                            {
+                                'count': 4,
+                                'term': 'Firefox',
+                                'facets': {
+                                    'release_channel': [
+                                        {
+                                            'count': 4,
+                                            'term': 'release',
+                                            'facets': {
+                                                'version': [
+                                                    {
+                                                        'count': 4,
+                                                        'term': '57.0',
+                                                        'facets': {
+                                                            'build_id': [
+                                                                {
+                                                                    'count': 4,
+                                                                    'term': 20180116123456,
+                                                                    'facets': {
+                                                                        'startup_crashes': {
+                                                                            'count_startup_crashes': { # NOQA
+                                                                                'value': 1
+                                                                            },
+                                                                            'doc_count': 1
+                                                                        },
+                                                                        'count_install_time': {
+                                                                            'value': 4
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+            }
+
+        CrashStopData.implementation().get.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('CrashStopData',))
+
+        # Test we get expected results.
+        response = self.client.get(url, {'signature': ['foo::bar()'],
+                                         'buildid': ['20180116123456'],
+                                         'product': ['Firefox'],
+                                         'channel': ['release']})
+        assert response.status_code == 200
+
+        res = json.loads(response.content)
+        assert len(res['signature']) == 1
 
     def test_Status(self):
 

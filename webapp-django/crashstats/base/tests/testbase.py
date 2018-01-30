@@ -11,7 +11,9 @@ import crashstats.supersearch.models
 
 
 classes_with_implementation = []
-for module in (crashstats.crashstats.models, crashstats.supersearch.models):
+for module in (crashstats.crashstats.models,
+               crashstats.supersearch.models,
+               crashstats.tools.models):
     for _, klass in inspect.getmembers(module, inspect.isclass):
         if issubclass(klass, crashstats.crashstats.models.SocorroMiddleware):
             # Remember, the default thing for SocorroMiddleware is
