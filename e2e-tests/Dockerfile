@@ -12,9 +12,9 @@ RUN apk --no-cache add \
 RUN update-ms-fonts && fc-cache -f
 
 WORKDIR /src
-COPY requirements/requirements.txt /src
 RUN pip install pipenv
-RUN pipenv install --system -r requirements.txt --skip-lock --deploy
+COPY Pipfile Pipfile.lock /src/
+RUN pipenv install --system --deploy
 ENV GECKODRIVER_VERSION=0.19.1
 RUN curl -fsSLo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-linux64.tar.gz \
   && rm -rf /opt/geckodriver \
