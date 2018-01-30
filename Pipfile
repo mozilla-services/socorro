@@ -1,0 +1,29 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[requires]
+
+python_version = "2.7"
+
+
+[dev-packages]
+
+
+
+[packages]
+
+mozlog = "*"
+PyPOM = "*"
+pytest = "*"
+pytest-base-url = "*"
+pytest-html = "*"
+pytest-metadata = "*"
+pytest-selenium = "*"
+pytest-variables = "*"
+pytest-xdist = "*"
+selenium = "*"
+requests = "*"
