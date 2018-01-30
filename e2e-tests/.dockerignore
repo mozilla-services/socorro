@@ -1,0 +1,5 @@
+.cache
+.git
+**/__pycache__
+**/*.pyc
+results

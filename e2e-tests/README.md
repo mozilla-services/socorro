@@ -8,21 +8,26 @@ This directory holds Socorro client-based end-to-end tests, which is why they're
 To review the specific-Python packages the tests use, please review
 `requirements/default.txt`.
 
-Prerequisites
--------------
-These tests assume that the following software is installed:
+How to run the tests
+====================
 
-* Pip 8.0.0 or higher
+Clone the repository
+--------------------
+
+If you have cloned this project already, then you can skip this; otherwise
+you'll need to clone this repo using Git. If you do not know how to clone a
+GitHub repository, check out this [help page][git clone] from GitHub.
+
+If you think you would like to contribute to the tests by writing or
+maintaining them in the future, it would be a good idea to create a fork of
+this repository first, and then clone that. GitHub also has great instructions
+for [forking a repository][git fork].
 
 Set up and run Socorro tests
 -----------------------------
 
 Review the documentation for [pytest-selenium][pytest-selenium] and decide
 which browser environment you wish to target.
-
-* [Install Tox](https://tox.readthedocs.io/en/latest/install.html) (1.6.1 or
-  higher)
-* Run `tox`
 
 An additional constraint for Firefox users: since version 48, Firefox now uses
 GeckoDriver and the Marionette-backed WebDriver. You will need to make sure the
@@ -32,32 +37,29 @@ latest geckodriver release.
 
 If you have multiple versions of Firefox installed, you can specify which to
 use by modifying your [PATH variable][path variable] so that the *directory
-containing the target binary* is prioritised.
+containing the target binary* is prioritized.
 
-___Running the tests on stage___
+### Running the tests on stage ###
+```bash
+  $ docker build -t socorro-tests .
+  $ docker run -it socorro-tests
+```
+### Running tests against localhost ###
+```bash
+  $ docker build -t socorro-tests .
+  $ docker run -it socorro-tests pytest --base-url "http://localhost:8000"
+```
+### Running tests against production ###
+```bash
+  $ docker build -t socorro-tests .
+  $ docker run -it socorro-tests pytest --base-url "https://crash-stats.mozilla.com"
+```
+### Running tests on Sauce Labs ###
 
-	$ tox
-
-___Running tests against localhost___
-
-	$ export PYTEST_BASE_URL="http://localhost:8000"
-	$ tox -e py27
-
-	$ export PATH=/path/to/firefox:$PATH
-	$ export PYTEST_BASE_URL="http://localhost:8000"
-	$ tox -e py27
-
-___Running tests against production___
-
-	$ export PYTEST_BASE_URL="https://crash-stats.mozilla.com"
-	$ tox -e py27
-
-___Running tests on SauceLabs___
-
-To use SauceLabs instead of an instance of Firefox running locally, do the following:
+To use Sauce Labs instead of an instance of Firefox running locally, do the following:
 
 Create a text file called `.saucelabs` and put it in your home directory. Get a
-username and key for SauceLabs and then add the following details to the
+username and key for Sauce Labs and then add the following details to the
 `.saucelabs` file:
 
 ```ini
@@ -66,15 +68,44 @@ username = <SauceLabs user name>
 key = <SauceLabs API key>
 ```
 
-Then you can run the tests against staging using the following command:
+Then you can run the tests against Sauce Labs using [Docker][] by passing the
+`--driver SauceLabs` argument as shown below. The `--mount` argument is
+important, as it allows your `.saucelabs` file to be accessed by the Docker
+container:
 
-	$ tox -e py27 -- --driver SauceLabs --capability browserName Firefox
+```bash
+  $ docker build -t socorro-tests .
+  $ docker run -it \
+    --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
+    socorro-tests pytest --driver SauceLabs
+```
 
-If you wish to run them against different environments, set `PYTEST_BASE_URL`
-as indicated in the sections above for running tests against localhost or
-production.
+To run them against different environments, such as **production**, change
+the last command, like so:
+```bash
+  $ docker run -it \
+    --mount type=bind,source=$HOME/.saucelabs,destination=/src/.saucelabs,readonly \
+    socorro-tests pytest --base-url "https://crash-stats.mozilla.com" --driver SauceLabs
+```
 
-___Running tests using headless Firefox___
+### Running tests locally ###
+
+Install [Pipenv][], and then using it, create a virtual environment with all
+the necessary Python package dependencies. Note that Python 2 is currently
+required for these tests.
+
+```
+$ pip install pipenv
+$ pipenv --two install -r requirements.txt
+```
+
+Then, you can run the tests using Pipenv:
+
+```
+$ pipenv run pytest
+```
+
+### Running tests using headless Firefox ###
 
 To run the tests using a copy of Firefox that can be run in 'headless' mode
 (meaning with no UI), do the following:
@@ -85,23 +116,27 @@ command:
 
 	$ export MOZ_HEADLESS=1
 
-Then run the tests using the following command:
+To run the tests, you will need to have the following installed:
+* Python 2.7
+* [Pipenv](https://pipenv.readthedocs.io)
 
-	$ tox -e py27
+Then run the tests using the following commands:
 
-___Running specific tests___
+```bash
+  $ pipenv install requirements/requirements.txt
+  $ pipenv shell
+  $ pytest
+```
+
+### Running specific tests ###
 
 You can run tests in a given file::
 
-    $ tox -e py27 -- tests/test_search.py
+    $ docker run -it socorro-tests pytest tests/test_search.py
 
 You can run tests that match a specific name:
 
-    $ tox -e py27 -- -k test_search_for_unrealistic_data
-
-You can run tests whose names match a specific pattern:
-
-    $ tox -e py27 -- -k test_search
+    $ docker run -it socorro-tests pytest tests/test_search::TestSuperSearch::test_search_for_unrealistic_data
 
 __Output__
 
@@ -129,20 +164,10 @@ If the test run hangs with Firefox open but no URL gets entered in the address
 box, some combinations of the Firefox version, and the Python Selenium bindings
 version may not be compatible. Upgrading each of them to latest often fixes it.
 
-Tips and tricks
----------------
 
-__Use a different driver__
-
-[pytest-selenium] provides the ability to run tests against
-[many other][test envs] browser environments -- consider using a different
-driver executable or external provider.
-
-It is important to note that tests must pass with Firefox driver otherwise
-they will not be accepted for merging.
-
-    $ tox -e py27 -- --driver PhantomJS --driver-path `which phantomjs` ...
-
+[git clone]: https://help.github.com/articles/cloning-a-repository/
+[git fork]: https://help.github.com/articles/fork-a-repo/
+[Docker]: https://www.docker.com
 [pytest-selenium]: http://pytest-selenium.readthedocs.org/
 [geckodriver]: https://github.com/mozilla/geckodriver/releases
 [test envs]: http://pytest-selenium.readthedocs.io/en/latest/user_guide.html#specifying-a-browser
