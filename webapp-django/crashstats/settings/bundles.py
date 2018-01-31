@@ -384,12 +384,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/manage-supersearch-fields.min.js',
     },
-    'manage:symbols_uploads': {
-        'source_filenames': (
-            'manage/js/symbols-uploads.js',
-        ),
-        'output_filename': 'js/manage-symbols-uploads.min.js',
-    },
     'manage:users': {
         'source_filenames': (
             'manage/js/users.js',
