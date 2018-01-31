@@ -8,19 +8,6 @@
 
 set -e
 
-# If this was kicked off via docker-compose, then it has a behavior
-# configuration already. If it wasn't, then we need to add behavior
-# configuration to the environment.
-if [[ -z "${CRONTABBER_BEHAVIOR}" ]];
-then
-    echo "Pulling in crontabber behavior configuration..."
-    CMDPREFIX="/app/bin/build_env.py /app/docker/config/crontabber.env"
-else
-    echo "Already have crontabber behavior configuration..."
-    CMDPREFIX=
-fi
-
-
 # Run crontabber sleeping 5 minutes between runs
 while true
 do

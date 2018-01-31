@@ -76,3 +76,53 @@ destination = DotDict({
         'wrapped_object_class': 'socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage',
     },
 })
+
+
+companion_process = DotDict({
+    'companion_class': 'socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
+    'symbol_cache_size': '40G',
+    'verbosity': 0,
+})
+
+
+new_crash_source = DotDict({
+    'crashstorage_class': 'socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage',
+    'new_crash_source_class': 'socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource',
+})
+
+
+processor = DotDict({
+    'jit_classifers.JitCrashCategorizeRule.chatty': True,
+    'processor_class': 'socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015',
+    'raw_to_processed_transform.BreakpadStackwalkerRule2015.command_pathname': (
+        '/stackwalk/stackwalker'
+    ),
+    'raw_to_processed_transform.BreakpadStackwalkerRule2015.symbols_urls': ','.join([
+        'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1',
+        'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-private/v1',
+    ]),
+    'raw_to_processed_transform.BreakpadStackwalkerRule2015.kill_timeout': 30,
+})
+
+
+producer_consumer = DotDict({
+    'maximum_queue_size': 32,
+    'number_of_threads': 16,
+})
+
+resource = DotDict({
+    'boto.keybuilder_class': 'socorro.external.boto.connection_context.DatePrefixKeyBuilder',
+    'boto.prefix': '',
+
+    # FIXME(willkg): Where does this file come from?
+    'elasticsearch.elasticsearch_index_settings': (
+        '/app/socorro/external/elasticsearch/socorro_index_settings.json'
+    ),
+    'elasticsearch.timeout': 2,
+    'elasticsearch.use_mapping_file': False,
+
+    'rabbitmq.filter_on_legacy_processing': True,
+    'rabbitmq.routing_key': 'socorro.normal',
+
+    'signature.collapse_arguments': True,
+})
