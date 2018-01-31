@@ -1146,5 +1146,5 @@ class Test_convert_booleans:
         }
         data = deepcopy(original_data)
 
-        truncate_keyword_field_values(fields, data)
+        convert_booleans(fields, data)
         assert original_data == data

@@ -55,7 +55,7 @@ def get_fields_by_analyzer(fields, analyzer):
 
     Note: This "hashes" the fields argument by using `id`. I think this is fine
     because fields doesn't change between runs and it's not mutated in-place.
-    We're we're hashing it sufficiently often that it's faster to use `id` than
+    We're hashing it sufficiently often that it's faster to use `id` than
     a more computationally intensive hash of a large data structure.
 
     :arg dict fields: dict of field information mapped as field name to
