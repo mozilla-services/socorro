@@ -1,14 +1,7 @@
 {% extends "crashstats_base.html" %}
 
-{% block site_css %}
-    {{ super() }}
-    {% stylesheet 'metricsgraphics' %}
-{% endblock %}
-
 {% block site_js %}
     {{ super() }}
-    {% javascript 'd3' %}
-    {% javascript 'metricsgraphics' %}
     {% javascript 'socorro_utils' %}
     {% javascript 'home' %}
 {% endblock %}
@@ -21,46 +14,13 @@ Crash Data for {{ product }}
 <div id="mainbody">
     <div class="page-heading">
         <h2 id="homepage-heading">{{ product }} Crash Data</h2>
-
-        <nav>
-            <ul id="duration" class="options">
-            {% for day in [3, 7, 14] %}
-                <li>
-                    <a  href="{{ change_query_string(days=day) }}"
-                        data-duration="{{ day }}"
-                        class="days-{{ day }}{% if day == days %} selected{% endif %}"
-                    >{{ day }} days</a>
-                </li>
-            {% endfor %}
-            </ul>
-        </nav>
     </div>
 
-    <div id="homepage-graph" class="panel">
-        <div class="title">
-            <h2>Crashes per 100 Active Daily Installs</h2>
-        </div>
-
-        <div
-            class="body"
-            id="homepage-graph-container"
-            data-supersearch-api="{{ url('api:model_wrapper', model_name='SuperSearch') }}"
-            data-product-build-types-api="{{ url('api:model_wrapper', model_name='ProductBuildTypes') }}"
-            data-adi-api="{{ url('api:model_wrapper', model_name='ADI') }}"
-            data-product="{{ product }}"
-            data-versions="{{ versions | to_json }}"
-            data-platforms="{{ platforms | to_json }}"
-            data-duration="{{ days }}"
-            data-es-shards-per-index="{{ es_shards_per_index }}"
-        >
-            <div class="message error hide"></div>
-            <div id="homepage-graph-graph"></div>
-            <div id="homepage-graph-legend" class="homepage-graph-legend"></div>
-        </div>
-    </div>
-
-
-    <div class="panel">
+    <div class="panel"
+        id="homepage-data-panel"
+        data-versions="{{ versions | to_json }}"
+        data-product="{{ product }}"
+    >
         <div class="title">
             <h2>Crash Reports</h2>
         </div>
@@ -86,8 +46,28 @@ Crash Data for {{ product }}
                                 version=version,
                                 process_type='plugin',
                                 days=days,
-                            ) }}">
+                                ) }}">
                                 Top Plugin Crashers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                product=product,
+                                version=version,
+                                process_type='content',
+                                days=days,
+                                ) }}">
+                                Top Content Crashers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                product=product,
+                                version=version,
+                                process_type='gpu',
+                                days=days,
+                                ) }}">
+                                Top GPU Crashers
                             </a>
                         </li>
                     </ul>
