@@ -27,7 +27,6 @@ from crashstats.crashstats.models import (
 from crashstats.supersearch.models import SuperSearchMissingFields
 from crashstats.tokens.models import Token
 from crashstats.status.models import StatusMessage
-from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 from crashstats.manage.decorators import superuser_required
 
@@ -342,70 +341,6 @@ def graphics_devices_lookup(request):
         return result
     else:
         return http.HttpResponseBadRequest(str(form.errors))
-
-
-@superuser_required
-def symbols_uploads(request):
-    context = {}
-    context['page_title'] = "Symbols Uploads"
-    return render(request, 'manage/symbols_uploads.html', context)
-
-
-@superuser_required
-@json_view
-def symbols_uploads_data(request):
-    try:
-        page = int(request.GET.get('page', 1))
-        assert page >= 1
-    except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
-
-    form = forms.FilterSymbolsUploadsForm(request.GET)
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    uploads = (
-        SymbolsUpload.objects.all()
-        .select_related('user')
-        .order_by('-created')
-    )
-    if form.cleaned_data['email']:
-        uploads = uploads.filter(
-            user__email__icontains=form.cleaned_data['email']
-        )
-    if form.cleaned_data['filename']:
-        uploads = uploads.filter(
-            filename__icontains=form.cleaned_data['filename']
-        )
-    if form.cleaned_data['content']:
-        uploads = uploads.filter(
-            content__contains=form.cleaned_data['content']
-        )
-
-    count = uploads.count()
-    items = []
-    batch_size = settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE
-    m = (page - 1) * batch_size
-    n = page * batch_size
-    for upload in uploads[m:n]:
-        items.append({
-            'user': {
-                'email': upload.user.email,
-                'id': upload.user.pk,
-                'url': reverse('manage:user', args=(upload.user.pk,)),
-            },
-            'id': upload.pk,
-            'filename': upload.filename,
-            'size': upload.size,
-            'created': upload.created,
-            'url': reverse('symbols:content', args=(upload.id,)),
-        })
-    return {
-        'items': items,
-        'count': count,
-        'batch_size': batch_size,
-        'page': page,
-    }
 
 
 @superuser_required

@@ -14,7 +14,6 @@ import pytest
 from pinax.eventlog.models import Log
 
 from crashstats.status.models import StatusMessage
-from crashstats.symbols.models import SymbolsUpload
 from crashstats.tokens.models import Token
 from crashstats.supersearch.models import (
     SuperSearchFields,
@@ -582,14 +581,6 @@ class TestViews(BaseTestViews):
         assert event.extra['success'] is True
         assert event.extra['database'] == 'pci.ids'
         assert event.extra['no_lines'] == 6
-
-    def test_symbols_uploads(self):
-        url = reverse('manage:symbols_uploads')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
 
     def test_supersearch_fields_missing(self):
         self._login()
@@ -1263,123 +1254,6 @@ class TestViews(BaseTestViews):
                     'exception_value': 'Crash!'
                 }
             )
-
-    def test_symbols_uploads_data_pagination(self):
-        url = reverse('manage:symbols_uploads_data')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        self._login()
-
-        other = User.objects.create(username='o', email='other@mozilla.com')
-        for i in range(settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE):
-            SymbolsUpload.objects.create(
-                user=other,
-                filename='file-%d.zip' % i,
-                size=1000 + i,
-                content='Some Content'
-            )
-        # add this last so it shows up first
-        user = User.objects.create(username='user', email='user@mozilla.com')
-        upload = SymbolsUpload.objects.create(
-            user=user,
-            filename='file.zip',
-            size=123456,
-            content='Some Content'
-        )
-        response = self.client.get(url)
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE + 1
-        assert data['batch_size'] == settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE
-        assert data['page'] == 1
-        items = data['items']
-        assert len(items) == settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE
-        first, = items[:1]
-        assert first['id'] == upload.id
-        assert first['created'] == upload.created.isoformat()
-        assert first['filename'] == 'file.zip'
-        assert first['size'] == 123456
-        assert first['url'] == reverse('symbols:content', args=(first['id'],))
-        expected = {
-            'email': user.email,
-            'url': reverse('manage:user', args=(user.id,)),
-            'id': user.id,
-        }
-        assert first['user'] == expected
-
-        # let's go to page 2
-        response = self.client.get(url, {'page': 2})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE + 1
-        items = data['items']
-        assert len(items) == 1
-        assert data['page'] == 2
-
-        # filter by user email
-        response = self.client.get(url, {'email': user.email[:5].upper()})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 1
-        first, = data['items']
-        assert first['user']['id'] == user.id
-
-        # filter by filename
-        response = self.client.get(url, {'filename': 'FILE.ZI'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 1
-        first, = data['items']
-        assert first['filename'] == 'file.zip'
-
-    def test_symbols_uploads_data_content_search(self):
-        url = reverse('manage:symbols_uploads_data')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        self._login()
-
-        other = User.objects.create(username='o', email='other@mozilla.com')
-        for i in range(3):
-            SymbolsUpload.objects.create(
-                user=other,
-                filename='file-%d.zip' % i,
-                size=1000 + i,
-                content='Some Content {}'.format(i)
-            )
-        response = self.client.get(url)
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 3
-
-        response = self.client.get(url, {'content': 'Some Content'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 3
-
-        response = self.client.get(url, {'content': 'Some Content 1'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 1
-
-        response = self.client.get(url, {'content': 'Some Content X'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 0
-
-    def test_symbols_uploads_data_pagination_bad_request(self):
-        url = reverse('manage:symbols_uploads_data')
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        response = self.client.get(url, {'page': 0})
-        assert response.status_code == 400
-
-        response = self.client.get(url, {'page': -1})
-        assert response.status_code == 400
-
-        response = self.client.get(url, {'page': 'NaN'})
-        assert response.status_code == 400
 
     def test_reprocessing(self):
         url = reverse('manage:reprocessing')
