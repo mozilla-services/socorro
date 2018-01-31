@@ -1,20 +1,28 @@
-FROM python:2-alpine3.7
+FROM ubuntu:xenial
 
-ENV MOZ_HEADLESS=1
+ENV DEBIAN_FRONTEND=noninteractive \
+  MOZ_HEADLESS=1
 
-RUN mkdir /opt
-RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories
-RUN apk --no-cache add \
-    curl \
-    firefox@testing \
-    msttcorefonts-installer
+RUN apt-get update \
+  && apt-get install -y software-properties-common \
+  && add-apt-repository ppa:deadsnakes/ppa \
+  && apt-get update \
+  && apt-get install -y bzip2 curl firefox python2.7 \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN update-ms-fonts && fc-cache -f
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py | python2.7 \
+  && pip install pipenv
 
-WORKDIR /src
-COPY requirements/requirements.txt /src
-RUN pip install pipenv
-RUN pipenv install --system -r requirements.txt --skip-lock --deploy
+ENV FIREFOX_VERSION=58.0.1
+
+RUN curl -fsSLo /tmp/firefox.tar.bz2 https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.bz2 \
+  && apt-get -y purge firefox \
+  && rm -rf /opt/firefox \
+  && tar -C /opt -xjf /tmp/firefox.tar.bz2 \
+  && rm /tmp/firefox.tar.bz2 \
+  && mv /opt/firefox /opt/firefox-$FIREFOX_VERSION \
+  && ln -fs /opt/firefox-$FIREFOX_VERSION/firefox /usr/bin/firefox
+
 ENV GECKODRIVER_VERSION=0.19.1
 RUN curl -fsSLo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-linux64.tar.gz \
   && rm -rf /opt/geckodriver \
@@ -22,8 +30,11 @@ RUN curl -fsSLo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/r
   && rm /tmp/geckodriver.tar.gz \
   && mv /opt/geckodriver /opt/geckodriver-$GECKODRIVER_VERSION \
   && chmod 755 /opt/geckodriver-$GECKODRIVER_VERSION \
-&& ln -fs /opt/geckodriver-$GECKODRIVER_VERSION /usr/bin/geckodriver
+  && ln -fs /opt/geckodriver-$GECKODRIVER_VERSION /usr/bin/geckodriver
+
+WORKDIR /src
+COPY requirements/requirements.txt /src
+RUN pipenv install --system -r requirements.txt --skip-lock --deploy
 
 COPY . /src
-
 CMD pytest --driver Firefox

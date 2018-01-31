@@ -105,29 +105,6 @@ Then, you can run the tests using Pipenv:
 $ pipenv run pytest
 ```
 
-### Running tests using headless Firefox ###
-
-To run the tests using a copy of Firefox that can be run in 'headless' mode
-(meaning with no UI), do the following:
-
-Set an environment variable `MOZ_HEADLESS` to be '1'. Check the documentation
-for your shell on how to do this. For zsh you can do using the following
-command:
-
-	$ export MOZ_HEADLESS=1
-
-To run the tests, you will need to have the following installed:
-* Python 2.7
-* [Pipenv](https://pipenv.readthedocs.io)
-
-Then run the tests using the following commands:
-
-```bash
-  $ pipenv install requirements/requirements.txt
-  $ pipenv shell
-  $ pytest
-```
-
 ### Running specific tests ###
 
 You can run tests in a given file::
