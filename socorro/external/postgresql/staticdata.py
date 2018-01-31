@@ -164,15 +164,6 @@ class ReportPartitionInfo(BaseTable):
             'TIMESTAMPTZ'
         ),
         (
-            'extensions',
-            '3',
-            '{"report_id,extension_key"}',
-            '{"report_id,date_processed"}',
-            '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-        (
             'raw_crashes',
             '4',
             '{uuid}',
