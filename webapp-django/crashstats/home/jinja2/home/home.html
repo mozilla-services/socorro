@@ -35,7 +35,6 @@ Crash Data for {{ product }}
                             <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
                                 product=product,
                                 version=version,
-                                days=days,
                             ) }}">
                                 Top Crashers
                             </a>
@@ -45,8 +44,7 @@ Crash Data for {{ product }}
                                 product=product,
                                 version=version,
                                 process_type='plugin',
-                                days=days,
-                                ) }}">
+                            ) }}">
                                 Top Plugin Crashers
                             </a>
                         </li>
@@ -55,8 +53,7 @@ Crash Data for {{ product }}
                                 product=product,
                                 version=version,
                                 process_type='content',
-                                days=days,
-                                ) }}">
+                            ) }}">
                                 Top Content Crashers
                             </a>
                         </li>
@@ -65,8 +62,7 @@ Crash Data for {{ product }}
                                 product=product,
                                 version=version,
                                 process_type='gpu',
-                                days=days,
-                                ) }}">
+                            ) }}">
                                 Top GPU Crashers
                             </a>
                         </li>
