@@ -155,12 +155,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/signature-report.min.css',
     },
-    'symbols': {
-        'source_filenames': (
-            'symbols/css/home.css',
-        ),
-        'output_filename': 'css/symbols.min.css',
-    },
     'tokens': {
         'source_filenames': (
             'tokens/css/home.css',

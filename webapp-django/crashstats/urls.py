@@ -3,6 +3,7 @@ import os
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.views.generic.base import RedirectView
 from django.views.static import serve
 
 from .base.monkeypatches import patch
@@ -47,7 +48,10 @@ urlpatterns = [
     url(r'^monitoring/', include(monitoring_urls, namespace='monitoring')),
     url(r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     url(r'^api/', include('crashstats.api.urls', namespace='api')),
-    url(r'^symbols/', include('crashstats.symbols.urls', namespace='symbols')),
+    # redirect all symbols/ requests to Tecken
+    url(r'^symbols/.*',
+        RedirectView.as_view(url='https://symbols.mozilla.org/'),
+        name='redirect-to-tecken'),
     # if we ever use the Django admin we might want to change this URL
     url(r'^admin/', include('crashstats.manage.urls', namespace='manage')),
     url(r'^profile/', include(
