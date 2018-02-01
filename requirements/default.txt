@@ -115,9 +115,9 @@ python-memcached==1.59 \
 django-ratelimit==1.1.0 \
     --hash=sha256:6e1c88b22055c49dc5abf721340fdc39a35de5f310f81acc3752c689ece71a15 \
     --hash=sha256:3c954ca36ad66675a3bb079f526b4234a3d0092954f8e84820132b77e87c00e0
-django-waffle==0.12.0 \
-    --hash=sha256:5825358d97cc327bc749cd3ce21ea70c958cd50ca91cb62e0c7b690eed83afc9 \
-    --hash=sha256:b37da3c26b9d44920e9f5bb35a1339a9f8320437423e733aa8b1f8e03c39cb74
+django-waffle==0.13.0 \
+    --hash=sha256:2dc8bf84ada5e77bc30de55cd4d0803ce0286cacbdf4f5b18c7f17186cc7499b \
+    --hash=sha256:aa0b313f9ca4eadc4f1c6d652f415500e96eaaec7f59acca15b8b50e8da49967
 Jinja2==2.10 \
     --hash=sha256:74c935a1b8bb9a3947c50a54766a969d4846290e1e788ea44c1392163723c3bd \
     --hash=sha256:f84be1bb0040caca4cea721fcbbbbd61f9be9464ca236387158b0feea01914a4
