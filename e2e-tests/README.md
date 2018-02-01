@@ -6,7 +6,7 @@ Continuous Integration
 This directory holds Socorro client-based end-to-end tests, which is why they're different than the rest of the code in this repository.
 
 To review the specific-Python packages the tests use, please review
-`requirements/default.txt`.
+`requirements/requirements.txt`.
 
 How to run the tests
 ====================
