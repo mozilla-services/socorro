@@ -29,6 +29,7 @@ recommonmark==0.4.0 \
     --hash=sha256:cd8bf902e469dae94d00367a8197fb7b81fcabc9cfb79d520e0d22d0fbeaa8b7 \
     --hash=sha256:6e29c723abcf5533842376d87c4589e62923ecb6002a8e059eb608345ddaff9d
 # recommonmark 0.4.0 requires CommonMark <= 0.5.4--don't upgrade this!
-CommonMark==0.5.4 \
-    --hash=sha256:34d73ec8085923c023930dfc0bcd1c4286e28a2a82de094bb72fabcc0281cbe5
+CommonMark==0.7.4 \
+    --hash=sha256:4d3e6853c17c5f92a5bec77343d816254f135e34b8935d0d61f0afc1226c51b7 \
+    --hash=sha256:24678b72094398df96312fb927e274ccaf5148f25e47aca9f7fc062693ae7577
 
