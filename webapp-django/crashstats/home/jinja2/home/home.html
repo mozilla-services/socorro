@@ -1,11 +1,5 @@
 {% extends "crashstats_base.html" %}
 
-{% block site_js %}
-    {{ super() }}
-    {% javascript 'socorro_utils' %}
-    {% javascript 'home' %}
-{% endblock %}
-
 {% block page_title %}
 Crash Data for {{ product }}
 {% endblock %}
@@ -16,11 +10,7 @@ Crash Data for {{ product }}
         <h2 id="homepage-heading">{{ product }} Crash Data</h2>
     </div>
 
-    <div class="panel"
-        id="homepage-data-panel"
-        data-versions="{{ versions | to_json }}"
-        data-product="{{ product }}"
-    >
+    <div class="panel">
         <div class="title">
             <h2>Crash Reports</h2>
         </div>
