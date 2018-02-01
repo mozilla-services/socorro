@@ -21,24 +21,23 @@ from sqlalchemy.sql import table, column
 
 
 def upgrade():
-    # Get a list of ALL tables that start with 'extensions_*' and drop them
+    # Get a list of ALL tables that start with 'extensions'
     connection = op.get_bind()
     cursor = connection.connection.cursor()
     cursor.execute("""
-        SELECT c.relname FROM pg_catalog.pg_class c
-        WHERE c.relkind = 'r' AND c.relname LIKE 'extensions_%'
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_name like 'extensions%'
     """)
     all_table_names = []
     for records in cursor.fetchall():
-        table_name, = records
-        all_table_names.append(table_name)
+        all_table_names.append(records[0])
 
+    # Sort table names so "extensions" is last since the others depend on it
+    # and delete them in that order
     all_table_names.sort(reverse=True)
     for table_name in all_table_names:
         op.execute('DROP TABLE IF EXISTS {}'.format(table_name))
-
-    # Now drop the extensions table itself
-    op.execute('DROP TABLE IF EXISTS extensions')
 
     # Now remove the entry from report_partition_info so the crontabber job
     # doesn't try to create a new partition
