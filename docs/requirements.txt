@@ -19,9 +19,9 @@ typing==3.6.4 \
 imagesize==0.7.1 \
     --hash=sha256:6ebdc9e0ad188f9d1b2cdd9bc59cbe42bf931875e829e7a595e6b3abdc05cdfb \
     --hash=sha256:0ab2c62b87987e3252f89d30b7cedbec12a01af9274af9ffa48108f2c13c6062
-Babel==2.5.1 \
-    --hash=sha256:f20b2acd44f587988ff185d8949c3e208b4b3d5d20fcab7d91fe481ffa435528 \
-    --hash=sha256:6007daf714d0cd5524bbe436e2d42b3c20e68da66289559341e48d2cd6d25811
+Babel==2.5.3 \
+    --hash=sha256:ad209a68d7162c4cff4b29cdebe3dec4cef75492df501b0049a9433c96ce6f80 \
+    --hash=sha256:8ce4cb6fdd4393edd323227cba3a077bceb2a6ce5201c902c65e730046f41f14
 sphinxcontrib-websupport==1.0.1 \
     --hash=sha256:7a85961326aa3a400cd4ad3c816d70ed6f7c740acd7ce5d78cd0a67825072eb9 \
     --hash=sha256:f4932e95869599b89bf4f80fc3989132d83c9faa5bf633e7b5e0c25dffb75da2
