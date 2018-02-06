@@ -155,12 +155,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/signature-report.min.css',
     },
-    'symbols': {
-        'source_filenames': (
-            'symbols/css/home.css',
-        ),
-        'output_filename': 'css/symbols.min.css',
-    },
     'tokens': {
         'source_filenames': (
             'tokens/css/home.css',
@@ -328,12 +322,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/exploitability_report.js',
         ),
         'output_filename': 'js/exploitability-report.min.js',
-    },
-    'home': {
-        'source_filenames': (
-            'home/js/home.js',
-        ),
-        'output_filename': 'js/home.min.js',
     },
     'report_index': {
         'source_filenames': (

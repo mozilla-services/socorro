@@ -32,7 +32,6 @@ MODELS_MODULES = (
     models,
     crashstats.tools.models,
     crashstats.supersearch.models,
-    crashstats.symbols.models,
 )
 
 

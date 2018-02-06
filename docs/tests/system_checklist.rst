@@ -13,7 +13,7 @@ make your change, then go through the checklist again.
 
 Lonnen the bear says, "Only you can prevent production fires!"
 
-Last updated: November 15th, 2017
+Last updated: February 6th, 2018
 
 
 How to use
@@ -177,17 +177,6 @@ Checklist
     2. Click on a crash signature to browse to Signature report
     3. Click on a crash id to browse to report index
 
-    Can you upload a symbols file?
-
-    * Download https://github.com/mozilla/socorro/blob/master/webapp-django/crashstats/symbols/tests/sample.zip
-      to disk
-    * Log in with a user with permission to upload symbols.
-    * Go to the symbol upload section (/symbols/upload/web)
-    * Try to upload the "sample.zip" file.
-    * To verify that it worked, go to the public symbols S3 bucket and check
-      that there is a "xpcshell.sym" file in the root with a recent modify
-      date.
-
 
     Crontabber
     ==========
@@ -215,4 +204,5 @@ Checklist
 
     Is the stage submitter running and sending crashes?
 
-    * Check Datadog dashboard for Antenna on -stage
+    * Check Datadog dashboard for Antenna on -stage to see if it's
+      receiving crashes

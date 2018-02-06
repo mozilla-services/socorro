@@ -313,21 +313,6 @@ class Module(DeclarativeBase):
     version = Column(u'version', TEXT(), nullable=False, primary_key=True)
 
 
-class Extension(DeclarativeBase):
-    __tablename__ = 'extensions'
-
-    # column definitions
-    report_id = Column(u'report_id', INTEGER(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    extension_key = Column(u'extension_key', INTEGER(), nullable=False)
-    extension_id = Column(u'extension_id', TEXT(), nullable=False)
-    extension_version = Column(u'extension_version', TEXT())
-    uuid = Column(u'uuid', UUID())
-
-    __mapper_args__ = {"primary_key": (
-        report_id, date_processed, extension_key, extension_id, extension_version)}
-
-
 class ExploitabilityReport(DeclarativeBase):
     __tablename__ = 'exploitability_reports'
 

@@ -46,6 +46,39 @@ class RawCrashRedactor(Redactor):
 VALID_KEY = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
+# Cache of (fields id, analyzer) -> list of fields properties
+_ANALYZER_TO_FIELDS_MAP = {}
+
+
+def get_fields_by_analyzer(fields, analyzer):
+    """Returns the fields in fields that have the specified analyzer
+
+    Note: This "hashes" the fields argument by using `id`. I think this is fine
+    because fields doesn't change between runs and it's not mutated in-place.
+    We're hashing it sufficiently often that it's faster to use `id` than
+    a more computationally intensive hash of a large data structure.
+
+    :arg dict fields: dict of field information mapped as field name to
+        properties
+    :arg str analyzer: the Elasticsearch analyzer to match
+
+    :returns: list of field properties for fields that match the analyzer
+
+    """
+    map_key = (id(fields), analyzer)
+    try:
+        return _ANALYZER_TO_FIELDS_MAP[map_key]
+    except KeyError:
+        pass
+
+    fields = [
+        field for field in fields.values()
+        if (field.get('storage_mapping') or {}).get('analyzer', '') == analyzer
+    ]
+    _ANALYZER_TO_FIELDS_MAP[map_key] = fields
+    return fields
+
+
 def is_valid_key(key):
     """Validates an Elasticsearch document key
 
@@ -92,17 +125,11 @@ def truncate_keyword_field_values(fields, data):
     :arg dict data: the data to look through
 
     """
-    # Go through all the fields marked as keyword and truncate values
-    # if they're too large
+    keyword_fields = get_fields_by_analyzer(fields, 'keyword')
 
-    for properties in fields.values():
-        field_name = properties.get('in_database_name')
-        storage = properties.get('storage_mapping')
-        if not field_name or not storage:
-            continue
-
-        analyzer = storage.get('analyzer')
-        if analyzer != 'keyword':
+    for field in keyword_fields:
+        field_name = field.get('in_database_name')
+        if not field_name:
             continue
 
         value = data.get(field_name)
@@ -111,6 +138,29 @@ def truncate_keyword_field_values(fields, data):
 
             # FIXME(willkg): When we get metrics throughout the processor, we should
             # keep track of this with an .incr().
+
+
+POSSIBLE_TRUE_VALUES = [1, '1', 'true', True]
+
+
+def convert_booleans(fields, data):
+    """Converts pseudo-boolean values to boolean values for boolean fields
+
+    Valid boolean values are True, 'true', False, and 'false'.
+
+    Note: This modifies the data dict in-place and only looks at the top level.
+
+    :arg dict fields: the super search fields schema
+    :arg dict data: the data to look through
+
+    """
+    boolean_fields = get_fields_by_analyzer(fields, 'boolean')
+
+    for field in boolean_fields:
+        field_name = field['in_database_name']
+
+        value = data.get(field_name)
+        data[field_name] = True if value in POSSIBLE_TRUE_VALUES else False
 
 
 class ESCrashStorage(CrashStorageBase):
@@ -203,6 +253,10 @@ class ESCrashStorage(CrashStorageBase):
         # Truncate values that are too long
         truncate_keyword_field_values(FIELDS, raw_crash)
         truncate_keyword_field_values(FIELDS, processed_crash)
+
+        # Convert pseudo-boolean values to boolean values
+        convert_booleans(FIELDS, raw_crash)
+        convert_booleans(FIELDS, processed_crash)
 
         # Capture crash data size metrics--do this only after we've cleaned up
         # the crash data

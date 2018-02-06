@@ -349,15 +349,7 @@ USE_TZ = True
 USERS_ADMIN_BATCH_SIZE = 10
 EVENTS_ADMIN_BATCH_SIZE = 10
 API_TOKENS_ADMIN_BATCH_SIZE = 10
-SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE = 10
 STATUS_MESSAGE_ADMIN_BATCH_SIZE = 10
-
-# Individual strings that can't be allowed in any of the lines in the
-# content of a symbols archive file.
-DISALLOWED_SYMBOLS_SNIPPETS = (
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=1012672
-    'qcom/proprietary',
-)
 
 # Rate limit for when using the Web API for anonymous hits
 API_RATE_LIMIT = '100/m'
@@ -387,26 +379,6 @@ ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
 MANAGERS = ADMINS
-
-# When you don't have permission to upload Symbols you might be confused
-# what to do next. On the page that explains that you don't have permission
-# there's a chance to put a link
-# SYMBOLS_PERMISSION_HINT_LINK = {
-#     'url': 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&'
-#            'component=General&groups=client-services-security',
-#     'label': 'File a bug in bugzilla'
-# }
-
-
-# to override the content-type of specific file extensinos:
-SYMBOLS_MIME_OVERRIDES = {
-    'sym': 'text/plain'
-}
-SYMBOLS_COMPRESS_EXTENSIONS = config(
-    'SYMBOLS_COMPRESS_EXTENSIONS',
-    'sym',
-    cast=Csv()
-)
 
 # ------------------------------------------------
 # Below are settings that can be overridden using
@@ -557,41 +529,6 @@ AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', None)
 AWS_HOST = config('AWS_HOST', None)
 AWS_PORT = config('AWS_PORT', 0, cast=int)
 AWS_SECURE = config('AWS_SECURE', True, cast=bool)
-
-# Information for uploading symbols to S3
-SYMBOLS_BUCKET_DEFAULT_NAME = config('SYMBOLS_BUCKET_DEFAULT_NAME', '')
-
-# The format for this is `email:bucketname, email2:bucketname, etc`
-SYMBOLS_BUCKET_EXCEPTIONS = config('SYMBOLS_BUCKET_EXCEPTIONS', '', cast=Csv())
-SYMBOLS_BUCKET_EXCEPTIONS = dict(
-    x.strip().split(':', 1) for x in SYMBOLS_BUCKET_EXCEPTIONS
-)
-# We *used* to allow just one single key/value override exceptions
-# we need to continue to support for a little bit.
-if (
-    config('SYMBOLS_BUCKET_EXCEPTIONS_USER', '') and
-    config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
-):
-    import warnings
-    warnings.warn(
-        'Note! To specify exceptions for users for different buckets, '
-        'instead use the CSV based key SYMBOLS_BUCKET_EXCEPTIONS where '
-        'each combination is written as \'emailregex:bucketname\' and '
-        'multiples are written as comma separated.',
-        DeprecationWarning
-    )
-    SYMBOLS_BUCKET_EXCEPTIONS[
-        config('SYMBOLS_BUCKET_EXCEPTIONS_USER', '')
-    ] = config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
-
-
-SYMBOLS_FILE_PREFIX = config('SYMBOLS_FILE_PREFIX', 'v1')
-
-# Set to the default Mozilla Socorro uses
-SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
-    'SYMBOLS_BUCKET_DEFAULT_LOCATION',
-    'us-west-2'
-)
 
 # This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the
 # implementation classes will use the config coming from `DATABASE_URL`.
