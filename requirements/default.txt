@@ -191,9 +191,6 @@ pytest-wholenodeid==0.2 \
     --hash=sha256:bdcb4df88ca182a19752ef95150c0881deaafc2c593ef67c61515894e5309206
 pytest-env==0.6.2 \
     --hash=sha256:7e94956aef7f2764f3c147d216ce066bf6c42948bb9e293169b1b1c880a580c2
-pytest-catchlog==1.2.2 \
-    --hash=sha256:4be15dc5ac1750f83960897f591453040dff044b5966fe24a91c2f7d04ecfcf0 \
-    --hash=sha256:a692966da726b918197cabd20dc0ad4da5503fbdc99baaa192e62579c8a45773
 Pygments==2.2.0 \
     --hash=sha256:78f3f434bcc5d6ee09020f92ba487f95ba50f1e3ef83ae96b9d5ffa1bab25c5d \
     --hash=sha256:dbae1046def0efb574852fab9e90209b23f556367b5a320c0bcb871c77c3e8cc
