@@ -56,7 +56,7 @@ PIPELINE_CSS = {
     },
     'accordion': {
         'source_filenames': (
-            'crashstats/css/accordion.less',
+            'crashstats/css/components/accordion.less',
         ),
         'output_filename': 'css/accordion.min.css',
     },
@@ -82,13 +82,13 @@ PIPELINE_CSS = {
     },
     'crashes_per_day': {
         'source_filenames': (
-            'crashstats/css/crashes_per_day.less',
+            'crashstats/css/pages/crashes_per_day.less',
         ),
         'output_filename': 'css/crashes-per-day.min.css',
     },
     'crontabber_state': {
         'source_filenames': (
-            'crashstats/css/crontabber_state.css',
+            'crashstats/css/pages/crontabber_state.css',
         ),
         'output_filename': 'css/crontabber-state.min.css',
     },
@@ -106,14 +106,14 @@ PIPELINE_CSS = {
     },
     'report_index': {
         'source_filenames': (
-            'crashstats/css/report_index.css',
+            'crashstats/css/pages/report_index.css',
             'crashstats/css/tree.css',
         ),
         'output_filename': 'css/report-index.min.css',
     },
     'report_pending': {
         'source_filenames': (
-            'crashstats/css/report_pending.less',
+            'crashstats/css/pages/report_pending.less',
         ),
         'output_filename': 'css/report-pending.min.css',
     },
