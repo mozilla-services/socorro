@@ -447,6 +447,7 @@ PIPELINE = {
         'LESS_BINARY',
         path('node_modules/.bin/lessc')
     ),
+    'LESS_ARGUMENTS': '--global-var="base-path=\'/tmp/crashstats-static/crashstats/css/\'"',
     'JS_COMPRESSOR': 'pipeline.compressors.uglifyjs.UglifyJSCompressor',
     'UGLIFYJS_BINARY': config(
         'UGLIFYJS_BINARY',
