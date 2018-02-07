@@ -1,0 +1,45 @@
+/* Product / Version dashboards */
+div.release_channel {
+    float: left;
+    margin: 12px 0;
+    width: 24%;
+    min-width: 160px;
+    h4 {
+        padding-left: 16px;
+        font-style: normal;
+    }
+    ul {
+        padding-left: 18px;
+    }
+    li {
+        padding: 0 0 12px 0;
+        font-size: (@base-font-size + 2); /* 14px or 1.1(r)em */
+        a {
+            color: #1c5168;
+            text-decoration: none;
+            &:hover,
+            &:active {
+                color: #287798;
+            }
+        }
+    }
+    li.focused {
+        a,
+        a:link,
+        a:hover,
+        a:active {
+            color: #0083bc;
+        }
+    }
+}
+.border_right {
+    border-right: 1px dashed #d0d0d0;
+}
+
+#homepage-graph {
+    position: relative;
+}
+.homepage-graph-legend {
+    width: 100%;
+    text-align: center;
+}

@@ -1,0 +1,251 @@
+/*
+Copyright (c) 2009, Yahoo! Inc. All rights reserved.
+Code licensed under the BSD License:
+http://developer.yahoo.net/yui/license.txt
+version: 3.0.0
+build: 1549
+*/
+
+@import "base/reset.less";
+@import "base/variables.less";
+@import "base/mixins.less";
+@import "base/forms.less";
+@import "base/tables.less";
+@import "base/typography.less";
+@import "base/layout.less";
+
+/* Layout elements */
+@import "components/nav.less";
+@import "components/footer.less";
+
+/* Common components */
+@import "components/admin.less";
+@import "components/code.less";
+@import "components/message.less";
+@import "components/table_sorter.less";
+@import "components/panel.less";
+@import "components/pagination.less";
+@import "components/sumo_link.less";
+
+/* Other shared styles */
+a {
+    text-decoration: none;
+}
+a, a:link, a:hover, a:active {
+    color: #0033FF;
+    text-decoration: underline;
+}
+.ui-widget-content a:visited, /* Override jQuery UI's behavior */
+a:visited {
+    color: #800080;
+}
+
+body > h1 {
+    font-size: 200%;
+}
+
+.clear {
+    clear: both;
+}
+.clear_left {
+    clear: left;
+}
+.clear_right {
+    clear: right;
+}
+.hidden {
+    display: none;
+}
+.visually-hidden {
+    .accessibly-hidden()
+}
+
+
+#mainbody {
+    position: relative;
+    margin: 1em 2em;
+    text-align: left;
+    flex: 1;
+}
+.loading {
+    position: absolute;
+    top: 45%;
+    left: 45%;
+}
+.inline-loader {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+
+
+/* --- */
+#data_sources {
+    border: 0;
+    table {
+        width: 100%;
+    }
+    th:last-child {
+        width: 80px;
+    }
+}
+
+#data_sources_nav {
+    background: none;
+    border: 0;
+    li {
+        background: none;
+        border: 0;
+    }
+    li:before {
+        content: "";
+    }
+}
+
+span.push_right {
+    margin-right: 10px;
+}
+
+.list {
+    tr:nth-child(2n+1) {
+        background-color: #ddd;
+    }
+    tr:nth-child(2n) {
+        background-color: #eee;
+    }
+    tr:hover {
+        background-color: #fff;
+    }
+    tr {
+        td {
+            padding:.5em;
+            text-align:left;
+            label {
+                border-bottom: 1px dashed #999;
+                font-weight: normal;
+            }
+        }
+    }
+    th {
+        background: #ddd;
+        padding: 2px;
+        border: 1px solid #000;
+        font-weight: bold;
+        a {
+            display: block;
+            padding:.2em 1.2em .2em .2em;
+            text-align: left;
+        }
+        a:hover {
+            background-color: #fff;
+        }
+    }
+}
+
+.oopp-hang {
+    clear: right;
+    float: right;
+    .current {
+        float: right;
+        background-image: url(../../img/3rdparty/fatcow/stop16x16.png);
+        background-repeat: no-repeat;
+        color: red;
+        padding-left: 20px;
+        height: 16px;
+        font-weight: 900;
+        .type {
+            color: #303030;
+        }
+    }
+    .pair {
+        clear: right;
+        padding: 0.5em 0 0.5em 0.5em;
+        a {
+            text-decoration: none;
+        }
+    }
+}
+
+td.in1,
+td.in2 {
+    ul {
+        padding-left: 15px;
+    }
+}
+
+.trend {
+    font-weight: 900;
+    color: white;
+}
+.trend.up {
+    background: url("../../img/up_arrow.png") no-repeat scroll right 10px #DD0000;
+}
+.trend.down {
+    background: url("../../img/down_arrow.png") no-repeat scroll right 10px #008800;
+}
+
+.complete {
+    position: absolute;
+    right: 0px;
+    background-color: #FFF;
+    border: solid 1px #AAA;
+    margin: 1em;
+}
+
+.correlation-module {
+    position: relative;
+    float: left;
+    padding: 1em;
+    width: 320px;
+    h3 {
+        font-weight: bold;
+    }
+}
+#duration-nav {
+    float: right;
+    ul {
+        li {
+            float: left;
+            padding-right: 1em;
+            list-style-type: none;
+        }
+    }
+}
+
+div.expandable-menu,
+div.each-sparkline {
+    margin-left: 12px;
+    border: none;
+}
+.correlation-cell {
+    div {
+        div.complete {
+            display: none;
+        }
+    }
+}
+.correlation {
+    pre {
+        clear: left;
+    }
+    h3 {
+        margin-top: 0.1em;
+    }
+}
+.complete {
+    h3 {
+        margin: 0.75em 0 0 0;
+    }
+}
+
+
+/* hide google ssIFrame */
+#ssIFrame_google {
+    display: none;
+}
+
+/* jQueryUI theme overrides */
+.ui-tabs-panel {
+    border: 1px solid #e0e0e0;
+}

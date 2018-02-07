@@ -69,7 +69,7 @@ PIPELINE_CSS = {
     },
     'crashstats_base': {
         'source_filenames': (
-            'crashstats/css/index.less',
+            'crashstats/css/base.less',
             'status/css/status.less',
         ),
         'output_filename': 'css/crashstats-base.min.css',
@@ -122,6 +122,12 @@ PIPELINE_CSS = {
             'manage/css/api_tokens.css',
         ),
         'output_filename': 'css/api-tokens.min.css',
+    },
+    'home': {
+        'source_filenames': (
+            'home/css/home.less',
+        ),
+        'output_filename': 'css/home.min.css',
     },
     'manage:home': {
         'source_filenames': (
