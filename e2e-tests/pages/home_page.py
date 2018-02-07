@@ -13,12 +13,10 @@ class CrashStatsHomePage(CrashStatsBasePage):
 
     URL_TEMPLATE = '/'
 
-    _graph_loading_locator = (By.CSS_SELECTOR, '#homepage-graph .loading')
     _release_channels_locator = (By.CSS_SELECTOR, '.release_channel')
 
     def wait_for_page_to_load(self):
         super(CrashStatsHomePage, self).wait_for_page_to_load()
-        self.wait.until(lambda s: not self.is_element_present(*self._graph_loading_locator))
         return self
 
     @property
