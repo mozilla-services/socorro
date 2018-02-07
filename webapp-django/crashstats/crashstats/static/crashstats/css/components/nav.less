@@ -1,0 +1,105 @@
+@import "mixins.less";
+
+/* Nav */
+nav {
+    display: inline;
+    .options {
+        display: inline;
+        margin-left: 1em;
+        font-size: 14px;
+        vertical-align: 4px;
+        li {
+            display: inline;
+            list-style: none;
+        }
+        a {
+            color: #254b5f;
+            padding: .3em .7em;
+            text-decoration: none;
+            white-space: nowrap;
+            .rounded-corners(.4em);
+
+            &:hover {
+                background-color: #DFECF2;
+            }
+            &.selected {
+                background-color: #2e5d74;
+                color: #fff;
+            }
+        }
+    }
+}
+
+.choices {
+    display: inline;
+    border-left: 1px solid #888;
+    padding: .25em 1em;
+    ul {
+        display: inline;
+        list-style: none;
+    }
+    li {
+        display: inline;
+    }
+    a {
+        padding: .25em .25em;
+        .rounded-corners(.5em);
+        font-weight: normal;
+        text-decoration: none;
+    }
+    a:hover {
+        background-color: #ddd;
+    }
+}
+.choices:first-child {
+    border-left: 0;
+    padding-left: 0;
+}
+
+.version-nav {
+    position: relative;
+    background-color: #406a80;
+    background-image: url(../../img/2.0/product-bg.png);
+    color: #edf1f3;
+    padding: 0 20px;
+    padding-left: 124px;
+    border-bottom: 1px solid #c0c0c0;
+    line-height: 32px;
+    a {
+        color: #edf1f3;
+    }
+    .filter {
+        display: inline;
+        li {
+            display: inline;
+            padding: .25em 1em;
+            border-left: 1px solid #7393A3;
+        }
+        li.version_select {
+            padding-left:0;
+            border-left: 0;
+        }
+        li:first-child {
+            padding-left: 0;
+            border-left: 0;
+        }
+        optgroup {
+            border-top: 1px solid #ccc;
+            padding: .5em 0;
+        }
+        optgroup:first-child {
+            border-top: 0;
+            padding-top: 0;
+        }
+        optgroup:last-child {
+            padding-bottom: 0;
+        }
+        option {
+            padding-left: 0;
+        }
+    }
+    .search {
+        display: inline;
+        float: right;
+    }
+}

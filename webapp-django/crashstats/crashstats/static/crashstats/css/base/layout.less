@@ -1,0 +1,22 @@
+.threecol {
+    overflow: auto;
+    .col {
+        float: left;
+        width: 33%;
+        border-left: 1px dotted #C0C0C0;
+        .col-inner {
+            padding: 0 20px;
+        }
+        h3 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+    }
+    .col:first-child {
+        border-left: 0;
+        .col-inner {
+            padding-left: 10px;
+        }
+    }
+}

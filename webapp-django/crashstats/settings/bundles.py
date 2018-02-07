@@ -63,13 +63,13 @@ PIPELINE_CSS = {
     'metricsgraphics': {
         'source_filenames': (
             'metrics-graphics/dist/metricsgraphics.css',
-            'crashstats/css/metricsgraphics_custom.css',
+            'crashstats/css/lib/metricsgraphics_custom.css',
         ),
         'output_filename': 'css/metricsgraphics.min.css',
     },
     'crashstats_base': {
         'source_filenames': (
-            'crashstats/css/screen.less',
+            'crashstats/css/index.less',
             'status/css/status.less',
         ),
         'output_filename': 'css/crashstats-base.min.css',
