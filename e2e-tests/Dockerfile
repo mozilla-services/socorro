@@ -14,7 +14,6 @@ RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py | python2.7 \
   && pip install pipenv
 
 ENV FIREFOX_VERSION=58.0.1
-
 RUN curl -fsSLo /tmp/firefox.tar.bz2 https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.bz2 \
   && apt-get -y purge firefox \
   && rm -rf /opt/firefox \
@@ -33,8 +32,8 @@ RUN curl -fsSLo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/r
   && ln -fs /opt/geckodriver-$GECKODRIVER_VERSION /usr/bin/geckodriver
 
 WORKDIR /src
-COPY requirements/requirements.txt /src
-RUN pipenv install --system -r requirements.txt --skip-lock --deploy
+COPY Pipfile Pipfile.lock /src/
+RUN pipenv install --system --deploy
 
 COPY . /src
 CMD pytest --driver Firefox
