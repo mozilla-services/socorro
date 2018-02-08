@@ -22,10 +22,10 @@ safety_weeks := weeks_to_keep::text || ' weeks';
 
 SELECT into cutoffdate (now() - safety_weeks::interval)::date;
 
--- Currently only truncating raw_crashes and processed_crashes
+-- Currently only truncating raw_crashes
 basenames := $q$SELECT table_name FROM report_partition_info
         WHERE partition_column = 'date_processed'
-        AND table_name IN ('raw_crashes', 'processed_crashes')
+        AND table_name = 'raw_crashes'
         order by build_order desc$q$;
 
 for mastername IN EXECUTE basenames LOOP

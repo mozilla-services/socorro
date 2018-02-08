@@ -2,15 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# this file defines two crash storage classes:
-# PostgreSQLBasicCrashStorage & PostgreSQLCrashStorage.
-
-# PostgreSQLBasicCrashStorage defines no 'get' methods and saves processed
-# crashes in a lossey form - picking only certain fields to save in the
-# 'reports' table.
-
-# PostgreSQLCrashStorage is a more complete crashstore. It saves processed
-# crashes completely as json in the 'processed_crashes' table.
+# This file defines PostgreSQLCrashStorage.
 
 import datetime
 import json
@@ -25,7 +17,7 @@ from configman import (
     class_converter
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.lib.datetimeutil import uuid_to_date, JsonDTEncoder
+from socorro.lib.datetimeutil import uuid_to_date
 from socorro.external.postgresql.dbapi2_util import (
     SQLDidNotReturnSingleValue,
     single_value_sql,
@@ -33,12 +25,8 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 
 
-class PostgreSQLBasicCrashStorage(CrashStorageBase):
-    """this implementation of crashstorage saves processed crashes to
-    an instance of Postgresql.  It only saves certain key values to the
-    partitioned reports table, therefore it is not a source for fetching
-    complete processed reports and doesn't not implement any of the 'get'
-    methods."""
+class PostgreSQLCrashStorage(CrashStorageBase):
+    """Saves crash data to postgresql"""
 
     required_config = Namespace()
 
@@ -99,7 +87,7 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
     )
 
     def __init__(self, config, quit_check_callback=None):
-        super(PostgreSQLBasicCrashStorage, self).__init__(
+        super(PostgreSQLCrashStorage, self).__init__(
             config,
             quit_check_callback=quit_check_callback
         )
@@ -263,14 +251,13 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
                                 previous_monday_date.month,
                                 previous_monday_date.day)
 
-
-class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
-
     def get_raw_crash(self, crash_id):
         """the default implementation of fetching a raw_crash
 
         parameters:
-           crash_id - the id of a raw crash to fetch"""
+           crash_id - the id of a raw crash to fetch
+
+        """
         return self.transaction(
             self._get_raw_crash_transaction,
             crash_id
@@ -286,32 +273,6 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
             return single_value_sql(connection, fetch_sql, (crash_id,))
         except ProgrammingError as e:
             err = 'relation "%s" does not exist' % raw_crash_table_name
-            if err in str(e):
-                raise CrashIDNotFound(crash_id)
-            raise
-        except SQLDidNotReturnSingleValue:
-            raise CrashIDNotFound(crash_id)
-
-    def get_unredacted_processed(self, crash_id):
-        """this method returns an unredacted processed crash
-
-        parameters:
-           crash_id - the id of a crash to fetch"""
-        return self.transaction(
-            self._get_processed_crash_transaction,
-            crash_id
-        )
-
-    def _get_processed_crash_transaction(self, connection, crash_id):
-        processed_crash_table_name = (
-            'processed_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
-        )
-        fetch_sql = 'select processed_crash from %s where uuid = %%s' % \
-                    processed_crash_table_name
-        try:
-            return single_value_sql(connection, fetch_sql, (crash_id,))
-        except ProgrammingError as e:
-            err = 'relation "%s" does not exist' % processed_crash_table_name
             if err in str(e):
                 raise CrashIDNotFound(crash_id)
             raise
@@ -361,51 +322,5 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
             'crash_id': crash_id,
             'raw_crash': json.dumps(raw_crash),
             'date_processed': raw_crash["submitted_timestamp"]
-        }
-        execute_no_results(connection, upsert_sql, values)
-
-    def _save_processed_transaction(self, connection, processed_crash):
-        report_id = self._save_processed_report(connection, processed_crash)
-        self._save_plugins(connection, processed_crash, report_id)
-        self._save_processed_crash(connection, processed_crash)
-
-    def _save_processed_crash(self, connection, processed_crash):
-        crash_id = processed_crash['uuid']
-        processed_crashes_table_name = (
-            'processed_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
-        )
-        upsert_sql = """
-        WITH
-        update_processed_crash AS (
-            UPDATE %(table)s SET
-                processed_crash = %%(processed_json)s,
-                date_processed = %%(date_processed)s
-            WHERE uuid = %%(uuid)s
-            RETURNING 1
-        ),
-        insert_processed_crash AS (
-            INSERT INTO %(table)s (uuid, processed_crash, date_processed)
-            ( SELECT
-                %%(uuid)s as uuid,
-                %%(processed_json)s as processed_crash,
-                %%(date_processed)s as date_processed
-                WHERE NOT EXISTS (
-                    SELECT uuid from %(table)s
-                    WHERE
-                        uuid = %%(uuid)s
-                    LIMIT 1
-                )
-            )
-            RETURNING 2
-        )
-        SELECT * from update_processed_crash
-        UNION ALL
-        SELECT * from insert_processed_crash
-        """ % {'table': processed_crashes_table_name, 'uuid': crash_id}
-
-        values = {
-            'processed_json': json.dumps(processed_crash, cls=JsonDTEncoder),
-            'date_processed': processed_crash["date_processed"],
-            'uuid': crash_id
         }
         execute_no_results(connection, upsert_sql, values)
