@@ -1,4 +1,4 @@
-import mock
+import logging
 
 from configman import (
     Namespace,
@@ -6,6 +6,7 @@ from configman import (
     ConfigFileFutureProxy,
 )
 from configman.dotdict import DotDict, configman_keys
+import mock
 import pytest
 
 from socorro.app.socorro_app import (
@@ -172,23 +173,21 @@ class AppWithMetrics(App):
         self.config.metrics.histogram('histogram_key', value=1000)
 
 
-@pytest.mark.usefixtures('caplog')
-class TestSocorroAppMetrics(TestCase):
-    @pytest.fixture(autouse=True)
-    def setup_caplog(self, caplog):
-        """Adds caplog pytext fixture as an instance attribute for log analysis"""
-        self.caplog = caplog
-
-    def test_logging_metrics(self):
+class TestSocorroAppMetrics:
+    def test_logging_metrics(self, caplog):
         """Verify LoggingMetrics work"""
+        caplog.set_level(logging.INFO)
+
         AppWithMetrics.run(values_source_list=[configman_keys({})])
 
-        assert 'increment: increment_key=1 tags=[]' in self.caplog.text
-        assert 'gauge: gauge_key=10 tags=[]' in self.caplog.text
-        assert 'timing: timing_key=100 tags=[]' in self.caplog.text
-        assert 'histogram: histogram_key=1000 tags=[]' in self.caplog.text
+        assert 'increment: increment_key=1 tags=[]' in caplog.text
+        assert 'gauge: gauge_key=10 tags=[]' in caplog.text
+        assert 'timing: timing_key=100 tags=[]' in caplog.text
+        assert 'histogram: histogram_key=1000 tags=[]' in caplog.text
 
-    def test_statsd_metrics(self):
+    def test_statsd_metrics(self, caplog):
+        caplog.set_level(logging.INFO)
+
         with mock.patch('datadog.dogstatsd.statsd') as mock_statsd:
             vsl = configman_keys({
                 'metricscfg.statsd_host': 'localhost',
@@ -197,10 +196,10 @@ class TestSocorroAppMetrics(TestCase):
             AppWithMetrics.run(values_source_list=[vsl])
 
             # Verify these didn't get logged
-            assert 'increment: increment_key' not in self.caplog.text
-            assert 'gauge: gauge_key' not in self.caplog.text
-            assert 'timing: timing_key' not in self.caplog.text
-            assert 'histogram: histogram_key' not in self.caplog.text
+            assert 'increment: increment_key' not in caplog.text
+            assert 'gauge: gauge_key' not in caplog.text
+            assert 'timing: timing_key' not in caplog.text
+            assert 'histogram: histogram_key' not in caplog.text
 
             # Verify they did get called on mock_statsd. Do this by converting the mock_calls call
             # objects to strings so they're easy to verify.
