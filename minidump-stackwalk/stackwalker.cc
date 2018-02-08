@@ -73,11 +73,13 @@ using google_breakpad::CodeModule;
 using google_breakpad::CodeModules;
 using google_breakpad::ExploitabilityRating;
 using google_breakpad::Minidump;
+using google_breakpad::MinidumpException;
 using google_breakpad::MinidumpMemoryInfo;
 using google_breakpad::MinidumpMemoryInfoList;
 using google_breakpad::MinidumpMiscInfo;
 using google_breakpad::MinidumpModule;
 using google_breakpad::MinidumpProcessor;
+using google_breakpad::MinidumpSystemInfo;
 using google_breakpad::PathnameStripper;
 using google_breakpad::ProcessResult;
 using google_breakpad::ProcessState;
@@ -857,6 +859,84 @@ static void ConvertLSBReleaseToJSON(const string& lsb_release,
   root["lsb_release"] = lsb;
 }
 
+// Returns true if `ptr` is not in x86-64 canonical form.
+// https://en.wikipedia.org/wiki/X86-64#Virtual_address_space_details
+static bool is_non_canonical(uint64_t ptr) {
+  return ptr > 0x7FFFFFFFFFFF && ptr < 0xFFFF800000000000;
+}
+
+// Returns true if the exception described by `*address`, `exception_code`,
+// and `exception_flags` on the system described by `raw_system_info` looks
+// like a general protection fault.
+static bool looks_like_general_protection_fault(
+    uint32_t platform_id,
+    uint64_t address,
+    uint32_t exception_code,
+    uint32_t exception_flags) {
+  // On Linux the crashing address is zero in these cases, and it
+  // presents as a SIGSEGV.
+  // See do_general_protection:
+  // http://lxr.free-electrons.com/source/arch/x86/kernel/traps.c?v=3.13#L271
+  // and __send_signal (info == SEND_SIG_PRIV in this case):
+  // http://lxr.free-electrons.com/source/kernel/signal.c?v=3.13#L1106
+  if (platform_id == MD_OS_LINUX &&
+      exception_code == MD_EXCEPTION_CODE_LIN_SIGSEGV &&
+      address == 0)
+    return true;
+
+  // On OS X the crashing address is zero and it presents as an
+  // EXC_BAD_ACCESS / EXC_I386_GPFLT
+  // See user_trap:
+  // http://opensource.apple.com/source/xnu/xnu-2050.24.15/osfmk/i386/trap.c
+  if (platform_id == MD_OS_MAC_OS_X &&
+      exception_code == MD_EXCEPTION_MAC_BAD_ACCESS &&
+      exception_flags == MD_EXCEPTION_CODE_MAC_X86_GENERAL_PROTECTION_FAULT &&
+      address == 0)
+    return true;
+
+  // On Windows the crashing address is (uint64_t)-1 and it presents
+  // as an EXCEPTION_ACCESS_VIOLATION
+  if ((platform_id == MD_OS_WIN32_NT ||
+       platform_id == MD_OS_WIN32_WINDOWS) &&
+      address == 0xFFFFFFFFFFFFFFFF &&
+      exception_code == MD_EXCEPTION_CODE_WIN_ACCESS_VIOLATION)
+    return true;
+
+  return false;
+}
+
+// On x86-64, exceptions due to referencing non-canonical addresses
+// do not include the faulting address in the general protection fault,
+// so the crash address is not useful and can lead to misdiagnosing the
+// crash. See if that's the case, and add a note if so.
+static void CheckCrashAddress(Minidump& dump,
+                              uint64_t address,
+                              Json::Value& root) {
+  MinidumpException* exception = dump.GetException();
+  if (!exception)
+    return;
+  const MDRawExceptionStream* raw_exception = exception->exception();
+  if (!raw_exception)
+    return;
+  MinidumpSystemInfo* minidump_system_info = dump.GetSystemInfo();
+  if (!minidump_system_info)
+    return;
+  const MDRawSystemInfo* raw_system_info = minidump_system_info->system_info();
+  if (!raw_system_info)
+    return;
+
+  uint32_t exception_code = raw_exception->exception_record.exception_code;
+  uint32_t exception_flags = raw_exception->exception_record.exception_flags;
+
+  if (raw_system_info->processor_architecture == MD_CPU_ARCHITECTURE_AMD64 &&
+      looks_like_general_protection_fault(raw_system_info->platform_id,
+                                          address,
+                                          exception_code,
+                                          exception_flags)) {
+    root["crash_info"]["address_likely_wrong"] = true;
+  }
+}
+
 static string ResultString(ProcessResult result) {
   string str;
   switch (result) {
@@ -916,206 +996,10 @@ static map<uint32_t, string> GetThreadIdNameMap(const Json::Value& raw_root)
   return result;
 }
 
-//*** This code copy-pasted from minidump_stackwalk.cc ***
-
-// Separator character for machine readable output.
-static const char kOutputSeparator = '|';
-
-// StripSeparator takes a string |original| and returns a copy
-// of the string with all occurences of |kOutputSeparator| removed.
-static string StripSeparator(const string &original) {
-  string result = original;
-  string::size_type position = 0;
-  while ((position = result.find(kOutputSeparator, position)) != string::npos) {
-    result.erase(position, 1);
-  }
-  position = 0;
-  while ((position = result.find('\n', position)) != string::npos) {
-    result.erase(position, 1);
-  }
-  return result;
-}
-
-// PrintStackMachineReadable prints the call stack in |stack| to stdout,
-// in the following machine readable pipe-delimited text format:
-// thread number|frame number|module|function|source file|line|offset
-//
-// Module, function, source file, and source line may all be empty
-// depending on availability.  The code offset follows the same rules as
-// PrintStack above.
-static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
-  int frame_count = stack->frames()->size();
-  // Does this stack need truncation?
-  bool truncate = frame_count > kMaxThreadFrames;
-  int last_head_frame, first_tail_frame;
-  if (truncate) {
-    last_head_frame = kMaxThreadFrames - kTailFramesWhenTruncating - 1;
-    first_tail_frame = frame_count - kTailFramesWhenTruncating;
-  }
-  for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
-    if (truncate && frame_index > last_head_frame &&
-        frame_index < first_tail_frame)
-      // Elide the frames in the middle.
-      continue;
-
-    const StackFrame *frame = stack->frames()->at(frame_index);
-    printf("%d%c%d%c", thread_num, kOutputSeparator, frame_index,
-           kOutputSeparator);
-
-    uint64_t instruction_address = frame->ReturnAddress();
-
-    if (frame->module) {
-      assert(!frame->module->code_file().empty());
-      printf("%s", StripSeparator(PathnameStripper::File(
-                     frame->module->code_file())).c_str());
-      if (!frame->function_name.empty()) {
-        printf("%c%s", kOutputSeparator,
-               StripSeparator(frame->function_name).c_str());
-        if (!frame->source_file_name.empty()) {
-          printf("%c%s%c%d%c0x%" PRIx64,
-                 kOutputSeparator,
-                 StripSeparator(frame->source_file_name).c_str(),
-                 kOutputSeparator,
-                 frame->source_line,
-                 kOutputSeparator,
-                 instruction_address - frame->source_line_base);
-        } else {
-          printf("%c%c%c0x%" PRIx64,
-                 kOutputSeparator,  // empty source file
-                 kOutputSeparator,  // empty source line
-                 kOutputSeparator,
-                 instruction_address - frame->function_base);
-        }
-      } else {
-        printf("%c%c%c%c0x%" PRIx64,
-               kOutputSeparator,  // empty function name
-               kOutputSeparator,  // empty source file
-               kOutputSeparator,  // empty source line
-               kOutputSeparator,
-               instruction_address - frame->module->base_address());
-      }
-    } else {
-      // the printf before this prints a trailing separator for module name
-      printf("%c%c%c%c0x%" PRIx64,
-             kOutputSeparator,  // empty function name
-             kOutputSeparator,  // empty source file
-             kOutputSeparator,  // empty source line
-             kOutputSeparator,
-             instruction_address);
-    }
-    printf("\n");
-  }
-}
-
-// PrintModulesMachineReadable outputs a list of loaded modules,
-// one per line, in the following machine-readable pipe-delimited
-// text format:
-// Module|{Module Filename}|{Version}|{Debug Filename}|{Debug Identifier}|
-// {Base Address}|{Max Address}|{Main}
-static void PrintModulesMachineReadable(const CodeModules *modules) {
-  if (!modules)
-    return;
-
-  uint64_t main_address = 0;
-  const CodeModule *main_module = modules->GetMainModule();
-  if (main_module) {
-    main_address = main_module->base_address();
-  }
-
-  unsigned int module_count = modules->module_count();
-  for (unsigned int module_sequence = 0;
-       module_sequence < module_count;
-       ++module_sequence) {
-    const CodeModule *module = modules->GetModuleAtSequence(module_sequence);
-    uint64_t base_address = module->base_address();
-    printf("Module%c%s%c%s%c%s%c%s%c0x%08" PRIx64 "%c0x%08" PRIx64 "%c%d\n",
-           kOutputSeparator,
-           StripSeparator(PathnameStripper::File(module->code_file())).c_str(),
-           kOutputSeparator, StripSeparator(module->version()).c_str(),
-           kOutputSeparator,
-           StripSeparator(PathnameStripper::File(module->debug_file())).c_str(),
-           kOutputSeparator,
-           StripSeparator(module->debug_identifier()).c_str(),
-           kOutputSeparator, base_address,
-           kOutputSeparator, base_address + module->size() - 1,
-           kOutputSeparator,
-           main_module != NULL && base_address == main_address ? 1 : 0);
-  }
-}
-
-static void PrintProcessStateMachineReadable(const ProcessState& process_state)
-{
-  // Print OS and CPU information.
-  // OS|{OS Name}|{OS Version}
-  // CPU|{CPU Name}|{CPU Info}|{Number of CPUs}
-  printf("OS%c%s%c%s\n", kOutputSeparator,
-         StripSeparator(process_state.system_info()->os).c_str(),
-         kOutputSeparator,
-         StripSeparator(process_state.system_info()->os_version).c_str());
-  printf("CPU%c%s%c%s%c%d\n", kOutputSeparator,
-         StripSeparator(process_state.system_info()->cpu).c_str(),
-         kOutputSeparator,
-         // this may be empty
-         StripSeparator(process_state.system_info()->cpu_info).c_str(),
-         kOutputSeparator,
-         process_state.system_info()->cpu_count);
-
-  int requesting_thread = process_state.requesting_thread();
-
-  // Print crash information.
-  // Crash|{Crash Reason}|{Crash Address}|{Crashed Thread}
-  printf("Crash%c", kOutputSeparator);
-  if (process_state.crashed()) {
-    printf("%s%c0x%" PRIx64 "%c",
-           StripSeparator(process_state.crash_reason()).c_str(),
-           kOutputSeparator, process_state.crash_address(), kOutputSeparator);
-  } else {
-    // print assertion info, if available, in place of crash reason,
-    // instead of the unhelpful "No crash"
-    string assertion = process_state.assertion();
-    if (!assertion.empty()) {
-      printf("%s%c%c", StripSeparator(assertion).c_str(),
-             kOutputSeparator, kOutputSeparator);
-    } else {
-      printf("No crash%c%c", kOutputSeparator, kOutputSeparator);
-    }
-  }
-
-  if (requesting_thread != -1) {
-    printf("%d\n", requesting_thread);
-  } else {
-    printf("\n");
-  }
-
-  PrintModulesMachineReadable(process_state.modules());
-
-  // blank line to indicate start of threads
-  printf("\n");
-
-  // If the thread that requested the dump is known, print it first.
-  if (requesting_thread != -1) {
-    PrintStackMachineReadable(requesting_thread,
-                              process_state.threads()->at(requesting_thread));
-  }
-
-  // Print all of the threads in the dump.
-  int thread_count = process_state.threads()->size();
-  for (int thread_index = 0; thread_index < thread_count; ++thread_index) {
-    if (thread_index != requesting_thread) {
-      // Don't print the crash thread again, it was already printed.
-      PrintStackMachineReadable(thread_index,
-                                process_state.threads()->at(thread_index));
-    }
-  }
-}
-
-//*** End of copy-paste from minidump_stackwalk.cc ***
-
 void usage() {
   fprintf(stderr, "Usage: stackwalker [options] <minidump> [<symbol paths]\n");
   fprintf(stderr, "Options:\n");
   fprintf(stderr, "\t--pretty\tPretty-print JSON output.\n");
-  fprintf(stderr, "\t--pipe-dump\tProduce pipe-delimited output in addition to JSON output\n");
   fprintf(stderr, "\t--raw-json\tAn input file with the raw annotations as JSON\n");
   http_commandline_usage();
   fprintf(stderr, "\t--help\tDisplay this help text.\n");
@@ -1125,7 +1009,6 @@ void usage() {
 int main(int argc, char** argv)
 {
   bool pretty = false;
-  bool pipe = false;
   char* json_path = nullptr;
   // Yeah, this is ugly.
   vector<char*> symbols_urls;
@@ -1133,7 +1016,6 @@ int main(int argc, char** argv)
   const char* symbols_tmp = "/tmp";
   static struct option long_options[] = {
     {"pretty", no_argument, nullptr, 'p'},
-    {"pipe-dump", no_argument, nullptr, 'i'},
     {"raw-json", required_argument, nullptr, 'r'},
     HTTP_COMMANDLINE_OPTIONS
     {"help", no_argument, nullptr, 'h'},
@@ -1150,9 +1032,6 @@ int main(int argc, char** argv)
       break;
     case 'p':
       pretty = true;
-      break;
-    case 'i':
-      pipe = true;
       break;
     case 'r':
       json_path = optarg;
@@ -1215,13 +1094,6 @@ int main(int argc, char** argv)
   ProcessResult result =
     minidump_processor.Process(&minidump, &process_state);
 
-  if (pipe) {
-    if (result == google_breakpad::PROCESS_OK) {
-      PrintProcessStateMachineReadable(process_state);
-    }
-    printf("====PIPE DUMP ENDS===\n");
-  }
-
   Json::Value raw_root(Json::objectValue);
   if (json_path) {
     Json::Reader reader;
@@ -1234,6 +1106,7 @@ int main(int argc, char** argv)
   if (result == google_breakpad::PROCESS_OK) {
     ConvertProcessStateToJSON(process_state, symbolizer,
                               http_symbol_supplier, root, raw_root);
+    CheckCrashAddress(minidump, process_state.crash_address(), root);
   }
   ConvertMemoryInfoToJSON(minidump, raw_root, root);
 
