@@ -41,7 +41,6 @@ class FetchTransformSaveApp(App):
     app_name = 'generic_fetch_transform_save_app'
     app_version = '0.1'
     app_description = __doc__
-    config_module = 'socorro.app.fetch_transform_save_config'
 
     required_config = Namespace()
     # the required config is broken into two parts: the source and the
@@ -54,7 +53,7 @@ class FetchTransformSaveApp(App):
     required_config.source.add_option(
         'crashstorage_class',
         doc='the source storage class',
-        default=None,
+        default='socorro.external.fs.crashstorage.FSPermanentStorage',
         from_string_converter=class_converter
     )
     required_config.destination = Namespace()
@@ -65,7 +64,7 @@ class FetchTransformSaveApp(App):
     required_config.destination.add_option(
         'crashstorage_class',
         doc='the destination storage class',
-        default=None,
+        default='socorro.external.fs.crashstorage.FSPermanentStorage',
         from_string_converter=class_converter
     )
     required_config.producer_consumer = Namespace()

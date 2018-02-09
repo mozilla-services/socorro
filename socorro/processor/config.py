@@ -6,10 +6,6 @@ from configman.dotdict import DotDict
 always_ignore_mismatches = True
 
 
-# Inherit config values from FetchTransformSaveApp
-from socorro.app.fetch_transform_save_config import * # NOQA
-
-
 # Crash storage source
 source = DotDict({
     'benchmark_tag': 'BotoBenchmarkRead',
