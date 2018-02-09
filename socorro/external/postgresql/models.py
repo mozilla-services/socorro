@@ -217,39 +217,6 @@ ischema_names['build_type_enum'] = build_type_enum
 ###############################
 
 
-class Tcbs(DeclarativeBase):
-    __tablename__ = 'tcbs'
-
-    # column definitions
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey(
-        'signatures.signature_id'), primary_key=True, nullable=False, index=True)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False, index=True)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True,
-                                nullable=False, autoincrement=False)
-    process_type = Column(u'process_type', CITEXT(),
-                          primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), ForeignKey(
-        'release_channels.release_channel'), primary_key=True, nullable=False)  # DEPRECATED
-    report_count = Column(u'report_count', INTEGER(),
-                          nullable=False, server_default=text('0'))
-    win_count = Column(u'win_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    mac_count = Column(u'mac_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    lin_count = Column(u'lin_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    hang_count = Column(u'hang_count', INTEGER(),
-                        nullable=False, server_default=text('0'))
-    startup_count = Column(u'startup_count', INTEGER())
-    is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
-    build_type = Column(u'build_type', build_type())
-
-    __table_args__ = (
-        Index('idx_tcbs_product_version', product_version_id, report_date),
-    )
-
-
 class CorrelationsAddon(DeclarativeBase):
     __tablename__ = 'correlations_addon'
 
@@ -944,12 +911,6 @@ class ReleaseChannel(DeclarativeBase):
         secondary='ProductReleaseChannel',
         secondaryjoin='ProductReleaseChannel.product_name==Product.product_name'
     )
-    signatures = relationship(
-        'Signature',
-        primaryjoin='ReleaseChannel.release_channel==Tcbs.release_channel',
-        secondary='Tcbs',
-        secondaryjoin='Tcbs.signature_id==Signature.signature_id'
-    )
 
 
 # DEPRECATED -> enum that's translated to a table for
@@ -1125,11 +1086,6 @@ class Signature(DeclarativeBase):
         primaryjoin='Signature.signature_id==SignatureProductsRollup.signature_id',
         secondary='SignatureProductsRollup',
         secondaryjoin='SignatureProductsRollup.product_name==Product.product_name')
-    release_channels = relationship(
-        'ReleaseChannel',
-        primaryjoin='Signature.signature_id==Tcbs.signature_id',
-        secondary='Tcbs',
-        secondaryjoin='Tcbs.release_channel==ReleaseChannel.release_channel')  # DEPRECATED
 
 
 class SignatureProduct(DeclarativeBase):
@@ -1222,40 +1178,6 @@ class SpecialProductPlatform(DeclarativeBase):
                           primary_key=True, nullable=False)  # DEPRECATED
     repository = Column(u'repository', CITEXT(),
                         primary_key=True, nullable=False)
-    build_type = Column(u'build_type', build_type())
-    # Above is a transition definition.
-    # Ultimately we will define build_type as follows:
-    # build_type = Column(u'build_type', build_type(), primary_key=True, nullable=False)
-
-
-class TcbsBuild(DeclarativeBase):
-    __tablename__ = 'tcbs_build'
-
-    # column definitions
-    build_date = Column(u'build_date', DATE(),
-                        primary_key=True, nullable=False)
-    hang_count = Column(u'hang_count', INTEGER(),
-                        nullable=False, server_default=text('0'))
-    lin_count = Column(u'lin_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    mac_count = Column(u'mac_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    process_type = Column(u'process_type', CITEXT(),
-                          primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
-    release_channel = Column(u'release_channel', CITEXT(),
-                             nullable=False)  # DEPRECATED
-    report_count = Column(u'report_count', INTEGER(),
-                          nullable=False, server_default=text('0'))
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
-    startup_count = Column(u'startup_count', INTEGER())
-    win_count = Column(u'win_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
     build_type = Column(u'build_type', build_type())
     # Above is a transition definition.
     # Ultimately we will define build_type as follows:
