@@ -88,7 +88,6 @@ new_crash_source = DotDict({
 
 
 processor = DotDict({
-    'jit_classifers.JitCrashCategorizeRule.chatty': True,
     'processor_class': 'socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015',
     'raw_to_processed_transform.BreakpadStackwalkerRule2015.command_pathname': (
         '/stackwalk/stackwalker'
