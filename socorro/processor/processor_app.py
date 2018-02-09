@@ -18,12 +18,147 @@ from socorro.lib.util import DotDict
 from socorro.lib import raven_client
 
 
+# Defined separately for readability
+CONFIG_DEFAULTS = {
+    'always_ignore_mismatches': True,
+
+    'source': {
+        'benchmark_tag': 'BotoBenchmarkRead',
+        'crashstorage_class': 'socorro.external.crashstorage_base.BenchmarkingCrashStorage',
+        'wrapped_crashstore': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
+    },
+
+    'destination': {
+        'crashstorage_class': 'socorro.external.crashstorage_base.PolyCrashStorage',
+
+        # Each key in this list corresponds to a key in this dict containing
+        # a crash storage config.
+        'storage_namespaces': ','.join([
+            'postgres',
+            's3',
+            'elasticsearch',
+            'statsd',
+            'telemetry',
+        ]),
+
+        'postgres': {
+            'benchmark_tag': 'PGBenchmarkWrite',
+            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
+            'statsd_prefix': 'processor.postgres',
+            'transaction_executor_class': (
+                'socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+            ),
+            'wrapped_object_class': (
+                'socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+            ),
+        },
+        's3': {
+            'active_list': 'save_raw_and_processed',
+            'benchmark_tag': 'BotoBenchmarkWrite',
+            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
+            'statsd_prefix': 'processor.s3',
+            'use_mapping_file': 'False',
+            'wrapped_object_class': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
+        },
+        'elasticsearch': {
+            'active_list': 'save_raw_and_processed',
+            'benchmark_tag': 'BotoBenchmarkWrite',
+            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
+            'es_redactor': {
+                'forbidden_keys': ', '.join([
+                    'memory_report',
+                    'upload_file_minidump_browser.json_dump',
+                    'upload_file_minidump_flash1.json_dump',
+                    'upload_file_minidump_flash2.json_dump',
+                ]),
+            },
+            'statsd_prefix': 'processor.es',
+            'use_mapping_file': 'False',
+            'wrapped_object_class': (
+                'socorro.external.es.crashstorage.ESCrashStorageRedactedJsonDump'
+            ),
+        },
+        'statsd': {
+            'active_list': 'save_raw_and_processed',
+            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdCounter',
+            'statsd_prefix': 'processor',
+        },
+        'telemetry': {
+            'active_list': 'save_raw_and_processed',
+            'bucket_name': 'org-mozilla-telemetry-crashes',
+            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
+            'statsd_prefix': 'processor.telemetry',
+            'wrapped_object_class': (
+                'socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage'
+            ),
+        },
+    },
+
+    'companion_process': {
+        'companion_class': 'socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
+        'symbol_cache_size': '40G',
+        'verbosity': 0,
+    },
+
+    'new_crash_source': {
+        'crashstorage_class': 'socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage',
+        'new_crash_source_class': (
+            'socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource'
+        ),
+    },
+
+    'processor': {
+        'processor_class': 'socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015',
+        'raw_to_processed_transform': {
+            'BreakpadStackwalkerRule2015': {
+                'command_pathname': '/stackwalk/stackwalker',
+                'symbols_urls': ','.join([
+                    'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1',
+                    'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-private/v1',
+                ]),
+                'kill_timeout': 30,
+            },
+        },
+    },
+
+    'producer_consumer': {
+        'maximum_queue_size': 32,
+        'number_of_threads': 16,
+    },
+
+    'resource': {
+        'boto': {
+            'keybuilder_class': 'socorro.external.boto.connection_context.DatePrefixKeyBuilder',
+            'prefix': '',
+        },
+
+        'elasticsearch': {
+            # FIXME(willkg): Where does this file come from?
+            'elasticsearch_index_settings': (
+                '/app/socorro/external/elasticsearch/socorro_index_settings.json'
+            ),
+            'timeout': 2,
+            'use_mapping_file': False,
+        },
+
+        'rabbitmq': {
+            'filter_on_legacy_processing': True,
+            'routing_key': 'socorro.normal',
+        },
+
+        'signature': {
+            'collapse_arguments': True,
+        },
+    },
+}
+
+
 class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     """the Socorro processor converts raw_crashes into processed_crashes"""
     app_name = 'processor'
     app_version = '3.0'
     app_description = __doc__
-    config_module = 'socorro.processor.config'
+    config_defaults = CONFIG_DEFAULTS
 
     required_config = Namespace()
     # configuration is broken into three namespaces: processor,

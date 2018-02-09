@@ -98,7 +98,25 @@ def jobs_converter(path_or_jobs):
 
 
 class CronTabberApp(CronTabberBase, App):
-    config_module = 'socorro.cron.config'
+    config_defaults = {
+        'always_ignore_mismatches': True,
+
+        'crontabber': {
+            'database_class': 'socorro.external.postgresql.connection_context.ConnectionContext',
+
+            'class-BugzillaCronApp': {
+                'days_into_past': 0,
+            },
+        },
+
+        'resource': {
+            'postgresql': {
+                'database_class': (
+                    'socorro.external.postgresql.connection_context.ConnectionContext'
+                ),
+            },
+        },
+    }
     required_config = CronTabberBase.required_config.safe_copy()
 
     # Stomp on the existing "crontabber.jobs" configuration with one that can

@@ -18,7 +18,21 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     app_name = 'submitter_app'
     app_version = '3.1'
     app_description = __doc__
-    config_module = 'socorro.submitter.config'
+    config_defaults = {
+        'always_ignore_mismatches': True,
+
+        'source': {
+            'crashstorage_class': 'socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage',
+        },
+
+        'destination': {
+            'crashstorage_class': (
+                'socorro.submitter.breakpad_submitter_utilities.BreakpadPOSTDestination'
+            ),
+        },
+
+        'number_of_submissions': 'all',
+    }
 
     required_config = Namespace()
     required_config.namespace('submitter')

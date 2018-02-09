@@ -91,7 +91,7 @@ def get_config_manager_for_crontabber(
         overrides = [local_overrides]
 
     # Be sure to include defaults
-    overrides.insert(0, CronTabberApp.config_module)
+    overrides.insert(0, CronTabberApp.config_defaults)
 
     return get_standard_config_manager(
         more_definitions=more_definitions,

@@ -177,11 +177,11 @@ Configuration is pulled from three sources:
 1. Envronment variables
 2. ENV files located in ``/app/docker/config/``. See ``docker-compose.yml`` for
    which ENV files are used in which containers, and their precedence.
-3. Python modules specified by each ``SocorroApp`` subclass's ``config_module``
-   attribute.
+3. The ``config_defaults`` attribute for each ``SocorroApp`` subclass.
 
 The sources above are ordered by precedence, i.e. configuration values defined
-by environment variables will override values from ENV files or Python modules.
+by environment variables will override values from ENV files or
+``config_defaults``.
 
 The following ENV files can be found in ``/app/docker/config/``:
 
@@ -210,17 +210,6 @@ The following ENV files can be found in ``/app/docker/config/``:
     doesn't get checked into version control.
 
     The template for this is in ``docker/config/my.env.dist``.
-
-The following python modules define app-specific configuration defaults:
-
-``socorro/processor/config.py``
-    Configuration defaults for the processor.
-
-``socorro/cron/config.py``
-    Configuration defaults for crontabber.
-
-``socorro/submitter/config.py``
-    Configuration defaults for the submitter.
 
 In this way:
 

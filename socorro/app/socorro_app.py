@@ -86,7 +86,7 @@ class SocorroApp(RequiredConfig):
     #: String containing a module import path. The module is used as a
     #: source for default configuration values. If None, this makes no
     #: changes to the configuration defaults.
-    config_module = None
+    config_defaults = None
 
     required_config = Namespace()
 
@@ -151,8 +151,8 @@ class SocorroApp(RequiredConfig):
             ]
 
         # Pull base set of defaults from the config module if it is specified
-        if klass.config_module is not None:
-            values_source_list.insert(0, klass.config_module)
+        if klass.config_defaults is not None:
+            values_source_list.insert(0, klass.config_defaults)
 
         config_definition = klass.get_required_config()
         if 'application' not in config_definition:
