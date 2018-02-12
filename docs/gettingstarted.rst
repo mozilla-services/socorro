@@ -82,17 +82,18 @@ Quickstart
 
 
 At this point, you should have a basic functional Socorro development
-environment.
+environment that has no crash data in it.
+
+If you need crash data, see :ref:`processor-chapter` for additional setup,
+fetching crash data, and running the processor.
 
 See :ref:`gettingstarted-chapter-updating` for how to maintain and update your
-environment.
+local development environment.
 
 See :ref:`gettingstarted-chapter-configuration` for how configuration works and
 about ``my.env``.
 
 See :ref:`webapp-chapter` for additional setup and running the webapp.
-
-See :ref:`processor-chapter` for additional setup and running the processor.
 
 See :ref:`crontabber-chapter` for additional setup and running crontabber.
 
