@@ -5,8 +5,8 @@ Continuous Integration
 ----------------------
 This directory holds Socorro client-based end-to-end tests, which is why they're different than the rest of the code in this repository.
 
-To review the specific-Python packages the tests use, please review
-`requirements/requirements.txt`.
+To review the specific Python packages the tests use, please review
+`Pipfile`.
 
 How to run the tests
 ====================
@@ -96,7 +96,6 @@ required for these tests.
 
 ```
 $ pip install pipenv
-$ pipenv --two install -r requirements.txt
 ```
 
 Then, you can run the tests using Pipenv:
