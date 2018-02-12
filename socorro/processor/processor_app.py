@@ -114,7 +114,6 @@ CONFIG_DEFAULTS = {
                 'command_pathname': '/stackwalk/stackwalker',
                 'symbols_urls': ','.join([
                     'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1',
-                    'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-private/v1',
                 ]),
                 'kill_timeout': 30,
             },

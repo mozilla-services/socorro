@@ -101,14 +101,6 @@ class CronTabberApp(CronTabberBase, App):
     config_defaults = {
         'always_ignore_mismatches': True,
 
-        'crontabber': {
-            'database_class': 'socorro.external.postgresql.connection_context.ConnectionContext',
-
-            'class-BugzillaCronApp': {
-                'days_into_past': 0,
-            },
-        },
-
         'resource': {
             'postgresql': {
                 'database_class': (
