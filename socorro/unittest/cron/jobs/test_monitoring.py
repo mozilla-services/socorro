@@ -55,6 +55,20 @@ class TestDependencySecurityCheckCronApp(object):
         assert app.get_python_vulnerabilities() == []
         assert popen.call_args[0][0] == [app_config['safety_path'], 'check', '--json']
 
+    def test_get_python_vulnerabilities_with_key(self, mock_popen, app_config):
+        app_config['safety_api_key'] = 'fake-api-key'
+        app = self.get_app(app_config)
+        popen = mock_popen(0)
+
+        assert app.get_python_vulnerabilities() == []
+        assert popen.call_args[0][0] == [
+            app_config['safety_path'],
+            'check',
+            '--json',
+            '--key',
+            'fake-api-key',
+        ]
+
     def test_get_python_vulnerabilities_failure(self, mock_popen, app_config):
         """Handle failures like being unable to connect to the network.
 

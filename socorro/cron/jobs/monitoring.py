@@ -51,6 +51,8 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         Path to the nsp binary for checking Node dependencies.
     crontabber.class-DependencySecurityCheckCronApp.safety_path
         Path to the PyUp Safety binary for checking Python dependencies.
+    crontabber.class-DependencySecurityCheckCronApp.safety_api_key
+        Optional API key to pass to Safety.
     crontabber.class-DependencySecurityCheckCronApp.package_json_path
         Path to the package.json file to run nsp against.
     secrets.sentry.dsn
@@ -73,6 +75,10 @@ class DependencySecurityCheckCronApp(BaseCronApp):
     required_config.add_option(
         'safety_path',
         doc='Path to the PyUp safety binary',
+    )
+    required_config.add_option(
+        'safety_api_key',
+        doc='API key for Safety to use latest Pyup vulnerability database',
     )
     required_config.add_option(
         'package_json_path',
@@ -128,12 +134,11 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         """
         # Safety checks what's installed in the current virtualenv, so no need
         # for any paths.
-        process = Popen(
-            [self.config.safety_path, 'check', '--json'],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=PIPE,
-        )
+        cmd = [self.config.safety_path, 'check', '--json']
+        if self.config.get('safety_api_key'):
+            cmd += ['--key', self.config.safety_api_key]
+
+        process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         output, error_output = process.communicate()
 
         if process.returncode == 0:
