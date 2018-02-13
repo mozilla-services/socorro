@@ -1,3 +1,6 @@
+@import "@{base-path}/mixins.less";
+@import "@{base-path}/variables.less";
+
 #details th,
 #metadata th {
     width: 15%;
@@ -61,7 +64,7 @@
 }
 .sig-overview,
 .sig-search {
-    background: transparent url(../../img/icons/external.png) left top no-repeat;
+    background: transparent url("@{image-path}/icons/external.png") left top no-repeat;
     display: inline-block;
     color: #333;
     margin-left: .5em;

@@ -106,8 +106,8 @@ PIPELINE_CSS = {
     },
     'report_index': {
         'source_filenames': (
-            'crashstats/css/pages/report_index.css',
-            'crashstats/css/tree.css',
+            'crashstats/css/pages/report_index.less',
+            'crashstats/css/components/tree.less',
         ),
         'output_filename': 'css/report-index.min.css',
     },
@@ -132,7 +132,7 @@ PIPELINE_CSS = {
     'manage:home': {
         'source_filenames': (
             'font-awesome/css/font-awesome.css',
-            'crashstats/css/fonts.less',
+            'crashstats/css/base/fonts.less',
             'manage/css/home.less',
         ),
         'output_filename': 'css/manage-home.min.css',
