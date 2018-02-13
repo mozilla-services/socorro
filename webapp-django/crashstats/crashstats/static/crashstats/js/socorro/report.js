@@ -124,7 +124,7 @@ $(document).ready(function () {
 
         $('li.correlations').show();
         $('#correlation h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
-        $('#correlation pre').empty().append(content);
+        $('#correlation pre').empty().text(content);
     });
 
     // Enhance bug links.
