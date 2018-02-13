@@ -439,8 +439,6 @@ STATICFILES_FINDERS = (
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
 
-LESS_PATH = '/tmp/crashstats-static' if LOCAL_DEV_ENV else '/app/webapp-django/static'
-
 PIPELINE = {
     'STYLESHEETS': PIPELINE_CSS,
     'JAVASCRIPT': PIPELINE_JS,
@@ -448,7 +446,7 @@ PIPELINE = {
         'LESS_BINARY',
         path('node_modules/.bin/lessc')
     ),
-    'LESS_ARGUMENTS': '--global-var="base-path=\'' + LESS_PATH + '/crashstats/css/base\'"',
+    'LESS_ARGUMENTS': '--global-var="base-path=\'' + STATIC_ROOT + '/crashstats/css/base\'"',
     'JS_COMPRESSOR': 'pipeline.compressors.uglifyjs.UglifyJSCompressor',
     'UGLIFYJS_BINARY': config(
         'UGLIFYJS_BINARY',
