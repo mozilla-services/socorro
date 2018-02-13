@@ -86,6 +86,6 @@ SignatureReport.CorrelationsTab.prototype.loadCorrelations = function () {
         if (Array.isArray(results)) {
             content = results.join('\n');
         }
-        contentElt.empty().append(content);
+        contentElt.empty().text(content);
     });
 };
