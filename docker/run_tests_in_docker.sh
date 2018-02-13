@@ -101,6 +101,8 @@ else
            --env-file ./docker/config/local_dev.env \
            --env-file ./docker/config/never_on_a_server.env \
            --env-file ./docker/config/test.env \
+           --tty \
+           --interactive \
            local/socorro_webapp /app/docker/run_tests.sh
 
     echo "Done!"
