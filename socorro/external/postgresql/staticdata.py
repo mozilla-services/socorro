@@ -172,15 +172,6 @@ class ReportPartitionInfo(BaseTable):
             'date_processed',
             'TIMESTAMPTZ'
         ),
-        (
-            'missing_symbols',
-            '13',
-            '{}',
-            '{}',
-            '{}',
-            'date_processed',
-            'DATE'
-        ),
     ]
 
 

@@ -13,15 +13,11 @@ from configman import Namespace
 from configman.converters import str_to_python_object
 import ujson
 
-from socorro.external.postgresql.dbapi2_util import (
-    execute_query_fetchall,
-    execute_no_results
-)
+from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import (
     UTC,
     datetime_from_isodate_string,
-    datestring_to_weekly_partition
 )
 from socorro.lib.ooid import dateFromOoid
 from socorro.lib.transform_rules import Rule
@@ -630,84 +626,6 @@ class TopMostFilesRule(Rule):
             if source_filename:
                 processed_crash.topmost_filenames = source_filename
                 return True
-        return True
-
-
-class MissingSymbolsRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-
-    def __init__(self, config):
-        super(MissingSymbolsRule, self).__init__(config)
-        self.database = self.config.database_class(config)
-        self.transaction = self.config.transaction_executor_class(
-            config,
-            self.database,
-        )
-        self.sql = (
-            "INSERT INTO missing_symbols_%s"
-            " (date_processed, debug_file, debug_id, code_file, code_id)"
-            " VALUES (%%s, %%s, %%s, %%s, %%s)"
-        )
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        try:
-            date = processed_crash['date_processed']
-            # update partition information based on date processed
-            sql = self.sql % datestring_to_weekly_partition(date)
-            for module in processed_crash['json_dump']['modules']:
-                try:
-                    # First of all, only bother if there are
-                    # missing_symbols in this module.
-                    # And because it's not useful if either of debug_file
-                    # or debug_id are empty, we filter on that here too.
-                    if (
-                        module['missing_symbols'] and
-                        module['debug_file'] and
-                        module['debug_id']
-                    ):
-                        self.transaction(
-                            execute_no_results,
-                            sql,
-                            (
-                                date,
-                                module['debug_file'],
-                                module['debug_id'],
-                                # These two use .get() because the keys
-                                # were added later in history. If it's
-                                # non-existent (or existant and None), it
-                                # will proceed and insert as a nullable.
-                                module.get('filename'),
-                                module.get('code_id'),
-                            )
-                        )
-                except self.database.ProgrammingError:
-                    processor_meta.processor_notes.append(
-                        "WARNING: missing symbols rule failed for"
-                        " %s" % raw_crash.uuid
-                    )
-                except KeyError:
-                    pass
-        except KeyError:
-            return False
         return True
 
 
