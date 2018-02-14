@@ -7,6 +7,7 @@ import mock
 
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs.upload_crash_report_json_schema import UploadCrashReportJSONSchemaCronApp
+from socorro.external.boto.connection_context import S3ConnectionContext
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA_AS_STRING
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
@@ -16,7 +17,10 @@ class TestUploadCrashReportJSONSchemaCronApp(IntegrationTestBase):
 
     def _setup_config_manager(self):
         return super(TestUploadCrashReportJSONSchemaCronApp, self)._setup_config_manager(
-            jobs_string=self.job
+            jobs_string=self.job,
+            extra_value_source=DotDict({
+                'resource.boto.resource_class': S3ConnectionContext
+            })
         )
 
     @mock.patch('boto.connect_s3')
@@ -44,7 +48,8 @@ class TestUploadCrashReportJSONSchemaCronApp(IntegrationTestBase):
     def test_override_telemetry_bucket_name(self, connect_s3):
         config = DotDict({
             'telemetry_bucket_name': '',
-            'bucket_name': 'dev_bucket'
+            'bucket_name': 'dev_bucket',
+            'resource_class': S3ConnectionContext
         })
         app = UploadCrashReportJSONSchemaCronApp(config, job_information=None)
         assert app.get_bucket_name() == 'dev_bucket'
