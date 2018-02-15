@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from __future__ import print_function
 
 import re
@@ -236,6 +240,7 @@ class ScrapersMixin(object):
 @with_postgres_transactions()
 @as_backfill_cron_app
 class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
+    """Scrapes archive.mozilla.org for build and version data"""
     app_name = 'ftpscraper'
     app_description = 'FTP Scraper'
     app_version = '0.1'

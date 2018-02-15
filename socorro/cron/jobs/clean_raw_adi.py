@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from configman import Namespace
 from crontabber.base import BaseCronApp
 from crontabber.mixins import (
@@ -12,12 +16,15 @@ SIX_MONTHS = 180
 @with_postgres_transactions()
 @with_single_postgres_transaction()
 class CleanRawADICronApp(BaseCronApp):
-    """Deletes old data from raw_adi and raw_adi_logs"""
+    """Deletes old data from raw_adi and raw_adi_logs
+
+    See https://bugzilla.mozilla.org/show_bug.cgi?id=1227131
+
+    """
 
     app_name = 'clean-raw-adi'
-    app_description = """
-    See https://bugzilla.mozilla.org/show_bug.cgi?id=1227131
-    """
+    app_description = 'Delete old data from raw_adi and raw_adi_logs'
+
     required_config = Namespace()
     required_config.add_option(
         'days_to_keep',

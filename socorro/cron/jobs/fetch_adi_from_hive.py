@@ -28,10 +28,10 @@ adjusting the contents of this script at all costs.
 
 import codecs
 import datetime
-import urllib2
 import os
 import tempfile
 import unicodedata
+import urllib2
 
 import pyhs2
 
@@ -142,10 +142,13 @@ _FENNEC38_ADI_CHANNEL_CORRECTION_SQL = """
 
 @as_backfill_cron_app
 class FetchADIFromHiveCronApp(BaseCronApp):
-    """ This cron is our daily blocklist ping web logs query
-        that rolls up all the browser checkins and let's us know
-        how many browsers we think were active on the internet
-        for a particular day """
+    """Fetches ADI data
+
+    This cron is our daily blocklist ping web logs query that rolls up all the
+    browser checkins and let's us know how many browsers we think were active
+    on the internet for a particular day.
+
+    """
     app_name = 'fetch-adi-from-hive'
     app_description = 'Fetch ADI From Hive App'
     app_version = '0.1'

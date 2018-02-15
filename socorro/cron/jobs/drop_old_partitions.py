@@ -14,13 +14,15 @@ from crontabber.mixins import (
 @with_postgres_transactions()
 @with_single_postgres_transaction()
 class DropOldPartitionsCronApp(BaseCronApp):
+    """Drop partition tables older than a year
+
+    See https://bugzilla.mozilla.org/show_bug.cgi?id=1014128
+
+    """
+
     app_name = 'drop-old-partitions'
     app_version = '1.0'
-    app_description = """See
-    https://socorro.readthedocs.io/en/latest/development
-    /databaseadminfunctions.html#drop-old-partitions
-    See https://bugzilla.mozilla.org/show_bug.cgi?id=1014128
-    """
+    app_description = 'Drop partition tables older than a year'
 
     def run(self, connection):
         # Determine date from one year ago.
