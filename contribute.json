@@ -4,7 +4,7 @@
     "repository": {
         "url": "https://github.com/mozilla/socorro",
         "license": "MPL2",
-        "tests": "https://travis-ci.org/mozilla/socorro"
+        "tests": "https://circleci.com/gh/mozilla-services/socorro"
     },
     "participate": {
         "home": "https://wiki.mozilla.org/Socorro",

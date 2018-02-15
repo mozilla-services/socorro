@@ -150,7 +150,7 @@ django-pipeline==1.6.14 \
 django-session-csrf==0.7.1 \
     --hash=sha256:e17177e6e2e6518ec7ce6693ad10a5c747f8571d09f4cfa9082599334421605d \
     --hash=sha256:ff8c10e30d312c77fc6a6db7710e22b9383e28c03b7fe958876ca96f39aa6cf2
-# the 'linux2' is for TravisCI
+# the 'linux2' is for CI
 pyinotify==0.9.6 ; sys_platform == 'linux' or sys_platform == 'linux2' \
     --hash=sha256:9c998a5d7606ca835065cdabc013ae6c66eb9ea76a00a1e3bc6e0cfe2b4f71f4
 django-jinja==2.4.1 \

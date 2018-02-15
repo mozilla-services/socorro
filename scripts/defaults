@@ -3,7 +3,7 @@ echo "this is the file defaults"
 export PYTHON=${PYTHON:-"python"}
 export VIRTUAL_ENV=${VIRTUAL_ENV:-"$PWD/socorro-virtualenv"}
 # Valid values for BUILD_TYPE are "rpm" (which we use in socorro-infra) and
-# "ci" # which we use in Travis CI.
+# "ci" # which we use in CI.
 export BUILD_TYPE=${BUILD_TYPE:-"ci"}
 export BUILD_DIR=${BUILD_DIR:-"build/$BUILD_TYPE/socorro"}
 export BUILD_VERSION="$(git describe --tags | cut -d'-' -f1).$(date +%s)"
