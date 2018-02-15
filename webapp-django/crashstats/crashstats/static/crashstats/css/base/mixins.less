@@ -1,6 +1,4 @@
-@import "@{base-path}/variables.less";
-
-/* apply a natural box layout model to all elements */
+// apply a natural box layout model to all elements
 .box-sizing (@model: border-box) {
     -moz-box-sizing: @model;
     -webkit-box-sizing: @model;
@@ -16,49 +14,19 @@
     -moz-border-radius: @arguments;
     border-radius: @arguments;
 }
+
 .shadow (@x, @y, @blur, @spread, @color) {
     -webkit-box-shadow: @arguments;
     -moz-box-shadow: @arguments;
     box-shadow: @arguments;
 }
-/* apply a natural box layout model to elements */
-.border-sizing(@model) {
-    -webkit-box-sizing: @model;
-    -moz-box-sizing: @model;
-    box-sizing: @model;
-}
-.transition(@prop, @duration: 1s) {
-    -webkit-transition: @prop @duration;
-    -moz-transition: @prop @duration;
-    transition: @prop @duration;
-}
+
 .rotate(@deg) {
     -webkit-transform: rotate(@deg);
     -moz-transform: rotate(@deg);
     transform: rotate(@deg);
 }
-.transformOrigin(@top, @left) {
-    -webkit-transform-origin: @top @left;
-    -moz-transform-origin: @top @left;
-    transform-origin: @top @left;
-}
-// Gradients
-#gradient {
-  .horizontal (@startColor: #555, @endColor: #333) {
-    background-color: @endColor;
-    background-repeat: repeat-x;
-    background-image: -webkit-linear-gradient(left, @startColor, @endColor); /* Safari 5.1+, Chrome 10+ */
-    -ms-filter: %("progid:DXImageTransform.Microsoft.gradient(startColorstr='%d', endColorstr='%d', GradientType=1)",@startColor,@endColor); /* IE8+ */
-    background-image: linear-gradient(to right, @startColor, @endColor); /* the standard */
-  }
-  .vertical (@startColor: #555, @endColor: #333) {
-    background-color: @endColor;
-    background-repeat: repeat-x;
-    background-image: -webkit-linear-gradient(top, @startColor, @endColor); /* Safari 5.1+, Chrome 10+ */
-    -ms-filter: %("progid:DXImageTransform.Microsoft.gradient(startColorstr='%d', endColorstr='%d', GradientType=0)",@startColor,@endColor); /* IE8+ */
-    background-image: linear-gradient(to bottom, @startColor, @endColor); /* the standard */
-  }
-}
+
 .button() {
     background-color: #406A80;
     background-image: -webkit-linear-gradient(top, #5D94B0, #48768E 50%, #406A80 51%, #48768E);
@@ -82,13 +50,8 @@
         background-color: #5D94B0;
     }
 }
-.notification {
-    background-color: @white;
-    margin: 1rem;
-    padding: .5rem;
-    .rounded-corners(6px);
-}
-/*http://developer.yahoo.com/blogs/ydn/posts/2012/10/clip-your-hidden-content-for-better-accessibility/*/
+
+// /*http://developer.yahoo.com/blogs/ydn/posts/2012/10/clip-your-hidden-content-for-better-accessibility/*/
 .accessibly-hidden() {
     position: absolute;
     clip: rect(1px 1px 1px 1px); /* IE6, IE7 */

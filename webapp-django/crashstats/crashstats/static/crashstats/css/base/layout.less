@@ -6,19 +6,19 @@ html {
     line-height: @base-line-height;
     margin: 0;
     padding: 0;
-}
 
-html.production {
-    margin: 0;
-    body > h1 {
-        display: none;
-    }
-    .page-heading {
-        margin: 20px;
-        margin-top: 30px;
-    }
-    .panel {
-        margin: 20px;
+    &.production {
+        margin: 0;
+        body > h1 {
+            display: none;
+        }
+        .page-heading {
+            margin: 20px;
+            margin-top: 30px;
+        }
+        .panel {
+            margin: 20px;
+        }
     }
 }
 
@@ -33,7 +33,7 @@ body {
     min-height: 64px;
     height: 64px;
     background-color: #0a2533;
-    background-image: url(../../img/2.0/header-bg.png);
+    background-image: url("@{image-path}/2.0/header-bg.png");
     h1 {
         position: absolute;
         display: block;
@@ -56,7 +56,7 @@ body {
             top: 13px;
             width: 88px;
             height: 78px;
-            background: url(../../img/2.0/logo2.png) no-repeat top left;
+            background: url("@{image-path}/2.0/logo2.png") no-repeat top left;
             z-index: 1;
         }
         .title {
@@ -65,7 +65,7 @@ body {
             top: 15px;
             width: 343px;
             height: 36px;
-            background: url(../../img/2.0/title.png) no-repeat top left;
+            background: url("@{image-path}/2.0/title.png") no-repeat top left;
         }
     }
     form {
@@ -76,7 +76,7 @@ body {
         }
         input {
             position: absolute;
-            background: @white url(../../img/2.0/search.png) no-repeat 5px center;
+            background: @white url("@{image-path}/2.0/search.png") no-repeat 5px center;
             right: 20px;
             top: 20px;
             width: 212px;
@@ -94,19 +94,15 @@ body {
     }
 }
 
-
 .page-heading {
     h2 {
         display: inline;
-        margin-bottom: .7em;
         font-size: 21px;
     }
     p.old-new-report-link {
         float: right;
     }
 }
-
-
 
 .threecol {
     overflow: auto;

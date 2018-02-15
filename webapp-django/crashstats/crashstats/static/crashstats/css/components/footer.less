@@ -4,16 +4,23 @@
     border-top: 1px solid #bbc3c7;
     margin: 40px 0 0 0;
     padding: 10px 20px;
-    a, a:link, a:hover, a:active, a:visited {
-        color: @base-link-color;
-        text-decoration: none;
+    a {
+        &:link,
+        &:hover,
+        &:active,
+        &:visited {
+            color: @base-link-color;
+            text-decoration: none;
+        }
+
+        &:hover {
+            text-decoration: underline;
+        }
     }
-    a:hover {
-        text-decoration: underline;
-    }
+
     .nav {
         float: left;
-        background: url(../../img/2.0/mozilla.png) no-repeat scroll 0% 0% transparent;
+        background: url("@{image-path}/2.0/mozilla.png") no-repeat scroll 0% 0% transparent;
         background-size: 40px 40px;
         padding-left: 48px;
     }

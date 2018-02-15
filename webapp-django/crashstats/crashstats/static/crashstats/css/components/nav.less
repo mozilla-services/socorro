@@ -30,39 +30,13 @@ nav {
     }
 }
 
-.choices {
-    display: inline;
-    border-left: 1px solid #888;
-    padding: .25em 1em;
-    ul {
-        display: inline;
-        list-style: none;
-    }
-    li {
-        display: inline;
-    }
-    a {
-        padding: .25em .25em;
-        .rounded-corners(.5em);
-        font-weight: normal;
-        text-decoration: none;
-    }
-    a:hover {
-        background-color: #ddd;
-    }
-}
-.choices:first-child {
-    border-left: 0;
-    padding-left: 0;
-}
-
 .version-nav {
     font-family: Trebuchet MS, Helvetica, sans-serif;
     font-size: 12px;
     background: transparent repeat-x left top;
     position: relative;
     background-color: #406a80;
-    background-image: url(../../img/2.0/product-bg.png);
+    background-image: url("@{image-path}/2.0/product-bg.png");
     color: #edf1f3;
     padding: 0 20px;
     padding-left: 124px;
@@ -103,6 +77,5 @@ nav {
     }
     .search {
         display: inline;
-        float: right;
     }
 }

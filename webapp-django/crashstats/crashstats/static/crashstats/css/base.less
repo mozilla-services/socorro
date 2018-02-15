@@ -25,14 +25,18 @@
 /* Other shared styles */
 a {
     text-decoration: none;
-}
-a, a:link, a:hover, a:active {
-    color: #0033FF;
-    text-decoration: underline;
-}
-.ui-widget-content a:visited, /* Override jQuery UI's behavior */
-a:visited {
-    color: #800080;
+    &,
+    &:link,
+    &:hover,
+    &:active {
+        color: #0033FF;
+        text-decoration: underline;
+    }
+
+    .ui-widget-content &:visited, /* Override jQuery UI's behavior */
+    &:visited {
+        color: #800080;
+    }
 }
 
 body > h1 {
@@ -146,9 +150,9 @@ span.push_right {
     float: right;
     .current {
         float: right;
-        background-image: url(../../img/3rdparty/fatcow/stop16x16.png);
+        background-image: url("@{image-path}/3rdparty/fatcow/stop16x16.png");
         background-repeat: no-repeat;
-        color: red;
+        color: @red;
         padding-left: 20px;
         height: 16px;
         font-weight: 900;
