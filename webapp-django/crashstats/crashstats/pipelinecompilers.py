@@ -15,7 +15,7 @@ class GoogleAnalyticsCompiler(CompilerBase):
         if not outdated and not force:
             return  # No need to recompiled file
 
-        # It might not be set. For example, in Travis runs.
+        # It might not be set. For example, in CI runs.
         if settings.GOOGLE_ANALYTICS_ID:
             with open(infile) as source:
                 new_content = source.read().replace(
