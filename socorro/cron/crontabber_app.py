@@ -23,24 +23,32 @@ from socorro.lib.datetimeutil import utc_now
 # FetchADIFromHiveCronApp job runs on a separate box with a separate crontabber
 # configuration.
 DEFAULT_JOBS_BASE = [
+    # DB partition table and ES maintenance
     'socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d',
-    'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00',
-    'socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00',
-    'socorro.cron.jobs.matviews.RawUpdateChannelCronApp|1d|05:00',
+    'socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d',
+    'socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d',
+    'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d',
+
+    # ADI maintenance
+    'socorro.cron.jobs.clean_raw_adi.CleanRawADICronApp|1d',
     'socorro.cron.jobs.matviews.ADUCronApp|1d|08:30',
+    'socorro.cron.jobs.matviews.BuildADUCronApp|1d|08:30',
+
+    # Product/version maintenance
+    'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h',
+    'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h',
+    'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00',
+
+    # Crash data analysis
     'socorro.cron.jobs.matviews.DuplicatesCronApp|1h',
     'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h',
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
-    'socorro.cron.jobs.matviews.BuildADUCronApp|1d|08:30',
+    'socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00',
+    'socorro.cron.jobs.matviews.RawUpdateChannelCronApp|1d|05:00',
     'socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|05:00',
     'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|05:00',
-    'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h',
-    'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d',
-    'socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d',
-    'socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d',
-    'socorro.cron.jobs.clean_raw_adi_logs.CleanRawADILogsCronApp|1d',
-    'socorro.cron.jobs.clean_raw_adi.CleanRawADICronApp|1d',
-    'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h',
+
+    # Misc
     'socorro.cron.jobs.upload_crash_report_json_schema.UploadCrashReportJSONSchemaCronApp|1h',
 ]
 
