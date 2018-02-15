@@ -86,11 +86,11 @@ docker-compose exec postgresql psql -U postgres breakpad -c "TRUNCATE raw_adi;"
 docker-compose exec postgresql psql -U postgres breakpad -c "$SQLDATA"
 
 # Reset the crontabber state for the job ignoring any error code
-docker-compose run crontabber ./scripts/socorro crontabber \
+docker-compose run crontabber ./socorro/cron/crontabber_app.py \
                --reset-job=fetch-adi-from-hive || true
 
 # Run the job as a dry run--it should print out two rows
-docker-compose run crontabber ./scripts/socorro crontabber \
+docker-compose run crontabber ./socorro/cron/crontabber_app.py \
                --job=fetch-adi-from-hive \
                --crontabber.class-RawADIMoverCronApp.dry_run
 
@@ -105,11 +105,11 @@ echo "==============================================="
 echo ""
 
 # Reset the crontabber state for the job ignoring any error code
-docker-compose run crontabber ./scripts/socorro crontabber \
+docker-compose run crontabber ./socorro/cron/crontabber_app.py \
                --reset-job=fetch-adi-from-hive || true
 
 # Run the job
-docker-compose run crontabber ./scripts/socorro crontabber \
+docker-compose run crontabber ./socorro/cron/crontabber_app.py \
                --job=fetch-adi-from-hive
 
 # Since the source and dest were the same, we inserted the two raw_adi rows into
@@ -135,11 +135,11 @@ docker-compose exec postgresql psql -U postgres breakpad -c "$SQLDATA"
 docker-compose run -e DATASERVICE_DATABASE_NAME=breakpad2 webapp ./docker/run_setup_postgres.sh
 
 # Reset the crontabber state for the job ignoring any error code
-docker-compose run crontabber ./scripts/socorro crontabber \
+docker-compose run crontabber ./socorro/cron/crontabber_app.py \
                --reset-job=fetch-adi-from-hive || true
 
 # Run the job with source_db != dest_db
-docker-compose run crontabber ./scripts/socorro crontabber \
+docker-compose run crontabber ./socorro/cron/crontabber_app.py \
                --job=fetch-adi-from-hive \
                --crontabber.class-RawADIMoverCronApp.destination.database_name=breakpad2
 

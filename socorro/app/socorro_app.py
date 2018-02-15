@@ -12,16 +12,6 @@ Derived from the base "SocorroApp" is the "App" class.  This class adds logging
 configuration requirements to the application.  App is the class from which
 all the Socorro Apps derive.
 
-Also derived from the base class "SocorroApp" is "SocorroWelcomeApp", an app
-that serves as a dispatcher for all other Socorro apps.  Rather than forcing
-the user to know what and where all the other Socorro apps are, this app adds
-an "application" config requirement as a commandline arguement.  The user may
-specify the app name that they want to run.  Running --help on this app, will
-also list all the Socorro Apps.
-
-If a configuration file exists that includes a not-commented-out 'application'
-parameter, it can be give directly to the "SocorroWelomeApp".  In that case,
-the "SocorroWelcomeApp" becomes the app requested in the config file.
 """
 
 import logging
@@ -33,11 +23,6 @@ import sys
 import re
 import threading
 
-import socorro.app.for_application_defaults
-from socorro.app.for_application_defaults import (
-    ApplicationDefaultsProxy,
-)
-
 from configman import (
     ConfigurationManager,
     Namespace,
@@ -46,41 +31,8 @@ from configman import (
     environment,
     command_line,
 )
-from configman.converters import py_obj_to_str
+from configman.converters import py_obj_to_str, str_to_python_object
 
-
-# every socorro app has a class method called 'get_application_defaults' from
-# which configman extracts the preferred configuration default values.
-#
-# The Socorro App class hierachy will create a 'values_source_list' with the
-# App's preferred config at the base.  These become the defaults over which
-# the configuration values from config file, environment, and command line are
-# overlaid.
-#
-# In the case where the actual app is not specified until configman is already
-# invoked, application defaults cannot be determined until configman
-# has already started the overlay process.  To resolve this
-# chicken/egg problem, we create a ApplicationDefaultsProxy class that stands
-# in values_source list (the list of places that overlay config values come
-# from).  Since the ApplicationDefaultsProxy also serves as the 'from_string'
-# converter for the Application config option, it can know when the target
-# application has been determined, fetch the defaults.  Since the
-# ApplicationDefaultsProxy object is already in the values source list, it can
-# then start providing overlay values immediately.
-
-# Configman knows nothing about how the ApplicationDefaultsProxy object works,
-# so we must regisiter it as a new values overlay source class.  We do that
-# by manually inserting inserting the new class into Configman's
-# handler/dispatcher.  That object associates config sources with modules that
-# are able to implement Configman's overlay handlers.
-from configman.value_sources import type_handler_dispatch
-# register our new type handler with configman
-type_handler_dispatch[ApplicationDefaultsProxy].append(
-    socorro.app.for_application_defaults
-)
-
-# create the app default proxy object
-application_defaults_proxy = ApplicationDefaultsProxy()
 
 # for use with SIGHUP for apps that run as daemons
 restart = True
@@ -104,12 +56,7 @@ def klass_to_pypath(klass):
     module actually had its own real name.  This ends up being very confusing
     to Configman as it tries to refer to a class by its proper module name.
     This function will convert a class into its properly qualified actual
-    pathname.  This method is used when a Socorro app is actually invoked
-    directly through the file in which the App class is defined.  This allows
-    configman to reimport the class under its proper name and treat it as if
-    it had been run through the SocorroWelcomeApp.  In turn, this allows
-    the application defaults to be fetched from the properly imported class
-    in time for configman use that information as value source."""
+    pathname."""
     if klass.__module__ == '__main__':
         module_path = (
             sys.modules['__main__']
@@ -136,21 +83,17 @@ class SocorroApp(RequiredConfig):
     app_version = "1.0"
     app_description = 'base class for app system'
 
+    #: String containing a module import path. The module is used as a
+    #: source for default configuration values. If None, this makes no
+    #: changes to the configuration defaults.
+    config_defaults = None
+
     required_config = Namespace()
 
     def __init__(self, config):
         self.config = config
         # give a name to this running instance of the program.
         self.app_instance_name = self._app_instance_name()
-
-    @staticmethod
-    def get_application_defaults():
-        """this method allows an app to inject defaults into the configuration
-        that can override defaults not under the direct control of the app.
-        For example, if an app were to use a class that had a config default
-        of X and that was not appropriate as a default for this app, then
-        this method could be used to override that default"""
-        return {}
 
     def main(self):  # pragma: no cover
         """derived classes must override this function with business logic"""
@@ -199,9 +142,6 @@ class SocorroApp(RequiredConfig):
 
         if values_source_list is None:
             values_source_list = [
-                # pull in the application defaults from the 'application'
-                # configman option, once it has been defined
-                application_defaults_proxy,
                 # pull in any configuration file
                 ConfigFileFutureProxy,
                 # get values from the environment
@@ -209,17 +149,17 @@ class SocorroApp(RequiredConfig):
                 # use the command line to get the final overriding values
                 command_line
             ]
-        elif application_defaults_proxy not in values_source_list:
-            values_source_list = (
-                [application_defaults_proxy] + values_source_list
-            )
+
+        # Pull base set of defaults from the config module if it is specified
+        if klass.config_defaults is not None:
+            values_source_list.insert(0, klass.config_defaults)
 
         config_definition = klass.get_required_config()
         if 'application' not in config_definition:
-            # the application option has not been defined.  This means that
-            # the we're likely trying to run one of the applications directly
-            # rather than through the SocorroWelocomApp.  Add the 'application'
-            # option initialized with the target application as the default.
+            # FIXME(mkelly): We used to have a SocorroWelcomeApp that defined an
+            # "application" option. We no longer have that. This section should
+            # get reworked possibly as part of getting rid of application
+            # defaults.
             application_config = Namespace()
             application_config.add_option(
                 'application',
@@ -230,9 +170,7 @@ class SocorroApp(RequiredConfig):
                 # the following setting means this option will NOT be
                 # commented out when configman generates a config file
                 likely_to_be_changed=True,
-                from_string_converter=(
-                    application_defaults_proxy.str_to_application_class
-                ),
+                from_string_converter=str_to_python_object,
             )
             config_definition = application_config
 
@@ -497,45 +435,6 @@ class App(SocorroApp):
     )
 
 
-class SocorroWelcomeApp(SocorroApp):
-    required_config = Namespace()
-    required_config.add_option(
-        'application',
-        is_argument=True,
-        doc=(
-            'the name of the app to run (select from: %s)' %
-            ', '.join(sorted(application_defaults_proxy.apps.keys()))
-        ),
-        default=None,
-        # the following setting means this option will NOT be
-        # commented out when configman generates a config file
-        likely_to_be_changed=True,
-        from_string_converter=(
-            application_defaults_proxy.str_to_application_class
-        ),
-    )
-    app_name = "SocorroWelcomeApp"
-    app_version = "1.0"
-    app_description = 'Welcome to Socorro'
-
-    def main(self):
-        if (
-            self.config.application and
-            self.config.application.__name__ is not self.__class__.__name__
-        ):
-            requested_app = self.config.application(self.config)
-            # this is where an app that was requested through the use of the
-            # config parameter 'application' is actually run
-            #requested_app.config_manager = self.config_manager
-            return requested_app.main()
-        else:
-            print(
-                "Welcome to Socorro.  To configure Socorro, please see "
-                "https://socorro.readthedocs.io/\n"
-                "use --help with this app to see what you can do here"
-            )
-
-
 def tear_down_logger(app_name):
     logger = logging.getLogger(app_name)
     # must have a copy of the handlers list since we cannot modify the original
@@ -548,14 +447,3 @@ def tear_down_logger(app_name):
 def _convert_format_string(s):
     """return '%(foo)s %(bar)s' if the input is '{foo} {bar}'"""
     return re.sub('{(\w+)}', r'%(\1)s', s)
-
-
-def main(app_class, config_path=None, values_source_list=None):
-    return app_class.run(
-        config_path=config_path,
-        values_source_list=values_source_list
-    )
-
-
-if __name__ == '__main__':
-    main(SocorroWelcomeApp)

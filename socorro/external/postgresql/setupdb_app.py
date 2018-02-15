@@ -19,7 +19,7 @@ from configman import Namespace, class_converter
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
 
-from socorro.app.socorro_app import App, main
+from socorro.app.socorro_app import App
 from socorro.external.postgresql import staticdata
 from socorro.external.postgresql.connection_context import (
     get_field_from_pg_database_url
@@ -359,4 +359,4 @@ class SocorroDBApp(App):
 
 
 if __name__ == "__main__":
-    sys.exit(main(SocorroDBApp))
+    sys.exit(SocorroDBApp.run())

@@ -53,7 +53,7 @@ class FetchTransformSaveApp(App):
     required_config.source.add_option(
         'crashstorage_class',
         doc='the source storage class',
-        default=None,
+        default='socorro.external.fs.crashstorage.FSPermanentStorage',
         from_string_converter=class_converter
     )
     required_config.destination = Namespace()
@@ -64,7 +64,7 @@ class FetchTransformSaveApp(App):
     required_config.destination.add_option(
         'crashstorage_class',
         doc='the destination storage class',
-        default=None,
+        default='socorro.external.fs.crashstorage.FSPermanentStorage',
         from_string_converter=class_converter
     )
     required_config.producer_consumer = Namespace()
@@ -80,25 +80,6 @@ class FetchTransformSaveApp(App):
         short_form='n',
         default='forever'
     )
-
-    @staticmethod
-    def get_application_defaults():
-        """this method allows an app to inject defaults into the configuration
-        that can override defaults not under the direct control of the app.
-        For example, if an app were to use a class that had a config default
-        of X and that was not appropriate as a default for this app, then
-        this method could be used to override that default.
-
-        This is a technique of getting defaults into an app that replaces
-        an older method of going to the configman option and using the
-        'set_default' method with 'force=True'"""
-
-        return {
-            'source.crashstorage_class':
-            'socorro.external.fs.crashstorage.FSPermanentStorage',
-            'destination.crashstorage_class':
-            'socorro.external.fs.crashstorage.FSPermanentStorage',
-        }
 
     def __init__(self, config):
         super(FetchTransformSaveApp, self).__init__(config)

@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import datetime
-import sys
 import re
 import os
 import json
@@ -9,13 +7,12 @@ import urlparse
 import fnmatch
 import functools
 
-import mock
 import lxml.html
 import requests
 from requests.adapters import HTTPAdapter
 
 from configman import Namespace
-from configman.converters import class_converter, str_to_list
+from configman.converters import str_to_list
 from crontabber.base import BaseCronApp
 from crontabber.mixins import (
     as_backfill_cron_app,
@@ -23,9 +20,6 @@ from crontabber.mixins import (
 )
 
 from socorro.cron import buildutil
-
-from socorro.app.socorro_app import App, main
-from socorro.lib.datetimeutil import string_to_datetime
 
 
 def memoize_download(fun):
@@ -513,60 +507,3 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         repository,
                         ignore_duplicates=True
                     )
-
-
-class FTPScraperCronAppDryRunner(App):  # pragma: no cover
-    """This is a utility class that makes it easy to run the scraping
-    and ALWAYS do so in a "dry run" fashion such that stuff is never
-    stored in the database but instead found releases are just printed
-    out stdout.
-
-    To run it, simply execute this file:
-
-        $ python socorro/cron/jobs/ftpscraper.py
-
-    If you want to override what date to run it for (by default it's
-    "now") you simply use this format:
-
-        $ python socorro/cron/jobs/ftpscraper.py --date=2015-10-23
-
-    By default it runs for every, default configured, product
-    (see the configuration set up in the FTPScraperCronApp above). You
-    can override that like this:
-
-        $ python socorro/cron/jobs/ftpscraper.py --product=mobile,thunderbird
-
-    """
-
-    required_config = Namespace()
-    required_config.add_option(
-        'date',
-        default=datetime.datetime.utcnow().date(),
-        doc='Date to run for',
-        from_string_converter=string_to_datetime
-    )
-    required_config.add_option(
-        'crontabber_job_class',
-        default='socorro.cron.jobs.ftpscraper.FTPScraperCronApp',
-        doc='bla',
-        from_string_converter=class_converter,
-    )
-
-    @staticmethod
-    def get_application_defaults():
-        return {
-            'database.database_class': mock.MagicMock()
-        }
-
-    def __init__(self, config):
-        self.config = config
-        self.config.dry_run = True
-        self.ftpscraper = config.crontabber_job_class(config, {})
-
-    def main(self):
-        assert self.config.dry_run
-        self.ftpscraper.run(self.config.date)
-
-
-if __name__ == '__main__':  # pragma: no cover
-    sys.exit(main(FTPScraperCronAppDryRunner))

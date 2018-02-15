@@ -388,7 +388,7 @@ CACHE_IMPLEMENTATION_FETCHES = config(
     'CACHE_IMPLEMENTATION_FETCHES', True, cast=bool
 )
 
-DEFAULT_PRODUCT = config('DEFAULT_PRODUCT', 'WaterWolf')
+DEFAULT_PRODUCT = config('DEFAULT_PRODUCT', 'Firefox')
 
 # can be changed from null to log to test something locally
 # or if using the debug toolbar, you might give toolbar a try
@@ -407,7 +407,7 @@ CACHES = {
         ),
         'LOCATION': config('CACHE_LOCATION', '127.0.0.1:11211'),
         'TIMEOUT': config('CACHE_TIMEOUT', 500),
-        'KEY_PREFIX': config('CACHE_KEY_PREFIX', 'crashstats'),
+        'KEY_PREFIX': config('CACHE_KEY_PREFIX', 'socorro'),
     }
 }
 
@@ -520,7 +520,7 @@ if raven_dsn:
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', 'UA-35433268-50')
 
 # Set to True enable analysis of all model fetches
-ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
+ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', True, cast=bool)
 
 
 # Credentials for being able to make an S3 connection

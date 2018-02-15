@@ -289,30 +289,29 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
-                'socorro.unittest.external.test_crashstorage_base.A,'
-                'socorro.unittest.external.test_crashstorage_base.A,'
-                'socorro.unittest.external.test_crashstorage_base.B'
-            ),
-            'storage1.y': 37,
+            'storage_namespaces': 'A,A2,B',
+            'A.crashstorage_class': 'socorro.unittest.external.test_crashstorage_base.A',
+            'A2.crashstorage_class': 'socorro.unittest.external.test_crashstorage_base.A',
+            'B.crashstorage_class': 'socorro.unittest.external.test_crashstorage_base.B',
+            'A2.y': 37
         }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
-            assert config.storage0.crashstorage_class.foo == 'a'
-            assert config.storage1.crashstorage_class.foo == 'a'
-            assert config.storage1.y == 37
-            assert config.storage2.crashstorage_class.foo == 'b'
+            assert config.A.crashstorage_class.foo == 'a'
+            assert config.A2.crashstorage_class.foo == 'a'
+            assert config.A2.y == 37
+            assert config.B.crashstorage_class.foo == 'b'
 
             poly_store = config.storage(config)
             assert len(poly_store.storage_namespaces) == 3
-            assert poly_store.storage_namespaces[0] == 'storage0'
-            assert poly_store.storage_namespaces[1] == 'storage1'
-            assert poly_store.storage_namespaces[2] == 'storage2'
+            assert poly_store.storage_namespaces[0] == 'A'
+            assert poly_store.storage_namespaces[1] == 'A2'
+            assert poly_store.storage_namespaces[2] == 'B'
 
             assert len(poly_store.stores) == 3
-            assert poly_store.stores.storage0.foo == 'a'
-            assert poly_store.stores.storage1.foo == 'a'
-            assert poly_store.stores.storage2.foo == 'b'
+            assert poly_store.stores.A.foo == 'a'
+            assert poly_store.stores.A2.foo == 'a'
+            assert poly_store.stores.B.foo == 'b'
 
             raw_crash = {'ooid': ''}
             dump = '12345'
@@ -345,10 +344,10 @@ class TestBase(TestCase):
             processed_crash = {'ooid': 'aoeu', 'product': 33}
 
             expected = Exception('this is messed up')
-            poly_store.stores['storage1'].save_raw_crash = Mock()
-            poly_store.stores['storage1'].save_raw_crash.side_effect = expected
-            poly_store.stores['storage2'].save_processed = Mock()
-            poly_store.stores['storage2'].save_processed.side_effect = expected
+            poly_store.stores['A2'].save_raw_crash = Mock()
+            poly_store.stores['A2'].save_raw_crash.side_effect = expected
+            poly_store.stores['B'].save_processed = Mock()
+            poly_store.stores['B'].save_processed.side_effect = expected
 
             with pytest.raises(PolyStorageError):
                 poly_store.save_raw_crash(raw_crash, dump, '')
@@ -369,7 +368,7 @@ class TestBase(TestCase):
                 v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
                 v.save_processed.assert_called_with(processed_crash)
 
-            poly_store.stores['storage2'].close.side_effect = Exception
+            poly_store.stores['B'].close.side_effect = Exception
             with pytest.raises(PolyStorageError):
                 poly_store.close()
 
@@ -387,7 +386,8 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
+            'storage_namespaces': 'store1',
+            'store1.crashstorage_class': (
                 'socorro.unittest.external.test_crashstorage_base'
                 '.MutatingProcessedCrashCrashStorage'
             ),
@@ -429,7 +429,8 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
+            'storage_namespaces': 'store1',
+            'store1.crashstorage_class': (
                 'socorro.unittest.external.test_crashstorage_base'
                 '.NonMutatingProcessedCrashCrashStorage'
             ),
@@ -464,7 +465,8 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
+            'storage_namespaces': 'store1',
+            'store1.crashstorage_class': (
                 'socorro.unittest.external.test_crashstorage_base'
                 '.MutatingProcessedCrashCrashStorage'
             ),

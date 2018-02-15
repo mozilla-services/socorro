@@ -30,26 +30,32 @@ class TestViews(BaseTestViews):
         Bugs.implementation().get.side_effect = mocked_bugs
 
         def mocked_signature_first_date_get(**options):
+            hits = [
+                {
+                    "signature": u"FakeSignature1 \u7684 Japanese",
+                    "first_date": datetime.datetime(
+                        2000, 1, 1, 12, 23, 34,
+                        tzinfo=utc,
+                    ),
+                    "first_build": "20000101122334",
+                },
+                {
+                    "signature": u"mozCool()",
+                    "first_date": datetime.datetime(
+                        2016, 5, 2, 0, 0, 0,
+                        tzinfo=utc,
+                    ),
+                    "first_build": "20160502000000",
+                },
+            ]
+
+            # Simulate filtering by signatures
+            if 'signatures' in options:
+                hits = [hit for hit in hits if hit['signature'] in options['signatures']]
+
             return {
-                "hits": [
-                    {
-                        "signature": u"FakeSignature1 \u7684 Japanese",
-                        "first_date": datetime.datetime(
-                            2000, 1, 1, 12, 23, 34,
-                            tzinfo=utc,
-                        ),
-                        "first_build": "20000101122334",
-                    },
-                    {
-                        "signature": u"mozCool()",
-                        "first_date": datetime.datetime(
-                            2016, 5, 2, 0, 0, 0,
-                            tzinfo=utc,
-                        ),
-                        "first_build": "20160502000000",
-                    },
-                ],
-                "total": 2
+                "hits": hits,
+                "total": len(hits)
             }
 
         SignatureFirstDate.implementation().get.side_effect = (

@@ -386,9 +386,9 @@ class RawADIMoverCronApp(BaseCronApp):
     It uses the same app_name to fulfill cron job depdencies.
 
     To force a dry run, reset the state::
-        ./scripts/socorro crontabber --reset-job=fetch-adi-from-hive
+        ./socorro/cron/crontabber_app.py --reset-job=fetch-adi-from-hive
 
-        ./scripts/socorro crontabber --job=fetch-adi-from-hive \
+        ./socorro/cron/crontabber_app.py --job=fetch-adi-from-hive \
             --crontabber.class-RawADIMoverCronApp.dry_run
 
     """

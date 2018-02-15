@@ -1,6 +1,9 @@
+#! /usr/bin/env python
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import sys
 
 from configman import Namespace, class_converter
 
@@ -32,3 +35,7 @@ class ClearESIndicesApp(App):
         for index in deleted_indices:
             self.config.logger.info('Deleted elasticsearch index %s' % (index,))
         return SUCCESS
+
+
+if __name__ == '__main__':
+    sys.exit(ClearESIndicesApp.run())

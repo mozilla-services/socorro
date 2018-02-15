@@ -172,7 +172,18 @@ Run::
 Configuration
 =============
 
-All configuration is done with ENV files located in ``/app/docker/config/``.
+Configuration is pulled from three sources:
+
+1. Envronment variables
+2. ENV files located in ``/app/docker/config/``. See ``docker-compose.yml`` for
+   which ENV files are used in which containers, and their precedence.
+3. The ``config_defaults`` attribute for each ``SocorroApp`` subclass.
+
+The sources above are ordered by precedence, i.e. configuration values defined
+by environment variables will override values from ENV files or
+``config_defaults``.
+
+The following ENV files can be found in ``/app/docker/config/``:
 
 ``local_dev.env``
     This holds *secrets* and *environment-specific configuration* required
@@ -187,13 +198,6 @@ All configuration is done with ENV files located in ``/app/docker/config/``.
 
     **These should never show up in a server environment.**
 
-``processor.env``, ``crontabber.env``, and ``webapp.env``
-    These configuration files hold *behavioral configuration* for these three
-    components for all environments--local development and servers.
-
-    For example, if you want to add a new destination crash store to the system,
-    you'd add it to ``processor.env``.
-
 ``test.env``
     This holds configuration specific to running the tests. It has some
     configuration value overrides because the tests are "interesting".
@@ -207,7 +211,6 @@ All configuration is done with ENV files located in ``/app/docker/config/``.
 
     The template for this is in ``docker/config/my.env.dist``.
 
-
 In this way:
 
 1. environmental configuration which covers secrets, hosts, ports, and
@@ -220,10 +223,6 @@ In this way:
 3. ``my.env`` lets you set configuration specific to your development
    environment as well as override any configuration and is not checked into
    version control
-
-
-See the ``docker-compose.yml`` file for order of precedence and which EMV files
-are used for which component container.
 
 
 Setting configuration specific to your local dev environment

@@ -12,9 +12,7 @@ import pytest
 from socorro.app.socorro_app import (
     App,
     SocorroApp,
-    main,
 )
-from socorro.app.for_application_defaults import ApplicationDefaultsProxy
 from socorro.unittest.testbase import TestCase
 
 
@@ -24,7 +22,6 @@ class TestSocorroApp(TestCase):
         config = DotDict()
         sa = SocorroApp(config)
 
-        assert sa.get_application_defaults() == {}
         with pytest.raises(NotImplementedError):
             sa.main()
         with pytest.raises(NotImplementedError):
@@ -86,7 +83,7 @@ class TestSocorroApp(TestCase):
                         assert self.config is expected
                         return 17
 
-                result = main(SomeOtherApp)
+                result = SomeOtherApp.run()
                 args = cm.call_args_list
                 args, kwargs = args[0]
                 assert isinstance(args[0], Namespace)
@@ -98,7 +95,6 @@ class TestSocorroApp(TestCase):
                 assert kwargs['values_source_list'][-1] == command_line
                 assert isinstance(kwargs['values_source_list'][-2], DotDict)
                 assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
-                assert isinstance(kwargs['values_source_list'][0], ApplicationDefaultsProxy)
                 assert result == 17
 
     def test_do_run_with_alternate_class_path(self):
@@ -115,7 +111,7 @@ class TestSocorroApp(TestCase):
                         assert self.config is expected
                         return 17
 
-                result = main(SomeOtherApp, 'my/other/path')
+                result = SomeOtherApp.run('my/other/path')
 
                 args = cm.call_args_list
                 args, kwargs = args[0]
@@ -128,7 +124,6 @@ class TestSocorroApp(TestCase):
                 assert kwargs['values_source_list'][-1] == command_line
                 assert isinstance(kwargs['values_source_list'][-2], DotDict)
                 assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
-                assert isinstance(kwargs['values_source_list'][0], ApplicationDefaultsProxy)
                 assert result == 17
 
     def test_do_run_with_alternate_values_source_list(self):
@@ -145,8 +140,7 @@ class TestSocorroApp(TestCase):
                         assert self.config is expected
                         return 17
 
-                result = main(
-                    SomeOtherApp,
+                result = SomeOtherApp.run(
                     config_path='my/other/path',
                     values_source_list=[{"a": 1}, {"b": 2}]
                 )
@@ -159,9 +153,8 @@ class TestSocorroApp(TestCase):
                 assert kwargs['app_description'] == SomeOtherApp.app_description
                 assert kwargs['config_pathname'] == 'my/other/path'
                 assert isinstance(kwargs['values_source_list'], list)
-                assert isinstance(kwargs['values_source_list'][0], ApplicationDefaultsProxy)
-                assert kwargs['values_source_list'][1] == {"a": 1}
-                assert kwargs['values_source_list'][2] == {"b": 2}
+                assert kwargs['values_source_list'][0] == {"a": 1}
+                assert kwargs['values_source_list'][1] == {"b": 2}
                 assert result == 17
 
 

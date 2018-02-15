@@ -6,18 +6,33 @@
 
 """This app submits crashes to a Socorro collector"""
 
+import sys
 import time
 
 from configman import Namespace
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
-from socorro.app.socorro_app import main
 
 
 class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     app_name = 'submitter_app'
     app_version = '3.1'
     app_description = __doc__
+    config_defaults = {
+        'always_ignore_mismatches': True,
+
+        'source': {
+            'crashstorage_class': 'socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage',
+        },
+
+        'destination': {
+            'crashstorage_class': (
+                'socorro.submitter.breakpad_submitter_utilities.BreakpadPOSTDestination'
+            ),
+        },
+
+        'number_of_submissions': 'all',
+    }
 
     required_config = Namespace()
     required_config.namespace('submitter')
@@ -33,18 +48,6 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         short_form='D',
         default=False
     )
-
-    @staticmethod
-    def get_application_defaults():
-        return {
-            "source.crashstorage_class": (
-                "socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage"
-            ),
-            "destination.crashstorage_class": (
-                'socorro.submitter.breakpad_submitter_utilities.BreakpadPOSTDestination'
-            ),
-            "number_of_submissions": "all",
-        }
 
     def _action_between_each_iteration(self):
         if self.config.submitter.delay:
@@ -85,4 +88,4 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
 
 if __name__ == '__main__':
-    main(SubmitterApp)
+    sys.exit(SubmitterApp.run())

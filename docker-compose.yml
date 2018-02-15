@@ -28,7 +28,6 @@ services:
     env_file:
       - docker/config/local_dev.env
       - docker/config/never_on_a_server.env
-      - docker/config/processor.env
       - my.env
     depends_on:
       - statsd
@@ -48,7 +47,6 @@ services:
     env_file:
       - docker/config/local_dev.env
       - docker/config/never_on_a_server.env
-      - docker/config/webapp.env
       - my.env
     depends_on:
       - statsd
@@ -72,7 +70,6 @@ services:
     env_file:
       - docker/config/local_dev.env
       - docker/config/never_on_a_server.env
-      - docker/config/crontabber.env
       - my.env
     depends_on:
       - localstack-s3
