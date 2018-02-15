@@ -9,6 +9,7 @@ import datetime
 from functools import total_ordering
 import os
 import os.path
+import sys
 from urlparse import urlparse, parse_qs
 
 import requests
@@ -136,10 +137,9 @@ def extract_params(url):
     return params
 
 
-def main(argv):
+def main(argv=None):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
-        prog=os.path.basename(__file__),
         description=DESCRIPTION.strip(),
     )
     parser.add_argument(
@@ -163,7 +163,10 @@ def main(argv):
         help='Increase verbosity of output'
     )
 
-    args = parser.parse_args(argv)
+    if argv is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(argv)
 
     # Start with params from --url value or product=Firefox
     if args.url:
