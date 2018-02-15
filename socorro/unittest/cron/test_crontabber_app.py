@@ -12,7 +12,6 @@ class TestJobsConverter:
         'BugzillaCronApp',
         'BuildADUCronApp',
         'CleanRawADICronApp',
-        'CleanRawADILogsCronApp',
         'DropOldPartitionsCronApp',
         'DuplicatesCronApp',
         'ElasticsearchCleanupCronApp',

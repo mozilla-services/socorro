@@ -19,10 +19,8 @@ class TestCleanRawADICronApp(IntegrationTestBase):
         cur = self.conn.cursor()
 
         # Ensure that the test partition entry and table no longer exist.
-        statement = """
-        TRUNCATE raw_adi CASCADE
-        """
-        cur.execute(statement)
+        cur.execute('TRUNCATE raw_adi CASCADE')
+        cur.execute('TRUNCATE raw_adi_logs CASCADE')
         self.conn.commit()
 
         super(TestCleanRawADICronApp, self).tearDown()
@@ -33,6 +31,17 @@ class TestCleanRawADICronApp(IntegrationTestBase):
         statement = """
             INSERT INTO raw_adi
             (date, product_name, adi_count) VALUES
+            (%(first)s, 'WinterFox', 11),
+            (%(second)s, 'WinterFox', 23)
+        """
+        second = utc_now().date()
+        first = second - datetime.timedelta(days=1)
+        cur.execute(statement, {'first': first, 'second': second})
+
+        # Ensure test table is present.
+        statement = """
+            INSERT INTO raw_adi_logs
+            (report_date, product_name, count) VALUES
             (%(first)s, 'WinterFox', 11),
             (%(second)s, 'WinterFox', 23)
         """
@@ -54,9 +63,12 @@ class TestCleanRawADICronApp(IntegrationTestBase):
         assert information['clean-raw-adi']['last_success']
 
         # Ensure test row was removed
-        cur.execute("""
-            SELECT date FROM raw_adi
-        """)
+        cur.execute('SELECT date FROM raw_adi')
+        result, = cur.fetchall()
+        report_date = result[0]
+        assert report_date == second
+
+        cur.execute('SELECT report_date FROM raw_adi_logs')
         result, = cur.fetchall()
         report_date = result[0]
         assert report_date == second
