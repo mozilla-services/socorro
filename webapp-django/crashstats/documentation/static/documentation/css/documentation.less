@@ -1,3 +1,5 @@
+@import "@{base-path}/variables.less";
+
 .panel {
     font-size: 14px;
     line-height: 1.42857143;
@@ -136,7 +138,7 @@
             content: url('../../img/3rdparty/silk/information.png') ' Note';
             display: block;
             background-color: #467386;
-            color: white;
+            color: @white;
             font-weight: bold;
             padding: 4px 10px;
         }
@@ -152,7 +154,7 @@
             content: url('../../img/3rdparty/silk/bricks.png') ' Example';
             display: block;
             background-color: #999;
-            color: white;
+            color: @white;
             font-weight: bold;
             padding: 4px 10px;
         }
@@ -176,7 +178,7 @@
         }
 
         .results {
-            background-color: black;
+            background-color: @black;
             border-top: 1px solid #999;
 
             .loader {
@@ -194,7 +196,7 @@
 
             h2 {
                 background-color: #333;
-                color: white;
+                color: @white;
                 font-size: 1.0em;
                 font-weight: bold;
                 padding: 4px 10px;
@@ -294,7 +296,7 @@ ul.main-links {
 }
 
 #table-of-content {
-    background-color: white;
+    background-color: @white;
     border: 1px solid #ccc;
     border-radius: 4px;
     display: none;

@@ -9,7 +9,7 @@ table.data-table {
         padding: .5em;
     }
     tbody {
-        background-color: white;
+        background-color: @white;
         tr:nth-child(odd) {
             background-color: #edecec;
         }
@@ -20,7 +20,7 @@ table.data-table {
         tr.missingsymbols:hover,
         tr.missingsymbols td, {
             background-color: #8f0222;
-            color: white;
+            color: @white;
             border-top: 2px solid white;
         }
     }
@@ -52,14 +52,14 @@ table.captioned-data-table {
     }
     th {
         background-color: #9c9c9c;
-        color: white;
+        color: @white;
     }
     th,
     td {
         padding: .5em;
     }
     tbody {
-        background-color: white;
+        background-color: @white;
         tr:nth-child(odd) {
             background-color: #edecec;
         }
@@ -82,7 +82,7 @@ table.captioned-data-table.initially-hidden {
 }
 table.vertical {
     th {
-        border: 1px solid #000;
+        border: 1px solid @black;
         font-weight: bold;
     }
 }
@@ -101,7 +101,7 @@ table.vertical {
     position: absolute;
     left: -6px;
     background-color: #D33419;
-    color: white;
+    color: @white;
     margin-top: -6px;
     padding: .5rem .5rem .2rem;
     border-radius: 6px 0 0 6px;

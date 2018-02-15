@@ -1,3 +1,5 @@
+@import "@{base-path}/variables.less";
+
 /* apply a natural box layout model to all elements */
 .box-sizing (@model: border-box) {
     -moz-box-sizing: @model;
@@ -62,7 +64,7 @@
     background-image: -webkit-linear-gradient(top, #5D94B0, #48768E 50%, #406A80 51%, #48768E);
     background-image: linear-gradient(to bottom, #5D94B0, #48768E 50%, #406A80 51%, #48768E);
     box-shadow: inset 0px 1px 1px #B5D7E8;
-    color: white;
+    color: @white;
     margin: 1rem;
     padding: .5rem;
     border: 1px solid #406A80;
@@ -81,7 +83,7 @@
     }
 }
 .notification {
-    background-color: #fff;
+    background-color: @white;
     margin: 1rem;
     padding: .5rem;
     .rounded-corners(6px);
