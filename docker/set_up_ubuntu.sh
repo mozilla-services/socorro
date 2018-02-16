@@ -35,4 +35,5 @@ fi
 # name which is in an environment variable. If there is no CONTAINERNAME,
 # then use the host name.
 PS1="\${MYUSER}@\${CONTAINERNAME:-\h}:\w\$ "
+PATH=\${PATH}:.
 EOF
