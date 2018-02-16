@@ -51,7 +51,6 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.FlashVersionRule, "
         "socorro.processor.mozilla_transform_rules.OSPrettyVersionRule, "
         "socorro.processor.mozilla_transform_rules.TopMostFilesRule, "
-        "socorro.processor.mozilla_transform_rules.MissingSymbolsRule, "
         "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
         "socorro.processor.rules.memory_report_extraction.MemoryReportExtraction, "
     ],

@@ -38,8 +38,6 @@ DEFAULT_JOBS_BASE = [
     'socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d',
     'socorro.cron.jobs.clean_raw_adi_logs.CleanRawADILogsCronApp|1d',
     'socorro.cron.jobs.clean_raw_adi.CleanRawADICronApp|1d',
-    'socorro.cron.jobs.clean_missing_symbols.CleanMissingSymbolsCronApp|1d',
-    'socorro.cron.jobs.missingsymbols.MissingSymbolsCronApp|1d',
     'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h',
     'socorro.cron.jobs.upload_crash_report_json_schema.UploadCrashReportJSONSchemaCronApp|1h',
 ]
@@ -57,8 +55,7 @@ STAGE_JOBS = ', '.join(
 
 # Jobs that run in the -stage-new environment
 STAGE_NEW_JOBS = ', '.join(
-    [job for job in DEFAULT_JOBS_BASE if 'MissingSymbolsCronApp' not in job] +
-    [
+    DEFAULT_JOBS_BASE + [
         'socorro.cron.jobs.fetch_adi_from_hive.RawADIMoverCronApp|1d|08:20'
     ]
 )

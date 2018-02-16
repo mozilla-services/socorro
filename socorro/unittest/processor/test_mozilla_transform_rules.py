@@ -8,7 +8,7 @@ import re
 from StringIO import StringIO
 
 from configman.dotdict import DotDict as CDotDict
-from mock import Mock, patch, call
+from mock import Mock, patch
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.util import DotDict
@@ -29,7 +29,6 @@ from socorro.processor.mozilla_transform_rules import (
     FlashVersionRule,
     Winsock_LSPRule,
     TopMostFilesRule,
-    MissingSymbolsRule,
     BetaVersionRule,
     AuroraVersionFixitRule,
     OSPrettyVersionRule,
@@ -1509,99 +1508,6 @@ class TestTopMostFilesRule(TestCase):
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
-
-
-class TestMissingSymbols(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-        config.chatty = False
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
-    def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
-
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {}
-        processed_crash = DotDict()
-        processed_crash.date_processed = '2014-12-31'
-        processed_crash.json_dump = {
-            'modules': [
-                {
-                    "debug_id": "ABCDEFG",
-                    "debug_file": "some-file.pdb",
-                    "missing_symbols": True,
-                    "code_id": "123",
-                    "filename": "debug.py",
-                },
-                {
-                    "debug_id": "BCDEFGH",
-                    "debug_file": "other-file.pdb",
-                    "missing_symbols": False,
-                },
-                {
-                    "debug_id": "CDEFGHI",
-                    "debug_file": "yet-another-file.pdb",
-                    "missing_symbols": True,
-                    "code_id": None,
-                    # Note that this does not even have a key
-                    # called 'code_file'.
-                },
-                {
-                    "debug_id": "",
-                    "debug_file": None,
-                    "missing_symbols": True,
-                },
-            ]
-        }
-
-        processor_meta = self.get_basic_processor_meta()
-
-        rule = MissingSymbolsRule(config)
-
-        expected_sql = rule.sql % '20141229'
-
-        # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        from socorro.external.postgresql.dbapi2_util import execute_no_results
-        assert config.transaction_executor_class.return_value.call_count == 2
-        expected_execute_args = [
-            call(execute_no_results, expected_sql,
-                 ('2014-12-31', 'some-file.pdb', 'ABCDEFG', 'debug.py', '123')),
-            call(execute_no_results, expected_sql,
-                 ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI', None, None))
-        ]
-        config.transaction_executor_class.return_value.assert_has_calls(
-            expected_execute_args
-        )
-
-        # make sure it works a second time
-        # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert config.transaction_executor_class.return_value.call_count == 4
-        expected_execute_args = [
-            call(execute_no_results, expected_sql,
-                 ('2014-12-31', 'some-file.pdb', 'ABCDEFG', 'debug.py', '123')),
-            call(execute_no_results, expected_sql,
-                 ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI', None, None)),
-            call(execute_no_results, expected_sql,
-                 ('2014-12-31', 'some-file.pdb', 'ABCDEFG', 'debug.py', '123')),
-            call(execute_no_results, expected_sql,
-                 ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI', None, None)),
-        ]
-        config.transaction_executor_class.return_value.assert_has_calls(
-            expected_execute_args
-        )
 
 
 class TestBetaVersion(TestCase):
