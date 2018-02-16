@@ -24,7 +24,7 @@ configuration.
 
 To ease debugging in the container, you can run a shell::
 
-  $ docker-compose run processor /bin/bash
+  $ docker-compose run processor bash
 
 
 Then you can start and stop the processor and tweak files and all that jazz.
@@ -47,8 +47,8 @@ crash id to the "socorro.normal" RabbitMQ queue.
 We have helper scripts for these steps.
 
 
-``scripts/fetch_crashids.py``
------------------------------
+fetch_crashids
+--------------
 
 This will generate a list of crash ids from crash-stats.mozilla.com that meet
 specified criteria. Crash ids are printed to stdout, so you can use this in
@@ -56,48 +56,48 @@ conjunction with other scripts or redirect to a file.
 
 This pulls 100 crash ids from yesterday for Firefox product::
 
-  $ docker/as_me.sh scripts/fetch_crashids.py
+  $ docker/as_me.sh socorro-cmd fetch_crashids
 
 This pulls 5 crash ids from 2017-09-01::
 
-  $ docker/as_me.sh scripts/fetch_crashids.py --num=5 --date=2017-09-01
+  $ docker/as_me.sh socorro-cmd fetch_crashids --num=5 --date=2017-09-01
 
 This pulls 100 crash ids for criteria specified with a Super Search url that we
 copy and pasted::
 
-  $ docker/as_me.sh scripts/fetch_crashids.py "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
+  $ docker/as_me.sh socorro-cmd fetch_crashids "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
 
 You can get command help::
 
-  $ docker/as_me.sh scripts/fetch_crash_data.py --help
+  $ docker/as_me.sh socorro-cmd fetch_crash_data --help
 
 
-``scripts/fetch_crash_data.py``
--------------------------------
+fetch_crash_data
+----------------
 
 This will fetch raw crash data from crash-stats.mozilla.com and save it in the
 appropriate directory structure rooted at outputdir.
 
 Usage from host::
 
-  $ docker/as_me.sh scripts/fetch_crash_data.py <outputdir> <crashid> [<crashid> ...]
+  $ docker/as_me.sh socorro-cmd fetch_crash_data <outputdir> <crashid> [<crashid> ...]
 
 
 For example (assumes this crash exists)::
 
-  $ docker/as_me.sh scripts/fetch_crash_data.py ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
+  $ docker/as_me.sh socorro-cmd fetch_crash_data ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
 
 
-Use with ``scripts/fetch_crashids.py`` to fetch crash data from 100 crashes from
-yesterday for Firefox::
+Use with ``fetch_crashids`` to fetch crash data from 100 crashes from yesterday
+for Firefox::
 
   $ docker/as_me.sh bash
-  app@...:/app$ scripts/fetch_crashids.py | scripts/fetch_crash_data.py ./testdata
+  app@processor:/app$ socorro-cmd fetch_crashids | socorro-cmd fetch_crash_data ./testdata
 
 
 You can get command help::
 
-  $ docker/as_me.sh scripts/fetch_crash_data.py --help
+  $ docker/as_me.sh socorro-cmd fetch_crash_data --help
 
 
 You should run this with ``docker/as_me.sh`` so that the files that get saved to
@@ -126,8 +126,8 @@ host.
    data policies that you agreed to when granted access to it.
 
 
-``scripts/socorro_aws_s3.sh``
------------------------------
+scripts/socorro_aws_s3.sh
+-------------------------
 
 This script is a convenience wrapper around the aws cli s3 subcommand that uses
 Socorro environment variables to set the credentials and endpoint.
@@ -157,8 +157,8 @@ Since this is just a wrapper, you can get help::
   $ docker/as_me.sh scripts/socorro_aws_s3.sh help
 
 
-``scripts/add_crashid_to_queue.py``
------------------------------------
+add_crashid_to_queue
+--------------------
 
 This script adds crash ids to the specified queue. Typically, you want to add
 crash ids to the ``socorro.normal`` queue, but if you're testing priority
@@ -166,19 +166,12 @@ processing you'd use ``socorro.priority``.
 
 Usage from host::
 
-  $ docker-compose run processor scripts/add_crashid_to_queue.py <queue> <crashid> [<crashid> ...]
-
-
-.. Note::
-
-   You can run this script with ``docker/as_me.sh``, too. It's adding items to a
-   queue, so it doesn't touch your file system and thus it doesn't matter what
-   uid/gid it runs under.
+  $ ./docker/as_me.sh socorro-cmd add_crashid_to_queue <queue> <crashid> [<crashid> ...]
 
 
 For example::
 
-  $ docker-compose run processor scripts/add_crashid_to_queue.py socorro.normal 5c9cecba-75dc-435f-b9d0-289a50170818
+  $ ./docker/as_me.sh socorro-cmd add_crashid_to_queue socorro.normal 5c9cecba-75dc-435f-b9d0-289a50170818
 
 
 .. Note::
@@ -189,29 +182,33 @@ For example::
 Example using all the scripts
 -----------------------------
 
-Let's process crashes for Firefox from yesterday. We'd do this::
+Let's process crashes for Firefox from yesterday. We'd do this:
+
+.. code-block:: shell
 
   # Start bash in the processor container as me
   $ docker/as_me.sh bash
 
   # Generate a file of crashids--one per line
-  (container) $ scripts/fetch_crashids.py > crashids.txt
+  you@processor:/app$ socorro-cmd fetch_crashids > crashids.txt
 
   # Pull raw crash data from -prod for each crash id and put it in the
   # "crashdata" directory on the host
-  (container) $ cat crashids.txt | scripts/fetch_crash_data.py ./crashdata
+  you@processor:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
 
   # Create a dev_bucket in localstack-s3
-  (container) $ scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+  you@processor:/app$ ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
 
   # Copy that data from the host into the localstack-s3 container
-  (container) $ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
+  you@processor:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
 
   # Add all the crash ids to the queue
-  (container) $ cat crashids.txt | scripts/add_crashid_to_queue.py socorro.normal
+  you@processor:/app$ cat crashids.txt | socorro-cmd add_crashid_to_queue socorro.normal
 
-  # Then exit the container and process all that stuff
-  (container) $ exit
+  # Then exit the container
+  you@processor:/app$ exit
+
+  # Run the processor to process all those crashes
   $ docker-compose up processor
 
 
