@@ -12,6 +12,7 @@ version = r'/versions/(?P<version>[;\w\.()]+)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 
+app_name = 'crashstats'
 urlpatterns = [
     url('^robots\.txt$',
         views.robots_txt,
