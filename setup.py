@@ -22,8 +22,9 @@ def read(fname):
 setup(
     name='socorro',
     version='master',
-    description=('Socorro is a server to accept and process Breakpad'
-                 ' crash reports.'),
+    description=(
+        'Socorro is a server to accept and process Breakpad crash reports.'
+    ),
     long_description=open('README.rst').read(),
     author='Mozilla',
     author_email='socorro-dev@mozilla.com',
@@ -36,11 +37,12 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
     ],
-    keywords=['socorro', 'breakpad', 'crash', 'reporting', 'minidump',
-              'stacktrace'],
+    keywords=[
+        'socorro', 'breakpad', 'crash', 'reporting', 'minidump', 'stacktrace'
+    ],
     packages=find_packages(),
     install_requires=[],  # use pip -r requirements.txt instead
-    scripts = [
+    scripts=[
         'socorro-cmd'
     ],
     zip_safe=False,
