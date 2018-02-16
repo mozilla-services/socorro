@@ -33,7 +33,7 @@ def wrapped(text, width=80):
 def showcommands_cmd(argv):
     """Sub command to show location of all command runners"""
     parser = argparse.ArgumentParser(
-        description='Shows commands and runner paths'
+        description='Shows socorro-cmd subcommands and runner paths.'
     )
     parser.parse_args(argv)
 
