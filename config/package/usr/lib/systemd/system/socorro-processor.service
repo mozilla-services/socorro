@@ -4,7 +4,7 @@ Description=Socorro Processor
 [Service]
 WorkingDirectory=/home/socorro
 Environment=VENV=/data/socorro/socorro-virtualenv
-ExecStart=/bin/bash -c "envconsul -upcase=false -prefix socorro/common -prefix socorro/processor $VENV/bin/socorro processor"
+ExecStart=/bin/bash -c "envconsul -upcase=false -prefix socorro/common -prefix socorro/processor $VENV/bin/python /data/socorro/application/socorro/processor/processor_app.py"
 Restart=always
 
 [Install]
