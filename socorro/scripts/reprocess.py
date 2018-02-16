@@ -51,10 +51,9 @@ def session_with_retries(url):
     return s
 
 
-def main(argv):
+def main(argv=None):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
-        prog=os.path.basename(__file__),
         description=DESCRIPTION.strip(),
     )
     parser.add_argument(
@@ -66,7 +65,10 @@ def main(argv):
     parser.add_argument('--host', help='host for system to reprocess in', default=DEFAULT_HOST)
     parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
 
-    args = parser.parse_args(argv)
+    if argv is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(argv)
 
     api_token = os.environ.get('SOCORRO_REPROCESS_API_TOKEN')
     if not api_token:
@@ -118,3 +120,7 @@ def main(argv):
         time.sleep(args.sleep)
 
     print('Done!')
+
+
+if __name__ == '__main__':
+    sys.exit(main())

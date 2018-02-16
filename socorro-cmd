@@ -17,7 +17,7 @@ import sys
 import textwrap
 import types
 
-from socorro.app.socorro_app import App, main
+from socorro.app.socorro_app import App
 
 
 def wrapped(text, width=80):
@@ -81,7 +81,7 @@ def import_and_run(runner):
 
     # If the app is a Socorro App, we run it using the Socorro App main
     if issubclass(app, App):
-        sys.exit(main(app))
+        sys.exit(app.run())
 
     print('ProgrammerError: Unknown runner type')
     sys.exit(1)

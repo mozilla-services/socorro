@@ -7,8 +7,6 @@
 import argparse
 import datetime
 from functools import total_ordering
-import os
-import os.path
 import sys
 from urlparse import urlparse, parse_qs
 
@@ -215,3 +213,7 @@ def main(argv=None):
         print(crashid)
 
     return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
