@@ -56,11 +56,11 @@ conjunction with other scripts or redirect to a file.
 
 This pulls 100 crash ids from yesterday for Firefox product::
 
-  $ docker/as_me.sh socorro-cmd fetch_crashids
+  $ docker/as_me.sh ./socorro-cmd fetch_crashids
 
 This pulls 5 crash ids from 2017-09-01::
 
-  $ docker/as_me.sh socorro-cmd fetch_crashids --num=5 --date=2017-09-01
+  $ docker/as_me.sh ./socorro-cmd fetch_crashids --num=5 --date=2017-09-01
 
 This pulls 100 crash ids for criteria specified with a Super Search url that we
 copy and pasted::
@@ -69,7 +69,7 @@ copy and pasted::
 
 You can get command help::
 
-  $ docker/as_me.sh socorro-cmd fetch_crash_data --help
+  $ docker/as_me.sh ./socorro-cmd fetch_crash_data --help
 
 
 fetch_crash_data
@@ -80,12 +80,12 @@ appropriate directory structure rooted at outputdir.
 
 Usage from host::
 
-  $ docker/as_me.sh socorro-cmd fetch_crash_data <outputdir> <crashid> [<crashid> ...]
+  $ docker/as_me.sh ./socorro-cmd fetch_crash_data <outputdir> <crashid> [<crashid> ...]
 
 
 For example (assumes this crash exists)::
 
-  $ docker/as_me.sh socorro-cmd fetch_crash_data ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
+  $ docker/as_me.sh ./socorro-cmd fetch_crash_data ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
 
 
 Use with ``fetch_crashids`` to fetch crash data from 100 crashes from yesterday
@@ -97,7 +97,7 @@ for Firefox::
 
 You can get command help::
 
-  $ docker/as_me.sh socorro-cmd fetch_crash_data --help
+  $ docker/as_me.sh ./socorro-cmd fetch_crash_data --help
 
 
 You should run this with ``docker/as_me.sh`` so that the files that get saved to
@@ -134,27 +134,27 @@ Socorro environment variables to set the credentials and endpoint.
 
 Usage from host::
 
-  $ docker/as_me.sh scripts/socorro_aws_s3.sh <s3cmd> ...
+  $ docker/as_me.sh ./scripts/socorro_aws_s3.sh <s3cmd> ...
 
 
 For example, this creates an S3 bucket named ``dev_bucket``::
 
-  $ docker/as_me.sh scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+  $ docker/as_me.sh ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
 
 
 This copies the contents of ``./testdata`` into the ``dev_bucket``::
 
-  $ docker/as_me.sh scripts/socorro_aws_s3.sh sync ./testdata s3://dev_bucket/
+  $ docker/as_me.sh ./scripts/socorro_aws_s3.sh sync ./testdata s3://dev_bucket/
 
 
 This lists the contents of the bucket::
 
-  $ docker/as_me.sh scripts/socorro_aws_s3.sh ls s3://dev_bucket/
+  $ docker/as_me.sh ./scripts/socorro_aws_s3.sh ls s3://dev_bucket/
 
 
 Since this is just a wrapper, you can get help::
 
-  $ docker/as_me.sh scripts/socorro_aws_s3.sh help
+  $ docker/as_me.sh ./scripts/socorro_aws_s3.sh help
 
 
 add_crashid_to_queue
@@ -166,12 +166,12 @@ processing you'd use ``socorro.priority``.
 
 Usage from host::
 
-  $ ./docker/as_me.sh socorro-cmd add_crashid_to_queue <queue> <crashid> [<crashid> ...]
+  $ ./docker/as_me.sh ./socorro-cmd add_crashid_to_queue <queue> <crashid> [<crashid> ...]
 
 
 For example::
 
-  $ ./docker/as_me.sh socorro-cmd add_crashid_to_queue socorro.normal 5c9cecba-75dc-435f-b9d0-289a50170818
+  $ ./docker/as_me.sh ./socorro-cmd add_crashid_to_queue socorro.normal 5c9cecba-75dc-435f-b9d0-289a50170818
 
 
 .. Note::
