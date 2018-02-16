@@ -1,3 +1,5 @@
+@import "@{base-path}/mixins.less";
+
 #topcrashers {
     h1 {
         font-size: 2em;
@@ -71,4 +73,138 @@
             min-width: 30px;
         }
     }
+}
+
+/* Bugzilla entries found within query results */
+th.bugzilla_numbers {
+    width: 140px
+}
+.bug_ids_expanded_list {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background-color: #FFF;
+    margin-top: 1em;
+    padding: 1em 1.5em;
+    border: solid 1px #CCC;
+    min-width: 300px;
+    .rounded-corners(3px);
+    h3 {
+        margin-bottom: 0.3em;
+        font-size: 100%;
+        code {
+            word-wrap: break-word;
+        }
+    }
+    .bug-summary {
+        word-wrap: break-word;
+        margin-left: 3px;
+    }
+}
+.sorted_bug_ids {
+    dt {
+        clear: left;
+    }
+}
+.full_bug_ids.popup {
+    li {
+        word-break: break-all;
+    }
+}
+.sorted_bug_ids.full {
+    dd {
+        margin-left: 0px;
+    }
+}
+.strike {
+    text-decoration: line-through !important;
+}
+.full_bug_ids {
+    width: 100%;
+    li {
+        margin: auto 0.5em 0.5em auto;
+        list-style-type: none;
+    }
+}
+#bugzilla {
+    h2 {
+        margin-top: 1em;
+    }
+    .bug_ids_expanded_list {
+        position: inherit;
+        display: block;
+        margin-bottom: .7em;
+        max-width: 100%;
+    }
+    strong {
+        font-weight: bold;
+    }
+}
+
+#buildid-graph {
+    width: 600px;
+    height: 200px;
+}
+
+/* top crashers no results */
+.no-results {
+    clear: both;
+    padding: 1.2em 0 1em 1em;
+}
+.hide {
+    display: none;
+}
+.startup {
+    margin-right: 1px;
+}
+
+#signature-list {
+    clear: both;
+    button {
+        float: right;
+    }
+    td {
+        width: 4%;
+    }
+    td.signature-column {
+        width: 32%;
+    }
+}
+.signature-popup {
+    background-color: #EEE;
+    border: solid 1px #AAA;
+    width: auto;
+}
+.signature-preview {
+    float: left;
+    display: block;
+    width: 420px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.moving-up,
+.moving-down {
+    position: absolute;
+    left: 3px;
+    display: inline-block;
+    color: #fff;
+    margin-top: -8px;
+    padding: 1.4em 0.5em 0.5em;
+    width: 26px;
+    text-align: center;
+    .rounded-corners(6px, 0, 0, 6px);
+}
+.moving-up {
+    background: rgba(211,52,25, 0.9) url("../../img/up_arrow.png") 9px 4px no-repeat;
+}
+.moving-down {
+    background: rgba(85, 183, 52, 0.9) url("../../img/down_arrow.png") 9px 4px no-repeat;
+}
+
+.label {
+    background-color: #ff9c9c;
+    border-radius: 4px;
+    padding: 2px 4px;
 }

@@ -1,0 +1,81 @@
+@import "@{base-path}/mixins.less";
+@import "@{base-path}/variables.less";
+
+#details th,
+#metadata th {
+    width: 15%;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.humanized {
+    padding-left: 3px;
+    color: rgb(111, 111, 111);
+    font-size: 11px;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+#sumo-link a {
+    margin-left: 5px;
+}
+
+.bugreporter {
+    background-color: #edecec;
+    margin-top: 1em;
+    padding: 0 0.4em;
+    border: 1px solid #ccc;
+    .rounded-corners(6px);
+}
+
+
+#report-index {
+    clear: right;
+
+    h2,
+    h3 {
+        margin: 10px 0;
+    }
+}
+#allthreads.hidden {
+    display: none;
+}
+
+#frames {
+    margin-top: 1em;
+}
+
+#report-header {
+    font-size: 150%;
+    position: relative;
+    width: 39em;
+    z-index: 1;
+}
+.record {
+    line-height: 1.5em;
+    th {
+        text-align: right;
+    }
+    pre {
+        white-space: pre-wrap;
+    }
+}
+.sig-overview,
+.sig-search {
+    background: transparent url("@{image-path}/icons/external.png") left top no-repeat;
+    display: inline-block;
+    color: #333;
+    margin-left: .5em;
+    padding-left: 17px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.sig-overview:link,
+.sig-overview:visited,
+.sig-search:link,
+.sig-search:visited {
+    color: #081C26;
+    text-decoration: none;
+}

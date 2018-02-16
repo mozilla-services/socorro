@@ -1,5 +1,3 @@
-@import "fonts.less";
-
 /* standard table styles for data tables */
 table.data-table {
     width: 100%;
@@ -112,4 +110,47 @@ table.vertical {
     line-height: 125%;
     font-weight: bold;
     text-align: center;
+}
+
+table {
+    thead,
+    tbody {
+        tr {
+            th,
+            td {
+                border: solid 1px #CCC;
+            }
+        }
+    }
+    th {
+        font-weight: bold;
+        padding: 0 .25em;
+        a.expand {
+            display: inline;
+            font-size: smaller;
+        }
+    }
+}
+tr {
+    z-index: 50;
+}
+table.tablesorter,
+table.zebra {
+    tbody {
+        tr:nth-child(odd) {
+            background-color: #edecec;
+        }
+    }
+}
+
+/* truncated frames */
+table.data-table {
+    tbody {
+        tr.truncated-frame {
+            background-color: #FFC266;
+            a {
+                color: #333;
+            }
+        }
+    }
 }

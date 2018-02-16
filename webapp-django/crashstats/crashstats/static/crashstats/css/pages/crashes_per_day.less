@@ -1,4 +1,4 @@
-@import "base.less";
+@import "@{base-path}/mixins.less";
 
 h1 {
     color: #000;
@@ -97,4 +97,18 @@ table.crash_data {
 }
 br.clear {
     clear:both;
+}
+
+
+/* Crashes per ADU */
+#adu-chart {
+    width: 99%;
+    height: 200px;
+}
+.legend table td {
+    padding: 2px;
+    border: 0px solid red;
+}
+.update-chart-button {
+    margin: 1em 0 0 0;
 }

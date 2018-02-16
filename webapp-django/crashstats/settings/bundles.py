@@ -56,20 +56,20 @@ PIPELINE_CSS = {
     },
     'accordion': {
         'source_filenames': (
-            'crashstats/css/accordion.less',
+            'crashstats/css/components/accordion.less',
         ),
         'output_filename': 'css/accordion.min.css',
     },
     'metricsgraphics': {
         'source_filenames': (
             'metrics-graphics/dist/metricsgraphics.css',
-            'crashstats/css/metricsgraphics_custom.css',
+            'crashstats/css/lib/metricsgraphics_custom.css',
         ),
         'output_filename': 'css/metricsgraphics.min.css',
     },
     'crashstats_base': {
         'source_filenames': (
-            'crashstats/css/screen.less',
+            'crashstats/css/base.less',
             'status/css/status.less',
         ),
         'output_filename': 'css/crashstats-base.min.css',
@@ -82,13 +82,13 @@ PIPELINE_CSS = {
     },
     'crashes_per_day': {
         'source_filenames': (
-            'crashstats/css/crashes_per_day.less',
+            'crashstats/css/pages/crashes_per_day.less',
         ),
         'output_filename': 'css/crashes-per-day.min.css',
     },
     'crontabber_state': {
         'source_filenames': (
-            'crashstats/css/crontabber_state.css',
+            'crashstats/css/pages/crontabber_state.css',
         ),
         'output_filename': 'css/crontabber-state.min.css',
     },
@@ -106,14 +106,14 @@ PIPELINE_CSS = {
     },
     'report_index': {
         'source_filenames': (
-            'crashstats/css/report_index.css',
-            'crashstats/css/tree.css',
+            'crashstats/css/pages/report_index.less',
+            'crashstats/css/components/tree.less',
         ),
         'output_filename': 'css/report-index.min.css',
     },
     'report_pending': {
         'source_filenames': (
-            'crashstats/css/report_pending.less',
+            'crashstats/css/pages/report_pending.less',
         ),
         'output_filename': 'css/report-pending.min.css',
     },
@@ -123,10 +123,16 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/api-tokens.min.css',
     },
+    'home': {
+        'source_filenames': (
+            'home/css/home.less',
+        ),
+        'output_filename': 'css/home.min.css',
+    },
     'manage:home': {
         'source_filenames': (
             'font-awesome/css/font-awesome.css',
-            'crashstats/css/fonts.less',
+            'crashstats/css/base/fonts.less',
             'manage/css/home.less',
         ),
         'output_filename': 'css/manage-home.min.css',
