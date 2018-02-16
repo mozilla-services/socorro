@@ -10,9 +10,14 @@ scripts in Socorro.
 This command should be run in the Docker-based local development environment in
 one of the Docker containers.
 
+Run "socorro-cmd --help" for help.
+
 """
 
+from __future__ import print_function
+
 import argparse
+import inspect
 import sys
 import textwrap
 import types
@@ -25,6 +30,25 @@ def wrapped(text, width=80):
     return '\n'.join(textwrap.wrap(text, width=width))
 
 
+def showcommands_cmd(argv):
+    """Sub command to show location of all command runners"""
+    parser = argparse.ArgumentParser(
+        description='Shows commands and runner paths'
+    )
+    parser.parse_args(argv)
+
+    print('Available commands and runners for socorro-cmd:')
+    print('')
+
+    for group in COMMANDS:
+        print('%s:' % group.name)
+        for cmd, runner in group:
+            if not isinstance(runner, basestring):
+                runner = '%s in %s' % (runner.__name__, inspect.getfile(runner))
+            print('  %-22s %s' % (cmd, runner))
+        print('')
+
+
 class Group:
     """Defines a grouping of commands"""
     def __init__(self, name, cmd_to_run_map):
@@ -32,8 +56,7 @@ class Group:
         self.cmd_to_run_map = cmd_to_run_map
 
     def __iter__(self):
-        for cmd, runner in sorted(self.cmd_to_run_map.items()):
-            yield cmd, runner
+        return iter(sorted(self.cmd_to_run_map.items()))
 
     def lookup(self, cmd):
         return self.cmd_to_run_map.get(cmd)
@@ -64,16 +87,30 @@ COMMANDS = [
             'submitter': 'socorro.submitter.submitter_app.SubmitterApp',
         }
     ),
+    Group(
+        'Miscellaneous', {
+            'showcommands': showcommands_cmd
+        }
+    )
 ]
 
 
 def import_and_run(runner):
-    """Imports a python dotted path representing a runner and runs it"""
-    # Import the class from the module
-    module_path, cls_name = runner.rsplit('.', 1)
-    __import__(module_path)
-    module = sys.modules[module_path]
-    app = getattr(module, cls_name)
+    """Takes a runner, converts it to a callable, and runs it
+
+    A runner can either be a Python-dotted string which will get imported and
+    run, or a callable which will get run directly.
+
+    """
+    if isinstance(runner, basestring):
+        # Import the class from the module
+        module_path, cls_name = runner.rsplit('.', 1)
+        __import__(module_path)
+        module = sys.modules[module_path]
+        app = getattr(module, cls_name)
+
+    else:
+        app = runner
 
     # If the app is a main function, we run it as is
     if isinstance(app, types.FunctionType):
