@@ -40,6 +40,9 @@ setup(
               'stacktrace'],
     packages=find_packages(),
     install_requires=[],  # use pip -r requirements.txt instead
+    scripts = [
+        'socorro-cmd'
+    ],
     zip_safe=False,
     data_files=[
         ('socorro/external/postgresql/raw_sql/procs',
