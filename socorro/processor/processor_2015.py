@@ -48,7 +48,6 @@ from socorro.processor.mozilla_transform_rules import (
     ExploitablityRule,
     FlashVersionRule,
     JavaProcessRule,
-    MissingSymbolsRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PluginContentURL,
@@ -91,7 +90,6 @@ DEFAULT_RULES = [
     FlashVersionRule,
     OSPrettyVersionRule,
     TopMostFilesRule,
-    MissingSymbolsRule,
     ThemePrettyNameRule,
     MemoryReportExtraction,
     # a set of classifiers to help with jit crashes
