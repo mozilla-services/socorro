@@ -26,7 +26,10 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'crashstats'
+        'LOCATION': 'crashstats',
+        'OPTIONS': {
+            'MAX_ENTRIES': 2000,  # Avoid culling during tests
+        },
     }
 }
 
