@@ -42,6 +42,10 @@ class CrashDoesNotExist(Exception):
     pass
 
 
+class BadAPIToken(Exception):
+    pass
+
+
 def create_dir_if_needed(d):
     if not os.path.exists(d):
         os.makedirs(d)
@@ -69,12 +73,18 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
         },
         headers=headers,
     )
+
+    # Handle 404 and 403 so we can provide the user more context
     if resp.status_code == 404:
         raise CrashDoesNotExist(crash_id)
+    if api_token and resp.status_code == 403:
+        raise BadAPIToken(resp.json().get('error', 'No error provided'))
 
-    raw_crash = resp.json()
+    # Raise an error for any other non-200 response
+    resp.raise_for_status()
 
     # Save raw crash to file system
+    raw_crash = resp.json()
     fn = os.path.join(outputdir, 'v2', 'raw_crash', crash_id[0:3], '20' + crash_id[-6:], crash_id)
     create_dir_if_needed(os.path.dirname(fn))
     with open(fn, 'w') as fp:
