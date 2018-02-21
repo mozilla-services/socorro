@@ -110,16 +110,14 @@ CONFIG_DEFAULTS = {
     },
 
     'processor': {
-        'processor_class': 'socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015',
-        'transform_rules': {
-            'BreakpadStackwalkerRule2015': {
-                'command_pathname': '/stackwalk/stackwalker',
-                'symbols_urls': ','.join([
-                    'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1',
-                ]),
-                'kill_timeout': 30,
-            },
-        },
+        'processor_class': 'socorro.processor.processor_2015.Processor2015',
+
+        # These are for the minidump-stackwalker command line
+        'command_pathname': '/stackwalk/stackwalker',
+        'kill_timeout': 30,
+        'symbols_urls': ','.join([
+            'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1',
+        ]),
     },
 
     'producer_consumer': {
@@ -353,7 +351,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
         self.processor = self.config.processor.processor_class(
             self.config.processor,
-            self.quit_check
+            quit_check_callback=self.quit_check
         )
 
     def close(self):
