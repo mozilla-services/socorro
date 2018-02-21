@@ -9,8 +9,6 @@ from sys import maxint
 import time
 from urllib import unquote_plus
 
-from configman import Namespace
-from configman.converters import str_to_python_object
 import ujson
 
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
@@ -438,70 +436,65 @@ class ExploitablityRule(Rule):
 
 
 class FlashVersionRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'known_flash_identifiers',
-        doc='A subset of the known "debug identifiers" for flash versions, '
-        'associated to the version',
-        default={
-            '7224164B5918E29AF52365AF3EAF7A500': '10.1.51.66',
-            'C6CDEFCDB58EFE5C6ECEF0C463C979F80': '10.1.51.66',
-            '4EDBBD7016E8871A461CCABB7F1B16120': '10.1',
-            'D1AAAB5D417861E6A5B835B01D3039550': '10.0.45.2',
-            'EBD27FDBA9D9B3880550B2446902EC4A0': '10.0.45.2',
-            '266780DB53C4AAC830AFF69306C5C0300': '10.0.42.34',
-            'C4D637F2C8494896FBD4B3EF0319EBAC0': '10.0.42.34',
-            'B19EE2363941C9582E040B99BB5E237A0': '10.0.32.18',
-            '025105C956638D665850591768FB743D0': '10.0.32.18',
-            '986682965B43DFA62E0A0DFFD7B7417F0': '10.0.23',
-            '937DDCC422411E58EF6AD13710B0EF190': '10.0.23',
-            '860692A215F054B7B9474B410ABEB5300': '10.0.22.87',
-            '77CB5AC61C456B965D0B41361B3F6CEA0': '10.0.22.87',
-            '38AEB67F6A0B43C6A341D7936603E84A0': '10.0.12.36',
-            '776944FD51654CA2B59AB26A33D8F9B30': '10.0.12.36',
-            '974873A0A6AD482F8F17A7C55F0A33390': '9.0.262.0',
-            'B482D3DFD57C23B5754966F42D4CBCB60': '9.0.262.0',
-            '0B03252A5C303973E320CAA6127441F80': '9.0.260.0',
-            'AE71D92D2812430FA05238C52F7E20310': '9.0.246.0',
-            '6761F4FA49B5F55833D66CAC0BBF8CB80': '9.0.246.0',
-            '27CC04C9588E482A948FB5A87E22687B0': '9.0.159.0',
-            '1C8715E734B31A2EACE3B0CFC1CF21EB0': '9.0.159.0',
-            'F43004FFC4944F26AF228334F2CDA80B0': '9.0.151.0',
-            '890664D4EF567481ACFD2A21E9D2A2420': '9.0.151.0',
-            '8355DCF076564B6784C517FD0ECCB2F20': '9.0.124.0',
-            '51C00B72112812428EFA8F4A37F683A80': '9.0.124.0',
-            '9FA57B6DC7FF4CFE9A518442325E91CB0': '9.0.115.0',
-            '03D99C42D7475B46D77E64D4D5386D6D0': '9.0.115.0',
-            '0CFAF1611A3C4AA382D26424D609F00B0': '9.0.47.0',
-            '0F3262B5501A34B963E5DF3F0386C9910': '9.0.47.0',
-            'C5B5651B46B7612E118339D19A6E66360': '9.0.45.0',
-            'BF6B3B51ACB255B38FCD8AA5AEB9F1030': '9.0.28.0',
-            '83CF4DC03621B778E931FC713889E8F10': '9.0.16.0',
-        },
-        from_string_converter=ujson.loads
-    )
-    required_config.add_option(
-        'flash_re',
-        doc='a regular expression to match Flash file names',
-        default=(
-            r'NPSWF32_?(.*)\.dll|'
-            'FlashPlayerPlugin_?(.*)\.exe|'
-            'libflashplayer(.*)\.(.*)|'
-            'Flash ?Player-?(.*)'
-        ),
-        from_string_converter=re.compile
+    # A subset of the known "debug identifiers" for flash versions, associated
+    # to the version
+    KNOWN_FLASH_IDENTIFIERS = {
+        '7224164B5918E29AF52365AF3EAF7A500': '10.1.51.66',
+        'C6CDEFCDB58EFE5C6ECEF0C463C979F80': '10.1.51.66',
+        '4EDBBD7016E8871A461CCABB7F1B16120': '10.1',
+        'D1AAAB5D417861E6A5B835B01D3039550': '10.0.45.2',
+        'EBD27FDBA9D9B3880550B2446902EC4A0': '10.0.45.2',
+        '266780DB53C4AAC830AFF69306C5C0300': '10.0.42.34',
+        'C4D637F2C8494896FBD4B3EF0319EBAC0': '10.0.42.34',
+        'B19EE2363941C9582E040B99BB5E237A0': '10.0.32.18',
+        '025105C956638D665850591768FB743D0': '10.0.32.18',
+        '986682965B43DFA62E0A0DFFD7B7417F0': '10.0.23',
+        '937DDCC422411E58EF6AD13710B0EF190': '10.0.23',
+        '860692A215F054B7B9474B410ABEB5300': '10.0.22.87',
+        '77CB5AC61C456B965D0B41361B3F6CEA0': '10.0.22.87',
+        '38AEB67F6A0B43C6A341D7936603E84A0': '10.0.12.36',
+        '776944FD51654CA2B59AB26A33D8F9B30': '10.0.12.36',
+        '974873A0A6AD482F8F17A7C55F0A33390': '9.0.262.0',
+        'B482D3DFD57C23B5754966F42D4CBCB60': '9.0.262.0',
+        '0B03252A5C303973E320CAA6127441F80': '9.0.260.0',
+        'AE71D92D2812430FA05238C52F7E20310': '9.0.246.0',
+        '6761F4FA49B5F55833D66CAC0BBF8CB80': '9.0.246.0',
+        '27CC04C9588E482A948FB5A87E22687B0': '9.0.159.0',
+        '1C8715E734B31A2EACE3B0CFC1CF21EB0': '9.0.159.0',
+        'F43004FFC4944F26AF228334F2CDA80B0': '9.0.151.0',
+        '890664D4EF567481ACFD2A21E9D2A2420': '9.0.151.0',
+        '8355DCF076564B6784C517FD0ECCB2F20': '9.0.124.0',
+        '51C00B72112812428EFA8F4A37F683A80': '9.0.124.0',
+        '9FA57B6DC7FF4CFE9A518442325E91CB0': '9.0.115.0',
+        '03D99C42D7475B46D77E64D4D5386D6D0': '9.0.115.0',
+        '0CFAF1611A3C4AA382D26424D609F00B0': '9.0.47.0',
+        '0F3262B5501A34B963E5DF3F0386C9910': '9.0.47.0',
+        'C5B5651B46B7612E118339D19A6E66360': '9.0.45.0',
+        'BF6B3B51ACB255B38FCD8AA5AEB9F1030': '9.0.28.0',
+        '83CF4DC03621B778E931FC713889E8F10': '9.0.16.0',
+    }
+
+    # A regular expression to match Flash file names
+    FLASH_RE = re.compile(
+        r'NPSWF32_?(.*)\.dll|'
+        'FlashPlayerPlugin_?(.*)\.exe|'
+        'libflashplayer(.*)\.(.*)|'
+        'Flash ?Player-?(.*)'
     )
 
     def version(self):
         return '1.0'
 
     def _get_flash_version(self, **kwargs):
-        """If (we recognize this module as Flash and figure out a version):
-        Returns version; else (None or '')"""
+        """If we recognize this module as Flash and figure out a version
+
+        :returns: version; else (None or '')
+
+        """
         filename = kwargs.get('filename', None)
         version = kwargs.get('version', None)
         debug_id = kwargs.get('debug_id', None)
-        m = self.config.flash_re.match(filename)
+        m = self.FLASH_RE.match(filename)
         if m:
             if version:
                 return version
@@ -516,10 +509,7 @@ class FlashVersionRule(Rule):
                 return groups[2]
             if groups[4]:
                 return groups[4]
-            return self.config.known_flash_identifiers.get(
-                debug_id,
-                None
-            )
+            return self.KNOWN_FLASH_IDENTIFIERS.get(debug_id)
         return None
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):

@@ -4,7 +4,6 @@
 
 import copy
 import json
-import re
 from StringIO import StringIO
 
 from configman.dotdict import DotDict as CDotDict
@@ -1262,12 +1261,6 @@ class TestFlashVersionRule(TestCase):
         config = CDotDict()
         config.logger = Mock()
 
-        config.flash_re = re.compile(
-            FlashVersionRule.required_config.flash_re.default
-        )
-        config.known_flash_identifiers = (
-            FlashVersionRule.required_config.known_flash_identifiers.default
-        )
         return config
 
     def get_basic_processor_meta(self):
