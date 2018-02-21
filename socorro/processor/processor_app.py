@@ -109,17 +109,6 @@ CONFIG_DEFAULTS = {
         ),
     },
 
-    'processor': {
-        'processor_class': 'socorro.processor.processor_2015.Processor2015',
-
-        # These are for the minidump-stackwalker command line
-        'command_pathname': '/stackwalk/stackwalker',
-        'kill_timeout': 30,
-        'symbols_urls': ','.join([
-            'https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1',
-        ]),
-    },
-
     'producer_consumer': {
         'maximum_queue_size': 32,
         'number_of_threads': 16,
@@ -143,10 +132,6 @@ CONFIG_DEFAULTS = {
         'rabbitmq': {
             'filter_on_legacy_processing': True,
             'routing_key': 'socorro.normal',
-        },
-
-        'signature': {
-            'collapse_arguments': True,
         },
     },
 }
