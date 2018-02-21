@@ -592,26 +592,9 @@ class TopMostFilesRule(Rule):
 
 
 class BetaVersionRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
+        # NOTE(willkg): These config values come from Processor2015 instance.
         database = config.database_class(config)
         self.transaction = config.transaction_executor_class(
             config,
