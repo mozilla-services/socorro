@@ -297,9 +297,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     The subset of the processed crash is based on the JSON Schema which is
     derived from "socorro/external/es/super_search_fields.py".
 
-    This uses a boto connection context with one twist: if you set
-    "resource.boto.telemetry_bucket_name", then that will override the value.
-
     """
 
     required_config = Namespace()
@@ -308,13 +305,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         'resource_class',
         'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
     )
-    required_config.add_option(
-        'telemetry_bucket_name',
-        default='',
-        reference_value_from='resource.boto',
-        doc='if set, overrides resource_class bucket name'
-    )
-
     required_config.elasticsearch = Namespace()
     required_config.elasticsearch.add_option(
         'elasticsearch_class',
@@ -331,18 +321,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         super(TelemetryBotoS3CrashStorage, self).__init__(
             config, *args, **kwargs
         )
-
-        if config.telemetry_bucket_name:
-            # If we have a telemetry.bucket_name set, then stomp on it with
-            # config.telemetry_bucket_name.
-
-            # FIXME(willkg): It'd be better if we could detect whether the
-            # connection context bucket_name was set at all (it's a default
-            # value, or the value of resource.boto.bucket_name).
-            config.logger.info(
-                'Using %s for TelemetryBotoS3CrashStorage bucket', config.telemetry_bucket_name
-            )
-            self.connection_source.config.bucket_name = config.telemetry_bucket_name
 
     def _get_all_fields(self):
         if (

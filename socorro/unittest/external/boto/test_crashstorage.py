@@ -1053,36 +1053,6 @@ class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
 
         return s3
 
-    def test_bucket_name_override(self):
-        """Verify that setting "resource.boto.telemetry_bucket_name" stomps on whatever
-        value bucket_name picked up.
-
-        """
-        tcs = TelemetryBotoS3CrashStorage(
-            config=self.get_tuned_config(
-                TelemetryBotoS3CrashStorage,
-                extra_values={
-                    'resource_class': S3ConnectionContext,
-                    'logger': mock.Mock(),
-                    'bucket_name': 'telemetry_crashes',
-                }
-            )
-        )
-        assert tcs.connection_source.config.bucket_name == 'telemetry_crashes'
-
-        tcs = TelemetryBotoS3CrashStorage(
-            config=self.get_tuned_config(
-                TelemetryBotoS3CrashStorage,
-                extra_values={
-                    'resource_class': S3ConnectionContext,
-                    'logger': mock.Mock(),
-                    'bucket_name': 'telemetry_crashes',
-                    'resource.boto.telemetry_bucket_name': 'override_bucket'
-                }
-            )
-        )
-        assert tcs.connection_source.config.bucket_name == 'override_bucket'
-
     def test_save_raw_and_processed(self):
         boto_s3_store = self.get_s3_store()
 
