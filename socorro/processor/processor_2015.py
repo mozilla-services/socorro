@@ -172,19 +172,23 @@ class Processor2015(RequiredConfig):
     )
     required_config.add_option(
         'result_key',
-        doc='the key where the external process result should be stored '
-            'in the processed crash',
+        doc=(
+            'the key where the external process result should be stored '
+            'in the processed crash'
+        ),
         default='stackwalker_result',
     )
     required_config.add_option(
         'return_code_key',
-        doc='the key where the external process return code should be stored '
-            'in the processed crash',
+        doc=(
+            'the key where the external process return code should be stored '
+            'in the processed crash'
+        ),
         default='stackwalker_return_code',
     )
     required_config.add_option(
         name='symbols_urls',
-        doc='comma delimited ordered list of urls for symbol lookup',
+        doc='comma-delimited ordered list of urls for symbol lookup',
         default='https://localhost',
         from_string_converter=str_to_list,
         likely_to_be_changed=True
@@ -192,13 +196,15 @@ class Processor2015(RequiredConfig):
     required_config.command_line = change_default(
         ExternalProcessRule,
         'command_line',
-        'timeout -s KILL {kill_timeout} {command_pathname} '
-        '--raw-json {raw_crash_pathname} '
-        '{symbols_urls} '
-        '--symbols-cache {symbol_cache_path} '
-        '--symbols-tmp {symbol_tmp_path} '
-        '{dump_file_pathname} '
-        '2> /dev/null'
+        (
+            'timeout -s KILL {kill_timeout} {command_pathname} '
+            '--raw-json {raw_crash_pathname} '
+            '{symbols_urls} '
+            '--symbols-cache {symbol_cache_path} '
+            '--symbols-tmp {symbol_tmp_path} '
+            '{dump_file_pathname} '
+            '2> /dev/null'
+        )
     )
     required_config.add_option(
         'kill_timeout',
