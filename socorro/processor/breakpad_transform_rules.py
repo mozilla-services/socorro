@@ -61,7 +61,9 @@ class CrashingThreadRule(Rule):
 
 
 class ExternalProcessRule(Rule):
-
+    # FIXME(willkg): command_line and command_pathname are referenced in the
+    # uplifted versions in Processor2015. The rest of these config values have
+    # no effect on anything and are just here.
     required_config = Namespace()
     required_config.add_option(
         'dump_field',
@@ -189,6 +191,9 @@ class ExternalProcessRule(Rule):
 
 class BreakpadStackwalkerRule2015(ExternalProcessRule):
     """Executes the minidump stackwalker external process and puts output in processed crash"""
+    # FIXME(willkg): command_line and command_pathname are referenced in the
+    # uplifted versions in Processor2015. The rest of these config values have
+    # no effect on anything and are just here.
     required_config = Namespace()
     required_config.add_option(
         name='symbols_urls',
@@ -367,7 +372,9 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
 
 class JitCrashCategorizeRule(ExternalProcessRule):
-
+    # FIXME(willkg): command_line and command_pathname are referenced in the
+    # uplifted versions in Processor2015. The rest of these config values have
+    # no effect on anything and are just here.
     required_config = Namespace()
     required_config.command_line = change_default(
         ExternalProcessRule,

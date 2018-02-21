@@ -4,7 +4,6 @@
 
 import copy
 import json
-import re
 from StringIO import StringIO
 
 from configman.dotdict import DotDict as CDotDict
@@ -800,7 +799,6 @@ class TestOutOfMemoryBinaryRule(TestCase):
 
     def test_extract_memory_info(self):
         config = CDotDict()
-        config.max_size_uncompressed = 1024
         config.logger = Mock()
 
         processor_meta = self.get_basic_processor_meta()
@@ -812,6 +810,8 @@ class TestOutOfMemoryBinaryRule(TestCase):
                 json.dumps({'myserious': ['awesome', 'memory']})
             )
             rule = OutOfMemoryBinaryRule(config)
+            # Stomp on the value to make it easier to test with
+            rule.MAX_SIZE_UNCOMPRESSED = 1024
             memory = rule._extract_memory_info(
                 'a_pathname',
                 processor_meta.processor_notes
@@ -821,7 +821,6 @@ class TestOutOfMemoryBinaryRule(TestCase):
 
     def test_extract_memory_info_too_big(self):
         config = CDotDict()
-        config.max_size_uncompressed = 5
         config.logger = Mock()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -845,6 +844,10 @@ class TestOutOfMemoryBinaryRule(TestCase):
 
             mocked_gzip_open.side_effect = gzip_open
             rule = OutOfMemoryBinaryRule(config)
+
+            # Stomp on the value to make it easier to test with
+            rule.MAX_SIZE_UNCOMPRESSED = 5
+
             memory = rule._extract_memory_info(
                 'a_pathname',
                 processor_meta.processor_notes
@@ -852,7 +855,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
             expected_error_message = (
                 "Uncompressed memory info too large %d (max: %s)" % (
                     35,
-                    config.max_size_uncompressed,
+                    rule.MAX_SIZE_UNCOMPRESSED
                 )
             )
             assert memory == {"ERROR": expected_error_message}
@@ -1258,12 +1261,6 @@ class TestFlashVersionRule(TestCase):
         config = CDotDict()
         config.logger = Mock()
 
-        config.flash_re = re.compile(
-            FlashVersionRule.required_config.flash_re.default
-        )
-        config.known_flash_identifiers = (
-            FlashVersionRule.required_config.known_flash_identifiers.default
-        )
         return config
 
     def get_basic_processor_meta(self):
