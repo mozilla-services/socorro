@@ -486,7 +486,7 @@ class FlashVersionRule(Rule):
         return '1.0'
 
     def _get_flash_version(self, **kwargs):
-        """If we recognize this module as Flash and figure out a version
+        """Extract flash version if recognized or None
 
         :returns: version; else (None or '')
 
@@ -498,8 +498,8 @@ class FlashVersionRule(Rule):
         if m:
             if version:
                 return version
-            # we didn't get a version passed into us
-            # try do deduce it
+
+            # We didn't get a version passed in, so try do deduce it
             groups = m.groups()
             if groups[0]:
                 return groups[0].replace('_', '.')
