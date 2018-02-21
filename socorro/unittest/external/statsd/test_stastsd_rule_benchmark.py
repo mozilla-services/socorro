@@ -24,8 +24,6 @@ class TestStatsdCountAnythingRule(TestCase):
 
     def setup_config(self, prefix=None):
         config = DotDict()
-        config.chatty_rules = False
-        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config.rules_list = DotDict()

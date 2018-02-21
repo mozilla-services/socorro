@@ -13,7 +13,9 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
+
 from socorro.external.crashstorage_base import CrashIDNotFound
+
 from socorro.lib.util import DotDict
 from socorro.lib import raven_client
 
@@ -109,7 +111,7 @@ CONFIG_DEFAULTS = {
 
     'processor': {
         'processor_class': 'socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015',
-        'raw_to_processed_transform': {
+        'transform_rules': {
             'BreakpadStackwalkerRule2015': {
                 'command_pathname': '/stackwalk/stackwalker',
                 'symbols_urls': ','.join([
@@ -281,8 +283,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             processed_crash = DotDict()
 
         try:
-            if 'uuid' not in raw_crash:
-                raw_crash.uuid = crash_id
             processed_crash = (
                 self.processor.process_crash(
                     raw_crash,
@@ -357,7 +357,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     def close(self):
-        """when  the processor shutsdown, this function cleans up"""
+        """when the processor shutsdown, this function cleans up"""
         try:
             self.companion_process.close()
         except AttributeError:

@@ -12,9 +12,6 @@ from configman.dotdict import DotDict
 from configman.converters import to_str
 
 from socorro.lib import raven_client
-from socorro.lib.converters import (
-    str_to_classes_in_namespaces_converter,
-)
 
 
 # support methods
@@ -39,12 +36,6 @@ class Rule(RequiredConfig):
     """the base class for Support Rules.  It provides the framework for the
     rules 'predicate', 'action', and 'version' as well as utilites to help
     rules do their jobs."""
-    required_config = Namespace()
-    required_config.add_option(
-        'chatty',
-        doc='should this rule announce what it is doing?',
-        default=False,
-    )
 
     def __init__(self, config=None, quit_check_callback=None):
         self.config = config
@@ -195,6 +186,9 @@ class Rule(RequiredConfig):
         else:
             return (False, None)
 
+    def close(self):
+        self.config.logger.debug('null close on rule %s', self.__class__)
+
 
 class TransformRule(Rule):
     """a pairing of two functions with default parameters to be used as
@@ -330,23 +324,13 @@ class TransformRule(Rule):
         else:
             return False
 
-    def close(self):
-        self.config.logger.debug('null close on rule %s', self.__class__)
-        pass
-
 
 class TransformRuleSystem(RequiredConfig):
     """A collection of TransformRules that can be applied together"""
     required_config = Namespace()
     required_config.add_option(
         name='rules_list',
-        default=[],
-        from_string_converter=str_to_classes_in_namespaces_converter()
-    )
-    required_config.add_option(
-        'chatty_rules',
-        doc='should the rules announce what they are doing?',
-        default=False,
+        default=[]
     )
 
     def __init__(self, config=None, quit_check=None):
@@ -357,12 +341,9 @@ class TransformRuleSystem(RequiredConfig):
         self.rules = []
         if not config:
             config = DotDict()
-        if 'chatty_rules' not in config:
-            config.chatty_rules = False
+
         self.config = config
         if "rules_list" in config:
-            self.tag = config.tag
-            self.act = getattr(self, config.action)
             list_of_rules = config.rules_list.class_list
 
             for a_rule_class_name, a_rule_class, ns_name in list_of_rules:
@@ -386,12 +367,6 @@ class TransformRuleSystem(RequiredConfig):
             TransformRule(*x, config=self.config) for x in an_iterable
         ]
 
-    def append_rules(self, an_iterable):
-        """add rules to the TransformRuleSystem"""
-        self.rules.extend(
-            TransformRule(*x, config=self.config) for x in an_iterable
-        )
-
     def apply_all_rules(self, *args, **kwargs):
         """cycle through all rules and apply them all without regard to
         success or failure
@@ -400,43 +375,9 @@ class TransformRuleSystem(RequiredConfig):
              True - since success or failure is ignored"""
         for x in self.rules:
             self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_all_rules: %s',
-                    to_str(x.__class__)
-                )
             predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '               : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
+
         return True
-
-    def apply_until_action_succeeds(self, *args, **kwargs):
-        """cycle through all rules until an action is run and succeeds
-
-        returns:
-           True - if an action is run and succeeds
-           False - if no action succeeds"""
-        for x in self.rules:
-            self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_until_action_succeeds: %s',
-                    to_str(x.__class__)
-                )
-            predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '                           : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
-            if action_result:
-                return True
-        return False
 
     def close(self):
         for a_rule in self.rules:
