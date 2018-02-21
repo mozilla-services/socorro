@@ -288,16 +288,8 @@ class JavaProcessRule(Rule):
 
 class OutOfMemoryBinaryRule(Rule):
 
-    required_config = Namespace()
-    required_config.add_option(
-        'max_size_uncompressed',
-        default=20 * 1024 * 1024,  # ~20 Mb
-        doc=(
-            "Number of bytes, max, that we accept memory info payloads "
-            "as JSON."
-        )
-
-    )
+    # Number of bytes, max, that we accept memory info payloads as JSON.
+    MAX_SIZE_UNCOMPRESSED = 20 * 1024 * 1024  # ~20Mb
 
     def version(self):
         return '1.0'
@@ -320,11 +312,11 @@ class OutOfMemoryBinaryRule(Rule):
 
         try:
             memory_info_as_string = fd.read()
-            if len(memory_info_as_string) > self.config.max_size_uncompressed:
+            if len(memory_info_as_string) > self.MAX_SIZE_UNCOMPRESSED:
                 error_message = (
                     "Uncompressed memory info too large %d (max: %d)" % (
                         len(memory_info_as_string),
-                        self.config.max_size_uncompressed,
+                        self.MAX_SIZE_UNCOMPRESSED
                     )
                 )
                 return error_out(error_message)
