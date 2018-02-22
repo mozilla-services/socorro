@@ -92,22 +92,6 @@ class ReportsCleanCronApp(_MatViewBackfillBase):
         self.run_proc(connection, [date])
 
 
-class DuplicatesCronApp(_MatViewBackfillBase):
-    proc_name = 'update_reports_duplicates'
-    app_name = 'duplicates'
-    app_version = '1.0'
-    app_description = ""
-
-    def run(self, connection, date):
-        start_time = date - datetime.timedelta(hours=3)
-        end_time = start_time + datetime.timedelta(hours=1)
-        self.run_proc(connection, [start_time, end_time])
-
-        start_time += datetime.timedelta(minutes=30)
-        end_time = start_time + datetime.timedelta(hours=1)
-        self.run_proc(connection, [start_time, end_time])
-
-
 class GraphicsDeviceCronApp(_MatViewBackfillBase):
     proc_name = 'update_graphics_devices'
     app_name = 'graphics-device-matview'

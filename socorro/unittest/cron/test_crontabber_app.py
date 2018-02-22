@@ -12,7 +12,6 @@ class TestJobsConverter:
         'BuildADUCronApp',
         'CleanRawADICronApp',
         'DropOldPartitionsCronApp',
-        'DuplicatesCronApp',
         'ElasticsearchCleanupCronApp',
         'FTPScraperCronApp',
         'FeaturedVersionsAutomaticCronApp',
