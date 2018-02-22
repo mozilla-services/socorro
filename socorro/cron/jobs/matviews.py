@@ -108,12 +108,6 @@ class DuplicatesCronApp(_MatViewBackfillBase):
         self.run_proc(connection, [start_time, end_time])
 
 
-class AndroidDevicesCronApp(_MatViewBackfillBase):
-    proc_name = 'update_android_devices'
-    app_name = 'android-devices-matview'
-    # Depends on raw_crashes being populated, but no jobs
-
-
 class GraphicsDeviceCronApp(_MatViewBackfillBase):
     proc_name = 'update_graphics_devices'
     app_name = 'graphics-device-matview'

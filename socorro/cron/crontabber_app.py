@@ -45,7 +45,6 @@ DEFAULT_JOBS_BASE = [
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
     'socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00',
     'socorro.cron.jobs.matviews.RawUpdateChannelCronApp|1d|05:00',
-    'socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|05:00',
     'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|05:00',
 
     # Misc
