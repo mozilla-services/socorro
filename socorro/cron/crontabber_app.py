@@ -21,16 +21,16 @@ from socorro.lib.datetimeutil import utc_now
 
 # NOTE(willkg): This is what we have in -prod. Note that the
 # FetchADIFromHiveCronApp job runs on a separate box with a separate crontabber
-# configuration.
+# configuration. Times are in UTC.
 DEFAULT_JOBS_BASE = [
     # DB partition table and ES maintenance
-    'socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d',
-    'socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d',
-    'socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d',
-    'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d',
+    'socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d|06:00',
+    'socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d|06:00',
+    'socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d|06:00',
+    'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d|06:00',
 
     # ADI maintenance
-    'socorro.cron.jobs.clean_raw_adi.CleanRawADICronApp|1d',
+    'socorro.cron.jobs.clean_raw_adi.CleanRawADICronApp|1d|06:00',
     'socorro.cron.jobs.matviews.ADUCronApp|1d|08:30',
     'socorro.cron.jobs.matviews.BuildADUCronApp|1d|08:30',
 
