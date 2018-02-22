@@ -18,7 +18,6 @@ class TestJobsConverter:
         'FeaturedVersionsAutomaticCronApp',
         'GraphicsDeviceCronApp',
         'ProductVersionsCronApp',
-        'RawUpdateChannelCronApp',
         'ReportsCleanCronApp',
         'SignaturesCronApp',
         'TruncatePartitionsCronApp',

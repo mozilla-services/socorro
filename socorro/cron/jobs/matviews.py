@@ -111,10 +111,3 @@ class DuplicatesCronApp(_MatViewBackfillBase):
 class GraphicsDeviceCronApp(_MatViewBackfillBase):
     proc_name = 'update_graphics_devices'
     app_name = 'graphics-device-matview'
-
-
-class RawUpdateChannelCronApp(_MatViewBackfillBase):
-    proc_name = 'update_raw_update_channel'
-    app_name = 'raw-update-channel-matview'
-    app_version = '1.0'
-    app_description = "Find new update_channels for B2G in reports"
