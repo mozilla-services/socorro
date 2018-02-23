@@ -53,6 +53,12 @@ class _MatViewBackfillBase(_MatViewBase):
 
 
 class ProductVersionsCronApp(_MatViewBase):
+    """Runs update_product_versions stored procedure
+
+    Updates product_versions and product_versions_builds tables from
+    releases_raw table.
+
+    """
     proc_name = 'update_product_versions'
     app_name = 'product-versions-matview'
     depends_on = (
@@ -61,24 +67,46 @@ class ProductVersionsCronApp(_MatViewBase):
 
 
 class SignaturesCronApp(_MatViewBackfillBase):
+    """Runs update_signatures stored procedure
+
+    Updates signatures, signatures_products, and signature_products_rollup
+    tables from reports table data.
+
+    """
     proc_name = 'update_signatures'
     app_name = 'signatures-matview'
     depends_on = ('reports-clean',)
 
 
 class ADUCronApp(_MatViewBackfillBase):
+    """Runs update_adu stored procedure
+
+    Updates product_adu table from raw_adi.
+
+    """
     proc_name = 'update_adu'
     app_name = 'adu-matview'
     depends_on = ('fetch-adi-from-hive', 'reports-clean',)
 
 
 class BuildADUCronApp(_MatViewBackfillBase):
+    """Runs update_build_adu stored procedure
+
+    Updates build_adu table using data from raw_adi.
+
+    """
     proc_name = 'update_build_adu'
     app_name = 'build-adu-matview'
     depends_on = ('fetch-adi-from-hive', 'reports-clean')
 
 
 class ReportsCleanCronApp(_MatViewBackfillBase):
+    """Runs update_reports_clean stored procedure
+
+    Updates reports_bad, reports_clean, reports_user_info, signatures, and
+    other tables from reports table.
+
+    """
     proc_name = 'update_reports_clean'
     app_name = 'reports-clean'
     app_version = '1.0'
@@ -93,5 +121,10 @@ class ReportsCleanCronApp(_MatViewBackfillBase):
 
 
 class GraphicsDeviceCronApp(_MatViewBackfillBase):
+    """Runs update_graphics_devices stored procedure
+
+    Updates graphics_device table with new data from raw_crashes table.
+
+    """
     proc_name = 'update_graphics_devices'
     app_name = 'graphics-device-matview'
