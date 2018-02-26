@@ -37,6 +37,7 @@ import pyhs2
 
 from configman import Namespace, class_converter
 from crontabber.base import BaseCronApp
+from crontabber.datetimeutil import utc_now
 from crontabber.mixins import as_backfill_cron_app
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.external.postgresql.dbapi2_util import execute_no_results
@@ -266,7 +267,10 @@ class FetchADIFromHiveCronApp(BaseCronApp):
         # for Bug 1159993
         execute_no_results(connection, _FENNEC38_ADI_CHANNEL_CORRECTION_SQL)
 
-    def run(self, date):
+    def run(self, date=None):
+        # NOTE(willkg): This lets us have a dry-run app that doesn't run as
+        # a backfill app. In the normal case, this will get passed a date.
+        date = date or utc_now()
 
         db_class = self.config.primary_destination.database_class
         primary_database = db_class(self.config.primary_destination)
@@ -345,13 +349,37 @@ class FetchADIFromHiveCronApp(BaseCronApp):
             self.config.logger.info(
                 'Wrote %d rows from doing hive query' % rows_written
             )
-            for transaction in transactions:
-                transaction(
-                    self._database_transaction,
-                    raw_adi_logs_pathname,
-                    target_date
-                )
+
+            self.persist_data(transactions, raw_adi_logs_pathname, target_date)
 
         finally:
             if os.path.isfile(raw_adi_logs_pathname):
                 os.remove(raw_adi_logs_pathname)
+
+    def persist_data(self, transactions, raw_adi_logs_pathname, target_date):
+        for transaction in transactions:
+            transaction(
+                self._database_transaction,
+                raw_adi_logs_pathname,
+                target_date
+            )
+
+
+class DryRunFetchADIFromHiveCronApp(FetchADIFromHiveCronApp):
+    """Dry run version of FetchADIFromHiveCronApp that doesn't persist any data
+
+    """
+    app_name = 'dry-run-fetch-adi-from-hive'
+    app_description = 'Dry Run Fetch ADI From Hive App'
+    app_version = '0.1'
+
+    required_config = Namespace()
+
+    # Override the as_backfill_cron_app() decorator
+    _is_backfill_app = False
+
+    def main(self, function=None, once=True):
+        return BaseCronApp.main(self, function, once)
+
+    def persist_data(self, transactions, raw_adi_logs_pathname, target_date):
+        self.config.logger.info('DRY RUN--no persisting!')
