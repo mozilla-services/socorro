@@ -1,3 +1,5 @@
+#!/usr/bin/env groovy
+
 /** Desired capabilities */
 def capabilities = [
   browserName: 'Firefox',
