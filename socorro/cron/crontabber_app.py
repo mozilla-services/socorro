@@ -112,6 +112,9 @@ class CronTabberApp(CronTabberBase, App):
                 ),
             },
         },
+        'crontabber': {
+            'max_ongoing_age_hours': 2
+        }
     }
     required_config = CronTabberBase.required_config.safe_copy()
 
