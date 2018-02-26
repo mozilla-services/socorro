@@ -18,20 +18,20 @@ from socorro.external.postgresql.connection_context import ConnectionContext
 
 @as_backfill_cron_app
 class FAKEFetchADIFromHiveCronApp(BaseCronApp):
-    """Because of firewalls, we can't generally run the real
-    'fetch-adi-from-hive' in a staging environment. That means that
-    various other crontabber apps that depend on this refuses to
-    run.
+    """Because of firewalls, we can't generally run the real 'fetch-adi-from-hive'
+    in a staging environment. That means that various other crontabber apps
+    that depend on this refuses to run.
 
-    By introducing a fake version - one that does nothing - we circumvent
-    that problem as we're able to keep the same name as the real class.
+    By introducing a fake version - one that does nothing - we circumvent that
+    problem as we're able to keep the same name as the real class.
 
-    NB. The reason for prefixing this class with the word FAKE in
-    all upper case is to make it extra noticable so that you never
-    enable this class in a crontabber environment on production.
+    NB. The reason for prefixing this class with the word FAKE in all upper
+    case is to make it extra noticable so that you never enable this class in a
+    crontabber environment on production.
 
     For more information, see:
     https://bugzilla.mozilla.org/show_bug.cgi?id=1246673
+
     """
 
     app_name = 'fetch-adi-from-hive'

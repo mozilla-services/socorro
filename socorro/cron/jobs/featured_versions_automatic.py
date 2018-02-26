@@ -1,6 +1,8 @@
-import re
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import requests
+import re
 
 from configman import Namespace
 from configman.converters import list_converter
@@ -9,6 +11,7 @@ from crontabber.mixins import (
     with_postgres_transactions,
     with_single_postgres_transaction,
 )
+import requests
 
 
 def alias_list_to_dict(input_string):
@@ -31,17 +34,16 @@ def alias_list_to_dict(input_string):
 
 
 class DownloadError(Exception):
-    """when downloading a network resource fails"""
+    """Error when downloading a network resource fails"""
 
 
 @with_postgres_transactions()
 @with_single_postgres_transaction()
 class FeaturedVersionsAutomaticCronApp(BaseCronApp):
+    """Determine featured product versions from product-details service"""
+
     app_name = 'featured-versions-automatic'
-    app_description = """Use https://product-details.mozilla.org/1.0/
-    to automatically figure out what product versions should be
-    set as featured.
-    """
+    app_description = 'Determine featured product versions'
 
     required_config = Namespace()
     required_config.add_option(
@@ -93,10 +95,8 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
     def _set_featured_versions(self, cursor, product, versions):
         # 'product_name' is what it's called in our product_versions
         # table.
-        product_name = self.config.aliases.get(
-            product,
-            product.capitalize()
-        )
+        product_name = self.config.aliases.get(product, product.capitalize())
+
         featured = set()
         if product_name == 'Firefox':
             featured.add(versions['FIREFOX_NIGHTLY'])
@@ -107,15 +107,18 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
             # any numbers after the 'b'.
             beta = re.sub('b(\d+)$', 'b', beta)
             featured.add(beta)
+
         elif product_name == 'FennecAndroid':
             featured.add(versions['nightly_version'])
             featured.add(versions['alpha_version'])
             featured.add(versions['beta_version'])
             featured.add(versions['version'])
+
         elif product_name == 'Thunderbird':
             featured.add(versions['LATEST_THUNDERBIRD_DEVEL_VERSION'])
             featured.add(versions['LATEST_THUNDERBIRD_VERSION'])
             featured.add(versions['LATEST_THUNDERBIRD_NIGHTLY_VERSION'])
+
         else:
             raise NotImplementedError(product_name)
 

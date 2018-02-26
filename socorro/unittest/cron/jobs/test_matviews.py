@@ -29,8 +29,7 @@ class TestMatviews(IntegrationTestBase):
                 self.old_proc_names[thing] = thing.proc_name
                 thing.proc_name = 'harmless'
 
-        # these have very different signatures
-        matviews.DuplicatesCronApp.proc_name = 'harmless_twotimestamps'
+        # this has very different signatures
         matviews.ReportsCleanCronApp.proc_name = 'harmless_timestamp'
 
         # add the benign stored procedure
@@ -153,35 +152,6 @@ class TestMatviews(IntegrationTestBase):
                 assert app_name in information
                 assert not information[app_name]['last_error']
                 assert information[app_name]['last_success']
-
-    def test_reports_clean_with_dependency(self):
-        config_manager = self._setup_config_manager(
-            'socorro.cron.jobs.matviews.DuplicatesCronApp|1h\n'
-            'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h'
-        )
-
-        with config_manager.context() as config:
-            tab = CronTabberApp(config)
-            tab.run_all()
-
-            information = self._load_structure()
-            assert information['reports-clean']
-            assert not information['reports-clean']['last_error']
-            assert information['reports-clean']['last_success']
-
-    def test_duplicates(self):
-        config_manager = self._setup_config_manager(
-            'socorro.cron.jobs.matviews.DuplicatesCronApp|1d'
-        )
-
-        with config_manager.context() as config:
-            tab = CronTabberApp(config)
-            tab.run_all()
-
-            information = self._load_structure()
-            assert information['duplicates']
-            assert not information['duplicates']['last_error']
-            assert information['duplicates']['last_success']
 
 
 class _Job(base.BaseCronApp):

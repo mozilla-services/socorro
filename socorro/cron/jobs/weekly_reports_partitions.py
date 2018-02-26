@@ -12,13 +12,15 @@ from crontabber.mixins import (
 @with_postgres_transactions()
 @with_single_postgres_transaction()
 class WeeklyReportsPartitionsCronApp(BaseCronApp):
+    """Builds weekly partition tables
+
+    See https://bugzilla.mozilla.org/show_bug.cgi?id=701253
+
+    """
+
     app_name = 'weekly-reports-partitions'
     app_version = '1.0'
-    app_description = """See
-    https://socorro.readthedocs.io/en/latest/development
-    /databaseadminfunctions.html#weekly-report-partitions
-    See https://bugzilla.mozilla.org/show_bug.cgi?id=701253
-    """
+    app_description = 'Builds weekly partition tables'
 
     def run(self, connection):
         cursor = connection.cursor()
