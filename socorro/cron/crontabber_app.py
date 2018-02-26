@@ -19,7 +19,9 @@ from socorro.app.socorro_app import App
 from socorro.lib.datetimeutil import utc_now
 
 
-# NOTE(willkg): This is what we have in -prod
+# NOTE(willkg): This is what we have in -prod. Note that the
+# FetchADIFromHiveCronApp job runs on a separate box with a separate crontabber
+# configuration.
 DEFAULT_JOBS_BASE = [
     'socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d',
     'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00',
@@ -47,16 +49,16 @@ DEFAULT_JOBS = ', '.join(DEFAULT_JOBS_BASE)
 # Jobs that run in the -stage environment
 STAGE_JOBS = ', '.join(
     DEFAULT_JOBS_BASE + [
-        'socorro.cron.jobs.fetch_adi_from_hive.FAKEFetchADIFromHiveCronApp|1d|08:20',
+        'socorro.cron.jobs.fetch_adi_alt.FAKEFetchADIFromHiveCronApp|1d|08:20',
         'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
     ]
 )
 
 
-# Jobs that run in the -stage-new environment
+# Jobs that run in the -stage-new and -prod-new environments
 STAGE_NEW_JOBS = ', '.join(
     DEFAULT_JOBS_BASE + [
-        'socorro.cron.jobs.fetch_adi_from_hive.RawADIMoverCronApp|1d|08:20'
+        'socorro.cron.jobs.fetch_adi_alt.RawADIMoverCronApp|1d|08:20'
     ]
 )
 
