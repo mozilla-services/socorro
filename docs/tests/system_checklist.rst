@@ -1,3 +1,5 @@
+.. _socorro-test-checklist-chapter:
+
 ======================
 Socorro Test Checklist
 ======================

@@ -30,14 +30,14 @@ After getting that working, we removed the collector code from the Socorro
 repository. We're removing other code, too.
 
 If you rely on that collector, the last good release is `270
-<https://github.com/mozilla/socorro/releases/tag/270>`_.
+<https://github.com/mozilla-services/socorro/releases/tag/270>`_.
 
 You can get it with something like this::
 
-    git clone https://github.com/mozilla/socorro
+    git clone https://github.com/mozilla-services/socorro
     git checkout 270
 
 
  Or get the tarball::
 
-    wget https://github.com/mozilla/socorro/archive/270.tar.gz
+    wget https://github.com/mozilla-services/socorro/archive/270.tar.gz

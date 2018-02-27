@@ -41,10 +41,14 @@ Contents
 
    gettingstarted
    contributing
-   symbols
-   architecture/*
-   components/*
-   services/*
+   signaturegeneration
+   topcrashersbysignature
+   socorro_app
+   crontabber
+   crashstorage
+   processor
+   webapp
    tests/*
+   elasticsearch
    deploy
    howto
