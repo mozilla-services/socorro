@@ -133,10 +133,9 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
                 fp.write(data)
 
 
-def main(argv):
+def main(argv=None):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
-        prog=os.path.basename(__file__),
         description=DESCRIPTION.strip(),
         epilog=EPILOG.strip(),
     )
@@ -148,7 +147,10 @@ def main(argv):
     parser.add_argument('outputdir', help='directory to place crash data in')
     parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
 
-    args = parser.parse_args(argv)
+    if argv is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(argv)
 
     # Validate outputdir and exit if it doesn't exist or isn't a directory
     outputdir = args.outputdir
@@ -173,3 +175,7 @@ def main(argv):
         fetch_crash(args.fetchdumps, outputdir, api_token, crash_id)
 
     return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -18,12 +18,7 @@ from socorro.scripts import WrappedTextHelpFormatter
 EPILOG = """
 To use in a docker-based local dev environment:
 
-  $ scripts/add_crashid_to_queue.py socorro.normal <CRASHID>
-
-To use in -prod:
-
-  $ /data/socorro/bin/socorro_env.sh
-  (socorro) $ scripts/add_crashid_to_queue.py socorro.submitter <CRASHID>
+  $ socorro-cmd add_crashid_to_queue socorro.normal <CRASHID>
 
 Queues:
 
@@ -58,17 +53,19 @@ def build_pika_connection(host, port, virtual_host, user, password):
     )
 
 
-def main(argv):
+def main(argv=None):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
-        prog=os.path.basename(__file__),
         description='Send crash id to rabbitmq queue for processing',
         epilog=EPILOG.strip(),
     )
     parser.add_argument('queue', help='the queue to add the crash id to')
     parser.add_argument('crashid', nargs='*', help='one or more crash ids to add')
 
-    args = parser.parse_args(argv)
+    if argv is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(argv)
 
     # This will pull crash ids from the command line if specified, or stdin
     crashids_iterable = args.crashid or sys.stdin
@@ -115,3 +112,7 @@ def main(argv):
 
     print('Done!')
     return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
