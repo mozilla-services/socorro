@@ -4,12 +4,12 @@
 Service: Crontabber
 ===================
 
-``crontabber`` is a project that manages scheduled tasks. Unlike traditional
-UNIX ``crontab``, all execution is done via the `./crontabber_app.py` script and
-the configuration about frequency and exact time to run is part of the
-configuration files.
+Crontabber is a project that manages scheduled tasks. Unlike traditional UNIX
+crontab, all execution is done via the crontabber script and the configuration
+about frequency and exact time to run is part of the configuration files.
 
-The configuration is done using ``configman`` and it looks something like this::
+The configuration is done using ``configman`` and can be specified in a ``.ini``
+file or in the process environment. An example looks like this::
 
   # name: jobs
   # doc: List of jobs and their frequency separated by `|`
@@ -19,45 +19,51 @@ The configuration is done using ``configman`` and it looks something like this::
        socorro.cron.jobs.pgjob.PGCronApp|1d|03:00
 
 
-The default config lives in ``socorro/cron/crontabber_app.py`` as
+The default jobs specification lives in ``socorro/cron/crontabber_app.py`` as
 ``DEFAULT_JOBS``.
 
-.. Warning::
+Different server environments use different jobs specifications based on
+``DEFAULT_JOBS``.
 
-   August 17th, 2017: Everything below this point is outdated.
 
+What runs crontabber?
+=====================
 
-crontab runs crontabber
-=======================
-
-``crontabber`` can be run at any time. Because the exact execution time is in
-configuration you can't accidentally execute jobs that aren't supposed to
-execute simply by running ``crontabber``.
-
-However, it can't be run as daemon. It actually needs to be run by UNIX
-``crontab`` every, say, 5 minutes. So instead of your ``crontab`` being a huge
-list of jobs at different times, all you need is this::
+In our current infrastructure, ``crontabber`` is run by ``crontab`` with
+a spec like this::
 
     */5 * * * * PYTHONPATH="..." crontabber
 
-By moving away from UNIX ``crontab`` we have better control of the
-cron apps and their inter-relationship.
+Every 5 minutes, ``crontabber`` runs, updates crontabber jobs bookkeeping,
+checks which jobs need to run, and runs those jobs.
+
+In our new infrastructure, ``crontabber`` runs, then sleeps for 5 minutes, then
+runs again. This is different than running every 5 minutes. Amongst other
+things, we're guaranteed to only have one ``crontabber`` process running on a
+node.
 
 
-Dependencies
-============
+Crontabber theory
+=================
 
-In ``crontabber`` the state of previous runs of cron apps within are remembered
-(stored internally in a JSON file) which makes it possible to assign
-dependencies between the cron apps.
+Crontabber runs a set of jobs.
 
-This is used to potentially prevent running jobs. Not to automatically run those
-that depend. For example, if ``FooCronApp`` *depends* on ``BarCronApp`` it just
-won't run if ``BarCronApp`` last resulted in an error or simply hasn't been run
-the last time it should.
+A job specification includes the class to run, a frequency, and optionally a
+specific time to run at. In this way, we can specify jobs to run weekly, daily,
+hourly, daily at a specific time, and so on.
 
-Overriding dependencies is possible with the ``--force`` parameter. For example,
-suppose you know ``BarCronApp`` can now be run you do that like this::
+Crontabber maintains some bookkeeping for each job including when the job was
+first run, most recently run, the time of the last success, the time of the last
+failure, and the next run. If the job failed, it logs some error information.
+
+Jobs can have zero or more dependencies on other jobs. Crontabber makes sure
+that dependencies are filled before running a job. For example, if
+``FooCronApp`` *depends* on ``BarCronApp`` it just won't run if ``BarCronApp``
+last resulted in an error or simply hasn't been run the last time it should.
+
+Crontabber has several command line arguments that let you override the job spec
+to run things manually. For example, you can override dependencies for a job
+with the ``--force`` parameter like this::
 
     ./crontabber --job=BarCronApp --force
 
@@ -76,52 +82,12 @@ string, a tuple or a list. In this example, since ``BarCronApp`` depends on
         def run(self):
             ...
 
-
-Own configurations
-==================
-
-Each cron app can have its own configuration. Obviously they must always have a
-good default that is good enough otherwise you can't run ``crontabber`` to run
-all jobs that are due. To make overrideable configuration options add the
-``required_config`` class attribute. Here's an example::
-
-    from configman import Namespace
-    from crontabber.base import BaseCronApp
-
-    class FooCronApp(BaseCronApp):
-        app_name = 'foo'
-
-        required_config = Namespace()
-        required_config.add_option(
-            'bugzilla_url',
-            default='https://bugs.mozilla.org',
-            doc='Base URL for bugzilla'
-        )
-
-        def run(self):
-            ...
-            print self.config.bugzilla_url
-            ...
-
-.. Note::
-
-   Note: Inside that ``run()`` method in that example, the ``self.config``
-   object is a special one. It's basically a reference to the configuration
-   specifically for this class but it has access to all configuration objects
-   defined in the "root". You can access things like ``self.config.logger`` here
-   too but other cron app won't have access to ``self.config.bugzilla_url``
-   since that's unique to this app.
-
-   To override cron app specific options on the command line you need to use a
-   special syntax to associate it with this cron app class. Usually, the best
-   hint of how to do this is to use ``python crontabber_app.py --help``. In this
-   example it would be::
-
-      crontabber --job=foo --class-FooCronApp.bugzilla_url=...
+Raising an error inside a cron app **will not stop the other jobs** from running
+other than the those that depend on it.
 
 
-App names versus/or class names
-===============================
+App names and class names
+=========================
 
 Every cron app in ``crontabber`` must have a class attribute called
 ``app_name``. This value must be unique. If you like, it can be the same as the
@@ -196,17 +162,11 @@ When backfilling across, say, three failed attempts. If the first of those three
 fail, the ``last_success`` date is moved forward accordingly.
 
 
-Manual intervention
-===================
+Troubleshooting
+===============
 
-First of all, to add a new job all you need to do is add it to the config file
-that ``crontabber`` is reading from. Thanks to being a ``configman`` application
-it automatically picks up configurations from files called ``crontabber.ini``,
-``crontabber.conf`` or ``crontabber.json``. To create a new config file, use
-``admin.dump_config`` like this::
-
-    python socorro/cron/crontabber_app.py --admin.dump_conf=ini
-
+Examining the last error
+------------------------
 
 All errors that happen are reported to the standard python ``logging`` module.
 Also, the latest error (type, value and traceback) is stored in the JSON
@@ -247,15 +207,19 @@ time **any** error happens and is reset once no error happens. So, only the
 latest error is kept and to find out about past error you have to inspect the
 log files.
 
-NOTE: If a cron app that is configured to run every 2 days runs into an error;
-it will try to run again in 2 days.
+.. NOTE::
 
-So, suppose you inspect the error and write a fix. If you're impatient and don't
+   If a cron app that is configured to run every 2 days runs into an error, it
+   will try to run again in 2 days.
+
+
+Running a job manually
+----------------------
+
+Suppose you inspect the error and write a fix. If you're impatient and don't
 want to wait till it's time to run again, you can start it again like this::
 
     python socorro/cron/crontabber_app.py --job=my-app-name
-    # or if you prefer
-    python socorro/cron/crontabber_app.py --job=path.to.MyCronAppClass
 
 
 This will attempt it again and no matter if it works or errors it will pick up
@@ -263,7 +227,7 @@ the frequency from the configuration and update what time it will run next.
 
 
 Resetting a job
-===============
+---------------
 
 If you want to pretend that a job has never run before you can use the
 ``--reset`` switch. It expects the name of the app. Like this::
@@ -276,33 +240,16 @@ apps that don't work on the first run or you know what you're doing and you just
 want it to start afresh.
 
 
-Nagios monitoring
-=================
+Figuring out configuration parameters
+-------------------------------------
 
-To hook up crontabber to Nagios monitoring as an NRPE plugin you can use the
-``--nagios`` switch like this::
-
-    python socorro/cron/crontabber_app.py --nagios
-
-What this will do is the following:
-
-1. If there are no recorded errors in any app, exit with code 0 and no message.
-
-2. If an app has exactly 1 error count, then:
-
-   1. If it's backfill based (meaning it should hopefully self-heal) it will
-      exit with code 1 and a message to ``stdout`` that starts with the word
-      ``WARNING`` and also prints the name of the app, the name of the class,
-      the exception type and the exception value.
-
-   2. If it's **not** a backfill based app, it will exit with code 3 and a
-      message on ``stdout`` starting with the word ``CRITICAL`` followed by the
-      name of the app, the name of the class, the exception type and the
-      exception value.
+Best way to figure out the keys for configuration parameters is by running
+crontabber and telling it to list the jobs. It'll spit out all the configuration
+keys at startup.
 
 
-Frequency and execution time
-============================
+Scheduling jobs
+===============
 
 The format for configuring jobs looks like this::
 
@@ -313,8 +260,8 @@ or like this::
   socorro.cron.jobs.pgjob.PGCronApp|2d|03:00
 
 Hopefully the format is self-explanatory. The first number is required and it
-must be a number followed by "y", "d", "h" or "m". (years, days, hours,
-minutes).
+must be a number followed by "y" (years), "d" (days), "h" (hours), or "m"
+(minutes).
 
 For jobs that have a frequency longer than 24 hours you can specify exactly when
 it should run. This format has to be in the 24-hour format of ``HH:MM``.
@@ -341,68 +288,12 @@ it's actually at 7pm pacific time.
 Writing cron apps (aka. jobs)
 =============================
 
-Because of the configurable nature of the ``crontabber`` the actual cron apps
-can be located anywhere. For example, if it's related to ``S3`` it could for
-example be in ``socorro/external/boto/mycronapp.py``. However, for the most part
-it's probably a good idea to write them in ``socorro/cron/jobs/`` and write one
-class per file to make it clear. There are already some "sample apps" in there
-that does nothing except serving as good examples. With time, we can hopefully
-delete these as other, real apps, can work as examples and inspiration.
+First off, if you can implement whatever you're implementing as something other
+than a crontabber job, do that. If not, proceed.
 
-The most common apps will be execution of certain specific pieces of SQL against
-the PostgreSQL database. For those, the ``socorro/cron/jobs/pgjob.py`` example
-is good to look at. At the time of writing it looks like this::
+Code for crontabber jobs goes in ``socorro/cron/jobs/``.
 
-    from socorro.cron.base import PostgresCronApp
-
-    class PGCronApp(PostgresCronApp):
-        app_name = 'pg-job'
-        app_description = 'Does some foo things'
-
-        def run(self, connection):
-            cursor = connection.cursor()
-            cursor.execute('select relname from pg_class')
-
-
-Let's pick that a part a bit...
-
-The most important difference is the different base class. Unlike the
-``BaseCronApp`` class, this one is executing the ``run()`` method with a
-connection instance as the one and only parameter. That connection will **NOT**
-automatically take care of transactions! That means that you have to manually
-handle that if it's applicable. For example, you might add the code with a
-``connection.commit()`` in Python or if it's a chunk of SQL you add ``COMMIT;``
-at the end of it.
-
-But suppose you want to let ``crontabber`` handle the transactions you can do
-that by instead of using ``PostgresCronApp`` as your base class for a cron app
-you instead use::
-
-    from socorro.cron.base import PostgresTransactionManagedCronApp
-
-
-With that, you can allow ``crontabber`` take care of any potential error
-handling for you. For example, this would work then as expected::
-
-    from socorro.cron.base import PostgresTransactionManagedCronApp
-
-    class MyPostgresCronApp(PostgresTransactionManagedCronApp):
-        ...
-
-        def run(self, connection):
-            cursor = connection.cursor()
-            today = datetime.datetime.today()
-            cursor.execute('INSERT INTO jobs (room) VALUES (bathroom)')
-            if today.strftime('%A') in ('Saturday', 'Sunday'):
-                raise ValueError("Today is not a good day!")
-            else:
-                cursor.execute('INSERT INTO jobs(tool) VALUES (brush)')
-
-
-Silly example but hopefully it's clear enough.
-
-Raising an error inside a cron app **will not stop the other jobs** from running
-other than the those that depend on it.
+Make sure to write tests for them if you can.
 
 
 Testing crontabber jobs manually
@@ -412,19 +303,12 @@ We have unit tests for crontabber jobs (located in: socorro/cron/jobs), but
 sometimes it is helpful to test these jobs locally before deploying changes.
 
 For "backfill-based" jobs, you will need to reset them to run them immediately
--- rather than waiting for the next available time period for running them.
+rather than waiting for the next available time period for running them.
 
 Example::
 
-    PYTHONPATH=. socorro/cron/crontabber_app.py --admin.conf=config/crontabber.ini --reset-job=ftpscraper
+    $ python socorro/cron/crontabber_app.py --reset-job=ftpscraper
 
 Then you can run them::
 
-    PYTHONPATH=. socorro/cron/crontabber_app.py --admin.conf=config/crontabber.ini --job=ftpscraper
-
-To dump a configuration file initially::
-
-    PYTHONPATH=. socorro/cron/crontabber_app.py --admin.dump=ftpscraper.ini --job=ftpscraper
-
-Check that configuration over and then add it to your config.
-``config/crontabber.ini-dist`` is our default config file from the distro.
+    $ python socorro/cron/crontabber_app.py --job=ftpscraper
