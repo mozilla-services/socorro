@@ -90,11 +90,8 @@ need to get a set of oauth credentials.
    a 403 CSRF error, mark the callback url as csrf_exempt e.g. with `this patch
    <https://github.com/g-k/socorro/commit/2afeb8d44a485d2936f0f9a06fa3572d5baea6d6#diff-2fef780ed0ba541e7eb26fd5c32022f4>`_
 
+
 After that, Google Sign-In should work.
-
-.. Warning::
-
-   August 17th, 2017: Everything below this point is outdated.
 
 
 About Permissions, User and Groups
