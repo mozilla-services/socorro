@@ -64,7 +64,10 @@ _QUERY = """
             domain='addons.mozilla.org' OR
             domain='blocklists.settings.services.mozilla.com'
         )
-        and http_status_code = '200'
+        and (
+            http_status_code='200' OR
+            http_status_code='304'
+        )
         and request_url like '/v1/blocklist/3/%%'
         and ds='%s'
     GROUP BY
