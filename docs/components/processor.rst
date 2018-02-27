@@ -65,7 +65,7 @@ This pulls 5 crash ids from 2017-09-01::
 This pulls 100 crash ids for criteria specified with a Super Search url that we
 copy and pasted::
 
-  $ docker/as_me.sh socorro-cmd fetch_crashids "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
+  $ docker/as_me.sh ./socorro-cmd fetch_crashids "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
 
 You can get command help::
 
@@ -92,7 +92,7 @@ Use with ``fetch_crashids`` to fetch crash data from 100 crashes from yesterday
 for Firefox::
 
   $ docker/as_me.sh bash
-  app@processor:/app$ socorro-cmd fetch_crashids | socorro-cmd fetch_crash_data ./testdata
+  app@processor:/app$ ./socorro-cmd fetch_crashids | socorro-cmd fetch_crash_data ./testdata
 
 
 You can get command help::
