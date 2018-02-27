@@ -1,8 +1,8 @@
 .. _webapp-chapter:
 
-=================================
-Webapp (crash-stats analysis app)
-=================================
+===========================
+Service: Crash Stats Webapp
+===========================
 
 Running the webapp
 ==================

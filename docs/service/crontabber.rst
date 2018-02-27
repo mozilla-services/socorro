@@ -1,8 +1,8 @@
 .. _crontabber-chapter:
 
-==========
-crontabber
-==========
+===================
+Service: Crontabber
+===================
 
 ``crontabber`` is a project that manages scheduled tasks. Unlike traditional
 UNIX ``crontab``, all execution is done via the `./crontabber_app.py` script and

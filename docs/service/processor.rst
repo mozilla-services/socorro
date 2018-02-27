@@ -1,8 +1,8 @@
 .. _processor-chapter:
 
-=========
-Processor
-=========
+==================
+Service: Processor
+==================
 
 .. Note::
 

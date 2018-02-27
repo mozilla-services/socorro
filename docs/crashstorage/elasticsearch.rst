@@ -1,8 +1,8 @@
 .. _elasticsearch-chapter:
 
-=============
-Elasticsearch
-=============
+============================
+Crash storage: Elasticsearch
+============================
 
 Features
 ========
