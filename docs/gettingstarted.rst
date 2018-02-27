@@ -84,18 +84,26 @@ Quickstart
 At this point, you should have a basic functional Socorro development
 environment that has no crash data in it.
 
-If you need crash data, see :ref:`processor-chapter` for additional setup,
-fetching crash data, and running the processor.
+.. Seealso::
 
-See :ref:`gettingstarted-chapter-updating` for how to maintain and update your
-local development environment.
+   **Run the processor and get some crash data!**
+       If you need crash data, see :ref:`processor-chapter` for additional
+       setup, fetching crash data, and running the processor.
 
-See :ref:`gettingstarted-chapter-configuration` for how configuration works and
-about ``my.env``.
+   **Update your local development environment!**
+       See :ref:`gettingstarted-chapter-updating` for how to maintain and
+       update your local development environment.
 
-See :ref:`webapp-chapter` for additional setup and running the webapp.
+   **Learn about configuration!**
+       See :ref:`gettingstarted-chapter-configuration` for how configuration
+       works and about ``my.env``.
 
-See :ref:`crontabber-chapter` for additional setup and running crontabber.
+   **Run the webapp!**
+       See :ref:`webapp-chapter` for additional setup and running the webapp.
+
+   **Run crontabber!**
+       See :ref:`crontabber-chapter` for additional setup and running
+       crontabber.
 
 
 .. _gettingstarted-chapter-updating:
@@ -134,10 +142,11 @@ After doing that, you'll definitely want to update data::
   $ make dockerupdatedata
 
 
-Wiping the database
--------------------
+Wiping crash storage and state
+------------------------------
 
-Any time you want to wipe the database and start over, run::
+Any time you want to wipe all the crash storage destinations, remove all the
+data, and reset the state of the system, run::
 
   $ make dockersetup
 
@@ -237,127 +246,3 @@ Overriding configuration
 
 If you want to override configuration temporarily for your local development
 environment, put it in ``my.env``.
-
-
-General architecture
-====================
-
-.. graphviz::
-
-   digraph G {
-      rankdir=LR;
-
-      client [shape=box3d, label="firefox"];
-
-      subgraph antpig {
-         rank=same;
-
-         antenna [shape=rect, label="antenna"];
-         pigeon [shape=cds, label="pigeon"];
-      }
-
-      subgraph stores {
-         rank=same;
-
-         postgres [shape=tab, label="Postgres", style=filled, fillcolor=gray];
-         elasticsearch [shape=tab, label="Elasticsearch", style=filled, fillcolor=gray];
-         telemetry [shape=tab, label="Telemetry (S3)", style=filled, fillcolor=gray];
-      }
-
-      subgraph stores2 {
-         rabbitmq [shape=tab, label="RMQ", style=filled, fillcolor=gray];
-         aws [shape=tab, label="S3", style=filled, fillcolor=gray];
-      }
-
-      subgraph processing {
-         rank=same;
-
-         processor [shape=rect, label="processor"];
-         crontabber [shape=rect, label="crontabber"];
-      }
-
-      webapp [shape=rect, label="webapp"];
-
-      client -> antenna [label="HTTP"];
-      antenna -> aws [label="save raw"];
-
-      aws -> pigeon [label="S3:PutObject"];
-      pigeon -> rabbitmq [label="crash id for processing"];
-
-      rabbitmq -> processor [label="crash id"];
-      aws -> processor [label="load raw"];
-      processor -> { aws, postgres, elasticsearch, telemetry } [label="save processed"];
-
-      postgres -> webapp;
-      aws -> webapp [label="load raw,processed"];
-      elasticsearch -> webapp [label="search"];
-
-      postgres -> crontabber;
-      elasticsearch -> crontabber;
-
-      { rank=min; client; }
-   }
-
-
-Arrows direction represents the flow of interesting information (crashes,
-authentication assertions, cached values), not trivia like acks.
-
-.. Warning::
-
-   August 17th, 2017. Everything below this point needs to be updated.
-
-
-
-Top-level folders
------------------
-
-If you clone our `git repository <https://github.com/mozilla/socorro>`_, you
-will find the following folders. Here is what each of them contains:
-
-+-----------------+-------------------------------------------------------------+
-| Folder          | Description                                                 |
-+=================+=============================================================+
-| docker/         | Docker environment related scripts, configuration, and      |
-|                 | other bits.                                                 |
-+-----------------+-------------------------------------------------------------+
-| docs/           | Documentation of the Socorro project (the one you are       |
-|                 | reading right now).                                         |
-+-----------------+-------------------------------------------------------------+
-| scripts/        | Scripts for launching the different parts of the Socorro    |
-|                 | application.                                                |
-+-----------------+-------------------------------------------------------------+
-| socorro/        | Core code of the Socorro project.                           |
-+-----------------+-------------------------------------------------------------+
-| sql/            | SQL scripts related to our PostgreSQL database. Contains    |
-|                 | schemas and update queries.                                 |
-+-----------------+-------------------------------------------------------------+
-| tools/          | External tools used by Socorro.                             |
-+-----------------+-------------------------------------------------------------+
-| webapp-django/  | Front-end Django application (also called webapp). See      |
-|                 | :ref:`webapp-chapter`.                                      |
-+-----------------+-------------------------------------------------------------+
-
-
-Socorro submodules
-------------------
-
-The core code module of Socorro, called ``socorro``, contains a lot of code.
-Here are descriptions of every submodule in there:
-
-+-------------------+---------------------------------------------------------------+
-| Module            | Description                                                   |
-+===================+===============================================================+
-| cron              | All cron jobs running around Socorro.                         |
-+-------------------+---------------------------------------------------------------+
-| database          | PostgreSQL related code.                                      |
-+-------------------+---------------------------------------------------------------+
-| external          | Here are APIs related to external resources like databases.   |
-+-------------------+---------------------------------------------------------------+
-| processor         | Code for the processor component.                             |
-+-------------------+---------------------------------------------------------------+
-| submitter         | Code for the stage submitter component.                       |
-+-------------------+---------------------------------------------------------------+
-| unittest          | All our unit tests are here.                                  |
-+-------------------+---------------------------------------------------------------+
-| webapp            | Code for the webapp component.                                |
-+-------------------+---------------------------------------------------------------+

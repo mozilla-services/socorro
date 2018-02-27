@@ -2,24 +2,11 @@
 Socorro - Crash ingestion pipeline
 ==================================
 
-Overview
-========
-
 Socorro is a set of components for collecting, processing, and analyzing crash
 data. It is used by Mozilla for analyzing crash data for Mozilla products.
 Mozilla's crash analysis tool is hosted at
 `<https://crash-stats.mozilla.com/>`_.
 
-The components which make up Socorro are:
-
-* Collector: Collects incoming crash reports via HTTP POST. The collector we
-  currently use is `Antenna <https://antenna.readthedocs.io/>`_ now collects
-  crashes for Socorro.
-* Processor: Turns breakpad minidump crashes into stack traces and other info.
-* Webapp/Crash Stats: Web user interface for analyzing crash data.
-* Crontabber: Runs hourly/daily/weekly tasks for analyzing and processing data.
-
-Data that's processed gets stored in several crash storage destinations.
 
 Project info
 ============
@@ -41,6 +28,7 @@ Contents
    :maxdepth: 1
    :glob:
 
+   overview
    gettingstarted
    contributing
    signaturegeneration
