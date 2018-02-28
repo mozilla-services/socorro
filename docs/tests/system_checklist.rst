@@ -90,9 +90,9 @@ Checklist
 
     * Log into a processor node and watch the processor logs for errors.
 
-      Log file: "/var/log/messages"
+      Do: "journalctl -u socorro-processor -f"
 
-      To check for errors: "grep ERROR /var/log/messages | less"
+      To check for errors grep for "ERRORS".
 
     * Check Datadog "processor.save_raw_and_processed" for appropriate
       environment.
@@ -145,9 +145,9 @@ Checklist
     * Check Sentry for errors
     * Log into webapp node and check logs for errors.
 
-      Log file: "/var/log/messages"
+      Do: "journalctl -u socorro-webapp -f"
 
-      To check for errors: "grep ERROR /var/log/messages | less"
+      To check for errors, grep that for "ERROR".
 
     * Run QA Selenium tests.
 
@@ -200,9 +200,9 @@ Checklist
     * Check Sentry for errors
     * Log into admin node and check logs for errors
 
-      Log file: "/var/log/socorro/crontabber"
+      Do: "tail -f /var/log/socorro/crontabber"
 
-      To check for errors: "grep ERROR /var/log/messages | less"
+      To check for errors, grep for "ERROR".
 
 
     Stage submitter
