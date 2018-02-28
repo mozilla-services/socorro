@@ -98,29 +98,29 @@ Checklist
       environment.
 
       localdev: Check the logging in the console
-      stage: https://app.datadoghq.com/dash/272676/antenna--stage
-      prod: https://app.datadoghq.com/dash/274773/antenna--prod
+      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
+      prod: https://app.datadoghq.com/dash/65215/socorro-prod
 
     Is the processor saving to ES? Postgres? S3?
 
     * Check Datadog
       "processor.es.ESCrashStorageRedactedJsonDump.save_raw_and_processed.avg"
 
-      stage: https://app.datadoghq.com/dash/272676/antenna--stage
-      prod: https://app.datadoghq.com/dash/274773/antenna--prod
+      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
+      prod: https://app.datadoghq.com/dash/65215/socorro-prod
 
     * Check Datadog
       "processor.s3.BotoS3CrashStorage.save_raw_and_processed" for
       appropriate environment.
 
-      stage: https://app.datadoghq.com/dash/272676/antenna--stage
-      prod: https://app.datadoghq.com/dash/274773/antenna--prod
+      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
+      prod: https://app.datadoghq.com/dash/65215/socorro-prod
 
     * Check Datadog
       "processor.postgres.PostgreSQLCrashStorage.save_raw_and_processed"
 
-      stage: https://app.datadoghq.com/dash/272676/antenna--stage
-      prod: https://app.datadoghq.com/dash/274773/antenna--prod
+      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
+      prod: https://app.datadoghq.com/dash/65215/socorro-prod
 
 
     Submit a crash or reprocess a crash. Wait a few minutes. Verify the crash was
