@@ -1,8 +1,8 @@
 .. _crashstorage-chapter:
 
-====================================
-Crashstorage API and Implementations
-====================================
+======================================
+Crash storage: API and Implementations
+======================================
 
 Documentation of our CrashStorage API. This attempts to provide a complete
 picture of all the crash storage classes that are provided by Socorro.

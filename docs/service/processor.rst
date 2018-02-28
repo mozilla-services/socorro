@@ -1,8 +1,8 @@
 .. _processor-chapter:
 
-=========
-Processor
-=========
+==================
+Service: Processor
+==================
 
 .. Note::
 
@@ -238,18 +238,3 @@ breakpad crash reporter. It will save crash data to the ``dev_bucket`` in the
 local S3 which is where the processor looks for it.
 
 FIXME(willkg): How to get crash ids into the processing queue?
-
-
-.. Warning::
-
-   August 17th, 2017: Everything below this point is outdated.
-
-
-Troubleshooting
-===============
-
-journalctl is a good place to look for Socorro logs, especially if services
-are not starting up or are crashing.
-
-Socorro supports syslog and raven for application-level logging of all
-services (including web services).

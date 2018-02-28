@@ -2,32 +2,21 @@
 Socorro - Crash ingestion pipeline
 ==================================
 
-Socorro is a set of components for collecting, processing and reporting on
-crashes. It is used by Mozilla for tracking crashes of Mozilla products.
-
+Socorro is a set of components for collecting, processing, and analyzing crash
+data. It is used by Mozilla for analyzing crash data for Mozilla products.
 Mozilla's crash analysis tool is hosted at
 `<https://crash-stats.mozilla.com/>`_.
 
-The components which make up Socorro are:
 
-* Collector - collects breakpad minidump crashes which come in over HTTP POST
+Project info
+============
 
-  `Antenna <https://antenna.readthedocs.io/>`_ now collects crashes for Socorro.
-
-* Processor - turn breakpad minidump crashes into stack traces and other info
-* Web UI for analysis aka crash-stats - Django-based web app for visualizing
-  crash data
-
-Socorro is available from source in a git repository at
-`<https://github.com/mozilla-services/socorro/>`_.
-
-* Free software: Mozilla Public License version 2.0
-* Code:
-
-  * Antenna: https://github.com/mozilla-services/antenna
-  * Socorro: https://github.com/mozilla-services/socorro
-
-* Documentation: https://antenna.readthedocs.io/
+:Free software: Mozilla Public License version 2.0
+:Code: https://github.com/mozilla-services/socorro/ and https://github.com/mozilla-services/antenna
+:Documentation: https://socorro.readthedocs.io/
+:Mailing list: https://lists.mozilla.org/listinfo/tools-socorro
+:IRC: `<irc://irc.mozilla.org/breakpad>`_
+:Bugs: https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
 
 
 Contents
@@ -36,15 +25,17 @@ Contents
 .. toctree::
    :numbered:
    :includehidden:
-   :maxdepth: 2
+   :maxdepth: 1
    :glob:
 
+   overview
    gettingstarted
    contributing
-   symbols
-   architecture/*
-   components/*
-   services/*
+   signaturegeneration
+   topcrashersbysignature
+   service/*
+   crashstorage/*
    tests/*
+   socorro_app
    deploy
    howto

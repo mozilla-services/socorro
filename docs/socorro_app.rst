@@ -1,4 +1,4 @@
-.. _socorro_app-chapter:
+.. _socorro-app-chapter:
 
 ============================================
 How app and an example works using configman

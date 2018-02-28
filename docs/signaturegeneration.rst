@@ -85,7 +85,7 @@ Note that after a signature change has been pushed to production, you might want
 to `reprocess the affected signatures <https://github.com/adngdb/reprocess>`_.
 
 
-.. include:: ../../socorro/signature/README.rst
+.. include:: ../socorro/signature/README.rst
 
 
-.. include:: ../../socorro/siglists/README.rst
+.. include:: ../socorro/siglists/README.rst

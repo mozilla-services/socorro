@@ -1,8 +1,8 @@
 .. _elasticsearch-chapter:
 
-=============
-Elasticsearch
-=============
+============================
+Crash storage: Elasticsearch
+============================
 
 Features
 ========
@@ -57,7 +57,7 @@ Configuration
 
 You can see Elasticsearch common options by passing ``--help`` to the
 processor app and looking at the ``resource.elasticsearch`` options like
-this:: 
+this::
 
   $ docker-compose run processor bash
   app@processor:/app$ python ./socorro/processor/processor_app \
@@ -100,8 +100,10 @@ Validate your configuration
 
 The best way to verify you have correctly configured your application for
 Elasticsearch is to send it a crash report and verify it is indexed. Follow the
-steps in :ref:`systemtest-chapter` to send a crash to your system. Once it is
-received and processed, verify that your Elasticsearch instance has the data::
+steps in :ref:`processor-chapter` to process a crash in your system. Once it is
+processed, verify that your Elasticsearch instance has the data:
+
+::
 
     $ curl -XGET localhost:9200/socorroYYYYWW/crash_reports/_count
 
