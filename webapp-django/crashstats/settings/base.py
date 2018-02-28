@@ -506,10 +506,16 @@ if raven_dsn:
     RAVEN_CONFIG = {
         'dsn': raven_dsn,
         'release': SOCORRO_REVISION,
+        # Defines keys to be sanitized by SanitizeKeysProcessor
+        'sanitize_keys': [
+            'sessionid',
+            'csrftoken',
+            'anoncsrf',
+            'sc',
+        ],
         'processors': (
-            # Note! This processor extends the default
-            # SanitizePasswordsProcessor to also scrub 'Auth-Token'.
-            'crashstats.tokens.utils.RavenSanitizeAuthTokenProcessor',
+            'raven.processors.SanitizeKeysProcessor',
+            'raven.processors.SanitizePasswordsProcessor',
         )
     }
 
