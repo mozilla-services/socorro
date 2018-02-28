@@ -142,7 +142,7 @@ _CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'django.template.context_processors.request',
     'crashstats.authentication.context_processors.oauth2',
-    'crashstats.base.context_processors.debug',
+    'crashstats.base.context_processors.settings',
     'crashstats.status.context_processors.status_message',
     'crashstats.crashstats.context_processors.help_urls',
 )
@@ -464,7 +464,6 @@ PIPELINE = {
     'DISABLE_WRAPPER': True,
     'COMPILERS': (
         'pipeline.compilers.less.LessCompiler',
-        'crashstats.crashstats.pipelinecompilers.GoogleAnalyticsCompiler',
     ),
     # The pipeline.jinja2.PipelineExtension extension doesn't support
     # automatically rendering any potentional compilation errors into
@@ -519,11 +518,7 @@ if raven_dsn:
         )
     }
 
-# The Mozilla Google Analytics ID is used here as a default.
-# The reason is that our deployment (when it runs `./manage.py collectstatic`)
-# runs before the environment variables have been all set.
-# See https://bugzilla.mozilla.org/show_bug.cgi?id=1314258
-GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', 'UA-35433268-50')
+GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
 
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', True, cast=bool)
@@ -632,21 +627,6 @@ CRONTABBER_STALE_MINUTES = config(
     # takes a very long time to finish, we'll bump this up a bit
     # to a higher default.
     default=60 * 2
-)
-
-# URL to send the Google Analytics pageviews and event tracking.
-# The value of this is extremely unlikely to change any time soon,
-GOOGLE_ANALYTICS_API_URL = config(
-    'GOOGLE_ANALYTICS_API_URL',
-    'https://ssl.google-analytics.com/collect'
-)
-
-# If calls to the Google Analytics API are done asynchronously, this
-# value can be quite high (5-10 seconds).
-GOOGLE_ANALYTICS_API_TIMEOUT = config(
-    'GOOGLE_ANALYTICS_API_TIMEOUT',
-    5,  # seconds
-    cast=int
 )
 
 # OAuth2 credentials are needed to be able to connect with Google OpenID

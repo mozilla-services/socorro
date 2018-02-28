@@ -65,14 +65,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
     }
 }
 
-
-# During testing, if mocking isn't done right, we never want to
-# accidentally send data to Google Analytics.
-GOOGLE_ANALYTICS_API_URL = 'https://example.com/collect'
-# By default, unset the GOOGLE_ANALYTICS_ID
-GOOGLE_ANALYTICS_ID = None
-
-
 # During testing we want to pretend that we've set up the OAuth2
 # credentials.
 OAUTH2_CLIENT_ID = '12345-example.apps.googleusercontent.com'
