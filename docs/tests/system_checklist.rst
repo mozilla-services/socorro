@@ -155,6 +155,10 @@ Checklist
       stage: In IRC: "webqatestbot build socorro.stage.saucelabs"
       prod: In IRC: "webqatestbot build socorro.prod.saucelabs"
 
+    Do webapp errors make it to sentry?
+
+    * Log into the webapp, go to the Admin, and use the Crash Me Now tool
+
     Are there JavaScript errors in the webapp?
 
     * While checking individual pages below, open the DevTools console and watch
