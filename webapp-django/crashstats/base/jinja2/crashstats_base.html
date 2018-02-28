@@ -1,6 +1,6 @@
 {% from "macros/pagination.html" import pagination %}
 <!DOCTYPE html>
-<html lang="en-US" class="production">
+<html lang="en-US" class="production" data-google-analytics-id="{{ GOOGLE_ANALYTICS_ID }}">
     <head>
         <meta charset="UTF-8" />
         <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
@@ -9,7 +9,7 @@
             {% stylesheet 'crashstats_base' %}
         {% endblock %}
 
-        {% if not DEBUG %}
+        {% if GOOGLE_ANALYTICS_ID %}
             {#
                 Use the preload technique which gives a performance boost for
                 modern browsers.
