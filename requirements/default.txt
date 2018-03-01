@@ -7,8 +7,8 @@ mock==2.0.0 \
     --hash=sha256:b158b6df76edd239b8208d481dc46b6afd45a846b7812ff0ce58971cf5bc8bba
 poster==0.8.1 \
     --hash=sha256:af5bf45da4a916db2b638cffd9e9d6668b33020e2b8ca9f864db79b49331c6ff
-uWSGI==2.0.15 \
-    --hash=sha256:572ef9696b97595b4f44f6198fe8c06e6f4e6351d930d22e5330b071391272ff
+uWSGI==2.0.17 \
+    --hash=sha256:3dc2e9b48db92b67bfec1badec0d3fdcc0771316486c5efa3217569da3528bf2
 configman==1.3.0 \
     --hash=sha256:bc96b4c974aefabf4605d82dfab409a5aed10b4ae0b05ae2535eda415a3f7b67 \
     --hash=sha256:8e45c20c7b73173bd4d0194521f982201b70558d6f6e945f11053201110b83e0 \
