@@ -38,6 +38,17 @@ Checklist
 
 ::
 
+    Verify version
+    ==============
+
+    Before doing anything, verify the environment(s) that you're testing
+    are running the version you expect.
+
+    * local dev: http://localhost:8000/api/Status
+    * -stage: https://crash-stats.allizom.org/api/Status
+    * -prod: https://crash-stats.mozilla.com/api/Status
+
+
     Migrations
     ==========
 
