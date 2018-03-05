@@ -60,6 +60,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/accordion.min.css',
     },
+    'bugzilla': {
+        'source_filenames': (
+            'crashstats/css/components/bugzilla.less',
+        ),
+        'output_filename': 'css/bugzilla.min.css',
+    },
     'metricsgraphics': {
         'source_filenames': (
             'metrics-graphics/dist/metricsgraphics.css',
