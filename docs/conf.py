@@ -30,7 +30,8 @@ import sphinx_rtd_theme
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.graphviz'
+    'sphinx.ext.graphviz',
+    'm2r',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -42,9 +43,7 @@ templates_path = ['_templates']
 # source_suffix = ['.rst', '.md']
 source_suffix = ['.rst', '.md']
 
-source_parsers = {
-    '.md': 'recommonmark.parser.CommonMarkParser',
-}
+source_parsers = {}
 
 # The master toctree document.
 master_doc = 'index'
