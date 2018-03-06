@@ -5,7 +5,7 @@ table {
             z-index: 50;
             th,
             td {
-                border: solid 1px #CCC;
+                border: solid 1px @grey;
             }
         }
     }
@@ -22,7 +22,7 @@ table {
     &.data-table {
         width: 100%;
         th {
-            background-color: #D9D9D9;
+            background-color: @dark-tan;
         }
         th,
         td {
@@ -31,18 +31,18 @@ table {
         tbody {
             background-color: @white;
             tr:nth-child(odd) {
-                background-color: #edecec;
+                background-color: @tan;
             }
             tr:hover {
-                background-color: #D9D9D9;
+                background-color: @light-grey;
             }
             tr.missingsymbols {
                 &,
                 &:hover,
                 & td {
-                    background-color: #8f0222;
+                    background-color: @red;
                     color: @white;
-                    border-top: 2px solid white;
+                    border-top: 2px solid @white;
                 }
             }
         }
@@ -52,7 +52,7 @@ table {
         width: 98%;
         caption {
             position: relative;
-            background-color: #ebebeb;
+            background-color: @tan;
             padding: 1em 1rem .5rem;
             .rounded-corners(6px, 6px);
             h3 {
@@ -65,7 +65,7 @@ table {
             a {
                 &:link,
                 &:visited {
-                    color: #333;
+                    color: @dark-grey;
                 }
                 &:focus {
                     text-decoration: none;
@@ -73,7 +73,7 @@ table {
             }
         }
         th {
-            background-color: #9c9c9c;
+            background-color: @grey;
             color: @white;
         }
         th,
@@ -83,10 +83,10 @@ table {
         tbody {
             background-color: @white;
             tr:nth-child(odd) {
-                background-color: #edecec;
+                background-color: @tan;
             }
             tr:hover {
-                background-color: #d9d9d9;
+                background-color: @light-grey;
             }
         }
 
@@ -116,7 +116,7 @@ table {
     &.zebra {
         tbody {
             tr:nth-child(odd) {
-                background-color: #edecec;
+                background-color: @tan;
             }
         }
     }
@@ -125,9 +125,9 @@ table {
     &.data-table {
         tbody {
             tr.truncated-frame {
-                background-color: #FFC266;
+                background-color: @jsonview-prop;
                 a {
-                    color: #333;
+                    color: @dark-grey;
                 }
             }
         }

@@ -2,8 +2,8 @@
 
 .status-message {
     position: relative;
-    background-color: #dae2e6;
-    border-bottom: 1px solid #c0c0c0;
+    background-color: @light-grey;
+    border-bottom: 1px solid @grey;
     color: @white;
     font-size: 1.1em;
     padding: 0 20px;
@@ -20,24 +20,24 @@
     }
 
     &.severity-info {
-        background-color: #31b0d5;
-        border-color: #269abc;
+        background-color: @primary-light;
+        border-color: @primary-light;
 
         &:before {
             content: url("@{image-path}/3rdparty/silk/information.png");
         }
     }
     &.severity-warning {
-        background-color: #f0ad4e;
-        border-color: #eea236;
+        background-color: @orange;
+        border-color: @orange;
 
         &:before {
             content: url("@{image-path}/3rdparty/silk/error.png");
         }
     }
     &.severity-critical {
-        background-color: #d9534f;
-        border-color: #d43f3a;
+        background-color: @red;
+        border-color: @red;
 
         &:before {
             content: url("@{image-path}/3rdparty/silk/exclamation.png");

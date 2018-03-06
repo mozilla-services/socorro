@@ -13,17 +13,17 @@ nav {
             list-style: none;
         }
         a {
-            color: #254b5f;
+            color: @primary-dark;
             padding: .3em .7em;
             text-decoration: none;
             white-space: nowrap;
             .rounded-corners(.4em);
 
             &:hover {
-                background-color: #DFECF2;
+                background-color: @off-white;
             }
             &.selected {
-                background-color: #2e5d74;
+                background-color: @primary;
                 color: @white;
             }
         }
@@ -35,22 +35,21 @@ nav {
     font-size: 12px;
     background: transparent repeat-x left top;
     position: relative;
-    background-color: #406a80;
-    background-image: url("@{image-path}/2.0/product-bg.png");
-    color: #edf1f3;
+    background-color: @primary;
+    color: @off-white;
     padding: 0 20px;
     padding-left: 124px;
-    border-bottom: 1px solid #c0c0c0;
+    border-bottom: 1px solid @grey;
     line-height: 32px;
     a, a:link, a:hover, a:active, a:visited {
-        color: #edf1f3;
+        color: @off-white;
     }
     .filter {
         display: inline;
         li {
             display: inline;
             padding: .25em 1em;
-            border-left: 1px solid #7393A3;
+            border-left: 1px solid @primary-medium;
         }
         li.version_select {
             padding-left:0;
@@ -61,7 +60,7 @@ nav {
             border-left: 0;
         }
         optgroup {
-            border-top: 1px solid #ccc;
+            border-top: 1px solid @light-grey;
             padding: .5em 0;
         }
         optgroup:first-child {
@@ -77,5 +76,6 @@ nav {
     }
     .search {
         display: inline;
+        float: right;
     }
 }

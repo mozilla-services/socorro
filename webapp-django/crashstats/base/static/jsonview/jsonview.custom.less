@@ -2,23 +2,23 @@
 
 .jsonview {
     background-color: @black;
-    color: #f9f9f9;
+    color: @white;
     font-family: monospace;
     font-size: 1.1em;
     white-space: pre-wrap;
 
     .prop {
-        color: #C5AF75;
+        color: @jsonview-prop;
     }
     .num {
-        color: #89BDFF;
+        color: @primary-light;
     }
     .null,
     .bool {
-        color: #E28964;
+        color: @jsonview-bool;
     }
     .string {
-        color: #65B042;
+        color: @green;
         white-space: pre-wrap;
     }
     .string.multiline {

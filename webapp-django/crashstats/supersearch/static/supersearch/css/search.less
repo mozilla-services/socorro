@@ -1,7 +1,7 @@
 @import "@{root-path}/base/variables.less";
 
 #search-form {
-    background: #dae2e5;
+    background: @light-grey;
     margin: -1em -2em;
     margin-bottom: 20px;
     padding: 1em 112px;
@@ -77,7 +77,7 @@
             overflow: hidden;
             position: relative;
             background-color: @white;
-            background-image: linear-gradient(top, #eee 1%, @white 15%);
+            background-image: linear-gradient(top, @white 1%, @white 15%);
 
             input {
                 border: none;
@@ -85,12 +85,12 @@
                 flex-grow: 10;
                 padding: 6px 5px;
                 line-height: 16px;
-                color: #333;
+                color: @dark-grey;
             }
 
             a {
-                background-color: #eee;
-                border-left: 1px solid #aaa;
+                background-color: @tan;
+                border-left: 1px solid @grey;
                 padding: 6px 5px 0 5px;
 
                 .icon-calendar::before {
@@ -108,7 +108,7 @@
         width: 49.33%;
 
         a {
-            color: #666;
+            color: @dark-grey;
 
             &.selected {
                 text-decoration: none;
@@ -146,7 +146,7 @@
 
     #advanced-search {
         fieldset fieldset {
-            border-top: 1px solid #ccc;
+            border-top: 1px solid @light-grey;
         }
     }
 
@@ -155,10 +155,10 @@
             cursor: pointer;
 
             span {
-                color: #555;
+                color: @dark-grey;
                 text-transform: uppercase;
                 font-size: 0.7em;
-                font-weigth: bold;
+                font-weight: bold;
             }
             .hide {
                 display: none;
@@ -278,8 +278,8 @@
     }
 
     code {
-        background-color: #f5f5f5;
-        border: 1px solid #ccc;
+        background-color: @off-white;
+        border: 1px solid @light-grey;
         border-radius: 3px;
         margin: 0 2px;
         padding: 1px 5px;

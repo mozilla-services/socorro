@@ -1,10 +1,10 @@
 @import "@{root-path}/base/variables.less";
 
 .panel {
-    color: #303030;
+    color: @black;
     .shadow(0px, 0px, 2px, -1px, #222);
     .title {
-        background: #f0f0f0 repeat-x left top;
+        background: @tan repeat-x left top;
         font-family: Trebuchet MS, Helvetica, sans-serif;
         font-size: 12px;
         line-height: 32px;
@@ -16,19 +16,22 @@
             font-size: 16px;
             font-weight: bold;
         }
+
         .choices {
-            border-left-color: #c0c0c0;
+            border-left-color: @grey;
             vertical-align: 1px;
         }
         a {
-            color: #303030;
-        }
-        a:hover {
-            background: #d4dce1;
-        }
-        a.selected {
-            background-color: #99b2bf;
-            color: @white;
+            color: @black;
+            &:hover,
+            &:focus {
+                background: @light-grey;
+            }
+
+            &.selected {
+                background-color: @primary-medium;
+                color: @white;
+            }
         }
     }
     .body {
@@ -39,7 +42,7 @@
     .table {
         font-size: 10px;
         border-collapse: collapse;
-        border: 1px solid #c0c0c0;
+        border: 1px solid @grey;
         border-top: 0;
         width: 100%;
         td,
@@ -54,17 +57,17 @@
             text-align: center;
         }
         .trend-up {
-            color: #ff0015;
+            color: @red;
         }
         .trend-down {
-            color: #009019;
+            color: @green;
         }
         thead {
             tr {
-                background: #f0f0f0;
+                background: @tan;
             }
             th {
-                border: 1px solid #c0c0c0;
+                border: 1px solid @grey;
                 border-top: 0;
                 font-weight: bold;
             }
@@ -84,15 +87,15 @@
                 }
             }
             tr:nth-child(even) {
-                background: #F6FAFC;
+                background: @white;
             }
             tr:hover {
-                background: #e4eff6;
+                background: @off-white;
             }
             td,
             th {
-                border-left: 1px dotted #e0e0e0;
-                border-top: 1px solid #e0e0e0;
+                border-left: 1px dotted @off-white;
+                border-top: 1px solid @off-white;
             }
             tr:first-child {
                 td,
@@ -102,7 +105,7 @@
             }
             td.separated,
             th.separated {
-                border-left: 1px solid #c0c0c0;
+                border-left: 1px solid @grey;
             }
             th {
                 font-weight: bold;
@@ -115,10 +118,10 @@
             }
         }
         td.count-high {
-            color: #FF0015;
+            color: @red;
         }
         td.count-none {
-            color: #999;
+            color: @dark-grey;
         }
     }
     .table.expand-counts {

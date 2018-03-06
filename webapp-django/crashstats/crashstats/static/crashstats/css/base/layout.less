@@ -1,8 +1,8 @@
 @import "@{root-path}/base/variables.less";
 
 html {
-    background: #f2f6f9;
-    color: #333;
+    background: @off-white;
+    color: @dark-grey;
     font-family: @base-font;
     font-size: @base-font-size;
     line-height: @base-line-height;
@@ -34,8 +34,7 @@ body {
     position: relative;
     min-height: 64px;
     height: 64px;
-    background-color: #0a2533;
-    background-image: url("@{image-path}/2.0/header-bg.png");
+    background-color: @primary-dark;
     h1 {
         position: absolute;
         display: block;
@@ -83,15 +82,15 @@ body {
             top: 20px;
             width: 212px;
             padding: 3px 4px 4px 28px;
-            border: 1px solid #a0a0a0;
+            border: 1px solid @grey;
             border-width: 1px 0 0 1px;
             font-family: Arial, Helvetica, sans-serif;
             font-size: 12px;
-            color: #303030;
+            color: @dark-grey;
             .rounded-corners(.5em);
         }
         input:-moz-placeholder {
-            color: #808080;
+            color: @light-grey;
         }
     }
 }
@@ -111,7 +110,7 @@ body {
     .col {
         float: left;
         width: 33%;
-        border-left: 1px dotted #C0C0C0;
+        border-left: 1px dotted @light-grey;
         .col-inner {
             padding: 0 20px;
         }

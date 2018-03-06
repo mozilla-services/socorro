@@ -29,13 +29,13 @@ a {
     &:link,
     &:hover,
     &:active {
-        color: #0033FF;
+        color: @blue;
         text-decoration: underline;
     }
 
     .ui-widget-content &:visited, /* Override jQuery UI's behavior */
     &:visited {
-        color: #800080;
+        color: @purple;
     }
 }
 
@@ -111,10 +111,10 @@ span.push_right {
 
 .list {
     tr:nth-child(2n+1) {
-        background-color: #ddd;
+        background-color: @off-white;
     }
     tr:nth-child(2n) {
-        background-color: #eee;
+        background-color: @white;
     }
     tr:hover {
         background-color: @white;
@@ -124,13 +124,13 @@ span.push_right {
             padding:.5em;
             text-align:left;
             label {
-                border-bottom: 1px dashed #999;
+                border-bottom: 1px dashed @grey;
                 font-weight: normal;
             }
         }
     }
     th {
-        background: #ddd;
+        background: @off-white;
         padding: 2px;
         border: 1px solid @black;
         font-weight: bold;
@@ -157,7 +157,7 @@ span.push_right {
         height: 16px;
         font-weight: 900;
         .type {
-            color: #303030;
+            color: @dark-grey;
         }
     }
     .pair {
@@ -181,17 +181,17 @@ td.in2 {
     color: @white;
 }
 .trend.up {
-    background: url("../../img/up_arrow.png") no-repeat scroll right 10px #DD0000;
+    background: url("@{image-path}/up_arrow.png") no-repeat scroll right 10px @red;
 }
 .trend.down {
-    background: url("../../img/down_arrow.png") no-repeat scroll right 10px #008800;
+    background: url("@{image-path}/down_arrow.png") no-repeat scroll right 10px @green;
 }
 
 .complete {
     position: absolute;
     right: 0px;
     background-color: @white;
-    border: solid 1px #AAA;
+    border: solid 1px @grey;
     margin: 1em;
 }
 
@@ -249,5 +249,5 @@ div.each-sparkline {
 
 /* jQueryUI theme overrides */
 .ui-tabs-panel {
-    border: 1px solid #e0e0e0;
+    border: 1px solid @off-white;
 }

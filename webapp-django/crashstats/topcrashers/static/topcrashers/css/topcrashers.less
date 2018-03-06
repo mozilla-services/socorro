@@ -9,7 +9,7 @@
     }
     table {
         margin: .3em 0 .5em;
-        border: 1px solid #ccc;
+        border: 1px solid @light-grey;
         width: 95%;
     }
     th {
@@ -46,8 +46,8 @@
     a:link,
     a:visited {
         display: inline-block;
-        background-color: #e0e0e0;
-        color: #333;
+        background-color: @light-grey;
+        color: @dark-grey;
         margin-right: .2em;
         padding: .3em;
         min-width: 65px;
@@ -56,10 +56,11 @@
         border-radius: 6px;
     }
     a:hover {
-        background-color: #B6D3E2;
+        background-color: @primary;
+        color: @white;
     }
     a.selected {
-        background-color: #2e5d74;
+        background-color: @primary;
         color: @white;
     }
     li {
@@ -75,6 +76,7 @@
         }
     }
 }
+
 
 #buildid-graph {
     width: 600px;
@@ -106,7 +108,7 @@
     }
 }
 .signature-popup {
-    background-color: #EEE;
+    background-color: @white;
     border: solid 1px #AAA;
     width: auto;
 }
@@ -131,14 +133,14 @@
     .rounded-corners(6px, 0, 0, 6px);
 }
 .moving-up {
-    background: rgba(211,52,25, 0.9) url("../../img/up_arrow.png") 9px 4px no-repeat;
+    background: @red url("../../img/up_arrow.png") 9px 4px no-repeat;
 }
 .moving-down {
-    background: rgba(85, 183, 52, 0.9) url("../../img/down_arrow.png") 9px 4px no-repeat;
+    background: @green url("../../img/down_arrow.png") 9px 4px no-repeat;
 }
 
 .label {
-    background-color: #ff9c9c;
+    background-color: @pink;
     border-radius: 4px;
     padding: 2px 4px;
 }
