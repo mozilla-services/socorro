@@ -49,6 +49,7 @@ pika==0.11.2 \
     --hash=sha256:15f485eb68ec56b5a2673c01d518d16f7c371809ca42c72a2da42d4d8190fa4f \
     --hash=sha256:ded1cf12810f909099a3a698cc5adf495b73fd2da1d8f669f8b267664653122d
 psycopg2==2.7.4 \
+    --no-binary psycopg2\
     --hash=sha256:aeaba399254ca79c299d9fe6aa811d3c3eac61458dee10270de7f4e71c624998 \
     --hash=sha256:1d90379d01d0dc50ae9b40c863933d87ff82d51dd7d52cea5d1cb7019afd72cd \
     --hash=sha256:36030ca7f4b4519ee4f52a74edc4ec73c75abfb6ea1d80ac7480953d1c0aa3c3 \
