@@ -99,43 +99,6 @@ DEFAULT_RULES = [
 ]
 
 
-default_rule_set = [
-    # rules to change the internals of the raw crash
-    ProductRewrite,
-    ESRVersionRewrite,
-    PluginContentURL,
-    PluginUserComment,
-    # rules to transform a raw crash into a processed crash
-    IdentifierRule,
-    BreakpadStackwalkerRule2015,
-    ProductRule,
-    UserDataRule,
-    EnvironmentRule,
-    PluginRule,
-    AddonsRule,
-    DatesAndTimesRule,
-    OutOfMemoryBinaryRule,
-    JavaProcessRule,
-    Winsock_LSPRule,
-    # post processing of the processed crash
-    CrashingThreadRule,
-    CPUInfoRule,
-    OSInfoRule,
-    BetaVersionRule,
-    ExploitablityRule,
-    AuroraVersionFixitRule,
-    FlashVersionRule,
-    OSPrettyVersionRule,
-    TopMostFilesRule,
-    ThemePrettyNameRule,
-    MemoryReportExtraction,
-    # a set of classifiers to help with jit crashes
-    JitCrashCategorizeRule,
-    # generate signature now that we've done all the processing it depends on
-    SignatureGeneratorRule,
-]
-
-
 class Processor2015(RequiredConfig):
     """this class is a generalization of the Processor into a rule processing
     framework. This class is suitable for use in the 'processor_app'
