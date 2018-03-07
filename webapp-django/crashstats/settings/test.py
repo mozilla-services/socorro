@@ -56,12 +56,18 @@ SYMBOLS_BUCKET_DEFAULT_LOCATION = 'us-west-2'
 AWS_HOST = ''
 
 
-# So it never ever actually uses a real ElasticSearch server
+# Test-specific Socorro configuration
 SOCORRO_IMPLEMENTATIONS_CONFIG = {
     'resource': {
         'elasticsearch': {
             'elasticsearch_urls': ['http://example:9123'],
         },
+        'boto': {
+            'bucket_name': 'crashstats-test'
+        }
+    },
+    'telemetrydata': {
+        'bucket_name': 'telemetry-test'
     }
 }
 

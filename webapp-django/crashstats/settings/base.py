@@ -614,6 +614,9 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
                 'resource.boto.calling_format', 'boto.s3.connection.OrdinaryCallingFormat'
             ),
         }
+    },
+    'telemetrydata': {
+        'bucket_name': config('TELEMETRY_BUCKET_NAME', None),
     }
 }
 

@@ -380,8 +380,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
-        """Overriding this method so we can control the "name of thing"
-        prefix used to upload to S3."""
+        """Overriding this to change "name of thing" to crash_report"""
         crash_id = processed_crash['uuid']
         processed_crash_as_string = boto_connection._convert_mapping_to_string(
             processed_crash
@@ -391,3 +390,17 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
             "crash_report",
             processed_crash_as_string
         )
+
+    @staticmethod
+    def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):
+        """Overriding this to change "name of thing" to crash_report"""
+        try:
+            processed_crash_as_string = boto_connection.fetch(crash_id, 'crash_report')
+            return json.loads(
+                processed_crash_as_string,
+                object_hook=json_object_hook,
+            )
+        except boto_connection.ResponseError as x:
+            raise CrashIDNotFound(
+                '%s not found: %s' % (crash_id, x)
+            )

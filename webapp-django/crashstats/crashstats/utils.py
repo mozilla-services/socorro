@@ -347,7 +347,7 @@ def ratelimit_rate(group, request):
     Otherwise return a number according to
     https://django-ratelimit.readthedocs.org/en/latest/rates.html#rates-chapter
     """
-    if group == 'crashstats.api.views.model_wrapper':
+    if group in ('crashstats.api.views.model_wrapper', 'crashstats.api.views.crash_verify'):
         if request.user.is_active:
             return settings.API_RATE_LIMIT_AUTHENTICATED
         else:
