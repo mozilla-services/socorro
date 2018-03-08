@@ -30,19 +30,27 @@ table {
         }
         tbody {
             background-color: @white;
-            tr:nth-child(odd) {
-                background-color: @tan;
-            }
-            tr:hover {
-                background-color: @light-grey;
-            }
-            tr.missingsymbols {
-                &,
-                &:hover,
-                & td {
-                    background-color: @red;
-                    color: @white;
-                    border-top: 2px solid @white;
+            tr {
+                &:nth-child(odd) {
+                    background-color: @tan;
+                }
+                &:hover {
+                    background-color: @light-grey;
+                }
+                &.truncated-frame {
+                    background-color: @jsonview-prop;
+                    a {
+                        color: @dark-grey;
+                    }
+                }
+                &.missingsymbols {
+                    &,
+                    &:hover,
+                    & td {
+                        background-color: @red;
+                        color: @white;
+                        border-top: 2px solid @white;
+                    }
                 }
             }
         }
@@ -117,18 +125,6 @@ table {
         tbody {
             tr:nth-child(odd) {
                 background-color: @tan;
-            }
-        }
-    }
-
-    /* truncated frames */
-    &.data-table {
-        tbody {
-            tr.truncated-frame {
-                background-color: @jsonview-prop;
-                a {
-                    color: @dark-grey;
-                }
             }
         }
     }
