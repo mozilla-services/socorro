@@ -6,7 +6,6 @@ import json
 from os.path import join
 
 import boto.exception
-from configman import ConfigurationManager, environment
 import mock
 import pytest
 
@@ -29,6 +28,7 @@ from socorro.external.crashstorage_base import (
     Redactor,
 )
 from socorro.lib.util import DotDict
+from socorro.unittest.external.boto import get_config
 
 
 a_raw_crash = {
@@ -53,47 +53,27 @@ class BaseTestCase(object):
     def setup_mocked_s3_storage(
         self,
         tmpdir=None,
-        executor=TransactionExecutor,
-        executor_for_gets=TransactionExecutor,
-        keybuilder_class=KeyBuilderBase,
-        storage_class='BotoS3CrashStorage',
-        bucket_name='mozilla-support-reason',
-        host='',
-        port=0,
+        storage_class=BotoS3CrashStorage,
+        bucket_name='crash_storage',
+        **extra
     ):
-        config = DotDict({
-            'source': {
-                'dump_field': 'dump'
-            },
-            'transaction_executor_class': executor,
-            'transaction_executor_class_for_get': executor_for_gets,
+        values_source={
             'resource_class': S3ConnectionContext,
-            'keybuilder_class': keybuilder_class,
-            'backoff_delays': [0, 0, 0],
-            'redactor_class': Redactor,
-            'forbidden_keys': Redactor.required_config.forbidden_keys.default,
-            'logger': mock.Mock(),
-            'host': host,
-            'port': port,
-            'access_key': 'this is the access key',
-            'secret_access_key': 'secrets',
-            'dump_file_suffix': '.dump',
             'bucket_name': bucket_name,
             'prefix': 'dev',
             'calling_format': mock.Mock(),
-            'json_object_hook': DotDict,
-        })
+        }
+        values_source.update(extra)
+
+        config = get_config(
+            cls=storage_class,
+            values_source=values_source
+        )
         if tmpdir is not None:
             config.temporary_file_system_storage_path = str(tmpdir)
 
-        if isinstance(storage_class, basestring):
-            if storage_class == 'BotoS3CrashStorage':
-                config.bucket_name = 'crash_storage'
-                s3 = BotoS3CrashStorage(config)
-            elif storage_class == 'SupportReasonAPIStorage':
-                s3 = SupportReasonAPIStorage(config)
-        else:
-            s3 = storage_class(config)
+        s3 = storage_class(config)
+
         s3_conn = s3.connection_source
         s3_conn._connect_to_endpoint = mock.Mock()
         s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
@@ -191,9 +171,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
@@ -201,12 +179,8 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert bucket_mock.new_key.call_count == 2
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call(
-                    'dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
-                ),
-                mock.call(
-                    'dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'
-                ),
+                mock.call('dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'),
             ],
             any_order=True,
         )
@@ -215,10 +189,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert storage_key_mock.set_contents_from_string.call_count == 2
         storage_key_mock.set_contents_from_string.assert_has_calls(
             [
-                mock.call(
-                    '{"submitted_timestamp": '
-                    '"2013-01-09T22:21:18.646733+00:00"}'
-                ),
+                mock.call('{"submitted_timestamp": ''"2013-01-09T22:21:18.646733+00:00"}'),
                 mock.call('[]'),
             ],
             any_order=True,
@@ -243,9 +214,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
@@ -253,18 +222,10 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert bucket_mock.new_key.call_count == 4
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call(
-                    'dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
-                ),
-                mock.call(
-                    'dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'
-                ),
-                mock.call(
-                    'dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'
-                ),
-                mock.call(
-                    'dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'
-                ),
+                mock.call('dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'),
             ],
             any_order=True,
         )
@@ -273,10 +234,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert storage_key_mock.set_contents_from_string.call_count == 4
         storage_key_mock.set_contents_from_string.assert_has_calls(
             [
-                mock.call(
-                    '{"submitted_timestamp": '
-                    '"2013-01-09T22:21:18.646733+00:00"}'
-                ),
+                mock.call('{"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"}'),
                 mock.call('["flash_dump", "dump"]'),
                 mock.call('fake dump'),
                 mock.call('fake flash dump'),
@@ -288,9 +246,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         boto_s3_store.connection_source.ResponseError = ABadDeal
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         get_bucket.side_effect = boto_s3_store.connection_source.ResponseError
 
         # the tested call
@@ -309,15 +265,11 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
-        create_bucket = (
-            boto_s3_store.connection_source._mocked_connection.create_bucket
-        )
+        create_bucket = boto_s3_store.connection_source._mocked_connection.create_bucket
         assert create_bucket.call_count == 1
 
         create_bucket.assert_called_with('crash_storage')
@@ -326,18 +278,10 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert bucket_mock.new_key.call_count == 4
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call(
-                    'dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
-                ),
-                mock.call(
-                    'dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'
-                ),
-                mock.call(
-                    'dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'
-                ),
-                mock.call(
-                    'dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'
-                ),
+                mock.call('dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'),
             ],
             any_order=True,
         )
@@ -347,10 +291,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
 
         storage_key_mock.set_contents_from_string.assert_has_calls(
             [
-                mock.call(
-                    '{"submitted_timestamp": '
-                    '"2013-01-09T22:21:18.646733+00:00"}'
-                ),
+                mock.call('{"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"}'),
                 mock.call('["flash_dump", "dump"]'),
                 mock.call('fake dump'),
                 mock.call('fake flash dump'),
@@ -375,18 +316,14 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
         bucket_mock = get_bucket.return_value
         assert bucket_mock.new_key.call_count == 1
         bucket_mock.new_key.assert_has_calls([
-            mock.call(
-                'dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'
-            ),
+            mock.call('dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'),
         ])
 
         storage_key_mock = bucket_mock.new_key.return_value
@@ -404,7 +341,8 @@ class TestBotoS3CrashStorage(BaseTestCase):
 
     def test_save_processed_support_reason(self):
         boto_s3_store = self.setup_mocked_s3_storage(
-            storage_class='SupportReasonAPIStorage'
+            storage_class=SupportReasonAPIStorage,
+            bucket_name='mozilla-support-reason'
         )
 
         # the tested call
@@ -425,18 +363,14 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('mozilla-support-reason')
 
         bucket_mock = get_bucket.return_value
         assert bucket_mock.new_key.call_count == 1
         bucket_mock.new_key.assert_has_calls([
-            mock.call(
-                'dev/v1/support_reason/3c61f81e-ea2b-4d24-a3ce-6bb9d2140915'
-            ),
+            mock.call('dev/v1/support_reason/3c61f81e-ea2b-4d24-a3ce-6bb9d2140915'),
         ])
 
         storage_key_mock = bucket_mock.new_key.return_value
@@ -454,7 +388,8 @@ class TestBotoS3CrashStorage(BaseTestCase):
 
     def test_save_processed_support_reason_bad_classification(self):
         boto_s3_store = self.setup_mocked_s3_storage(
-            storage_class='SupportReasonAPIStorage'
+            storage_class=SupportReasonAPIStorage,
+            bucket_name='mozilla-support-reason'
         )
 
         # the tested call
@@ -473,9 +408,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
 
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 0
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 0
 
         bucket_mock = get_bucket.return_value
@@ -508,18 +441,14 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
         bucket_mock = get_bucket.return_value
         assert bucket_mock.new_key.call_count == 1
         bucket_mock.new_key.assert_has_calls([
-            mock.call(
-                'dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'
-            ),
+            mock.call('dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'),
         ])
 
         storage_key_mock = bucket_mock.new_key.return_value
@@ -548,9 +477,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         ]
 
         # the tested call
-        result = boto_s3_store.get_raw_crash(
-            "936ce666-ff3b-4c7a-9674-367fe2120408"
-        )
+        result = boto_s3_store.get_raw_crash("936ce666-ff3b-4c7a-9674-367fe2120408")
 
         assert isinstance(result, DotDict)
 
@@ -561,9 +488,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
@@ -579,7 +504,8 @@ class TestBotoS3CrashStorage(BaseTestCase):
     def test_get_unredacted_processed_crash_with_consistency_trouble(self):
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage(
-            executor_for_gets=TransactionExecutorWithLimitedBackoff
+            backoff_delays=[0, 0, 0],
+            transaction_executor_class_for_get=TransactionExecutorWithLimitedBackoff
         )
 
         actions = [
@@ -595,13 +521,10 @@ class TestBotoS3CrashStorage(BaseTestCase):
             return action
 
         boto_s3_store.connection_source.fetch = mock.Mock()
-        boto_s3_store.connection_source.fetch \
-            .side_effect = temp_failure_fn
+        boto_s3_store.connection_source.fetch.side_effect = temp_failure_fn
 
         # the tested call
-        result = boto_s3_store.get_raw_crash(
-            "936ce666-ff3b-4c7a-9674-367fe2120408"
-        )
+        result = boto_s3_store.get_raw_crash("936ce666-ff3b-4c7a-9674-367fe2120408")
 
         # what should have happened internally
         assert boto_s3_store.connection_source.fetch.call_count == 3
@@ -616,7 +539,8 @@ class TestBotoS3CrashStorage(BaseTestCase):
     def test_get_unredacted_processed_crash_with_consistency_trouble_no_recover(self):
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage(
-            executor_for_gets=TransactionExecutorWithLimitedBackoff
+            backoff_delays=[0, 0, 0],
+            transaction_executor_class_for_get=TransactionExecutorWithLimitedBackoff
         )
 
         actions = [
@@ -632,8 +556,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
             return action
 
         boto_s3_store.connection_source.fetch = mock.Mock()
-        boto_s3_store.connection_source.fetch \
-            .side_effect = temp_failure_fn
+        boto_s3_store.connection_source.fetch.side_effect = temp_failure_fn
 
         # the tested call
         with pytest.raises(ConditionallyABadDeal):
@@ -661,9 +584,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         ]
 
         # the tested call
-        result = boto_s3_store.get_raw_dump(
-            '936ce666-ff3b-4c7a-9674-367fe2120408'
-        )
+        result = boto_s3_store.get_raw_dump('936ce666-ff3b-4c7a-9674-367fe2120408')
 
         # what should have happened internally
         assert boto_s3_store.connection_source._calling_format.call_count == 1
@@ -672,9 +593,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
@@ -717,9 +636,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
@@ -762,9 +679,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         assert boto_s3_store.connection_source._connect_to_endpoint.call_count == 1
         self.assert_s3_connection_parameters(boto_s3_store)
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         assert get_bucket.call_count == 1
         get_bucket.assert_called_with('crash_storage')
 
@@ -809,9 +724,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         assert boto_s3_store.connection_source._mocked_connection.get_bucket.call_count == 1
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         get_bucket.assert_called_with('crash_storage')
 
         mocked_get_contents_as_string.assert_has_calls(
@@ -833,9 +746,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
             mock.MagicMock(),
             mock.MagicMock(),
         ]
-        boto_s3_store.connection_source._open.return_value = mock.MagicMock(
-            side_effect=files
-        )
+        boto_s3_store.connection_source._open.return_value = mock.MagicMock(side_effect=files)
         mocked_get_contents_as_string = (
             boto_s3_store.connection_source._connect_to_endpoint.return_value
             .get_bucket.return_value.get_key.return_value
@@ -900,9 +811,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         assert boto_s3_store.connection_source._mocked_connection.get_bucket.call_count == 1
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
         get_bucket.assert_called_with('crash_storage')
 
         key_mock = (
@@ -917,7 +826,8 @@ class TestBotoS3CrashStorage(BaseTestCase):
     def test_get_undredacted_processed_with_trouble(self):
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage(
-            executor_for_gets=TransactionExecutorWithLimitedBackoff
+            backoff_delays=[0, 0, 0],
+            transaction_executor_class_for_get=TransactionExecutorWithLimitedBackoff
         )
         mocked_bucket = (
             boto_s3_store.connection_source._connect_to_endpoint.return_value
@@ -941,10 +851,7 @@ class TestBotoS3CrashStorage(BaseTestCase):
                 raise action
             return action
 
-        get_bucket = (
-            boto_s3_store.connection_source._connect_to_endpoint
-            .return_value.get_bucket
-        )
+        get_bucket = boto_s3_store.connection_source._connect_to_endpoint.return_value.get_bucket
         get_bucket.side_effect = temp_failure_fn
         # the tested call
         result = boto_s3_store.get_unredacted_processed(
@@ -999,24 +906,16 @@ class TestBotoS3CrashStorage(BaseTestCase):
 
 class TestTelemetryBotoS3CrashStorage(BaseTestCase):
     def get_s3_store(self):
-        conf = TelemetryBotoS3CrashStorage.get_required_config()
-        conf.add_option('logger', default=mock.Mock())
-
-        values_source = {
-            'resource_class': S3ConnectionContext,
-            'bucket_name': 'telemetry-crashes',
-            'calling_format': mock.Mock(),
-        }
-        cm = ConfigurationManager(
-            [conf],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='TelemetryBotoS3CrashStorage test',
-            values_source_list=[environment, values_source],
-            argv_source=[],
+        config = get_config(
+            cls=TelemetryBotoS3CrashStorage,
+            values_source={
+                'resource_class': S3ConnectionContext,
+                'bucket_name': 'telemetry-crashes',
+                'calling_format': mock.Mock(),
+            }
         )
 
-        s3 = TelemetryBotoS3CrashStorage(cm.get_config())
+        s3 = TelemetryBotoS3CrashStorage(config)
 
         s3_conn = s3.connection_source
         s3_conn._connect_to_endpoint = mock.Mock()
@@ -1054,12 +953,8 @@ class TestTelemetryBotoS3CrashStorage(BaseTestCase):
 
         assert boto_s3_store.connection_source._mocked_connection.get_bucket.call_count == 1
 
-        get_bucket = (
-            boto_s3_store.connection_source._mocked_connection.get_bucket
-        )
-        get_bucket.assert_called_with(
-            'telemetry-crashes'
-        )
+        get_bucket = boto_s3_store.connection_source._mocked_connection.get_bucket
+        get_bucket.assert_called_with('telemetry-crashes')
 
         bucket_mock = (
             boto_s3_store.connection_source._mocked_connection
@@ -1115,12 +1010,8 @@ class TestTelemetryBotoS3CrashStorage(BaseTestCase):
             },
             '0bba929f-8721-460c-dead-a43c20071027'
         )
-        mocked_connection = (
-            boto_s3_store.connection_source._connect_to_endpoint()
-        )
-        mocked_set_function = (
-            mocked_connection.get_bucket().new_key().set_contents_from_string
-        )
+        mocked_connection = boto_s3_store.connection_source._connect_to_endpoint()
+        mocked_set_function = mocked_connection.get_bucket().new_key().set_contents_from_string
         mocked_set_function.assert_called_with(
             json.dumps({
                 "uuid": "0bba929f-8721-460c-dead-a43c20071027",

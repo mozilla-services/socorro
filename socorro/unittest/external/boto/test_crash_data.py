@@ -1,42 +1,17 @@
 import json
 
-from configman import ConfigurationManager
-import mock
 from moto import mock_s3_deprecated
 import pytest
 
-from socorro.lib import MissingArgumentError, BadArgumentError
 from socorro.external.boto.crash_data import SimplifiedCrashData
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.lib import MissingArgumentError, BadArgumentError
+from socorro.unittest.external.boto import get_config
 
 
 class TestSimplifiedCrashData:
-    def _get_config(self, sources, extra_values=None):
-        self.mock_logging = mock.Mock()
-
-        config_definitions = []
-        for source in sources:
-            conf = source.get_required_config()
-            conf.add_option('logger', default=self.mock_logging)
-            config_definitions.append(conf)
-
-        values_source = {'logger': self.mock_logging}
-
-        config_manager = ConfigurationManager(
-            config_definitions,
-            app_name='testapp',
-            app_version='1.0',
-            app_description='',
-            values_source_list=[values_source],
-            argv_source=[],
-        )
-
-        return config_manager.get_config()
-
     def get_s3_store(self):
-        return SimplifiedCrashData(
-            config=self._get_config([SimplifiedCrashData])
-        )
+        return SimplifiedCrashData(config=get_config(SimplifiedCrashData))
 
     @mock_s3_deprecated
     def test_get_processed(self, boto_helper):
