@@ -16,6 +16,7 @@ class TestSimplifiedCrashData:
     @mock_s3_deprecated
     def test_get_processed(self, boto_helper):
         boto_helper.put_object(
+            bucket_name='crashstats',
             key='/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027',
             value=json.dumps({'foo': 'bar'})
         )
@@ -42,6 +43,7 @@ class TestSimplifiedCrashData:
     @mock_s3_deprecated
     def test_get_raw_dump(self, boto_helper):
         boto_helper.put_object(
+            bucket_name='crashstats',
             key='/v1/dump/0bba929f-8721-460c-dead-a43c20071027',
             value='\xa0'
         )

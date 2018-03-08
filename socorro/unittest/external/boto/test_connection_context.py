@@ -11,7 +11,6 @@ import pytest
 from socorro.external.boto.connection_context import (
     DatePrefixKeyBuilder,
     SimpleDatePrefixKeyBuilder,
-    KeyBuilderBase,
     KeyNotFound,
     S3ConnectionContext,
     RegionalS3ConnectionContext,
