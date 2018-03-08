@@ -496,8 +496,8 @@ class StorageNamespaceList(collections.Sequence):
     def __getitem__(self, key):
         return self.storage_namespaces[key]
 
-    def to_str(self):
-        return ','.join(self.storage_namespaces)
+    def __repr__(self):
+        return 'StorageNamespaceList(%s)' % repr(self.storage_namespaces)
 
     @classmethod
     def converter(cls, storage_namespace_list_str):
