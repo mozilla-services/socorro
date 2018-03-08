@@ -4,10 +4,9 @@
 
 import json
 from os.path import join
-import shutil
-import tempfile
 
 import boto.exception
+from configman import ConfigurationManager, environment
 import mock
 import pytest
 
@@ -29,16 +28,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
     Redactor,
 )
-from socorro.unittest.external.es.base import ElasticsearchTestCase
-from socorro.unittest.testbase import TestCase
 from socorro.lib.util import DotDict
-
-
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 a_raw_crash = {
@@ -59,20 +49,10 @@ S3ConnectionContext.operational_exceptions = (ABadDeal, )
 S3ConnectionContext.conditional_exceptions = (ConditionallyABadDeal, )
 
 
-class BaseTestCase(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(BaseTestCase, cls).setUpClass()
-        cls.TEMPDIR = tempfile.mkdtemp()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(BaseTestCase, cls).tearDownClass()
-        shutil.rmtree(cls.TEMPDIR)
-
+class BaseTestCase(object):
     def setup_mocked_s3_storage(
         self,
+        tmpdir=None,
         executor=TransactionExecutor,
         executor_for_gets=TransactionExecutor,
         keybuilder_class=KeyBuilderBase,
@@ -97,13 +77,14 @@ class BaseTestCase(TestCase):
             'port': port,
             'access_key': 'this is the access key',
             'secret_access_key': 'secrets',
-            'temporary_file_system_storage_path': self.TEMPDIR,
             'dump_file_suffix': '.dump',
             'bucket_name': bucket_name,
             'prefix': 'dev',
             'calling_format': mock.Mock(),
             'json_object_hook': DotDict,
         })
+        if tmpdir is not None:
+            config.temporary_file_system_storage_path = str(tmpdir)
 
         if isinstance(storage_class, basestring):
             if storage_class == 'BotoS3CrashStorage':
@@ -137,7 +118,7 @@ class BaseTestCase(TestCase):
         _connect_to_endpoint.assert_called_with(**kwargs)
 
 
-class TestCase(BaseTestCase):
+class TestBotoS3CrashStorage(BaseTestCase):
 
     def _fake_processed_crash(self):
         d = DotDict()
@@ -632,7 +613,7 @@ class TestCase(BaseTestCase):
 
         assert result == self._fake_unredacted_processed_crash()
 
-    def test_get_unredacted_processed_crash_with_consistency_trouble_no_recover(self):  # NOQA
+    def test_get_unredacted_processed_crash_with_consistency_trouble_no_recover(self):
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage(
             executor_for_gets=TransactionExecutorWithLimitedBackoff
@@ -844,9 +825,9 @@ class TestCase(BaseTestCase):
         }
         assert result == expected
 
-    def test_get_raw_dumps_as_files(self):
+    def test_get_raw_dumps_as_files(self, tmpdir):
         # setup some internal behaviors and fake outs
-        boto_s3_store = self.setup_mocked_s3_storage()
+        boto_s3_store = self.setup_mocked_s3_storage(tmpdir=tmpdir)
         files = [
             mock.MagicMock(),
             mock.MagicMock(),
@@ -877,17 +858,17 @@ class TestCase(BaseTestCase):
         # we just need to be concerned about the file writing worked
         expected = {
             'flash_dump': join(
-                self.TEMPDIR,
+                str(tmpdir),
                 '936ce666-ff3b-4c7a-9674-367fe2120408.flash_dump'
                 '.TEMPORARY.dump'
             ),
             'city_dump': join(
-                self.TEMPDIR,
+                str(tmpdir),
                 '936ce666-ff3b-4c7a-9674-367fe2120408.city_dump'
                 '.TEMPORARY.dump'
             ),
             'upload_file_minidump': join(
-                self.TEMPDIR,
+                str(tmpdir),
                 '936ce666-ff3b-4c7a-9674-367fe2120408'
                 '.upload_file_minidump.TEMPORARY.dump'
             )
@@ -1016,34 +997,27 @@ class TestCase(BaseTestCase):
             boto_s3_store.get_raw_crash('0bba929f-dead-dead-dead-a43c20071027')
 
 
-class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
+class TestTelemetryBotoS3CrashStorage(BaseTestCase):
+    def get_s3_store(self):
+        conf = TelemetryBotoS3CrashStorage.get_required_config()
+        conf.add_option('logger', default=mock.Mock())
 
-    def get_s3_store(
-        self,
-        storage_class=TelemetryBotoS3CrashStorage,
-        bucket_name='telemetry-crashes',
-    ):
-        s3 = TelemetryBotoS3CrashStorage(
-            config=self.get_tuned_config(
-                TelemetryBotoS3CrashStorage,
-                extra_values={
-                    'transaction_executor_class': TransactionExecutor,
-                    'transaction_executor_class_for_get': TransactionExecutor,
-                    'resource_class': S3ConnectionContext,
-                    'redactor_class': Redactor,
-                    'forbidden_keys': (
-                        Redactor.required_config.forbidden_keys.default
-                    ),
-                    'logger': mock.Mock(),
-                    'access_key': 'this is the access key',
-                    'secret_access_key': 'secrets',
-                    'temporary_file_system_storage_path': self.TEMPDIR,
-                    'bucket_name': bucket_name,
-                    'prefix': 'dev',
-                    'calling_format': mock.Mock()
-                }
-            )
+        values_source = {
+            'resource_class': S3ConnectionContext,
+            'bucket_name': 'telemetry-crashes',
+            'calling_format': mock.Mock(),
+        }
+        cm = ConfigurationManager(
+            [conf],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='TelemetryBotoS3CrashStorage test',
+            values_source_list=[environment, values_source],
+            argv_source=[],
         )
+
+        s3 = TelemetryBotoS3CrashStorage(cm.get_config())
+
         s3_conn = s3.connection_source
         s3_conn._connect_to_endpoint = mock.Mock()
         s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
@@ -1095,8 +1069,7 @@ class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    'dev/v1/crash_report/20071027/0bba929f-8721-460c-dead-'
-                    'a43c20071027'
+                    '/v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027'
                 ),
             ],
         )

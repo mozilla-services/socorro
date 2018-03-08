@@ -8,7 +8,6 @@ import json
 import mock
 import pytest
 
-from socorro.lib.util import DotDict
 from socorro.external.boto.connection_context import (
     DatePrefixKeyBuilder,
     SimpleDatePrefixKeyBuilder,
@@ -18,10 +17,7 @@ from socorro.external.boto.connection_context import (
     RegionalS3ConnectionContext,
     HostPortS3ConnectionContext,
 )
-from socorro.database.transaction_executor import (
-    TransactionExecutor,
-)
-import socorro.unittest.testbase
+from socorro.lib.util import DotDict
 
 
 a_raw_crash = {
@@ -53,22 +49,15 @@ a_thing = {
 thing_as_str = json.dumps(a_thing)
 
 
-class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
+class TestConnectionContext(object):
     def setup_mocked_s3_storage(
         self,
-        executor=TransactionExecutor,
-        executor_for_gets=TransactionExecutor,
-        storage_class='BotoS3CrashStorage',
-        host='',
-        port=0,
         resource_class=S3ConnectionContext,
         **extra
     ):
         config = DotDict({
             'resource_class': resource_class,
             'logger': mock.Mock(),
-            'host': host,
-            'port': port,
             'access_key': 'this is the access key',
             'secret_access_key': 'secrets',
             'bucket_name': 'silliness',
@@ -296,24 +285,14 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         )
 
 
-class MultiplePathsBase(socorro.unittest.testbase.TestCase):
+class MultiplePathsBase(object):
     """Sets up mocked s3 storage using DatePrefixKeyBuilder"""
-    def setup_mocked_s3_storage(
-        self,
-        executor=TransactionExecutor,
-        executor_for_gets=TransactionExecutor,
-        storage_class='BotoS3CrashStorage',
-        host='',
-        port=0,
-        resource_class=S3ConnectionContext,
-        keybuilder_class=DatePrefixKeyBuilder,
-        **extra
-    ):
+    def setup_mocked_s3_storage(self, keybuilder_class=DatePrefixKeyBuilder):
         config = DotDict({
-            'resource_class': resource_class,
+            'resource_class': S3ConnectionContext,
             'logger': mock.Mock(),
-            'host': host,
-            'port': port,
+            'host': '',
+            'port': 0,
             'access_key': 'this is the access key',
             'secret_access_key': 'secrets',
             'bucket_name': 'silliness',
@@ -321,8 +300,7 @@ class MultiplePathsBase(socorro.unittest.testbase.TestCase):
             'prefix': 'dev',
             'calling_format': mock.Mock()
         })
-        config.update(extra)
-        s3_conn = resource_class(config)
+        s3_conn = S3ConnectionContext(config)
         s3_conn._connect_to_endpoint = mock.Mock()
         s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
         s3_conn._calling_format.return_value = mock.Mock()
@@ -333,7 +311,7 @@ class MultiplePathsBase(socorro.unittest.testbase.TestCase):
         return s3_conn
 
 
-class DatePrefixKeyBuilderTestCase(MultiplePathsBase):
+class TestDatePrefixKeyBuilder(MultiplePathsBase):
     """Tests the DatePrefixKeyBuilder with different crash types"""
     def test_dir_builder_with_dump(self):
         connection_source = self.setup_mocked_s3_storage()
@@ -382,12 +360,11 @@ class DatePrefixKeyBuilderTestCase(MultiplePathsBase):
         assert all_keys[0] == 'dev/v1/raw_crash/fff13cf0-5671-4496-ab89-47a922xxxxxx'
 
 
-class SimpleDatePrefixKeyBuilderTestCase(MultiplePathsBase):
+class TestSimpleDatePrefixKeyBuilder(MultiplePathsBase):
     """Tests the SimpleDatePrefixKeyBuilder with different crash types"""
 
     def setup_mocked_s3_storage(self):
-        parent = super(SimpleDatePrefixKeyBuilderTestCase, self)
-        return parent.setup_mocked_s3_storage(
+        return super(TestSimpleDatePrefixKeyBuilder, self).setup_mocked_s3_storage(
             keybuilder_class=SimpleDatePrefixKeyBuilder,
         )
 
@@ -422,7 +399,7 @@ class SimpleDatePrefixKeyBuilderTestCase(MultiplePathsBase):
         assert all_keys[0] == expected
 
 
-class MultiplePathsTestCase(MultiplePathsBase):
+class TestMultiplePaths(MultiplePathsBase):
     """Tests crash storage when multiple keys are involved
 
     ``.submit()`` should always use the first key from a keybuilder.

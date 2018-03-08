@@ -1,18 +1,16 @@
 import json
 
-from boto.exception import StorageResponseError
 from configman import ConfigurationManager
 import mock
+from moto import mock_s3_deprecated
 import pytest
 
 from socorro.lib import MissingArgumentError, BadArgumentError
 from socorro.external.boto.crash_data import SimplifiedCrashData
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.unittest.testbase import TestCase
 
 
-class TestSimplifiedCrashData(TestCase):
-
+class TestSimplifiedCrashData:
     def _get_config(self, sources, extra_values=None):
         self.mock_logging = mock.Mock()
 
@@ -36,109 +34,76 @@ class TestSimplifiedCrashData(TestCase):
         return config_manager.get_config()
 
     def get_s3_store(self):
-        s3 = SimplifiedCrashData(
+        return SimplifiedCrashData(
             config=self._get_config([SimplifiedCrashData])
         )
-        s3_conn = s3.connection_source
-        s3_conn._connect_to_endpoint = mock.Mock()
-        return s3
 
-    def test_get_basic_processed(self):
+    @mock_s3_deprecated
+    def test_get_processed(self, boto_helper):
+        boto_helper.put_object(
+            key='/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027',
+            value=json.dumps({'foo': 'bar'})
+        )
+
         boto_s3_store = self.get_s3_store()
-        mocked_connection = (
-            boto_s3_store.connection_source._connect_to_endpoint()
-        )
 
-        def mocked_get_contents_as_string():
-            return json.dumps({'foo': 'bar'})
-
-        mocked_connection.get_bucket().get_key().get_contents_as_string = (
-            mocked_get_contents_as_string
-        )
         result = boto_s3_store.get(
             uuid='0bba929f-8721-460c-dead-a43c20071027',
             datatype='processed'
         )
         assert result == {'foo': 'bar'}
 
-    def test_get_not_found_processed(self):
+    @mock_s3_deprecated
+    def test_get_processed_not_found(self, boto_helper):
+        boto_helper.get_or_create_bucket('crashstats')
+
         boto_s3_store = self.get_s3_store()
-        mocked_connection = (
-            boto_s3_store.connection_source._connect_to_endpoint()
-        )
-
-        def mocked_get_key(key):
-            assert '/processed_crash/' in key
-            assert '0bba929f-8721-460c-dead-a43c20071027' in key
-            raise StorageResponseError(404, 'not found')
-
-        mocked_connection.get_bucket().get_key = (
-            mocked_get_key
-        )
         with pytest.raises(CrashIDNotFound):
             boto_s3_store.get(
                 uuid='0bba929f-8721-460c-dead-a43c20071027',
                 datatype='processed'
             )
 
-    def test_get_basic_raw_dump(self):
+    @mock_s3_deprecated
+    def test_get_raw_dump(self, boto_helper):
+        boto_helper.put_object(
+            key='/v1/dump/0bba929f-8721-460c-dead-a43c20071027',
+            value='\xa0'
+        )
+
         boto_s3_store = self.get_s3_store()
-        mocked_connection = (
-            boto_s3_store.connection_source._connect_to_endpoint()
-        )
 
-        def mocked_get_contents_as_string():
-            return '\xa0'
-
-        mocked_connection.get_bucket().get_key().get_contents_as_string = (
-            mocked_get_contents_as_string
-        )
         result = boto_s3_store.get(
             uuid='0bba929f-8721-460c-dead-a43c20071027',
             datatype='raw',
         )
         assert result == '\xa0'
 
-    def test_get_not_found_raw_dump(self):
+    @mock_s3_deprecated
+    def test_get_raw_dump_not_found(self, boto_helper):
+        boto_helper.get_or_create_bucket('crashstats')
+
         boto_s3_store = self.get_s3_store()
-        mocked_connection = (
-            boto_s3_store.connection_source._connect_to_endpoint()
-        )
 
-        def mocked_get_key(key):
-            assert '/dump/' in key
-            assert '0bba929f-8721-460c-dead-a43c20071027' in key
-            raise StorageResponseError(404, 'not found')
-
-        mocked_connection.get_bucket().get_key = (
-            mocked_get_key
-        )
         with pytest.raises(CrashIDNotFound):
             boto_s3_store.get(
                 uuid='0bba929f-8721-460c-dead-a43c20071027',
                 datatype='raw'
             )
 
-    def test_get_not_found_raw_crash(self):
+    @mock_s3_deprecated
+    def test_get_raw_crash_not_found(self, boto_helper):
+        boto_helper.get_or_create_bucket('crashstats')
+
         boto_s3_store = self.get_s3_store()
-        mocked_connection = (
-            boto_s3_store.connection_source._connect_to_endpoint()
-        )
 
-        def mocked_get_key(key):
-            assert '/raw_crash/' in key
-            assert '0bba929f-8721-460c-dead-a43c20071027' in key
-            raise StorageResponseError(404, 'not found')
-
-        mocked_connection.get_bucket().get_key = (
-            mocked_get_key
-        )
         with pytest.raises(CrashIDNotFound):
             boto_s3_store.get(
                 uuid='0bba929f-8721-460c-dead-a43c20071027',
                 datatype='meta'
             )
 
+    @mock_s3_deprecated
     def test_bad_arguments(self):
         boto_s3_store = self.get_s3_store()
         with pytest.raises(MissingArgumentError):
