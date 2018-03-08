@@ -1,4 +1,4 @@
-@import "@{base-path}/variables.less";
+@import "@{root-path}/base/variables.less";
 
 /* Product / Version dashboards */
 div.release_channel {
@@ -17,11 +17,11 @@ div.release_channel {
         padding: 0 0 12px 0;
         font-size: (@base-font-size + 2); /* 14px or 1.1(r)em */
         a {
-            color: #1c5168;
+            color: @primary-dark;
             text-decoration: none;
             &:hover,
             &:active {
-                color: #287798;
+                color: @primary;
             }
         }
     }
@@ -30,10 +30,10 @@ div.release_channel {
         a:link,
         a:hover,
         a:active {
-            color: #0083bc;
+            color: @primary;
         }
     }
 }
 .border_right {
-    border-right: 1px dashed #d0d0d0;
+    border-right: 1px dashed @dark-tan;
 }

@@ -1,7 +1,7 @@
-@import "@{base-path}/variables.less";
+@import "@{root-path}/base/variables.less";
 
 #search-form {
-    background: #dae2e5;
+    background: @light-grey;
     margin: -1em -2em;
     margin-bottom: 20px;
     padding: 1em 112px;
@@ -24,13 +24,13 @@
             vertical-align: middle;
         }
         #search-button:before {
-            content: url(../../img/3rdparty/silk/magnifier.png);
+            content: url("@{image-path}/3rdparty/silk/magnifier.png");
         }
         .new-line:before {
-            content: url(../../img/3rdparty/silk/application_form_add.png);
+            content: url("@{image-path}/3rdparty/silk/application_form_add.png");
         }
         .customize:before {
-            content: url(../../img/3rdparty/silk/wrench.png);
+            content: url("@{image-path}/3rdparty/silk/wrench.png");
         }
     }
 
@@ -76,8 +76,8 @@
             border: 1px solid #aaa;
             overflow: hidden;
             position: relative;
-            background-color: #fff;
-            background-image: linear-gradient(top, #eee 1%, #fff 15%);
+            background-color: @white;
+            background-image: linear-gradient(top, @white 1%, @white 15%);
 
             input {
                 border: none;
@@ -85,16 +85,16 @@
                 flex-grow: 10;
                 padding: 6px 5px;
                 line-height: 16px;
-                color: #333;
+                color: @dark-grey;
             }
 
             a {
-                background-color: #eee;
-                border-left: 1px solid #aaa;
+                background-color: @tan;
+                border-left: 1px solid @grey;
                 padding: 6px 5px 0 5px;
 
                 .icon-calendar::before {
-                    content: url(../../img/3rdparty/silk/calendar.png);
+                    content: url("@{image-path}/3rdparty/silk/calendar.png");
                 }
             }
         }
@@ -108,7 +108,7 @@
         width: 49.33%;
 
         a {
-            color: #666;
+            color: @dark-grey;
 
             &.selected {
                 text-decoration: none;
@@ -138,7 +138,7 @@
         display: inline-block;
         margin: 5px 10px 0 0;
         vertical-align: middle;
-        background-image: url(../../img/3rdparty/silk/delete.png);
+        background-image: url("@{image-path}/3rdparty/silk/delete.png");
         height: 16px;
         width: 16px;
         text-indent: -9999px;
@@ -146,7 +146,7 @@
 
     #advanced-search {
         fieldset fieldset {
-            border-top: 1px solid #ccc;
+            border-top: 1px solid @light-grey;
         }
     }
 
@@ -155,10 +155,10 @@
             cursor: pointer;
 
             span {
-                color: #555;
+                color: @dark-grey;
                 text-transform: uppercase;
                 font-size: 0.7em;
-                font-weigth: bold;
+                font-weight: bold;
             }
             .hide {
                 display: none;
@@ -231,7 +231,7 @@
 
     .error {
         li {
-            color: black;
+            color: @black;
             font-weight: bold;
             list-style: inside none disc;
 
@@ -253,7 +253,7 @@
 }
 
 .loader {
-    background-image: url(../../img/ajax-loader.gif);
+    background-image: url("@{image-path}/ajax-loader.gif");
     height: 19px;
     margin: auto;
     width: 220px;
@@ -278,8 +278,8 @@
     }
 
     code {
-        background-color: #f5f5f5;
-        border: 1px solid #ccc;
+        background-color: @off-white;
+        border: 1px solid @light-grey;
         border-radius: 3px;
         margin: 0 2px;
         padding: 1px 5px;

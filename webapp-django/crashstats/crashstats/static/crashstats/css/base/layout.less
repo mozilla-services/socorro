@@ -1,24 +1,26 @@
+@import "@{root-path}/base/variables.less";
+
 html {
-    background: #f2f6f9;
-    color: #333;
+    background: @off-white;
+    color: @dark-grey;
     font-family: @base-font;
     font-size: @base-font-size;
     line-height: @base-line-height;
     margin: 0;
     padding: 0;
-}
 
-html.production {
-    margin: 0;
-    body > h1 {
-        display: none;
-    }
-    .page-heading {
-        margin: 20px;
-        margin-top: 30px;
-    }
-    .panel {
-        margin: 20px;
+    &.production {
+        margin: 0;
+        body > h1 {
+            display: none;
+        }
+        .page-heading {
+            margin: 20px;
+            margin-top: 30px;
+        }
+        .panel {
+            margin: 20px;
+        }
     }
 }
 
@@ -32,8 +34,7 @@ body {
     position: relative;
     min-height: 64px;
     height: 64px;
-    background-color: #0a2533;
-    background-image: url(../../img/2.0/header-bg.png);
+    background-color: @primary-dark;
     h1 {
         position: absolute;
         display: block;
@@ -42,7 +43,7 @@ body {
         a {
             position: absolute;
             display: block;
-            color: #fff;
+            color: @white;
             left: 0;
             top: 0;
         }
@@ -56,7 +57,7 @@ body {
             top: 13px;
             width: 88px;
             height: 78px;
-            background: url(../../img/2.0/logo2.png) no-repeat top left;
+            background: url("@{image-path}/2.0/logo2.png") no-repeat top left;
             z-index: 1;
         }
         .title {
@@ -65,40 +66,38 @@ body {
             top: 15px;
             width: 343px;
             height: 36px;
-            background: url(../../img/2.0/title.png) no-repeat top left;
+            background: url("@{image-path}/2.0/title.png") no-repeat top left;
         }
     }
     form {
         position: absolute;
         right: 0;
         label {
-            color: #fff;
+            color: @white;
         }
         input {
             position: absolute;
-            background: #fff url(../../img/2.0/search.png) no-repeat 5px center;
+            background: @white url("@{image-path}/2.0/search.png") no-repeat 5px center;
             right: 20px;
             top: 20px;
             width: 212px;
             padding: 3px 4px 4px 28px;
-            border: 1px solid #a0a0a0;
+            border: 1px solid @grey;
             border-width: 1px 0 0 1px;
             font-family: Arial, Helvetica, sans-serif;
             font-size: 12px;
-            color: #303030;
+            color: @dark-grey;
             .rounded-corners(.5em);
         }
         input:-moz-placeholder {
-            color: #808080;
+            color: @light-grey;
         }
     }
 }
 
-
 .page-heading {
     h2 {
         display: inline;
-        margin-bottom: .7em;
         font-size: 21px;
     }
     p.old-new-report-link {
@@ -106,14 +105,12 @@ body {
     }
 }
 
-
-
 .threecol {
     overflow: auto;
     .col {
         float: left;
         width: 33%;
-        border-left: 1px dotted #C0C0C0;
+        border-left: 1px dotted @light-grey;
         .col-inner {
             padding: 0 20px;
         }

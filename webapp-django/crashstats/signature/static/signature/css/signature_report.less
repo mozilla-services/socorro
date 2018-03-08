@@ -1,3 +1,5 @@
+@import "@{root-path}/base/variables.less";
+
 .page-heading {
     p {
         font-style: italic;
@@ -19,10 +21,10 @@
             a:link,
             a:visited {
                 display: inline-block;
-                background-color: #e0e0e0;
-                border: 1px solid #d1d1d1;
+                background-color: @dark-tan;
+                border: 1px solid @grey;
                 border-bottom: none;
-                color: #333;
+                color: @dark-grey;
                 font-size: 1.1em;
                 padding: .3em .8em;
                 text-decoration: none;
@@ -30,11 +32,11 @@
                 border-radius: 8px 8px 0 0;
             }
             a:hover {
-                background-color: #B6D3E2;
+                background-color: @grey;
             }
             a.selected {
-                background-color: #2e5d74;
-                color: #fff;
+                background-color: @primary;
+                color: @white;
             }
         }
     }
@@ -96,9 +98,9 @@ a.crash-id {
     }
 
     hr {
-        background-color: #ccc;
-        border-color: #ccc;
-        color: #ccc;
+        background-color: @light-grey;
+        border-color: @light-grey;
+        color: @light-grey;
         margin-top: 15px;
         width: 60%;
     }

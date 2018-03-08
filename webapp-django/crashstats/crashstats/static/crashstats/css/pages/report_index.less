@@ -1,5 +1,5 @@
-@import "@{base-path}/mixins.less";
-@import "@{base-path}/variables.less";
+@import "@{root-path}/base/mixins.less";
+@import "@{root-path}/base/variables.less";
 
 #details th,
 #metadata th {
@@ -23,10 +23,10 @@
 }
 
 .bugreporter {
-    background-color: #edecec;
+    background-color: @off-white;
     margin-top: 1em;
     padding: 0 0.4em;
-    border: 1px solid #ccc;
+    border: 1px solid @light-grey;
     .rounded-corners(6px);
 }
 
@@ -66,7 +66,7 @@
 .sig-search {
     background: transparent url("@{image-path}/icons/external.png") left top no-repeat;
     display: inline-block;
-    color: #333;
+    color: @dark-grey;
     margin-left: .5em;
     padding-left: 17px;
     font-size: 12px;
@@ -76,6 +76,26 @@
 .sig-overview:visited,
 .sig-search:link,
 .sig-search:visited {
-    color: #081C26;
+    color: @black;
     text-decoration: none;
+}
+
+/**
+ * Adds a little flyout to the left of a row in
+ * order to draw attention or display a notice.
+ */
+.row-notice {
+    display: inline-block;
+    position: absolute;
+    left: -6px;
+    background-color: @red;
+    color: @white;
+    margin-top: -6px;
+    padding: .5rem .5rem .2rem;
+    border-radius: 6px 0 0 6px;
+    width: 26px;
+    font-size: 1.6rem;
+    line-height: 125%;
+    font-weight: bold;
+    text-align: center;
 }

@@ -10,7 +10,7 @@
 
 .link {
     fill: none;
-    stroke: #000;
+    stroke: @black;
     stroke-opacity:0.2;
 }
 

@@ -1,12 +1,13 @@
-@import "@{base-path}/mixins.less";
+@import "@{root-path}/base/variables.less";
+@import "@{root-path}/base/mixins.less";
 
 h1 {
-    color: #000;
+    color: @black;
     font-size: 1.90em;
     font-weight: bold;
 }
 #daily_content {
-    color: #000;
+    color: @black;
     font-family: Arial;
     margin-top: 1em;
 }
@@ -67,11 +68,11 @@ p.adu-chart-help {
 /* Crash Data */
 table.crash_data {
     clear: both;
-    color: #000;
+    color: @black;
     margin-top: 20px;
     font-family: Helvetica;
     th {
-        background-color: #ddd;
+        background-color: @light-grey;
         padding: 4px;
         border: 1px solid #999;
         text-align: center;
@@ -107,8 +108,36 @@ br.clear {
 }
 .legend table td {
     padding: 2px;
-    border: 0px solid red;
+    border: 0px solid @red;
 }
 .update-chart-button {
     margin: 1em 0 0 0;
+}
+
+.choices {
+    display: inline;
+    border-left: 1px solid #888;
+    padding: .25em 1em;
+
+    &:first-child {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    ul {
+        display: inline;
+        list-style: none;
+    }
+    li {
+        display: inline;
+    }
+    a {
+        padding: .25em .25em;
+        .rounded-corners(.5em);
+        font-weight: normal;
+        text-decoration: none;
+    }
+    a:hover {
+        background-color: @light-grey;
+    }
 }

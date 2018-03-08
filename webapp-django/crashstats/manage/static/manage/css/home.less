@@ -1,3 +1,5 @@
+@import "@{root-path}/base/variables.less";
+
 .body {
     h3 {
         margin: 0 0.5em;
@@ -8,15 +10,15 @@
         align-items: stretch;
 
         li {
-            background-color: #eee;
-            border: 1px solid #ccc;
+            background-color: @white;
+            border: 1px solid @light-grey;
             border-radius: 4px;
             margin: 0.5em;
             text-align: center;
             width: 19em;
 
             a {
-                color: #222;
+                color: @black;
                 display: inline-block;
                 font-weight: bold;
                 padding: 1em 0.4em 0 0.4em;
@@ -25,7 +27,7 @@
                 width: 100%;
 
                 .fa {
-                    color: #467086;
+                    color: @primary;
                     display: block;
                     margin: auto;
                 }
