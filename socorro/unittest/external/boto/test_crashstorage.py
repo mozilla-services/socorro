@@ -8,7 +8,6 @@ from os.path import join
 from moto import mock_s3_deprecated
 import pytest
 
-from socorro.database.transaction_executor import TransactionExecutorWithLimitedBackoff
 from socorro.external.boto.connection_context import S3ConnectionContext
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
