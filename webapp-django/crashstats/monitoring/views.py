@@ -27,6 +27,7 @@ def crontabber_status(request):
     all_apps = api.get()['state']
     last_runs = [
         x['last_run'] for x in all_apps.values()
+        if x['last_run']
     ]
     if last_runs:
         ancient_times = timezone.now() - datetime.timedelta(
