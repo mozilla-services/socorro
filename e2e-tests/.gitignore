@@ -1,3 +1,4 @@
 .cache
 *.pyc
+Pipfile.lock
 results/
