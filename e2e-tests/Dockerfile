@@ -10,8 +10,11 @@ RUN apt-get update \
   && apt-get install -y bzip2 curl firefox python2.7 \
   && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py | python2.7 \
-  && pip install pipenv
+WORKDIR /src
+COPY pipenv.txt /src
+
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py | python2.7
+RUN pip install -r pipenv.txt
 
 ENV FIREFOX_VERSION=58.0.1
 
