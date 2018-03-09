@@ -63,21 +63,6 @@ def setup_mocked_s3_storage(
     return storage_class(config)
 
 
-def assert_s3_connection_parameters(boto_s3_store):
-    kwargs = {
-        "aws_access_key_id": boto_s3_store.config.access_key,
-        "aws_secret_access_key": boto_s3_store.config.secret_access_key,
-        "is_secure": True,
-        "calling_format": (
-            boto_s3_store.connection_source._calling_format.return_value
-        ),
-    }
-    _connect_to_endpoint = (
-        boto_s3_store.connection_source._connect_to_endpoint
-    )
-    _connect_to_endpoint.assert_called_with(**kwargs)
-
-
 class TestBotoS3CrashStorage:
     def _fake_processed_crash(self):
         d = DotDict()
@@ -147,7 +132,7 @@ class TestBotoS3CrashStorage:
 
         # Verify the raw_crash made it to the right place and has the right
         # contents
-        raw_crash = boto_helper.fetch_object(
+        raw_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -161,7 +146,7 @@ class TestBotoS3CrashStorage:
 
         # Verify dump_names made it to the right place and has the right
         # contents
-        dump_names = boto_helper.fetch_object(
+        dump_names = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -184,7 +169,7 @@ class TestBotoS3CrashStorage:
 
         # Verify the raw_crash made it to the right place and has the right
         # contents
-        raw_crash = boto_helper.fetch_object(
+        raw_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -198,7 +183,7 @@ class TestBotoS3CrashStorage:
 
         # Verify dump_names made it to the right place and has the right
         # contents
-        dump_names = boto_helper.fetch_object(
+        dump_names = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -219,7 +204,7 @@ class TestBotoS3CrashStorage:
 
         # Verify the raw_crash made it to the right place and has the right
         # contents
-        raw_crash = boto_helper.fetch_object(
+        raw_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -233,20 +218,20 @@ class TestBotoS3CrashStorage:
 
         # Verify dump_names made it to the right place and has the right
         # contents
-        dump_names = boto_helper.fetch_object(
+        dump_names = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'
         )
         assert sorted(json.loads(dump_names)) == ['dump', 'flash_dump']
 
         # Verify dumps
-        dump = boto_helper.fetch_object(
+        dump = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'
         )
         assert dump == 'fake dump'
 
-        flash_dump = boto_helper.fetch_object(
+        flash_dump = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -265,7 +250,7 @@ class TestBotoS3CrashStorage:
 
         # Verify the processed crash was put in the right place and has the
         # right contents
-        processed_crash = boto_helper.fetch_object(
+        processed_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -297,7 +282,7 @@ class TestBotoS3CrashStorage:
         )
 
         # Verify processed crash is saved
-        processed_crash = boto_helper.fetch_object(
+        processed_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'
         )
@@ -317,7 +302,7 @@ class TestBotoS3CrashStorage:
 
     @mock_s3_deprecated
     def test_get_raw_crash(self, boto_helper):
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/raw_crash/936ce666-ff3b-4c7a-9674-367fe2120408',
             value=a_raw_crash_as_string
@@ -339,7 +324,7 @@ class TestBotoS3CrashStorage:
     @mock_s3_deprecated
     def test_get_raw_dump(self, boto_helper):
         """test fetching the raw dump without naming it"""
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is a raw dump'
@@ -360,7 +345,7 @@ class TestBotoS3CrashStorage:
     @mock_s3_deprecated
     def test_get_raw_dump_upload_file_minidump(self, boto_helper):
         """test fetching the raw dump, naming it 'upload_file_minidump'"""
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is a raw dump'
@@ -378,7 +363,7 @@ class TestBotoS3CrashStorage:
     @mock_s3_deprecated
     def test_get_raw_dump_empty_string(self, boto_helper):
         """test fetching the raw dump, naming it with empty string"""
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is a raw dump'
@@ -391,22 +376,22 @@ class TestBotoS3CrashStorage:
 
     @mock_s3_deprecated
     def test_get_raw_dumps(self, boto_helper):
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='["dump", "flash_dump", "city_dump"]'
         )
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is "dump", the first one'
         )
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is "flash_dump", the second one'
         )
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is "city_dump", the last one'
@@ -432,22 +417,22 @@ class TestBotoS3CrashStorage:
 
     @mock_s3_deprecated
     def test_get_raw_dumps_as_files(self, boto_helper, tmpdir):
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='["dump", "flash_dump", "city_dump"]'
         )
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is "dump", the first one'
         )
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is "flash_dump", the second one'
         )
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408',
             value='this is "city_dump", the last one'
@@ -480,7 +465,7 @@ class TestBotoS3CrashStorage:
 
     @mock_s3_deprecated
     def test_get_unredacted_processed(self, boto_helper):
-        boto_helper.put_object(
+        boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/processed_crash/936ce666-ff3b-4c7a-9674-367fe2120408',
             value=self._fake_unredacted_processed_crash_as_string()
@@ -535,7 +520,7 @@ class TestTelemetryBotoS3CrashStorage:
 
         # Get the crash data we just saved from the bucket and verify it's
         # contents
-        crash_data = boto_helper.fetch_object(
+        crash_data = boto_helper.get_contents_as_string(
             bucket_name='telemetry-crashes',
             key='/v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027'
         )

@@ -21,7 +21,7 @@ def get_config(cls, values_source=None):
         [conf],
         app_name='testapp',
         app_version='1.0',
-        app_description='TelemetryBotoS3CrashStorage test',
+        app_description='',
         values_source_list=[values_source],
         argv_source=[],
     )

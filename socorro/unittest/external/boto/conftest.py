@@ -20,13 +20,13 @@ class BotoHelper(object):
             bucket = conn.get_bucket(bucket_name)
         return bucket
 
-    def put_object(self, bucket_name, key, value):
+    def set_contents_from_string(self, bucket_name, key, value):
         """Puts an object into the specified bucket"""
         bucket = self.get_or_create_bucket(bucket_name)
         key_object = bucket.new_key(key)
         key_object.set_contents_from_string(value)
 
-    def fetch_object(self, bucket_name, key):
+    def get_contents_as_string(self, bucket_name, key):
         """Fetches an object from the specified bucket"""
         bucket = self.get_or_create_bucket(bucket_name)
         key_object = bucket.get_key(key)
