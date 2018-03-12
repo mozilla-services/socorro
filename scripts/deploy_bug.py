@@ -106,7 +106,7 @@ def main(argv):
     print()
     print('It consists of the following:')
     print()
-    print('(current tag: %s - %s)' % (current_tag, sha[:8]))
+    print('(current tag: %s - %s)' % (current_tag, sha[:7]))
 
     # Print the commits out skipping merge commits
     for commit in commits:
@@ -114,11 +114,11 @@ def main(argv):
             continue
 
         print('%s: %s' % (
-            commit['sha'][:8],
+            commit['sha'][:7],
             commit['commit']['message'].splitlines()[0][:80]
         ))
 
-    print('(next tag: %s - %s)' % (next_tag, commits[-1]['sha'][:8]))
+    print('(next tag: %s - %s)' % (next_tag, commits[-1]['sha'][:7]))
     print()
 
     # Print all possible post-deploy steps--we winnow the unnecessary ones when
