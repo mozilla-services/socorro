@@ -42,4 +42,14 @@ class BotoHelper(object):
 
 @pytest.fixture
 def boto_helper():
+    """BotoHelper() for automating repetitive tasks in S3 setup
+
+    Provides:
+
+    * ``get_or_create_bucket(bucket_name)``
+    * ``set_contents_from_string(bucket_name, key, value)``
+    * ``get_contents_as_string(bucket_name, key)``
+    * ``list(bucket_name)``
+
+    """
     return BotoHelper()
