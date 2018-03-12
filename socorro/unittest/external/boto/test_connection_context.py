@@ -8,20 +8,15 @@ import json
 import mock
 import pytest
 
-from socorro.lib.util import DotDict
 from socorro.external.boto.connection_context import (
     DatePrefixKeyBuilder,
     SimpleDatePrefixKeyBuilder,
-    KeyBuilderBase,
     KeyNotFound,
     S3ConnectionContext,
     RegionalS3ConnectionContext,
     HostPortS3ConnectionContext,
 )
-from socorro.database.transaction_executor import (
-    TransactionExecutor,
-)
-import socorro.unittest.testbase
+from socorro.unittest.external.boto import get_config
 
 
 a_raw_crash = {
@@ -53,40 +48,31 @@ a_thing = {
 thing_as_str = json.dumps(a_thing)
 
 
-class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
-    def setup_mocked_s3_storage(
-        self,
-        executor=TransactionExecutor,
-        executor_for_gets=TransactionExecutor,
-        storage_class='BotoS3CrashStorage',
-        host='',
-        port=0,
-        resource_class=S3ConnectionContext,
-        **extra
-    ):
-        config = DotDict({
-            'resource_class': resource_class,
-            'logger': mock.Mock(),
-            'host': host,
-            'port': port,
-            'access_key': 'this is the access key',
-            'secret_access_key': 'secrets',
-            'bucket_name': 'silliness',
-            'keybuilder_class': KeyBuilderBase,
-            'prefix': 'dev',
-            'calling_format': mock.Mock()
-        })
-        config.update(extra)
-        s3_conn = resource_class(config)
-        s3_conn._connect_to_endpoint = mock.Mock()
-        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
-        s3_conn._calling_format.return_value = mock.Mock()
-        s3_conn._CreateError = mock.Mock()
-        s3_conn.ResponseError = mock.Mock()
-        s3_conn._open = mock.MagicMock()
+def setup_mocked_s3_storage(cls=S3ConnectionContext, **extra):
+    values_source = {
+        'bucket_name': 'silliness',
+        'prefix': 'dev',
+        'calling_format': mock.Mock()
+    }
+    values_source.update(extra)
 
-        return s3_conn
+    config = get_config(
+        cls=cls,
+        values_source=values_source
+    )
 
+    s3_conn = cls(config)
+    s3_conn._connect_to_endpoint = mock.Mock()
+    s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
+    s3_conn._calling_format.return_value = mock.Mock()
+    s3_conn._CreateError = mock.Mock()
+    s3_conn.ResponseError = mock.Mock()
+    s3_conn._open = mock.MagicMock()
+
+    return s3_conn
+
+
+class TestConnectionContext:
     def assert_s3_connection_parameters(self, connection_source):
         kwargs = {
             'aws_access_key_id': connection_source.config.access_key,
@@ -99,15 +85,11 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         connection_source._connect_to_endpoint.assert_called_with(**kwargs)
 
     def test_dir_builder(self):
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage()
         prefix = 'dev'
         name_of_thing = 'dump'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
-        all_keys = connection_source.build_keys(
-            prefix,
-            name_of_thing,
-            crash_id
-        )
+        all_keys = conn.build_keys(prefix, name_of_thing, crash_id)
 
         # This uses the default key builder which should produce a single
         # key--so we verify that there's only one key and that it's the one
@@ -116,29 +98,27 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         assert all_keys[0] == 'dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114'
 
     def test_submit(self):
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage()
 
         # the call to be tested
-        connection_source.submit(
+        conn.submit(
             'this_is_an_id',
             'name_of_thing',
             thing_as_str
         )
 
         # this should have happened
-        self.assert_s3_connection_parameters(connection_source)
-        assert connection_source._calling_format.call_count == 1
-        connection_source._calling_format.assert_called_with()
+        self.assert_s3_connection_parameters(conn)
+        assert conn._calling_format.call_count == 1
+        conn._calling_format.assert_called_with()
 
-        assert connection_source._connect_to_endpoint.call_count == 1
-        self.assert_s3_connection_parameters(connection_source)
+        assert conn._connect_to_endpoint.call_count == 1
+        self.assert_s3_connection_parameters(conn)
 
-        assert connection_source._mocked_connection.get_bucket.call_count == 1
-        connection_source._mocked_connection.get_bucket.assert_called_with(
-            'silliness'
-        )
+        assert conn._mocked_connection.get_bucket.call_count == 1
+        conn._mocked_connection.get_bucket.assert_called_with('silliness')
 
-        bucket_mock = connection_source._mocked_connection.get_bucket.return_value
+        bucket_mock = conn._mocked_connection.get_bucket.return_value
         assert bucket_mock.new_key.call_count == 1
         bucket_mock.new_key.called_once_with(
             'dev/v1/name_of_thing/this_is_an_id'
@@ -153,31 +133,29 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
 
     def test_fetch(self):
         # setup some internal behaviors and fake outs
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
-            connection_source._connect_to_endpoint.return_value
+            conn._connect_to_endpoint.return_value
             .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [thing_as_str]
 
         # the tested call
-        result = connection_source.fetch(
+        result = conn.fetch(
             'name_of_thing',
             'this_is_an_id'
         )
 
         # what should have happened internally
-        assert connection_source._calling_format.call_count == 1
-        connection_source._calling_format.assert_called_with()
+        assert conn._calling_format.call_count == 1
+        conn._calling_format.assert_called_with()
 
-        assert connection_source._connect_to_endpoint.call_count == 1
-        self.assert_s3_connection_parameters(connection_source)
+        assert conn._connect_to_endpoint.call_count == 1
+        self.assert_s3_connection_parameters(conn)
 
-        assert connection_source._mocked_connection.get_bucket.call_count == 1
-        connection_source._mocked_connection.get_bucket.assert_called_with(
-            'silliness'
-        )
+        assert conn._mocked_connection.get_bucket.call_count == 1
+        conn._mocked_connection.get_bucket.assert_called_with('silliness')
 
         assert mocked_get_contents_as_string.call_count == 1
         mocked_get_contents_as_string.assert_has_calls(
@@ -191,67 +169,65 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
     def assert_regional_s3_connection_parameters(
         self,
         region,
-        connection_source
+        conn
     ):
         kwargs = {
-            'aws_access_key_id': connection_source.config.access_key,
+            'aws_access_key_id': conn.config.access_key,
             'aws_secret_access_key': (
-                connection_source.config.secret_access_key
+                conn.config.secret_access_key
             ),
             'is_secure': True,
-            'calling_format': connection_source._calling_format.return_value
+            'calling_format': conn._calling_format.return_value
         }
         args = (region,)
-        connection_source._connect_to_endpoint.assert_called_with(
+        conn._connect_to_endpoint.assert_called_with(
             *args,
             **kwargs
         )
 
     def test_fetch_with_regional_s3connection_context(self):
         # setup some internal behaviors and fake outs
-        connection_source = self.setup_mocked_s3_storage(
-            resource_class=RegionalS3ConnectionContext,
+        conn = setup_mocked_s3_storage(
+            cls=RegionalS3ConnectionContext,
             region='us-south-3'
         )
-        connection_source.fetch(
+        conn.fetch(
             'name_of_thing',
             'this_is_an_id'
         )
         self.assert_regional_s3_connection_parameters(
             'us-south-3',
-            connection_source
+            conn
         )
 
     def test_create_bucket_with_regional_s3connection_context(self):
-        connection_source = self.setup_mocked_s3_storage(
-            resource_class=RegionalS3ConnectionContext,
+        conn = setup_mocked_s3_storage(
+            cls=RegionalS3ConnectionContext,
             region='us-south-3'
         )
 
         # by overriding, we can set any type of exception here
-        connection_source.ResponseError = (NameError,)
+        conn.ResponseError = (NameError,)
 
         def mocked_get_bucket(bucket_name):
             assert bucket_name == 'name-of-bucket'
             raise NameError('nope!')
 
-        connection_source._mocked_connection.get_bucket.side_effect = (
-            mocked_get_bucket
-        )
+        conn._mocked_connection.get_bucket.side_effect = mocked_get_bucket
 
-        connection_source._get_or_create_bucket(
-            connection_source._mocked_connection,
+        conn._get_or_create_bucket(
+            conn._mocked_connection,
             'name-of-bucket'
         )
-        connection_source._mocked_connection.create_bucket.assert_called_with(
+        conn._mocked_connection.create_bucket.assert_called_with(
             'name-of-bucket',
             location='us-south-3'
         )
 
     def test_HostPortS3ConnectionContext_host_port_secure(self):
         # Test with secure=True
-        conn = self.setup_mocked_s3_storage(
-            resource_class=HostPortS3ConnectionContext,
+        conn = setup_mocked_s3_storage(
+            cls=HostPortS3ConnectionContext,
             host='localhost',
             port=4569,
             secure=True,
@@ -268,13 +244,11 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
             'port': 4569,
             'is_secure': True,
         }
-        conn._connect_to_endpoint.assert_called_with(
-            **kwargs
-        )
+        conn._connect_to_endpoint.assert_called_with(**kwargs)
 
         # Test with secure=False
-        conn = self.setup_mocked_s3_storage(
-            resource_class=HostPortS3ConnectionContext,
+        conn = setup_mocked_s3_storage(
+            cls=HostPortS3ConnectionContext,
             host='localhost',
             port=4569,
             secure=False,
@@ -291,75 +265,32 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
             'port': 4569,
             'is_secure': False,
         }
-        conn._connect_to_endpoint.assert_called_with(
-            **kwargs
-        )
+        conn._connect_to_endpoint.assert_called_with(**kwargs)
 
 
-class MultiplePathsBase(socorro.unittest.testbase.TestCase):
-    """Sets up mocked s3 storage using DatePrefixKeyBuilder"""
-    def setup_mocked_s3_storage(
-        self,
-        executor=TransactionExecutor,
-        executor_for_gets=TransactionExecutor,
-        storage_class='BotoS3CrashStorage',
-        host='',
-        port=0,
-        resource_class=S3ConnectionContext,
-        keybuilder_class=DatePrefixKeyBuilder,
-        **extra
-    ):
-        config = DotDict({
-            'resource_class': resource_class,
-            'logger': mock.Mock(),
-            'host': host,
-            'port': port,
-            'access_key': 'this is the access key',
-            'secret_access_key': 'secrets',
-            'bucket_name': 'silliness',
-            'keybuilder_class': keybuilder_class,
-            'prefix': 'dev',
-            'calling_format': mock.Mock()
-        })
-        config.update(extra)
-        s3_conn = resource_class(config)
-        s3_conn._connect_to_endpoint = mock.Mock()
-        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
-        s3_conn._calling_format.return_value = mock.Mock()
-        s3_conn._CreateError = mock.Mock()
-        s3_conn.ResponseError = mock.Mock()
-        s3_conn._open = mock.MagicMock()
-
-        return s3_conn
-
-
-class DatePrefixKeyBuilderTestCase(MultiplePathsBase):
+class TestDatePrefixKeyBuilder:
     """Tests the DatePrefixKeyBuilder with different crash types"""
     def test_dir_builder_with_dump(self):
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage(
+            keybuilder_class=DatePrefixKeyBuilder,
+        )
         prefix = 'dev'
         name_of_thing = 'dump'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
-        all_keys = connection_source.build_keys(
-            prefix,
-            name_of_thing,
-            crash_id
-        )
+        all_keys = conn.build_keys(prefix, name_of_thing, crash_id)
 
         # Only the old-style key is returned
         assert len(all_keys) == 1
         assert all_keys[0] == 'dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114'
 
     def test_dir_builder_with_raw_crash(self):
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage(
+            keybuilder_class=DatePrefixKeyBuilder,
+        )
         prefix = 'dev'
         name_of_thing = 'raw_crash'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
-        all_keys = connection_source.build_keys(
-            prefix,
-            name_of_thing,
-            crash_id
-        )
+        all_keys = conn.build_keys(prefix, name_of_thing, crash_id)
 
         # The new- and old-style keys are returned
         assert len(all_keys) == 2
@@ -367,32 +298,26 @@ class DatePrefixKeyBuilderTestCase(MultiplePathsBase):
         assert all_keys[1] == 'dev/v1/raw_crash/fff13cf0-5671-4496-ab89-47a922141114'
 
     def test_dir_builder_with_raw_crash_no_date(self):
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage(
+            keybuilder_class=DatePrefixKeyBuilder,
+        )
         prefix = 'dev'
         name_of_thing = 'raw_crash'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922xxxxxx'
-        all_keys = connection_source.build_keys(
-            prefix,
-            name_of_thing,
-            crash_id,
-        )
+        all_keys = conn.build_keys(prefix, name_of_thing, crash_id)
 
         # The suffix is not a date, so only the old-style key is returned
         assert len(all_keys) == 1
         assert all_keys[0] == 'dev/v1/raw_crash/fff13cf0-5671-4496-ab89-47a922xxxxxx'
 
 
-class SimpleDatePrefixKeyBuilderTestCase(MultiplePathsBase):
+class TestSimpleDatePrefixKeyBuilder:
     """Tests the SimpleDatePrefixKeyBuilder with different crash types"""
 
-    def setup_mocked_s3_storage(self):
-        parent = super(SimpleDatePrefixKeyBuilderTestCase, self)
-        return parent.setup_mocked_s3_storage(
-            keybuilder_class=SimpleDatePrefixKeyBuilder,
-        )
-
     def test_dir_builder(self):
-        connection_source = self.setup_mocked_s3_storage()
+        connection_source = setup_mocked_s3_storage(
+            keybuilder_class=SimpleDatePrefixKeyBuilder
+        )
         prefix = 'dev'
         name_of_thing = 'crash'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
@@ -405,7 +330,9 @@ class SimpleDatePrefixKeyBuilderTestCase(MultiplePathsBase):
         assert all_keys[0] == 'dev/v1/crash/20141114/fff13cf0-5671-4496-ab89-47a922141114'
 
     def test_dir_builder_with_no_date(self):
-        connection_source = self.setup_mocked_s3_storage()
+        connection_source = setup_mocked_s3_storage(
+            keybuilder_class=SimpleDatePrefixKeyBuilder
+        )
         prefix = 'dev'
         name_of_thing = 'crash'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922xxxxxx'
@@ -422,7 +349,7 @@ class SimpleDatePrefixKeyBuilderTestCase(MultiplePathsBase):
         assert all_keys[0] == expected
 
 
-class MultiplePathsTestCase(MultiplePathsBase):
+class TestMultiplePaths:
     """Tests crash storage when multiple keys are involved
 
     ``.submit()`` should always use the first key from a keybuilder.
@@ -431,17 +358,19 @@ class MultiplePathsTestCase(MultiplePathsBase):
 
     """
     def test_submit_with_dump(self):
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage(
+            keybuilder_class=DatePrefixKeyBuilder
+        )
 
         # the call to be tested
-        connection_source.submit(
+        conn.submit(
             'fff13cf0-5671-4496-ab89-47a922141114',
             'dump',
             thing_as_str
         )
 
         bucket_mock = (
-            connection_source
+            conn
             ._mocked_connection
             .get_bucket
             .return_value
@@ -455,17 +384,17 @@ class MultiplePathsTestCase(MultiplePathsBase):
         """Verify that .submit() only uses the first key if there are multiple
 
         """
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage()
 
         # the call to be tested
-        connection_source.submit(
+        conn.submit(
             'fff13cf0-5671-4496-ab89-47a922141114',
             'raw_crash',
             thing_as_str
         )
 
         bucket_mock = (
-            connection_source
+            conn
             ._mocked_connection
             .get_bucket
             .return_value
@@ -478,9 +407,11 @@ class MultiplePathsTestCase(MultiplePathsBase):
 
     def test_fetch_with_raw_crash_at_new_style_path(self):
         """Verifies that .fetch() works correctly if the first key works."""
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage(
+            keybuilder_class=DatePrefixKeyBuilder
+        )
         mocked_get_contents_as_string = (
-            connection_source
+            conn
             ._connect_to_endpoint
             .return_value
             .get_bucket
@@ -491,14 +422,11 @@ class MultiplePathsTestCase(MultiplePathsBase):
         )
         mocked_get_contents_as_string.side_effect = [thing_as_str]
 
-        connection_source.fetch(
-            'fff13cf0-5671-4496-ab89-47a922141114',
-            'raw_crash'
-        )
+        conn.fetch('fff13cf0-5671-4496-ab89-47a922141114', 'raw_crash')
 
-        assert connection_source._mocked_connection.get_bucket.call_count == 1
-        assert connection_source._mocked_connection.get_bucket.return_value.get_key.call_count == 1
-        connection_source._mocked_connection.get_bucket.return_value.get_key.assert_called_with(
+        assert conn._mocked_connection.get_bucket.call_count == 1
+        assert conn._mocked_connection.get_bucket.return_value.get_key.call_count == 1
+        conn._mocked_connection.get_bucket.return_value.get_key.assert_called_with(
             'dev/v2/raw_crash/fff/20141114/fff13cf0-5671-4496-ab89-47a922141114'
         )
 
@@ -508,9 +436,11 @@ class MultiplePathsTestCase(MultiplePathsBase):
         key.
 
         """
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage(
+            keybuilder_class=DatePrefixKeyBuilder
+        )
         mocked_get_key = (
-            connection_source
+            conn
             ._connect_to_endpoint
             .return_value
             .get_bucket
@@ -541,13 +471,10 @@ class MultiplePathsTestCase(MultiplePathsBase):
 
         mocked_get_key.side_effect = get_key_first_call
 
-        connection_source.fetch(
-            'fff13cf0-5671-4496-ab89-47a922141114',
-            'raw_crash'
-        )
+        conn.fetch('fff13cf0-5671-4496-ab89-47a922141114', 'raw_crash')
 
-        assert connection_source._mocked_connection.get_bucket.call_count == 1
-        assert connection_source._mocked_connection.get_bucket.return_value.get_key.call_count == 2
+        assert conn._mocked_connection.get_bucket.call_count == 1
+        assert conn._mocked_connection.get_bucket.return_value.get_key.call_count == 2
 
         # The first time, it's called with a new-style path
         expected = 'dev/v2/raw_crash/fff/20141114/fff13cf0-5671-4496-ab89-47a922141114'
@@ -563,9 +490,11 @@ class MultiplePathsTestCase(MultiplePathsBase):
         there.
 
         """
-        connection_source = self.setup_mocked_s3_storage()
+        conn = setup_mocked_s3_storage(
+            keybuilder_class=DatePrefixKeyBuilder
+        )
         mocked_get_key = (
-            connection_source
+            conn
             ._connect_to_endpoint
             .return_value
             .get_bucket
@@ -575,9 +504,6 @@ class MultiplePathsTestCase(MultiplePathsBase):
         mocked_get_key.return_value = None
 
         with pytest.raises(KeyNotFound):
-            connection_source.fetch(
-                'fff13cf0-5671-4496-ab89-47a922141114',
-                'raw_crash'
-            )
-        assert connection_source._mocked_connection.get_bucket.call_count == 1
-        assert connection_source._mocked_connection.get_bucket.return_value.get_key.call_count == 2
+            conn.fetch('fff13cf0-5671-4496-ab89-47a922141114', 'raw_crash')
+        assert conn._mocked_connection.get_bucket.call_count == 1
+        assert conn._mocked_connection.get_bucket.return_value.get_key.call_count == 2
