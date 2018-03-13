@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from moto import mock_s3_deprecated
-import pytest
 
 from socorro.external.boto.upload_telemetry_schema import UploadTelemetrySchema
 from socorro.unittest.external.boto import get_config
