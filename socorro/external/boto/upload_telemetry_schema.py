@@ -4,6 +4,7 @@
 
 import sys
 
+from boto.exception import S3ResponseError
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -34,7 +35,7 @@ class UploadTelemetrySchema(App):
 
     app_name = 'upload-telemetry-schema'
     app_version = '0.1'
-    app_description = 'Uploads schema to S3 bucket for Telemetry'
+    app_description = 'Uploads JSON schema to S3 bucket for Telemetry'
     metadata = ''
 
     required_config = Namespace()
@@ -61,7 +62,16 @@ class UploadTelemetrySchema(App):
         connection_context = self.config.telemetry.resource_class(self.config.telemetry)
 
         connection = connection_context._connect()
-        bucket = connection_context._get_bucket(connection, self.config.telemetry.bucket_name)
+        try:
+            bucket = connection_context._get_bucket(connection, self.config.telemetry.bucket_name)
+        except S3ResponseError:
+            # If there's no bucket--fail out here
+            self.config.logger.error(
+                'Failure: The %s S3 bucket must be created first.',
+                self.config.telemetry.bucket_name
+            )
+            return 1
+
         key = bucket.get_key(self.config.telemetry.json_filename)
         if not key:
             key = bucket.new_key(self.config.telemetry.json_filename)
