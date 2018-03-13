@@ -4308,7 +4308,7 @@ FIELDS = {
         'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'uuid',
-        'is_exposed': False,
+        'is_exposed': True,
         'is_mandatory': False,
         'is_returned': True,
         'name': 'uuid',
