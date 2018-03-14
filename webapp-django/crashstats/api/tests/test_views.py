@@ -12,9 +12,6 @@ import pyquery
 from socorro.lib import BadArgumentError, MissingArgumentError
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import BaseTestViews
-from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS
-)
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.crashstats.models import (
     ProductVersions,
@@ -49,15 +46,7 @@ class TestDedentLeft(TestCase):
 
 class TestDocumentationViews(BaseTestViews):
 
-    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
-    def test_documentation_home_page(self, supersearchfields):
-
-        def mocked_supersearchfields_get_fields(**params):
-            return SUPERSEARCH_FIELDS_MOCKED_RESULTS
-
-        supersearchfields().get.side_effect = (
-            mocked_supersearchfields_get_fields
-        )
+    def test_documentation_home_page(self):
 
         url = reverse('api:documentation')
         response = self.client.get(url)
