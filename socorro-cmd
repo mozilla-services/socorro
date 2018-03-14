@@ -45,7 +45,7 @@ def showcommands_cmd(argv):
         for cmd, runner in group:
             if not isinstance(runner, basestring):
                 runner = '%s in %s' % (runner.__name__, inspect.getfile(runner))
-            print('  %-22s %s' % (cmd, runner))
+            print('  %-24s %s' % (cmd, runner))
         print('')
 
 
@@ -77,6 +77,9 @@ COMMANDS = [
                 'socorro.external.es.create_recent_indices_app.CreateRecentESIndicesApp'
             ),
             'clear_indices': 'socorro.external.es.clear_indices_app.ClearESIndicesApp',
+            'upload_telemetry_schema': (
+                'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
+            ),
             'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
         }
     ),
