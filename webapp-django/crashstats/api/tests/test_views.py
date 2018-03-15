@@ -1,3 +1,4 @@
+import contextlib
 import json
 
 from django.contrib.auth.models import User, Permission
@@ -7,14 +8,11 @@ from django.utils import timezone
 
 from markus.testing import MetricsMock
 import mock
+from moto import mock_s3_deprecated
 import pyquery
 
-from socorro.lib import BadArgumentError, MissingArgumentError
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import BaseTestViews
-from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS
-)
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.crashstats.models import (
     ProductVersions,
@@ -29,6 +27,9 @@ from crashstats.crashstats.models import (
     SignaturesByBugs,
 )
 from crashstats.tokens.models import Token
+from socorro.lib import BadArgumentError, MissingArgumentError
+from socorro.lib.ooid import create_new_ooid
+from socorro.unittest.external.boto.conftest import BotoHelper
 
 
 class TestDedentLeft(TestCase):
@@ -49,15 +50,7 @@ class TestDedentLeft(TestCase):
 
 class TestDocumentationViews(BaseTestViews):
 
-    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
-    def test_documentation_home_page(self, supersearchfields):
-
-        def mocked_supersearchfields_get_fields(**params):
-            return SUPERSEARCH_FIELDS_MOCKED_RESULTS
-
-        supersearchfields().get.side_effect = (
-            mocked_supersearchfields_get_fields
-        )
+    def test_documentation_home_page(self):
 
         url = reverse('api:documentation')
         response = self.client.get(url)
@@ -877,3 +870,160 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, params, HTTP_AUTH_TOKEN=token.key)
         assert response.status_code == 200
         assert json.loads(response.content) is True
+
+
+class TestCrashVerify(object):
+    @contextlib.contextmanager
+    def supersearch_returns_crashes(self, uuids):
+        """Mock supersearch implementation to return result with specified crashes"""
+        def mocked_supersearch_get(**params):
+            assert sorted(params.keys()) == ['_columns', '_fields', '_results_number', 'uuid']
+
+            return {
+                'hits': [{'uuid': uuid} for uuid in uuids],
+                'facets': {
+                    'signature': []
+                },
+                'total': len(uuids)
+            }
+
+        with mock.patch('crashstats.supersearch.models.SuperSearch.implementation') as mock_ss:
+            mock_ss.return_value.get.side_effect = mocked_supersearch_get
+            yield
+
+    def test_bad_uuid(self, client):
+        url = reverse('api:crash_verify')
+
+        resp = client.get(url, {'crash_id': 'foo'})
+        assert resp.status_code == 400
+        data = json.loads(resp.content)
+        assert data == {'error': 'unknown crash id'}
+
+    @mock_s3_deprecated
+    def test_elastcsearch_has_crash(self, client):
+        uuid = create_new_ooid()
+
+        with self.supersearch_returns_crashes([uuid]):
+            url = reverse('api:crash_verify')
+            resp = client.get(url, {'crash_id': uuid})
+
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+
+        assert (
+            data ==
+            {
+                u'uuid': uuid,
+                u'elasticsearch_crash': True,
+
+                u's3_raw_crash': False,
+                u's3_processed_crash': False,
+                u's3_telemetry_crash': False,
+            }
+        )
+
+    @mock_s3_deprecated
+    def test_raw_crash_has_crash(self, client):
+        uuid = create_new_ooid()
+        crash_data = {
+            'submitted_timestamp': '2018-03-14-09T22:21:18.646733+00:00'
+        }
+
+        boto_helper = BotoHelper()
+        boto_helper.get_or_create_bucket('crashstats-test')
+        boto_helper.set_contents_from_string(
+            bucket_name='crashstats-test',
+            key='/v1/raw_crash/%s' % uuid,
+            value=json.dumps(crash_data)
+        )
+
+        with self.supersearch_returns_crashes([]):
+            url = reverse('api:crash_verify')
+            resp = client.get(url, {'crash_id': uuid})
+
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+
+        assert (
+            data ==
+            {
+                u'uuid': uuid,
+                u's3_raw_crash': True,
+
+                u's3_processed_crash': False,
+                u'elasticsearch_crash': False,
+                u's3_telemetry_crash': False,
+            }
+        )
+
+    @mock_s3_deprecated
+    def test_processed_has_crash(self, client):
+        uuid = create_new_ooid()
+        crash_data = {
+            'signature': '[@signature]',
+            'uuid': uuid,
+            'completeddatetime': '2018-03-14 10:56:50.902884',
+        }
+
+        boto_helper = BotoHelper()
+        boto_helper.get_or_create_bucket('crashstats-test')
+        boto_helper.set_contents_from_string(
+            bucket_name='crashstats-test',
+            key='/v1/processed_crash/%s' % uuid,
+            value=json.dumps(crash_data)
+        )
+
+        with self.supersearch_returns_crashes([]):
+            url = reverse('api:crash_verify')
+            resp = client.get(url, {'crash_id': uuid})
+
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+
+        assert (
+            data ==
+            {
+                u'uuid': uuid,
+                u's3_processed_crash': True,
+
+                u's3_raw_crash': False,
+                u'elasticsearch_crash': False,
+                u's3_telemetry_crash': False,
+            }
+        )
+
+    @mock_s3_deprecated
+    def test_telemetry_has_crash(self, client):
+        uuid = create_new_ooid()
+        crash_data = {
+            'platform': 'Linux',
+            'signature': 'now_this_is_a_signature',
+            'uuid': uuid
+        }
+
+        boto_helper = BotoHelper()
+        boto_helper.get_or_create_bucket('telemetry-test')
+        boto_helper.set_contents_from_string(
+            bucket_name='telemetry-test',
+            key='/v1/crash_report/20%s/%s' % (uuid[-6:], uuid),
+            value=json.dumps(crash_data)
+        )
+
+        with self.supersearch_returns_crashes([]):
+            url = reverse('api:crash_verify')
+            resp = client.get(url, {'crash_id': uuid})
+
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+
+        assert (
+            data ==
+            {
+                u'uuid': uuid,
+                u's3_telemetry_crash': True,
+
+                u's3_raw_crash': False,
+                u's3_processed_crash': False,
+                u'elasticsearch_crash': False,
+            }
+        )
