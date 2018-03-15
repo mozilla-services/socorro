@@ -16,13 +16,15 @@ from django.forms.forms import DeclarativeFieldsMetaclass
 
 from ratelimit.decorators import ratelimit
 
-from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.lib import BadArgumentError, MissingArgumentError
+from socorro.lib.ooid import is_crash_id_valid
 
 import crashstats
 from crashstats.crashstats.decorators import track_api_pageview
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
+from crashstats.supersearch import models as supersearch_models
 from crashstats.tokens.models import Token
 from .cleaner import Cleaner
 
@@ -129,6 +131,7 @@ BLACKLIST = (
     'GraphicsDevices',
     'GraphicsReport',
     'Priorityjob',
+    'TelemetryCrash',
 )
 
 
@@ -457,3 +460,70 @@ def dedent_left(text, spaces):
         line = regex.sub('', line)
         lines.append(line)
     return '\n'.join(lines)
+
+
+@csrf_exempt
+@ratelimit(
+    key='ip',
+    method=['GET'],
+    rate=utils.ratelimit_rate,
+    block=True
+)
+@utils.add_CORS_header
+@utils.json_view
+def crash_verify(request):
+    """Verifies crash data in crash data destinations"""
+    crash_id = request.GET.get('crash_id', None)
+
+    if not crash_id or not is_crash_id_valid(crash_id):
+        return http.JsonResponse({'error': 'unknown crash id'}, status=400)
+
+    data = {
+        'uuid': crash_id
+    }
+
+    # Check S3 crash bucket for raw and processed crash data
+    raw_api = models.RawCrash()
+    try:
+        raw_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_raw_crash = True
+    except CrashIDNotFound:
+        has_raw_crash = False
+    data['s3_raw_crash'] = has_raw_crash
+
+    processed_api = models.ProcessedCrash()
+    try:
+        processed_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_processed_crash = True
+    except CrashIDNotFound:
+        has_processed_crash = False
+    data['s3_processed_crash'] = has_processed_crash
+
+    # Check Elasticsearch for crash data
+    supersearch_api = supersearch_models.SuperSearch()
+    params = {
+        '_columns': ['uuid'],
+        '_results_number': 1,
+        'uuid': crash_id,
+        'dont_cache': True,
+        'refresh_cache': True
+    }
+    results = supersearch_api.get(**params)
+    data['elasticsearch_crash'] = (
+        results['total'] == 1 and
+        results['hits'][0]['uuid'] == crash_id
+    )
+
+    # Check S3 telemetry bucket for crash data
+    telemetry_api = models.TelemetryCrash()
+    try:
+        telemetry_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_telemetry_crash = True
+    except CrashIDNotFound:
+        has_telemetry_crash = False
+    data['s3_telemetry_crash'] = has_telemetry_crash
+
+    # NOTE(willkg): This doesn't check postgres because that's being phased
+    # out.
+
+    return http.HttpResponse(json.dumps(data), content_type='text/json')

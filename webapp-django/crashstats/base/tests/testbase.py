@@ -35,14 +35,21 @@ class DjangoTestCase(django.test.TestCase):
         # These are all the classes who have an implementation
         # (e.g. a class that belongs to socorro.external.something.something)
         # They all need to be mocked.
+        self._mockeries = {}
 
         for klass in classes_with_implementation:
+            self._mockeries[klass] = klass.implementation
+
             klass.implementation = mock.MagicMock()
             # The class name is used by the internal caching that guards
             # for repeated calls with the same parameter.
             # If we don't do this the cache key will always have the
             # string 'MagicMock' in it no matter which class it came from.
             klass.implementation().__class__.__name__ = klass.__name__
+
+    def tearDown(self):
+        for klass in classes_with_implementation:
+            klass.implementation = self._mockeries[klass]
 
     def _login(
         self,
