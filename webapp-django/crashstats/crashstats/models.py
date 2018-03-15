@@ -79,11 +79,17 @@ def config_from_configman():
         'rabbitmq_priority_class',
         default=PriorityjobRabbitMQCrashStore,
     )
-    definition_source.namespace('data')
-    definition_source.data.add_option(
+    definition_source.namespace('crashdata')
+    definition_source.crashdata.add_option(
         'crash_data_class',
         default=socorro.external.boto.crash_data.SimplifiedCrashData,
     )
+    definition_source.namespace('telemetrydata')
+    definition_source.telemetrydata.add_option(
+        'telemetry_data_class',
+        default=socorro.external.boto.crash_data.TelemetryCrashData,
+    )
+
     config = configuration(
         definition_source=definition_source,
         values_source_list=[
@@ -96,7 +102,8 @@ def config_from_configman():
     # same logger as we have here in the webapp.
     config.queuing.logger = logger
     config.priority.logger = logger
-    config.data.logger = logger
+    config.crashdata.logger = logger
+    config.telemetrydata.logger = logger
     return config
 
 
@@ -562,10 +569,24 @@ class Platforms(SocorroMiddleware):
         return super(Platforms, self).get()
 
 
+class TelemetryCrash(SocorroMiddleware):
+    """Model for data we store in the S3 bucket to send to Telemetry"""
+
+    implementation = socorro.external.boto.crash_data.TelemetryCrashData
+    implementation_config_namespace = 'telemetrydata'
+
+    required_params = (
+        'crash_id',
+    )
+    aliases = {
+        'crash_id': 'uuid',
+    }
+
+
 class ProcessedCrash(SocorroMiddleware):
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
-    implementation_config_namespace = 'data'
+    implementation_config_namespace = 'crashdata'
 
     required_params = (
         'crash_id',
@@ -679,7 +700,7 @@ class RawCrash(SocorroMiddleware):
     """
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
-    implementation_config_namespace = 'data'
+    implementation_config_namespace = 'crashdata'
 
     required_params = (
         'crash_id',

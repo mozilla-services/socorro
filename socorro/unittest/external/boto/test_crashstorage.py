@@ -531,3 +531,26 @@ class TestTelemetryBotoS3CrashStorage:
                 'uuid': '0bba929f-8721-460c-dead-a43c20071027'
             }
         )
+
+    @mock_s3_deprecated
+    def test_get_unredacted_processed(self, boto_helper):
+        crash_data = {
+            'platform': 'Linux',
+            'signature': 'now_this_is_a_signature',
+            'uuid': '0bba929f-8721-460c-dead-a43c20071027'
+        }
+
+        # Save the data to S3 so we have something to get
+        boto_helper.set_contents_from_string(
+            bucket_name='telemetry-crashes',
+            key='/v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027',
+            value=json.dumps(crash_data)
+        )
+
+        # Get the crash and assert it's the same data
+        boto_s3_store = self.get_s3_store()
+
+        data = boto_s3_store.get_unredacted_processed(
+            crash_id='0bba929f-8721-460c-dead-a43c20071027'
+        )
+        assert data == crash_data

@@ -32,9 +32,6 @@ from socorro.external.crashstorage_base import CrashIDNotFound
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
-from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
-)
 from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchUnredacted,
@@ -42,6 +39,7 @@ from crashstats.supersearch.models import (
 )
 from crashstats.crashstats.views import GRAPHICS_REPORT_HEADER
 from .test_models import Response
+from socorro.external.es.super_search_fields import FIELDS
 
 
 SAMPLE_STATUS = {
@@ -361,24 +359,11 @@ class BaseTestViews(DjangoTestCase):
         )
 
         def mocked_supersearchfields(**params):
-            results = copy.deepcopy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-            # to be realistic we want to introduce some dupes
-            # that have a different key but its `in_database_name`
-            # is one that is already in the hardcoded list (the
-            # baseline)
-            assert 'accessibility' not in results
-            results['accessibility'] = {
-                'name': 'accessibility',
-                'query_type': 'string',
-                'namespace': 'raw_crash',
-                'form_field_choices': None,
-                'permissions_needed': [],
-                'default_value': None,
-                'is_exposed': True,
-                'is_returned': True,
-                'is_mandatory': False,
-                'in_database_name': 'Accessibility',
-            }
+            results = copy.deepcopy(FIELDS)
+            # to be realistic we want to introduce some dupes that have a
+            # different key but its `in_database_name` is one that is already
+            # in the hardcoded list (the baseline)
+            results['accessibility2'] = results['accessibility']
             return results
 
         supersearchfields_mock_get = mock.Mock()
@@ -1428,7 +1413,10 @@ class TestViews(BaseTestViews):
 
         # Ensure fields have their description in title.
         assert 'No description for this field.' in response.content
-        assert 'Description of the signature field' in response.content
+        # NOTE(willkg): This is the description of "crash address". If we ever
+        # change that we'll need to update this to another description that
+        # shows up.
+        assert 'The crashing address.' in response.content
 
         # If the user ceases to be active, these PII fields should disappear
         user.is_active = False

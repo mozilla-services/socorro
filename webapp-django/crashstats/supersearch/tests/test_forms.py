@@ -1,8 +1,6 @@
 from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import forms
-from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS
-)
+from socorro.external.es.super_search_fields import FIELDS
 
 
 class TestForms(TestCase):
@@ -44,7 +42,7 @@ class TestForms(TestCase):
                 'name': 'Linux'
             }
         ]
-        self.all_fields = SUPERSEARCH_FIELDS_MOCKED_RESULTS
+        self.all_fields = FIELDS
 
     def test_search_form(self):
 
