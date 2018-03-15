@@ -4,12 +4,10 @@
 
 import datetime
 
-from configman import Namespace, class_converter
-
-from socorro.app.socorro_app import App
+from configman import Namespace, class_converter, RequiredConfig
 
 
-class ElasticsearchConfig(App):
+class ElasticsearchConfig(RequiredConfig):
 
     required_config = Namespace()
     required_config.namespace('elasticsearch')
