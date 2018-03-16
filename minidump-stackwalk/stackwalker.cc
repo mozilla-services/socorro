@@ -129,6 +129,53 @@ static string ToInt(uint64_t value) {
   return buffer;
 }
 
+static vector<string> split(const string& s, char delimiter) {
+  vector<string> bits;
+  size_t prev = 0;
+  size_t pos = s.find(delimiter);
+  while (true) {
+    size_t count = pos == string::npos ? string::npos : pos - prev;
+    bits.push_back(s.substr(prev, count));
+    if (pos == string::npos) {
+      break;
+    }
+    prev = pos + 1;
+    pos = s.find(delimiter, prev);
+  }
+  return bits;
+}
+
+static bool startswith(const string& s, const string& f) {
+  return s.find(f) == 0;
+}
+
+static string lower(const string& s) {
+  string r = s;
+  std::transform(r.begin(), r.end(), r.begin(), ::tolower);
+  return r;
+}
+
+static string stripquotes(const string& s) {
+  if (s.size() > 2 && s.front() == '"' && s.back() == '"') {
+    return s.substr(1, s.size() - 2);
+  }
+  return s;
+}
+
+static string trim(const string& s) {
+  size_t first = s.find_first_not_of(" \t");
+  if (first == string::npos) {
+    first = 0;
+  }
+
+  size_t last = s.find_last_not_of(" \t");
+  if (last == string::npos) {
+    last = s.length();
+  }
+
+  return s.substr(first, last);
+}
+
 class StackFrameSymbolizerForward : public StackFrameSymbolizer {
 public:
   StackFrameSymbolizerForward(SymbolSupplier* supplier,
@@ -547,9 +594,52 @@ bool ConvertStackToJSON(const ProcessState& process_state,
   return truncate;
 }
 
+typedef map<string, string> ModuleCertMap;
+
+static ModuleCertMap GetModuleCertMap(const Json::Value& raw_root)
+{
+  ModuleCertMap result;
+
+  const Json::Value& infoString = raw_root["ModuleSignatureInfo"];
+  if (!infoString || !infoString.isString()) {
+    return result;
+  }
+
+  Json::Value info;
+  Json::Reader reader;
+  if (!reader.parse(infoString.asString(), info, false)) {
+    return result;
+  }
+
+  Json::Value::Members certs = info.getMemberNames();
+
+  for (auto&& cert : certs) {
+    Json::Value& moduleArray = info[cert];
+    if (!moduleArray.isArray()) {
+      continue;
+    }
+
+    for (auto&& module : moduleArray) {
+      if (!module.isString()) {
+        continue;
+      }
+
+      auto moduleStr = module.asString();
+      if (moduleStr.empty()) {
+        continue;
+      }
+
+      result.insert(std::make_pair(moduleStr, cert));
+    }
+  }
+
+  return result;
+}
+
 int ConvertModulesToJSON(const ProcessState& process_state,
                          const StackFrameSymbolizerForward& symbolizer,
                          const HTTPSymbolSupplier* supplier,
+                         const ModuleCertMap& cert_info,
                          Json::Value& json) {
   const CodeModules* modules = process_state.modules();
   const vector<const CodeModule*>* modules_without_symbols =
@@ -575,7 +665,8 @@ int ConvertModulesToJSON(const ProcessState& process_state,
       main_module_index = module_sequence;
 
     Json::Value module_data;
-    module_data["filename"] = PathnameStripper::File(module->code_file());
+    string filename_leaf = PathnameStripper::File(module->code_file());
+    module_data["filename"] = filename_leaf;
     module_data["code_id"] = PathnameStripper::File(module->code_identifier());
     module_data["version"] = module->version();
     module_data["debug_file"] = PathnameStripper::File(module->debug_file());
@@ -600,6 +691,10 @@ int ConvertModulesToJSON(const ProcessState& process_state,
           module_data["symbol_fetch_time"] = stats.fetch_time_ms;
         }
       }
+    }
+    auto cert_subject = cert_info.find(filename_leaf);
+    if (cert_subject != cert_info.end()) {
+      module_data["cert_subject"] = cert_subject->second;
     }
     json.append(module_data);
   }
@@ -672,12 +767,17 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
   }
   root["crash_info"] = crash_info;
 
+  ModuleCertMap cert_info = GetModuleCertMap(raw_root);
+
   Json::Value modules(Json::arrayValue);
   int main_module = ConvertModulesToJSON(process_state, symbolizer,
-                                         supplier, modules);
+                                         supplier, cert_info, modules);
   if (main_module != -1)
     root["main_module"] = main_module;
   root["modules"] = modules;
+  if (!cert_info.empty()) {
+    root["modules_contains_cert_info"] = true;
+  }
 
   auto thread_id_name_map = std::move(GetThreadIdNameMap(raw_root));
 
@@ -778,53 +878,6 @@ static void ConvertMemoryInfoToJSON(Minidump& dump,
   root["write_combine_size"] = ToInt(write_combine_size);
   root["tiny_block_size"] = ToInt(tiny_block_size);
 
-}
-
-static vector<string> split(const string& s, char delimiter) {
-  vector<string> bits;
-  size_t prev = 0;
-  size_t pos = s.find(delimiter);
-  while (true) {
-    size_t count = pos == string::npos ? string::npos : pos - prev;
-    bits.push_back(s.substr(prev, count));
-    if (pos == string::npos) {
-      break;
-    }
-    prev = pos + 1;
-    pos = s.find(delimiter, prev);
-  }
-  return bits;
-}
-
-static bool startswith(const string& s, const string& f) {
-  return s.find(f) == 0;
-}
-
-static string lower(const string& s) {
-  string r = s;
-  std::transform(r.begin(), r.end(), r.begin(), ::tolower);
-  return r;
-}
-
-static string stripquotes(const string& s) {
-  if (s.size() > 2 && s.front() == '"' && s.back() == '"') {
-    return s.substr(1, s.size() - 2);
-  }
-  return s;
-}
-
-static string trim(const string& s) {
-  size_t first = s.find_first_not_of(" \t");
-  if (first == string::npos) {
-    first = 0;
-  }
-
-  size_t last = s.find_last_not_of(" \t");
-  if (last == string::npos) {
-    last = s.length();
-  }
-
-  return s.substr(first, last);
 }
 
 static void ConvertCPUInfoToJSON(const string& cpuinfo,
