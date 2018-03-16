@@ -1695,6 +1695,74 @@ class TestViews(BaseTestViews):
         assert 'id="modules-list"' in response.content
         assert '<a href="https://s3.example.com/winmm.sym">winmm.dll</a>' in response.content
 
+    def test_report_index_with_cert_subject_in_modules(self):
+        json_dump = {
+            'status': 'OK',
+            'sensitive': {
+                'exploitability': 'high'
+            },
+            'threads': [],
+            'modules': [
+                {
+                    'base_addr': '0x769c0000',
+                    'code_id': '411096B9b3000',
+                    'debug_file': 'userenv.pdb',
+                    'debug_id': 'C72199CE55A04CD2A965557CF1D97F4E2',
+                    'end_addr': '0x76a73000',
+                    'filename': 'userenv.dll',
+                    'version': '5.1.2600.2180',
+                },
+                {
+                    'base_addr': '0x76b40000',
+                    'cert_subject': 'Microsoft Windows',
+                    'code_id': '411096D62d000',
+                    'debug_file': 'winmm.pdb',
+                    'debug_id': '4FC9F179964745CAA3C78D6FADFC28322',
+                    'end_addr': '0x76b6d000',
+                    'filename': 'winmm.dll',
+                    'loaded_symbols': True,
+                    'symbol_disk_cache_hit': True,
+                    'symbol_url': 'https://s3.example.com/winmm.sym',
+                    'version': '5.1.2600.2180',
+                },
+            ],
+            'modules_contains_cert_info': True,
+        }
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                crash = copy.deepcopy(_SAMPLE_META)
+                crash['additional_minidumps'] = 'foo, bar,'
+                return crash
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        assert 'id="modules-list"' in response.content
+        assert re.search('<td>userenv\.pdb</td>\s*?<td></td>', response.content)
+        assert re.search('<td>winmm\.pdb</td>\s*?<td>Microsoft Windows</td>', response.content)
+
     def test_report_index_with_shutdownhang_signature(self):
         json_dump = {
             'crash_info': {
