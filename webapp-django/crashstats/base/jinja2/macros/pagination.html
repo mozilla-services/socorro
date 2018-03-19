@@ -11,7 +11,7 @@
 
     {% for page in range(1, report.total_pages + 1) %}
         {%- if page == current_page %}
-        <strong>{{ page }}</strong>
+        <b>{{ page }}</b>
         {% elif page > 2 and page < (report.total_pages - 2) %}
             {%- if current_page < 3 and page==7 %}
             &hellip;

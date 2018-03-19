@@ -286,7 +286,7 @@
                                 <td>{{ report.process_type }}
                                     ({{ raw.RemoteType and raw.RemoteType or 'web' }})
                                     {% if report.PluginName %}
-                                    <strong class="name">{{ report.PluginName }}</strong>
+                                    <b class="name">{{ report.PluginName }}</b>
                                     {% endif %}
                                     {% if report.PluginVersion %}
                                     <span>Version:</span>
@@ -707,7 +707,7 @@
                 <div id="bugzilla" class="ui-tabs-hide">
                     <div class="bugreporter">
                         <p>
-                            <strong>Bugzilla</strong> - Report this bug in
+                            <b>Bugzilla</b> - Report this bug in
                             {% for bug_product in [report.product, 'Core', 'External Software Affecting Firefox', 'Toolkit'] %}
                                 {% if bug_product in bug_product_map %}
                                     {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
@@ -810,7 +810,7 @@
                                 <td>{{ split[0] }}</td>
                                 <td>{{ split[1] }}</td>
                                 <td>
-                                    <strong>{{ split[2] }}</strong>
+                                    <b>{{ split[2] }}</b>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -855,16 +855,16 @@
                             <img
                                 src="{{ static('img/ajax-loader16x16.gif') }}"
                                 alt="Waiting...">
-                            <strong>
+                            <b>
                                 Sending crash ID in for reprocessing...
-                            </strong>
+                            </b>
                         </p>
                     </div>
                     <div class="reprocessing-success" style="display:none">
                         <p>
-                            <strong>
+                            <b>
                                 Success!
-                            </strong>
+                            </b>
                         </p>
                         <p>
 
@@ -878,10 +878,10 @@
                     </div>
                     <div class="reprocessing-error" style="display:none">
                         <p>
-                            <strong>
+                            <b>
                                 Sadly, it seems we were unable to send this crash
                                 in for reprocessing.
-                            </strong>
+                            </b>
                         </p>
                         <p>
                             HTTP Status code: <code class="status"></code>

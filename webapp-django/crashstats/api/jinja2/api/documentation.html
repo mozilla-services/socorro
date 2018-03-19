@@ -49,7 +49,7 @@
         <div class="body">
             <form class="testdrive" data-methods="{{ endpoint.methods | to_json }}">
                 <p class="url">
-                    <strong>{{ ' | '.join(endpoint.methods) }}</strong>
+                    <b>{{ ' | '.join(endpoint.methods) }}</b>
                     <code>{{ base_url }}{{ endpoint.url }}</code>
                 </p>
 
@@ -78,7 +78,7 @@
                         {% for parameter in endpoint.parameters %}
                         <tr>
                             <td class="fixed">
-                                <strong>{{ parameter.name }}</strong>
+                                <b>{{ parameter.name }}</b>
                             </td>
                             <td class="fixed">
                                 {% if parameter.required %}Required {% else %}Optional {% endif %}
@@ -114,14 +114,14 @@
                         An error happened on the server when trying this URL.
                     </p>
                     <p class="used-url">
-                        <strong>Using</strong>
+                        <b>Using</b>
                         <br>
                         <a href="">
                             <code></code>
                         </a>
                     </p>
                     <p class="used-data">
-                        <strong>Data</strong>
+                        <b>Data</b>
                         <br>
                         <code></code>
                     </p>
@@ -130,7 +130,7 @@
                         <code></code>
                     </p>
                     <p>
-                        <strong>Output:</strong>
+                        <b>Output:</b>
                     </p>
                     <pre></pre>
                     <span class="binary-response-warning">
@@ -139,7 +139,7 @@
                         <a href="#" class="open">Download the content?</a>
                     </span>
                     <p class="response-size">
-                        <strong>Size:</strong>
+                        <b>Size:</b>
                         <code></code>
                     </p>
 
