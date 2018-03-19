@@ -1,22 +1,25 @@
+@import "@{root-path}/base/variables.less";
+
+
 a.modify,
 a.delete,
 span.false,
 span.true {
-    background: url('../../img/3rdparty/silk/tick.png') no-repeat;
+    background: url('@{image-path}/3rdparty/silk/tick.png') no-repeat;
     display: inline-block;
     height: 16px;
     width: 16px;
     text-indent: -9999px;
 }
 span.false {
-    background: url('../../img/3rdparty/silk/cross.png') no-repeat;
+    background: url('@{image-path}/3rdparty/silk/cross.png') no-repeat;
 }
 
 a.modify {
-    background: url('../../img/3rdparty/silk/application_edit.png') no-repeat;
+    background: url('@{image-path}/3rdparty/silk/application_edit.png') no-repeat;
 }
 a.delete {
-    background: url('../../img/3rdparty/silk/delete.png') no-repeat;
+    background: url('@{image-path}/3rdparty/silk/delete.png') no-repeat;
 }
 
 td.boolean {
@@ -36,7 +39,7 @@ td.boolean {
     width: 20%;
 }
 #supersearch-field th .note:before {
-    content: url('../../img/3rdparty/silk/exclamation.png');
+    content: url('@{image-path}/3rdparty/silk/exclamation.png');
     height: 16px;
     margin: 2px;
     vertical-align: middle;
@@ -49,7 +52,7 @@ td.boolean {
 }
 
 .create-field:before {
-    content: url('../../img/3rdparty/silk/application_form_add.png');
+    content: url('@{image-path}/3rdparty/silk/application_form_add.png');
     height: 16px;
     margin: 4px;
     vertical-align: middle;

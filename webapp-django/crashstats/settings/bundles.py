@@ -82,7 +82,7 @@ PIPELINE_CSS = {
     },
     'api_documentation': {
         'source_filenames': (
-            'api/css/documentation.css',
+            'api/css/documentation.less',
         ),
         'output_filename': 'css/api-documentation.min.css',
     },
@@ -94,7 +94,7 @@ PIPELINE_CSS = {
     },
     'crontabber_state': {
         'source_filenames': (
-            'crashstats/css/pages/crontabber_state.css',
+            'crashstats/css/pages/crontabber_state.less',
         ),
         'output_filename': 'css/crontabber-state.min.css',
     },
@@ -125,7 +125,7 @@ PIPELINE_CSS = {
     },
     'api_tokens': {
         'source_filenames': (
-            'manage/css/api_tokens.css',
+            'manage/css/api_tokens.less',
         ),
         'output_filename': 'css/api-tokens.min.css',
     },
@@ -151,13 +151,13 @@ PIPELINE_CSS = {
     },
     'manage:status_message': {
         'source_filenames': (
-            'manage/css/status_message.css',
+            'manage/css/status_message.less',
         ),
         'output_filename': 'css/manage-status-message.min.css',
     },
     'profile': {
         'source_filenames': (
-            'profile/css/profile.css',
+            'profile/css/profile.less',
         ),
         'output_filename': 'css/profile.min.css',
     },
@@ -169,7 +169,7 @@ PIPELINE_CSS = {
     },
     'tokens': {
         'source_filenames': (
-            'tokens/css/home.css',
+            'tokens/css/home.less',
         ),
         'output_filename': 'css/tokens.min.css',
     },

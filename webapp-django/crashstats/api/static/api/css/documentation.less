@@ -1,24 +1,36 @@
-p.url {
-    margin: 15px;
-    font-size: 1.6em;
+@import "@{root-path}/base/variables.less";
+
+p {
+    &.url {
+
+        margin: 15px;
+        font-size: 1.6em;
+        code {
+
+            padding-left: 25px;
+        }
+    }
 }
-p.url code {
-    padding-left: 25px;
+
+th,
+td {
+    &.fixed {
+        width: 15%;
+    }
 }
-th.fixed, td.fixed {
-    width: 15%;
-}
+
 div.run-test {
     text-align: right;
     margin: 10px;
 }
-a.collapse-list, a.expand-list {
+a.collapse-list,
+a.expand-list {
     text-decoration: none;
     font-weight: bold;
     padding: 3px;
 }
 input.error {
-    border: 2px solid red;
+    border: 2px solid @red;
 }
 /* things that are hidden by default */
 div.test-drive,
@@ -29,11 +41,11 @@ img.loading-ajax,
     display: none;
 }
 .status-error {
-    color: red;
+    color: @red;
     font-weight: bold;
 }
 pre.docstring {
-    background-color: rgb(225,225,225);
+    background-color: @white;
     padding: 6px;
 }
 .title h2 a {
@@ -59,7 +71,7 @@ form.testdrive td ul li {
 
 .deprecation-warning {
     font-weight: bold;
-    color: rgb(194, 110, 0);
+    color: @orange;
 }
 p.deprecation-warning {
     text-transform: uppercase;

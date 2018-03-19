@@ -1,3 +1,5 @@
+@import "@{root-path}/base/variables.less";
+
 .count {
       display: none;
       margin-bottom: 0;
@@ -14,7 +16,7 @@ form#tokens {
   margin-top: 30px;
 }
 .page-wrapper {
-    color: #666;
+    color: @dark-grey;
     font-size: 80%;
 }
 .pagination {
@@ -36,6 +38,6 @@ th.notes, td.notes {
     max-width: 350px;
 }
 td.expired {
-    color: darkred;
+    color: @red;
     font-weight: bold;
 }
