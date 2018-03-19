@@ -1,49 +1,25 @@
-<!doctype html>
-<html>
+{% extends "crashstats_base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Debug Login</title>
-    <style>
-        * {
-            font-family: Arial, Helvetica, sans-serif;
-        }
+{% block page_title %}Debug Login{% endblock %}
 
-        .test {
-            padding: 7px 15px;
-            border: 1px solid @grey;
-            margin-bottom: 30px;
-        }
+{% block product_nav_filter %}&nbsp;{% endblock %}
 
-        .verdict.good {
-            color: green;
-        }
+{% block site_css %}
+{{ super() }}
+{% stylesheet 'debug_login' %}
+{% endblock %}
 
-        .verdict.bad {
-            color: red;
-        }
+{% block site_js %}
+{{ super() }}
+{% javascript 'debug_login' %}
+{% endblock %}
 
-        .conclusion {
-            display: none;
-            text-align: center;
-            margin: 0 auto;
-            font-size: 20px;
-        }
 
-        .conclusion.good {
-            color: green;
-        }
-
-        .conclusion.bad {
-            color: red;
-        }
-    </style>
-    <meta name="google-signin-client_id" content="{{ OAUTH2_CLIENT_ID }}">
-</head>
-
-<body>
-    <h1>Debug Login</h1>
-
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Debug Login</h2>
+    </div>
     <h3>
         Trying to figure out why sign-in isn't working?
         <br> Let's see what clues we might be able to find...
@@ -58,7 +34,7 @@
         <h3>There appears to be some trouble in the configuration</h3>
     </div>
 
-    <div style="display:none;color:red" id="check-console">
+    <div id="check-console">
         <p>Something went wrong during the rendering of this page. Open the web console and look for warnings and errors.</p>
     </div>
 
@@ -76,10 +52,5 @@
         </p>
         <p class="loading">Loading...</p>
     </div>
-
-    {% javascript 'crashstats_base' %}
-    <script src="{{ static('auth/js/debug_login.js') }}"></script>
-
-</body>
-
-</html>
+    </div>
+{% endblock %}

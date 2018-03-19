@@ -850,7 +850,7 @@
                     <form method="post">
                         <button type="submit">Reprocess this crash</button>
                     </form>
-                    <div class="waiting" style="display:none">
+                    <div class="waiting hidden">
                         <p>
                             <img
                                 src="{{ static('img/ajax-loader16x16.gif') }}"
@@ -860,7 +860,7 @@
                             </b>
                         </p>
                     </div>
-                    <div class="reprocessing-success" style="display:none">
+                    <div class="reprocessing-success hidden">
                         <p>
                             <b>
                                 Success!
@@ -876,7 +876,7 @@
                             <a href="?refresh=cache">Reload this page without cache</a>
                         </p>
                     </div>
-                    <div class="reprocessing-error" style="display:none">
+                    <div class="reprocessing-error hidden">
                         <p>
                             <b>
                                 Sadly, it seems we were unable to send this crash

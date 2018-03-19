@@ -86,6 +86,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/api-documentation.min.css',
     },
+    'debug_login': {
+        'source_filenames': (
+            'auth/css/debug_login.less',
+        ),
+        'output_filename': 'css/debug-login.min.css',
+    },
     'crashes_per_day': {
         'source_filenames': (
             'crashstats/css/pages/crashes_per_day.less',
@@ -295,6 +301,12 @@ PIPELINE_JS = {
             'crashstats/js/socorro/analytics.js',
         ),
         'output_filename': 'js/crashstats-base.min.js',
+    },
+    'debug_login': {
+        'source_filenames': (
+            'auth/js/debug_login.js',
+        ),
+        'output_filename': 'js/debug-login.min.js',
     },
     'api_documentation': {
         'source_filenames': (
