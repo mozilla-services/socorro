@@ -16,7 +16,7 @@ COPY pipenv.txt /src
 RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py | python2.7
 RUN pip install -r pipenv.txt
 
-ENV FIREFOX_VERSION=58.0.1
+ENV FIREFOX_VERSION=59.0
 
 RUN curl -fsSLo /tmp/firefox.tar.bz2 https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.bz2 \
   && apt-get -y purge firefox \
