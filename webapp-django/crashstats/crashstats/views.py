@@ -1023,7 +1023,7 @@ def dockerflow_version(requst):
             data = fp.read()
     else:
         data = '{}'
-    return http.HttpResponse(data, content_type='text/json')
+    return http.HttpResponse(data, content_type='application/json')
 
 
 @pass_default_context
