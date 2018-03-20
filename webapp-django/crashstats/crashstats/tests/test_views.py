@@ -2766,7 +2766,7 @@ class TestDockerflow:
             client = Client()
             resp = client.get(reverse('crashstats:dockerflow_version'))
             assert resp.status_code == 200
-            assert resp['Content-Type'] == 'text/json'
+            assert resp['Content-Type'] == 'application/json'
             assert resp.content == '{}'
 
     def test_version_with_file(self, tmpdir):
@@ -2781,5 +2781,5 @@ class TestDockerflow:
             client = Client()
             resp = client.get(reverse('crashstats:dockerflow_version'))
             assert resp.status_code == 200
-            assert resp['Content-Type'] == 'text/json'
+            assert resp['Content-Type'] == 'application/json'
             assert resp.content == text

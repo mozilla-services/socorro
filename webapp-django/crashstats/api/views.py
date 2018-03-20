@@ -526,4 +526,4 @@ def crash_verify(request):
     # NOTE(willkg): This doesn't check postgres because that's being phased
     # out.
 
-    return http.HttpResponse(json.dumps(data), content_type='text/json')
+    return http.HttpResponse(json.dumps(data), content_type='application/json')
