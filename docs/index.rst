@@ -33,6 +33,7 @@ Contents
    contributing
    signaturegeneration
    topcrashersbysignature
+   schemas
    service/*
    crashstorage/*
    tests/*
