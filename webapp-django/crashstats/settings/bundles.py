@@ -179,6 +179,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/tokens.min.css',
     },
+    'analyze-model-fetches': {
+        'source_filenames': (
+            'manage/css/analyze-model-fetches.less',
+        ),
+        'output_filename': 'css/analyze-model-fetches.min.css',
+    },
     'topcrashers': {
         'source_filenames': (
             'topcrashers/css/topcrashers.less',
@@ -288,6 +294,12 @@ PIPELINE_JS = {
             'topcrashers/js/topcrashers.js',
         ),
         'output_filename': 'js/topcrashers.min.js',
+    },
+    'analyze-model-fetches': {
+        'source_filenames': (
+            'manage/js/analyze-model-fetches.js',
+        ),
+        'output_filename': 'js/analyze-model-fetches.min.js',
     },
     'crashstats_base': {
         'source_filenames': (
