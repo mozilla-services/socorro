@@ -7,16 +7,26 @@ div.page-section {
     float: right;
 }
 
-.panel .links li {
-    display: inline-block;
-    font-size: 1.1em;
-    margin: 10px;
-}
+.panel .body {
+    &:after {
+        clear: both;
+        content: "";
+        display: table;
+    }
 
-ul.links.left {
-    float: left;
-}
+    .links {
+        &.left {
+            float: left;
+        }
 
-ul.links.right {
-    float: right;
+        &.right {
+            float: right;
+        }
+
+        li {
+            display: inline-block;
+            font-size: 1.1em;
+            margin: 10px;
+        }
+    }
 }
