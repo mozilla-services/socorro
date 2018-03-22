@@ -1,15 +1,13 @@
 End-to-End Tests for Socorro
 ============================
 
-Continuous Integration
-----------------------
+Summary
+-------
+
 This directory holds Socorro client-based end-to-end tests, which is why they're different than the rest of the code in this repository.
 
 To review the specific-Python packages the tests use, please review
 `requirements/requirements.txt`.
-
-How to run the tests
-====================
 
 Clone the repository
 --------------------
@@ -24,7 +22,7 @@ this repository first, and then clone that. GitHub also has great instructions
 for [forking a repository][git fork].
 
 Set up and run Socorro tests
------------------------------
+----------------------------
 
 Review the documentation for [pytest-selenium][pytest-selenium] and decide
 which browser environment you wish to target.
@@ -90,7 +88,7 @@ the last command, like so:
 
 ### Running tests locally ###
 
-Install [Pipenv][], and then using it, create a virtual environment with all
+Install [Pipenv](https://docs.pipenv.org/), and then using it, create a virtual environment with all
 the necessary Python package dependencies. Note that Python 2 is currently
 required for these tests.
 
