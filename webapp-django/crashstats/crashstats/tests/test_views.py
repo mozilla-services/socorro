@@ -510,8 +510,7 @@ class TestViews(BaseTestViews):
         url = reverse('home:home', args=('Unknown',))
         response = self.client.get(url)
         assert response.status_code == 404
-        assert 'Page Not Found' in response.content
-        assert 'id="products_select"' not in response.content
+        assert 'Missing product' in response.content
 
     def test_handler404_json(self):
         # Just need any view that has the json_view decorator on it.

@@ -1,0 +1,24 @@
+{% extends "crashstats_base.html" %}
+{% stylesheet 'home' %}
+
+{% block page_title %}
+Missing product: {{ product }}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2 id="homepage-heading">Missing product: {{ product }}</h2>
+    </div>
+
+    <div class="panel">
+        <div class="body">
+            <p>
+                The "{{ product }}" product doesn't exist. If you think this is
+                an error, please contact an admin to add the product to Crash
+                Stats.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
