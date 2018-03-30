@@ -318,6 +318,26 @@ class ESCrashStorage(CrashStorageBase):
             # later.
             self.config.logger.exception('something went wrong when capturing processed_crash_size')
 
+    def _index_crash_in_elasticsearch(self, connection, es_index, es_doctype, crash_document, crash_id):
+        try:
+            start_time = datetime.now()
+            connection.index(
+                index=es_index,
+                doc_type=es_doctype,
+                body=crash_document,
+                id=crash_id
+            )
+            index_outcome = 'successful'
+        except:
+            index_outcome = 'failed'
+            raise
+        finally:
+            elapsed_time = datetime.now() - start_time
+            self.config.metrics.histogram(
+                'processor.es.%s_index' % index_outcome,
+                elapsed_time.microseconds
+            )
+
     def _submit_crash_to_elasticsearch(self, connection, crash_document):
         """Submit a crash report to elasticsearch"""
         es_index = self.get_index_for_crash(
@@ -336,15 +356,9 @@ class ESCrashStorage(CrashStorageBase):
         # case of an unhandled exception.
         for attempt in range(5):
             try:
-                index_outcome = 'failed'
-                start_time = datetime.now()
-                connection.index(
-                    index=es_index,
-                    doc_type=es_doctype,
-                    body=crash_document,
-                    id=crash_id
-                )
-                index_outcome = 'successful'
+                self._index_crash_in_elasticsearch(self, connection, es_index,
+                                                   es_doctype, crash_document,
+                                                   crash_id)
                 break
             except elasticsearch.exceptions.TransportError as e:
                 field_name = None
@@ -405,12 +419,6 @@ class ESCrashStorage(CrashStorageBase):
                     exc_info=True
                 )
                 raise
-            finally:
-                elapsed_time = datetime.now() - start_time
-                self.config.metrics.histogram(
-                    'processor.es.%s_index' % index_outcome,
-                    elapsed_time.microseconds
-                )
 
 
 class ESCrashStorageRedactedSave(ESCrashStorage):
