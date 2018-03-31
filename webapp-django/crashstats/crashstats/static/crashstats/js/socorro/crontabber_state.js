@@ -135,9 +135,7 @@ d3.json('/api/CrontabberState/', function(data) {
         .append('path')
         .attr('class', 'link')
         .attr('d', path)
-        .style('stroke-width', function(d) {
-            return Math.max(1, (d.y1 - d.y0));
-        })
+        .style('stroke-width', 15)
         .style('stroke', function(d) {
             return d.color = color(d);
         })
@@ -245,7 +243,7 @@ d3.json('/api/CrontabberState/', function(data) {
             var isTime = (field === 'last_success' || field === 'next_run');
             if (isTime) {
                 if (d) {
-                    return moment(d).fromNow();
+                    return d + ' (' + moment(d).fromNow() + ')';
                 } else {
                     return '';
                 }
