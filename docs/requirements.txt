@@ -77,8 +77,8 @@ chardet==3.0.4 \
 MarkupSafe==1.0 \
     --hash=sha256:a6be69091dac236ea9c6bc7d012beab42010fa914c459791d627dad4910eb665
 
-m2r==0.1.13 \
-    --hash=sha256:b19e3703a3a897859f01ff6a068ee9a0eea8e8fdf75e896e00e88b3476a12f87
+m2r==0.1.14 \
+    --hash=sha256:a14635cdeedb125f0f85e014eb5898fd634e2da358a160c124818e9c9f851add
 mistune==0.8.3 \
     --hash=sha256:b4c512ce2fc99e5a62eb95a4aba4b73e5f90264115c40b70a21e1f7d4e0eac91 \
     --hash=sha256:bc10c33bfdcaa4e749b779f62f60d6e12f8215c46a292d05e486b869ae306619
