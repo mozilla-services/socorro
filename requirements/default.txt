@@ -1,5 +1,5 @@
-SQLAlchemy==1.2.4 \
-    --hash=sha256:6997507af46b10630e13b605ac278b78885fd683d038896dbee0e7ec41d809d2
+SQLAlchemy==1.2.6 \
+    --hash=sha256:7cb00cc9b9f92ef8b4391c8a2051f81eeafefe32d63c6b395fd51401e9a39edb
 alembic==0.9.8 \
     --hash=sha256:13b8611788acf0d7b617775db5c2ae26554a6d4263c590ef628d448fd05aef56
 mock==2.0.0 \
