@@ -178,9 +178,9 @@ django_csp==3.4 \
 urlwait==0.4 \
     --hash=sha256:fc39ff2c8abbcaad5043e1f79699dcb15a036cc4b0ff4d1aa825ea105d4889ff \
     --hash=sha256:395fc0c2a7f9736858a2c2f449aa20c6e9da1f86bfc2d1fda4f2f5b78a5c115a
-pytest==3.4.1 \
-    --hash=sha256:8970e25181e15ab14ae895599a0a0e0ade7d1f1c4c8ca1072ce16f25526a184d \
-    --hash=sha256:9ddcb879c8cc859d2540204b5399011f842e5e8823674bf429f70ada281b3cc6
+pytest==3.5.0 \
+    --hash=sha256:6266f87ab64692112e5477eba395cfedda53b1933ccd29478e671e73b420c19c \
+    --hash=sha256:fae491d1874f199537fd5872b5e1f0e74a009b979df9d53d1553fd03da1703e1
 pytest-wholenodeid==0.2 \
     --hash=sha256:6bc4edaf560c8b45ac4669bb8b99d8fbbb7f6e5af8dc7727200cd4d3ef4668c2 \
     --hash=sha256:bdcb4df88ca182a19752ef95150c0881deaafc2c593ef67c61515894e5309206
