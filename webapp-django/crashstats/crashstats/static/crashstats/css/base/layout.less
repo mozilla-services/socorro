@@ -35,59 +35,54 @@ body {
     min-height: 64px;
     height: 64px;
     background-color: @primary-dark;
-    h1 {
-        position: absolute;
-        display: block;
-        left: 0;
-        top: 0;
-        a {
-            position: absolute;
-            display: block;
-            color: @white;
-            left: 0;
-            top: 0;
-        }
-        .icon,
-        .title {
-            position: absolute;
-            display: block;
-        }
-        .icon {
-            left: 18px;
-            top: 13px;
-            width: 88px;
-            height: 78px;
-            background: url("@{image-path}/2.0/logo2.png") no-repeat top left;
-            z-index: 1;
-        }
-        .title {
-            text-indent: -1000em;
-            left: 124px;
-            top: 15px;
-            width: 343px;
-            height: 36px;
-            background: url("@{image-path}/2.0/title.png") no-repeat top left;
+    a {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        padding-left: 1em;
+
+        &,
+        &:link {
+            text-decoration: none;
         }
     }
+    .icon,
+    .title {
+        display: block;
+    }
+    .icon {
+        width: 32px;
+        height: 32px;
+        background: url("@{image-path}/3.0/logo.png") no-repeat top left;
+        z-index: 1;
+        background-size: contain;
+    }
+    .title {
+        color: @white;
+        text-decoration: none;
+        border: none;
+        font-size: 2em;
+        font-weight: 100;
+        letter-spacing: 0.03em;
+        padding-left: 1rem;
+        padding-top: 0.05em;
+    }
+
     form {
-        position: absolute;
-        right: 0;
         label {
             color: @white;
         }
         input {
             position: absolute;
             background: @white url("@{image-path}/2.0/search.png") no-repeat 5px center;
-            right: 20px;
+            border: none;
+            right: 1rem;
             top: 20px;
             width: 212px;
             padding: 3px 4px 4px 28px;
-            border: 1px solid @grey;
-            border-width: 1px 0 0 1px;
-            font-family: Arial, Helvetica, sans-serif;
             font-size: 12px;
             color: @dark-grey;
-            .rounded-corners(.5em);
+            .rounded-corners(2px);
         }
         input:-moz-placeholder {
             color: @light-grey;

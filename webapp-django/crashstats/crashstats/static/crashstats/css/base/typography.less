@@ -1,8 +1,24 @@
-@import "variables.less";
-@import "fonts.less";
+@import "@{root-path}/base/variables.less";
+@import "@{root-path}/base/fonts.less";
 
-/* Sizes, especially for type, is based on the following
-   modular scale: http://modularscale.com/scale/?px1=12&px2=32&ra1=1.333&ra2=0 */
+html,
+body {
+  font-weight: 300;
+  letter-spacing: 0.01em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 200;
+  letter-spacing: 0;
+  line-height: 1em;
+  margin-bottom: 0.5em;
+}
+
 h1 {
     font-size: @heading-level1;
 }
@@ -15,6 +31,7 @@ h3 {
 }
 h4 {
     font-size: @heading-level4;
+    font-weight: 500;
     margin: 0 0 .7em 0;
 }
 p {
@@ -29,3 +46,5 @@ em {
 b {
     font-weight: bold;
 }
+
+

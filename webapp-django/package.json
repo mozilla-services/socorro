@@ -29,6 +29,7 @@
     "jssha": "2.3.1",
     "metrics-graphics": "2.13.0",
     "moment": "2.20.1",
+    "photon-colors": "3.0.1",
     "qs": "6.5.1",
     "tablesorter": "2.29.6",
     "underscore": "1.8.3"

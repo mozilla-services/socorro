@@ -1,39 +1,43 @@
+@import "photon-colors.less";
+
 @image-path: "/static/img";
 
-@base-font: Arial, Helvetica, sans-serif;
+@import "https://code.cdn.mozilla.net/fonts/fira.css";
+
+@base-font: "Fira Sans", "Helvetica Neue For Number", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
 @base-font-size: 12px;
 @base-line-height: 1.7;
 @base-link-color: @primary;
 
-@heading-level1: 2.7rem;
-@heading-level2: 2.0rem;
-@heading-level3: 1.6rem;
-@heading-level4: 1.4rem;
+@heading-level1: 33px;
+@heading-level2: 33px;
+@heading-level3: 24px;
+@heading-level4: 18px;
 
 // Colors
 
-@primary-light: #6db0dd;
-@primary-medium: #4b7895;
-@primary: #406a80;
-@primary-dark: #0a2533;
+@primary-light: @blue-40;
+@primary-medium: @blue-50;
+@primary: @blue-60;
+@primary-dark: @blue-80;
 
-@white: #fff;
+@white: @white-100;
 @off-white: #f2f6f9;
-@black: #000;
+@black: @ink-90;
 
-@blue: #00f;
-@red: #d33419;
-@orange: #eea236;
-@green: #55b734;
-@purple: #850085;
+@blue: @blue-60;
+@red: @red-60;
+@orange: @orange-50;
+@green: @green-60;
+@purple: @purple-60;
 @pink: #ff9c9c;
 
-@tan: #f0f0f0;
-@dark-tan: #d9d9d9;
+@tan: @grey-10;
+@dark-tan: darken(@grey-20, 5%);
 
-@light-grey: #dae2e7;
-@grey: #bbc3c7;
-@dark-grey: #45474a;
+@light-grey: @grey-30;
+@grey: @grey-40;// #bbc3c7;
+@dark-grey: @grey-60; //#45474a;
 
 @gray: @grey;
 @light-gray: @light-grey;
