@@ -13,6 +13,12 @@ class TestViews(BaseTestViews):
         assert 'WaterWolf Crash Data' in response.content
         assert 'WaterWolf 19.0' in response.content
 
+    def test_home_product_missing(self):
+        url = reverse('home:home', args=('PickleParty',))
+        response = self.client.get(url)
+        assert response.status_code == 404
+        assert 'Missing product: PickleParty' in response.content
+
     def test_home_product_without_featured_versions(self):
         url = reverse('home:home', args=('SeaMonkey',))
         response = self.client.get(url)
