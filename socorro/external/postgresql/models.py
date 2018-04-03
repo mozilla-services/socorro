@@ -549,36 +549,6 @@ class FlashVersion(DeclarativeBase):
         u'flash_version_id', INTEGER(), primary_key=True, nullable=False)
 
 
-class HomePageGraph(DeclarativeBase):
-    __tablename__ = 'home_page_graph'
-
-    # column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False, server_default=text('0'))
-    crash_hadu = Column(u'crash_hadu', NUMERIC(),
-                        nullable=False, server_default=text('0.0'))
-    product_version_id = Column(u'product_version_id', INTEGER(
-    ), primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(),
-                          nullable=False, server_default=text('0'))
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False)
-
-
-class HomePageGraphBuild(DeclarativeBase):
-    __tablename__ = 'home_page_graph_build'
-
-    # column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False, server_default=text('0'))
-    build_date = Column(u'build_date', DATE(),
-                        primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(),
-                                primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(),
-                          nullable=False, server_default=text('0'))
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False)
-
-
 class OsName(DeclarativeBase):
     __tablename__ = 'os_names'
 
