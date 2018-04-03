@@ -1,5 +1,4 @@
 {% extends "crashstats_base.html" %}
-{% stylesheet 'home' %}
 
 {% block page_title %}
 Missing product: {{ product }}
@@ -8,7 +7,7 @@ Missing product: {{ product }}
 {% block content %}
 <div id="mainbody">
     <div class="page-heading">
-        <h2 id="homepage-heading">Missing product: {{ product }}</h2>
+        <h2>Missing product: {{ product }}</h2>
     </div>
 
     <div class="panel">
@@ -18,6 +17,16 @@ Missing product: {{ product }}
                 an error, please contact an admin to add the product to Crash
                 Stats.
             </p>
+            {% if DEBUG %}
+                <p>
+                    Seems like you might be seeing this page in a local
+                    development environment. If so, you should run:
+                </p>
+                <pre>make dockerupdatedata</pre>
+                <p>
+                    That'll create some products in the database.
+                </p>
+            {% endif %}
         </div>
     </div>
 </div>
