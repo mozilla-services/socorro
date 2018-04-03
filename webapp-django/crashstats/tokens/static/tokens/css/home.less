@@ -1,5 +1,7 @@
+@import "@{root-path}/base/variables.less";
+
 .errorlist {
-    color: red;
+    color: @red;
 }
 
 textarea {
@@ -8,8 +10,8 @@ textarea {
 }
 
 code, pre {
-    background-color: #efefef;
-    border: 1px solid #ccc;
+    background-color: @light-grey;
+    border: 1px solid @grey;
 }
 p.code code {
     font-size: 1.5em;
@@ -28,7 +30,7 @@ p.code .rest-hidden {
 }
 
 div.token {
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid @grey;
     padding: 25px 5px;
 }
 
@@ -41,7 +43,7 @@ table.meta-data td {
     border: 0;
 }
 .is-expired {
-    color: red;
+    color: @red;
     font-weight: bold;
     font-size: 110%;
     margin: 5px;

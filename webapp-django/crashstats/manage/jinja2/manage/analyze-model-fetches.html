@@ -7,13 +7,13 @@
 {% block site_css %}
 {{ super() }}
 {% stylesheet 'tablesorter' %}
-<link href="{{ static('manage/css/analyze-model-fetches.css') }}" type="text/css" rel="stylesheet">
+{% stylesheet 'analyze-model-fetches' %}
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
 {% javascript 'tablesorter' %}
-<script src="{{ static('manage/js/analyze-model-fetches.js') }}"></script>
+{% javascript 'analyze-model-fetches' %}
 {% endblock %}
 
 {% block mainbody %}

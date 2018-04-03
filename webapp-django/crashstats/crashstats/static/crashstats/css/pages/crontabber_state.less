@@ -1,3 +1,5 @@
+@import "@{root-path}/base/variables.less";
+
 #chart {
     height: 500px;
 }
@@ -5,7 +7,7 @@
 .node rect {
     cursor: move;
     fill-opacity: 0.9;
-    shape-renderong: crispEdges;
+    shape-rendering: crispEdges;
 }
 
 .link {
@@ -37,28 +39,28 @@ div.panel.failing {
 }
 
 @-webkit-keyframes color_change {
-  from { color: #9f3774; }
-  to { color: #ccc; }
+  from { color: @purple; }
+  to { color: @grey; }
 }
 @-moz-keyframes color_change {
-  from { color: #9f3774; }
-  to { color: #ccc; }
+  from { color: @purple; }
+  to { color: @grey; }
 }
 @-ms-keyframes color_change {
-  from { color: #9f3774; }
-  to { color: #ccc; }
+  from { color: @purple; }
+  to { color: @grey; }
 }
 @-o-keyframes color_change {
-  from { color: #9f3774; }
-  to { color: #ccc; }
+  from { color: @purple; }
+  to { color: @grey; }
 }
 @keyframes color_change {
-  from { color: #9f3774; }
-  to { color: #ccc; }
+  from { color: @purple; }
+  to { color: @grey; }
 }
 
 .ongoing.panel .title {
-    color: #9f3774;
+    color: @purple;
     font-weight: bold;
    -webkit-animation: color_change 1s infinite alternate;
    -moz-animation: color_change 1s infinite alternate;

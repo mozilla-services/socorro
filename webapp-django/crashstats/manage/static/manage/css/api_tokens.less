@@ -1,3 +1,5 @@
+@import "@{root-path}/base/variables.less";
+
 .count {
       display: none;
       margin-bottom: 0;
@@ -14,7 +16,7 @@ form#tokens {
   margin-top: 30px;
 }
 .page-wrapper {
-    color: #666;
+    color: @dark-grey;
     font-size: 80%;
 }
 .pagination {
@@ -29,13 +31,19 @@ form#tokens {
     width: 500px;
     height: 50px;
 }
-code.redacted, span.redacted {
+code.redacted,
+span.redacted {
     cursor: pointer;
 }
-th.notes, td.notes {
+td.notes,
+th.notes {
     max-width: 350px;
 }
 td.expired {
-    color: darkred;
+    color: @red;
     font-weight: bold;
+}
+td.key,
+th.key {
+    width: 260px;
 }
