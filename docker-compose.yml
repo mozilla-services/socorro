@@ -111,7 +111,7 @@ services:
   # This uses the development ./bin/run_web.sh script from the Antenna
   # container since that creates a bucket before running Antenna.
   antenna:
-    image: mozilla/antenna:latest
+    image: mozilla/antenna:latest@sha256:23f2a3e8881e7e72afbac0c4ea77c0ef8358b6cec69dbadad6d203597737589c
     environment:
       - LOGGING_LEVEL=INFO
       - CRASHSTORAGE_CLASS=antenna.ext.s3.crashstorage.S3CrashStorage
@@ -130,7 +130,7 @@ services:
 
   # https://hub.docker.com/r/hopsoft/graphite-statsd/
   statsd:
-    image: hopsoft/graphite-statsd
+    image: hopsoft/graphite-statsd:latest@sha256:42074ad968921e2b8053f3f0b222a605d8307060be0d7bd53b2e3b4b8b8d8952
     ports:
       - "8080:80"
       - "2003-2004:2003-2004"
@@ -141,14 +141,14 @@ services:
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
   elasticsearch:
-    image: mozilla/socorro_elasticsearch:1.4.5
+    image: mozilla/socorro_elasticsearch:1.4.5@sha256:971ae9fc1f6010395a118a328bfca859ab351a596d03a12862a8364eb9764bef
     ports:
       - "9200:9200"
       - "9300:9300"
 
   # https://hub.docker.com/_/rabbitmq/
   rabbitmq:
-    image: rabbitmq:3.6.9
+    image: rabbitmq:3.6.9@sha256:727c1f4df2df1c31ce1172e0589ef0a680d2d4c295cc3b4bfef9a97ef1ca2676
     environment:
       - RABBITMQ_DEFAULT_USER=rabbituser
       - RABBITMQ_DEFAULT_PASS=rabbitpwd
@@ -156,7 +156,7 @@ services:
 
   # https://hub.docker.com/_/postgres/
   postgresql:
-    image: postgres:9.4
+    image: postgres:9.4@sha256:8b2ad7cd303751246f8b681614e362c89128c47440fe3efe833b4b9a983cdc93
     ports:
       - "8574:5432"
     environment:
@@ -168,7 +168,7 @@ services:
   # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake S3
   localstack-s3:
-    image: localstack/localstack:0.7.4
+    image: localstack/localstack:0.7.4@sha256:b4009f2bce32a1ac4c04bac37eb3ca8f87ff7aff6bf0db02f41af83360b41d54
     environment:
       - SERVICES=s3:5000
       - DEFAULT_REGION=us-west-2
@@ -178,6 +178,6 @@ services:
 
   # https://hub.docker.com/_/memcached/
   memcached:
-    image: memcached:1.5.1
+    image: memcached:1.5.1@sha256:fc1826e2cb45307c5ac777b18107f14b53f91572b44bc1f856d3ba2e5d115059
     ports:
       - "11211:11211"

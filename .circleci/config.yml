@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # base image
-      - image: ubuntu:16.04
+      - image: ubuntu:16.04@sha256:e348fbbea0e0a0e73ab0370de151e7800684445c509d46195aef73e090a49bd6
     working_directory: /
     steps:
       - run:
