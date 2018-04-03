@@ -5,22 +5,75 @@ from __future__ import print_function
 # The keys are library names (from webapp-django/package.json) and the
 # values are a list of fnmatch patterns to match files to copy.
 NPM_FILE_PATTERNS = {
-    'jquery-ui': ['ui/*', 'themes/base/*'],
-    'flatpickr': ['dist/*'],
-    'Select2': ['*'],
-    'metrics-graphics': ['dist/*'],
-    'font-awesome': ['css/*', 'fonts/*'],
-    'tablesorter': ['dist/*'],
-    'd3': ['build/*'],
-    'jssha': ['src/*.js'],
-    'qs': ['dist/*'],
-    'moment': ['moment.js'],
-    'filesize': ['lib/*'],
-    'underscore': ['*.js'],
-    'd3-sankey': ['build/*'],
-    'jquery-jsonview': ['dist/*'],
-    'ace-builds': ['src/*'],
-    'jquery': ['dist/*'],
+    'jquery-ui': [
+        'ui/version.js',
+        'ui/widget.js',
+        'ui/safe-active-element.js',
+        'ui/unique-id.js',
+        'ui/keycode.js',
+        'ui/widgets/mouse.js',
+        'ui/widgets/sortable.js',
+        'ui/widgets/datepicker.js',
+        'ui/widgets/tabs.js',
+        'themes/base/core.css',
+        'themes/base/sortable.css',
+        'themes/base/datepicker.css',
+        'themes/base/tabs.css',
+    ],
+    'flatpickr': [
+        'dist/themes/dark.css',
+        'dist/flatpickr.min.js',
+    ],
+    'Select2': [
+        'select2.css',
+        'select2.js',
+        'select2.png',
+        'select2-spinner.gif',
+        'select2x2.png',
+    ],
+    'metrics-graphics': [
+        'dist/*',
+    ],
+    'font-awesome': [
+        'css/*',
+        'fonts/*',
+    ],
+    'tablesorter': [
+        'dist/css/theme.default.min.css',
+        'dist/js/jquery.tablesorter.js',
+    ],
+    'd3': [
+        'build/*',
+    ],
+    'jssha': [
+        'src/*.js',
+    ],
+    'qs': [
+        'dist/*',
+    ],
+    'moment': [
+        'moment.js',
+    ],
+    'filesize': [
+        'lib/*',
+    ],
+    'underscore': [
+        '*.js',
+    ],
+    'd3-sankey': [
+        'build/*',
+    ],
+    'jquery-jsonview': [
+        'dist/*',
+    ],
+    'ace-builds': [
+        'src/ace.js',
+        'src/theme-monokai.js',
+        'src/mode-json.js',
+    ],
+    'jquery': [
+        'dist/*',
+    ],
 }
 
 #
