@@ -280,3 +280,7 @@ backports.ssl_match_hostname==3.5.0.1 \
 backports.weakref==1.0.post1 \
     --hash=sha256:81bc9b51c0abc58edc76aefbbc68c62a787918ffe943a37947e162c3f8e19e82 \
     --hash=sha256:bc4170a29915f8b22c9e7c4939701859650f2eb84184aee80da329ac0b9825c2
+more-itertools==4.1.0 \
+    --hash=sha256:c9ce7eccdcb901a2c75d326ea134e0886abfbea5f93e91cc95de9507c0816c44 \
+    --hash=sha256:11a625025954c20145b37ff6309cd54e39ca94f72f6bb9576d1195db6fa2442e \
+    --hash=sha256:0dd8f72eeab0d2c3bd489025bb2f6a1b8342f9b198f6fc37b52d15cfa4531fea
