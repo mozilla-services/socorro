@@ -691,6 +691,9 @@ CSP_CONNECT_SRC = (
     "'self'",
 )
 
+CSP_REPORT_URI = (
+    '/__cspreport__',   
+)
 
 # This is the number of versions to display if a particular product
 # has no 'featured versions'. Then we use the active versions, but capped
