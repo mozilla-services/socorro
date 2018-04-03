@@ -692,7 +692,7 @@ CSP_CONNECT_SRC = (
 )
 
 CSP_REPORT_URI = (
-    '/__cspreport__',   
+    '/__cspreport__',
 )
 
 # This is the number of versions to display if a particular product
