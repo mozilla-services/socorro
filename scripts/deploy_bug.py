@@ -43,13 +43,8 @@ def fetch_history_from_github(user, repo, from_sha):
 
 
 def fetch_current_revision(host):
-    # Try /__version__ and fall back to /api/Status/
     resp = fetch(host + '/__version__')
-    if 'commit' in resp:
-        return resp['commit']
-
-    resp = fetch(host + '/api/Status/')
-    return resp['socorro_revision']
+    return resp['commit']
 
 
 def ref_to_tag(ref):
@@ -121,19 +116,8 @@ def main(argv):
     print('(next tag: %s - %s)' % (next_tag, commits[-1]['sha'][:7]))
     print()
 
-    # Print all possible post-deploy steps--we winnow the unnecessary ones when
-    # writing up the bug
-    print('After deploy:')
-    print()
-    print('* update -prod admin node')
-    print('* make configuration changes')
-    print('* perform alembic migrations')
-    print('* perform Django migrations')
-    print('* verify webapp functionality')
-    print()
-
-    # Any additional notes
-    print('Additional notes:')
+    # Any additional things to note
+    print('Additional things to note:')
     print()
     print('* ')
     print()
