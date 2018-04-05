@@ -1,10 +1,33 @@
+import functools
+
 from django.conf import settings
+from django.http import Http404
 from django.shortcuts import render
 from django.views.generic.base import RedirectView
 
 from crashstats.crashstats.decorators import pass_default_context
+from crashstats.crashstats.utils import build_default_context
 
 
+def handle_missing_product(view):
+    """Handle a 404 due to missing product
+
+    We want a more user-friendly "missing product" page with instructions and
+    other things.
+
+    """
+    @functools.wraps(view)
+    def inner(request, *args, **kwargs):
+        try:
+            return view(request, *args, **kwargs)
+        except Http404:
+            context = build_default_context()
+            context['product'] = kwargs.get('product', 'No product')
+            return render(request, 'home/missing_product.html', context, status=404)
+    return inner
+
+
+@handle_missing_product
 @pass_default_context
 def home(request, product, default_context=None):
     context = default_context or {}
