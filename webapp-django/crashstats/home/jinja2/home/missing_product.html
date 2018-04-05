@@ -1,0 +1,33 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Missing product: {{ product }}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Missing product: {{ product }}</h2>
+    </div>
+
+    <div class="panel">
+        <div class="body">
+            <p>
+                The "{{ product }}" product doesn't exist. If you think this is
+                an error, please contact an admin to add the product to Crash
+                Stats.
+            </p>
+            {% if DEBUG %}
+                <p>
+                    Seems like you might be seeing this page in a local
+                    development environment. If so, you should run:
+                </p>
+                <pre>make dockerupdatedata</pre>
+                <p>
+                    That'll create some products in the database.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
