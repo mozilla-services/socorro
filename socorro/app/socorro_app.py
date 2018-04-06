@@ -234,9 +234,8 @@ def setup_logger(config, local_unused, args_unused):
         app_name = 'a_socorro_app'
 
     logging_level = config.logging.level
-    logging_format = _convert_format_string(
-        config.logging.format_string.replace('{app_name}', app_name)
-    )
+    logging_root_level = config.logging.root_level
+    logging_format = _convert_format_string(config.logging.format_string)
 
     logging_config = {
         'version': 1,
@@ -260,11 +259,17 @@ def setup_logger(config, local_unused, args_unused):
             'socorro': {
                 'handlers': ['console'],
                 'level': logging_level,
+                'propagate': 0,
             },
             app_name: {
                 'handlers': ['console'],
                 'level': logging_level,
+                'propagate': 0,
             }
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': logging_root_level,
         }
     }
 
@@ -336,7 +341,7 @@ class App(SocorroApp):
     required_config.logging.add_option(
         'format_string',
         doc='format string for logging',
-        default='{asctime} {levelname} - {app_name} - {threadName} - {message}',
+        default='{asctime} {levelname} - {name} - {threadName} - {message}',
         reference_value_from='resource.logging',
     )
     required_config.logging.add_option(
