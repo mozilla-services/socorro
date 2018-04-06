@@ -15,6 +15,7 @@ all the Socorro Apps derive.
 """
 
 import logging
+import logging.config
 import logging.handlers
 import functools
 import signal
@@ -217,91 +218,60 @@ class SocorroApp(RequiredConfig):
             return return_code
 
 
-class LoggerWrapper(object):
-    """This class wraps the standard logger object.  It changes the logged
-    messages to display the 'executor_identity': the thread/greenlet/process
-    that is currently running."""
-
-    def __init__(self, logger, config):
-        self.config = config
-        self.logger = logger
-
-    def executor_identity(self):
-        try:
-            return " - %s - " % self.config.executor_identity()
-        except KeyError:
-            return " - %s - " % threading.currentThread().getName()
-
-    def debug(self, message, *args, **kwargs):
-        self.logger.debug(self.executor_identity() + message, *args, **kwargs)
-
-    def info(self, message, *args, **kwargs):
-        self.logger.info(self.executor_identity() + message, *args, **kwargs)
-
-    def error(self, message, *args, **kwargs):
-        self.logger.error(self.executor_identity() + message, *args, **kwargs)
-
-    def warning(self, message, *args, **kwargs):
-        self.logger.warning(
-            self.executor_identity() + message,
-            *args,
-            **kwargs
-        )
-
-    def critical(self, message, *args, **kwargs):
-        self.logger.critical(
-            self.executor_identity() + message,
-            *args,
-            **kwargs
-        )
-
-    def exception(self, message, *args, **kwargs):
-        kwargs['exc_info'] = True
-        self.error(message, *args, **kwargs)
-
-
 def setup_logger(config, local_unused, args_unused):
-    """This method is sets up and initializes the logger objects.  It is a
-    function in the form appropriate for a configiman aggregation.  When given
-    to Configman, that library will setup and initialize the logging system
+    """Initialize logging infrastructure and returns app logger
+
+    This method is sets up and initializes the logger objects. It is a function
+    in the form appropriate for a configiman aggregation. When given to
+    Configman, that library will setup and initialize the logging system
     automatically and then offer the logger as an object within the
-    configuration object."""
+    configuration object.
+
+    """
     try:
         app_name = config.application.app_name
     except KeyError:
         app_name = 'a_socorro_app'
+
+    logging_level = config.logging.level
+    logging_format = _convert_format_string(
+        config.logging.format_string.replace('{app_name}', app_name)
+    )
+
+    logging_config = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'socorroapp': {
+                'format': logging_format
+            }
+        },
+        'handlers': {
+            'console': {
+                'level': logging_level,
+                'class': 'logging.StreamHandler',
+                'formatter': 'socorroapp',
+            },
+        },
+        'loggers': {
+            'py.warnings': {
+                'handlers': ['console'],
+            },
+            'socorro': {
+                'handlers': ['console'],
+                'level': logging_level,
+            },
+            app_name: {
+                'handlers': ['console'],
+                'level': logging_level,
+            }
+        }
+    }
+
+    logging.config.dictConfig(logging_config)
+
     logger = logging.getLogger(app_name)
-    # if this is a restart, loggers must be removed before being recreated
-    tear_down_logger(app_name)
-    logger.setLevel(logging.DEBUG)
-    stderr_log = logging.StreamHandler()
-    stderr_log.setLevel(config.logging.stderr_error_logging_level)
-    stderr_format = config.logging.stderr_line_format_string.replace(
-        '{app_name}',
-        app_name
-    )
-    stderr_log_formatter = logging.Formatter(
-        _convert_format_string(stderr_format)
-    )
-    stderr_log.setFormatter(stderr_log_formatter)
-    logger.addHandler(stderr_log)
-
-    syslog = logging.handlers.SysLogHandler(
-        facility=config.logging.syslog_facility_string
-    )
-    syslog.setLevel(config.logging.syslog_error_logging_level)
-    syslog_format = config.logging.syslog_line_format_string.replace(
-        '{app_name}',
-        app_name
-    )
-    syslog_formatter = logging.Formatter(
-        _convert_format_string(syslog_format)
-    )
-    syslog.setFormatter(syslog_formatter)
-    logger.addHandler(syslog)
-
-    wrapped_logger = LoggerWrapper(logger, config)
-    return wrapped_logger
+    return logger
 
 
 def setup_metrics(config, local_unused, args_unused):
@@ -364,51 +334,27 @@ class App(SocorroApp):
     required_config = Namespace()
     required_config.namespace('logging')
     required_config.logging.add_option(
-        'syslog_host',
-        doc='syslog hostname',
-        default='localhost',
+        'format_string',
+        doc='format string for logging',
+        default='{asctime} {levelname} - {app_name} - {threadName} - {message}',
         reference_value_from='resource.logging',
     )
     required_config.logging.add_option(
-        'syslog_port',
-        doc='syslog port',
-        default=514,
+        'level',
+        doc=(
+            'logging level '
+            '(10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+        ),
+        default=20,
         reference_value_from='resource.logging',
     )
     required_config.logging.add_option(
-        'syslog_facility_string',
-        doc='syslog facility string ("user", "local0", etc)',
-        default='user',
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'syslog_line_format_string',
-        doc='python logging system format for syslog entries',
-        default='{app_name} (pid {process}): '
-                '{asctime} {levelname} - {threadName} - '
-                '{message}',
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'syslog_error_logging_level',
-        doc='logging level for the log file (10 - DEBUG, 20 '
-            '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
-        default=40,
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'stderr_line_format_string',
-        doc='python logging system format for logging to stderr',
-        default='{asctime} {levelname} - {app_name} - '
-                '{message}',
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'stderr_error_logging_level',
-        doc='logging level for the logging to stderr (10 - '
-            'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
-            '50 - CRITICAL)',
-        default=10,
+        'root_level',
+        doc=(
+            'logging level for everything not Socorro '
+            '(10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+        ),
+        default=30,
         reference_value_from='resource.logging',
     )
     required_config.add_aggregation(
