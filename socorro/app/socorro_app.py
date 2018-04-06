@@ -21,7 +21,6 @@ import functools
 import signal
 import os
 import sys
-import re
 import threading
 
 from configman import (
@@ -235,7 +234,7 @@ def setup_logger(config, local_unused, args_unused):
 
     logging_level = config.logging.level
     logging_root_level = config.logging.root_level
-    logging_format = _convert_format_string(config.logging.format_string)
+    logging_format = config.logging.format_string
 
     logging_config = {
         'version': 1,
@@ -247,7 +246,6 @@ def setup_logger(config, local_unused, args_unused):
         },
         'handlers': {
             'console': {
-                'level': logging_level,
                 'class': 'logging.StreamHandler',
                 'formatter': 'socorroapp',
             },
@@ -259,19 +257,24 @@ def setup_logger(config, local_unused, args_unused):
             'socorro': {
                 'handlers': ['console'],
                 'level': logging_level,
-                'propagate': 0,
             },
             app_name: {
                 'handlers': ['console'],
                 'level': logging_level,
-                'propagate': 0,
-            }
+            },
         },
-        'root': {
+    }
+
+    # If the user is setting the root level to something below or equal to
+    # logging level, then we want to stop propagating some loggers. This only
+    # happens in local development environments.
+    if logging_root_level <= logging_level:
+        logging_config['root'] = {
             'handlers': ['console'],
             'level': logging_root_level,
         }
-    }
+        logging_config['loggers']['socorro']['propagate'] = 0
+        logging_config['loggers'][app_name]['propagate'] = 0
 
     logging.config.dictConfig(logging_config)
 
@@ -341,7 +344,7 @@ class App(SocorroApp):
     required_config.logging.add_option(
         'format_string',
         doc='format string for logging',
-        default='{asctime} {levelname} - {name} - {threadName} - {message}',
+        default='%(asctime)s %(levelname)s - %(name)s - %(threadName)s - %(message)s',
         reference_value_from='resource.logging',
     )
     required_config.logging.add_option(
@@ -384,17 +387,3 @@ class App(SocorroApp):
         'metrics',
         setup_metrics
     )
-
-
-def tear_down_logger(app_name):
-    logger = logging.getLogger(app_name)
-    # must have a copy of the handlers list since we cannot modify the original
-    # list while we're deleting items from that list
-    handlers = [x for x in logger.handlers]
-    for x in handlers:
-        logger.removeHandler(x)
-
-
-def _convert_format_string(s):
-    """return '%(foo)s %(bar)s' if the input is '{foo} {bar}'"""
-    return re.sub('{(\w+)}', r'%(\1)s', s)

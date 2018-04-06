@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
+
 from mock import Mock
 
 import pytest
@@ -9,8 +11,12 @@ import pytest
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.task_manager import TaskManager
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
+
+
+def get_logger():
+    return logging.getLogger(__name__)
 
 
 class TestFetchTransformSaveApp(TestCase):
@@ -33,7 +39,7 @@ class TestFetchTransformSaveApp(TestCase):
             def transform(self, anItem):
                 self.the_list.append(anItem)
 
-        logger = SilentFakeLogger()
+        logger = get_logger()
         config = DotDict({
             'logger': logger,
             'number_of_threads': 2,
@@ -113,7 +119,7 @@ class TestFetchTransformSaveApp(TestCase):
             def close(self):
                 self.number_of_close_calls += 1
 
-        logger = SilentFakeLogger()
+        logger = get_logger()
         config = DotDict({
             'logger': logger,
             'number_of_threads': 2,
@@ -179,7 +185,7 @@ class TestFetchTransformSaveApp(TestCase):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dump
 
-        logger = SilentFakeLogger()
+        logger = get_logger()
         config = DotDict({
             'logger': logger,
             'number_of_threads': 2,
@@ -233,7 +239,7 @@ class TestFetchTransformSaveApp(TestCase):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dump
 
-        logger = SilentFakeLogger()
+        logger = get_logger()
         config = DotDict({
             'logger': logger,
             'number_of_threads': 2,
@@ -290,7 +296,7 @@ class TestFetchTransformSaveApp(TestCase):
                 for k in self.store.keys():
                     yield k
 
-        logger = SilentFakeLogger()
+        logger = get_logger()
         config = DotDict({
             'logger': logger,
             'number_of_threads': 2,

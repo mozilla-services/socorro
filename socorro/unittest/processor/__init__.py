@@ -1,4 +1,4 @@
-import mock
+import logging
 
 from socorro.lib.util import DotDict
 from socorro.signature.rules import CSignatureTool
@@ -18,8 +18,6 @@ def create_basic_fake_processor():
     fake_processor = DotDict()
     fake_processor.c_signature_tool = c_signature_tool
     fake_processor.config = DotDict()
-    # need help figuring out failures? switch to FakeLogger and read stdout
-    fake_processor.config.logger = mock.MagicMock()
-    #fake_processor.config.logger = sutil.FakeLogger()
+    fake_processor.config.logger = logging.getLogger(__name__)
     fake_processor.processor_notes = []
     return fake_processor

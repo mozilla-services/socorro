@@ -2,9 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
+
 from mock import patch, call
 
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.lib.util import DotDict
 from socorro.lib.statistics import StatisticsForStatsd
 from socorro.unittest.testbase import TestCase
 
@@ -13,7 +15,7 @@ class TestStatsd(TestCase):
 
     def setUp(self):
         super(TestStatsd, self).setUp()
-        self.logger = SilentFakeLogger()
+        self.logger = logging.getLogger(__name__)
 
     def test_statistics_all_good(self):
         d = DotDict()
