@@ -75,9 +75,10 @@ class RabbitMQCrashStorage(CrashStorageBase):
         reference_value_from='resource.rabbitmq',
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(RabbitMQCrashStorage, self).__init__(
             config,
+            namespace=namespace,
             quit_check_callback=quit_check_callback
         )
 

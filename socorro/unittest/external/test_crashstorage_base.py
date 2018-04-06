@@ -22,7 +22,9 @@ from socorro.external.crashstorage_base import (
     BenchmarkingCrashStorage,
     MemoryDumpsMapping,
     FileDumpsMapping,
-    socorrodotdict_to_dict
+    socorrodotdict_to_dict,
+    MetricsCounter,
+    MetricsBenchmarkingWrapper,
 )
 from socorro.lib.util import DotDict as SocorroDotDict
 from socorro.unittest.testbase import TestCase
@@ -34,8 +36,8 @@ class A(CrashStorageBase):
     required_config.add_option('x', default=1)
     required_config.add_option('y', default=2)
 
-    def __init__(self, config, quit_check=None):
-        super(A, self).__init__(config, quit_check)
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        super(A, self).__init__(config, namespace, quit_check_callback)
         self.raw_crash_count = 0
 
     def save_raw_crash(self, raw_crash, dump):
@@ -992,11 +994,14 @@ class TestBench(TestCase):
         with config_manager.context() as config:
             crashstorage = BenchmarkingCrashStorage(
                 config,
+                namespace='',
                 quit_check_callback=fake_quit_check
             )
             crashstorage.start_timer = lambda: 0
             crashstorage.end_timer = lambda: 1
-            fake_crash_store.assert_called_with(config, fake_quit_check)
+            fake_crash_store.assert_called_with(
+                config, namespace='', quit_check_callback=fake_quit_check
+            )
 
             crashstorage.save_raw_crash({}, 'payload', 'ooid')
             crashstorage.wrapped_crashstore.save_raw_crash.assert_called_with(
@@ -1110,3 +1115,55 @@ class TestDumpsMappings(TestCase):
         )
         assert fdm.as_file_dumps_mapping() is fdm
         assert fdm.as_memory_dumps_mapping() == mdm
+
+
+class TestMetricsCounter(object):
+    def test_count(self, metricsmock):
+        config_manager = ConfigurationManager(
+            [MetricsCounter.get_required_config()],
+            values_source_list=[{
+                'metrics_prefix': 'phil',
+                'active_list': 'run',
+            }],
+            argv_source=[]
+        )
+        with config_manager.context() as config:
+            counter = MetricsCounter(config)
+
+        with metricsmock as mm:
+            counter.run()
+            counter.walk()
+
+        assert len(mm.get_records()) == 1
+        assert mm.has_record('incr', stat='phil.run', value=1)
+
+
+class TestMetricsBenchmarkingWrapper(object):
+    def test_wrapper(self, metricsmock):
+        fake_crash_store_class = mock.MagicMock()
+        fake_crash_store_class.__name__ = 'Phil'
+
+        config_manager = ConfigurationManager(
+            [MetricsBenchmarkingWrapper.get_required_config()],
+            values_source_list=[{
+                'wrapped_object_class': fake_crash_store_class,
+                'metrics_prefix': 'phil',
+                'active_list': 'run',
+            }],
+            argv_source=[]
+        )
+        with config_manager.context() as config:
+            mbw = MetricsBenchmarkingWrapper(config)
+
+        with metricsmock as mm:
+            mbw.run()
+            mbw.walk()
+
+        # Assert that the timing call occurred
+        assert len(mm.get_records()) == 1
+        assert mm.has_record('timing', stat='phil.Phil.run')
+
+        # Assert that the wrapped crash storage class .run() and .walk() were
+        # called on the instance
+        fake_crash_store_class.return_value.run.assert_called_with()
+        fake_crash_store_class.return_value.walk.assert_called_with()

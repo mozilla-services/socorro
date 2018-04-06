@@ -85,10 +85,11 @@ class BotoCrashStorage(CrashStorageBase):
         #elif   # for further cases...
         return False
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(BotoCrashStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
 
         self.connection_source = config.resource_class(config)

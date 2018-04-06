@@ -45,8 +45,8 @@ CONFIG_DEFAULTS = {
 
         'postgres': {
             'benchmark_tag': 'PGBenchmarkWrite',
-            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
-            'statsd_prefix': 'processor.postgres',
+            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
+            'metrics_prefix': 'processor.postgres',
             'transaction_executor_class': (
                 'socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
             ),
@@ -57,15 +57,15 @@ CONFIG_DEFAULTS = {
         's3': {
             'active_list': 'save_raw_and_processed',
             'benchmark_tag': 'BotoBenchmarkWrite',
-            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
-            'statsd_prefix': 'processor.s3',
+            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
+            'metrics_prefix': 'processor.s3',
             'use_mapping_file': 'False',
             'wrapped_object_class': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
         },
         'elasticsearch': {
             'active_list': 'save_raw_and_processed',
             'benchmark_tag': 'BotoBenchmarkWrite',
-            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
+            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
             'es_redactor': {
                 'forbidden_keys': ', '.join([
                     'memory_report',
@@ -74,7 +74,7 @@ CONFIG_DEFAULTS = {
                     'upload_file_minidump_flash2.json_dump',
                 ]),
             },
-            'statsd_prefix': 'processor.es',
+            'metrics_prefix': 'processor.es',
             'use_mapping_file': 'False',
             'wrapped_object_class': (
                 'socorro.external.es.crashstorage.ESCrashStorageRedactedJsonDump'
@@ -82,14 +82,14 @@ CONFIG_DEFAULTS = {
         },
         'statsd': {
             'active_list': 'save_raw_and_processed',
-            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdCounter',
-            'statsd_prefix': 'processor',
+            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsCounter',
+            'metrics_prefix': 'processor',
         },
         'telemetry': {
             'active_list': 'save_raw_and_processed',
             'bucket_name': 'org-mozilla-telemetry-crashes',
-            'crashstorage_class': 'socorro.external.statsd.statsd_base.StatsdBenchmarkingWrapper',
-            'statsd_prefix': 'processor.telemetry',
+            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
+            'metrics_prefix': 'processor.telemetry',
             'wrapped_object_class': (
                 'socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage'
             ),

@@ -292,6 +292,7 @@ class FetchTransformSaveApp(App):
         try:
             self.source = self.config.source.crashstorage_class(
                 self.config.source,
+                namespace=self.app_name,
                 quit_check_callback=self.quit_check
             )
         except Exception:
@@ -303,6 +304,7 @@ class FetchTransformSaveApp(App):
         try:
             self.destination = self.config.destination.crashstorage_class(
                 self.config.destination,
+                namespace=self.app_name,
                 quit_check_callback=self.quit_check
             )
         except Exception:

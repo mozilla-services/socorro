@@ -31,7 +31,8 @@ from configman import (
     environment,
     command_line,
 )
-from configman.converters import py_obj_to_str, str_to_python_object
+from configman.converters import py_obj_to_str, str_to_python_object, str_to_list
+import markus
 
 
 # for use with SIGHUP for apps that run as daemons
@@ -258,6 +259,10 @@ def setup_logger(config, local_unused, args_unused):
                 'handlers': ['console'],
                 'level': logging_level,
             },
+            'markus': {
+                'handlers': ['console'],
+                'level': logging.INFO,
+            },
             app_name: {
                 'handlers': ['console'],
                 'level': logging_level,
@@ -283,58 +288,40 @@ def setup_logger(config, local_unused, args_unused):
 
 
 def setup_metrics(config, local_unused, args_unused):
-    """Sets up metrics client which is either a DogStatsd client or a LoggingClient
+    """Sets up markus and adds a metrics client to config
 
-    NOTE(willkg): This is a little gross, but that's mostly to keep all the code in one place and
-    minimal which makes it easier to deal with for now. If this ever grows, then we'll probably want
-    to split this out into its own module.
-
-    This gets tossed in config (along with everything else), so you can use it like this::
-
-        class SomeComponent(RequiredConfig):
-            def something(self):
-                self.config.metrics.increment('somekey')
+    :returns: Markus MetricsInterface
 
     """
-    # We do the import here in case there are parts of Socorro that are running in environments that
-    # don't have this library installed.
-    #
-    # FIXME(willkg): We're using a *super* old version of dogstatsd-python which doesn't have the
-    # DogStatsd class. We should upgrade.
-    try:
-        from datadog.dogstatsd import statsd
-    except ImportError:
-        statsd = None
+    backends = []
 
-    host = config.metricscfg.statsd_host
-    port = config.metricscfg.statsd_port
+    for backend in config.metricscfg.markus_backends:
+        if backend == 'markus.backends.statsd.StatsdMetrics':
+            backends.append({
+                'class': 'markus.backends.statsd.StatsdMetrics',
+                'options': {
+                    'statsd_host': config.metricscfg.statsd_host,
+                    'statsd_port': config.metricscfg.statsd_port,
+                }
+            })
+        elif backend == 'markus.backends.datadog.DatadogMetrics':
+            backends.append({
+                'class': 'markus.backends.datadog.DatadogMetrics',
+                'options': {
+                    'statsd_host': config.metricscfg.statsd_host,
+                    'statsd_port': config.metricscfg.statsd_port,
+                }
+            })
+        elif backend == 'markus.backends.logging.LoggingMetrics':
+            backends.append({
+                'class': 'markus.backends.logging.LoggingMetrics',
+            })
+        else:
+            raise ValueError('Invalid markus backend "%s"' % backend)
 
-    if host and statsd:
-        statsd.host = host
-        statsd.port = port
-        return statsd
+    markus.configure(backends=backends)
 
-    class LoggingMetrics(object):
-        """Logging-based metrics class that mimics DogStatsd class"""
-        def __init__(self):
-            self.logger = logging.getLogger('socorro.metrics')
-
-        def _log(self, operation, metric, value, tags):
-            self.logger.info('%s: %s=%s tags=%s', operation, metric, value, tags or [])
-
-        def increment(self, metric, value=1, tags=None):
-            self._log('increment', metric, value, tags)
-
-        def gauge(self, metric, value, tags=None):
-            self._log('gauge', metric, value, tags)
-
-        def timing(self, metric, value, tags=None):
-            self._log('timing', metric, value, tags)
-
-        def histogram(self, metric, value, tags=None):
-            self._log('histogram', metric, value, tags)
-
-    return LoggingMetrics()
+    return markus.get_metrics('')
 
 
 class App(SocorroApp):
@@ -382,6 +369,13 @@ class App(SocorroApp):
         doc='port for statsd server',
         default=8125,
         reference_value_from='resource.statsd'
+    )
+    required_config.metricscfg.add_option(
+        'markus_backends',
+        doc='comma separated list of Markus backends to use',
+        default='markus.backends.datadog.DatadogMetrics',
+        reference_value_from='resource.statsd',
+        from_string_converter=str_to_list,
     )
     required_config.add_aggregation(
         'metrics',

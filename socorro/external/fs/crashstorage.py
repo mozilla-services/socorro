@@ -704,8 +704,12 @@ class TarFileWritingCrashStore(CrashStorageBase):
         text buffer tarfiles or using temporary files"""
         return self.tarfile_module.open(self.config.tarball_name, 'w')
 
-    def __init__(self, config, quit_check_callback=None):
-        super(TarFileWritingCrashStore, self).__init__(config, quit_check_callback)
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        super(TarFileWritingCrashStore, self).__init__(
+            config,
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
+        )
         self.tarfile_module = config.tarfile_module
         self.gzip_module = config.gzip_module
         self.tar_fp = self._create_tarfile()
@@ -761,10 +765,11 @@ class TarFileSequentialReadingCrashStore(CrashStorageBase):
         text buffer tarfiles or using temporary files"""
         return self.tarfile_module.open(self.config.tarball_name, 'r')
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(TarFileSequentialReadingCrashStore, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
         self.tarfile_module = config.tarfile_module
         self.gzip_module = config.gzip_module

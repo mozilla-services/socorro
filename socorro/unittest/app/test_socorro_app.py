@@ -1,5 +1,3 @@
-import logging
-
 from configman import (
     Namespace,
     command_line,
@@ -160,44 +158,19 @@ class TestSocorroApp(TestCase):
 
 class AppWithMetrics(App):
     def main(self):
-        self.config.metrics.increment('increment_key')
+        self.config.metrics.incr('increment_key')
         self.config.metrics.gauge('gauge_key', value=10)
         self.config.metrics.timing('timing_key', value=100)
         self.config.metrics.histogram('histogram_key', value=1000)
 
 
 class TestSocorroAppMetrics:
-    def test_logging_metrics(self, caplog):
+    def test_metrics(self, metricsmock):
         """Verify LoggingMetrics work"""
-        caplog.set_level(logging.INFO)
+        with metricsmock as mm:
+            AppWithMetrics.run(values_source_list=[configman_keys({})])
 
-        AppWithMetrics.run(values_source_list=[configman_keys({})])
-
-        assert 'increment: increment_key=1 tags=[]' in caplog.text
-        assert 'gauge: gauge_key=10 tags=[]' in caplog.text
-        assert 'timing: timing_key=100 tags=[]' in caplog.text
-        assert 'histogram: histogram_key=1000 tags=[]' in caplog.text
-
-    def test_statsd_metrics(self, caplog):
-        caplog.set_level(logging.INFO)
-
-        with mock.patch('datadog.dogstatsd.statsd') as mock_statsd:
-            vsl = configman_keys({
-                'metricscfg.statsd_host': 'localhost',
-                'metricscfg.statsd_port': '8125',
-            })
-            AppWithMetrics.run(values_source_list=[vsl])
-
-            # Verify these didn't get logged
-            assert 'increment: increment_key' not in caplog.text
-            assert 'gauge: gauge_key' not in caplog.text
-            assert 'timing: timing_key' not in caplog.text
-            assert 'histogram: histogram_key' not in caplog.text
-
-            # Verify they did get called on mock_statsd. Do this by converting the mock_calls call
-            # objects to strings so they're easy to verify.
-            mock_calls = [str(call) for call in mock_statsd.mock_calls]
-            assert 'call.increment(\'increment_key\')' in mock_calls
-            assert 'call.gauge(\'gauge_key\', value=10)' in mock_calls
-            assert 'call.timing(\'timing_key\', value=100)' in mock_calls
-            assert 'call.histogram(\'histogram_key\', value=1000)' in mock_calls
+            assert mm.has_record('incr', stat='increment_key', value=1)
+            assert mm.has_record('gauge', stat='gauge_key', value=10)
+            assert mm.has_record('timing', stat='timing_key', value=100)
+            assert mm.has_record('histogram', stat='histogram_key', value=1000)

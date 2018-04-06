@@ -200,10 +200,11 @@ class ESCrashStorage(CrashStorageBase):
         r'\[failed to parse \[([\w\-.]+)]]'
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(ESCrashStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
 
         # Ok, it's sane, so let's continue.
@@ -429,11 +430,8 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         from_string_converter=class_converter,
     )
 
-    def __init__(self, config, quit_check_callback=None):
-        super(ESCrashStorageRedactedSave, self).__init__(
-            config,
-            quit_check_callback
-        )
+    def __init__(self, config, *args, **kwargs):
+        super(ESCrashStorageRedactedSave, self).__init__(config, *args, **kwargs)
         self.redactor = config.es_redactor.redactor_class(config.es_redactor)
         self.raw_crash_redactor = config.raw_crash_es_redactor.redactor_class(
             config.raw_crash_es_redactor
@@ -569,10 +567,11 @@ def _create_bulk_load_crashstore(base_class):
             doc='the maximum size of the internal queue'
         )
 
-        def __init__(self, config, quit_check_callback=None):
+        def __init__(self, config, namespace='', quit_check_callback=None):
             super(ESBulkClassTemplate, self).__init__(
                 config,
-                quit_check_callback
+                namespace=namespace,
+                quit_check_callback=quit_check_callback
             )
 
             self.task_queue = QueueWrapper(config.maximum_queue_size)

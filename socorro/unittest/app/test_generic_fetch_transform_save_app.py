@@ -67,7 +67,7 @@ class TestFetchTransformSaveApp(TestCase):
                     yield ((x,), {})
 
         class FakeStorageSource(object):
-            def __init__(self, config, quit_check_callback):
+            def __init__(self, config, namespace='', quit_check_callback=None):
                 self.store = DotDict({
                     '1234': DotDict({
                         'ooid': '1234',
@@ -106,8 +106,7 @@ class TestFetchTransformSaveApp(TestCase):
                 self.number_of_close_calls += 1
 
         class FakeStorageDestination(object):
-
-            def __init__(self, config, quit_check_callback):
+            def __init__(self, config, namespace='', quit_check_callback=None):
                 self.store = DotDict()
                 self.dumps = DotDict()
                 self.number_of_close_calls = 0
