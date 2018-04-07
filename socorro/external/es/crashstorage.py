@@ -11,6 +11,7 @@ from contextlib import contextmanager
 import elasticsearch
 from configman import Namespace
 from configman.converters import class_converter, list_converter
+import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
 from socorro.external.es.super_search_fields import FIELDS
@@ -218,6 +219,8 @@ class ESCrashStorage(CrashStorageBase):
             quit_check_callback
         )
 
+        self.metrics = markus.get_metrics(namespace)
+
     def get_index_for_crash(self, crash_date):
         """Return the submission URL for a crash; based on the submission URL
         from config and the date of the crash.
@@ -295,13 +298,10 @@ class ESCrashStorage(CrashStorageBase):
 
     def capture_crash_metrics(self, raw_crash, processed_crash):
         """Capture metrics about crash data being saved to Elasticsearch"""
-        # NOTE(willkg): this is a hard-coded keyname to match what the statsdbenchmarkingwrapper
-        # produces for processor crashstorage classes. This is only used in that context, so we're
-        # hard-coding this now rather than figuring out a better way to carry that name through.
         try:
-            self.config.metrics.histogram(
-                'processor.es.raw_crash_size',
-                len(json.dumps(raw_crash, cls=JsonDTEncoder))
+            self.metrics.histogram(
+                'raw_crash_size',
+                value=len(json.dumps(raw_crash, cls=JsonDTEncoder))
             )
         except Exception:
             # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
@@ -309,9 +309,9 @@ class ESCrashStorage(CrashStorageBase):
             self.config.logger.exception('something went wrong when capturing raw_crash_size')
 
         try:
-            self.config.metrics.histogram(
-                'processor.es.processed_crash_size',
-                len(json.dumps(processed_crash, cls=JsonDTEncoder))
+            self.metrics.histogram(
+                'processed_crash_size',
+                value=len(json.dumps(processed_crash, cls=JsonDTEncoder))
             )
         except Exception:
             # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
