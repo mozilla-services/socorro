@@ -572,7 +572,7 @@ class PolyCrashStorage(CrashStorageBase):
         self.storage_namespaces = config.storage_namespaces
         self.stores = ConfigmanDotDict()
         for a_namespace in self.storage_namespaces:
-            store_namespace = '.'.join([namespace, a_namespace])
+            store_namespace = '.'.join(x for x in [namespace, a_namespace] if x)
             self.stores[a_namespace] = config[a_namespace].crashstorage_class(
                 config[a_namespace],
                 namespace=store_namespace,
@@ -720,12 +720,12 @@ class FallbackCrashStorage(CrashStorageBase):
         super(FallbackCrashStorage, self).__init__(config, namespace, quit_check_callback)
         self.primary_store = config.primary.storage_class(
             config.primary,
-            namespace='.'.join([namespace, 'primary']),
+            namespace='.'.join(x for x in [namespace, 'primary'] if x),
             quit_check_callback=quit_check_callback
         )
         self.fallback_store = config.fallback.storage_class(
             config.fallback,
-            namespace='.'.join([namespace, 'fallback']),
+            namespace='.'.join(x for x in [namespace, 'fallback'] if x),
             quit_check_callback=quit_check_callback
         )
         self.logger = self.config.logger
@@ -1000,7 +1000,7 @@ class PrimaryDeferredStorage(CrashStorageBase):
         )
         self.primary_store = config.primary.storage_class(
             config.primary,
-            namespace='.'.join([namespace, 'primary']),
+            namespace='.'.join(x for x in [namespace, 'primary'] if x),
             quit_check_callback=quit_check_callback
         )
         self.deferred_store = config.deferred.storage_class(
@@ -1304,8 +1304,7 @@ class MetricsEnabledBase(RequiredConfig):
         self.metrics = markus.get_metrics(self.config.metrics_prefix)
 
     def _make_key(self, *args):
-        parts = list(args)
-        return '.'.join(x for x in parts if x)
+        return '.'.join(x for x in args if x)
 
 
 class MetricsCounter(MetricsEnabledBase):

@@ -10,6 +10,7 @@ import pytest
 from socorro.app.socorro_app import (
     App,
     SocorroApp,
+    setup_logger,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -174,3 +175,61 @@ class TestSocorroAppMetrics:
             assert mm.has_record('gauge', stat='gauge_key', value=10)
             assert mm.has_record('timing', stat='timing_key', value=100)
             assert mm.has_record('histogram', stat='histogram_key', value=1000)
+
+
+def test_setup_logger():
+    """Verify setup_logger with level and root_level variations"""
+    with mock.patch('socorro.app.socorro_app.logging.config.dictConfig') as dict_config_mock:
+        # Defaults for level and root_level
+        cfg = DotDict({
+            'application': {
+                'app_name': 'app'
+            },
+            'logging': {
+                'level': 20,
+                'root_level': 40,
+                'format_string': 'foo'
+            }
+        })
+        setup_logger(cfg, None, None)
+        logging_config = dict_config_mock.call_args[0][0]
+
+        assert 'root' not in logging_config
+        assert 'propagate' not in logging_config['loggers']['socorro']
+        assert 'propagate' not in logging_config['loggers']['app']
+
+        # level == root_level
+        cfg = DotDict({
+            'application': {
+                'app_name': 'app'
+            },
+            'logging': {
+                'level': 20,
+                'root_level': 20,
+                'format_string': 'foo'
+            }
+        })
+        setup_logger(cfg, None, None)
+        logging_config = dict_config_mock.call_args[0][0]
+
+        assert 'root' in logging_config
+        assert logging_config['loggers']['socorro']['propagate'] == 0
+        assert logging_config['loggers']['app']['propagate'] == 0
+
+        # level < root_level
+        cfg = DotDict({
+            'application': {
+                'app_name': 'app'
+            },
+            'logging': {
+                'level': 20,
+                'root_level': 10,
+                'format_string': 'foo'
+            }
+        })
+        setup_logger(cfg, None, None)
+        logging_config = dict_config_mock.call_args[0][0]
+
+        assert 'root' in logging_config
+        assert logging_config['loggers']['socorro']['propagate'] == 0
+        assert logging_config['loggers']['app']['propagate'] == 0

@@ -16,11 +16,12 @@ def metricsmock():
             with metricsmock as mm:
                 # do stuff
                 assert mm.has_record(
+                    'incr',
                     stat='some.stat',
-                    kwargs_contains={
-                        'something': 1
-                    }
+                    value=1
                 )
+
+    https://markus.readthedocs.io/en/latest/testing.html
 
     """
     return MetricsMock()
