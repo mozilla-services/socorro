@@ -111,7 +111,7 @@ CONFIG_DEFAULTS = {
 
     'producer_consumer': {
         'maximum_queue_size': 32,
-        'number_of_threads': 16,
+        'number_of_threads': 4,
     },
 
     'resource': {
