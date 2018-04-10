@@ -361,7 +361,7 @@ class App(SocorroApp):
     required_config.metricscfg.add_option(
         'statsd_host',
         doc='host for statsd server',
-        default='',
+        default='localhost',
         reference_value_from='resource.metrics'
     )
     required_config.metricscfg.add_option(
