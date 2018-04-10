@@ -571,11 +571,11 @@ class PolyCrashStorage(CrashStorageBase):
         super(PolyCrashStorage, self).__init__(config, namespace, quit_check_callback)
         self.storage_namespaces = config.storage_namespaces
         self.stores = ConfigmanDotDict()
-        for a_namespace in self.storage_namespaces:
-            store_namespace = '.'.join(x for x in [namespace, a_namespace] if x)
-            self.stores[a_namespace] = config[a_namespace].crashstorage_class(
-                config[a_namespace],
-                namespace=store_namespace,
+        for storage_namespace in self.storage_namespaces:
+            absolute_namespace = '.'.join(x for x in [namespace, storage_namespace] if x)
+            self.stores[storage_namespace] = config[storage_namespace].crashstorage_class(
+                config[storage_namespace],
+                namespace=absolute_namespace,
                 quit_check_callback=quit_check_callback
             )
 

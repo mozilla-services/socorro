@@ -362,19 +362,19 @@ class App(SocorroApp):
         'statsd_host',
         doc='host for statsd server',
         default='',
-        reference_value_from='resource.statsd'
+        reference_value_from='resource.metrics'
     )
     required_config.metricscfg.add_option(
         'statsd_port',
         doc='port for statsd server',
         default=8125,
-        reference_value_from='resource.statsd'
+        reference_value_from='resource.metrics'
     )
     required_config.metricscfg.add_option(
         'markus_backends',
         doc='comma separated list of Markus backends to use',
         default='markus.backends.datadog.DatadogMetrics',
-        reference_value_from='resource.statsd',
+        reference_value_from='resource.metrics',
         from_string_converter=str_to_list,
     )
     required_config.add_aggregation(
