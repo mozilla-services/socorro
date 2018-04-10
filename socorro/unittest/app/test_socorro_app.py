@@ -1,5 +1,3 @@
-import logging
-
 from configman import (
     Namespace,
     command_line,
@@ -12,6 +10,7 @@ import pytest
 from socorro.app.socorro_app import (
     App,
     SocorroApp,
+    setup_logger,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -160,44 +159,77 @@ class TestSocorroApp(TestCase):
 
 class AppWithMetrics(App):
     def main(self):
-        self.config.metrics.increment('increment_key')
+        self.config.metrics.incr('increment_key')
         self.config.metrics.gauge('gauge_key', value=10)
         self.config.metrics.timing('timing_key', value=100)
         self.config.metrics.histogram('histogram_key', value=1000)
 
 
 class TestSocorroAppMetrics:
-    def test_logging_metrics(self, caplog):
+    def test_metrics(self, metricsmock):
         """Verify LoggingMetrics work"""
-        caplog.set_level(logging.INFO)
+        with metricsmock as mm:
+            AppWithMetrics.run(values_source_list=[configman_keys({})])
 
-        AppWithMetrics.run(values_source_list=[configman_keys({})])
+            assert mm.has_record('incr', stat='increment_key', value=1)
+            assert mm.has_record('gauge', stat='gauge_key', value=10)
+            assert mm.has_record('timing', stat='timing_key', value=100)
+            assert mm.has_record('histogram', stat='histogram_key', value=1000)
 
-        assert 'increment: increment_key=1 tags=[]' in caplog.text
-        assert 'gauge: gauge_key=10 tags=[]' in caplog.text
-        assert 'timing: timing_key=100 tags=[]' in caplog.text
-        assert 'histogram: histogram_key=1000 tags=[]' in caplog.text
 
-    def test_statsd_metrics(self, caplog):
-        caplog.set_level(logging.INFO)
+def test_setup_logger():
+    """Verify setup_logger with level and root_level variations"""
+    with mock.patch('socorro.app.socorro_app.logging.config.dictConfig') as dict_config_mock:
+        # Defaults for level and root_level
+        cfg = DotDict({
+            'application': {
+                'app_name': 'app'
+            },
+            'logging': {
+                'level': 20,
+                'root_level': 40,
+                'format_string': 'foo'
+            }
+        })
+        setup_logger(cfg, None, None)
+        logging_config = dict_config_mock.call_args[0][0]
 
-        with mock.patch('datadog.dogstatsd.statsd') as mock_statsd:
-            vsl = configman_keys({
-                'metricscfg.statsd_host': 'localhost',
-                'metricscfg.statsd_port': '8125',
-            })
-            AppWithMetrics.run(values_source_list=[vsl])
+        assert 'root' not in logging_config
+        assert 'propagate' not in logging_config['loggers']['socorro']
+        assert 'propagate' not in logging_config['loggers']['app']
 
-            # Verify these didn't get logged
-            assert 'increment: increment_key' not in caplog.text
-            assert 'gauge: gauge_key' not in caplog.text
-            assert 'timing: timing_key' not in caplog.text
-            assert 'histogram: histogram_key' not in caplog.text
+        # level == root_level
+        cfg = DotDict({
+            'application': {
+                'app_name': 'app'
+            },
+            'logging': {
+                'level': 20,
+                'root_level': 20,
+                'format_string': 'foo'
+            }
+        })
+        setup_logger(cfg, None, None)
+        logging_config = dict_config_mock.call_args[0][0]
 
-            # Verify they did get called on mock_statsd. Do this by converting the mock_calls call
-            # objects to strings so they're easy to verify.
-            mock_calls = [str(call) for call in mock_statsd.mock_calls]
-            assert 'call.increment(\'increment_key\')' in mock_calls
-            assert 'call.gauge(\'gauge_key\', value=10)' in mock_calls
-            assert 'call.timing(\'timing_key\', value=100)' in mock_calls
-            assert 'call.histogram(\'histogram_key\', value=1000)' in mock_calls
+        assert 'root' in logging_config
+        assert logging_config['loggers']['socorro']['propagate'] == 0
+        assert logging_config['loggers']['app']['propagate'] == 0
+
+        # level < root_level
+        cfg = DotDict({
+            'application': {
+                'app_name': 'app'
+            },
+            'logging': {
+                'level': 20,
+                'root_level': 10,
+                'format_string': 'foo'
+            }
+        })
+        setup_logger(cfg, None, None)
+        logging_config = dict_config_mock.call_args[0][0]
+
+        assert 'root' in logging_config
+        assert logging_config['loggers']['socorro']['propagate'] == 0
+        assert logging_config['loggers']['app']['propagate'] == 0

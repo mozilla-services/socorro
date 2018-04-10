@@ -5,6 +5,7 @@
 import os
 import json
 
+import mock
 from socorro.processor.rules.memory_report_extraction import (
     MemoryReportExtraction,
 )
@@ -24,6 +25,8 @@ def get_example_file_data(filename):
 class TestMemoryReportExtraction(TestCase):
     def get_config(self):
         fake_processor = create_basic_fake_processor()
+        # FIXME(willkg): we should switch logging testing to use pytest's caplog
+        fake_processor.config.logger = mock.MagicMock()
         return fake_processor.config
 
     def test_predicate_success(self):

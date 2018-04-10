@@ -86,9 +86,10 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         ("version", "version", 16),
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(PostgreSQLCrashStorage, self).__init__(
             config,
+            namespace=namespace,
             quit_check_callback=quit_check_callback
         )
         self.database = config.database_class(config)

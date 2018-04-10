@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
+
 from mock import Mock
 
 from socorro.lib.task_manager import TaskManager, default_task_func
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 
@@ -13,7 +15,7 @@ class TestTaskManager(TestCase):
 
     def setUp(self):
         super(TestTaskManager, self).setUp()
-        self.logger = SilentFakeLogger()
+        self.logger = logging.getLogger(__name__)
 
     def test_constuctor1(self):
         config = DotDict()
