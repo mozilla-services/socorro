@@ -15,8 +15,9 @@ import datetime
 from socorro.lib.util import DotDict as SocorroDotDict
 
 from configman import Namespace, RequiredConfig
-from configman.converters import class_converter
+from configman.converters import class_converter, str_to_list
 from configman.dotdict import DotDict as ConfigmanDotDict
+import markus
 
 
 def socorrodotdict_to_dict(sdotdict):
@@ -182,11 +183,13 @@ class CrashStorageBase(RequiredConfig):
         reference_value_from='resource.redactor',
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """base class constructor
 
         parameters:
             config - a configman dot dict holding configuration information
+            namespace - namespace for this crashstorage instance. Used for
+                        metrics prefixes and logging.
             quit_check_callback - a function to be called periodically during
                                   long running operations.  It should check
                                   whatever the client app uses to detect a
@@ -203,8 +206,10 @@ class CrashStorageBase(RequiredConfig):
                     exceptions that can be raised by a given storage
                     implementation.  This may be fetched by a client of the
                     crashstorge so that it can determine if it can try a failed
-                    storage operation again."""
+                    storage operation again.
+        """
         self.config = config
+        self.namespace = namespace
         if quit_check_callback:
             self.quit_check = quit_check_callback
         else:
@@ -548,11 +553,12 @@ class PolyCrashStorage(CrashStorageBase):
         likely_to_be_changed=True,
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """instantiate all the subordinate crashstorage instances
 
         parameters:
             config - a configman dot dict holding configuration information
+            namespace - namespace for this crashstorage
             quit_check_callback - a function to be called periodically during
                                   long running operations.
 
@@ -562,13 +568,15 @@ class PolyCrashStorage(CrashStorageBase):
             self.stores - instances of the subordinate crash stores
 
         """
-        super(PolyCrashStorage, self).__init__(config, quit_check_callback)
+        super(PolyCrashStorage, self).__init__(config, namespace, quit_check_callback)
         self.storage_namespaces = config.storage_namespaces
         self.stores = ConfigmanDotDict()
-        for a_namespace in self.storage_namespaces:
-            self.stores[a_namespace] = config[a_namespace].crashstorage_class(
-                config[a_namespace],
-                quit_check_callback
+        for storage_namespace in self.storage_namespaces:
+            absolute_namespace = '.'.join(x for x in [namespace, storage_namespace] if x)
+            self.stores[storage_namespace] = config[storage_namespace].crashstorage_class(
+                config[storage_namespace],
+                namespace=absolute_namespace,
+                quit_check_callback=quit_check_callback
             )
 
     def close(self):
@@ -707,16 +715,18 @@ class FallbackCrashStorage(CrashStorageBase):
         from_string_converter=class_converter
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """instantiate the primary and secondary storage systems"""
-        super(FallbackCrashStorage, self).__init__(config, quit_check_callback)
+        super(FallbackCrashStorage, self).__init__(config, namespace, quit_check_callback)
         self.primary_store = config.primary.storage_class(
             config.primary,
-            quit_check_callback
+            namespace='.'.join(x for x in [namespace, 'primary'] if x),
+            quit_check_callback=quit_check_callback
         )
         self.fallback_store = config.fallback.storage_class(
             config.fallback,
-            quit_check_callback
+            namespace='.'.join(x for x in [namespace, 'fallback'] if x),
+            quit_check_callback=quit_check_callback
         )
         self.logger = self.config.logger
 
@@ -981,19 +991,22 @@ class PrimaryDeferredStorage(CrashStorageBase):
         from_string_converter=eval
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """instantiate the primary and deferred storage systems"""
         super(PrimaryDeferredStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
         self.primary_store = config.primary.storage_class(
             config.primary,
-            quit_check_callback
+            namespace='.'.join(x for x in [namespace, 'primary'] if x),
+            quit_check_callback=quit_check_callback
         )
         self.deferred_store = config.deferred.storage_class(
             config.deferred,
-            quit_check_callback
+            namespace='.'.join([namespace, 'deferred']),
+            quit_check_callback=quit_check_callback
         )
         self.logger = self.config.logger
 
@@ -1115,10 +1128,11 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
         from_string_converter=class_converter
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(PrimaryDeferredProcessedStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
         self.processed_store = config.processed.storage_class(
             config.processed,
@@ -1150,14 +1164,16 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         from_string_converter=class_converter
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(BenchmarkingCrashStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
         self.wrapped_crashstore = config.wrapped_crashstore(
             config,
-            quit_check_callback)
+            namespace=namespace,
+            quit_check_callback=quit_check_callback)
         self.tag = config.benchmark_tag
         self.start_timer = datetime.datetime.now
         self.end_timer = datetime.datetime.now
@@ -1266,3 +1282,75 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             self.tag,
             end_time - start_time
         )
+
+
+class MetricsEnabledBase(RequiredConfig):
+    """Base class for capturing metrics for crashstorage classes"""
+    required_config = Namespace()
+    required_config.add_option(
+        'metrics_prefix',
+        doc='a string to be used as the prefix for metrics keys',
+        default=''
+    )
+    required_config.add_option(
+        'active_list',
+        default='save_raw_and_processed,act',
+        doc='a comma delimeted list of counters that are enabled',
+        from_string_converter=str_to_list
+    )
+
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        self.config = config
+        self.metrics = markus.get_metrics(self.config.metrics_prefix)
+
+    def _make_key(self, *args):
+        return '.'.join(x for x in args if x)
+
+
+class MetricsCounter(MetricsEnabledBase):
+    """Counts the number of times it's called"""
+    required_config = Namespace()
+
+    def __getattr__(self, attr):
+        if attr in self.config.active_list:
+            self.metrics.incr(attr)
+        return self._noop
+
+    def _noop(self, *args, **kwargs):
+        pass
+
+
+class MetricsBenchmarkingWrapper(MetricsEnabledBase):
+    """Sends timings for specified method calls in wrapped crash store"""
+    required_config = Namespace()
+    required_config.add_option(
+        name="wrapped_object_class",
+        doc='fully qualified Python class path for an object to an be benchmarked',
+        default='',
+        from_string_converter=class_converter
+    )
+
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        super(MetricsBenchmarkingWrapper, self).__init__(
+            config,
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
+        )
+        self.wrapped_object = config.wrapped_object_class(
+            config,
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
+        )
+
+    def close(self):
+        self.wrapped_object.close()
+
+    def __getattr__(self, attr):
+        wrapped_attr = getattr(self.wrapped_object, attr)
+        if attr in self.config.active_list:
+            def benchmarker(*args, **kwargs):
+                metrics_key = self._make_key(self.config.wrapped_object_class.__name__, attr)
+                with self.metrics.timer(metrics_key):
+                    return wrapped_attr(*args, **kwargs)
+            return benchmarker
+        return wrapped_attr

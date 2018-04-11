@@ -58,14 +58,14 @@ urlwait "${ELASTICSEARCH_URL}" 10
 # FIXME(willkg): For some reason, this has to go first because setting up
 # socorro_integration_test needs it. Does it mean that alembic is doing
 # migrations in the wrong db?
-$SETUPDB --database_name=socorro_migration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged --createdb
+$SETUPDB --database_name=socorro_migration_test --dropdb --logging.level=40 --unlogged --createdb
 
 # Set up database for unittests
-$SETUPDB --database_name=socorro_integration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged --no_staticdata --createdb
+$SETUPDB --database_name=socorro_integration_test --dropdb --logging.level=40 --unlogged --no_staticdata --createdb
 
 # FIXME(willkg): What's this one for? It's got crontabber stuff in it and that's
 # it. Maybe we don't need it?
-$SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged --no_staticdata --createdb
+$SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.level=40 --unlogged --no_staticdata --createdb
 
 $ALEMBIC -c "${alembic_config}" downgrade -1
 $ALEMBIC -c "${alembic_config}" upgrade heads

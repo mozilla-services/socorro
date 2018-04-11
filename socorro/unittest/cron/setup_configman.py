@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from collections import Sequence
+import logging
+
 from mock import Mock
 
-from collections import Sequence
-
 from socorro.cron.crontabber_app import CronTabberApp
-from socorro.lib.util import SilentFakeLogger
 
 from configman import (
     Namespace,
@@ -24,7 +24,7 @@ def get_standard_config_manager(
     required_config = Namespace()
     required_config.add_option(
         'logger',
-        default=SilentFakeLogger(),
+        default=logging.getLogger(__name__),
         doc='a logger',
     )
     required_config.add_option(
