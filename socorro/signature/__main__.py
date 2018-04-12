@@ -31,7 +31,7 @@ logger = logging.getLogger('socorro.signature')
 
 
 # FIXME(willkg): This hits production. We might want it configurable.
-API_URL = 'https://crash-stats.mozilla.com/api/'
+API_URL = 'https://crash-stats.mozilla.com/api'
 
 
 def setup_logging(logging_level):

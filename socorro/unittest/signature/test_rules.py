@@ -221,6 +221,22 @@ class TestCSignatureTool:
         sig, notes = s.generate(a)
         assert sig == 'f | e | d | i'
 
+    def test_specifiers_and_return_types(self):
+        """prefix and irrelevant should match ignoring specifiers and return types"""
+        generator = self.setup_config_c_sig_tool(
+            # irrelevant
+            ig=['ignored'],
+            # prefix
+            pr=['pre1', 'pre2'],
+        )
+        source_list = (
+            'static void ignored',
+            'pre1',
+            'static bool pre2',
+        )
+        sig, notes = generator.generate(source_list)
+        assert sig == 'pre1 | static bool pre2'
+
     def test_generate_with_merged_dll(self):
         generator = self.setup_config_c_sig_tool(
             ['a', 'b', 'c'],
