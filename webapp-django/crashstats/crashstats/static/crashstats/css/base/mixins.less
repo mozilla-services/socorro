@@ -33,27 +33,25 @@
 }
 
 .button() {
-    @darkShade: shade(@primary, 10%);
-    @lightShade: tint(@primary, 10%);
-
-    background-color: @primary;
-    background-image: linear-gradient(to bottom, @primary, @primary 50%, @darkShade 51%, @darkShade);
-    box-shadow: inset 0px 1px 1px @primary-light;
-    color: @white;
-    margin: 1rem;
-    padding: .5rem;
-    border: 1px solid @primary;
-    border-radius: .4rem;
-    min-width: 100px;
-    font-size: 1.3rem;
+    background-color: @blue-60;
+    padding: 0.8em;
+    border: none;
+    border-radius: 2px;
     cursor: pointer;
+
+    &,
+    a {
+        color: @white;
+        text-decoration: none;
+    }
+
 
     &:hover,
     &:focus {
-        background-image: linear-gradient(to bottom, @lightShade, @lightShade 50%, @primary 51%, @primary);
+        background: @blue-70;
     }
     &:active {
-        background: @primary-dark;
+        background: @blue-80;
     }
 }
 
