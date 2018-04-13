@@ -21,40 +21,45 @@ table {
     /* standard table styles for data tables */
     &.data-table {
         width: 100%;
-        th {
-            background-color: @dark-tan;
-        }
-        th,
-        td {
-            padding: .5em;
-        }
-        tbody {
-            background-color: @white;
-            tr {
-                &:nth-child(odd) {
-                    background-color: @tan;
+    }
+    th {
+        background-color: @dark-tan;
+    }
+    th,
+    td {
+        padding: .5em;
+    }
+    tbody {
+        background-color: @white;
+        tr {
+            &:nth-child(even) {
+                background-color: @grey-90-a10;
+            }
+            &:nth-child(odd) {
+                background-color: @grey-90-a025;
+            }
+            &:hover {
+                background-color: @light-grey;
+            }
+            &.truncated-frame {
+                background-color: @jsonview-prop;
+                a {
+                    color: @dark-grey;
                 }
-                &:hover {
-                    background-color: @light-grey;
-                }
-                &.truncated-frame {
-                    background-color: @jsonview-prop;
-                    a {
-                        color: @dark-grey;
-                    }
-                }
-                &.missingsymbols {
-                    &,
-                    &:hover,
-                    & td {
-                        background-color: @red;
-                        color: @white;
-                        border-top: 2px solid @white;
-                    }
+            }
+            &.missingsymbols {
+                &,
+                &:hover,
+                & td {
+                    background-color: @red;
+                    color: @white;
+                    border-top: 2px solid @white;
                 }
             }
         }
     }
+
+
     &.captioned-data-table {
         margin: 1rem;
         width: 98%;
@@ -88,15 +93,6 @@ table {
         td {
             padding: .5em;
         }
-        tbody {
-            background-color: @white;
-            tr:nth-child(odd) {
-                background-color: @tan;
-            }
-            tr:hover {
-                background-color: @light-grey;
-            }
-        }
 
         &.initially-hidden {
             caption {
@@ -119,15 +115,6 @@ table {
         }
     }
 
-
-    &.tablesorter,
-    &.zebra {
-        tbody {
-            tr:nth-child(odd) {
-                background-color: @tan;
-            }
-        }
-    }
 }
 
 .tablesorter {
