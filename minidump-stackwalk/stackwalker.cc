@@ -183,11 +183,12 @@ public:
     : StackFrameSymbolizer(supplier, resolver) {}
 
   virtual SymbolizerResult FillSourceLineInfo(const CodeModules* modules,
+                                              const CodeModules* unloaded_modules,
                                               const SystemInfo* system_info,
                                               StackFrame* stack_frame) {
     SymbolizerResult res =
       StackFrameSymbolizer::FillSourceLineInfo(modules,
-                                               NULL, // unloaded_modules
+                                               unloaded_modules,
                                                system_info,
                                                stack_frame);
     RecordResult(stack_frame->module, res);
