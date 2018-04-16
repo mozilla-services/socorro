@@ -133,6 +133,8 @@ class ReleaseRepositories(BaseTable):
         ['comm-beta'],
         ['mozilla-esr52'],
         ['comm-esr52'],
+        ['mozilla-esr60'],
+        ['comm-esr60'],
     ]
 
 
