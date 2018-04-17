@@ -217,59 +217,6 @@ ischema_names['build_type_enum'] = build_type_enum
 ###############################
 
 
-class CorrelationsAddon(DeclarativeBase):
-    __tablename__ = 'correlations_addon'
-
-    # column definitions
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    addon_id = Column(u'addon_id', TEXT(), nullable=False)
-    addon_version = Column(u'addon_version', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
-    os_name = Column(u'os_name', TEXT(), nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          nullable=False, index=True)
-    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
-    total = Column(u'total', INTEGER())
-    __mapper_args__ = {"primary_key": (
-        product_version_id, addon_id, addon_version, report_date, os_name, signature_id)}
-
-
-class CorrelationsCore(DeclarativeBase):
-    __tablename__ = 'correlations_core'
-
-    # column definitions
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    cpu_arch = Column(u'cpu_arch', TEXT(), nullable=False)
-    cpu_count = Column(u'cpu_count', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
-    os_name = Column(u'os_name', TEXT(), nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          nullable=False, index=True)
-    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
-    total = Column(u'total', INTEGER())
-    __mapper_args__ = {"primary_key": (
-        product_version_id, cpu_arch, cpu_count, report_date, os_name, signature_id)}
-
-
-class CorrelationsModule(DeclarativeBase):
-    __tablename__ = 'correlations_module'
-
-    # column definitions
-    product_version_id = Column(
-        u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    module_id = Column(u'module_id', INTEGER(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
-    os_name = Column(u'os_name', TEXT(), nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=False, nullable=False, index=True)
-    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
-    total = Column(u'total', INTEGER())
-    __mapper_args__ = {"primary_key": (
-        product_version_id, module_id, report_date, os_name, signature_id)}
-
-
 class Module(DeclarativeBase):
     __tablename__ = 'modules'
 
@@ -603,21 +550,6 @@ class Plugin(DeclarativeBase):
     __table_args__ = (
         Index('filename_name_key', filename, name, unique=True),
     )
-
-
-class Priorityjob(DeclarativeBase):
-    __tablename__ = 'priorityjobs'
-
-    # column definitions
-    uuid = Column(u'uuid', VARCHAR(length=255),
-                  primary_key=True, nullable=False)
-
-
-class PriorityjobsLoggingSwitch(DeclarativeBase):
-    __tablename__ = 'priorityjobs_logging_switch'
-
-    # column definitions
-    log_jobs = Column(u'log_jobs', BOOLEAN(), primary_key=True, nullable=False)
 
 
 class ProcessType(DeclarativeBase):
@@ -1008,14 +940,6 @@ class ReportsUserInfo(DeclarativeBase):
     url = Column(u'url', TEXT())
     user_comments = Column(u'user_comments', CITEXT())
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
-
-
-class ReprocessingJob(DeclarativeBase):
-    __tablename__ = 'reprocessing_jobs'
-
-    # column definitions
-    uuid = Column(u'crash_id', UUID())
-    __mapper_args__ = {"primary_key": (uuid)}
 
 
 class Session(DeclarativeBase):
