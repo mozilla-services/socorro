@@ -4,9 +4,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import print_function
+
 import argparse
 import datetime
 from functools import total_ordering
+import random
 import sys
 from urlparse import urlparse, parse_qs
 
@@ -141,12 +144,15 @@ def main(argv=None):
         description=DESCRIPTION.strip(),
     )
     parser.add_argument(
-        '--date', default='yesterday',
-        help='Date to pull crash ids from (YYYY-MM-DD)'
+        '--date', default='',
+        help=(
+            'date to pull crash ids from as YYYY-MM-DD, "yesterday", "today", or "now"; '
+            'defaults to "yesterday"'
+        )
     )
     parser.add_argument(
         '--signature-contains', default='', dest='signature',
-        help='Signature contains this string'
+        help='signature contains this string'
     )
     parser.add_argument(
         '--url', default='',
@@ -154,11 +160,11 @@ def main(argv=None):
     )
     parser.add_argument(
         '--num', default=100,
-        help='The number of crash ids you want or "all" for all of them'
+        help='number of crash ids you want or "all" for all of them'
     )
     parser.add_argument(
         '-v', '--verbose', action='store_true',
-        help='Increase verbosity of output'
+        help='increase verbosity of output'
     )
 
     if argv is None:
@@ -177,17 +183,31 @@ def main(argv=None):
     params['_columns'] = 'uuid'
 
     # Override with date if specified
-    datestamp = args.date
-    if 'date' not in params or datestamp != 'yesterday':
-        if datestamp == 'yesterday':
+    if 'date' not in params or args.date:
+        datestamp = args.date or 'yesterday'
+
+        if datestamp == 'today' or datestamp == 'now':
+            startdate = utc_now()
+        elif datestamp == 'yesterday':
             startdate = utc_now() - datetime.timedelta(days=1)
         else:
             startdate = datetime.datetime.strptime(datestamp, '%Y-%m-%d')
 
         enddate = startdate + datetime.timedelta(days=1)
+
+        startdate = startdate.strftime('%Y-%m-%d')
+        enddate = enddate.strftime('%Y-%m-%d')
+
+        if datestamp == 'now':
+            # If we want crashes for now, add some cache-busting bits to the
+            # url and also sort in reverse by date
+            startdate = '%sT00:00:%02d.000Z' % (startdate, random.randint(0, 59))
+            enddate = '%sT00:00:00.000Z' % enddate
+            params['_sort'] = '-date'
+
         params['date'] = [
-            '>=%s' % startdate.strftime('%Y-%m-%d'),
-            '<%s' % enddate.strftime('%Y-%m-%d')
+            '>=%s' % startdate,
+            '<%s' % enddate
         ]
 
     # Override with signature-contains if specified
