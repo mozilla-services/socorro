@@ -233,9 +233,10 @@ class TestCSignatureTool:
             'static void ignored',
             'pre1',
             'static bool pre2',
+            'foo'
         )
         sig, notes = generator.generate(source_list)
-        assert sig == 'pre1 | static bool pre2'
+        assert sig == 'pre1 | static bool pre2 | foo'
 
     def test_generate_with_merged_dll(self):
         generator = self.setup_config_c_sig_tool(
