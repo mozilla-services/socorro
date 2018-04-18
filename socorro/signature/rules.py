@@ -76,9 +76,11 @@ class SignatureTool(object):
 
 
 class CSignatureTool(SignatureTool):
-    """This is the class for signature generation tools that work on
-    breakpad C/C++ stacks.  It provides a method to normalize signatures
-    and then defines its own '_do_generate' method."""
+    """This is the class for signature generation tools that work on breakpad C/C++
+    stacks. It provides a method to normalize signatures and then defines its
+    own '_do_generate' method.
+
+    """
 
     hang_prefixes = {
         -1: "hang",
@@ -219,6 +221,7 @@ class CSignatureTool(SignatureTool):
             # Ensure a space after commas
             function = self.fixup_comma.sub(', ', function)
             return function
+
         # if source is not None and source_line is not None:
         if file and line:
             filename = file.rstrip('/\\')
@@ -260,8 +263,13 @@ class CSignatureTool(SignatureTool):
         # Get all the relevant frame signatures.
         new_signature_list = []
         for a_signature in source_list:
-            # If the signature matches the irrelevant signatures regex, skip to the next frame.
-            if self.irrelevant_signature_re.match(a_signature):
+            # We want to match against the function signature or any of the parts of the
+            # signature in the case where there are specifiers and return types.
+            a_signature_parts = a_signature.split() + [a_signature]
+
+            # If one of the parts of the function signature matches the
+            # irrelevant signatures regex, skip to the next frame.
+            if any(self.irrelevant_signature_re.match(part) for part in a_signature_parts):
                 continue
 
             # If the signature matches the trim dll signatures regex, rewrite it to remove all but
@@ -276,9 +284,10 @@ class CSignatureTool(SignatureTool):
 
             new_signature_list.append(a_signature)
 
-            # If the signature does not match the prefix signatures regex, then it is the last one
-            # we add to the list.
-            if not self.prefix_signature_re.match(a_signature):
+            # If none of the parts of the function signature signature matches
+            # the prefix signatures regex, then it is the last one we add to
+            # the list.
+            if not any(self.prefix_signature_re.match(part) for part in a_signature_parts):
                 break
 
         # Add a special marker for hang crash reports.
