@@ -17,28 +17,28 @@ and astounding your friends at parties.
 
 To use::
 
-    $ python -m socorro.signature CRASHID [CRASHID ...]
+    $ socorro-cmd signature CRASHID [CRASHID ...]
 
 
 Pulling crash ids from the file ``crashids.txt``::
 
-    $ cat crashids.txt | python -m socorro.signature
+    $ cat crashids.txt | socorro-cmd signature
 
 
 Pulling crash ids from another script::
 
-    $ ./scripts/fetch_crashids.py --num=10 | python -m socorro.signature
+    $ ./scripts/fetch_crashids.py --num=10 | socorro-cmd signature
 
 
 Spitting output in CSV format to more easily analyze results for generating
 signatures for multiple crashes::
 
-    $ cat crashids.txt | python -m socorro.signature --format=csv
+    $ cat crashids.txt | socorro-cmd signature --format=csv
 
 
 For more argument help, see::
 
-    $ python -m socorro.signature --help
+    $ socorro-cmd signature --help
 
 
 .. Note::
@@ -47,7 +47,7 @@ For more argument help, see::
    do this::
 
      $ docker-compose run processor bash
-     app@.../app$ python -m socorro.signature --help
+     app@.../app$ socorro-cmd signature --help
 
 
 library

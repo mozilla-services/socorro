@@ -139,7 +139,7 @@ def fetch(endpoint, crash_id, api_token=None):
     return requests.get(API_URL + endpoint, **kwargs)
 
 
-def main(args):
+def main(argv=None):
     """Takes crash data via args and generates a Socorro signature
 
     """
@@ -157,7 +157,16 @@ def main(args):
     parser.add_argument(
         'crashids', metavar='crashid', nargs='*', help='crash id to generate signatures for'
     )
-    args = parser.parse_args()
+
+    # Fix the case where the user ran "python -m socorro.signature --help" so
+    # it prints a helpful prog.
+    if sys.argv and '__main__.py' in sys.argv[0]:
+        parser.prog = 'python -m socorro.signature'
+
+    if argv is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(argv)
 
     if args.format == 'csv':
         outputter = CSVOutput
@@ -274,4 +283,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main())
