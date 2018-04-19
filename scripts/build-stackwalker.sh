@@ -21,18 +21,14 @@ if [ "$(uname -sm)" == "Linux x86_64" ]; then
   # Fetch pre-built, known version of breakpad from taskcluster
   wget -N --quiet 'https://index.taskcluster.net/v1/task/project.socorro.breakpad.v1.builds.linux64.latest/artifacts/public/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
-
-  # Copy breakpad bits into stackwalk/
-  cp -ar "${SRCDIR}/breakpad" "${SRCDIR}/stackwalk"
 else
   # Build breakpad from source
   PREFIX="${SRCDIR}/breakpad/" SKIP_TAR=1 "${SRCDIR}/scripts/build-breakpad.sh"
-
 fi
 
 # Copy breakpad bits into stackwalk/
 rm -rf stackwalk || true
-cp -ar "${SRCDIR}/breakpad" "${SRCDIR}/stackwalk"
+cp -r "${SRCDIR}/breakpad" "${SRCDIR}/stackwalk"
 
 # Now build stackwalker
 cd "${SRCDIR}/minidump-stackwalk"

@@ -67,5 +67,5 @@ cp breakpad/src/src/third_party/libdisasm/libdisasm.a "${PREFIX}"/lib/
 
 # Optionally package everything up
 if test -z "${SKIP_TAR}"; then
-  tar -C "${PREFIX}"/.. --mode 755 --owner 0 --group 0 -zcf breakpad.tar.gz "$(basename "${PREFIX}")"
+  tar -C "${PREFIX}"/.. -zcf breakpad.tar.gz "$(basename "${PREFIX}")"
 fi
