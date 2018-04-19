@@ -32,6 +32,7 @@ Contents
    gettingstarted
    contributing
    signaturegeneration
+   stackwalker
    topcrashersbysignature
    schemas
    service/*
