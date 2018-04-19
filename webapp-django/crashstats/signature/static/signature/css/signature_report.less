@@ -182,20 +182,16 @@ section.correlations-panel {
 }
 
 .tab-inner-panel {
-    header.title {
-        padding: 0.5em;
-        display: flex;
-        justify-content: space-between;
-        align-content: center;
-    }
     .options {
-        display: inline-block;
+        display: block;
         height: 16px;
         text-indent: -9999px;
         width: 16px;
 
         &.delete {
             background-image: url('@{image-path}/3rdparty/silk/cross.png');
+            position: relative;
+            top: 1px;
         }
         &.show {
             background-image: url('@{image-path}/3rdparty/silk/resultset_previous.png');
@@ -203,9 +199,14 @@ section.correlations-panel {
         &.hide {
             background-image: url('@{image-path}/3rdparty/silk/arrow_bottom.png');
         }
+
+        &:hover {
+            cursor: pointer;
+        }
     }
-    .options:hover {
-        cursor: pointer;
+    .body {
+        margin: 1em 0 0;
+        padding: 0;
     }
 }
 

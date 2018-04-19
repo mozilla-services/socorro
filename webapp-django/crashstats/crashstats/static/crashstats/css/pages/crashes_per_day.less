@@ -8,7 +8,6 @@ h1 {
 }
 #daily_content {
     color: @black;
-    font-family: @base-font;
     margin-top: 1em;
 }
 div.daily_search,
@@ -27,33 +26,18 @@ div.daily_graph {
 div.daily_search_version {
     margin: 0;
     padding-bottom: 5px;
-}
-table.by_version {
-    border: 0;
-    padding: 4px 0;
-    th {
-        padding: 4px 0;
-        border: 0;
-        width: 70px;
-    }
-    td {
-        border: 0;
-        padding: 4px 0;
-    }
-    select {
-        padding: .3em .3em 0 .3em;
-        width: 200px;
-    }
-    option {
-        padding: .2em;
+
+    p:first-child {
+        margin-top: 0;
     }
 }
 input.date {
     width: 80px;
+    font-size: 0.8em;
 }
-span.title {
-    width: 50px;
-    min-width: 50px;
+.radio-item,
+label {
+    display: block;
 }
 
 /* Crash Graph */
@@ -69,7 +53,6 @@ p.adu-chart-help {
 table.crash_data {
     clear: both;
     color: @black;
-    margin-top: 20px;
     font-family: @base-font;
     th {
         background-color: @light-grey;
@@ -113,7 +96,10 @@ br.clear {
 .update-chart-button {
     margin: 1em 0 0 0;
 }
-
+table.by_version {
+    margin-bottom: 1em;
+    width: 100%;
+}
 .choices {
     display: inline;
     border-left: 1px solid #888;
@@ -141,3 +127,4 @@ br.clear {
         background-color: @light-grey;
     }
 }
+

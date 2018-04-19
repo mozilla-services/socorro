@@ -1,3 +1,4 @@
+
 table {
     thead,
     tbody {
@@ -19,8 +20,20 @@ table {
     }
 
     /* standard table styles for data tables */
-    &.data-table {
+    &.data-table,
+    &.zebra {
         width: 100%;
+        tr {
+            &:nth-child(even) {
+                background-color: @grey-90-a10;
+            }
+            &:nth-child(odd) {
+                background-color: @grey-90-a025;
+            }
+            &:hover {
+                background-color: @light-grey;
+            }
+        }
     }
     th {
         background-color: @dark-tan;
@@ -32,15 +45,8 @@ table {
     tbody {
         background-color: @white;
         tr {
-            &:nth-child(even) {
-                background-color: @grey-90-a10;
-            }
-            &:nth-child(odd) {
-                background-color: @grey-90-a025;
-            }
-            &:hover {
-                background-color: @light-grey;
-            }
+
+
             &.truncated-frame {
                 background-color: @jsonview-prop;
                 a {

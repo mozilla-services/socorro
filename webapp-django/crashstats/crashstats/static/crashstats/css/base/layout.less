@@ -15,8 +15,14 @@ html {
             display: none;
         }
         .page-heading {
-            margin: 20px;
-            margin-top: 30px;
+            margin: 4em 2em 2em;
+            display: flex;
+            align-items: center;
+
+            h2 {
+                flex-grow: 1;
+                margin: 0;
+            }
         }
         .panel {
             margin: 20px;
@@ -46,24 +52,14 @@ body {
             text-decoration: none;
         }
     }
-    .icon,
+
     .title {
-        display: block;
-    }
-    .icon {
-        display: none; // TODO: display when logo it's been updated for photon.
-        width: 32px;
-        height: 32px;
-        background: url("@{image-path}/3.0/logo.png") no-repeat top left;
-        z-index: 1;
-        background-size: contain;
-    }
-    .title {
-        color: @white;
-        text-decoration: none;
         border: none;
+        color: @white;
+        display: block;
+        text-decoration: none;
         font-size: 2em;
-        font-weight: 100;
+        font-weight: 200;
         letter-spacing: 0.03em;
     }
 
