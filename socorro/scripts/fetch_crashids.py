@@ -186,24 +186,34 @@ def main(argv=None):
     if 'date' not in params or args.date:
         datestamp = args.date or 'yesterday'
 
-        if datestamp == 'today' or datestamp == 'now':
-            startdate = utc_now()
-        elif datestamp == 'yesterday':
-            startdate = utc_now() - datetime.timedelta(days=1)
-        else:
-            startdate = datetime.datetime.strptime(datestamp, '%Y-%m-%d')
-
-        enddate = startdate + datetime.timedelta(days=1)
-
-        startdate = startdate.strftime('%Y-%m-%d')
-        enddate = enddate.strftime('%Y-%m-%d')
-
         if datestamp == 'now':
-            # If we want crashes for now, add some cache-busting bits to the
-            # url and also sort in reverse by date
-            startdate = '%sT00:00:%02d.000Z' % (startdate, random.randint(0, 59))
-            enddate = '%sT00:00:00.000Z' % enddate
+            # Create a start -> end window that has wiggle room on either side
+            # to deal with time differences between the client and server, but
+            # also big enough to pick up results even in stage where it doesn't
+            # process much
+            enddate = utc_now() + datetime.timedelta(hours=1)
+            startdate = enddate - datetime.timedelta(hours=12)
+
+            # For "now", we want precision so we don't hit cache and we want to
+            # sort by reverse date so that we get the most recent crashes
+            startdate = startdate.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            enddate = enddate.strftime('%Y-%m-%dT%H:%M:%S.000Z')
             params['_sort'] = '-date'
+
+        else:
+            if datestamp == 'today':
+                startdate = utc_now()
+            elif datestamp == 'yesterday':
+                startdate = utc_now() - datetime.timedelta(days=1)
+            else:
+                startdate = datetime.datetime.strptime(datestamp, '%Y-%m-%d')
+
+            enddate = startdate + datetime.timedelta(days=1)
+
+            # For "today", "yesterday", and other dates, we want a day
+            # precision so that Socorro can cache it
+            startdate = startdate.strftime('%Y-%m-%d')
+            enddate = enddate.strftime('%Y-%m-%d')
 
         params['date'] = [
             '>=%s' % startdate,
