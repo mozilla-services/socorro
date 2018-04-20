@@ -8,14 +8,15 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
-from django.views.decorators.http import require_POST
-from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.db import transaction
 from django.core.paginator import Paginator
+from django.core.urlresolvers import reverse
+from django.db import connection, transaction
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from pinax.eventlog.models import log, Log
+import requests
 
 from crashstats.crashstats.models import (
     ProductVersions,
@@ -810,3 +811,62 @@ def status_message_disable(request, id):
     )
 
     return redirect(reverse('manage:status_message'))
+
+
+@superuser_required
+def site_overview(request):
+    context = {}
+
+    # Get version information for deployed parts
+    version_info = {}
+    for url in settings.OVERVIEW_VERSION_URLS.split(','):
+        url = url.strip()
+        try:
+            data = requests.get(url).json()
+        except Exception as exc:
+            data = {'error': str(exc)}
+        version_info[url] = data
+
+    context['version_info'] = version_info
+
+    # Get alembic migration data
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT version_num FROM alembic_version')
+            row = cursor.fetchone()
+            alembic_version = row[0]
+            alembic_error = ''
+    except Exception as exc:
+        alembic_version = ''
+        alembic_error = 'error: %s' % exc
+    context['alembic_version'] = alembic_version
+    context['alembic_error'] = alembic_error
+
+    # Get Django migration data
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT id, app, name, applied FROM django_migrations')
+            django_db_data = cursor.fetchall()
+            django_db_error = ''
+    except Exception as exc:
+        django_db_data = []
+        django_db_error = 'error: %s' % exc
+    context['django_db_data'] = django_db_data
+    context['django_db_error'] = django_db_error
+
+    # Get crontabber data
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'SELECT app_name, next_run, last_run, last_success, error_count, last_error '
+                'FROM crontabber WHERE error_count > 0'
+            )
+            crontabber_data = cursor.fetchall()
+            crontabber_error = ''
+    except Exception as exc:
+        crontabber_data = []
+        crontabber_error = 'error: %s' % exc
+    context['crontabber_data'] = crontabber_data
+    context['crontabber_error'] = crontabber_error
+
+    return render(request, 'manage/site_overview.html', context)

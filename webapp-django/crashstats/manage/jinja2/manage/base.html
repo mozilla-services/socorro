@@ -35,6 +35,8 @@
                     {% if url( 'manage:crash_me_now') in request.path_info %}class="selected"{% endif %}>Crash Me Now</a></li>
                 <li><a href="{{ url('manage:reprocessing') }}"
                     {% if url( 'manage:reprocessing') in request.path_info %}class="selected"{% endif %}>Reprocessing</a></li>
+                <li><a href="{{ url('manage:overview') }}"
+                    {% if url( 'manage:overview') in request.path_info %}class="selected"{% endif %}>Overview</a></li>
             </ul>
         </nav>
     </div>

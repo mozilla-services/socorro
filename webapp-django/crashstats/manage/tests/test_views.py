@@ -1255,6 +1255,16 @@ class TestViews(BaseTestViews):
                 }
             )
 
+    def test_overview(self):
+        """Basic test to make sure the page loads and has appropriate access"""
+        url = reverse('manage:overview')
+        response = self.client.get(url)
+        assert response.status_code == 302
+
+        self._login()
+        response = self.client.get(url)
+        assert response.status_code == 200
+
     def test_reprocessing(self):
         url = reverse('manage:reprocessing')
         response = self.client.get(url)

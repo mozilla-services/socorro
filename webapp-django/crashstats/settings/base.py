@@ -498,6 +498,9 @@ try:
 except IOError:
     SOCORRO_REVISION = None
 
+# Comma-separated list of urls that serve version information in JSON format
+OVERVIEW_VERSION_URLS = config('OVERVIEW_VERSION_URLS', '')
+
 # Raven sends errors to Sentry.
 # The release is optional.
 raven_dsn = config('RAVEN_DSN', '')

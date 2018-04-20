@@ -1,0 +1,69 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Site Overview{% endblock %}
+
+{% block admin_title %}{{ super() }} - Site Overview{% endblock %}
+
+{% block mainbody %}
+<div class="panel">
+    <div class="body notitle">
+        <h3>Version info</h3>
+        {% for url, info in version_info.items() %}
+            <p>{{ url }}: {{ info }}</p>
+        {% endfor %}
+
+        <h3>Alembic status</h3>
+        <p>
+            {% if alembic_error %}
+                {{ alembic_error }}
+            {% else %}
+                HEAD: {{ alembic_version }}
+            {% endif %}
+        </p>
+
+        <h3>Django db status</h3>
+        {% if django_error %}
+            <p>{{ django_error }}</p>
+        {% else %}
+            <table class="data-table">
+                <tr>
+                    <th>id</th>
+                    <th>app</th>
+                    <th>name</th>
+                    <th>applied</th>
+                </tr>
+                {% for row in django_db_data %}
+                    <tr>
+                        {% for item in row %}
+                            <td>{{ item }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+
+        <h3>Crontabber failed jobs</h3>
+        {% if crontabber_error %}
+            <p>{{ crontabber_error }}</p>
+        {% else %}
+            <table class="data-table">
+                <tr>
+                    <th>app_name</th>
+                    <th>next_run</th>
+                    <th>last_run</th>
+                    <th>last_success</th>
+                    <th>error_count</th>
+                    <th>last_error</th>
+                </tr>
+                {% for row in crontabber_data %}
+                    <tr>
+                        {% for item in row %}
+                            <td>{{ item }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
