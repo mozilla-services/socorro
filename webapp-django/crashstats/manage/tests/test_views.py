@@ -1255,9 +1255,9 @@ class TestViews(BaseTestViews):
                 }
             )
 
-    def test_overview(self):
+    def test_site_status(self):
         """Basic test to make sure the page loads and has appropriate access"""
-        url = reverse('manage:overview')
+        url = reverse('manage:site_status')
         response = self.client.get(url)
         assert response.status_code == 302
 

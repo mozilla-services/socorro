@@ -1,8 +1,8 @@
 {% extends "manage/base.html" %}
 
-{% block page_title %}{{ super() }} - Site Overview{% endblock %}
+{% block page_title %}{{ super() }} - Site Status{% endblock %}
 
-{% block admin_title %}{{ super() }} - Site Overview{% endblock %}
+{% block admin_title %}{{ super() }} - Site Status{% endblock %}
 
 {% block mainbody %}
 <div class="panel">
@@ -34,9 +34,10 @@
                 </tr>
                 {% for row in django_db_data %}
                     <tr>
-                        {% for item in row %}
-                            <td>{{ item }}</td>
-                        {% endfor %}
+                        <td>{{ row['id'] }}</td>
+                        <td>{{ row['app'] }}</td>
+                        <td>{{ row['name'] }}</td>
+                        <td>{{ row['applied'] }}</td>
                     </tr>
                 {% endfor %}
             </table>
@@ -57,9 +58,12 @@
                 </tr>
                 {% for row in crontabber_data %}
                     <tr>
-                        {% for item in row %}
-                            <td>{{ item }}</td>
-                        {% endfor %}
+                        <td>{{ row['app_name'] }}</td>
+                        <td>{{ row['next_run'] }}</td>
+                        <td>{{ row['last_run'] }}</td>
+                        <td>{{ row['last_success'] }}</td>
+                        <td>{{ row['error_count'] }}</td>
+                        <td>{{ row['last_error'] }}</td>
                     </tr>
                 {% endfor %}
             </table>

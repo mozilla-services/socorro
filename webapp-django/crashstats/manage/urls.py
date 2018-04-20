@@ -68,7 +68,7 @@ urlpatterns = [
     url('^reprocessing/$',
         views.reprocessing,
         name='reprocessing'),
-    url('^overview/$',
-        views.site_overview,
-        name='overview'),
+    url('^sitestatus/$',
+        views.site_status,
+        name='site_status'),
 ]

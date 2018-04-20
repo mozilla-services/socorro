@@ -814,7 +814,7 @@ def status_message_disable(request, id):
 
 
 @superuser_required
-def site_overview(request):
+def site_status(request):
     context = {}
 
     # Get version information for deployed parts
@@ -833,8 +833,7 @@ def site_overview(request):
     try:
         with connection.cursor() as cursor:
             cursor.execute('SELECT version_num FROM alembic_version')
-            row = cursor.fetchone()
-            alembic_version = row[0]
+            alembic_version = cursor.fetchone()[0]
             alembic_error = ''
     except Exception as exc:
         alembic_version = ''
@@ -846,7 +845,8 @@ def site_overview(request):
     try:
         with connection.cursor() as cursor:
             cursor.execute('SELECT id, app, name, applied FROM django_migrations')
-            django_db_data = cursor.fetchall()
+            cols = [col[0] for col in cursor.description]
+            django_db_data = [dict(zip(cols, row)) for row in cursor.fetchall()]
             django_db_error = ''
     except Exception as exc:
         django_db_data = []
@@ -861,7 +861,8 @@ def site_overview(request):
                 'SELECT app_name, next_run, last_run, last_success, error_count, last_error '
                 'FROM crontabber WHERE error_count > 0'
             )
-            crontabber_data = cursor.fetchall()
+            cols = [col[0] for col in cursor.description]
+            crontabber_data = [dict(zip(cols, row)) for row in cursor.fetchall()]
             crontabber_error = ''
     except Exception as exc:
         crontabber_data = []
@@ -869,4 +870,4 @@ def site_overview(request):
     context['crontabber_data'] = crontabber_data
     context['crontabber_error'] = crontabber_error
 
-    return render(request, 'manage/site_overview.html', context)
+    return render(request, 'manage/site_status.html', context)
