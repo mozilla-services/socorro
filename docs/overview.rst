@@ -83,12 +83,14 @@ so on.
 
 Important services in the diagram:
 
-* Collector: Collects incoming crash reports via HTTP POST. The collector we
-  currently use is `Antenna <https://antenna.readthedocs.io/>`_ now collects
-  crashes for Socorro.
-* Processor: Turns breakpad minidump crashes into stack traces and other info.
-* Webapp/Crash Stats: Web user interface for analyzing crash data.
-* Crontabber: Runs hourly/daily/weekly tasks for analyzing and processing data.
+* **Collector:** Collects incoming crash reports via HTTP POST. The collector
+  we use is called `Antenna <https://antenna.readthedocs.io/>`_. It saves
+  crash data to AWS S3.
+* **Processor:** Extracts data from minidumps, generates crash signatures,
+  performs other analysis, and saves everything as a processed crash.
+* **Webapp (aka Crash Stats):** Web user interface for analyzing crash data.
+* **Crontabber:** Runs hourly/daily/weekly tasks for analyzing and processing
+  data.
 
 The processor stores crash data in several crash storage destinations:
 
