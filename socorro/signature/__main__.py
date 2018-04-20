@@ -143,6 +143,11 @@ def main(argv=None):
     """Takes crash data via args and generates a Socorro signature
 
     """
+    # Fix the case where the user ran "python -m socorro.signature --help" so
+    # it prints a helpful prog.
+    if sys.argv and '__main__.py' in sys.argv[0]:
+        sys.argv[0] = 'python -m socorro.signature'
+
     parser = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
     parser.add_argument(
         '-v', '--verbose', help='increase output verbosity', action='store_true'
@@ -157,11 +162,6 @@ def main(argv=None):
     parser.add_argument(
         'crashids', metavar='crashid', nargs='*', help='crash id to generate signatures for'
     )
-
-    # Fix the case where the user ran "python -m socorro.signature --help" so
-    # it prints a helpful prog.
-    if sys.argv and '__main__.py' in sys.argv[0]:
-        parser.prog = 'python -m socorro.signature'
 
     if argv is None:
         args = parser.parse_args()
