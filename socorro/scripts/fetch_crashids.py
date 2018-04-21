@@ -9,7 +9,6 @@ from __future__ import print_function
 import argparse
 import datetime
 from functools import total_ordering
-import random
 import sys
 from urlparse import urlparse, parse_qs
 
