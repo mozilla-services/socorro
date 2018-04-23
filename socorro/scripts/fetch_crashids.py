@@ -4,6 +4,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import print_function
+
 import argparse
 import datetime
 from functools import total_ordering
@@ -141,12 +143,15 @@ def main(argv=None):
         description=DESCRIPTION.strip(),
     )
     parser.add_argument(
-        '--date', default='yesterday',
-        help='Date to pull crash ids from (YYYY-MM-DD)'
+        '--date', default='',
+        help=(
+            'date to pull crash ids from as YYYY-MM-DD, "yesterday", "today", or "now"; '
+            'defaults to "yesterday"'
+        )
     )
     parser.add_argument(
         '--signature-contains', default='', dest='signature',
-        help='Signature contains this string'
+        help='signature contains this string'
     )
     parser.add_argument(
         '--url', default='',
@@ -154,11 +159,11 @@ def main(argv=None):
     )
     parser.add_argument(
         '--num', default=100,
-        help='The number of crash ids you want or "all" for all of them'
+        help='number of crash ids you want or "all" for all of them'
     )
     parser.add_argument(
         '-v', '--verbose', action='store_true',
-        help='Increase verbosity of output'
+        help='increase verbosity of output'
     )
 
     if argv is None:
@@ -177,17 +182,41 @@ def main(argv=None):
     params['_columns'] = 'uuid'
 
     # Override with date if specified
-    datestamp = args.date
-    if 'date' not in params or datestamp != 'yesterday':
-        if datestamp == 'yesterday':
-            startdate = utc_now() - datetime.timedelta(days=1)
-        else:
-            startdate = datetime.datetime.strptime(datestamp, '%Y-%m-%d')
+    if 'date' not in params or args.date:
+        datestamp = args.date or 'yesterday'
 
-        enddate = startdate + datetime.timedelta(days=1)
+        if datestamp == 'now':
+            # Create a start -> end window that has wiggle room on either side
+            # to deal with time differences between the client and server, but
+            # also big enough to pick up results even in stage where it doesn't
+            # process much
+            enddate = utc_now() + datetime.timedelta(hours=1)
+            startdate = enddate - datetime.timedelta(hours=12)
+
+            # For "now", we want precision so we don't hit cache and we want to
+            # sort by reverse date so that we get the most recent crashes
+            startdate = startdate.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            enddate = enddate.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            params['_sort'] = '-date'
+
+        else:
+            if datestamp == 'today':
+                startdate = utc_now()
+            elif datestamp == 'yesterday':
+                startdate = utc_now() - datetime.timedelta(days=1)
+            else:
+                startdate = datetime.datetime.strptime(datestamp, '%Y-%m-%d')
+
+            enddate = startdate + datetime.timedelta(days=1)
+
+            # For "today", "yesterday", and other dates, we want a day
+            # precision so that Socorro can cache it
+            startdate = startdate.strftime('%Y-%m-%d')
+            enddate = enddate.strftime('%Y-%m-%d')
+
         params['date'] = [
-            '>=%s' % startdate.strftime('%Y-%m-%d'),
-            '<%s' % enddate.strftime('%Y-%m-%d')
+            '>=%s' % startdate,
+            '<%s' % enddate
         ]
 
     # Override with signature-contains if specified
