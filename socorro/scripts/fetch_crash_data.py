@@ -96,15 +96,19 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
         dump_names = raw_crash.get('dump_checksums', {}).keys()
         for dump_name in dump_names:
             print('Fetching %s -> %s' % (crash_id, dump_name))
-            if dump_name == 'upload_file_minidump':
-                dump_name = 'dump'
+
+            # We store "upload_file_minidump" as "dump", so we need to use that
+            # name when requesting from the RawCrash api
+            file_name = dump_name
+            if file_name == 'upload_file_minidump':
+                file_name = 'dump'
 
             resp = requests.get(
                 HOST + '/api/RawCrash/',
                 params={
                     'crash_id': crash_id,
                     'format': 'raw',
-                    'name': dump_name
+                    'name': file_name
                 },
                 headers=headers,
             )
