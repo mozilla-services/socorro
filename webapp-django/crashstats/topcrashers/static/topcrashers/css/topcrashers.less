@@ -86,8 +86,18 @@
 /* top crashers no results */
 .no-results {
     clear: both;
-    padding: 1.2em 0 1em 1em;
+    padding: 1em;
+    display: block;
+    margin: 0 auto 1em;
+    text-align: center;
+    width: 50%;
+    .shadow(0px, 1px, 4px, 0, @grey-90-a10);
+
+    time {
+        font-weight: 900;
+    }
 }
+
 .hide {
     display: none;
 }
@@ -123,7 +133,7 @@
 .moving-up,
 .moving-down {
     position: absolute;
-    left: 3px;
+    left: 6px;
     display: inline-block;
     color: @white;
     margin-top: -8px;
