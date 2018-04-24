@@ -14,9 +14,11 @@ from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
     ExternalProcessRule,
-    JitCrashCategorizeRule
+    JitCrashCategorizeRule,
+    MinidumpSha256Rule,
 )
 from socorro.unittest.testbase import TestCase
+
 
 example_uuid = '00000000-0000-0000-0000-000002140504'
 canonical_standard_raw_crash = DotDict({
@@ -241,6 +243,49 @@ class TestCrashingThreadRule(TestCase):
 
         assert processed_crash.crashedThread is None
         assert processor_meta.processor_notes == ['MDSW did not identify the crashing thread']
+
+
+class TestMinidumpSha256HashRule(object):
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        return config
+
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+        processor_meta.quit_check = lambda: False
+
+        return processor_meta
+
+    def test_hash_not_in_raw_crash(self):
+        config = self.get_basic_config()
+
+        raw_crash = DotDict()
+        raw_dumps = {}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = MinidumpSha256Rule(config)
+
+        assert rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta) is False
+
+    def test_hash_in_raw_crash(self):
+        config = self.get_basic_config()
+
+        raw_crash = DotDict({
+            'MinidumpSha256Hash': 'hash'
+        })
+        raw_dumps = {}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = MinidumpSha256Rule(config)
+
+        assert rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta) is True
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash['minidump_sha256_hash'] == 'hash'
 
 
 cannonical_external_output = {

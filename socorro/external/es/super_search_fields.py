@@ -3056,6 +3056,24 @@ FIELDS = {
             'type': 'string'
         }
     },
+    'minidump_sha256_hash': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': 'SHA256 hash of the minidump if there was one.',
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'minidump_sha256_hash',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'minidump_sha256_hash',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'query_type': 'string',
+        'storage_mapping': {
+            'type': 'string'
+        }
+    },
     'moz_crash_reason': {
         'data_validation_type': 'str',
         'default_value': None,

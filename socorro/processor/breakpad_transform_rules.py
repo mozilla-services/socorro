@@ -60,6 +60,18 @@ class CrashingThreadRule(Rule):
         return True
 
 
+class MinidumpSha256Rule(Rule):
+    """Copy over MinidumpSha256Hash value if there is one"""
+    def version(self):
+        return '1.0'
+
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return 'MinidumpSha256Hash' in raw_crash
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash['minidump_sha256_hash'] = raw_crash['MinidumpSha256Hash']
+
+
 class ExternalProcessRule(Rule):
     # FIXME(willkg): command_line and command_pathname are referenced in the
     # uplifted versions in Processor2015. The rest of these config values have
