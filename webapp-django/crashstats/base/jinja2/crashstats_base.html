@@ -44,9 +44,10 @@
         <input type="hidden" id="url_site" name="url_site" value="/" />
 
     {% block product_nav_filter %}
+        <span class="quick-nav-title">Quick Navigation</span>
         <ul class="filter">
             <li>
-                <label for="products_select">Product:</label>
+                <label for="products_select" class="visually-hidden">Select Product</label>
                 <select id="products_select">
                 {% for p in active_versions %}
                     <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
@@ -86,7 +87,7 @@
                 </select>
             </li>
             <li>
-                <label for="report_select">Report:</label>
+                <label for="report_select" class="visually-hidden">Report:</label>
                 <select id="report_select">
                     <optgroup label=" ">
                         <option
