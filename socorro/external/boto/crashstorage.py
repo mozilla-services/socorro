@@ -15,9 +15,6 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.external.boto.connection_context import (
-    SimpleDatePrefixKeyBuilder
-)
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
@@ -314,10 +311,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     )
 
     def __init__(self, config, *args, **kwargs):
-        # This class requires that we use
-        # SimpleDatePrefixKeyBuilder, so we stomp on the configuration
-        # to make absolutely sure it gets set that way.
-        config.keybuilder_class = SimpleDatePrefixKeyBuilder
         super(TelemetryBotoS3CrashStorage, self).__init__(
             config, *args, **kwargs
         )
