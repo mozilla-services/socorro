@@ -42,7 +42,9 @@ if [ ! -d "breakpad" ]; then
   cd breakpad
   fetch breakpad
 else
-  cd breakpad
+  cd breakpad/src
+  git fetch origin
+  cd ..
 fi
 
 cd src
