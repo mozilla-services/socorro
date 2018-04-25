@@ -18,16 +18,11 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
 
     def __init__(self):
         # Deliberately not doing anything fancy with config. So no super call.
-        # Prep the self._all_fields so it's available when
-        # self.save_raw_and_processed() is called.
         r = requests.get(
             API_BASE.format('SuperSearchFields'),
         )
         print(r.url)
         self._all_fields = r.json()
-
-    def _get_all_fields(self):
-        return self._all_fields
 
     def save_processed(self, crash):
         self.combined = crash
