@@ -31,15 +31,24 @@ class IntegrationTestAnalyzers(ElasticsearchTestCase):
 
         That analyzer creates tokens (terms) by splitting the input on
         semicolons (;) only.
+
         """
-        self.index_crash({
-            'date_processed': self.now,
-            'app_init_dlls': '/path/to/dll;;foo;C:\\bar\\boo',
-        })
-        self.index_crash({
-            'date_processed': self.now,
-            'app_init_dlls': '/path/to/dll;D:\\bar\\boo',
-        })
+        self.index_crash(
+            processed_crash={
+                'date_processed': self.now,
+            },
+            raw_crash={
+                'AppInitDLLs': '/path/to/dll;;foo;C:\\bar\\boo',
+            }
+        )
+        self.index_crash(
+            processed_crash={
+                'date_processed': self.now,
+            },
+            raw_crash={
+                'AppInitDLLs': '/path/to/dll;D:\\bar\\boo',
+            }
+        )
         self.refresh_index()
 
         res = self.api.get(

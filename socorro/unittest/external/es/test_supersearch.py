@@ -110,28 +110,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert 'write_combine_size' in res['hits'][0]
 
     @minimum_es_version('1.0')
-    def test_get_with_root_field(self):
-        """Verify that querying fields at the root of the crash document works.
-        """
-        self.index_crash({
-            'signature': 'js::break_your_browser',
-            'date_processed': self.now,
-        }, root_doc={
-            'removed_fields': 'foo bar',
-        })
-        self.refresh_index()
-
-        res = self.api.get(_columns=[
-            'date', 'signature', 'removed_fields'
-        ], _facets=['removed_fields'])
-
-        assert 'removed_fields' in res['hits'][0]
-        assert res['hits'][0]['removed_fields'] == 'foo bar'
-
-        assert 'removed_fields' in res['facets']
-        assert len(res['facets']['removed_fields']) == 2
-
-    @minimum_es_version('1.0')
     def test_get_with_bad_results_number(self):
         """Run a very basic test, just to see if things work. """
         with pytest.raises(BadArgumentError):
@@ -1726,6 +1704,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         self.index_crash({
             'signature': 'js::break_your_browser',
             'product': 'WaterWolf',
+            'cpu_name': 'intel',
             'os_name': 'Windows NT',
             'date_processed': self.now,
         })
@@ -1743,21 +1722,21 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test a synonyme field returns the correct name.
         kwargs = {
-            '_columns': ['product_2']
+            '_columns': ['cpu_arch']
         }
         res = self.api.get(**kwargs)
 
-        assert 'product_2' in res['hits'][0]
-        assert 'product' not in res['hits'][0]
+        assert 'cpu_arch' in res['hits'][0]
+        assert 'cpu_name' not in res['hits'][0]
 
         # Test with 2 synonyme fields.
         kwargs = {
-            '_columns': ['product', 'product_2']
+            '_columns': ['cpu_name', 'cpu_arch']
         }
         res = self.api.get(**kwargs)
 
-        assert 'product_2' in res['hits'][0]
-        assert 'product' in res['hits'][0]
+        assert 'cpu_name' in res['hits'][0]
+        assert 'cpu_arch' in res['hits'][0]
 
         # Test errors
         with pytest.raises(BadArgumentError):

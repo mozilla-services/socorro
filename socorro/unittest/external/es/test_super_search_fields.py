@@ -8,10 +8,9 @@ import datetime
 import pytest
 
 from socorro.lib import BadArgumentError
-from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.external.es.super_search_fields import FIELDS, SuperSearchFields
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
-    SUPERSEARCH_FIELDS,
     ElasticsearchTestCase,
     minimum_es_version,
 )
@@ -31,11 +30,11 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         super(IntegrationTestSuperSearchFields, self).setUp()
 
         self.api = SuperSearchFields(config=self.config)
-        self.api.get_fields = lambda: copy.deepcopy(SUPERSEARCH_FIELDS)
+        self.api.get_fields = lambda: copy.deepcopy(FIELDS)
 
     def test_get_fields(self):
         results = self.api.get_fields()
-        assert results == SUPERSEARCH_FIELDS
+        assert results == FIELDS
 
     @minimum_es_version('1.0')
     def test_get_missing_fields(self):
@@ -166,7 +165,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         assert 'fake_field' not in properties['raw_crash']['properties']
 
         # Those fields have a `storage_mapping`.
-        assert processed_crash['release_channel'] == {'type': 'string'}
+        assert processed_crash['release_channel'] == {'analyzer': 'keyword', 'type': 'string'}
 
         # Test nested objects.
         assert 'json_dump' in processed_crash
@@ -177,6 +176,8 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         # Test overwriting a field.
         mapping = self.api.get_mapping(overwrite_mapping={
             'name': 'fake_field',
+            'namespace': 'raw_crash',
+            'in_database_name': 'fake_field',
             'storage_mapping': {
                 'type': 'long'
             }
@@ -195,6 +196,8 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         # Insert an invalid storage mapping.
         mapping = self.api.get_mapping({
             'name': 'fake_field',
+            'namespace': 'raw_crash',
+            'in_database_name': 'fake_field',
             'storage_mapping': {
                 'type': 'unkwown'
             }
@@ -216,3 +219,48 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         })
         with pytest.raises(BadArgumentError):
             self.api.test_mapping(mapping)
+
+
+def get_fields():
+    return FIELDS.items()
+
+
+@pytest.mark.parametrize('name, properties', get_fields())
+def test_validate_super_search_fields(name, properties):
+    """Validates the contents of socorro.external.es.super_search_fields.FIELDS"""
+
+    # FIXME(willkg): When we start doing schema stuff in Python, we should
+    # switch this to a schema validation.
+
+    property_keys = [
+        'data_validation_type',
+        'default_value',
+        'description',
+        'form_field_choices',
+        'has_full_version',
+        'in_database_name',
+        'is_exposed',
+        'is_mandatory',
+        'is_returned',
+        'name',
+        'namespace',
+        'permissions_needed',
+        'query_type',
+        'storage_mapping',
+    ]
+
+    # Assert it has all the keys
+    assert sorted(properties.keys()) == sorted(property_keys)
+
+    # Assert boolean fields have boolean values
+    for key in ['has_full_version', 'is_exposed', 'is_mandatory', 'is_returned']:
+        assert properties[key] in (True, False)
+
+    # Assert data_validation_type has a valid value
+    assert properties['data_validation_type'] in ('bool', 'datetime', 'enum', 'int', 'str')
+
+    # Assert query_type has a valid value
+    assert properties['query_type'] in ('bool', 'date', 'enum', 'flag', 'number', 'string')
+
+    # The name in the mapping should be the same as the name in properties
+    assert properties['name'] == name
