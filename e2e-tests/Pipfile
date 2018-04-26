@@ -1,6 +1,6 @@
 [[source]]
 
-url = "https://pypi.org"
+url = "pypi.org"
 verify_ssl = true
 name = "pypi"
 
