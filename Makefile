@@ -12,7 +12,7 @@ package:
 
 # Docker related rules
 
-.PHONY: dockerbuild dockersetup dockerclean dockertest dockertestshell dockerrun
+.PHONY: dockerbuild dockersetup dockerclean lint dockertest dockertestshell dockerrun
 
 DC := $(shell which docker-compose)
 
@@ -39,6 +39,9 @@ dockersetup: my.env .docker-build
 
 dockerclean:
 	rm .docker-build
+
+lint: my.env
+	${DC} run processor flake8
 
 dockertest: my.env
 	./docker/run_tests_in_docker.sh ${ARGS}
