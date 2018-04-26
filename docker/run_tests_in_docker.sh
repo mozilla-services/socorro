@@ -25,10 +25,11 @@ APP_GID="10001"
 BASEIMAGENAME="python:2.7.14-slim"
 
 # Start services in background (this is idempotent)
-echo "Starting services in the background..."
+echo "Starting services needed by tests in the background..."
 ${DC} up -d elasticsearch
 ${DC} up -d postgresql
 ${DC} up -d rabbitmq
+${DC} up -d statsd
 
 # If we're running a shell, then we start up a test container with . mounted
 # to /app.
