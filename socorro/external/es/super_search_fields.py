@@ -22,21 +22,20 @@ class SuperSearchFields(ElasticsearchBase):
         """Return all the fields from our super_search_fields.json file."""
         return FIELDS
 
-    # The reason for this alias is because this class gets used from
-    # the webapp and it expects to be able to execute
-    # SuperSearchFields.get() but there's a subclass of this class
-    # called SuperSearchMissingFields which depends on calling
-    # self.get_fields(). That class has its own `get` method.
-    # If you don't refer to `get_fields` with `get_fields` you'd get
-    # an infinite recursion loop.
-
+    # Alias ``get`` as ``get_fields`` so this can be used in the API well and
+    # can be conveniently subclassed by ``SuperSearchMissingFields``.
     get = get_fields
 
     def get_missing_fields(self):
-        """Return a list of all missing fields in our JSON file.
+        """Return fields missing from our FIELDS list
 
-        Take the list of all fields that were indexed in the last 3 weeks
-        and do a diff with the list of known fields.
+        Go through the last three weeks of indexes, fetch the mappings, and
+        figure out which fields are in the mapping that aren't in our list of
+        known fields.
+
+        :returns: dict of missing fields (``hits``) and total number of missing
+            fields (``total``)
+
         """
         now = datetimeutil.utc_now()
         two_weeks_ago = now - datetime.timedelta(weeks=2)
@@ -99,8 +98,13 @@ class SuperSearchFields(ElasticsearchBase):
         }
 
     def get_mapping(self, overwrite_mapping=None):
-        """Return the mapping to be used in elasticsearch, generated from the
-        current list of fields in the database.
+        """Generates Elasticsearch mapping from the super search fields schema
+
+        :arg overwrite_mapping: mapping with values that override the super
+            search fields schema values
+
+        :returns: dict of doctype name -> Elasticsearch mapping
+
         """
         properties = {}
         all_fields = self.get_fields()
@@ -155,21 +159,22 @@ class SuperSearchFields(ElasticsearchBase):
         }
 
     def test_mapping(self, mapping):
-        """Verify that a mapping is correct.
+        """Verify that a mapping is correct
 
-        This function does so by first creating a new, temporary index in
+        This method verifies a mapping by creating a new, temporary index in
         elasticsearch using the mapping. It then takes some recent crash
         reports that are in elasticsearch and tries to insert them in the
         temporary index. Any failure in any of those steps will raise an
         exception. If any is raised, that means the mapping is incorrect in
-        some way (either it doesn't validate against elasticsearch's rules,
-        or is not compatible with the data we currently store).
+        some way (either it doesn't validate against elasticsearch's rules, or
+        is not compatible with the data we currently store).
 
-        If no exception is raised, the mapping is likely correct.
+        Raises an exception if the mapping is bad.
 
-        This function is to be used in any place that can change the
-        `storage_mapping` field in any Super Search Field.
-        Methods `create_field` and `update_field` use it, see above.
+        Use this to test any mapping changes.
+
+        :arg mapping: the Elasticsearch mapping to test
+
         """
         temp_index = 'socorro_mapping_test'
 
@@ -217,12 +222,9 @@ class SuperSearchFields(ElasticsearchBase):
 
 
 class SuperSearchMissingFields(SuperSearchFields):
+    """Model that returns fields missing from super search fields"""
 
     def get(self):
-        # This is the whole reason for making this subclass.
-        # This way we can get a dedicated class with a single get method
-        # so that it becomes easier to use the big class for multiple
-        # API purposes.
         return super(SuperSearchMissingFields, self).get_missing_fields()
 
 
