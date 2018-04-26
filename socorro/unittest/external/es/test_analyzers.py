@@ -6,7 +6,6 @@ from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     SuperSearchWithFields,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -25,7 +24,6 @@ class IntegrationTestAnalyzers(ElasticsearchTestCase):
         self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()
 
-    @minimum_es_version('1.0')
     def test_semicolon_keywords(self):
         """Test the analyzer called `semicolon_keywords`.
 

@@ -12,7 +12,6 @@ from socorro.external.es.super_search_fields import FIELDS, SuperSearchFields
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -36,7 +35,6 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         results = self.api.get_fields()
         assert results == FIELDS
 
-    @minimum_es_version('1.0')
     def test_get_missing_fields(self):
         config = self.get_base_config(
             es_index='socorro_integration_test_%W'
