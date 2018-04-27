@@ -137,32 +137,39 @@ class ConnectionContextBase(RequiredConfig):
 
         """
         if name_of_thing == 'raw_crash':
-            # {prefix}/v2/{name_of_thing}/{entropy}/{date}/{id}
-
             # Insert the first 3 chars of the crashid providing some entropy
             # earlier in the key so that consecutive s3 requests get
             # distributed across multiple s3 partitions
-            first_chars = crashid[:3]
+            entropy = crashid[:3]
             date = self._get_datestamp(crashid).strftime('%Y%m%d')
             return [
-                '%s/v2/%s/%s/%s/%s' % (
-                    prefix, name_of_thing, first_chars, date, crashid
-                )
+                '%(prefix)s/v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s' % {
+                    'prefix': prefix,
+                    'nameofthing': name_of_thing,
+                    'entropy': entropy,
+                    'date': date,
+                    'crashid': crashid
+                }
             ]
 
         elif name_of_thing == 'crash_report':
             # Crash data from the TelemetryBotoS3CrashStorage
-
-            # {prefix}/v1/{name_of_thing}/{date}/{id}
             date = self._get_datestamp(crashid).strftime('%Y%m%d')
             return [
-                '%s/v1/%s/%s/%s' % (
-                    prefix, name_of_thing, date, crashid
-                )
+                '%(prefix)s/v1/%(nameofthing)s/%(date)s/%(crashid)s' % {
+                    'prefix': prefix,
+                    'nameofthing': name_of_thing,
+                    'date': date,
+                    'crashid': crashid
+                }
             ]
 
         return [
-            '%s/v1/%s/%s' % (prefix, name_of_thing, crashid)
+            '%(prefix)s/v1/%(nameofthing)s/%(crashid)s' % {
+                'prefix': prefix,
+                'nameofthing': name_of_thing,
+                'crashid': crashid
+            }
         ]
 
     def _get_bucket(self, conn, bucket_name):
