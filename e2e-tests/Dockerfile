@@ -36,8 +36,8 @@ RUN curl -fsSLo /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/r
   && ln -fs /opt/geckodriver-$GECKODRIVER_VERSION /usr/bin/geckodriver
 
 WORKDIR /src
-COPY Pipfile /src/
-RUN pipenv --three install --system --deploy --ignore-pipfile
+COPY Pipfile* /src/
+RUN pipenv install --system --deploy --ignore-pipfile
 
 COPY . /src
 CMD pytest --driver Firefox
