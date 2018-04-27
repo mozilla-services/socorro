@@ -598,10 +598,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'bucket_name': config('resource.boto.bucket_name', 'crashstats'),
             'region': config('resource.boto.region', 'us-west-2'),
             'prefix': config('resource.boto.prefix', ''),
-            'keybuilder_class': config(
-                'resource.boto.keybuilder_class',
-                'socorro.external.boto.connection_context.DatePrefixKeyBuilder'
-            ),
 
             # NOTE(willkg): In the local dev environment, we need to use a
             # HostPortS3ConnectionContext which requires these additional configuration bits. The

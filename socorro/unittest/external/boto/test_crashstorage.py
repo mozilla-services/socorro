@@ -133,7 +133,7 @@ class TestBotoS3CrashStorage:
         # contents
         raw_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
-            key='dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
+            key='dev/v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027'
         )
 
         assert (
@@ -170,7 +170,7 @@ class TestBotoS3CrashStorage:
         # contents
         raw_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
-            key='dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
+            key='dev/v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027'
         )
 
         assert (
@@ -205,7 +205,7 @@ class TestBotoS3CrashStorage:
         # contents
         raw_crash = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
-            key='dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'
+            key='dev/v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027'
         )
 
         assert (
@@ -303,7 +303,7 @@ class TestBotoS3CrashStorage:
     def test_get_raw_crash(self, boto_helper):
         boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
-            key='dev/v1/raw_crash/936ce666-ff3b-4c7a-9674-367fe2120408',
+            key='dev/v2/raw_crash/936/20120408/936ce666-ff3b-4c7a-9674-367fe2120408',
             value=a_raw_crash_as_string
         )
 
