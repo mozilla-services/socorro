@@ -29,14 +29,6 @@ class OSNameMatches(BaseTable):
             ['Linux', 'Linux%']]
 
 
-class ProcessTypes(BaseTable):
-    table = 'process_types'
-    columns = ['process_type']
-    rows = [['browser'],
-            ['plugin'],
-            ['content']]
-
-
 class ReleaseChannels(BaseTable):
     table = 'release_channels'
     columns = ['release_channel', 'sort']
@@ -45,26 +37,6 @@ class ReleaseChannels(BaseTable):
             ['Beta', '3'],
             ['Release', '4'],
             ['ESR', '5']]
-
-
-class ReleaseChannelMatches(BaseTable):
-    table = 'release_channel_matches'
-    columns = ['release_channel', 'match_string']
-    rows = [['Release', 'release'],
-            ['Release', 'default'],
-            ['Beta', 'beta'],
-            ['Aurora', 'aurora'],
-            ['Nightly', 'nightly%']]
-
-
-class UptimeLevels(BaseTable):
-    table = 'uptime_levels'
-    columns = ['uptime_level', 'uptime_string', 'min_uptime', 'max_uptime']
-    rows = [['1', '< 1 min', '00:00:00', '00:01:00'],
-            ['2', '1-5 min', '00:01:00', '00:05:00'],
-            ['3', '5-15 min', '00:05:00', '00:15:00'],
-            ['4', '15-60 min', '00:15:00', '01:00:00'],
-            ['5', '> 1 hour', '01:00:00', '1 year']]
 
 
 class WindowsVersions(BaseTable):
@@ -136,18 +108,6 @@ class ReleaseRepositories(BaseTable):
         ['mozilla-esr60'],
         ['comm-esr60'],
     ]
-
-
-class CrashTypes(BaseTable):
-    table = 'crash_types'
-    columns = [
-        'crash_type_id', 'crash_type', 'crash_type_short', 'process_type',
-        'has_hang_id', 'old_code', 'include_agg']
-    rows = [['1', 'Browser', 'crash', 'browser', False, 'C', True],
-            ['2', 'OOP Plugin', 'oop', 'plugin', False, 'P', True],
-            ['3', 'Hang Browser', 'hang-b', 'plugin', True, 'c', False],
-            ['4', 'Hang Plugin', 'hang-p', 'browser', True, 'p', True],
-            ['5', 'Content', 'content', 'content', False, 'T', True]]
 
 
 class ReportPartitionInfo(BaseTable):
@@ -266,10 +226,10 @@ class SpecialProductPlatforms(BaseTable):
     ]
 
 
-# the order that tables are loaded is important.
-tables = [OSNames, OSNameMatches, ProcessTypes, ReleaseChannels,
-          ReleaseChannelMatches, UptimeLevels, WindowsVersions,
+# NOTE(willkg): the order that tables are loaded is important
+tables = [OSNames, OSNameMatches, ReleaseChannels,
+          WindowsVersions,
           OSVersions, ReleaseRepositories,
-          CrashTypes, ReportPartitionInfo,
+          ReportPartitionInfo,
           Products, ProductBuildTypes, ProductReleaseChannels,
           ProductProductIDMap, SpecialProductPlatforms]

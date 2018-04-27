@@ -77,9 +77,5 @@ WHILE thisday <= lastday LOOP
 
 END LOOP;
 
--- finally rank_compare, which doesn't need to be filled in for each day
-RAISE INFO 'rank_compare';
-PERFORM backfill_rank_compare(lastday);
-
 RETURN true;
 END; $$;

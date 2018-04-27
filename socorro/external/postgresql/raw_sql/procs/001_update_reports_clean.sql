@@ -412,5 +412,3 @@ RETURN TRUE;
 
 END;
 $_$;
-
-
