@@ -117,8 +117,8 @@ parameter. That should return all the crash reports that were indexed in the
 passed week.
 
 
-Master list of fields
-=====================
+Super Search fields
+===================
 
 Super Search, and thus all the features based on it, is powered by a master list
 of fields that tells it what data to expose and how to expose it. That list
@@ -127,41 +127,86 @@ contains data about each field from Elasticsearch that can be manipulated.
 The list is managed in code in ``socorro/external/es/super_search_fields.py``
 as a dict of ``name`` -> ``properties``.
 
+
+Names
+-----
+
 The name of a field is exposed in the Super Search API. This must be unique.
+
+
+Properties
+----------
 
 Here is an explanation of each properties of a field:
 
-+----------------------+---------------------------------------------------------+
-| Parameter            | Description                                             |
-+======================+=========================================================+
-| in_database_name     | Name of the field in the database and in Elasticsearch. |
-+----------------------+---------------------------------------------------------+
-| namespace            | Namespace of the field. Separated with dots.            |
-+----------------------+---------------------------------------------------------+
-| description          | Description of the field, for admins only.              |
-+----------------------+---------------------------------------------------------+
-| query_type           | Defines operators that can be used in Super Search.     |
-|                      | See details below.                                      |
-+----------------------+---------------------------------------------------------+
-| data_validation_type | Defines the validation done on values passed to         |
-|                      | filers of this field in Super Search.                   |
-+----------------------+---------------------------------------------------------+
-| permissions_needed   | Permissions needed for a user to access this field.     |
-+----------------------+---------------------------------------------------------+
-| form_field_choices   | Choices offered for filters of that field in the        |
-|                      | Super Search form.                                      |
-+----------------------+---------------------------------------------------------+
-| is_exposed           | Is this field exposed as a filter?                      |
-+----------------------+---------------------------------------------------------+
-| is_returned          | Is this field returned in results?                      |
-+----------------------+---------------------------------------------------------+
-| has_full_version     | Does this field have a full version in Elasticsearch?   |
-|                      | Enable only if you use a multitype field in the         |
-|                      | storage mapping.                                        |
-+----------------------+---------------------------------------------------------+
-| storage_mapping      | Mapping that is used in Elasticsearch for this field.   |
-|                      | See Elasticsearch documentation for more info.          |
-+----------------------+---------------------------------------------------------+
+**name**
+    The name of the field.
+
+**description**
+    Brief description of the field.
+
+    This shows up in the `Super Search API documentation
+    <https://crash-stats.mozilla.com/documentation/supersearch/api/>`_.
+
+**namespace**
+    The dotted name space for the source of the value of this field.
+
+    Examples:
+
+    * ``raw_crash``
+    * ``processed_crash``
+    * ``processed_crash.json_dump.crashing_thread``
+
+**in_database_name**
+    This is the name used to store this field value in Elasticsearch and other
+    places.
+
+**query_type**
+    Specifies the operators that can be used with this field in Super Search.
+    See the list of query types below.
+
+**data_validation_type**
+    Specifies how values are validated when passed to filters of this field
+    in Super Search.
+
+    Possible values: ``str``, ``enum``, ``bool``, ``int``, ``datetime``,
+
+**permissions_needed**
+    Permissions needed for a user to access this field.
+
+**form_field_choices**
+    Possible values for this field in the Super Search form.
+
+**is_exposed**
+    Is this field exposed as a filter?
+
+**is_returned**
+    Is this field returned in results?
+
+**has_full_version**
+    Does this field have a full version in Elasticsearch? Enable only if you use
+    a multitype field in the storage mapping.
+
+**storage_mapping**
+    Mapping that is used in Elasticsearch for this field. See below for more
+    information.
+
+
+We also have these properties which are always set to the same values:
+
+**default_value**
+    The default value for a Super Search filter.
+
+    Always set to ``None``.
+
+**is_mandatory**
+    Is this field required to have a value in the Super Search form?
+
+    Always set to ``False``.
+
+
+Query types
+-----------
 
 Here are the operators that will be available for each ``query_type``. Note that
 each operator automatically has an opposite version (for example, each field
@@ -180,3 +225,13 @@ that has access to the ``contains`` operator also has ``does not contain``).
 +----------------------+------------------------------------------------------+
 | bool                 | is true                                              |
 +----------------------+------------------------------------------------------+
+
+
+Storage mapping
+---------------
+
+The storage mapping field contains Elasticsearch mapping instructions for the
+field.
+
+See `Elasticsearch 1.4 mapping documentation
+<https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping.html>`_.
