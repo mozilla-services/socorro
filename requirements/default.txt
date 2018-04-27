@@ -5,8 +5,6 @@ alembic==0.9.9 \
 mock==2.0.0 \
     --hash=sha256:5ce3c71c5545b472da17b72268978914d0252980348636840bd34a00b5cc96c1 \
     --hash=sha256:b158b6df76edd239b8208d481dc46b6afd45a846b7812ff0ce58971cf5bc8bba
-poster==0.8.1 \
-    --hash=sha256:af5bf45da4a916db2b638cffd9e9d6668b33020e2b8ca9f864db79b49331c6ff
 uWSGI==2.0.17 \
     --hash=sha256:3dc2e9b48db92b67bfec1badec0d3fdcc0771316486c5efa3217569da3528bf2
 configman==1.3.0 \

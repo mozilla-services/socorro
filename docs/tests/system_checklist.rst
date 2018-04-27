@@ -219,7 +219,7 @@ Checklist
     Stage submitter
     ===============
 
-    Is the stage submitter running and sending crashes?
+    Is the stage submitter AWS Lambda job passing along crashes?
 
-    * Check Datadog dashboard for Antenna on -stage to see if it's
+    * Check Datadog dashboard for stage collector to see if it's
       receiving crashes

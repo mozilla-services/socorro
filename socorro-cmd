@@ -87,7 +87,6 @@ COMMANDS = [
         'Services (run these in their respective containers)', {
             'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
             'processor': 'socorro.processor.processor_app.ProcessorApp',
-            'submitter': 'socorro.submitter.submitter_app.SubmitterApp',
         }
     ),
     Group(
