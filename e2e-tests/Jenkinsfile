@@ -71,7 +71,7 @@ pipeline {
         reportName: 'HTML Report'])
     }
     changed {
-      ircNotification('#breakpad')
+      ircNotification('#breakpad-bots')
       ircNotification('#fx-test-alerts')
     }
     failure {
