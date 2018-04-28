@@ -847,17 +847,6 @@ class SignatureProductsRollup(DeclarativeBase):
         'Signature', primaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
 
 
-class AndroidDevice(DeclarativeBase):
-    __tablename__ = 'android_devices'
-
-    android_device_id = Column(
-        u'android_device_id', INTEGER(), primary_key=True, nullable=False)
-    android_cpu_abi = Column(u'android_cpu_abi', TEXT())
-    android_manufacturer = Column(u'android_manufacturer', TEXT())
-    android_model = Column(u'android_model', TEXT())
-    android_version = Column(u'android_version', TEXT())
-
-
 class GraphicsDevice(DeclarativeBase):
     __tablename__ = 'graphics_device'
 

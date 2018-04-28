@@ -69,8 +69,6 @@ WHILE thisday <= lastday LOOP
     RAISE INFO 'signatures';
     PERFORM update_signatures(thisday, FALSE);
     DROP TABLE IF EXISTS new_signatures;
-    RAISE INFO 'android_devices';
-    PERFORM backfill_android_devices(thisday);
     RAISE INFO 'graphics_devices';
     PERFORM backfill_graphics_devices(thisday);
     thisday := thisday + 1;

@@ -17,7 +17,10 @@ down_revision = '8e8390138426'
 
 
 def upgrade():
+    # Bug 1398200
     op.execute('DROP TABLE IF EXISTS plugins')
+
+    # Bug 1457484
     op.execute('DROP TABLE IF EXISTS release_channel_matches')
     op.execute('DROP TABLE IF EXISTS replication_test')
     op.execute('DROP TABLE IF EXISTS sessions')
@@ -37,6 +40,12 @@ def upgrade():
 
     # Load the new version of backfill_matviews
     load_stored_proc(op, ['backfill_matviews.sql'])
+
+    # Bug 1440474
+    op.execute('DROP TABLE IF EXISTS android_devices')
+
+    op.execute('DROP FUNCTION IF EXISTS update_android_devices(date, boolean)')
+    op.execute('DROP FUNCTION IF EXISTS backfill_android_devices(date)')
 
 
 def downgrade():
