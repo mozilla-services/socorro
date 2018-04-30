@@ -43,7 +43,6 @@ DEFAULT_JOBS_BASE = [
     'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h',
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
     'socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00',
-    'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|05:00',
 
     # Misc
     'socorro.cron.jobs.upload_crash_report_json_schema.UploadCrashReportJSONSchemaCronApp|1h',

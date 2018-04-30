@@ -1,4 +1,7 @@
-"""bug 1440471 remove raw_update_channels
+"""bug 1440471, 1434425 remove raw_update_channels and graphics_device things
+
+This doesn't remove the graphics_device table--we're passing that to
+Django-land. This does remove the stored procedures that manipulate it.
 
 Revision ID: 3474e98b321f
 Revises: 1e188109fc6b
@@ -30,6 +33,10 @@ def upgrade():
         'update_raw_update_channel(timestamp, interval, boolean, boolean, text)'
     )
     op.execute('DROP FUNCTION IF EXISTS backfill_raw_update_channel(timestamp, timestamp)')
+
+    # Bug 1434425
+    op.execute('DROP FUNCTION IF EXISTS backfill_graphics_devices(date)')
+    op.execute('DROP FUNCTION IF EXISTS update_graphics_devices(date, boolean)')
 
 
 def downgrade():
