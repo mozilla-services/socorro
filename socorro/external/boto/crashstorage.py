@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import json
-import time
 
 import json_schema_reducer
 from socorro.lib.converters import change_default
@@ -15,9 +14,6 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
-)
-from socorro.external.boto.connection_context import (
-    SimpleDatePrefixKeyBuilder
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
@@ -315,28 +311,10 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     )
 
     def __init__(self, config, *args, **kwargs):
-        # This class requires that we use
-        # SimpleDatePrefixKeyBuilder, so we stomp on the configuration
-        # to make absolutely sure it gets set that way.
-        config.keybuilder_class = SimpleDatePrefixKeyBuilder
         super(TelemetryBotoS3CrashStorage, self).__init__(
             config, *args, **kwargs
         )
-
-    def _get_all_fields(self):
-        if (
-            hasattr(self, '_all_fields') and
-            hasattr(self, '_all_fields_timestamp')
-        ):
-            # we might have it cached
-            age = time.time() - self._all_fields_timestamp
-            if age < 60 * 60:
-                # fresh enough
-                return self._all_fields
-
         self._all_fields = SuperSearchFields(config=self.config).get()
-        self._all_fields_timestamp = time.time()
-        return self._all_fields
 
     def save_raw_and_processed(
         self,
@@ -345,7 +323,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         processed_crash,
         crash_id
     ):
-        all_fields = self._get_all_fields()
         crash_report = {}
 
         # TODO Opportunity of optimization;
@@ -358,7 +335,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         # Rename fields in raw_crash.
         raw_fields_map = dict(
             (x['in_database_name'], x['name'])
-            for x in all_fields.values()
+            for x in self._all_fields.values()
             if x['namespace'] == 'raw_crash'
         )
         for key, val in raw_crash.items():
@@ -367,7 +344,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         # Rename fields in processed_crash.
         processed_fields_map = dict(
             (x['in_database_name'], x['name'])
-            for x in all_fields.values()
+            for x in self._all_fields.values()
             if x['namespace'] == 'processed_crash'
         )
         for key, val in processed_crash.items():

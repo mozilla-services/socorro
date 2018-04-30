@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-.PHONY: package
+.PHONY: clean package
 
 # Used by infra to build rpm
 package:
@@ -10,9 +10,12 @@ package:
 	./scripts/install.sh
 	./scripts/package.sh
 
-# Docker related rules
+clean:
+	-rm .docker-build
+	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz
+	cd minidump-stackwalk && make clean
 
-.PHONY: dockerbuild dockersetup dockerclean lint dockertest dockertestshell dockerrun
+.PHONY: dockerbuild dockersetup lint dockertest dockertestshell dockerrun
 
 DC := $(shell which docker-compose)
 
@@ -36,9 +39,6 @@ dockerbuild: my.env
 # postgres going forward and has the needed environment variables.
 dockersetup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup.sh
-
-dockerclean:
-	rm .docker-build
 
 lint: my.env
 	${DC} run processor flake8

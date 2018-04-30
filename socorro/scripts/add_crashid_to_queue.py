@@ -24,7 +24,6 @@ Queues:
 
 * socorro.normal - normal processing
 * socorro.priority - priority processing
-* socorro.stagesubmitter (-prod only) - sends crash to -stage environment
 
 """
 

@@ -6,7 +6,6 @@ from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     SuperSearchWithFields,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -25,21 +24,29 @@ class IntegrationTestAnalyzers(ElasticsearchTestCase):
         self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()
 
-    @minimum_es_version('1.0')
     def test_semicolon_keywords(self):
         """Test the analyzer called `semicolon_keywords`.
 
         That analyzer creates tokens (terms) by splitting the input on
         semicolons (;) only.
+
         """
-        self.index_crash({
-            'date_processed': self.now,
-            'app_init_dlls': '/path/to/dll;;foo;C:\\bar\\boo',
-        })
-        self.index_crash({
-            'date_processed': self.now,
-            'app_init_dlls': '/path/to/dll;D:\\bar\\boo',
-        })
+        self.index_crash(
+            processed_crash={
+                'date_processed': self.now,
+            },
+            raw_crash={
+                'AppInitDLLs': '/path/to/dll;;foo;C:\\bar\\boo',
+            }
+        )
+        self.index_crash(
+            processed_crash={
+                'date_processed': self.now,
+            },
+            raw_crash={
+                'AppInitDLLs': '/path/to/dll;D:\\bar\\boo',
+            }
+        )
         self.refresh_index()
 
         res = self.api.get(

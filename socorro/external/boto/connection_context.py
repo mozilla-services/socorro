@@ -22,99 +22,15 @@ class KeyNotFound(Exception):
     pass
 
 
+class CrashidMissingDatestamp(Exception):
+    pass
+
+
 class JSONISOEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.date):
             return obj.isoformat()
         raise NotImplementedError("Don't know about {0!r}".format(obj))
-
-
-class KeyBuilderBase(object):
-    """Base key builder for s3 pseudo-filenames"""
-    def build_keys(self, prefix, name_of_thing, id):
-        """
-        Use S3 pseudo-directories to make it easier to list/expire later
-        {prefix}/v1/{name_of_thing}/{id}
-        """
-        return [
-            '%s/v1/%s/%s' % (prefix, name_of_thing, id)
-        ]
-
-
-class DatePrefixKeyBuilder(KeyBuilderBase):
-    """s3 pseudo-filename key builder with date prefixes
-
-    This adds the date to the prefix for raw_crash objects making it easier to
-    list all the raw_crash objects for a specific date.
-
-    """
-    def build_keys(self, prefix, name_of_thing, id):
-        """Use S3 pseudo-directories to make it easier to list/expire.
-
-        For "raw_crash" things, the id is an ooid/crash_id. This uses the
-        first three characters of the ooid for entropy and extracts the
-        crash submission date from the last 6 charactes. Then it mooshes
-        that all together into this structure::
-
-            {prefix}/v2/{name_of_thing}/{entropy}/{date}/{id}
-
-        This makes it possible to list all the raw_crashes submitted on a
-        given date.
-
-        It also returns the keys that KeyBuilderBase builds so that we can
-        fetch objects that were saved with older keys.
-
-        """
-        keys = []
-
-        if name_of_thing == 'raw_crash':
-            datestamp = dateFromOoid(id)
-
-            if datestamp is not None:
-                # We insert the first 3 chars of the ooid/crash_id providing
-                # some entropy earlier in the key so that consecutive s3
-                # requests get distributed across multiple s3 partitions.
-                first_chars = id[:3]
-                date = datestamp.strftime('%Y%m%d')
-                keys.append(
-                    '%s/v2/%s/%s/%s/%s' % (
-                        prefix, name_of_thing, first_chars, date, id
-                    )
-                )
-
-        keys.extend(
-            super(DatePrefixKeyBuilder, self).build_keys(
-                prefix, name_of_thing, id
-            )
-        )
-        return keys
-
-
-class SimpleDatePrefixKeyBuilder(KeyBuilderBase):
-    """s3 pseudo-filename key builder with simple date prefixes.
-
-    Simply the {prefix}/{name_of_thing}/{date}/{id}
-
-    This key builder is useful for the S3 upload of processed crashes
-    to go into Telemetry. It's important that the {date} is of the
-    format YYYYMMDD.
-    """
-
-    def build_keys(self, prefix, name_of_thing, id):
-        """return a list of one key. The reason for not returning more than
-        one is that this key builder class is going to be used for
-        something new so it has no legacy."""
-        datestamp = dateFromOoid(id)
-        if datestamp is None:
-            # the id did not have a date component in it
-            datestamp = datetime.datetime.utcnow()
-        date = datestamp.strftime('%Y%m%d')
-        keys = [
-            '%s/v1/%s/%s/%s' % (
-                prefix, name_of_thing, date, id
-            )
-        ]
-        return keys
 
 
 class ConnectionContextBase(RequiredConfig):
@@ -148,17 +64,6 @@ class ConnectionContextBase(RequiredConfig):
         reference_value_from='resource.boto',
         likely_to_be_changed=True,
     )
-    required_config.add_option(
-        'keybuilder_class',
-        default='socorro.external.boto.connection_context.KeyBuilderBase',
-        doc=(
-            'fully qualified dotted Python classname to handle building s3 '
-            'pseudo-filenames'
-        ),
-        from_string_converter=class_converter,
-        reference_value_from='resource.boto',
-        likely_to_be_changed=True,
-    )
 
     operational_exceptions = (
         socket.timeout,
@@ -189,7 +94,6 @@ class ConnectionContextBase(RequiredConfig):
             boto.exception.StorageResponseError,
             KeyNotFound
         )
-        self.keybuilder = config.keybuilder_class()
 
         self._bucket_cache = {}
 
@@ -207,11 +111,66 @@ class ConnectionContextBase(RequiredConfig):
         of credentials required for the type of connection"""
         raise NotImplementedError
 
-    def build_keys(self, prefix, name_of_thing, id):
-        """Builds an s3 pseudo-filename using the specified keybuilder class.
+    def _get_datestamp(self, crashid):
+        """Retrieves the datestamp from a crashid or raises an exception"""
+        datestamp = dateFromOoid(crashid)
+        if datestamp is None:
+            # We should never hit this situation unless the crashid is a bad crashid
+            raise CrashidMissingDatestamp('%s is missing datestamp' % crashid)
+        return datestamp
+
+    def build_keys(self, prefix, name_of_thing, crashid):
+        """Builds a list of s3 pseudo-filenames
+
+        When using keys for saving a crash, always use the first one given.
+
+        When using keys for loading a crash, try each key in order. This lets
+        us change our key scheme and continue to access things saved using the
+        old key.
+
+        :arg prefix: the prefix to use
+        :arg name_of_thing: the kind of thing we're building a filename for; e.g.
+            "raw_crash"
+        :arg crashid: the crash id for the thing being stored
+
+        :returns: list of keys to try in order
 
         """
-        return self.keybuilder.build_keys(prefix, name_of_thing, id)
+        if name_of_thing == 'raw_crash':
+            # Insert the first 3 chars of the crashid providing some entropy
+            # earlier in the key so that consecutive s3 requests get
+            # distributed across multiple s3 partitions
+            entropy = crashid[:3]
+            date = self._get_datestamp(crashid).strftime('%Y%m%d')
+            return [
+                '%(prefix)s/v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s' % {
+                    'prefix': prefix,
+                    'nameofthing': name_of_thing,
+                    'entropy': entropy,
+                    'date': date,
+                    'crashid': crashid
+                }
+            ]
+
+        elif name_of_thing == 'crash_report':
+            # Crash data from the TelemetryBotoS3CrashStorage
+            date = self._get_datestamp(crashid).strftime('%Y%m%d')
+            return [
+                '%(prefix)s/v1/%(nameofthing)s/%(date)s/%(crashid)s' % {
+                    'prefix': prefix,
+                    'nameofthing': name_of_thing,
+                    'date': date,
+                    'crashid': crashid
+                }
+            ]
+
+        return [
+            '%(prefix)s/v1/%(nameofthing)s/%(crashid)s' % {
+                'prefix': prefix,
+                'nameofthing': name_of_thing,
+                'crashid': crashid
+            }
+        ]
 
     def _get_bucket(self, conn, bucket_name):
         try:

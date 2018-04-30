@@ -930,10 +930,11 @@ class TestCrashVerify(object):
         }
 
         boto_helper = BotoHelper()
+        raw_crash_key = '/v2/raw_crash/%s/20%s/%s' % (uuid[0:3], uuid[-6:], uuid)
         boto_helper.get_or_create_bucket('crashstats-test')
         boto_helper.set_contents_from_string(
             bucket_name='crashstats-test',
-            key='/v1/raw_crash/%s' % uuid,
+            key=raw_crash_key,
             value=json.dumps(crash_data)
         )
 

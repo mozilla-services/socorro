@@ -116,7 +116,6 @@ CONFIG_DEFAULTS = {
 
     'resource': {
         'boto': {
-            'keybuilder_class': 'socorro.external.boto.connection_context.DatePrefixKeyBuilder',
             'prefix': '',
         },
 

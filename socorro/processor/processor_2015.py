@@ -26,6 +26,7 @@ from socorro.processor.breakpad_transform_rules import (
     CrashingThreadRule,
     ExternalProcessRule,  # imported to override config, not instantiated
     JitCrashCategorizeRule,
+    MinidumpSha256Rule,
 )
 
 from socorro.processor.general_transform_rules import (
@@ -70,6 +71,7 @@ DEFAULT_RULES = [
     PluginUserComment,
     # rules to transform a raw crash into a processed crash
     IdentifierRule,
+    MinidumpSha256Rule,
     BreakpadStackwalkerRule2015,
     ProductRule,
     UserDataRule,
