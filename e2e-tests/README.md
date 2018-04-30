@@ -6,8 +6,8 @@ Summary
 
 This directory holds Socorro client-based end-to-end tests, which is why they're different than the rest of the code in this repository.
 
-To review the specific-Python packages the tests use, please review
-`requirements/requirements.txt`.
+To review the specific-Python packages the tests use, please review the
+`Pipfile`.
 
 Clone the repository
 --------------------
