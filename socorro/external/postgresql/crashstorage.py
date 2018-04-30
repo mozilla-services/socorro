@@ -103,8 +103,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         self.transaction(self._save_processed_transaction, processed_crash)
 
     def _save_processed_transaction(self, connection, processed_crash):
-        report_id = self._save_processed_report(connection, processed_crash)
-        self._save_plugins(connection, processed_crash, report_id)
+        self._save_processed_report(connection, processed_crash)
 
     def _save_processed_report(self, connection, processed_crash):
         """Here we INSERT or UPDATE a row in the reports table.
@@ -198,48 +197,6 @@ class PostgreSQLCrashStorage(CrashStorageBase):
 
         report_id = single_value_sql(connection, upsert_sql, value_list)
         return report_id
-
-    def _save_plugins(self, connection, processed_crash, report_id):
-        """ Electrolysis Support - Optional - processed_crash may contain a
-        ProcessType of plugin. In the future this value would be default,
-        content, maybe even Jetpack... This indicates which process was the
-        crashing process.
-            plugin - When set to plugin, the jsonDocument MUST calso contain
-                     PluginFilename and PluginName
-        """
-        process_type = processed_crash['process_type']
-        if not process_type:
-            return
-
-        if process_type == "plugin":
-
-            # Bug#543776 We actually will are relaxing the non-null policy...
-            # a null filename, name, and version is OK. We'll use empty strings
-            try:
-                plugin_filename = processed_crash['PluginFilename']
-                plugin_name = processed_crash['PluginName']
-            except KeyError as x:
-                self.config.logger.error(
-                    'the crash is missing a required field: %s', str(x)
-                )
-                return
-            find_plugin_sql = ('select id from plugins '
-                               'where filename = %s '
-                               'and name = %s')
-            try:
-                single_value_sql(
-                    connection,
-                    find_plugin_sql,
-                    (plugin_filename, plugin_name)
-                )
-            except SQLDidNotReturnSingleValue:
-                insert_plugsins_sql = ("insert into plugins (filename, name) "
-                                       "values (%s, %s) returning id")
-                execute_no_results(
-                    connection,
-                    insert_plugsins_sql,
-                    (plugin_filename, plugin_name)
-                )
 
     @staticmethod
     def _table_suffix_for_crash_id(crash_id):

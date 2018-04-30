@@ -227,11 +227,10 @@ class TestPostgreSQLCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash)
 
         assert mocked_database_connection_source.call_count == 1
-        assert mocked_cursor.execute.call_count == 2
+        assert mocked_cursor.execute.call_count == 1
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
-            'select id from plugins',
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
             assert a_fragment in a_call[0][0]
@@ -263,12 +262,10 @@ class TestPostgreSQLCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash)
 
         assert mocked_database_connection_source.call_count == 1
-        assert mocked_cursor.execute.call_count == 3
+        assert mocked_cursor.execute.call_count == 1
         # check correct fragments
         sql_fragments = [
             "UPDATE reports_20120402",
-            'select id from plugins',
-            'insert into plugins',
         ]
         for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
             assert a_fragment in a_call[0][0]
@@ -294,7 +291,7 @@ class TestPostgreSQLCrashStorage(TestCase):
         crashstorage.save_processed(a_processed_crash_with_everything_too_long)
 
         assert mocked_database_connection_source.call_count == 1
-        assert mocked_cursor.execute.call_count == 2
+        assert mocked_cursor.execute.call_count == 1
 
         # check correct fragments
         first_call = mocked_cursor.execute.call_args_list[0]

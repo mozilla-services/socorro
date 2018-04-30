@@ -9,7 +9,6 @@ SQLAlchemy models for Socorro
 from __future__ import unicode_literals
 
 from sqlalchemy import Column, ForeignKey, Index, text, Integer
-from sqlalchemy import event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import sqlalchemy.types as types
@@ -27,7 +26,6 @@ from sqlalchemy.dialects.postgresql import (
     ARRAY,
     BIGINT,
     SMALLINT,
-    CHAR,
 )
 from sqlalchemy.dialects.postgresql.base import ischema_names
 
@@ -217,16 +215,6 @@ ischema_names['build_type_enum'] = build_type_enum
 ###############################
 
 
-class Module(DeclarativeBase):
-    __tablename__ = 'modules'
-
-    # column definitions
-    module_id = Column(u'module_id', INTEGER(),
-                       nullable=False, primary_key=True)
-    name = Column(u'name', TEXT(), nullable=False, primary_key=True)
-    version = Column(u'version', TEXT(), nullable=False, primary_key=True)
-
-
 class RawAdiLogs(DeclarativeBase):
     __tablename__ = 'raw_adi_logs'
 
@@ -280,16 +268,6 @@ class RawAdi(DeclarativeBase):
         Index(u'raw_adi_1_idx', date, product_name, product_version,
               product_os_platform, product_os_version),
     )
-
-
-class ReplicationTest(DeclarativeBase):
-    __tablename__ = 'replication_test'
-
-    # column definitions
-    id = Column(u'id', SMALLINT())
-    test = Column(u'test', BOOLEAN())
-
-    __mapper_args__ = {"primary_key": (id, test)}
 
 
 class ReportsBad(DeclarativeBase):
@@ -410,70 +388,6 @@ class BuildAdu(DeclarativeBase):
     )
 
 
-class CrashType(DeclarativeBase):
-    __tablename__ = 'crash_types'
-
-    # column definitions
-    crash_type = Column(u'crash_type', CITEXT(),
-                        nullable=False, index=True, unique=True)
-    crash_type_id = Column(u'crash_type_id', INTEGER(),
-                           primary_key=True, nullable=False)
-    crash_type_short = Column(u'crash_type_short', CITEXT(),
-                              nullable=False, index=True, unique=True)
-    has_hang_id = Column(u'has_hang_id', BOOLEAN())
-    include_agg = Column(u'include_agg', BOOLEAN(),
-                         nullable=False, server_default=text('True'))
-    old_code = Column(u'old_code', CHAR(length=1), nullable=False)
-    process_type = Column(u'process_type', CITEXT(), ForeignKey(
-        'process_types.process_type'), nullable=False)
-
-    # relationship definitions
-    process_types = relationship(
-        'ProcessType', primaryjoin='CrashType.process_type==ProcessType.process_type')
-
-
-class CrashesByUser(DeclarativeBase):
-    __tablename__ = 'crashes_by_user'
-
-    # column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False)
-    crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey(
-        'crash_types.crash_type_id'), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', CITEXT(),
-                           primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(),
-                                primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False)
-
-    # relationship definitions
-    crash_types = relationship(
-        'CrashType', primaryjoin='CrashesByUser.crash_type_id==CrashType.crash_type_id')
-
-
-class CrashesByUserBuild(DeclarativeBase):
-    __tablename__ = 'crashes_by_user_build'
-
-    # column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False)
-    build_date = Column(u'build_date', DATE(),
-                        primary_key=True, nullable=False)
-    crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey(
-        'crash_types.crash_type_id'), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', CITEXT(),
-                           primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True,
-                                nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-    report_date = Column(u'report_date', DATE(),
-                         primary_key=True, nullable=False)
-
-    # relationship definitions
-    crash_types = relationship(
-        'CrashType', primaryjoin='CrashesByUserBuild.crash_type_id==CrashType.crash_type_id')
-
-
 class Domain(DeclarativeBase):
     __tablename__ = 'domains'
 
@@ -537,27 +451,6 @@ class OsVersion(DeclarativeBase):
     # relationship definitions
     os_names = relationship(
         'OsName', primaryjoin='OsVersion.os_name==OsName.os_name')
-
-
-class Plugin(DeclarativeBase):
-    __tablename__ = 'plugins'
-
-    # column definitions
-    filename = Column(u'filename', TEXT(), nullable=False)
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    name = Column(u'name', TEXT(), nullable=False)
-
-    __table_args__ = (
-        Index('filename_name_key', filename, name, unique=True),
-    )
-
-
-class ProcessType(DeclarativeBase):
-    __tablename__ = 'process_types'
-
-    # column definitions
-    process_type = Column(u'process_type', CITEXT(),
-                          primary_key=True, nullable=False)
 
 
 class Product(DeclarativeBase):
@@ -737,28 +630,6 @@ class ProductVersionBuild(DeclarativeBase):
     )
 
 
-class RankCompare(DeclarativeBase):
-    __tablename__ = 'rank_compare'
-
-    # column definitions
-    percent_of_total = Column(u'percent_of_total', NUMERIC())
-    product_version_id = Column(u'product_version_id', INTEGER(),
-                                primary_key=True, nullable=False, autoincrement=False)
-    rank_days = Column(u'rank_days', INTEGER(),
-                       primary_key=True, nullable=False)
-    rank_report_count = Column(u'rank_report_count', INTEGER())
-    report_count = Column(u'report_count', INTEGER())
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False, index=True)
-    total_reports = Column(u'total_reports', BIGINT())
-
-    # Indexes
-    __table_args__ = (
-        Index('rank_compare_product_version_id_rank_report_count',
-              product_version_id, rank_report_count),
-    )
-
-
 class RawCrashes(DeclarativeBase):
     __tablename__ = 'raw_crashes'
 
@@ -800,24 +671,6 @@ class ReleaseChannel(DeclarativeBase):
         primaryjoin='ReleaseChannel.release_channel==ProductReleaseChannel.release_channel',
         secondary='ProductReleaseChannel',
         secondaryjoin='ProductReleaseChannel.product_name==Product.product_name'
-    )
-
-
-# DEPRECATED -> enum that's translated to a table for
-# 001_update_reports_clean.sql
-class ReleaseChannelMatch(DeclarativeBase):
-    __tablename__ = 'release_channel_matches'
-
-    # column definitions
-    match_string = Column(u'match_string', TEXT(),
-                          primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), ForeignKey(
-        'release_channels.release_channel'), primary_key=True, nullable=False)
-
-    # relationship definitions
-    release_channels = relationship(
-        'ReleaseChannel',
-        primaryjoin='ReleaseChannelMatch.release_channel==ReleaseChannel.release_channel'
     )
 
 
@@ -942,16 +795,6 @@ class ReportsUserInfo(DeclarativeBase):
     uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
 
 
-class Session(DeclarativeBase):
-    __tablename__ = 'sessions'
-
-    # column definitions
-    data = Column(u'data', TEXT(), nullable=False)
-    last_activity = Column(u'last_activity', INTEGER(), nullable=False)
-    session_id = Column(u'session_id', VARCHAR(length=127),
-                        primary_key=True, nullable=False)
-
-
 class Signature(DeclarativeBase):
     __tablename__ = 'signatures'
 
@@ -1004,17 +847,6 @@ class SignatureProductsRollup(DeclarativeBase):
         'Signature', primaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
 
 
-class AndroidDevice(DeclarativeBase):
-    __tablename__ = 'android_devices'
-
-    android_device_id = Column(
-        u'android_device_id', INTEGER(), primary_key=True, nullable=False)
-    android_cpu_abi = Column(u'android_cpu_abi', TEXT())
-    android_manufacturer = Column(u'android_manufacturer', TEXT())
-    android_model = Column(u'android_model', TEXT())
-    android_version = Column(u'android_version', TEXT())
-
-
 class GraphicsDevice(DeclarativeBase):
     __tablename__ = 'graphics_device'
 
@@ -1024,25 +856,6 @@ class GraphicsDevice(DeclarativeBase):
     adapter_hex = Column(u'adapter_hex', TEXT())
     vendor_name = Column(u'vendor_name', TEXT())
     adapter_name = Column(u'adapter_name', TEXT())
-
-
-class SocorroDbVersion(DeclarativeBase):
-    __tablename__ = 'socorro_db_version'
-
-    # column definitions
-    current_version = Column(u'current_version', TEXT(),
-                             primary_key=True, nullable=False)
-    refreshed_at = Column(u'refreshed_at', TIMESTAMP(timezone=True))
-
-
-class SocorroDbVersionHistory(DeclarativeBase):
-    __tablename__ = 'socorro_db_version_history'
-
-    # column definitions
-    backfill_to = Column(u'backfill_to', DATE())
-    upgraded_on = Column(u'upgraded_on', TIMESTAMP(
-        timezone=True), primary_key=True, nullable=False, server_default=text('NOW()'))
-    version = Column(u'version', TEXT(), primary_key=True, nullable=False)
 
 
 class SpecialProductPlatform(DeclarativeBase):
@@ -1064,42 +877,6 @@ class SpecialProductPlatform(DeclarativeBase):
     # Above is a transition definition.
     # Ultimately we will define build_type as follows:
     # build_type = Column(u'build_type', build_type(), primary_key=True, nullable=False)
-
-
-class TransformRule(DeclarativeBase):
-    __tablename__ = 'transform_rules'
-
-    # column definitions
-    transform_rule_id = Column(
-        u'transform_rule_id', INTEGER(), primary_key=True, nullable=False)
-    category = Column(u'category', CITEXT(), nullable=False)
-    rule_order = Column(u'rule_order', INTEGER(), nullable=False)
-    action = Column(u'action', TEXT(), nullable=False, server_default='')
-    action_args = Column(u'action_args', TEXT(),
-                         nullable=False, server_default='')
-    action_kwargs = Column(u'action_kwargs', TEXT(),
-                           nullable=False, server_default='')
-    predicate = Column(u'predicate', TEXT(), nullable=False, server_default='')
-    predicate_args = Column(u'predicate_args', TEXT(),
-                            nullable=False, server_default='')
-    predicate_kwargs = Column(
-        u'predicate_kwargs', TEXT(), nullable=False, server_default='')
-
-    __table_args__ = (
-        Index('transform_rules_key', category, rule_order, unique=True),
-    )
-
-
-class UptimeLevel(DeclarativeBase):
-    __tablename__ = 'uptime_levels'
-
-    # column definitions
-    max_uptime = Column(u'max_uptime', INTERVAL(), nullable=False)
-    min_uptime = Column(u'min_uptime', INTERVAL(), nullable=False)
-    uptime_level = Column(u'uptime_level', INTEGER(),
-                          primary_key=True, nullable=False, autoincrement=False)
-    uptime_string = Column(u'uptime_string', CITEXT(),
-                           nullable=False, index=True, unique=True)
 
 
 class Crontabber(DeclarativeBase):
@@ -1219,19 +996,3 @@ class Correlations(DeclarativeBase):
             unique=True
         ),
     )
-
-
-###########################################
-# Schema definition: Aggregates
-###########################################
-
-@event.listens_for(UptimeLevel.__table__, "after_create")
-def array_accum(target, connection, **kw):
-    array_accum = """
-        CREATE AGGREGATE array_accum(anyelement) (
-            SFUNC = array_append,
-            STYPE = anyarray,
-            INITCOND = '{}'
-        )
-    """
-    connection.execute(array_accum)
