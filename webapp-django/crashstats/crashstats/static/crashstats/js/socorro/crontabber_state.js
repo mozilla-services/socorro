@@ -71,7 +71,7 @@ function escapeHtml(unsafe) {
         .replace(/'/g, '&#039;');
 }
 
-d3.json('/api/CrontabberState/', function(data) {
+d3.json('/api/CrontabberState/').then(function(data) {
 
     /**
      * Reshape the data
