@@ -43,7 +43,7 @@ NPM_FILE_PATTERNS = {
         'dist/js/jquery.tablesorter.js',
     ],
     'd3': [
-        'build/*',
+        'dist/*',
     ],
     'jssha': [
         'src/*.js',
@@ -286,7 +286,7 @@ PIPELINE_JS = {
     },
     'd3': {
         'source_filenames': (
-            'd3/build/d3.js',
+            'd3/dist/d3.js',
         ),
         'output_filename': 'js/d3.min.js',
     },
