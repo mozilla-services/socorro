@@ -1,5 +1,9 @@
 {% extends "crashstats_base.html" %}
+
+{% block site_css %}
+{{ super() }}
 {% stylesheet 'home' %}
+{% endblock %}
 
 {% block page_title %}
 Crash Data for {{ product }}
