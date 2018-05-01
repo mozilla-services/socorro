@@ -1,9 +1,9 @@
 Sphinx==1.7.4 \
     --hash=sha256:2e7ad92e96eff1b2006cf9f0cdb2743dacbae63755458594e9e8238b0c3dc60b \
     --hash=sha256:e9b1a75a3eae05dded19c80eb17325be675e0698975baae976df603b6ed1eb10
-sphinx_rtd_theme==0.2.4 \
-    --hash=sha256:62ee4752716e698bad7de8a18906f42d33664128eea06c46b718fc7fbd1a9f5c \
-    --hash=sha256:2df74b8ff6fae6965c527e97cca6c6c944886aae474b490e17f92adfbe843417
+sphinx_rtd_theme==0.3.0 \
+    --hash=sha256:220dbf14814001c6475f0c6c25ac4129a18fb5e3681251a7c6ffb1646da5cc30 \
+    --hash=sha256:665135dfbdf8f1d218442458a18cf266444354b8c98eed93d1543f7e701cfdba
 future==0.16.0 \
     --hash=sha256:e39ced1ab767b5936646cedba8bcce582398233d6a627067d4c6a454c90cfedb
 snowballstemmer==1.2.1 \
