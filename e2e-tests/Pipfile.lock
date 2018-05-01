@@ -183,10 +183,10 @@
         },
         "pathlib2": {
             "hashes": [
-                "sha256:24e0b33e1333b55e73c9d1e9a8342417d519f7789a9d3b440f4acd00ea45157e",
-                "sha256:deb3a960c1d55868dfbcac98432358b92ba89d95029cddd4040db1f27405055c"
+                "sha256:d1aa2a11ba7b8f7b21ab852b1fb5afb277e1bb99d5dfc663380b5015c0d80c5a",
+                "sha256:8eb170f8d0d61825e09a95b38be068299ddeda82f35e96c3301a8a5e7604cb83"
             ],
-            "version": "==2.1.0"
+            "version": "==2.3.2"
         },
         "pipenv": {
             "hashes": [
