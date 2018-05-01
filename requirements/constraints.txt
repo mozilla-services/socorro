@@ -286,3 +286,6 @@ more-itertools==4.1.0 \
     --hash=sha256:c9ce7eccdcb901a2c75d326ea134e0886abfbea5f93e91cc95de9507c0816c44 \
     --hash=sha256:11a625025954c20145b37ff6309cd54e39ca94f72f6bb9576d1195db6fa2442e \
     --hash=sha256:0dd8f72eeab0d2c3bd489025bb2f6a1b8342f9b198f6fc37b52d15cfa4531fea
+responses==0.9.0 \
+    --hash=sha256:f23a29dca18b815d9d64a516b4a0abb1fbdccff6141d988ad8100facb81cf7b3 \
+    --hash=sha256:c6082710f4abfb60793899ca5f21e7ceb25aabf321560cc0726f8b59006811c9
