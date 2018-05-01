@@ -134,7 +134,6 @@ class TestMatviews(IntegrationTestBase):
             'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
             'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
             'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
-            'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|02:00\n'
         )
 
         with config_manager.context() as config:
@@ -146,8 +145,7 @@ class TestMatviews(IntegrationTestBase):
             for app_name in ('product-versions-matview',
                              'signatures-matview',
                              'adu-matview',
-                             'build-adu-matview',
-                             'graphics-device-matview',):
+                             'build-adu-matview'):
 
                 assert app_name in information
                 assert not information[app_name]['last_error']

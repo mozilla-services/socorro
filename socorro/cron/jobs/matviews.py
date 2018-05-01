@@ -115,13 +115,3 @@ class ReportsCleanCronApp(_MatViewBackfillBase):
     def run(self, connection, date):
         date -= datetime.timedelta(hours=2)
         self.run_proc(connection, [date])
-
-
-class GraphicsDeviceCronApp(_MatViewBackfillBase):
-    """Runs update_graphics_devices stored procedure
-
-    Updates graphics_device table with new data from raw_crashes table.
-
-    """
-    proc_name = 'update_graphics_devices'
-    app_name = 'graphics-device-matview'
