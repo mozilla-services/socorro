@@ -17,8 +17,8 @@ class TestJobsConverter:
         'FeaturedVersionsAutomaticCronApp',
         'ProductVersionsCronApp',
         'ReportsCleanCronApp',
-        'SignaturesCronApp',
         'TruncatePartitionsCronApp',
+        'UpdateSignaturesCronApp',
         'WeeklyReportsPartitionsCronApp',
     ]
 

@@ -42,7 +42,7 @@ DEFAULT_JOBS_BASE = [
     # Crash data analysis
     'socorro.cron.jobs.matviews.ReportsCleanCronApp|1h',
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
-    'socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00',
+    'socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h|05:00',
 ]
 
 DEFAULT_JOBS = ', '.join(DEFAULT_JOBS_BASE)
