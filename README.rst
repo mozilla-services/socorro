@@ -74,5 +74,3 @@ Development
 ===========
 
 Current deployment status: https://whatsdeployed.io/s-7M7
-
-Mozilla-centric Infrastructure (AWS) code: https://github.com/mozilla/socorro-infra
