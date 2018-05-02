@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "2b735233d0da5dbf78be0fa0993d67ca28a3465030da8183a8b567a1a48f9aeb"
+            "sha256": "51b343fba36d775e99216f998d06cc49b2644914a4af9d79e4f95e315b451ad5"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -94,23 +94,6 @@
                 "sha256:4ebf8bd772d97c0f557184173f0f96cfca0abfc07e1ae975fbcfa76be50b5561"
             ],
             "version": "==0.1.0"
-        },
-        "pathlib2": {
-            "hashes": [
-                "sha256:24e0b33e1333b55e73c9d1e9a8342417d519f7789a9d3b440f4acd00ea45157e",
-                "sha256:deb3a960c1d55868dfbcac98432358b92ba89d95029cddd4040db1f27405055c"
-            ],
-            "markers": "python_version < '3.4'",
-            "version": "==2.1.0"
-        },
-        "pipenv": {
-            "hashes": [
-                "sha256:0a183a447bee57b1d3302732e13f1a8922b79ca5285cd444af4327d0c04d2637",
-                "sha256:9acfd4d4b6a36e35ec3d255211224506c9983c30e4b57b3047e61d690c2d82cb",
-                "sha256:c39c9ba928677492e3eee3fd4d160a5f6e6a879759fd63d2235870bbb5e9797d"
-            ],
-            "index": "pypi",
-            "version": "==11.10.1"
         },
         "pluggy": {
             "hashes": [
@@ -227,20 +210,6 @@
                 "sha256:cc44da8e1145637334317feebd728bd869a35285b93cbb4cca2577da7e62db4f"
             ],
             "version": "==1.22"
-        },
-        "virtualenv": {
-            "hashes": [
-                "sha256:1d7e241b431e7afce47e77f8843a276f652699d1fa4f93b9d8ce0076fd7b0b54",
-                "sha256:e8e05d4714a1c51a2f5921e62f547fcb0f713ebbe959e0a7f585cc8bef71d11f"
-            ],
-            "version": "==15.2.0"
-        },
-        "virtualenv-clone": {
-            "hashes": [
-                "sha256:4507071d81013fd03ea9930ec26bc8648b997927a11fa80e8ee81198b57e0ac7",
-                "sha256:b5cfe535d14dc68dfc1d1bb4ac1209ea28235b91156e2bba8e250d291c3fb4f8"
-            ],
-            "version": "==0.3.0"
         },
         "zope.component": {
             "hashes": [
