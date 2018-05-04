@@ -19,7 +19,6 @@ class TestJobsConverter:
         'ReportsCleanCronApp',
         'SignaturesCronApp',
         'TruncatePartitionsCronApp',
-        'UploadCrashReportJSONSchemaCronApp',
         'WeeklyReportsPartitionsCronApp',
     ]
 
