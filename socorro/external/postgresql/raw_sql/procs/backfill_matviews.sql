@@ -66,9 +66,6 @@ WHILE thisday <= lastday LOOP
     RAISE INFO 'adu';
     PERFORM backfill_adu(thisday);
     PERFORM backfill_build_adu(thisday);
-    RAISE INFO 'signatures';
-    PERFORM update_signatures(thisday, FALSE);
-    DROP TABLE IF EXISTS new_signatures;
     thisday := thisday + 1;
 
 END LOOP;
