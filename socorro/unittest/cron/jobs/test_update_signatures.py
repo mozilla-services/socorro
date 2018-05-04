@@ -33,7 +33,7 @@ class FakeModel(object):
 class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
     def _setup_config_manager(self):
         return super(UpdateSignaturesCronAppTestCase, self)._setup_config_manager(
-            jobs_string='socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h|05:00'
+            jobs_string='socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h'
         )
 
     def _truncate_signatures(self):
