@@ -68,10 +68,10 @@ jobs:
             # set DOCKER_DEPLOY=true in Circle UI to push to Dockerhub
             DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              bin/ci/deploy-dockerhub.sh latest
+              scripts/deploy-dockerhub.sh latest
             fi
             if [ -n "${CIRCLE_TAG}" ]; then
-              bin/ci/deploy-dockerhub.sh "$CIRCLE_TAG"
+              scripts/deploy-dockerhub.sh "$CIRCLE_TAG"
             fi
 
 workflows:
