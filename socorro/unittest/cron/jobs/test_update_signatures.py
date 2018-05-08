@@ -225,7 +225,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         supersearch = FakeModel()
         mock_supersearch.return_value = supersearch
 
-        # Mock SuperSearch to return 4 crashes covering two signatures
+        # Mock SuperSearch to return 1 crash with no build id
         supersearch.add_get_step({
             'errors': [],
             'hits': [
@@ -242,6 +242,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         # Run crontabber
         self.run_job_and_assert_success()
 
-        # Two signatures got inserted
+        # The crash has no build id, so it gets ignored and nothing gets
+        # inserted
         data = self.fetch_signatures_data()
         assert data == []
