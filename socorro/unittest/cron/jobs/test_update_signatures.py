@@ -12,10 +12,8 @@ class FakeModel(object):
     def __init__(self):
         self._get_steps = []
 
-    def add_get_step(self, assertions, response):
-        assertions = assertions or []
+    def add_get_step(self, response):
         self._get_steps.append({
-            'assertions': assertions,
             'response': response
         })
 
@@ -24,9 +22,6 @@ class FakeModel(object):
             raise Exception('Unexpected call to .get()')
 
         step = self._get_steps.pop(0)
-
-        for assertion in step['assertions']:
-            assertion(args, kwargs)
         return step['response']
 
 
@@ -62,22 +57,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         super(UpdateSignaturesCronAppTestCase, self).tearDown()
         self._truncate_signatures()
 
-    @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
-    def test_no_crashes_to_process(self, mock_supersearch):
-        supersearch = FakeModel()
-        mock_supersearch.return_value = supersearch
-
-        # Mock SuperSearch to return no results
-        supersearch.add_get_step(
-            assertions=None,
-            response={
-                'errors': [],
-                'hits': [],
-                'total': 0,
-                'facets': {}
-            }
-        )
-
+    def run_job_and_assert_success(self):
         # Run crontabber
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
@@ -88,6 +68,22 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         crontabber_info = self._load_structure()
         assert crontabber_info['update-signatures']['last_error'] == {}
         assert crontabber_info['update-signatures']['last_success']
+
+    @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
+    def test_no_crashes_to_process(self, mock_supersearch):
+        supersearch = FakeModel()
+        mock_supersearch.return_value = supersearch
+
+        # Mock SuperSearch to return no results
+        supersearch.add_get_step({
+            'errors': [],
+            'hits': [],
+            'total': 0,
+            'facets': {}
+        })
+
+        # Run crontabber
+        self.run_job_and_assert_success()
 
         # Assert that nothing got inserted
         data = self.fetch_signatures_data()
@@ -103,32 +99,21 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         assert len(data) == 0
 
         # Mock SuperSearch to return 1 crash
-        supersearch.add_get_step(
-            assertions=None,
-            response={
-                'errors': [],
-                'hits': [
-                    {
-                        'build_id': u'20180420000000',
-                        'date': u'2018-05-03T16:00:00.00000+00:00',
-                        'signature': u'OOM | large'
-                    },
-                ],
-                'total': 1,
-                'facets': {}
-            }
-        )
+        supersearch.add_get_step({
+            'errors': [],
+            'hits': [
+                {
+                    'build_id': u'20180420000000',
+                    'date': u'2018-05-03T16:00:00.00000+00:00',
+                    'signature': u'OOM | large'
+                },
+            ],
+            'total': 1,
+            'facets': {}
+        })
 
         # Run crontabber
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            crontabberapp = CronTabberApp(config)
-            crontabberapp.run_one('update-signatures')
-
-        # Assert the job ran correctly
-        crontabber_info = self._load_structure()
-        assert crontabber_info['update-signatures']['last_error'] == {}
-        assert crontabber_info['update-signatures']['last_success']
+        self.run_job_and_assert_success()
 
         # Signature was inserted
         data = self.fetch_signatures_data()
@@ -144,35 +129,24 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         )
 
         # Mock SuperSearch to return 1 crash with different data
-        supersearch.add_get_step(
-            assertions=None,
-            response={
-                'errors': [],
-                'hits': [
-                    {
-                        'build_id': u'20180320000000',
-                        'date': u'2018-05-03T12:00:00.00000+00:00',
-                        'signature': u'OOM | large'
-                    },
-                ],
-                'total': 1,
-                'facets': {}
-            }
-        )
+        supersearch.add_get_step({
+            'errors': [],
+            'hits': [
+                {
+                    'build_id': u'20180320000000',
+                    'date': u'2018-05-03T12:00:00.00000+00:00',
+                    'signature': u'OOM | large'
+                },
+            ],
+            'total': 1,
+            'facets': {}
+        })
 
         # Wipe crontabber state so we can rerun the job
         self._truncate()
 
         # Run crontabber again
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            crontabberapp = CronTabberApp(config)
-            crontabberapp.run_one('update-signatures')
-
-        # Assert the job ran correctly
-        crontabber_info = self._load_structure()
-        assert crontabber_info['update-signatures']['last_error'] == {}
-        assert crontabber_info['update-signatures']['last_success']
+        self.run_job_and_assert_success()
 
         # Signature was updated with correct data
         data = self.fetch_signatures_data()
@@ -194,49 +168,38 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         mock_supersearch.return_value = supersearch
 
         # Mock SuperSearch to return 4 crashes covering two signatures
-        supersearch.add_get_step(
-            assertions=None,
-            response={
-                'errors': [],
-                'hits': [
-                    {
-                        'build_id': u'20180426000000',
-                        # This is the earliest date of the three
-                        'date': u'2018-05-03T16:00:00.00000+00:00',
-                        'signature': u'OOM | large'
-                    },
-                    {
-                        # This is the earliest build id of the three
-                        'build_id': u'20180322000000',
-                        'date': u'2018-05-03T18:00:00.00000+00:00',
-                        'signature': u'OOM | large'
-                    },
-                    {
-                        'build_id': u'20180427000000',
-                        'date': u'2018-05-03T19:00:00.000000+00:00',
-                        'signature': u'OOM | large'
-                    },
-                    {
-                        'build_id': u'20180322140748',
-                        'date': u'2018-05-03T18:22:34.969718+00:00',
-                        'signature': u'shutdownhang | js::DispatchTyped<T>'
-                    }
-                ],
-                'total': 4,
-                'facets': {}
-            }
-        )
+        supersearch.add_get_step({
+            'errors': [],
+            'hits': [
+                {
+                    'build_id': u'20180426000000',
+                    # This is the earliest date of the three
+                    'date': u'2018-05-03T16:00:00.00000+00:00',
+                    'signature': u'OOM | large'
+                },
+                {
+                    # This is the earliest build id of the three
+                    'build_id': u'20180322000000',
+                    'date': u'2018-05-03T18:00:00.00000+00:00',
+                    'signature': u'OOM | large'
+                },
+                {
+                    'build_id': u'20180427000000',
+                    'date': u'2018-05-03T19:00:00.000000+00:00',
+                    'signature': u'OOM | large'
+                },
+                {
+                    'build_id': u'20180322140748',
+                    'date': u'2018-05-03T18:22:34.969718+00:00',
+                    'signature': u'shutdownhang | js::DispatchTyped<T>'
+                }
+            ],
+            'total': 4,
+            'facets': {}
+        })
 
         # Run crontabber
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            crontabberapp = CronTabberApp(config)
-            crontabberapp.run_all()
-
-        # Assert the job ran correctly
-        crontabber_info = self._load_structure()
-        assert crontabber_info['update-signatures']['last_error'] == {}
-        assert crontabber_info['update-signatures']['last_success']
+        self.run_job_and_assert_success()
 
         # Two signatures got inserted
         data = self.fetch_signatures_data()
