@@ -82,6 +82,10 @@ class UpdateSignaturesCronApp(BaseCronApp):
             for hit in hits:
                 crashids_count += 1
 
+                if not hit['build_id']:
+                    # Not all crashes have a build id, so skip the ones that don't.
+                    continue
+
                 if hit['signature'] in results:
                     data = results[hit['signature']]
                     data['build_id'] = min(data['build_id'], hit['build_id'])
@@ -114,10 +118,6 @@ class UpdateSignaturesCronApp(BaseCronApp):
         # Save signature data to the db
         signature_first_date_api = SignatureFirstDate(config=self.config)
         for item in signature_data:
-            # Convert the build_id to an int because that's how it's stored in
-            # the db
-            item['build_id'] = int(item['build_id'])
-
             if self.config.dry_run:
                 self.config.logger.info(
                     'Inserting/updating signature (%s, %s, %s)',

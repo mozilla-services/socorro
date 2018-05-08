@@ -218,3 +218,30 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
                 }
             ]
         )
+
+    @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
+    def test_crash_with_no_buildid(self, mock_supersearch):
+        """Test crashes with no build id are ignored"""
+        supersearch = FakeModel()
+        mock_supersearch.return_value = supersearch
+
+        # Mock SuperSearch to return 4 crashes covering two signatures
+        supersearch.add_get_step({
+            'errors': [],
+            'hits': [
+                {
+                    'build_id': '',
+                    'date': u'2018-05-03T16:00:00.00000+00:00',
+                    'signature': u'OOM | large'
+                },
+            ],
+            'total': 1,
+            'facets': {}
+        })
+
+        # Run crontabber
+        self.run_job_and_assert_success()
+
+        # Two signatures got inserted
+        data = self.fetch_signatures_data()
+        assert data == []
