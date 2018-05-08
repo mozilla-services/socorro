@@ -1,3 +1,5 @@
+.. _collector-chapter:
+
 ==================
 Service: Collector
 ==================

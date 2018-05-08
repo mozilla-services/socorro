@@ -63,14 +63,14 @@ Git conventions
 
 First line is a summary of the commit. It should start with one of the following::
 
-  Fixes bug nnnnnnn
+  bug nnnnnnn: summary
 
-or::
+which will trigger the auto-clsoer to add a comment to the bug when this is merged
+into the master branch, or::
 
-  Bug nnnnnnn
+  fix bug nnnnnnn: summary
 
-
-The first, when it lands, will cause the bug to be closed. The second one does not.
+which will do that and also close the bug.
 
 After that, the commit should explain *why* the changes are being made and any
 notes that future readers should know for context or be aware of.
@@ -237,3 +237,41 @@ different depending on the context.
 
 Tip! Try to mock in limited context so that individual tests don't affect other
 tests. Use context managers and instead of monkey patching imported modules.
+
+
+Repository structure
+====================
+
+If you clone our `git repository
+<https://github.com/mozilla-services/socorro>`_, you will find the following
+folders.
+
+Here is what each of them contains:
+
+**alembic/**
+    Alembic-managed database migrations.
+
+**docker/**
+    Docker environment related scripts, configuration, and other bits.
+
+**docs/**
+    Documentation of the Socorro project (you're reading it right now).
+
+**e2e-tests/**
+    The Selenium tests for the webapp.
+
+**minidump-stackwalk/**
+    The minidump stackwalker program that the processor runs for pulling
+    out information from crash report dumps.
+
+**requirements/**
+    Files that hold Python library requirements information.
+
+**scripts/**
+    Arbitrary scripts.
+
+**socorro/**
+    The bulk of the Socorro source code.
+
+**webapp-django/**
+    The webapp source code.
