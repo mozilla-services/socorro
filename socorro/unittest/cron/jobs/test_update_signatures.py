@@ -204,7 +204,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         # Two signatures got inserted
         data = self.fetch_signatures_data()
         assert (
-            sorted(data) ==
+            sorted(data, key=lambda item: item['first_build']) ==
             [
                 {
                     'first_build': '20180322000000',
