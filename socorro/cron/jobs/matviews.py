@@ -66,18 +66,6 @@ class ProductVersionsCronApp(_MatViewBase):
     )
 
 
-class SignaturesCronApp(_MatViewBackfillBase):
-    """Runs update_signatures stored procedure
-
-    Updates signatures, signatures_products, and signature_products_rollup
-    tables from reports table data.
-
-    """
-    proc_name = 'update_signatures'
-    app_name = 'signatures-matview'
-    depends_on = ('reports-clean',)
-
-
 class ADUCronApp(_MatViewBackfillBase):
     """Runs update_adu stored procedure
 

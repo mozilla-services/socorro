@@ -131,7 +131,6 @@ class TestMatviews(IntegrationTestBase):
             'socorro.unittest.cron.jobs.test_matviews.FetchADIFromHiveCronApp|1d\n'
             ''
             'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
-            'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
             'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
             'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
         )
@@ -143,7 +142,6 @@ class TestMatviews(IntegrationTestBase):
             information = self._load_structure()
 
             for app_name in ('product-versions-matview',
-                             'signatures-matview',
                              'adu-matview',
                              'build-adu-matview'):
 
