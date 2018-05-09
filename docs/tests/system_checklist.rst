@@ -162,7 +162,7 @@ Checklist
 
     * Run QA Selenium WebDriver tests:
 
-    http://socorro.readthedocs.io/en/latest/tests/e2e_readme.html#set-up-and-run-socorro-tests
+      http://socorro.readthedocs.io/en/latest/tests/e2e_readme.html#set-up-and-run-socorro-tests
 
     Do webapp errors make it to Sentry?
 
