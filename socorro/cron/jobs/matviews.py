@@ -61,9 +61,6 @@ class ProductVersionsCronApp(_MatViewBase):
     """
     proc_name = 'update_product_versions'
     app_name = 'product-versions-matview'
-    depends_on = (
-        'reports-clean',
-    )
 
 
 class ADUCronApp(_MatViewBackfillBase):
@@ -74,7 +71,7 @@ class ADUCronApp(_MatViewBackfillBase):
     """
     proc_name = 'update_adu'
     app_name = 'adu-matview'
-    depends_on = ('fetch-adi-from-hive', 'reports-clean',)
+    depends_on = ('fetch-adi-from-hive',)
 
 
 class BuildADUCronApp(_MatViewBackfillBase):
@@ -85,21 +82,4 @@ class BuildADUCronApp(_MatViewBackfillBase):
     """
     proc_name = 'update_build_adu'
     app_name = 'build-adu-matview'
-    depends_on = ('fetch-adi-from-hive', 'reports-clean')
-
-
-class ReportsCleanCronApp(_MatViewBackfillBase):
-    """Runs update_reports_clean stored procedure
-
-    Updates reports_bad, reports_clean, reports_user_info, signatures, and
-    other tables from reports table.
-
-    """
-    proc_name = 'update_reports_clean'
-    app_name = 'reports-clean'
-    app_version = '1.0'
-    app_description = ""
-
-    def run(self, connection, date):
-        date -= datetime.timedelta(hours=2)
-        self.run_proc(connection, [date])
+    depends_on = ('fetch-adi-from-hive',)

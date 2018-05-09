@@ -523,7 +523,4 @@ def crash_verify(request):
         has_telemetry_crash = False
     data['s3_telemetry_crash'] = has_telemetry_crash
 
-    # NOTE(willkg): This doesn't check postgres because that's being phased
-    # out.
-
     return http.HttpResponse(json.dumps(data), content_type='application/json')

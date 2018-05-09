@@ -36,24 +36,12 @@ CONFIG_DEFAULTS = {
         # Each key in this list corresponds to a key in this dict containing
         # a crash storage config.
         'storage_namespaces': ','.join([
-            'postgres',
             's3',
             'elasticsearch',
             'statsd',
             'telemetry',
         ]),
 
-        'postgres': {
-            'benchmark_tag': 'PGBenchmarkWrite',
-            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
-            'metrics_prefix': 'processor.postgres',
-            'transaction_executor_class': (
-                'socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
-            ),
-            'wrapped_object_class': (
-                'socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
-            ),
-        },
         's3': {
             'active_list': 'save_raw_and_processed',
             'benchmark_tag': 'BotoBenchmarkWrite',
