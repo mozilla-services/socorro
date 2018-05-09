@@ -6,7 +6,7 @@ Socorro Test Checklist
 
 This is a high-level system-wide checklist for making sure Socorro is working
 correctly in a specific environment. It's a helpful template for figuring out
-what you need to change if you're pushing out a significant change.
+what you need to check if you're pushing out a significant change.
 
 **Note:** This is used infrequently, so if you're about to make a significant change,
 you should go through the checklist to make sure the checklist is correct and
@@ -160,13 +160,12 @@ Checklist
 
       To check for errors, grep that for "ERROR".
 
-    * Run QA Selenium tests.
+    * Run QA Selenium WebDriver tests.
 
-      localdev: ?
-      stage: In IRC: "webqatestbot build socorro.stage.saucelabs"
-      prod: In IRC: "webqatestbot build socorro.prod.saucelabs"
+      See the README in the /e2e-tests/ directory, here:
+      https://github.com/mozilla-services/socorro/blob/master/e2e-tests/README.md
 
-    Do webapp errors make it to sentry?
+    Do webapp errors make it to Sentry?
 
     * Log into the webapp, go to the Admin, and use the Crash Me Now tool
 
@@ -192,7 +191,7 @@ Checklist
 
     1. Browse to Top Crashers
     2. Click on a crash signature to browse to Signature report
-    3. Click on a crash id to browse to report index
+    3. Click on a crash ID to browse to report index
 
 
     Crontabber
