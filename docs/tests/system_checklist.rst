@@ -160,10 +160,9 @@ Checklist
 
       To check for errors, grep that for "ERROR".
 
-    * Run QA Selenium WebDriver tests.
+    * Run QA Selenium WebDriver tests:
 
-      See the README in the /e2e-tests/ directory, here:
-      https://github.com/mozilla-services/socorro/blob/master/e2e-tests/README.md
+    http://socorro.readthedocs.io/en/latest/tests/e2e_readme.html#set-up-and-run-socorro-tests
 
     Do webapp errors make it to Sentry?
 
