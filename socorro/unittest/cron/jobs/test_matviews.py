@@ -132,7 +132,6 @@ class TestMatviews(IntegrationTestBase):
 
         information = self._load_structure()
 
-        print(information)
         for app_name in ('product-versions-matview',
                          'adu-matview',
                          'build-adu-matview'):
