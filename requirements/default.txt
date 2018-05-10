@@ -155,7 +155,7 @@ humanfriendly==4.12 \
 jsonschema==2.6.0 \
     --hash=sha256:000e68abd33c972a5248544925a0cae7d1125f9bf6c58280d37546b946769a08 \
     --hash=sha256:6ff5f3180870836cae40f06fa10419f557208175f13ad7bc26caa77beb1f6e02
-functools32==3.2.3-2 \
+functools32==3.2.3-2 ; python_version < '3.2' \
     --hash=sha256:f6253dfbe0538ad2e387bd8fdfd9293c925d63553f5813c4e587745416501e6d \
     --hash=sha256:89d824aa6c358c421a234d7f9ee0bd75933a67c29588ce50aaa3acdf4d403fa0
 requests-mock==1.4.0 \
@@ -213,3 +213,6 @@ flake8-isort==2.5 \
 moto==1.3.3 \
     --hash=sha256:ee71b515ba34d64c5f625950fc995594040f793a4a106614ff108ae02c1a2896 \
     --hash=sha256:45d14aca2b06b0083d5e82cfd770ebca0ba77b5070aec6928670240939a78681
+six==1.11.0 \
+    --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb \
+    --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9

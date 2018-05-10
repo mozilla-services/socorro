@@ -7,9 +7,9 @@ import socket
 import contextlib
 import psycopg2
 import psycopg2.extensions
-from urlparse import urlparse
 
 from configman import RequiredConfig, Namespace
+from six.moves.urllib.parse import urlparse
 
 
 def get_field_from_pg_database_url(field, default):

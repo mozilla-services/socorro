@@ -8,7 +8,6 @@ Create, prepare and load schema for Socorro PostgreSQL database.
 """
 from __future__ import unicode_literals
 
-import cStringIO
 import os
 import re
 import sys
@@ -18,6 +17,7 @@ from alembic.config import Config
 from configman import Namespace, class_converter
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
+from six.moves import cStringIO
 
 from socorro.app.socorro_app import App
 from socorro.external.postgresql import staticdata
@@ -145,7 +145,7 @@ class SocorroDBApp(App):
     )
 
     def bulk_load_table(self, db, table):
-        io = cStringIO.StringIO()
+        io = cStringIO()
         for line in table.generate_rows():
             io.write('\t'.join([str(x) for x in line]))
             io.write('\n')

@@ -62,10 +62,10 @@ dockerbuild: my.env
 dockersetup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup.sh
 
-dockertest: my.env
+dockertest: my.env .docker-build
 	./docker/run_tests_in_docker.sh ${ARGS}
 
-dockertestshell: my.env
+dockertestshell: my.env .docker-build
 	./docker/run_tests_in_docker.sh --shell
 
 dockerupdatedata: my.env
@@ -79,3 +79,20 @@ dockerstop: my.env
 
 dockerdependencycheck: my.env
 	${DC} run crontabber ./docker/run_dependency_checks.sh
+
+# Python 3 transition related things
+
+.PHONY: dockerbuild3 dockertest3 dockertestshell3
+
+.docker-build3:
+	make dockerbuild3
+
+dockerbuild3: my.env
+	${DC} build testpython3
+	touch .docker-build3
+
+dockertest3: my.env .docker-build3
+	USEPYTHON=3 ./docker/run_tests_in_docker.sh ${ARGS}
+
+dockertestshell3: my.env .docker-build3
+	USEPYTHON=3 ./docker/run_tests_in_docker.sh --shell

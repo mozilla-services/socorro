@@ -27,51 +27,37 @@ ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
 export PYTHONPATH=/app/:$PYTHONPATH
 FLAKE8="$(which flake8)"
 PYTEST="$(which pytest)"
+PYTHON="$(which python)"
 ALEMBIC="$(which alembic)"
-SETUPDB="$(which python) /app/socorro/external/postgresql/setupdb_app.py"
+SETUPDB="/app/socorro/external/postgresql/setupdb_app.py"
 
-# Verify we have __init__.py files everywhere we need them
-errors=0
-while read d; do
-    if [ ! -f "$d/__init__.py" ]; then
-        if [ "$(ls -A "$d/test*py")" ]; then
-            echo "$d is missing an __init__.py file, tests will not run"
-            errors=$((errors+1))
-        else
-            echo "$d has no tests - ignoring it"
-        fi
-    fi
-done < <(find socorro/unittest/* -not -name logs -type d)
-
-if [ $errors != 0 ]; then
-    exit 1
-fi
-
-# Wait for postgres in the postgres container to be ready
+# Wait for postgres and elasticsearch services to be ready
 urlwait "${DATABASE_URL}" 10
-
-# Wait for elasticsearch in the elasticsearch container to be ready
 urlwait "${ELASTICSEARCH_URL}" 10
 
-# Set up database for alembic migrations
-#
-# Set up socorro_migration_test db
-$SETUPDB --database_name=socorro_migration_test --dropdb --logging.level=40 --unlogged --createdb
+# Set up socorro_migration_test db for migration testing
+"${PYTHON}" "${SETUPDB}" --database_name=socorro_migration_test --dropdb --logging.level=40 --unlogged --createdb
 
 # Set up socorro_test db for unittests
-$SETUPDB --database_name=socorro_test --dropdb --logging.level=40 --unlogged --no_staticdata --createdb
+"${PYTHON}" "${SETUPDB}" --database_name=socorro_test --dropdb --logging.level=40 --unlogged --no_staticdata --createdb
 
-$ALEMBIC -c "${alembic_config}" downgrade -1
-$ALEMBIC -c "${alembic_config}" upgrade heads
+# Test the last migration
+"${ALEMBIC}" -c "${alembic_config}" downgrade -1
+"${ALEMBIC}" -c "${alembic_config}" upgrade heads
 
 # Run linting
-$FLAKE8
+"${FLAKE8}"
 
-# Run tests
-$PYTEST
+if [ "${USEPYTHON:-2}" == "2" ]; then
+    # Run tests
+    "${PYTEST}"
 
-# Collect static and then run py.test in the webapp
-pushd webapp-django
-python manage.py collectstatic --noinput
-$PYTEST
-popd
+    # Collect static and then run py.test in the webapp
+    pushd webapp-django
+    python manage.py collectstatic --noinput
+    "${PYTEST}"
+    popd
+else
+    # Run the tests we know work in Python 3
+    ./docker/run_tests_python3.sh
+fi

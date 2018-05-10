@@ -1,5 +1,8 @@
 from __future__ import print_function
 
+import six
+
+
 # This determines what files are copied from npm libraries into the
 # static root when collectstatic runs.
 # The keys are library names (from webapp-django/package.json) and the
@@ -529,10 +532,10 @@ _used = {}
 for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
     _trouble = set()
     for k, v in config.items():
-        assert isinstance(k, basestring), k
+        assert isinstance(k, six.string_types), k
         out = v['output_filename']
         assert isinstance(v['source_filenames'], tuple), v
-        assert isinstance(out, basestring), v
+        assert isinstance(out, six.string_types), v
         assert not out.split('/')[-1].startswith('.'), k
         assert '_' not in out
         assert out.endswith('.min.css') or out.endswith('.min.js')

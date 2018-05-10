@@ -5,16 +5,14 @@
 import pika
 from random import randint
 
-from Queue import (
-    Queue,
-    Empty
-)
 
 from configman import (
     Namespace,
     class_converter
 )
 from configman.dotdict import DotDict
+from six.moves.queue import Queue, Empty
+
 from socorro.lib.converters import change_default
 from socorro.external.rabbitmq.connection_context import (
     ConnectionContext,
