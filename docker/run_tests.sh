@@ -19,7 +19,7 @@ set -v -e -x
 # Set up environment variables
 
 # NOTE(willkg): This has to be "database_url" all lowercase because configman.
-DATABASE_URL=${database_url:-"postgres://postgres:aPassword@postgresql:5432/socorro_integration_test"}
+DATABASE_URL=${database_url:-"postgres://postgres:aPassword@postgresql:5432/socorro_test"}
 
 # NOTE(willkg): This has to be "elasticsearch_url" all lowercase because configman.
 ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
@@ -55,17 +55,11 @@ urlwait "${ELASTICSEARCH_URL}" 10
 
 # Set up database for alembic migrations
 #
-# FIXME(willkg): For some reason, this has to go first because setting up
-# socorro_integration_test needs it. Does it mean that alembic is doing
-# migrations in the wrong db?
+# Set up socorro_migration_test db
 $SETUPDB --database_name=socorro_migration_test --dropdb --logging.level=40 --unlogged --createdb
 
-# Set up database for unittests
-$SETUPDB --database_name=socorro_integration_test --dropdb --logging.level=40 --unlogged --no_staticdata --createdb
-
-# FIXME(willkg): What's this one for? It's got crontabber stuff in it and that's
-# it. Maybe we don't need it?
-$SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.level=40 --unlogged --no_staticdata --createdb
+# Set up socorro_test db for unittests
+$SETUPDB --database_name=socorro_test --dropdb --logging.level=40 --unlogged --no_staticdata --createdb
 
 $ALEMBIC -c "${alembic_config}" downgrade -1
 $ALEMBIC -c "${alembic_config}" upgrade heads
