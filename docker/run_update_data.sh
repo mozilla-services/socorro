@@ -31,12 +31,5 @@ docker-compose run crontabber ${CRONTABBERCMD} --job=featured-versions-automatic
 # Fetch normalization data for versions we know about
 docker-compose run processor python docker/fetch_normalization_data.py --products=${PRODUCTS}
 
-# NOTE(willkg): Running this next script creates the xyz_yyyymmdd tables
-# including raw_crashes_yyyymmdd and processed_crashes_yyyymmdd for the last 8
-# weeks plus the next 2 weeks. Otherwise postgres crashstorage fails epically.
-
-# Create weekly reports
-docker-compose run processor python docker/create_weekly_tables.py
-
 # Create ES indexes for the next few weeks
 docker-compose run processor socorro/external/es/create_recent_indices_app.py

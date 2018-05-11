@@ -26,7 +26,6 @@ DEFAULT_JOBS_BASE = [
     # DB partition table and ES maintenance
     'socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d|06:00',
     'socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d|06:00',
-    'socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d|06:00',
     'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d|06:00',
 
     # ADI maintenance

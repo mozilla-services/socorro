@@ -16,7 +16,6 @@ class TestJobsConverter:
         'FTPScraperCronApp',
         'FeaturedVersionsAutomaticCronApp',
         'ProductVersionsCronApp',
-        'TruncatePartitionsCronApp',
         'UpdateSignaturesCronApp',
         'WeeklyReportsPartitionsCronApp',
     ]

@@ -125,15 +125,6 @@ class ReportPartitionInfo(BaseTable):
             'date_processed',
             'TIMESTAMPTZ'
         ),
-        (
-            'raw_crashes',
-            '4',
-            '{uuid}',
-            '{date_processed}',
-            '{}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
     ]
 
 

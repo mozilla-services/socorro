@@ -21,7 +21,6 @@ from sqlalchemy.dialects.postgresql import (
     NUMERIC,
     DATE,
     BOOLEAN,
-    UUID,
     VARCHAR,
     ARRAY,
     BIGINT,
@@ -628,18 +627,6 @@ class ProductVersionBuild(DeclarativeBase):
         'ProductVersion',
         primaryjoin='ProductVersionBuild.product_version_id==ProductVersion.product_version_id'
     )
-
-
-class RawCrashes(DeclarativeBase):
-    __tablename__ = 'raw_crashes'
-
-    # column definitions
-    uuid = Column(u'uuid', UUID(), nullable=False, index=True, unique=True)
-    raw_crash = Column(u'raw_crash', JSON(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-
-    # relationship definitions
-    __mapper_args__ = {"primary_key": (uuid)}
 
 
 class Reason(DeclarativeBase):
