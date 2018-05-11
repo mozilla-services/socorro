@@ -110,24 +110,6 @@ class ReleaseRepositories(BaseTable):
     ]
 
 
-class ReportPartitionInfo(BaseTable):
-    table = 'report_partition_info'
-    columns = [
-        'table_name', 'build_order', 'keys', 'indexes', 'fkeys', 'partition_column', 'timetype'
-    ]
-    rows = [
-        (
-            'reports',
-            '1',
-            '{id,uuid}',
-            '{date_processed,hangid,"product,version",reason,signature,url}',
-            '{}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-    ]
-
-
 class Products(BaseTable):
     table = 'products'
     columns = [
@@ -221,6 +203,5 @@ class SpecialProductPlatforms(BaseTable):
 tables = [OSNames, OSNameMatches, ReleaseChannels,
           WindowsVersions,
           OSVersions, ReleaseRepositories,
-          ReportPartitionInfo,
           Products, ProductBuildTypes, ProductReleaseChannels,
           ProductProductIDMap, SpecialProductPlatforms]

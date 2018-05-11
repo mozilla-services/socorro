@@ -86,40 +86,24 @@ class TestPostgreSQLBase(TestCase):
 class IntegrationTestBase(PostgreSQLTestCase):
 
     def setUp(self):
-        """Set up this test class by populating the reports table with fake
-        data. """
         super(IntegrationTestBase, self).setUp()
 
+        # Populate the release_channels table with fake data
         cursor = self.connection.cursor()
-        # NOTE(willkg): Sometimes, there are items in the reports and this causes test_counts to
-        # fail. This truncates it first. It'd be nice to fix whatever is causing this problem,
-        # though.
+        # Truncate first in case there's data in there--there shouldn't be
         cursor.execute("""
-            TRUNCATE reports CASCADE;
+            TRUNCATE release_channels CASCADE;
         """)
         self.connection.commit()
         cursor.execute("""
-            INSERT INTO reports
-            (id, date_processed, uuid, url, email, success, addons_checked)
+            INSERT INTO release_channels
+            (release_channel, sort)
             VALUES
-            (
-                1,
-                '2000-01-01T01:01:01+00:00',
-                '1',
-                'http://mywebsite.com',
-                'test@something.com',
-                TRUE,
-                TRUE
-            ),
-            (
-                2,
-                '2000-01-01T01:01:01+00:00',
-                '2',
-                'http://myotherwebsite.com',
-                'admin@example.com',
-                NULL,
-                FALSE
-            );
+            ('Nightly', 1),
+            ('Aurora', 2),
+            ('Beta', 3),
+            ('Release', 4),
+            ('ESR', 5)
         """)
 
         self.connection.commit()
@@ -128,7 +112,7 @@ class IntegrationTestBase(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE reports CASCADE;
+            TRUNCATE release_channels CASCADE;
         """)
         self.connection.commit()
         super(IntegrationTestBase, self).tearDown()
@@ -148,21 +132,21 @@ class IntegrationTestBase(PostgreSQLTestCase):
         base = PostgreSQLBase(config=self.config)
 
         # A working query
-        sql = 'SELECT * FROM reports'
+        sql = 'SELECT * FROM release_channels ORDER BY sort'
         results = base.query(sql)
-        assert len(results) == 2
-        assert 'http://mywebsite.com' in results[0]
-        assert 'admin@example.com' in results[1]
+        assert len(results) == 5
+        assert results[0] == ('Nightly', 1)
+        assert results[1] == ('Aurora', 2)
 
         # A working query with parameters
-        sql = 'SELECT * FROM reports WHERE url=%(url)s'
-        params = {'url': 'http://mywebsite.com'}
+        sql = 'SELECT * FROM release_channels WHERE release_channel=%(release_channel)s'
+        params = {'release_channel': 'Nightly'}
         results = base.query(sql, params)
         assert len(results) == 1
-        assert 'http://mywebsite.com' in results[0]
+        assert results[0] == ('Nightly', 1)
 
         # A failing query
-        sql = 'SELECT FROM reports LIMIT notanumber'
+        sql = 'SELECT FROM release_channels LIMIT notanumber'
         with pytest.raises(DatabaseError):
             base.query(sql)
 
@@ -170,17 +154,17 @@ class IntegrationTestBase(PostgreSQLTestCase):
         base = PostgreSQLBase(config=self.config)
 
         # A working count
-        sql = 'SELECT count(*) FROM reports'
+        sql = 'SELECT count(*) FROM release_channels'
         count = base.count(sql)
-        assert count == 2
+        assert count == 5
 
         # A working count with parameters
-        sql = 'SELECT count(*) FROM reports WHERE url=%(url)s'
-        params = {'url': 'http://mywebsite.com'}
+        sql = 'SELECT count(*) FROM release_channels WHERE release_channel=%(release_channel)s'
+        params = {'release_channel': 'Nightly'}
         count = base.count(sql, params)
         assert count == 1
 
         # A failing count
-        sql = 'SELECT count(`invalid_field_name`) FROM reports'
+        sql = 'SELECT count(`invalid_field_name`) FROM release_channels'
         with pytest.raises(DatabaseError):
             base.count(sql)

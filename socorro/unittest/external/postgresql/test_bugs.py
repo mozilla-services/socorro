@@ -13,8 +13,6 @@ class IntegrationTestBugs(PostgreSQLTestCase):
     """Test socorro.external.postgresql.bugs.Bugs class. """
 
     def setUp(self):
-        """Set up this test class by populating the reports table with fake
-        data. """
         super(IntegrationTestBugs, self).setUp()
 
         cursor = self.connection.cursor()

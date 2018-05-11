@@ -14,8 +14,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
     """Test socorro.external.postgresql.releases.Releases class. """
 
     def setUp(self):
-        """Set up this test class by populating the reports table with fake
-        data. """
         super(IntegrationTestReleases, self).setUp()
 
         cursor = self.connection.cursor()
