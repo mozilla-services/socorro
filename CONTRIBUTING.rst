@@ -65,7 +65,7 @@ First line is a summary of the commit. It should start with one of the following
 
   bug nnnnnnn: summary
 
-which will trigger the auto-clsoer to add a comment to the bug when this is merged
+which will trigger the auto-closer to add a comment to the bug when this is merged
 into the master branch, or::
 
   fix bug nnnnnnn: summary

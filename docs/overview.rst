@@ -33,15 +33,11 @@ The crash ingestion pipeline that we have at Mozilla looks like this:
          rank=same;
 
          s3raw [shape=tab, label="S3 (Raw)", style=filled, fillcolor=gray];
-         pigeon [shape=cds, label="pigeon"];
-         rabbitmq [shape=tab, label="RMQ", style=filled, fillcolor=gray];
+         pigeon [shape=cds, label="Pigeon"];
+         rabbitmq [shape=tab, label="RabbitMQ", style=filled, fillcolor=gray];
       }
 
-      subgraph proc {
-         rank=same;
-
-         processor [shape=rect, label="processor"];
-      }
+      processor [shape=rect, label="processor"];
 
       subgraph stores2 {
          rank=same;
@@ -72,11 +68,13 @@ The crash ingestion pipeline that we have at Mozilla looks like this:
       processor -> { s3processed, elasticsearch, s3telemetry } [label="save processed"];
 
       postgres -> webapp;
+      webapp -> postgres;
       s3raw -> webapp [label="load raw"];
       s3processed -> webapp [label="load processed"];
       elasticsearch -> webapp;
 
       postgres -> crontabber;
+      crontabber -> postgres;
       elasticsearch -> crontabber;
 
       s3telemetry -> telemetry [label="telemetry ingestion"];
@@ -169,6 +167,9 @@ A crash id looks like this::
                                throttle result instruction
 
 
+The collector we currently use is called Antenna.
+
+
 .. seealso::
 
    **Code**
@@ -223,8 +224,9 @@ information about the process and symbolicates the symbols on the stack. It also
 determines some other things about the state of the process when Firefox
 crashed.
 
-Another rule generates a crash signature from the stack of the crashind thread.
-We use crash signatures to bucket crashes so we can look at them as groups.
+Another rule generates a crash signature from the stack of the crashing thread.
+We use crash signatures to group crashes that have similar symptoms so that we
+can more easily see trends and causes.
 
 There are other rules, too.
 
@@ -313,7 +315,7 @@ perform housekeeping functions in the crash ingestion pipeline like:
 3. updating "first time we saw this signature" type information
 
 Crontabber jobs that fail are re-run. You can see the state of Crontabber jobs
-on the `Cronttaber State <https://crash-stats.mozilla.com/crontabber-state/>`_
+on the `Crontabber State <https://crash-stats.mozilla.com/crontabber-state/>`_
 page.
 
 .. seealso::
