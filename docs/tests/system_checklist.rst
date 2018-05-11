@@ -112,7 +112,7 @@ Checklist
       stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
       prod: https://app.datadoghq.com/dash/65215/socorro-prod
 
-    Is the processor saving to ES? Postgres? S3?
+    Is the processor saving to ES? S3?
 
     * Check Datadog
       "processor.es.ESCrashStorageRedactedJsonDump.save_raw_and_processed.avg"
@@ -127,15 +127,9 @@ Checklist
       stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
       prod: https://app.datadoghq.com/dash/65215/socorro-prod
 
-    * Check Datadog
-      "processor.postgres.PostgreSQLCrashStorage.save_raw_and_processed"
-
-      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
-      prod: https://app.datadoghq.com/dash/65215/socorro-prod
-
 
     Submit a crash or reprocess a crash. Wait a few minutes. Verify the crash was
-    processed and made it to S3, ES and Postgres.
+    processed and made it to S3 and Elasticsearch.
 
     **FIXME:** We should write a script that uses envconsul to provide vars and takes
     a uuid via the command line and then checks all the things to make sure it's
