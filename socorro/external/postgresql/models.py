@@ -642,24 +642,6 @@ class ReleasesRaw(DeclarativeBase):
     # Index('releases_raw_date', func.build_date(build_id));
 
 
-class ReportPartitionInfo(DeclarativeBase):
-    __tablename__ = 'report_partition_info'
-
-    # column definitions
-    build_order = Column(u'build_order', INTEGER(),
-                         nullable=False, server_default=text('1'))
-    fkeys = Column(u'fkeys', ARRAY(TEXT()), nullable=False,
-                   server_default=text("'{}'::text[]"))
-    indexes = Column(u'indexes', ARRAY(TEXT()), nullable=False,
-                     server_default=text("'{}'::text[]"))
-    keys = Column(u'keys', ARRAY(TEXT()), nullable=False,
-                  server_default=text("'{}'::text[]"))
-    table_name = Column(u'table_name', CITEXT(),
-                        primary_key=True, nullable=False)
-    partition_column = Column(u'partition_column', TEXT(), nullable=False)
-    timetype = Column(u'timetype', TEXT(), nullable=False)
-
-
 class Signature(DeclarativeBase):
     __tablename__ = 'signatures'
 
