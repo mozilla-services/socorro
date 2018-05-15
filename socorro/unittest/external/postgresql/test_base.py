@@ -48,40 +48,6 @@ class TestPostgreSQLBase(TestCase):
         }
         return PostgreSQLBase(**args)
 
-    def test_parse_versions(self):
-        """Test PostgreSQLBase.parse_versions()."""
-        pgbase = self.get_instance()
-
-        # Test 1: only product:version args
-        versions_list = ["Firefox:9.0", "Fennec:12.1"]
-        versions_list_exp = ["Firefox", "9.0", "Fennec", "12.1"]
-        products = []
-        products_exp = []
-
-        (versions, products) = pgbase.parse_versions(versions_list, products)
-        assert versions == versions_list_exp
-        assert products == products_exp
-
-        # Test 2: product:version and product only args
-        versions_list = ["Firefox:9.0", "Fennec"]
-        versions_list_exp = ["Firefox", "9.0"]
-        products = []
-        products_exp = ["Fennec"]
-
-        (versions, products) = pgbase.parse_versions(versions_list, products)
-        assert versions == versions_list_exp
-        assert products == products_exp
-
-        # Test 3: product only args
-        versions_list = ["Firefox", "Fennec"]
-        versions_list_exp = []
-        products = []
-        products_exp = ["Firefox", "Fennec"]
-
-        (versions, products) = pgbase.parse_versions(versions_list, products)
-        assert versions == versions_list_exp
-        assert products == products_exp
-
 
 class IntegrationTestBase(PostgreSQLTestCase):
 

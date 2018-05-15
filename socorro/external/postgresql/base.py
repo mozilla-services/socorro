@@ -19,15 +19,6 @@ from socorro.lib import DatabaseError
 logger = logging.getLogger("webapi")
 
 
-def add_param_to_dict(dictionary, key, value):
-    """
-    Dispatch a list of parameters into a dictionary.
-    """
-    for i, elem in enumerate(value):
-        dictionary[key + str(i)] = elem
-    return dictionary
-
-
 class PostgreSQLStorage(RequiredConfig):
     """Storage class for Postgres-using models
 
@@ -165,21 +156,3 @@ class PostgreSQLBase(object):
             if connection and fresh_connection:
                 connection.close()
         return result
-
-    @staticmethod
-    def parse_versions(versions_list, products):
-        """
-        Parses the versions, separating by ":" and returning versions
-        and products.
-        """
-        versions = []
-
-        for v in versions_list:
-            if v.find(":") > -1:
-                pv = v.split(":")
-                versions.append(pv[0])
-                versions.append(pv[1])
-            else:
-                products.append(v)
-
-        return (versions, products)
