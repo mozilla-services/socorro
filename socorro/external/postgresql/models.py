@@ -269,30 +269,6 @@ class RawAdi(DeclarativeBase):
     )
 
 
-class WindowsVersion(DeclarativeBase):
-    __tablename__ = 'windows_versions'
-    windows_version_name = Column(
-        u'windows_version_name', CITEXT(), nullable=False)
-    major_version = Column(u'major_version', INTEGER(), nullable=False)
-    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (major_version, minor_version)}
-    __table_args__ = (
-        Index('windows_version_key', major_version, minor_version, unique=True),
-    )
-
-
-class Address(DeclarativeBase):
-    __tablename__ = 'addresses'
-
-    # column definitions
-    address_id = Column(u'address_id', INTEGER(),
-                        primary_key=True, nullable=False)
-    address = Column(u'address', CITEXT(), nullable=False,
-                     index=True, unique=True)
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-
-
 class AlembicVersion(DeclarativeBase):
     __tablename__ = 'alembic_version'
 
@@ -330,28 +306,6 @@ class BuildAdu(DeclarativeBase):
     )
 
 
-class Domain(DeclarativeBase):
-    __tablename__ = 'domains'
-
-    # column definitions
-    domain = Column(u'domain', CITEXT(), nullable=False,
-                    index=True, unique=True)
-    domain_id = Column(u'domain_id', INTEGER(),
-                       primary_key=True, nullable=False)
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-
-
-class FlashVersion(DeclarativeBase):
-    __tablename__ = 'flash_versions'
-
-    # column definitions
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-    flash_version = Column(u'flash_version', CITEXT(),
-                           nullable=False, index=True)
-    flash_version_id = Column(
-        u'flash_version_id', INTEGER(), primary_key=True, nullable=False)
-
-
 class OsName(DeclarativeBase):
     __tablename__ = 'os_names'
 
@@ -376,23 +330,6 @@ class OsNameMatche(DeclarativeBase):
     # relationship definitions
     os_names = relationship(
         'OsName', primaryjoin='OsNameMatche.os_name==OsName.os_name')
-
-
-class OsVersion(DeclarativeBase):
-    __tablename__ = 'os_versions'
-
-    # column definitions
-    major_version = Column(u'major_version', INTEGER(), nullable=False)
-    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
-    os_name = Column(u'os_name', CITEXT(), ForeignKey(
-        'os_names.os_name'), nullable=False)
-    os_version_id = Column(u'os_version_id', INTEGER(),
-                           primary_key=True, nullable=False)
-    os_version_string = Column(u'os_version_string', CITEXT())
-
-    # relationship definitions
-    os_names = relationship(
-        'OsName', primaryjoin='OsVersion.os_name==OsName.os_name')
 
 
 class Product(DeclarativeBase):
@@ -570,19 +507,6 @@ class ProductVersionBuild(DeclarativeBase):
         'ProductVersion',
         primaryjoin='ProductVersionBuild.product_version_id==ProductVersion.product_version_id'
     )
-
-
-class Reason(DeclarativeBase):
-    __tablename__ = 'reasons'
-
-    # column definitions
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-    reason = Column(u'reason', CITEXT(), nullable=False,
-                    index=True, unique=True)
-    reason_id = Column(u'reason_id', INTEGER(),
-                       primary_key=True, nullable=False)
-
-    # relationship definitions
 
 
 # DEPRECATED -> build_type ENUM
