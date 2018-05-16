@@ -38,13 +38,13 @@
     {% for endpoint in endpoints %}
     <div class="panel" id="{{ endpoint.name }}">
         <div class="title">
+            <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
             {% if endpoint.required_permissions %}
             <p class="required-permission">
                 Only available if used with an <b>API Token</b> associated with {% for permission in endpoint.required_permissions %}
                 <b>{{ permission }}</b> {% if not loop.last %} and {% endif %} {% endfor %} permission.
             </p>
             {% endif %}
-            <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
         </div>
         <div class="body">
             <form class="testdrive" data-methods="{{ endpoint.methods | to_json }}" {% if endpoint.methods == ['GET'] %}data-no-csrf{% endif %}>
