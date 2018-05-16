@@ -116,8 +116,6 @@ class CrashStatsTopCrashers(CrashStatsBasePage):
 
     class SignatureItem(Region):
         _signature_link_locator = (By.CSS_SELECTOR, 'a.signature')
-        _browser_icon_locator = (By.CSS_SELECTOR, 'div img.browser')
-        _plugin_icon_locator = (By.CSS_SELECTOR, 'div img.plugin')
 
         def click(self):
             self.find_element(*self._signature_link_locator).click()
@@ -127,11 +125,3 @@ class CrashStatsTopCrashers(CrashStatsBasePage):
         @property
         def title(self):
             return self.find_element(*self._signature_link_locator).get_attribute('title')
-
-        @property
-        def is_plugin_icon_visible(self):
-            return self.is_element_displayed(*self._plugin_icon_locator)
-
-        @property
-        def is_browser_icon_visible(self):
-            return self.is_element_displayed(*self._browser_icon_locator)
