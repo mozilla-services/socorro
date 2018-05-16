@@ -35,9 +35,9 @@ substantially).
 
 **Ideal Outputs**
 
-(to be filled)
+FIXME: to be filled
 
-See [[SocorroUIInstallation]] for additional details.
+See SocorroUIInstallation for additional details.
 
 
 Operations

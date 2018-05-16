@@ -12,11 +12,11 @@ from configman import configuration, Namespace
 
 from socorro.lib import BadArgumentError
 from socorro.external.es.base import ElasticsearchConfig
-from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
     PriorityjobRabbitMQCrashStore,
 )
+from socorro.external.postgresql.base import PostgreSQLStorage
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
@@ -67,7 +67,7 @@ def config_from_configman():
     definition_source.namespace('database')
     definition_source.database.add_option(
         'database_storage_class',
-        default=PostgreSQLCrashStorage,
+        default=PostgreSQLStorage,
     )
     definition_source.namespace('queuing')
     definition_source.queuing.add_option(
@@ -318,9 +318,8 @@ class SocorroMiddleware(SocorroCommon):
     # by default, assume the class to not have an implementation reference
     implementation = None
 
-    # The default, is 'database' which means it's to do with talking
-    # to a PostgreSQL based implementation.
-    implementation_config_namespace = 'database'
+    # config namespace to use for the implementation
+    implementation_config_namespace = ''
 
     default_date_format = '%Y-%m-%d'
     default_datetime_format = '%Y-%m-%dT%H:%M:%S'

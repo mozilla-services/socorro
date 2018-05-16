@@ -29,9 +29,6 @@ class TestMatviews(IntegrationTestBase):
                 self.old_proc_names[thing] = thing.proc_name
                 thing.proc_name = 'harmless'
 
-        # this has very different signatures
-        matviews.ReportsCleanCronApp.proc_name = 'harmless_timestamp'
-
         # add the benign stored procedure
         cursor = self.conn.cursor()
         cursor.execute("""
@@ -91,7 +88,6 @@ class TestMatviews(IntegrationTestBase):
 
     def test_one_matview_alone(self):
         config_manager = self._setup_config_manager(
-            'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
             'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
             ''
             'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d'
@@ -102,10 +98,6 @@ class TestMatviews(IntegrationTestBase):
             tab.run_all()
 
             information = self._load_structure()
-            assert information['reports-clean']
-            assert not information['reports-clean']['last_error']
-            assert information['reports-clean']['last_success']
-
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
@@ -126,7 +118,6 @@ class TestMatviews(IntegrationTestBase):
         mocked_utc_now.side_effect = mock_utc_now
 
         config_manager = self._setup_config_manager(
-            'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
             'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
             'socorro.unittest.cron.jobs.test_matviews.FetchADIFromHiveCronApp|1d\n'
             ''
@@ -139,15 +130,15 @@ class TestMatviews(IntegrationTestBase):
             tab = CronTabberApp(config)
             tab.run_all()
 
-            information = self._load_structure()
+        information = self._load_structure()
 
-            for app_name in ('product-versions-matview',
-                             'adu-matview',
-                             'build-adu-matview'):
+        for app_name in ('product-versions-matview',
+                         'adu-matview',
+                         'build-adu-matview'):
 
-                assert app_name in information
-                assert not information[app_name]['last_error']
-                assert information[app_name]['last_success']
+            assert app_name in information
+            assert not information[app_name]['last_error']
+            assert information[app_name]['last_success']
 
 
 class _Job(base.BaseCronApp):
@@ -155,10 +146,6 @@ class _Job(base.BaseCronApp):
     def run(self):
         assert self.app_name
         self.config.logger.info("Ran %s" % self.__class__.__name__)
-
-
-class ReportsCleanJob(_Job):
-    app_name = 'reports-clean'
 
 
 class FTPScraperJob(_Job):
