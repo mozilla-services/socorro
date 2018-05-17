@@ -41,9 +41,32 @@ def upgrade():
     )
 
     op.execute('DROP TABLE IF EXISTS reports_bad')
-    op.execute('DROP TABLE IF EXISTS reports_clean')
     op.execute('DROP TABLE IF EXISTS reports_duplicates')
     op.execute('DROP TABLE IF EXISTS reports_user_info')
+
+    # Get rid of all tables that start with 'reports_clean'
+    connection = op.get_bind()
+    cursor = connection.connection.cursor()
+    cursor.execute("""
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_name like 'reports_clean%'
+    """)
+    all_table_names = []
+    for records in cursor.fetchall():
+        all_table_names.append(records[0])
+
+    # Sort table names so 'reports_clean' is last since the others depend on it and
+    # delete them in that order
+    all_table_names.sort(reverse=True)
+    for table_name in all_table_names:
+        op.execute('DROP TABLE IF EXISTS {}'.format(table_name))
+
+    # Now remove the entry from report_partition_info so the crontabber job
+    # doesn't try to create a new partition
+    op.execute("""
+        DELETE FROM report_partition_info WHERE table_name = 'reports_clean'
+    """)
 
     # Get rid of all tables that start with 'reports'
     connection = op.get_bind()
