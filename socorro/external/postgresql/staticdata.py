@@ -39,38 +39,6 @@ class ReleaseChannels(BaseTable):
             ['ESR', '5']]
 
 
-class WindowsVersions(BaseTable):
-    table = 'windows_versions'
-    columns = ['windows_version_name', 'major_version', 'minor_version']
-    rows = [['Windows NT', '3', '5'],
-            ['Windows NT', '4', '0'],
-            ['Windows 98', '4', '1'],
-            ['Windows Me', '4', '9'],
-            ['Windows 2000', '5', '0'],
-            ['Windows XP', '5', '1'],
-            ['Windows Vista', '6', '0'],
-            ['Windows 7', '6', '1'],
-            ['Windows 8', '6', '2'],
-            ['Windows 8.1', '6', '3'],
-            ['Windows 10', '10', '0']]
-
-
-class OSVersions(BaseTable):
-    table = 'os_versions'
-    columns = ['os_version_id', 'os_name', 'major_version',
-               'minor_version', 'os_version_string']
-    rows = [['66', 'Windows', '6', '135', 'Windows Unknown'],
-            ['67', 'Windows', '5', '3', 'Windows Unknown'],
-            ['68', 'Mac OS X', '10', '8', 'OS X 10.8'],
-            ['69', 'Linux', '2', '6', 'Linux'],
-            ['70', 'Windows', '5', '11', 'Windows Unknown'],
-            ['71', 'Windows', '6', '0', 'Windows Vista'],
-            ['72', 'Windows', '6', '50', 'Windows Unknown'],
-            ['73', 'Mac OS X', '10', '4', 'OS X 10.4'],
-            ['74', 'Mac OS X', '300', '5', 'OS X Unknown'],
-            ['75', 'Windows', '5', '0', 'Windows 2000']]
-
-
 class ReleaseRepositories(BaseTable):
     table = 'release_repositories'
     columns = ['repository']
@@ -107,33 +75,6 @@ class ReleaseRepositories(BaseTable):
         ['comm-esr52'],
         ['mozilla-esr60'],
         ['comm-esr60'],
-    ]
-
-
-class ReportPartitionInfo(BaseTable):
-    table = 'report_partition_info'
-    columns = [
-        'table_name', 'build_order', 'keys', 'indexes', 'fkeys', 'partition_column', 'timetype'
-    ]
-    rows = [
-        (
-            'reports',
-            '1',
-            '{id,uuid}',
-            '{date_processed,hangid,"product,version",reason,signature,url}',
-            '{}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-        (
-            'raw_crashes',
-            '4',
-            '{uuid}',
-            '{date_processed}',
-            '{}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
     ]
 
 
@@ -228,8 +169,6 @@ class SpecialProductPlatforms(BaseTable):
 
 # NOTE(willkg): the order that tables are loaded is important
 tables = [OSNames, OSNameMatches, ReleaseChannels,
-          WindowsVersions,
-          OSVersions, ReleaseRepositories,
-          ReportPartitionInfo,
+          ReleaseRepositories,
           Products, ProductBuildTypes, ProductReleaseChannels,
           ProductProductIDMap, SpecialProductPlatforms]

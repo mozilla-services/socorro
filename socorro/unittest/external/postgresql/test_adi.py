@@ -14,8 +14,6 @@ from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 class IntegrationTestADI(PostgreSQLTestCase):
 
     def setUp(self):
-        """Set up this test class by populating the reports table with fake
-        data. """
         super(IntegrationTestADI, self).setUp()
         self._truncate()
         cursor = self.connection.cursor()

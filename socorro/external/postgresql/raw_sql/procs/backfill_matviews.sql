@@ -50,16 +50,6 @@ END IF;
 -- fill in products
 PERFORM update_product_versions();
 
--- backfill reports_clean.  this takes a while
--- we provide a switch to disable it
-IF reportsclean THEN
-    RAISE INFO 'backfilling reports_clean';
-    PERFORM backfill_reports_clean(first_rc, last_rc);
-    RAISE INFO 'backfilling raw_update_channel';
-    PERFORM backfill_raw_update_channel(first_rc, last_rc);
-END IF;
-
-
 -- loop through the days, backfilling one at a time
 WHILE thisday <= lastday LOOP
     RAISE INFO 'backfilling other matviews for %',thisday;

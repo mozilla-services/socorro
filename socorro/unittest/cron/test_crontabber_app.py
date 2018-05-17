@@ -11,14 +11,11 @@ class TestJobsConverter:
         'BugzillaCronApp',
         'BuildADUCronApp',
         'CleanRawADICronApp',
-        'DropOldPartitionsCronApp',
         'ElasticsearchCleanupCronApp',
         'FTPScraperCronApp',
         'FeaturedVersionsAutomaticCronApp',
         'ProductVersionsCronApp',
-        'TruncatePartitionsCronApp',
         'UpdateSignaturesCronApp',
-        'WeeklyReportsPartitionsCronApp',
     ]
 
     def test_dotted_path(self):
