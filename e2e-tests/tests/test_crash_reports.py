@@ -145,50 +145,6 @@ class TestCrashReports:
         assert '7' == tc_page.current_days_filter
 
     @pytest.mark.nondestructive
-    def test_that_only_browser_reports_have_browser_icon(self, base_url, selenium):
-        csp = CrashStatsHomePage(selenium, base_url).open()
-        reports_page = csp.release_channels[-1].click_top_crasher()
-        product_type, days, os = 'Browser', '7', 'Windows'
-        assert product_type == reports_page.current_filter_type
-
-        reports_page.click_filter_days_by(days)
-        reports_page.click_filter_os_by(os)
-        assert product_type == reports_page.current_filter_type
-        assert days == reports_page.current_days_filter
-        assert os == reports_page.current_os_filter
-
-        signature_list_items = reports_page.random_signature_items(19)
-        assert len(signature_list_items) > 0, 'Signature list items not found'
-
-        for signature_item in signature_list_items:
-            assert (signature_item.is_browser_icon_visible), \
-                "Signature %s did not have a browser icon" % signature_item.title
-            assert (not signature_item.is_plugin_icon_visible), \
-                "Signature %s unexpectedly had a plugin icon" % signature_item.title
-
-    @pytest.mark.nondestructive
-    def test_that_only_plugin_reports_have_plugin_icon(self, base_url, selenium):
-        csp = CrashStatsHomePage(selenium, base_url).open()
-        reports_page = csp.release_channels[-1].click_top_crasher()
-        product_type, days, os = 'Plugin', '28', 'Windows'
-        reports_page.click_filter_by(product_type)
-        reports_page.click_filter_days_by(days)
-        reports_page.click_filter_os_by(os)
-        assert product_type == reports_page.current_filter_type
-        assert days == reports_page.current_days_filter
-        assert os == reports_page.current_os_filter
-
-        signature_list_items = reports_page.signature_items
-
-        assert len(signature_list_items) > 0, 'Signature list items not found'
-
-        for signature_item in signature_list_items[:min(signature_list_items, 24)]:
-            assert (signature_item.is_plugin_icon_visible), \
-                "Signature %s did not have a plugin icon" % signature_item.title
-            assert (not signature_item.is_browser_icon_visible), \
-                "Signature %s unexpectedly had a browser icon" % signature_item.title
-
-    @pytest.mark.nondestructive
     def test_that_lowest_version_topcrashers_do_not_return_errors(self, base_url, selenium):
         csp = CrashStatsHomePage(selenium, base_url).open()
         lowest_version_index = len(csp.header.version_select_text) - 1
