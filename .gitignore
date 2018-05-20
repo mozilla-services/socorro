@@ -45,6 +45,7 @@ e2e-tests/.cache/
 
 # docker things
 .docker-build
+.docker-build3
 .cache/
 docker-compose.override.yml
 my.env

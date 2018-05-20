@@ -79,6 +79,26 @@ services:
     volumes:
       - .:/app
 
+  # For running tests in as we transition to Python 3
+  testpython3:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.python3
+    image: local/socorro_python3
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
+    depends_on:
+      - statsd
+      - localstack-s3
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+      - memcached
+    volumes:
+      - .:/app
+
   # -----------------------------
   # External services
   # -----------------------------

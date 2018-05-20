@@ -1,12 +1,13 @@
 import csv
 import codecs
-import cStringIO
 import datetime
 import isodate
 import functools
 import json
 import re
 from collections import OrderedDict
+
+from six.moves import cStringIO
 
 from django import http
 from django.conf import settings
@@ -311,7 +312,7 @@ class UnicodeWriter:
 
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
         # Redirect output to a queue
-        self.queue = cStringIO.StringIO()
+        self.queue = cStringIO()
         self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
         self.stream = f
         self.encoder = codecs.getincrementalencoder(encoding)()

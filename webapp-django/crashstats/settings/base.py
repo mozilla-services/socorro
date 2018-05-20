@@ -8,7 +8,7 @@ from pkg_resources import resource_string
 import dj_database_url
 from decouple import config, Csv
 
-from bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
+from .bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
 
 
 ROOT = os.path.abspath(
