@@ -26,6 +26,11 @@ $(function () {
             }),
         };
 
+	$("#search-button").on('click', function() {
+	    filters.from.input.value = filters.from.selectedDates[0].toUTCString();
+	    filters.to.input.value = filters.to.selectedDates[0].toUTCString();
+	});
+
         function setDate(key, value) {
             filters[key].setDate(value, true);
         }
