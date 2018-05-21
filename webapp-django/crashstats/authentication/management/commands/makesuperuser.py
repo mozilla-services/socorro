@@ -36,5 +36,6 @@ class Command(BaseCommand):
                 print('{} was already a superuser'.format(user.email))
             else:
                 user.is_superuser = True
+                user.is_staff = True
                 user.save()
                 print('{} is now a superuser'.format(user.email))
