@@ -155,6 +155,8 @@
             <ul>
                 <li>
                 {% if request.user and request.user.is_active %}
+                    <span>{{ request.user.email }}</span>
+                    |
                     <a href="{{ url('profile:profile') }}"
                       title="You are signed in as {{ request.user.email }}"
                     >
