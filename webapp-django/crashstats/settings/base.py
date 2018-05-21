@@ -98,6 +98,8 @@ INSTALLED_APPS = (
     'waffle',
     'pinax.eventlog',
     'django_jinja',
+
+    'django.contrib.admin',
 )
 
 
