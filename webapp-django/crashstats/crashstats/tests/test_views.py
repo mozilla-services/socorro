@@ -2699,10 +2699,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 403
 
-        # give the user the right permission
-        group = Group.objects.create(name='Hackers')
-        permission = Permission.objects.get(codename='run_long_queries')
-        group.permissions.add(permission)
+        # Add the user to the HAckers group which has run_long_queries
+        # permission
+        group = Group.objects.get(name='Hackers')
         user.groups.add(group)
 
         # But even with the right permissions you still need to
