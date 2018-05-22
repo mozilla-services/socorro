@@ -20,7 +20,7 @@ $(function() {
                 $.map(data.ratios[i], function(value) {
                     return {
                         date: new Date(value[0]),
-                        ratio: value[1]
+                        ratio: value[1],
                     };
                 })
             );
@@ -39,12 +39,10 @@ $(function() {
             area: false,
             legend: legend,
             legend_target: '#crashes-per-adi-legend',
-            show_secondary_x_label: false
+            show_secondary_x_label: false,
         });
-
     } else {
-        $('#crashes-per-adi-graph')
-            .text('No results were found.');
+        $('#crashes-per-adi-graph').text('No results were found.');
     }
 
     $('th.version').each(function() {
@@ -54,10 +52,12 @@ $(function() {
     // To avoid having to set `title="Bla bla throttle something bla bla"`
     // on every th and td element that is about the throttle we just do
     // it here once with javascript
-    $('th.throttle, td.throttle')
-        .attr('title', $('table#crash_data').data('throttle-title'));
+    $('th.throttle, td.throttle').attr(
+        'title',
+        $('table#crash_data').data('throttle-title')
+    );
 
     $('.datepicker-daily input').datepicker({
-        dateFormat: 'yy-mm-dd'
+        dateFormat: 'yy-mm-dd',
     });
 });

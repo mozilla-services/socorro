@@ -26,5 +26,4 @@ var PaginationUtils = (function() {
     return {
         show_pagination_links: show_pagination_links,
     };
-
 })();

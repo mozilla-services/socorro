@@ -1,4 +1,4 @@
-(function ($, document) {
+(function($, document) {
     'use strict';
 
     var _submission_locked = false;
@@ -12,11 +12,9 @@
                 if (!o[this.name].push) {
                     o[this.name] = [o[this.name]];
                 }
-                if (this.value)
-                  o[this.name].push(this.value || '');
+                if (this.value) o[this.name].push(this.value || '');
             } else {
-                if (this.value)
-                  o[this.name] = this.value || '';
+                if (this.value) o[this.name] = this.value || '';
             }
         });
         return o;
@@ -43,11 +41,10 @@
     }
 
     function validate_form(form) {
-
         function is_int(x) {
             var y = parseInt(x, 10);
             if (isNaN(y)) return false;
-            return x==y && x.toString() == y.toString();
+            return x == y && x.toString() == y.toString();
         }
         var all_valid = true;
         $('input', form).each(function() {
@@ -56,7 +53,11 @@
             var value = element.val();
             if (element.hasClass('required') && !value) {
                 valid = false;
-            } else if (element.hasClass('required') && element.hasClass('validate-int') && !is_int(value)) {
+            } else if (
+                element.hasClass('required') &&
+                element.hasClass('validate-int') &&
+                !is_int(value)
+            ) {
                 valid = false;
             } else {
                 // we can do more validation but let's not go too crazy yet
@@ -85,7 +86,9 @@
             // The second parameter (`true`) is so that things like
             // `{products: ["Firefox", "Thunderbird"]}`
             // becomes: `products=Firefox&products=Thunderbird`
-            var qs = Qs.stringify(form.serializeExclusive(), { indices: false });
+            var qs = Qs.stringify(form.serializeExclusive(), {
+                indices: false,
+            });
             if (qs) {
                 url += '?' + qs;
             }
@@ -103,84 +106,94 @@
 
         var container = $('.test-drive', form);
         $.ajax({
-           url: ajax_url,
-           method: method,
-           // Only send the `data` if it's a POST. For get the params are
-           // in the `ajax_url` already.
-           data: method === 'POST' ? form.serializeArray() : null,
-           dataType: 'text',
-           success: function(response, textStatus, jqXHR) {
-               $('pre', container).text(response);
-               $('.status code', container).hide();
-               $('.status-error', container).hide();
-               $('.response-size code', container).text(filesize(response.length));
-               $('.response-size').show();
-           },
-           error: function(jqXHR, textStatus, errorThrown) {
-               $('pre', container).text(jqXHR.responseText);
-               $('.status code', container).text(jqXHR.status).show();
-               $('.status-error', container).show();
-               $('.response-size').hide();
-               // in case it was binary before this run
-               $('pre', container).show();
-               $('.binary-response-warning', container).hide();
-           },
-           complete: function(jqXHR, textStatus) {
-               $('.used-url code', container).text(url);
-               $('.used-url a', container).attr('href', url);
-               if (method === 'POST') {
-                   $('.used-data code')
-                   .text(JSON.stringify(form.serializeExclusive()));
-                   $('.used-data').show();
-               } else {
-                   $('.used-data').hide();
-               }
-               if (jqXHR.getResponseHeader('Content-Type') === 'application/octet-stream') {
+            url: ajax_url,
+            method: method,
+            // Only send the `data` if it's a POST. For get the params are
+            // in the `ajax_url` already.
+            data: method === 'POST' ? form.serializeArray() : null,
+            dataType: 'text',
+            success: function(response, textStatus, jqXHR) {
+                $('pre', container).text(response);
+                $('.status code', container).hide();
+                $('.status-error', container).hide();
+                $('.response-size code', container).text(
+                    filesize(response.length)
+                );
+                $('.response-size').show();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                $('pre', container).text(jqXHR.responseText);
+                $('.status code', container)
+                    .text(jqXHR.status)
+                    .show();
+                $('.status-error', container).show();
+                $('.response-size').hide();
+                // in case it was binary before this run
+                $('pre', container).show();
+                $('.binary-response-warning', container).hide();
+            },
+            complete: function(jqXHR, textStatus) {
+                $('.used-url code', container).text(url);
+                $('.used-url a', container).attr('href', url);
+                if (method === 'POST') {
+                    $('.used-data code').text(
+                        JSON.stringify(form.serializeExclusive())
+                    );
+                    $('.used-data').show();
+                } else {
+                    $('.used-data').hide();
+                }
+                if (
+                    jqXHR.getResponseHeader('Content-Type') ===
+                    'application/octet-stream'
+                ) {
                     $('pre', container).hide();
                     $('.binary-response-warning', container).show();
-               } else {
+                } else {
                     // in case it was binary *before* this run, reset it
                     $('pre', container).show();
                     $('.binary-response-warning', container).hide();
-               }
-               container.show();
-               setTimeout(function() {
-                   // add a slight delay so it feels smoother for endpoints
-                   // that complete in milliseconds
-                   $('img.loading-ajax', form).hide();
-                   $('button.close', form).show();
-               }, 500);
-               _submission_locked = false;
-           }
+                }
+                container.show();
+                setTimeout(function() {
+                    // add a slight delay so it feels smoother for endpoints
+                    // that complete in milliseconds
+                    $('img.loading-ajax', form).hide();
+                    $('button.close', form).show();
+                }, 500);
+                _submission_locked = false;
+            },
         });
     }
 
-    $(document).ready(function () {
+    $(document).ready(function() {
         $('input.validate-list').each(function() {
             $('<a href="#">-</a>')
-              .hide()
-              .addClass('collapse-list')
-              .attr('title', 'Click to remove the last added input field')
-              .click(function(e) {
-                  e.preventDefault();
-                  one_less(this);
-              })
-              .insertAfter($(this));
+                .hide()
+                .addClass('collapse-list')
+                .attr('title', 'Click to remove the last added input field')
+                .click(function(e) {
+                    e.preventDefault();
+                    one_less(this);
+                })
+                .insertAfter($(this));
             $('<a href="#">+</a>')
-              .addClass('expand-list')
-              .attr('title', 'Click to create another input field')
-              .click(function(e) {
-                  e.preventDefault();
-                  one_more(this);
-              })
-              .insertAfter($(this));
+                .addClass('expand-list')
+                .attr('title', 'Click to create another input field')
+                .click(function(e) {
+                    e.preventDefault();
+                    one_more(this);
+                })
+                .insertAfter($(this));
         });
 
         $('form.testdrive').submit(function(event) {
             var $form = $(this);
             event.preventDefault();
             if (_submission_locked) {
-                alert('Currently processing an existing query. Please be patient.');
+                alert(
+                    'Currently processing an existing query. Please be patient.'
+                );
             } else {
                 _submission_locked = true;
                 if (validate_form($form)) {
@@ -215,8 +228,5 @@
             location.href = url;
             // window.open(url);
         });
-
     });
-
-
-}($, document));
+})($, document);

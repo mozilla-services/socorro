@@ -7,21 +7,21 @@
  * @inheritdoc
  */
 SignatureReport.ReportsTab = function(tabName) {
-
     var config = {
-        'panels': false,
-        'dataDisplayType': 'table',
-        'pagination': true
+        panels: false,
+        dataDisplayType: 'table',
+        pagination: true,
     };
 
     SignatureReport.Tab.call(this, tabName, config);
 };
 
-SignatureReport.ReportsTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
+SignatureReport.ReportsTab.prototype = SignatureReport.inherit(
+    SignatureReport.Tab.prototype
+);
 
 // Extends loadControls to add a text input and some default fields.
 SignatureReport.ReportsTab.prototype.loadControls = function() {
-
     // For accessing this inside functions.
     var that = this;
 
@@ -32,27 +32,27 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
 
     // Make the control elements: an input and an update button.
     // (The hidden input is for select2.)
-    var columnsInputHidden = $('<input>',  {
-        'type': 'hidden',
-        'name': '_columns',
-        'value': columns,
+    var columnsInputHidden = $('<input>', {
+        type: 'hidden',
+        name: '_columns',
+        value: columns,
     });
 
     this.$columnsInput = $('<input>', {
-        'type': 'text',
-        'name': '_columns_fake',
-        'value': columns,
+        type: 'text',
+        name: '_columns_fake',
+        value: columns,
     });
 
     this.$sortInputHidden = $('<input>', {
-        'type': 'hidden',
-        'name': '_sort',
-        'value': sort,
+        type: 'hidden',
+        name: '_sort',
+        value: sort,
     });
 
     var updateButton = $('<button>', {
-        'type': 'submit',
-        'text': 'Update'
+        type: 'submit',
+        text: 'Update',
     });
 
     // Append the controls.
@@ -66,28 +66,31 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
 
     // Make the columns input sortable.
     this.$columnsInput.select2({
-        'data': fields,
-        'multiple': true,
-        'width': 'element',
-        'sortResults': socorro.search.sortResults,
+        data: fields,
+        multiple: true,
+        width: 'element',
+        sortResults: socorro.search.sortResults,
     });
 
-    this.$columnsInput.on("change", function() {
+    this.$columnsInput.on('change', function() {
         columnsInputHidden.val(that.$columnsInput.val());
     });
 
-    this.$columnsInput.select2('container').find('ul.select2-choices').sortable({
-        containment: 'parent',
-        start: function() {
-            that.$columnsInput.select2('onSortStart');
-        },
-        update: function() {
-            that.$columnsInput.select2('onSortEnd');
-        }
-    });
+    this.$columnsInput
+        .select2('container')
+        .find('ul.select2-choices')
+        .sortable({
+            containment: 'parent',
+            start: function() {
+                that.$columnsInput.select2('onSortStart');
+            },
+            update: function() {
+                that.$columnsInput.select2('onSortEnd');
+            },
+        });
 
     // On clicking the update button, loadContent is called.
-    updateButton.on('click', function (e) {
+    updateButton.on('click', function(e) {
         e.preventDefault();
         that.loadContent(that.$contentElement);
     });
@@ -96,8 +99,7 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
 // Extends getParamsForUrl to do two extra things:
 // 1) add the columns parameters
 // 2) add the page parameter
-SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
-
+SignatureReport.ReportsTab.prototype.getParamsForUrl = function() {
     // Get the params as usual.
     var params = SignatureReport.getParamsWithSignature();
 
@@ -110,7 +112,11 @@ SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
     }
 
     // Get the sort for the input.
-    params._sort = this.$sortInputHidden.val().trim().split(',') || [];
+    params._sort =
+        this.$sortInputHidden
+            .val()
+            .trim()
+            .split(',') || [];
 
     // Get the page number.
     params.page = this.page || SignatureReport.pageNum;
@@ -119,8 +125,7 @@ SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
 };
 
 // Extends buildUrl to also replace the history.
-SignatureReport.ReportsTab.prototype.buildUrl = function (params) {
-
+SignatureReport.ReportsTab.prototype.buildUrl = function(params) {
     // Build the query string.
     var queryString = '?' + Qs.stringify(params, { indices: false });
 
@@ -131,16 +136,20 @@ SignatureReport.ReportsTab.prototype.buildUrl = function (params) {
     return this.dataUrl + queryString;
 };
 
-SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, data) {
+SignatureReport.ReportsTab.prototype.onAjaxSuccess = function(
+    contentElement,
+    data
+) {
     var tab = this;
 
     contentElement.empty().append($(data));
     $('#reports-list').tablesorter({
         headers: {
-            0: {  // disable the first column, `Crash ID`
-                sorter: false
-            }
-        }
+            0: {
+                // disable the first column, `Crash ID`
+                sorter: false,
+            },
+        },
     });
     this.bindPaginationLinks(contentElement);
 
@@ -148,7 +157,7 @@ SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, d
     // do not activate server-side sorting, rely on the
     // default client-side sorting.
     if ($('.pagination a', contentElement).length) {
-        $('.sort-header', contentElement).click(function (e) {
+        $('.sort-header', contentElement).click(function(e) {
             e.preventDefault();
 
             var thisElt = $(this);
@@ -158,7 +167,7 @@ SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, d
             var sortArr = tab.$sortInputHidden.val().split(',');
 
             // First remove all previous mentions of that field.
-            sortArr = sortArr.filter(function (item) {
+            sortArr = sortArr.filter(function(item) {
                 return item !== fieldName && item !== '-' + fieldName;
             });
 
@@ -166,8 +175,10 @@ SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, d
             // ascending -> descending -> none
             if (thisElt.hasClass('headerSortDown')) {
                 sortArr.unshift('-' + fieldName);
-            }
-            else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+            } else if (
+                !thisElt.hasClass('headerSortDown') &&
+                !thisElt.hasClass('headerSortUp')
+            ) {
                 sortArr.unshift(fieldName);
             }
 

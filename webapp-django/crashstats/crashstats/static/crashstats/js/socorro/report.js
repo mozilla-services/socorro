@@ -1,7 +1,6 @@
 /* global window $ Analytics BugLinks */
 
-$(document).ready(function () {
-
+$(document).ready(function() {
     /* Idempotent function to display the TelemetryEnvironment with
      * jQuery JSONView */
     var displayTelemetryEnvironment = (function() {
@@ -19,7 +18,7 @@ $(document).ready(function () {
                     $('#telemetryenvironment-json').JSONView(jsonData);
                 } catch (ex) {
                     console.warn(
-                        "The data in the #telemetryenvironment-json dataset is not valid JSON"
+                        'The data in the #telemetryenvironment-json dataset is not valid JSON'
                     );
                     container.append(
                         $('<p>Invalid JSON in TelemetryEnvironment</p>')
@@ -60,7 +59,7 @@ $(document).ready(function () {
         },
     });
 
-    $('a[href="#allthreads"]').on('click', function () {
+    $('a[href="#allthreads"]').on('click', function() {
         var element = $(this);
         $('#allthreads').toggle(400);
         if (element.text() === element.data('show')) {
@@ -79,8 +78,10 @@ $(document).ready(function () {
         $('.expand').click(function(event) {
             event.preventDefault();
             // swap cell title into cell text for each cell in this column
-            $('td:nth-child(3)', $(this).parents('tbody')).each(function () {
-                $(this).text($(this).attr('title')).removeAttr('title');
+            $('td:nth-child(3)', $(this).parents('tbody')).each(function() {
+                $(this)
+                    .text($(this).attr('title'))
+                    .removeAttr('title');
             });
             $(this).remove();
         });
@@ -98,14 +99,24 @@ $(document).ready(function () {
         // This avoids adding multiple calls to addExpand which will add multiple links to the
         // same header.
         cells.each(function() {
-            if (($(this).attr('title').length !== $(this).text().length) && (!isExpandAdded)) {
-                addExpand($(this).parents('tbody').find('th.signature-column'));
+            if (
+                $(this).attr('title').length !== $(this).text().length &&
+                !isExpandAdded
+            ) {
+                addExpand(
+                    $(this)
+                        .parents('tbody')
+                        .find('th.signature-column')
+                );
                 isExpandAdded = true;
             }
         });
     });
 
-    $('#modules-list').tablesorter({sortList: [[1, 0]], headers: {1: {sorter : 'digit'}}});
+    $('#modules-list').tablesorter({
+        sortList: [[1, 0]],
+        headers: { 1: { sorter: 'digit' } },
+    });
 
     // Decide whether to show the Correlations tab if this product,
     // channel and signature has correlations.
@@ -114,18 +125,27 @@ $(document).ready(function () {
     var channel = container.data('channel');
     var product = container.data('product');
 
-    window.correlations.getCorrelations(signature, channel, product)
-    .then(function(results) {
-        if (!Array.isArray(results)) {
-            return;
-        }
+    window.correlations
+        .getCorrelations(signature, channel, product)
+        .then(function(results) {
+            if (!Array.isArray(results)) {
+                return;
+            }
 
-        var content = results.join('\n');
+            var content = results.join('\n');
 
-        $('li.correlations').show();
-        $('#correlation h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
-        $('#correlation pre').empty().text(content);
-    });
+            $('li.correlations').show();
+            $('#correlation h3').text(
+                'Correlations for ' +
+                    product +
+                    ' ' +
+                    channel[0].toUpperCase() +
+                    channel.substr(1)
+            );
+            $('#correlation pre')
+                .empty()
+                .text(content);
+        });
 
     // Enhance bug links.
     BugLinks.enhance();

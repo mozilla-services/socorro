@@ -1,6 +1,6 @@
 /*global $ window moment */
 
-$(function () {
+$(function() {
     /**
      * Interface to deal with the date filters in the Search form.
      *
@@ -10,16 +10,16 @@ $(function () {
      *  - setDates(dates = Array of strings) -> void
      *  - getDates() -> Array of strings
      */
-    window.DateFilters = (function () {
+    window.DateFilters = (function() {
         var filters = {
             from: $('.datetime-picker.date_from').flatpickr({
-                onChange: function (dateObjs) {
+                onChange: function(dateObjs) {
                     removeSelectedShortcut();
                     filters.to.set('minDate', dateObjs[0]);
                 },
             }),
             to: $('.datetime-picker.date_to').flatpickr({
-                onChange: function (dateObjs) {
+                onChange: function(dateObjs) {
                     removeSelectedShortcut();
                     filters.from.set('maxDate', dateObjs[0]);
                 },
@@ -31,7 +31,9 @@ $(function () {
         }
 
         function getDate(key) {
-            return moment(filters[key].input.value).utc().toDate();
+            return moment(filters[key].input.value)
+                .utc()
+                .toDate();
         }
 
         function removeSelectedShortcut() {
@@ -43,15 +45,20 @@ $(function () {
         filters.from.set('maxDate', getDate('to'));
 
         // Enable the date filters range shortcuts.
-        $('.date-shortcuts').on('click', 'a', function (e) {
+        $('.date-shortcuts').on('click', 'a', function(e) {
             e.preventDefault();
             var thisElt = $(this);
 
             var range = thisElt.data('range');
             var value = parseInt(range.slice(0, -1));
             var unit = range.slice(-1);
-            var toDate = moment().utc().toDate();
-            var fromDate = moment().utc().subtract(value, unit).toDate();
+            var toDate = moment()
+                .utc()
+                .toDate();
+            var fromDate = moment()
+                .utc()
+                .subtract(value, unit)
+                .toDate();
 
             setDate('to', toDate);
             setDate('from', fromDate);
@@ -65,7 +72,7 @@ $(function () {
         return {
             set: setDate,
             get: getDate,
-            setDates: function (dates) {
+            setDates: function(dates) {
                 // Remove any previously selected date shortcut because it
                 // will most likely be wrong now.
                 $('.date-shortcuts a').removeClass('selected');
@@ -75,29 +82,38 @@ $(function () {
                 }
 
                 // Set date filters values.
-                dates.forEach(function (value) {
+                dates.forEach(function(value) {
                     var date;
                     if (value.indexOf('>') === 0) {
                         if (value.indexOf('>=') === 0) {
                             date = value.slice(2);
-                        }
-                        else {
+                        } else {
                             date = value.slice(1);
                         }
-                        setDate('from', moment.utc(date).utcOffset(date).toDate());
-                    }
-                    else if (value.indexOf('<') === 0) {
+                        setDate(
+                            'from',
+                            moment
+                                .utc(date)
+                                .utcOffset(date)
+                                .toDate()
+                        );
+                    } else if (value.indexOf('<') === 0) {
                         if (value.indexOf('<=') === 0) {
                             date = value.slice(2);
-                        }
-                        else {
+                        } else {
                             date = value.slice(1);
                         }
-                        setDate('to', moment.utc(date).utcOffset(date).toDate());
+                        setDate(
+                            'to',
+                            moment
+                                .utc(date)
+                                .utcOffset(date)
+                                .toDate()
+                        );
                     }
                 });
             },
-            getDates: function () {
+            getDates: function() {
                 var dateFrom = getDate('from');
                 var dateTo = getDate('to');
                 var dates = [];

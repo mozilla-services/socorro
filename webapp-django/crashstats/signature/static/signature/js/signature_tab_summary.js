@@ -7,30 +7,36 @@
  * @inheritdoc
  */
 SignatureReport.SummaryTab = function(tabName) {
-
-    var config  = {
-        'panels': false,
-        'dataDisplayType': 'table',
-        'pagination': false
+    var config = {
+        panels: false,
+        dataDisplayType: 'table',
+        pagination: false,
     };
 
     SignatureReport.Tab.call(this, tabName, config);
 };
 
-SignatureReport.SummaryTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
+SignatureReport.SummaryTab.prototype = SignatureReport.inherit(
+    SignatureReport.Tab.prototype
+);
 
-SignatureReport.SummaryTab.prototype.onAjaxSuccess = function (contentElement, data) {
+SignatureReport.SummaryTab.prototype.onAjaxSuccess = function(
+    contentElement,
+    data
+) {
     SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
     var localStorageKey = 'pref-opened-panels';
-    var prefOpenedPanels = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
+    var prefOpenedPanels = JSON.parse(
+        localStorage.getItem(localStorageKey) || '[]'
+    );
     prefOpenedPanels.forEach(function(id, i) {
         var parent = $('#' + id + '.panel');
         $('.content', parent).toggle();
         $('.options', parent).toggleClass('hide');
     });
 
-    $(contentElement).on('click', '.panel header', function (e) {
+    $(contentElement).on('click', '.panel header', function(e) {
         e.preventDefault();
         var parent = $(this).parent();
         var panelId = parent.attr('id');

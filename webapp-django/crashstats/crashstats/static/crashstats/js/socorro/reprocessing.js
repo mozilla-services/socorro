@@ -15,19 +15,18 @@ $(function() {
         // show a waiting message
         $('.waiting', parent).show();
 
-        $.post('/api/Reprocessing/', {crash_ids: crash_id})
-        .done(function(response) {
-            $('.reprocessing-success', parent).show();
-        })
-        .error(function(jqXHR, textStatus, errorThrown) {
-            $('.reprocessing-error .status', parent).text(jqXHR.status);
-            $('.reprocessing-error pre', parent).text(jqXHR.responseText);
-            $('.reprocessing-error', parent).show();
-        })
-        .complete(function() {
-            $('.waiting', parent).hide();
-            $('form button', parent).prop('disabled', false);
-        });
+        $.post('/api/Reprocessing/', { crash_ids: crash_id })
+            .done(function(response) {
+                $('.reprocessing-success', parent).show();
+            })
+            .error(function(jqXHR, textStatus, errorThrown) {
+                $('.reprocessing-error .status', parent).text(jqXHR.status);
+                $('.reprocessing-error pre', parent).text(jqXHR.responseText);
+                $('.reprocessing-error', parent).show();
+            })
+            .complete(function() {
+                $('.waiting', parent).hide();
+                $('form button', parent).prop('disabled', false);
+            });
     });
-
 });

@@ -1,5 +1,5 @@
 /*global alert:true location:true PaginationUtils:true */
-(function ($, document) {
+(function($, document) {
     'use strict';
 
     function start_loading() {
@@ -11,7 +11,6 @@
     }
 
     function fetch_users() {
-
         function show_groups(groups) {
             var names = $.map(groups, function(item) {
                 return item.name;
@@ -37,10 +36,13 @@
                     .append($('<td>').text(user.is_active))
                     .append($('<td>').text(show_groups(user.groups)))
                     .append($('<td>').text(moment(user.last_login).fromNow()))
-                    .append($('<td>')
-                            .append($('<a>')
-                                    .attr('href', location.pathname + user.id + '/')
-                                    .text('Edit')))
+                    .append(
+                        $('<td>').append(
+                            $('<a>')
+                                .attr('href', location.pathname + user.id + '/')
+                                .text('Edit')
+                        )
+                    )
                     .appendTo($tbody);
             });
             $('.page').text(response.page);
@@ -53,11 +55,12 @@
     }
 
     function reset_page() {
-        $('#filter').find('[name="page"]').val('1');
+        $('#filter')
+            .find('[name="page"]')
+            .val('1');
     }
 
     $(document).ready(function() {
-
         var $form = $('#filter');
         $('input.reset', $form).click(function() {
             $form[0].reset();
@@ -93,5 +96,4 @@
 
         fetch_users();
     });
-
-}($, document));
+})($, document);

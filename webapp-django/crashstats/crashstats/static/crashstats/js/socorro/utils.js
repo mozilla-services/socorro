@@ -1,6 +1,6 @@
 /*global socorro:false, $:false */
-(function( window, undefined ) {
-    "use strict";
+(function(window, undefined) {
+    'use strict';
     var socorro = {
         ui: {
             /**
@@ -22,12 +22,15 @@
                     isLoaderSet = document.querySelector('.' + selector);
                 }
 
-                if(!isLoaderSet) {
+                if (!isLoaderSet) {
                     var loader = new Image();
                     //set the class, alt and src attributes of the loading image
-                    loader.setAttribute("class", classList);
-                    loader.setAttribute("alt", "loading...");
-                    loader.setAttribute("src", "/static/img/icons/ajax-loader.gif");
+                    loader.setAttribute('class', classList);
+                    loader.setAttribute('alt', 'loading...');
+                    loader.setAttribute(
+                        'src',
+                        '/static/img/icons/ajax-loader.gif'
+                    );
 
                     //append loader to it's container
                     $(container).append(loader);
@@ -59,18 +62,23 @@
                 }
             },
             setUserMsg: function(selector, response, position) {
-
                 // Remove any currently shown user messages in node.
                 socorro.ui.removeUserMsg(selector);
 
                 var domParentNode = document.querySelector(selector),
-                insertPos = position ? position : "afterbegin";
-                if(response.status === "success") {
-                    domParentNode.insertAdjacentHTML(insertPos, "<div class='success'>" + response.message + "</div>");
+                    insertPos = position ? position : 'afterbegin';
+                if (response.status === 'success') {
+                    domParentNode.insertAdjacentHTML(
+                        insertPos,
+                        "<div class='success'>" + response.message + '</div>'
+                    );
                 } else {
-                    domParentNode.insertAdjacentHTML(insertPos, "<div class='error'>" + response.message + "</div>");
+                    domParentNode.insertAdjacentHTML(
+                        insertPos,
+                        "<div class='error'>" + response.message + '</div>'
+                    );
                 }
-            }
+            },
         },
         date: {
             ONE_DAY: 1000 * 60 * 60 * 24,
@@ -85,7 +93,7 @@
             // @param dateString The string to convert to a Date object
             // @param form The date format of the string
             convertToDateObj: function(dateString, format) {
-                if(format === "ISO8601") {
+                if (format === 'ISO8601') {
                     var origin = dateString,
                         year = origin.substring(0, 4),
                         month = origin.substring(4, 6),
@@ -112,7 +120,7 @@
                 return inequality === 'less' ? adate < bdate : adate > bdate;
             },
             addLeadingZero: function(number) {
-                    return number > 9 ? number : "0" + number;
+                return number > 9 ? number : '0' + number;
             },
             // add one day to the passed date
             addDay: function(currentDate) {
@@ -125,33 +133,32 @@
              * ISO_STANDARD = "yyyy-mm-dd"
              */
             formatDate: function(date, format) {
-
                 var returnDate, day, month, full_year;
                 day = this.addLeadingZero(date.getDate());
                 //months are zero based so we need to add one
                 month = this.addLeadingZero(date.getMonth() + 1);
                 full_year = date.getFullYear();
 
-                if(format === "US_NUMERICAL") {
-                    returnDate = day + "/" + month + "/" + full_year;
-                } else if(format === "ISO") {
-                    returnDate = full_year + "/" + month + "/" + day;
-                } else if(format === "ISO_STANDARD") {
-                    returnDate = full_year + "-" + month + "-" + day;
+                if (format === 'US_NUMERICAL') {
+                    returnDate = day + '/' + month + '/' + full_year;
+                } else if (format === 'ISO') {
+                    returnDate = full_year + '/' + month + '/' + day;
+                } else if (format === 'ISO_STANDARD') {
+                    returnDate = full_year + '-' + month + '-' + day;
                 }
 
-               return returnDate;
+                return returnDate;
             },
             getAllDatesInRange: function(from, to, returnFormat) {
                 var fromDate = null,
-                toDate = null,
-                shouldFormat = returnFormat !== undefined,
-                dates = [];
+                    toDate = null,
+                    shouldFormat = returnFormat !== undefined,
+                    dates = [];
 
                 // if we received dates in the format dd/mm/yyyy then we need
                 // to massage the date a little in order for new Date to return
                 // the correct date.
-                if((typeof from !== "object") && from.indexOf("/") > -1) {
+                if (typeof from !== 'object' && from.indexOf('/') > -1) {
                     fromDate = this.convertToDateObj(from);
                     toDate = this.convertToDateObj(to);
                 }
@@ -167,7 +174,7 @@
 
                     //if a return format for the dates have been specified,
                     // format the date first before adding to the array.
-                    if(shouldFormat) {
+                    if (shouldFormat) {
                         fromDate = this.formatDate(fromDate, returnFormat);
                     }
                     dates.push(fromDate);
@@ -176,14 +183,16 @@
                     fromDate = this.addDay(currentDate);
                 }
                 // as a last step at the toDate to the end of the dates array
-                toDate = shouldFormat ? this.formatDate(toDate, returnFormat) : toDate;
+                toDate = shouldFormat
+                    ? this.formatDate(toDate, returnFormat)
+                    : toDate;
                 dates.push(toDate);
 
                 return dates;
-            }
+            },
         },
         search: {
-            parseQueryString: function (queryString) {
+            parseQueryString: function(queryString) {
                 var params = {};
                 var queries;
                 var temp;
@@ -191,7 +200,7 @@
                 var len;
 
                 // Split into key/value pairs
-                queries = queryString.split("&");
+                queries = queryString.split('&');
                 len = queries.length;
 
                 if (len === 1 && queries[0] === '') {
@@ -206,18 +215,16 @@
 
                     if (params[key] && Array.isArray(params[key])) {
                         params[key].push(value);
-                    }
-                    else if (params[key]) {
+                    } else if (params[key]) {
                         params[key] = [params[key], value];
-                    }
-                    else {
+                    } else {
                         params[key] = value;
                     }
                 }
 
                 return params;
             },
-            getFilteredParams: function (params) {
+            getFilteredParams: function(params) {
                 if ('page' in params) {
                     delete params.page;
                 }
@@ -231,16 +238,14 @@
 
                 return params;
             },
-            sortResults: function (results, container, query) {
+            sortResults: function(results, container, query) {
                 if (query.term) {
-                    return results.sort(function (a, b) {
+                    return results.sort(function(a, b) {
                         if (a.text.length > b.text.length) {
                             return 1;
-                        }
-                        else if (a.text.length < b.text.length) {
+                        } else if (a.text.length < b.text.length) {
                             return -1;
-                        }
-                        else {
+                        } else {
                             return 0;
                         }
                     });
@@ -249,14 +254,13 @@
             },
         },
         dateSupported: function() {
-            var inputElem = document.createElement("input");
-            inputElem.setAttribute("type", "date");
+            var inputElem = document.createElement('input');
+            inputElem.setAttribute('type', 'date');
 
-            return inputElem.type !== "text" ? true : false;
-        }
+            return inputElem.type !== 'text' ? true : false;
+        },
     };
 
     //expose socorro to the global object
     window.socorro = socorro;
-
 })(window);

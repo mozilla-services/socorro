@@ -1,12 +1,10 @@
 (function(window, undefined) {
-
     'use strict';
 
     var Accordion = function(accordionContainer) {
         // var self = this;
 
         this.container = accordionContainer;
-
 
         /**
          * Hides all content panes in current accordion container.
@@ -16,7 +14,9 @@
             var panesLength = contentPanes.length;
 
             for (var i = 0; i < panesLength; i++) {
-                var classArray = contentPanes[i].getAttribute('class').split(/\s/);
+                var classArray = contentPanes[i]
+                    .getAttribute('class')
+                    .split(/\s/);
                 var index = classArray.indexOf('show');
 
                 if (index > -1) {
@@ -24,7 +24,10 @@
                     // we are collapsing so, update aria-expanded
                     contentPanes[i].setAttribute('aria-hidden', 'true');
                     // @see https://developer.mozilla.org/en-US/docs/Web/API/NonDocumentTypeChildNode.previousElementSibling
-                    contentPanes[i].previousElementSibling.setAttribute('aria-expanded', 'false');
+                    contentPanes[i].previousElementSibling.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
                 }
                 contentPanes[i].setAttribute('class', classArray.join(' '));
             }
@@ -47,7 +50,6 @@
          * @params {object} event - The event that was fired.
          */
         this.handleEvent = function(event) {
-
             var anchor = event.target;
             var contentPanelId = anchor.getAttribute('href');
 
@@ -65,7 +67,9 @@
                 parent.setAttribute('aria-selected', 'false');
 
                 // hide all the panes
-                this.hidePanes(this.container.querySelectorAll('.content-pane'));
+                this.hidePanes(
+                    this.container.querySelectorAll('.content-pane')
+                );
             } else if (parentRole === 'tab') {
                 event.preventDefault();
 
@@ -74,7 +78,9 @@
                 parent.setAttribute('aria-selected', 'true');
 
                 // hide all the panes
-                this.hidePanes(this.container.querySelectorAll('.content-pane'));
+                this.hidePanes(
+                    this.container.querySelectorAll('.content-pane')
+                );
 
                 // show the selected pane
                 this.showPane(document.querySelector(contentPanelId));
@@ -90,8 +96,11 @@
             var key = event.key ? event.key : event.keyCode;
 
             // handle enter and spacebar keys.
-            if ((key === 13 || key === 32) ||
-                (key === 'Enter' || key === 'Spacebar')) {
+            if (
+                key === 13 ||
+                key === 32 ||
+                (key === 'Enter' || key === 'Spacebar')
+            ) {
                 this.handleEvent(event);
             }
         }.bind(this);
@@ -117,34 +126,43 @@
         }.bind(this);
 
         this.init = function() {
-
             // this.container = accordionContainer;
 
-            this.container.addEventListener('click', function(event) {
-                // handle edge cases where the original event.targer is removed
-                // riht after the event was trigered causing event.target.parentNode
-                // in handleEvent to be null.
-                if (event.target.parentNode) {
-                    this.handleEvent(event);
-                }
-            }.bind(this), false);
+            this.container.addEventListener(
+                'click',
+                function(event) {
+                    // handle edge cases where the original event.targer is removed
+                    // riht after the event was trigered causing event.target.parentNode
+                    // in handleEvent to be null.
+                    if (event.target.parentNode) {
+                        this.handleEvent(event);
+                    }
+                }.bind(this),
+                false
+            );
 
-            this.container.addEventListener('keyup', function(event) {
-                if (event.target.parentNode) {
-                    this.delegateKeyEvents(event);
-                }
-            }.bind(this), false);
+            this.container.addEventListener(
+                'keyup',
+                function(event) {
+                    if (event.target.parentNode) {
+                        this.delegateKeyEvents(event);
+                    }
+                }.bind(this),
+                false
+            );
 
-            this.container.addEventListener('keydown', function(event) {
-                if (event.target.parentNode) {
-                    this.delegateKeyEvents(event);
-                }
-            }.bind(this), false);
+            this.container.addEventListener(
+                'keydown',
+                function(event) {
+                    if (event.target.parentNode) {
+                        this.delegateKeyEvents(event);
+                    }
+                }.bind(this),
+                false
+            );
         }.bind(this);
-
     };
 
     // Expose accordion to the global object
     window.Accordion = Accordion;
-
 })(window);

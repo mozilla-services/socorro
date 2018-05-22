@@ -1,6 +1,6 @@
 /* global window, $, jsSHA, Promise */
 
-window.correlations = (function () {
+window.correlations = (function() {
     /**
      * Handle any errors by logging them.
      */
@@ -21,77 +21,94 @@ window.correlations = (function () {
     }
 
     function loadChannelsData(product) {
-        return Promise.resolve()
-        .then(function () {
+        return Promise.resolve().then(function() {
             if (correlationData[product]) {
                 return correlationData[product];
             }
 
             var dataURL = getDataURL(product);
             if (!dataURL) {
-                console.warn('Correlation results unavailable for the "' + product + '" product.');
+                console.warn(
+                    'Correlation results unavailable for the "' +
+                        product +
+                        '" product.'
+                );
                 return null;
             }
 
             return fetch(dataURL + 'all.json.gz')
-            .then(function (response) {
-                return response.json();
-            })
-            .then(function (totals) {
-                correlationData[product] = {
-                    'date': totals.date,
-                };
-
-                var channels = $('#mainbody').data('channels');
-                if (!channels) {
-                    channels = [$('#mainbody').data('channel')];
-                }
-                if (!channels || !channels.length) {
-                    throw new Error('No channel or channels dataset attribute set');
-                }
-
-                channels.forEach(function (ch) {
-                    correlationData[product][ch] = {
-                        'total': totals[ch],
-                        'signatures': {},
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(totals) {
+                    correlationData[product] = {
+                        date: totals.date,
                     };
+
+                    var channels = $('#mainbody').data('channels');
+                    if (!channels) {
+                        channels = [$('#mainbody').data('channel')];
+                    }
+                    if (!channels || !channels.length) {
+                        throw new Error(
+                            'No channel or channels dataset attribute set'
+                        );
+                    }
+
+                    channels.forEach(function(ch) {
+                        correlationData[product][ch] = {
+                            total: totals[ch],
+                            signatures: {},
+                        };
+                    });
+                    return correlationData[product];
                 });
-                return correlationData[product];
-            });
         });
     }
 
     function loadCorrelationData(signature, channel, product) {
         return loadChannelsData(product)
-        .then(function (channelsData) {
-            if (!channelsData || !channelsData[channel] || signature in channelsData[channel].signatures) {
-                return;
-            }
+            .then(function(channelsData) {
+                if (
+                    !channelsData ||
+                    !channelsData[channel] ||
+                    signature in channelsData[channel].signatures
+                ) {
+                    return;
+                }
 
-            var shaObj = new jsSHA('SHA-1', 'TEXT');
-            shaObj.update(signature);
-            var sha1signature = shaObj.getHash('HEX');
+                var shaObj = new jsSHA('SHA-1', 'TEXT');
+                shaObj.update(signature);
+                var sha1signature = shaObj.getHash('HEX');
 
-            return fetch(getDataURL(product) + channel + '/' + sha1signature + '.json.gz')
-            .then(function (response) {
-                return response.json();
+                return fetch(
+                    getDataURL(product) +
+                        channel +
+                        '/' +
+                        sha1signature +
+                        '.json.gz'
+                )
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        correlationData[product][channel].signatures[
+                            signature
+                        ] = data;
+                    });
             })
-            .then(function (data) {
-                correlationData[product][channel].signatures[signature] = data;
+            .catch(handleError)
+            .then(function() {
+                return correlationData;
             });
-        })
-        .catch(handleError)
-        .then(function () {
-            return correlationData;
-        });
     }
 
     function itemToLabel(item) {
         return Object.getOwnPropertyNames(item)
-        .map(function (key) {
-            return key + ' = ' + item[key];
-        })
-        .join(' ∧ ');
+            .map(function(key) {
+                return key + ' = ' + item[key];
+            })
+            .join(' ∧ ');
     }
 
     // Convert the number to a user-readable percentage with four digits.
@@ -117,7 +134,9 @@ window.correlations = (function () {
         var diff = prop1 - prop2;
 
         // Wald 95% confidence interval for the difference between the proportions.
-        var standard_error = Math.sqrt(prop1 * (1 - prop1) / total1 + prop2 * (1 - prop2) / total2);
+        var standard_error = Math.sqrt(
+            prop1 * (1 - prop1) / total1 + prop2 * (1 - prop2) / total2
+        );
         var ci = [diff - 1.96 * standard_error, diff + 1.96 * standard_error];
 
         // Yates continuity correction for the confidence interval.
@@ -126,9 +145,12 @@ window.correlations = (function () {
         return [ci[0] - correction, ci[1] + correction];
     }
 
-    function sortCorrelationData(correlationData, total_reference, total_group) {
-        return correlationData
-        .sort(function (a, b) {
+    function sortCorrelationData(
+        correlationData,
+        total_reference,
+        total_group
+    ) {
+        return correlationData.sort(function(a, b) {
             // Sort by the number of attributes first (results with a smaller number of attributes
             // are easier to read and are often the most interesting ones).
             var rule_a_len = Object.keys(a.item).length;
@@ -156,10 +178,12 @@ window.correlations = (function () {
                     a.prior.count_reference,
                     a.prior.total_reference
                 );
-            }
-            else {
+            } else {
                 ciA = confidenceInterval(
-                    a.count_group, total_group, a.count_reference, total_reference
+                    a.count_group,
+                    total_group,
+                    a.count_reference,
+                    total_reference
                 );
             }
 
@@ -171,68 +195,130 @@ window.correlations = (function () {
                     b.prior.count_reference,
                     b.prior.total_reference
                 );
-            }
-            else {
+            } else {
                 ciB = confidenceInterval(
-                    b.count_group, total_group, b.count_reference, total_reference
+                    b.count_group,
+                    total_group,
+                    b.count_reference,
+                    total_reference
                 );
             }
 
-            return Math.min(Math.abs(ciB[0]), Math.abs(ciB[1])) - Math.min(Math.abs(ciA[0]), Math.abs(ciA[1]));
+            return (
+                Math.min(Math.abs(ciB[0]), Math.abs(ciB[1])) -
+                Math.min(Math.abs(ciA[0]), Math.abs(ciA[1]))
+            );
         });
     }
 
     function getResults(signature, channel, product) {
         return loadCorrelationData(signature, channel, product)
-        .then(function (data) {
-
-            if (!data[product]) {
-                return 'No correlation data was generated for the "' + product + '" product.';
-            }
-
-            if (!data[product][channel]) {
-                return 'No correlation data was generated for the "' + channel + '" channel and the "' + product + '" product.';
-            }
-
-            var signatureData = data[product][channel].signatures[signature];
-
-            if (!signatureData || !signatureData.results) {
-                return 'No correlation data was generated for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
-            }
-
-            var correlationData = signatureData.results;
-            if (correlationData.length === 0) {
-                return 'No correlations found for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
-            }
-
-            var total_reference = data[product][channel].total;
-            var total_group = signatureData.total;
-
-            var results = sortCorrelationData(correlationData, total_reference, total_group)
-            .map(function (line) {
-                var percentGroup = toPercentage(line.count_group / total_group);
-                var percentRef = toPercentage(line.count_reference / total_reference);
-
-                var result = '(' + percentGroup + '% in signature vs ' + percentRef + '% overall) ' + itemToLabel(line.item);
-
-                // If the rule has a prior that alters its distribution significantly, print it after the rule.
-                if (line.prior && line.prior.total_group && line.prior.total_reference) {
-                    var percentGroupGivenPrior = toPercentage(line.prior.count_group / line.prior.total_group);
-                    var percentRefGivenPrior = toPercentage(line.prior.count_reference / line.prior.total_reference);
-                    result += ' [' + percentGroupGivenPrior + '% vs ' + percentRefGivenPrior + '% if ' + itemToLabel(line.prior.item) + ']';
+            .then(function(data) {
+                if (!data[product]) {
+                    return (
+                        'No correlation data was generated for the "' +
+                        product +
+                        '" product.'
+                    );
                 }
 
-                return result;
-            });
+                if (!data[product][channel]) {
+                    return (
+                        'No correlation data was generated for the "' +
+                        channel +
+                        '" channel and the "' +
+                        product +
+                        '" product.'
+                    );
+                }
 
-            if (signatureData.top_words) {
-                results.push('');
-                results.push('Top words: ' + signatureData.top_words.join(', '));
-            }
+                var signatureData =
+                    data[product][channel].signatures[signature];
 
-            return results;
-        })
-        .catch(handleError);
+                if (!signatureData || !signatureData.results) {
+                    return (
+                        'No correlation data was generated for the signature "' +
+                        signature +
+                        '" on the "' +
+                        channel +
+                        '" channel, for the "' +
+                        product +
+                        '" product.'
+                    );
+                }
+
+                var correlationData = signatureData.results;
+                if (correlationData.length === 0) {
+                    return (
+                        'No correlations found for the signature "' +
+                        signature +
+                        '" on the "' +
+                        channel +
+                        '" channel, for the "' +
+                        product +
+                        '" product.'
+                    );
+                }
+
+                var total_reference = data[product][channel].total;
+                var total_group = signatureData.total;
+
+                var results = sortCorrelationData(
+                    correlationData,
+                    total_reference,
+                    total_group
+                ).map(function(line) {
+                    var percentGroup = toPercentage(
+                        line.count_group / total_group
+                    );
+                    var percentRef = toPercentage(
+                        line.count_reference / total_reference
+                    );
+
+                    var result =
+                        '(' +
+                        percentGroup +
+                        '% in signature vs ' +
+                        percentRef +
+                        '% overall) ' +
+                        itemToLabel(line.item);
+
+                    // If the rule has a prior that alters its distribution significantly, print it after the rule.
+                    if (
+                        line.prior &&
+                        line.prior.total_group &&
+                        line.prior.total_reference
+                    ) {
+                        var percentGroupGivenPrior = toPercentage(
+                            line.prior.count_group / line.prior.total_group
+                        );
+                        var percentRefGivenPrior = toPercentage(
+                            line.prior.count_reference /
+                                line.prior.total_reference
+                        );
+                        result +=
+                            ' [' +
+                            percentGroupGivenPrior +
+                            '% vs ' +
+                            percentRefGivenPrior +
+                            '% if ' +
+                            itemToLabel(line.prior.item) +
+                            ']';
+                    }
+
+                    return result;
+                });
+
+                if (signatureData.top_words) {
+                    results.push('');
+                    results.push(
+                        'Top words: ' + signatureData.top_words.join(', ')
+                    );
+                }
+
+                return results;
+            })
+            .catch(handleError);
     }
 
     return {
