@@ -215,22 +215,6 @@ class SuperSearchFieldForm(BaseForm):
         ]
 
 
-class ProductForm(BaseForm):
-
-    product = forms.CharField()
-    initial_version = forms.CharField()
-
-    def __init__(self, *args, **kwargs):
-        self.existing_products = kwargs.pop('existing_products', [])
-        super(ProductForm, self).__init__(*args, **kwargs)
-
-    def clean_product(self):
-        value = self.cleaned_data['product']
-        if value in self.existing_products:
-            raise forms.ValidationError('%s already exists' % (value,))
-        return value
-
-
 class ReleaseForm(BaseForm):
 
     product = forms.CharField()
