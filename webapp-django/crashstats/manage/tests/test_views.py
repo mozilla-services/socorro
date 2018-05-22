@@ -105,8 +105,6 @@ class TestViews(BaseTestViews):
         assert fields_missing_url in response.content
         users_url = reverse('manage:users')
         assert users_url in response.content
-        releases_url = reverse('manage:releases')
-        assert releases_url in response.content
 
         user.is_active = False
         user.save()
@@ -623,95 +621,6 @@ class TestViews(BaseTestViews):
         assert 'field_a' in response.content
         assert 'namespace1.field_b' in response.content
         assert 'namespace2.subspace1.field_c' in response.content
-
-    def test_create_release(self):
-
-        def mocked_release_post(**params):
-            assert params['product'] == 'WaterCat'
-            assert params['version'] == '19.0'
-            assert params['beta_number'] == 1
-            assert params['throttle'] == 0
-            return True
-
-        models.Releases.implementation().post.side_effect = mocked_release_post
-
-        user = self._login()
-        url = reverse('manage:releases')
-        response = self.client.get(url)
-        assert response.status_code == 200
-        # there should be a dropdown with some known platforms
-        assert 'value="Windows"' in response.content
-        assert 'value="Mac OS X"' in response.content
-
-        # first attempt to create with a product version that doesn't exist
-        now = datetime.datetime.utcnow()
-        data = {
-            'product': 'WaterCat',
-            'version': '99.9',
-            'update_channel': 'beta',
-            'build_id': now.strftime('%Y%m%d%H%M'),
-            'platform': 'Windows',
-            'beta_number': '0',
-            'release_channel': 'Beta',
-            'throttle': '1'
-        }
-
-        # set some bad values that won't pass validation
-        data['throttle'] = 'xxx'
-        data['beta_number'] = 'yyy'
-        data['version'] = '19.0'
-        data['build_id'] = 'XX'
-        response = self.client.post(url, data)
-        assert response.status_code == 200
-        assert 'Must start with YYYYMMDD' in response.content
-        assert response.content.count('not a number') == 2
-
-        data['build_id'] = '20140101XXXXX'
-        response = self.client.post(url, data)
-        assert response.status_code == 200
-        assert 'Date older than 30 days' in response.content
-
-        # finally, all with good parameters
-        data['beta_number'] = '1'
-        data['throttle'] = '0'
-        data['build_id'] = now.strftime('%Y%m%d%H%M')
-        response = self.client.post(url, data)
-        assert response.status_code == 302
-
-        event, = Log.objects.all()
-        assert event.user == user
-        assert event.action == 'release.add'
-        assert event.extra['product'] == 'WaterCat'
-
-    @mock.patch('requests.post')
-    def test_create_release_with_null_beta_number(self, rpost):
-        mock_calls = []
-
-        def mocked_release_post(**params):
-            mock_calls.append(True)
-            assert params['beta_number'] is None
-            return True
-
-        models.Releases.implementation().post.side_effect = mocked_release_post
-
-        self._login()
-
-        now = datetime.datetime.utcnow()
-        data = {
-            'product': 'WaterWolf',
-            'version': '99.9',
-            'update_channel': 'beta',
-            'build_id': now.strftime('%Y%m%d%H%M'),
-            'platform': 'Windows',
-            'beta_number': ' ',
-            'release_channel': 'Beta',
-            'throttle': '1'
-        }
-        url = reverse('manage:releases')
-        response = self.client.post(url, data)
-        assert response.status_code == 302
-        # make sure it really called the POST to /releases/release/
-        assert mock_calls
 
     def test_view_events_page(self):
         url = reverse('manage:events')
