@@ -26,6 +26,25 @@ If you're not familiar with `Docker <https://docs.docker.com/>`_ and
 reading up on.
 
 
+Preparing to contribute changes to Socorro
+==========================================
+
+If you're interested in helping out and taking a bug to work on, you
+need to do the following first:
+
+1. `Set up a working local development environment
+   <https://socorro.readthedocs.io/en/latest/gettingstarted.html>`_.
+
+2. Read through the `overview of Socorro
+   <https://socorro.readthedocs.io/en/latest/overview.html>`_.
+
+We can't assign bugs to you until you've done at least those two
+steps.
+
+If you need help, let us know by `asking on IRC or sending an email to the
+mailing list <https://socorro.readthedocs.io/en/latest/#project-info>`_.
+
+
 Python code conventions
 =======================
 
@@ -79,7 +98,11 @@ notes that future readers should know for context or be aware of.
 Pull requests
 =============
 
-Pull request summary should indicate the bug the pull request addresses.
+Pull request summary should indicate the bug the pull request addresses. For
+example::
+
+  fix bug nnnnnnn: removed frob from tree class
+
 
 Pull request descriptions should cover at least some of the following:
 
