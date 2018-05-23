@@ -27,35 +27,33 @@ var OAuth2 = (function() {
 
     var serverSignout = function() {
         var signoutURL = $('a.google-signout').attr('href');
-        var csrfmiddlewaretoken = $(
-            'input[name="csrfmiddlewaretoken"]'
-        ).val();
+        var csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
         var data = {
             csrfmiddlewaretoken: csrfmiddlewaretoken,
         };
         $.post(signoutURL, data)
-        .done(function() {
-            document.location.reload();
-        })
-        .fail(function() {
-            // XXX Need to understand what the conditions might be for
-            // failing.
-            console.warn('Failed to sign out on the server');
-            console.error.apply(console, arguments);
-        });
+            .done(function() {
+                document.location.reload();
+            })
+            .fail(function() {
+                // XXX Need to understand what the conditions might be for
+                // failing.
+                console.warn('Failed to sign out on the server');
+                console.error.apply(console, arguments);
+            });
     };
 
     var signOut = function() {
         loadGoogleAuth()
-        .then(function(auth2api) {
-            var auth2 = auth2api.getAuthInstance();
-            auth2.then(function() {
-                auth2.signOut().then(serverSignout);
+            .then(function(auth2api) {
+                var auth2 = auth2api.getAuthInstance();
+                auth2.then(function() {
+                    auth2.signOut().then(serverSignout);
+                });
+            })
+            .catch(function() {
+                console.error.apply(console, arguments);
             });
-        })
-        .catch(function() {
-            console.error.apply(console, arguments);
-        });
     };
 
     return {
@@ -63,9 +61,7 @@ var OAuth2 = (function() {
             // The "signin" meta tag, and its value being "signout"
             // means that the server thinks the user has been logged in
             // to be safe.
-            var signedin = document.head.querySelector(
-                'meta[name="signin"]'
-            );
+            var signedin = document.head.querySelector('meta[name="signin"]');
             if (signedin && signedin.content === 'signout') {
                 console.warn('Login session has to expire.');
                 // You have to sign out
@@ -89,14 +85,14 @@ var OAuth2 = (function() {
                 // commented out for the sake of showing what can be set.
                 gapi.signin2.render('signin2', {
                     // 'scope': 'profile email',
-                    'scope': 'email',
+                    scope: 'email',
                     // 'scope': 'openid',
                     // 'width': 240,
                     // 'height': 36,
-                    'height': 30,
+                    height: 30,
                     // 'longtitle': true,
                     // 'theme': 'dark',
-                    'onsuccess': function(googleUser) {
+                    onsuccess: function(googleUser) {
                         var id_token = googleUser.getAuthResponse().id_token;
 
                         var url = $('.google-signin').data('signin-url');
@@ -108,49 +104,48 @@ var OAuth2 = (function() {
                             csrfmiddlewaretoken: csrfmiddlewaretoken,
                         };
                         $.post(url, data)
-                        .done(function(response) {
-                            // It worked!
-                            var next = Qs.parse(
-                                document.location.search.slice(1)
-                            ).next;
-                            // only if ?next=/... exists on the current URL
-                            if (next) {
-                                // A specific URL exits.
-                                // This is most likely the case when you tried
-                                // to access a privileged URL whilst being
-                                // anonymous and being redirected.
-                                // Make sure it's on this server
-                                document.location.pathname = next;
-                            } else {
-                                document.location.reload();
-                            }
-                        })
-                        .fail(function(xhr) {
-                            console.error(xhr);
-                            var auth2 = gapi.auth2.getAuthInstance();
-                            auth2.signOut().then(function() {
-                                alert(
-                                    'Signed in to Google, but unable to ' +
-                                    'sign in on the server. (' +
-                                    xhr.responseText + ')'
-                                );
+                            .done(function(response) {
+                                // It worked!
+                                var next = Qs.parse(
+                                    document.location.search.slice(1)
+                                ).next;
+                                // only if ?next=/... exists on the current URL
+                                if (next) {
+                                    // A specific URL exits.
+                                    // This is most likely the case when you tried
+                                    // to access a privileged URL whilst being
+                                    // anonymous and being redirected.
+                                    // Make sure it's on this server
+                                    document.location.pathname = next;
+                                } else {
+                                    document.location.reload();
+                                }
+                            })
+                            .fail(function(xhr) {
+                                console.error(xhr);
+                                var auth2 = gapi.auth2.getAuthInstance();
+                                auth2.signOut().then(function() {
+                                    alert(
+                                        'Signed in to Google, but unable to ' +
+                                            'sign in on the server. (' +
+                                            xhr.responseText +
+                                            ')'
+                                    );
+                                });
                             });
-                        });
                     },
-                    'onfailure': function(error) {
+                    onfailure: function(error) {
                         // Happens if the user,
                         // for some reason presses the "Deny" button.
                         // If that happens, there's not much to do.
                         console.error(error);
                         console.warn.apply(console, arguments);
-                    }
+                    },
                 });
-
             }
         },
     };
 })();
-
 
 // This is how we load the google APIs, with a callback.
 window.googleAPILoaded = OAuth2.init;

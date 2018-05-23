@@ -5,7 +5,7 @@
 /*jslint browser:true, jQuery:false */
 /*global window, $, BugLinks */
 
-$(document).ready(function () {
+$(document).ready(function() {
     var perosTbl = $('#peros-tbl');
 
     $('#signature-list').tablesorter({
@@ -17,8 +17,8 @@ $(document).ready(function () {
             6: { sorter: 'digit' },
             7: { sorter: 'digit' },
             8: { sorter: 'digit' },
-            9: { sorter: 'date' },  // First Appearance
-            11: { sorter: false },  // Bugzilla IDs
+            9: { sorter: 'date' }, // First Appearance
+            11: { sorter: false }, // Bugzilla IDs
         },
     });
 

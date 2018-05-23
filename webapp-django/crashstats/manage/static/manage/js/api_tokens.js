@@ -1,5 +1,5 @@
 /*global alert:true location:true PaginationUtils:true */
-(function ($, document) {
+(function($, document) {
     'use strict';
 
     function start_loading() {
@@ -11,29 +11,30 @@
     }
 
     function fetch() {
-
         function deleteToken(button) {
             var id = button.data('id');
             var row = button.parents('tr');
             var expired = button.data('expired');
-            if (expired || confirm("Are you sure you want to delete this?")) {
+            if (expired || confirm('Are you sure you want to delete this?')) {
                 button.text('Deleting');
                 var form = $('form#tokens');
                 var data = {
                     id: id,
-                    csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+                    csrfmiddlewaretoken: $(
+                        'input[name="csrfmiddlewaretoken"]'
+                    ).val(),
                 };
                 $.post(form.data('delete-url'), data)
-                .then(function(response) {
-                    row.fadeOut(300, function() {
-                        row.remove();
+                    .then(function(response) {
+                        row.fadeOut(300, function() {
+                            row.remove();
+                        });
+                    })
+                    .fail(function() {
+                        console.warn('Unable to delete the token');
+                        console.error(arguments);
+                        $(this).text('Delete');
                     });
-                })
-                .fail(function() {
-                    console.warn('Unable to delete the token');
-                    console.error(arguments);
-                    $(this).text('Delete');
-                });
             }
         }
 
@@ -65,29 +66,37 @@
             var brief = text;
             if (brief.length > max_length) {
                 brief = brief.substr(0, max_length);
-                return $('<span>').addClass('redacted').append(
-                    $('<span>').addClass('_brief').text(brief + '...')
-                    .click(function() {
-                        var parent = $(this).parent('span');
-                        $('._full', parent).show();
-                        $(this).hide();
-                    })
-                ).append(
-                    $('<span>').addClass('_full').hide().html(
-                        text.replace('<', '&lt;')
-                            .replace('>', '&gt;')
-                            .replace('\n', '<br>')
+                return $('<span>')
+                    .addClass('redacted')
+                    .append(
+                        $('<span>')
+                            .addClass('_brief')
+                            .text(brief + '...')
+                            .click(function() {
+                                var parent = $(this).parent('span');
+                                $('._full', parent).show();
+                                $(this).hide();
+                            })
                     )
-                    .click(function() {
-                        var parent = $(this).parent('span');
-                        $('._brief', parent).show();
-                        $(this).hide();
-                    })
-                );
+                    .append(
+                        $('<span>')
+                            .addClass('_full')
+                            .hide()
+                            .html(
+                                text
+                                    .replace('<', '&lt;')
+                                    .replace('>', '&gt;')
+                                    .replace('\n', '<br>')
+                            )
+                            .click(function() {
+                                var parent = $(this).parent('span');
+                                $('._brief', parent).show();
+                                $(this).hide();
+                            })
+                    );
             } else {
                 return $('<span>').text(text);
             }
-
         }
 
         start_loading();
@@ -102,8 +111,8 @@
             var $tbody = $('tbody', $form);
             $('tr', $tbody).remove();
             $.each(response.tokens, function(i, token) {
-
-                var timestamp_text, timestamp = moment(token.expires);
+                var timestamp_text,
+                    timestamp = moment(token.expires);
                 if (token.expired) {
                     timestamp_text = timestamp.fromNow(false);
                 } else {
@@ -112,24 +121,30 @@
                 $('<tr>')
                     .append($('<td>').text(token.user))
                     .append($('<td>').append(displayKey(token.key)))
-                    .append($('<td>')
+                    .append(
+                        $('<td>')
                             .text(timestamp_text)
                             .addClass(token.expired ? 'expired' : '')
-                            .attr('title', timestamp.format('LLLL')))
-                    .append($('<td>')
-                            .html(token.permissions.join('<br>')))
-                    .append($('<td>')
+                            .attr('title', timestamp.format('LLLL'))
+                    )
+                    .append($('<td>').html(token.permissions.join('<br>')))
+                    .append(
+                        $('<td>')
                             .addClass('notes')
-                            .append(displayNotes(token.notes)))
-                    .append($('<td>')
-                            .append($('<button>')
-                                    .text('Delete')
-                                    .data('id', token.id)
-                                    .data('expired', token.expired)
-                                    .click(function(event) {
-                                        event.preventDefault();
-                                        deleteToken($(this));
-                                    })))
+                            .append(displayNotes(token.notes))
+                    )
+                    .append(
+                        $('<td>').append(
+                            $('<button>')
+                                .text('Delete')
+                                .data('id', token.id)
+                                .data('expired', token.expired)
+                                .click(function(event) {
+                                    event.preventDefault();
+                                    deleteToken($(this));
+                                })
+                        )
+                    )
                     .appendTo($tbody);
             });
             $('.page').text(response.page);
@@ -146,16 +161,16 @@
             if ($('form#create .errorlist').length) {
                 $('form#create')[0].scrollIntoView();
             }
-
         });
-    }  // end of function fetch()
+    } // end of function fetch()
 
     function reset_page() {
-        $('#tokens').find('[name="page"]').val('1');
+        $('#tokens')
+            .find('[name="page"]')
+            .val('1');
     }
 
     $(document).ready(function() {
-
         var $form = $('#tokens');
         $('input.reset', $form).click(function() {
             $form[0].reset();
@@ -190,7 +205,5 @@
         });
 
         fetch();
-
     });
-
-}($, document));
+})($, document);

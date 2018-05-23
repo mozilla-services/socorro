@@ -4,26 +4,26 @@
 
 var BugLinks = (function() {
     var NOT_DONE_STATUSES = ['UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED'];
-    var URL = '/buginfo/bug';  // TODO move this outside
+    var URL = '/buginfo/bug'; // TODO move this outside
 
     // from https://github.com/janl/mustache.js/blob/master/mustache.js#L82
     var entityMap = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
         '"': '&quot;',
         "'": '&#39;',
-        "/": '&#x2F;'
+        '/': '&#x2F;',
     };
     function escapeHtml(string) {
-        return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return String(string).replace(/[&<>"'\/]/g, function(s) {
             return entityMap[s];
         });
     }
 
     function fetch_remotely(bug_ids) {
         var deferred = $.Deferred();
-        var data = {bug_ids: bug_ids.join(',')};
+        var data = { bug_ids: bug_ids.join(',') };
         var req = $.getJSON(URL, data);
         req.done(function(response) {
             var table = {};
@@ -56,15 +56,15 @@ var BugLinks = (function() {
 
     function fetch(bug_ids) {
         var batch_size = 100;
-        var i = 0, j = 0;
+        var i = 0,
+            j = 0;
         while (i < bug_ids.length) {
             j += batch_size;
             // For each batch, do an XHR on the data
             // which also appends that fetched data to each link tag.
             // When the data has been downloaded and attached to
             // each link tag run this to update
-            fetch_remotely(bug_ids.slice(i, j))
-              .done(transform_with_data);
+            fetch_remotely(bug_ids.slice(i, j)).done(transform_with_data);
             i = j;
         }
     }
@@ -74,7 +74,7 @@ var BugLinks = (function() {
         // fetch_without_data() has fetched more data for the links
         $('.bug-link-with-data').each(function() {
             var $link = $(this);
-            if ($link.data('transformed')) return;  // already done
+            if ($link.data('transformed')) return; // already done
             var status = $link.data('status');
             var resolution = $link.data('resolution') || '---';
             var summary = $link.data('summary');
@@ -82,12 +82,10 @@ var BugLinks = (function() {
             var combined = status + ' ' + resolution + ' ' + summary;
             $link.attr('title', escapeHtml(combined));
             if ($link.parents('.bug_ids_expanded_list').length) {
-                $link.after(
-                    $('<span class="bug-summary">').text(combined)
-                );
+                $link.after($('<span class="bug-summary">').text(combined));
             }
             if (status && $.inArray(status, NOT_DONE_STATUSES) === -1) {
-                $link.addClass("strike");
+                $link.addClass('strike');
             }
             $link.data('transformed', true);
         });
@@ -116,7 +114,7 @@ var BugLinks = (function() {
             fetch_without_data();
         },
         /* Enhance bug links and expanded bug lists. */
-        enhanceExpanded: function () {
+        enhanceExpanded: function() {
             this.enhance();
 
             $('.bug_ids_more').hover(function() {
@@ -124,11 +122,13 @@ var BugLinks = (function() {
                 var inset = 10;
                 var $cell = $(this);
                 var bugList = $cell.find('.bug_ids_expanded_list');
-                bugList.css({
-                    top: $cell.position().top - inset,
-                    left: $cell.position().left - (bugList.width() + inset)
-                }).toggle();
+                bugList
+                    .css({
+                        top: $cell.position().top - inset,
+                        left: $cell.position().left - (bugList.width() + inset),
+                    })
+                    .toggle();
             });
-        }
+        },
     };
 })();

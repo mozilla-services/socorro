@@ -1,17 +1,21 @@
 function perform_lookup() {
-    var vendor_hex = $('#id_vendor_hex').val().trim();
-    var adapter_hex = $('#id_adapter_hex').val().trim();
+    var vendor_hex = $('#id_vendor_hex')
+        .val()
+        .trim();
+    var adapter_hex = $('#id_adapter_hex')
+        .val()
+        .trim();
     if (!vendor_hex) {
-        alert("Enter a Vendor hex first");
+        alert('Enter a Vendor hex first');
         return;
     }
     if (!adapter_hex) {
-        alert("Enter an Adapter hex first");
+        alert('Enter an Adapter hex first');
         return;
     }
     var url = $('form.edit').data('lookup-url');
     $('.lookup-result:visible').hide();
-    $.get(url, {vendor_hex: vendor_hex, adapter_hex: adapter_hex})
+    $.get(url, { vendor_hex: vendor_hex, adapter_hex: adapter_hex })
         .done(function(response) {
             if (response.total) {
                 $('#something-found').show();
@@ -28,7 +32,8 @@ function perform_lookup() {
         })
         .fail(function() {
             alert('Unable to perform lookup');
-        }).always(function() {
+        })
+        .always(function() {
             setTimeout(function() {
                 $('.lookup-result:visible').hide();
             }, 5 * 1000);

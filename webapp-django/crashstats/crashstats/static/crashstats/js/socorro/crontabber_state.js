@@ -1,6 +1,9 @@
 /*global moment, d3, _ */
-var margin = {top: 1, right: 20, bottom: 6, left: 10};
-var width = d3.select('#crontabber-chart').property('scrollWidth') - margin.left - margin.right;
+var margin = { top: 1, right: 20, bottom: 6, left: 10 };
+var width =
+    d3.select('#crontabber-chart').property('scrollWidth') -
+    margin.left -
+    margin.right;
 var height = 500 - margin.top - margin.bottom;
 // To be obsolete it means that your next_run was more than
 // 24 hours ago.
@@ -30,7 +33,7 @@ var format = d3.format(',.0f'),
         if (name === undefined) {
             name = d.source.name;
         }
-        if(errors > 0) {
+        if (errors > 0) {
             return name + ' has failed ' + format(errors) + ' times';
         }
         if (skips > 0) {
@@ -40,22 +43,25 @@ var format = d3.format(',.0f'),
             return name + ' is ongoing for ' + moment(d.ongoing).fromNow(true);
         }
         if (d._obsolete) {
-            return name + ' is obsolete. Last run ' + moment(d.last_run).fromNow(false);
+            return (
+                name +
+                ' is obsolete. Last run ' +
+                moment(d.last_run).fromNow(false)
+            );
         }
         return name + ' is working normally.';
     };
 
-var svg = d3.select('#crontabber-chart')
+var svg = d3
+    .select('#crontabber-chart')
     .append('svg')
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
     .append('g')
-    .attr(
-        'transform',
-        'translate(' + margin.left + ',' + margin.top + ')'
-    );
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-var sankey = d3.sankey()
+var sankey = d3
+    .sankey()
     .nodeWidth(15)
     .nodePadding(10)
     .size([width, height]);
@@ -72,7 +78,6 @@ function escapeHtml(unsafe) {
 }
 
 d3.json('/api/CrontabberState/').then(function(data) {
-
     /**
      * Reshape the data
      * Sankey wants the following:
@@ -110,7 +115,7 @@ d3.json('/api/CrontabberState/').then(function(data) {
     // reverse linked lists
     var links = [];
     _.each(nodes, function(element, index) {
-        _.each(element.depends_on, function (d) {
+        _.each(element.depends_on, function(d) {
             var dep = data.state[d];
             links.push({
                 source: dep.pos,
@@ -124,11 +129,12 @@ d3.json('/api/CrontabberState/').then(function(data) {
 
     var graph = {
         nodes: nodes,
-        links: links
+        links: links,
     };
     sankey(graph);
 
-    var link = svg.append('g')
+    var link = svg
+        .append('g')
         .selectAll('path')
         .data(links)
         .enter()
@@ -137,14 +143,16 @@ d3.json('/api/CrontabberState/').then(function(data) {
         .attr('d', path)
         .style('stroke-width', 15)
         .style('stroke', function(d) {
-            return d.color = color(d);
+            return (d.color = color(d));
         })
-        .sort(function(a, b) { return (b.y1 - b.y0) - (a.y1 - a.y0); });
+        .sort(function(a, b) {
+            return b.y1 - b.y0 - (a.y1 - a.y0);
+        });
 
-    link.append('title')
-        .text(title);
+    link.append('title').text(title);
 
-    var node = svg.append('g')
+    var node = svg
+        .append('g')
         .selectAll('g')
         .data(nodes)
         .enter()
@@ -153,21 +161,28 @@ d3.json('/api/CrontabberState/').then(function(data) {
         .attr('transform', function(d) {
             return 'translate(' + d.x0 + ',' + d.y0 + ')';
         })
-        .call(d3.drag()
-            .on('start', function() {
-                this.parentNode.appendChild(this);
-            })
-            .on('drag', dragmove)
+        .call(
+            d3
+                .drag()
+                .on('start', function() {
+                    this.parentNode.appendChild(this);
+                })
+                .on('drag', dragmove)
         );
 
-    node.append('rect')
-        .attr('height', function(d) { return d.y1 - d.y0; })
-        .attr('width', function(d) { return d.x1 - d.x0; })
+    node
+        .append('rect')
+        .attr('height', function(d) {
+            return d.y1 - d.y0;
+        })
+        .attr('width', function(d) {
+            return d.x1 - d.x0;
+        })
         .style('fill', function(d) {
-            return d.color = color(d);
+            return (d.color = color(d));
         })
         .style('opacity', function(d) {
-            return d.opacity = d._obsolete && 0.3 || 1.0;
+            return (d.opacity = (d._obsolete && 0.3) || 1.0);
         })
         .style('stroke', function(d) {
             return d3.rgb(d.color).darker(2);
@@ -176,22 +191,29 @@ d3.json('/api/CrontabberState/').then(function(data) {
         .text(title)
         .style(color);
 
-    node.append('text')
+    node
+        .append('text')
         .attr('x', -6)
-        .attr('y', function(d) { return (d.y1 - d.y0) / 2; })
+        .attr('y', function(d) {
+            return (d.y1 - d.y0) / 2;
+        })
         .attr('dy', '.35em')
         .attr('text-anchor', 'end')
         .attr('transform', null)
-        .text(function(d) { return d.name; })
-        .filter(function(d) { return d.x0 < width / 2;})
+        .text(function(d) {
+            return d.name;
+        })
+        .filter(function(d) {
+            return d.x0 < width / 2;
+        })
         .attr('x', 6 + sankey.nodeWidth())
         .attr('text-anchor', 'start');
 
     function dragmove(d) {
         d.y0 = Math.max(0, Math.min(height - (d.y1 - d.y0), d3.event.y));
-        d3.select(this).attr(
-            'transform',
-            'translate(' + d.x0 + ',' + d.y0 + ')');
+        d3
+            .select(this)
+            .attr('transform', 'translate(' + d.x0 + ',' + d.y0 + ')');
         sankey.update(graph);
         link.attr('d', path);
     }
@@ -215,17 +237,22 @@ d3.json('/api/CrontabberState/').then(function(data) {
 
     table.classed('data-table tablesorter', true);
 
-    thead.append('tr').selectAll('th')
+    thead
+        .append('tr')
+        .selectAll('th')
         .data(tableFields)
-        .enter().append('th')
+        .enter()
+        .append('th')
         .text(function capitalize(s) {
             return s[0].toUpperCase() + s.slice(1).replace('_', ' ');
         })
         .classed('header', true);
 
-    tbody.selectAll('tr')
+    tbody
+        .selectAll('tr')
         .data(nodes)
-        .enter().append('tr')
+        .enter()
+        .append('tr')
         .filter(function(node) {
             return !node._obsolete;
         })
@@ -237,10 +264,11 @@ d3.json('/api/CrontabberState/').then(function(data) {
             });
             return scrubbed;
         })
-        .enter().append('td')
+        .enter()
+        .append('td')
         .text(function(d, i) {
             var field = tableFields[i];
-            var isTime = (field === 'last_success' || field === 'next_run');
+            var isTime = field === 'last_success' || field === 'next_run';
             if (isTime) {
                 if (d) {
                     return d + ' (' + moment(d).fromNow() + ')';
@@ -248,10 +276,14 @@ d3.json('/api/CrontabberState/').then(function(data) {
                     return '';
                 }
             }
-            if (typeof(d) === 'object') {
-                var joined = _.reduce(d, function(m, i) {
-                    return m + i + ', ';
-                }, '');
+            if (typeof d === 'object') {
+                var joined = _.reduce(
+                    d,
+                    function(m, i) {
+                        return m + i + ', ';
+                    },
+                    ''
+                );
                 return joined.substring(0, joined.length - 2);
             }
             return d;
@@ -261,15 +293,14 @@ d3.json('/api/CrontabberState/').then(function(data) {
     table = d3.select('#ongoing-table').append('table');
     thead = table.append('thead');
     tbody = table.append('tbody');
-    tableFields = [
-        'name',
-        'ongoing',
-    ];
+    tableFields = ['name', 'ongoing'];
     var anyOngoing = false;
 
     table.classed('data-table tablesorter', true);
 
-    thead.append('tr').selectAll('th')
+    thead
+        .append('tr')
+        .selectAll('th')
         .data(tableFields)
         .enter()
         .append('th')
@@ -282,9 +313,11 @@ d3.json('/api/CrontabberState/').then(function(data) {
         })
         .classed('header', true);
 
-    tbody.selectAll('tr')
+    tbody
+        .selectAll('tr')
         .data(nodes)
-        .enter().append('tr')
+        .enter()
+        .append('tr')
         .filter(function(node) {
             if (node.ongoing) {
                 anyOngoing = true;
@@ -299,7 +332,8 @@ d3.json('/api/CrontabberState/').then(function(data) {
             });
             return scrubbed;
         })
-        .enter().append('td')
+        .enter()
+        .append('td')
         .text(function(d, i) {
             var field = tableFields[i];
             if (field === 'ongoing') {
@@ -317,14 +351,13 @@ d3.json('/api/CrontabberState/').then(function(data) {
     table = d3.select('.obsolete .body').append('table');
     thead = table.append('thead');
     tbody = table.append('tbody');
-    tableFields = [
-        'name',
-        'last_run',
-    ];
+    tableFields = ['name', 'last_run'];
     var anyObsolete = false;
 
     table.classed('data-table tablesorter', true);
-    thead.append('tr').selectAll('th')
+    thead
+        .append('tr')
+        .selectAll('th')
         .data(tableFields)
         .enter()
         .append('th')
@@ -333,9 +366,11 @@ d3.json('/api/CrontabberState/').then(function(data) {
         })
         .classed('header', true);
 
-    tbody.selectAll('tr')
+    tbody
+        .selectAll('tr')
         .data(nodes)
-        .enter().append('tr')
+        .enter()
+        .append('tr')
         .filter(function(node) {
             if (node._obsolete) {
                 anyObsolete = true;
@@ -351,7 +386,8 @@ d3.json('/api/CrontabberState/').then(function(data) {
             });
             return scrubbed;
         })
-        .enter().append('td')
+        .enter()
+        .append('td')
         .text(function(d, i) {
             var field = tableFields[i];
             if (field === 'last_run') {
@@ -368,14 +404,12 @@ d3.json('/api/CrontabberState/').then(function(data) {
     table = d3.select('#failing').append('table');
     thead = table.append('thead');
     tbody = table.append('tbody');
-    tableFields = [
-        'name',
-        'error_count',
-        'last_error',
-    ];
+    tableFields = ['name', 'error_count', 'last_error'];
     table.classed('data-table tablesorter', true); // worth doing?
 
-    thead.append('tr').selectAll('th')
+    thead
+        .append('tr')
+        .selectAll('th')
         .data(tableFields)
         .enter()
         .append('th')
@@ -385,7 +419,8 @@ d3.json('/api/CrontabberState/').then(function(data) {
         .classed('header', true);
 
     var anyErrors = false;
-    tbody.selectAll('tr')
+    tbody
+        .selectAll('tr')
         .data(nodes)
         .enter()
         .append('tr')
@@ -405,9 +440,11 @@ d3.json('/api/CrontabberState/').then(function(data) {
         .append('td')
         .html(function(d, i) {
             if (tableFields[i] === 'last_error') {
-                return '<pre>' +
+                return (
+                    '<pre>' +
                     escapeHtml(JSON.stringify(d, undefined, 4)) +
-                    '</pre>';
+                    '</pre>'
+                );
             }
             return escapeHtml('' + d);
         });
@@ -416,5 +453,4 @@ d3.json('/api/CrontabberState/').then(function(data) {
     }
 
     $('.tablesorter').tablesorter();
-
 });

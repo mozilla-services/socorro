@@ -18,7 +18,10 @@ $(function() {
 
     function addVerdict(container, msg, color) {
         container.append(
-            $('<p>').addClass('verdict').html(msg).addClass(color)
+            $('<p>')
+                .addClass('verdict')
+                .html(msg)
+                .addClass(color)
         );
     }
 
@@ -58,56 +61,59 @@ $(function() {
             );
         }
     }
-    $.getJSON(location.pathname, {'test-cookie': true})
-    .done(function(r) {
-        if (r.cookie_value === cookie_secure.data('cookie-value')) {
-            addVerdict(
-                cookie_secure,
-                "Happily able to set a cookie and retrieving it again.",
-                'good'
-            );
-        } else {
-            addVerdict(
-                cookie_secure,
-                "Unable to set a cookie and retrieving it again.",
-                'bad'
-            );
-        }
-    }).fail(function() {
-        console.warn('Unable to make an AJAX request to test cookies');
-        console.error(arguments);
-        $('#check-console').show();
-    }).always(function() {
-        $('.loading', cookie_secure).hide();
-        drawConclusionSoon();
-    });
+    $.getJSON(location.pathname, { 'test-cookie': true })
+        .done(function(r) {
+            if (r.cookie_value === cookie_secure.data('cookie-value')) {
+                addVerdict(
+                    cookie_secure,
+                    'Happily able to set a cookie and retrieving it again.',
+                    'good'
+                );
+            } else {
+                addVerdict(
+                    cookie_secure,
+                    'Unable to set a cookie and retrieving it again.',
+                    'bad'
+                );
+            }
+        })
+        .fail(function() {
+            console.warn('Unable to make an AJAX request to test cookies');
+            console.error(arguments);
+            $('#check-console').show();
+        })
+        .always(function() {
+            $('.loading', cookie_secure).hide();
+            drawConclusionSoon();
+        });
 
     /* Check that caching works */
     var caching = $('#caching');
-    $.getJSON(location.pathname, {'test-caching': true})
-    .done(function(r) {
-        if (r.cache_value === caching.data('cache-value')) {
-            // seems to work
-            addVerdict(
-                caching,
-                'Setting and retrieving from cache seems to work.',
-                'good'
-            );
-        } else {
-            addVerdict(
-                caching,
-                'Unable to set a value in cache that sticks! ' +
-                'Check your <code>settings.CACHES</code> settings.',
-                'bad'
-            );
-        }
-    }).fail(function() {
-        console.warn('Unable to make an AJAX request');
-        console.error(arguments);
-        $('#check-console').show();
-    }).always(function() {
-        $('.loading', caching).hide();
-        drawConclusionSoon();
-    });
-
+    $.getJSON(location.pathname, { 'test-caching': true })
+        .done(function(r) {
+            if (r.cache_value === caching.data('cache-value')) {
+                // seems to work
+                addVerdict(
+                    caching,
+                    'Setting and retrieving from cache seems to work.',
+                    'good'
+                );
+            } else {
+                addVerdict(
+                    caching,
+                    'Unable to set a value in cache that sticks! ' +
+                        'Check your <code>settings.CACHES</code> settings.',
+                    'bad'
+                );
+            }
+        })
+        .fail(function() {
+            console.warn('Unable to make an AJAX request');
+            console.error(arguments);
+            $('#check-console').show();
+        })
+        .always(function() {
+            $('.loading', caching).hide();
+            drawConclusionSoon();
+        });
 });

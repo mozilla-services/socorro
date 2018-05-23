@@ -1,6 +1,6 @@
 /* globals ace */
 
-$(function () {
+$(function() {
     'use strict';
 
     // parameters
@@ -10,17 +10,14 @@ $(function () {
     var submitButton = $('#search-button');
     var contentElt = $('#search_results');
     var indicesElt = $('#search_indices');
-    var textareaElt = $('<textarea>', {'class': 'json-results'});
+    var textareaElt = $('<textarea>', { class: 'json-results' });
     var editorElt = $('#editor');
     var editor = null;
 
     // Default UI data.
     var defaultQuery = '{"query": {"match_all": {}}}';
     var possibleIndices = $('#mainbody').data('elasticsearch-indices');
-    var defaultIndices = [
-        possibleIndices[0],
-        possibleIndices[1],
-    ];
+    var defaultIndices = [possibleIndices[0], possibleIndices[1]];
 
     // Django CSRF protection
     var csrftoken = $('input[name=csrfmiddlewaretoken]').val();
@@ -31,7 +28,7 @@ $(function () {
 
     function csrfSafeMethod(method) {
         // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        return /^(GET|HEAD|OPTIONS|TRACE)$/.test(method);
     }
     $.ajaxSetup({
         crossDomain: false, // obviates need for sameOrigin test
@@ -44,11 +41,11 @@ $(function () {
 
     function showResults(query, indices) {
         // show loader
-        contentElt.empty().append($('<div>', {'class': 'loader'}));
+        contentElt.empty().append($('<div>', { class: 'loader' }));
 
         $.ajax({
             url: resultsURL,
-            data: {'query': query, 'indices': indices},
+            data: { query: query, indices: indices },
             type: 'POST',
             traditional: true,
             success: function(data) {
@@ -61,31 +58,35 @@ $(function () {
                 var errorTitle = 'Oops, an error occured';
                 var errorMsg = 'Please fix the following issues: ';
 
-                var errorContent = $('<div>', {class: 'error'});
-                errorContent.append($('<h3>', {text: errorTitle}));
-                errorContent.append($('<p>', {text: errorMsg}));
-                errorContent.append($('<p>', {text: jqXHR.responseText}));
+                var errorContent = $('<div>', { class: 'error' });
+                errorContent.append($('<h3>', { text: errorTitle }));
+                errorContent.append($('<p>', { text: errorMsg }));
+                errorContent.append($('<p>', { text: jqXHR.responseText }));
 
                 contentElt.empty().append(errorContent);
             },
         });
     }
 
-    submitButton.click(function (e) {
+    submitButton.click(function(e) {
         e.preventDefault();
 
         var query = editor.getValue();
         var indices = indicesElt.select2('val');
         var state = {
-            'query': query,
-            'indices': indices,
+            query: query,
+            indices: indices,
         };
 
-        window.history.pushState(state, 'Search results', window.location.pathname);
+        window.history.pushState(
+            state,
+            'Search results',
+            window.location.pathname
+        );
         showResults(query, indices);
     });
 
-    window.onpopstate = function (e) {
+    window.onpopstate = function(e) {
         if (e.state) {
             // If there is a query, run the search and show results
             var query = e.state.query;
@@ -94,12 +95,15 @@ $(function () {
             showResults(query, indices);
             editor.setValue(query);
             indicesElt.select2('data', indices);
-        }
-        else {
+        } else {
             // If there are no parameters, empty the form and show the default content
             editor.setValue(defaultQuery);
             indicesElt.select2('data', defaultIndices);
-            contentElt.empty().append($('<p>', {'text': 'Run a search to get some results. '}));
+            contentElt
+                .empty()
+                .append(
+                    $('<p>', { text: 'Run a search to get some results. ' })
+                );
         }
     };
 
@@ -119,10 +123,10 @@ $(function () {
     form.show();
 
     indicesElt.select2({
-        'data': possibleIndices,
-        'closeOnSelect': false,
-        'multiple': true,
-        'width': 'element',
+        data: possibleIndices,
+        closeOnSelect: false,
+        multiple: true,
+        width: 'element',
     });
     if (!indicesElt.val()) {
         indicesElt.select2('data', defaultIndices);

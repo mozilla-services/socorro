@@ -15,6 +15,6 @@ var Analytics = (function() {
         },
         trackPageview: function(url) {
             wrap('send', 'pageview', url);
-        }
+        },
     };
 })();

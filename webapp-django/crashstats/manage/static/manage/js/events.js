@@ -1,5 +1,5 @@
 /*global alert:true location:true PaginationUtils:true */
-(function ($, document) {
+(function($, document) {
     'use strict';
 
     function start_loading() {
@@ -11,11 +11,12 @@
     }
 
     function fetch_events() {
-
         function tdURLOrEmpty(url) {
             if (url) {
                 return $('<td>').append(
-                    $('<a>').text('Edit').attr('href', url)
+                    $('<a>')
+                        .text('Edit')
+                        .attr('href', url)
                 );
             } else {
                 return $('<td>').text('n/a');
@@ -51,15 +52,25 @@
                 $('<tr>')
                     .append($('<td>').text(event.user))
                     .append($('<td>').text(event.action))
-                    .append($('<td>')
+                    .append(
+                        $('<td>')
                             .text(timestamp.fromNow())
-                            .attr('title', timestamp.format('LLLL')))
+                            .attr('title', timestamp.format('LLLL'))
+                    )
                     .append(tdURLOrEmpty(event.url))
-                    .append($('<td>').append(
-                            $('<a href="#">').text('Expand').click(toggleExpandPre))
-                        .append(
-                            $('<pre>').text(JSON.stringify(event.extra, undefined, 4))
-                        ))
+                    .append(
+                        $('<td>')
+                            .append(
+                                $('<a href="#">')
+                                    .text('Expand')
+                                    .click(toggleExpandPre)
+                            )
+                            .append(
+                                $('<pre>').text(
+                                    JSON.stringify(event.extra, undefined, 4)
+                                )
+                            )
+                    )
                     .appendTo($tbody);
             });
             $('.page').text(response.page);
@@ -72,11 +83,12 @@
     }
 
     function reset_page() {
-        $('#filter').find('[name="page"]').val('1');
+        $('#filter')
+            .find('[name="page"]')
+            .val('1');
     }
 
     $(document).ready(function() {
-
         var $form = $('#filter');
         $('input.reset', $form).click(function() {
             $form[0].reset();
@@ -112,5 +124,4 @@
 
         fetch_events();
     });
-
-}($, document));
+})($, document);
