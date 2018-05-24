@@ -62,6 +62,9 @@ dockerbuild: my.env
 dockersetup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup.sh
 
+dockerlint: my.env .docker-build
+	./docker/run_lints_in_docker.sh ${ARGS}
+
 dockertest: my.env .docker-build
 	./docker/run_tests_in_docker.sh ${ARGS}
 

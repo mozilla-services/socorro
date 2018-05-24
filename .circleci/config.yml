@@ -57,6 +57,11 @@ jobs:
             make dockerbuild
 
       - run:
+          name: Run lints
+          working_directory: /socorro
+          command: make dockerlint
+
+      - run:
           name: Run tests
           working_directory: /socorro
           command: make dockertest
