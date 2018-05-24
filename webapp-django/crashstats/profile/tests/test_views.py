@@ -2,9 +2,9 @@ import pyquery
 
 from django.core.urlresolvers import reverse
 
-from crashstats.crashstats.management import PERMISSIONS
-from crashstats.supersearch.models import SuperSearchUnredacted
+from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.crashstats.tests.test_views import BaseTestViews
+from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 class TestViews(BaseTestViews):

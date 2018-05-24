@@ -2,6 +2,7 @@ import os
 
 from django.conf import settings
 from django.conf.urls import include, url
+from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import RedirectView
 from django.views.static import serve
@@ -28,22 +29,10 @@ urlpatterns = [
     }),
     url(r'', include(urls, namespace='crashstats')),
     url(r'', include(supersearch_urls)),
-    url(r'^signature/', include(
-        'crashstats.signature.urls',
-        namespace='signature'
-    )),
-    url(r'^topcrashers/', include(
-        'crashstats.topcrashers.urls',
-        namespace='topcrashers'
-    )),
-    url(r'^sources/', include(
-        'crashstats.sources.urls',
-        namespace='sources'
-    )),
-    url(r'^home/', include(
-        'crashstats.home.urls',
-        namespace='home'
-    )),
+    url(r'^signature/', include('crashstats.signature.urls', namespace='signature')),
+    url(r'^topcrashers/', include('crashstats.topcrashers.urls', namespace='topcrashers')),
+    url(r'^sources/', include('crashstats.sources.urls', namespace='sources')),
+    url(r'^home/', include('crashstats.home.urls', namespace='home')),
     url(r'', include(auth_urls, namespace='auth')),
     url(r'^monitoring/', include(monitoring_urls, namespace='monitoring')),
     url(r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
@@ -54,14 +43,10 @@ urlpatterns = [
         name='redirect-to-tecken'),
     # if we ever use the Django admin we might want to change this URL
     url(r'^admin/', include('crashstats.manage.urls', namespace='manage')),
-    url(r'^profile/', include(
-        'crashstats.profile.urls',
-        namespace='profile'
-    )),
-    url(r'^documentation/', include(
-        'crashstats.documentation.urls',
-        namespace='documentation'
-    )),
+    url(r'^profile/', include('crashstats.profile.urls', namespace='profile')),
+    url(r'^documentation/', include('crashstats.documentation.urls', namespace='documentation')),
+
+    url(r'^siteadmin/', include(admin.site.urls)),
 ]
 
 # In DEBUG mode, serve media files through Django.
