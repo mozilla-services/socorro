@@ -19,9 +19,7 @@ from pinax.eventlog.models import log, Log
 import requests
 
 from crashstats.crashstats.models import (
-    Releases,
     GraphicsDevices,
-    Platforms,
     Reprocessing,
 )
 from crashstats.supersearch.models import SuperSearchMissingFields
@@ -352,53 +350,6 @@ def supersearch_fields_missing(request):
     context['missing_fields_count'] = missing_fields['total']
 
     return render(request, 'manage/supersearch_fields_missing.html', context)
-
-
-@superuser_required
-def releases(request):
-    context = {}
-    platforms_api = Platforms()
-    platform_names = [x['name'] for x in platforms_api.get()]
-
-    if request.method == 'POST':
-        form = forms.ReleaseForm(
-            request.POST,
-            platforms=platform_names
-        )
-        if form.is_valid():
-            api = Releases()
-            api.post(
-                product=form.cleaned_data['product'],
-                version=form.cleaned_data['version'],
-                update_channel=form.cleaned_data['update_channel'],
-                build_id=form.cleaned_data['build_id'],
-                platform=form.cleaned_data['platform'],
-                beta_number=form.cleaned_data['beta_number'],
-                release_channel=form.cleaned_data['release_channel'],
-                throttle=form.cleaned_data['throttle'],
-            )
-            log(request.user, 'release.add', form.cleaned_data)
-            messages.success(
-                request,
-                'New release for %s:%s added.' % (
-                    form.cleaned_data['product'],
-                    form.cleaned_data['version']
-                )
-            )
-            return redirect('manage:releases')
-    else:
-        form = forms.ReleaseForm(
-            platforms=platform_names,
-            initial={
-                'throttle': 1,
-                'update_channel': 'Release',
-                'release_channel': 'release',
-            }
-        )
-
-    context['form'] = form
-    context['page_title'] = "Releases"
-    return render(request, 'manage/releases.html', context)
 
 
 @superuser_required
