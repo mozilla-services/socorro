@@ -123,28 +123,3 @@ Django needs to write its ORM tables:
    cd webapp-django
    ./manage.py migrate auth
    ./manage.py migrate
-
-
-Adding new products and releases
-================================
-
-Each product you wish to have reports on must be added via the Socorro
-admin UI:
-
-http://crash-stats/admin/products/
-
-All products must have one or more releases:
-
-http://crash-stats/admin/releases/
-
-Make sure to restart memcached so you see your changes right away:
-
-::
-
-    sudo systemctl restart memcached
-
-
-Now go to the front page for your application. For example, if your application
-was named "KillerApp" then it will appear at:
-
-http://crash-stats/home/products/KillerApp

@@ -105,8 +105,6 @@ class TestViews(BaseTestViews):
         assert fields_missing_url in response.content
         users_url = reverse('manage:users')
         assert users_url in response.content
-        products_url = reverse('manage:products')
-        assert products_url in response.content
         releases_url = reverse('manage:releases')
         assert releases_url in response.content
 
@@ -625,43 +623,6 @@ class TestViews(BaseTestViews):
         assert 'field_a' in response.content
         assert 'namespace1.field_b' in response.content
         assert 'namespace2.subspace1.field_c' in response.content
-
-    def test_create_product(self):
-
-        def mocked_post(**options):
-            assert options['product'] == 'WaterCat'
-            assert options['version'] == '1.0'
-            return True
-
-        models.ProductVersions.implementation().post.side_effect = (
-            mocked_post
-        )
-
-        user = self._login()
-        url = reverse('manage:products')
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert 'value="1.0"' in response.content
-
-        # first attempt to create an existing combo
-        response = self.client.post(url, {
-            'product': 'WaterWolf',
-            'initial_version': '1.0'
-        })
-        assert response.status_code == 200
-        assert 'WaterWolf already exists' in response.content
-
-        # now with a new unique product
-        response = self.client.post(url, {
-            'product': 'WaterCat',
-            'initial_version': '1.0'
-        })
-        assert response.status_code == 302
-
-        event, = Log.objects.all()
-        assert event.user == user
-        assert event.action == 'product.add'
-        assert event.extra['product'] == 'WaterCat'
 
     def test_create_release(self):
 

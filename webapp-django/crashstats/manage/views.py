@@ -19,7 +19,6 @@ from pinax.eventlog.models import log, Log
 import requests
 
 from crashstats.crashstats.models import (
-    ProductVersions,
     Releases,
     GraphicsDevices,
     Platforms,
@@ -353,50 +352,6 @@ def supersearch_fields_missing(request):
     context['missing_fields_count'] = missing_fields['total']
 
     return render(request, 'manage/supersearch_fields_missing.html', context)
-
-
-@superuser_required
-def products(request):
-    context = {}
-    api = ProductVersions()
-    if request.method == 'POST':
-        existing_products = set(
-            x['product'] for x in api.get()['hits']
-        )
-        form = forms.ProductForm(
-            request.POST,
-            existing_products=existing_products
-        )
-        if form.is_valid():
-            api.post(
-                product=form.cleaned_data['product'],
-                version=form.cleaned_data['initial_version']
-            )
-            log(request.user, 'product.add', form.cleaned_data)
-            messages.success(
-                request,
-                'Product %s (%s) added.' % (
-                    form.cleaned_data['product'],
-                    form.cleaned_data['initial_version']
-                )
-            )
-            return redirect('manage:products')
-    else:
-        product = request.GET.get('product')
-        if product is not None:
-            messages.error(
-                request,
-                'Product %s not found. Submit the form below to add it.' % (
-                    product
-                )
-            )
-        form = forms.ProductForm(initial={
-            'product': product,
-            'initial_version': '1.0'
-        })
-    context['form'] = form
-    context['page_title'] = "Products"
-    return render(request, 'manage/products.html', context)
 
 
 @superuser_required
