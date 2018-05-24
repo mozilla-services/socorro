@@ -46,9 +46,12 @@ class LogEntryAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
-        # NOTE(willkg): If this always returned False, then this modeladmin
+        # FIXME(willkg): If this always returned False, then this modeladmin
         # doesn't show up in the index. However, this means you get a change
         # page that suggests you can change it, but errors out when saving.
+        #
+        # We can nix this and use has_view_permission when we upgrade to
+        # Django 2.1.
         return request.method != 'POST'
 
     def has_delete_permission(self, request, obj=None):
