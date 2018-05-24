@@ -2699,7 +2699,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 403
 
-        # Add the user to the HAckers group which has run_long_queries
+        # Add the user to the Hackers group which has run_long_queries
         # permission
         group = Group.objects.get(name='Hackers')
         user.groups.add(group)

@@ -6,7 +6,7 @@ from django.dispatch import receiver
 
 
 # NOTE(willkg): When referring to these in code, you'll have to use the prefix
-# 'crashstats'. For example, in jinja2 templste, use this:
+# 'crashstats'. For example, in jinja2 templates, use this:
 #
 #   {% if request.user.has_perm('crashstats.view_pii') %}
 #
