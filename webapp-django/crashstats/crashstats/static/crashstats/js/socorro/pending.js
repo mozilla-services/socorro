@@ -2,7 +2,6 @@ $(function() {
   var Checker = (function() {
     var intervalTime = 5 * 1000;
     var checkInterval;
-    var totalTime = 0;
 
     return {
       startChecking: function(crashID) {

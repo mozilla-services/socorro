@@ -1,4 +1,4 @@
-/*global: ALL_PERMISSIONS */
+/* global ALL_PERMISSIONS */
 
 $(function() {
   'use strict';

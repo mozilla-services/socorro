@@ -143,7 +143,7 @@ SignatureReport.GraphsTab.prototype.drawGraph = function(graphData, contentEleme
     legend: graphData.legend,
     legend_target: '.new-legend',
     show_secondary_x_label: false,
-    mouseover: function(d, i) {
+    mouseover: function(d) {
       $('.mg-active-datapoint', contentElement).html(d.term + ': ' + d.count + (d.count === 1 ? ' crash' : ' crashes'));
     },
   });

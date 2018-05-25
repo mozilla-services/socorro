@@ -1,4 +1,3 @@
-/*global alert:true location:true PaginationUtils:true */
 (function($, document) {
   'use strict';
 

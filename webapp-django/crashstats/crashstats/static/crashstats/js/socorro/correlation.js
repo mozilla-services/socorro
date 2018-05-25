@@ -1,4 +1,4 @@
-/* global window, $, jsSHA, Promise */
+/* global jsSHA */
 
 window.correlations = (function() {
   /**

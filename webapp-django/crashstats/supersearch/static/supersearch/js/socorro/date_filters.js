@@ -1,5 +1,3 @@
-/*global $ window moment */
-
 $(function() {
   /**
    * Interface to deal with the date filters in the Search form.

@@ -1,5 +1,3 @@
-/*global SignatureReport */
-
 /**
  * Tab for displaying correlations.
  * Does not have any panels.

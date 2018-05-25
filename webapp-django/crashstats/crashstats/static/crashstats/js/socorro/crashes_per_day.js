@@ -1,5 +1,3 @@
-/*global window, $, MG*/
-
 $(function() {
   'use strict';
 

@@ -1,4 +1,4 @@
-/* globals ace */
+/* global ace */
 
 $(function() {
   'use strict';

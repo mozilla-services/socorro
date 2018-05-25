@@ -1,5 +1,3 @@
-/*global $ window Analytics socorro Qs BugLinks DateFilters */
-
 $(function() {
   'use strict';
 

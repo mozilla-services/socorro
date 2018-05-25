@@ -1,5 +1,3 @@
-/* global moment */
-
 $(function() {
   function replaceTimeTag(inTheFuture) {
     return function() {

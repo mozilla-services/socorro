@@ -1,3 +1,5 @@
+/* global filesize */
+
 (function($, document) {
   'use strict';
 
@@ -7,7 +9,6 @@
     var o = {};
     var a = this.serializeArray();
     $.each(a, function() {
-      var value;
       if (o[this.name] !== undefined) {
         if (!o[this.name].push) {
           o[this.name] = [o[this.name]];
@@ -106,14 +107,14 @@
       // in the `ajax_url` already.
       data: method === 'POST' ? form.serializeArray() : null,
       dataType: 'text',
-      success: function(response, textStatus, jqXHR) {
+      success: function(response) {
         $('pre', container).text(response);
         $('.status code', container).hide();
         $('.status-error', container).hide();
         $('.response-size code', container).text(filesize(response.length));
         $('.response-size').show();
       },
-      error: function(jqXHR, textStatus, errorThrown) {
+      error: function(jqXHR) {
         $('pre', container).text(jqXHR.responseText);
         $('.status code', container)
           .text(jqXHR.status)
@@ -124,7 +125,7 @@
         $('pre', container).show();
         $('.binary-response-warning', container).hide();
       },
-      complete: function(jqXHR, textStatus) {
+      complete: function(jqXHR) {
         $('.used-url code', container).text(url);
         $('.used-url a', container).attr('href', url);
         if (method === 'POST') {

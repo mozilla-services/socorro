@@ -1,4 +1,3 @@
-/*global alert:true location:true PaginationUtils:true */
 (function($, document) {
   'use strict';
 
@@ -23,7 +22,7 @@
           csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
         };
         $.post(form.data('delete-url'), data)
-          .then(function(response) {
+          .then(function() {
             row.fadeOut(300, function() {
               row.remove();
             });

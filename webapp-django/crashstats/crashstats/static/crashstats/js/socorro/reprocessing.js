@@ -16,10 +16,10 @@ $(function() {
     $('.waiting', parent).show();
 
     $.post('/api/Reprocessing/', { crash_ids: crash_id })
-      .done(function(response) {
+      .done(function() {
         $('.reprocessing-success', parent).show();
       })
-      .error(function(jqXHR, textStatus, errorThrown) {
+      .error(function(jqXHR) {
         $('.reprocessing-error .status', parent).text(jqXHR.status);
         $('.reprocessing-error pre', parent).text(jqXHR.responseText);
         $('.reprocessing-error', parent).show();

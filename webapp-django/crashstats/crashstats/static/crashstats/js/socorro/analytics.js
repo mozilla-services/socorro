@@ -1,4 +1,4 @@
-/*global ga */
+/* eslint-disable no-unused-vars */
 
 var Analytics = (function() {
   'use strict';

@@ -18,7 +18,7 @@ SignatureReport.BugzillaTab = function(tabName) {
 
 SignatureReport.BugzillaTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
-SignatureReport.BugzillaTab.prototype.onAjaxSuccess = function(contentElement, data) {
+SignatureReport.BugzillaTab.prototype.onAjaxSuccess = function() {
   SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
   // Enhance bug links.

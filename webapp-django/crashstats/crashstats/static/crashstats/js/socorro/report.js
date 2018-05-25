@@ -1,5 +1,3 @@
-/* global window $ Analytics BugLinks */
-
 $(document).ready(function() {
   /* Idempotent function to display the TelemetryEnvironment with
      * jQuery JSONView */

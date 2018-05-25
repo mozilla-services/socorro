@@ -1,3 +1,5 @@
+/* global gapi */
+
 var OAuth2 = (function() {
   /* Generally the best documentation for working with GoogleAuth
     is here: https://developers.google.com/identity/sign-in/web/reference
@@ -5,12 +7,10 @@ var OAuth2 = (function() {
     https://developers.google.com/identity/sign-in/web/sign-in
     */
 
-  var client_id = document.head.querySelector('meta[name="google-signin-client_id"]').content;
-
   var GoogleAuth = null;
 
   var loadGoogleAuth = function() {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function(resolve) {
       if (!GoogleAuth) {
         gapi.auth2.init();
         GoogleAuth = gapi.auth2;
@@ -100,7 +100,7 @@ var OAuth2 = (function() {
               csrfmiddlewaretoken: csrfmiddlewaretoken,
             };
             $.post(url, data)
-              .done(function(response) {
+              .done(function() {
                 // It worked!
                 var next = Qs.parse(document.location.search.slice(1)).next;
                 // only if ?next=/... exists on the current URL

@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+/* global postData:true */
+
 // Open the add product version form and fill the fields in with given input
 function branchAddProductVersionFill(product, version) {
   $('#add_version').simplebox();

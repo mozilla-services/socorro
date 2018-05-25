@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 var PaginationUtils = (function() {
   function show_pagination_links(count, batch_size, page) {
     var $pagination = $('.pagination').hide();

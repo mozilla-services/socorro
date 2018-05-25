@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* eslint-disable no-unused-vars */
+
 var BugLinks = (function() {
   var NOT_DONE_STATUSES = ['UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED'];
   var URL = '/buginfo/bug'; // TODO move this outside
@@ -16,7 +18,7 @@ var BugLinks = (function() {
     '/': '&#x2F;',
   };
   function escapeHtml(string) {
-    return String(string).replace(/[&<>"'\/]/g, function(s) {
+    return String(string).replace(/[&<>"'/]/g, function(s) {
       return entityMap[s];
     });
   }
@@ -46,7 +48,7 @@ var BugLinks = (function() {
       });
       deferred.resolve($.unique(fetched_bug_ids));
     });
-    req.fail(function(data, textStatus, errorThrown) {
+    req.fail(function() {
       deferred.reject();
     });
     return deferred.promise();

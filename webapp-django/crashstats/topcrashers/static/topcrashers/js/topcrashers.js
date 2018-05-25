@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*jslint browser:true, jQuery:false */
-/*global window, $, BugLinks */
 
 $(document).ready(function() {
   var perosTbl = $('#peros-tbl');

@@ -1,5 +1,3 @@
-/* global socorro $ Analytics Qs DateFilters */
-
 var SignatureReport = {
   // Function to help with inheritance.
   inherit: function(proto) {

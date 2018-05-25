@@ -18,12 +18,12 @@ SignatureReport.SummaryTab = function(tabName) {
 
 SignatureReport.SummaryTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
-SignatureReport.SummaryTab.prototype.onAjaxSuccess = function(contentElement, data) {
+SignatureReport.SummaryTab.prototype.onAjaxSuccess = function(contentElement) {
   SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
   var localStorageKey = 'pref-opened-panels';
   var prefOpenedPanels = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
-  prefOpenedPanels.forEach(function(id, i) {
+  prefOpenedPanels.forEach(function(id) {
     var parent = $('#' + id + '.panel');
     $('.content', parent).toggle();
     $('.options', parent).toggleClass('hide');

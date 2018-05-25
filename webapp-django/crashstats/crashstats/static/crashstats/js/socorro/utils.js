@@ -1,4 +1,3 @@
-/*global socorro:false, $:false */
 (function(window, undefined) {
   'use strict';
   var socorro = {
