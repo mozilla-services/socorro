@@ -7,6 +7,8 @@
 # This script runs migrations for Socorro. Run this in a crontabber docker
 # container.
 
+set -e
+
 # If RAVEN_DSN is defined, then define SENTRY_DSN and evoke the sentry-cli bash
 # hook which will send errors to sentry.
 if [ -n "${RAVEN_DSN}" ]; then
