@@ -7,22 +7,20 @@
  * @inheritdoc
  */
 SignatureReport.BugzillaTab = function(tabName) {
+  var config = {
+    panels: false,
+    dataDisplayType: 'table',
+    pagination: false,
+  };
 
-    var config  = {
-        'panels': false,
-        'dataDisplayType': 'table',
-        'pagination': false
-    };
-
-    SignatureReport.Tab.call(this, tabName, config);
-
+  SignatureReport.Tab.call(this, tabName, config);
 };
 
 SignatureReport.BugzillaTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
-SignatureReport.BugzillaTab.prototype.onAjaxSuccess = function (contentElement, data) {
-    SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
+SignatureReport.BugzillaTab.prototype.onAjaxSuccess = function(contentElement, data) {
+  SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
-    // Enhance bug links.
-    BugLinks.enhance();
+  // Enhance bug links.
+  BugLinks.enhance();
 };

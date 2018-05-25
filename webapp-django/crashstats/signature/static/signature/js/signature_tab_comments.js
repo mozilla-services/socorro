@@ -7,15 +7,13 @@
  * @inheritdoc
  */
 SignatureReport.CommentsTab = function(tabName) {
+  var config = {
+    panels: false,
+    dataDisplayType: 'table',
+    pagination: true,
+  };
 
-    var config  = {
-        'panels': false,
-        'dataDisplayType': 'table',
-        'pagination': true
-    };
-
-    SignatureReport.Tab.call(this, tabName, config);
-
+  SignatureReport.Tab.call(this, tabName, config);
 };
 
 SignatureReport.CommentsTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);

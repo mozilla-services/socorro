@@ -1,522 +1,516 @@
 /*global $ window Analytics socorro Qs BugLinks DateFilters */
 
-$(function () {
-    'use strict';
+$(function() {
+  'use strict';
 
-    var searchContainer = $('#search-form');
-    var form = $('form', searchContainer);
-    var resultsURL = form.data('results-url');
-    var simpleSearchContainer = $('#simple-search');
+  var searchContainer = $('#search-form');
+  var form = $('form', searchContainer);
+  var resultsURL = form.data('results-url');
+  var simpleSearchContainer = $('#simple-search');
 
-    var contentElt = $('#search_results');
-    var sortInput = $('input[name=_sort]', form);
-    var facetsInput = $('input[name=_facets]', form);
-    var columnsInput = $('input[name=_columns_fake]', form);
+  var contentElt = $('#search_results');
+  var sortInput = $('input[name=_sort]', form);
+  var facetsInput = $('input[name=_facets]', form);
+  var columnsInput = $('input[name=_columns_fake]', form);
 
-    /**
-     * Run a search.
-     *
-     * Update the public API URL, push a new history state, query the search
-     * results and show them.
-     */
-    function search(noHistory, page) {
-        if (!page) {
-            page = 1;
-        }
-
-        var params = getParams();
-        updatePublicApiUrl(params);
-
-        // Set the page after updating the public API URL, because we don't want
-        // that page parameter in the URL. It is only useful in the UI.
-        params.page = page;
-
-        var url = prepareResultsQueryString(params);
-        queryResults(resultsURL + url);
-
-        if (!noHistory) {
-            pushHistoryState(params, url);
-        }
+  /**
+   * Run a search.
+   *
+   * Update the public API URL, push a new history state, query the search
+   * results and show them.
+   */
+  function search(noHistory, page) {
+    if (!page) {
+      page = 1;
     }
 
-    /**
-     * Display results from a search query.
-     */
-    function showResults(data) {
-        contentElt.empty().append(data);
+    var params = getParams();
+    updatePublicApiUrl(params);
 
-        if ($('.no-data', contentElt).length) {
-            // There are no results, no need to do more.
-            return;
-        }
+    // Set the page after updating the public API URL, because we don't want
+    // that page parameter in the URL. It is only useful in the UI.
+    params.page = page;
 
-        // Determine which tab should be open. If there is a hash,
-        // we let jQuery UI's tabs open the correct one. Otherwise,
-        // we want to open the last one of the list.
-        var activeTab = null;
-        if (!location.hash) {
-            activeTab = -1;
-        }
+    var url = prepareResultsQueryString(params);
+    queryResults(resultsURL + url);
 
-        var params = getParams();
-        var url = prepareResultsQueryString(params);
+    if (!noHistory) {
+      pushHistoryState(params, url);
+    }
+  }
 
-        contentElt.tabs({
-            active: activeTab,
-            activate: function (event, ui) {
-                // Make sure the hash is changed when switching tabs.
-                var hash = '#' + ui.newPanel.attr('id');
-                pushHistoryState(params, url, hash);
-            },
-            create: function (event, ui) {
-                // Put the first tab's id in the hash of the URL.
-                var hash = '#' + ui.panel.attr('id');
-                pushHistoryState(params, url, hash, true);
-            },
+  /**
+   * Display results from a search query.
+   */
+  function showResults(data) {
+    contentElt.empty().append(data);
+
+    if ($('.no-data', contentElt).length) {
+      // There are no results, no need to do more.
+      return;
+    }
+
+    // Determine which tab should be open. If there is a hash,
+    // we let jQuery UI's tabs open the correct one. Otherwise,
+    // we want to open the last one of the list.
+    var activeTab = null;
+    if (!location.hash) {
+      activeTab = -1;
+    }
+
+    var params = getParams();
+    var url = prepareResultsQueryString(params);
+
+    contentElt.tabs({
+      active: activeTab,
+      activate: function(event, ui) {
+        // Make sure the hash is changed when switching tabs.
+        var hash = '#' + ui.newPanel.attr('id');
+        pushHistoryState(params, url, hash);
+      },
+      create: function(event, ui) {
+        // Put the first tab's id in the hash of the URL.
+        var hash = '#' + ui.panel.attr('id');
+        pushHistoryState(params, url, hash, true);
+      },
+    });
+
+    // Handle server-side sorting.
+    $('.tablesorter.facet').tablesorter();
+    $('#reports-list').tablesorter({
+      headers: {
+        0: {
+          // disable the first column, `Crash ID`
+          sorter: false,
+        },
+      },
+    });
+
+    // Make sure there are more than 1 page of results. If not,
+    // do not activate server-side sorting, rely on the
+    // default client-side sorting.
+    if ($('.pagination a', contentElt).length) {
+      $('.sort-header', contentElt).click(function(e) {
+        e.preventDefault();
+
+        var thisElt = $(this);
+
+        // Update the sort field.
+        var fieldName = thisElt.data('field-name');
+        var sortArr = sortInput.select2('val');
+
+        // First remove all previous mentions of that field.
+        sortArr = sortArr.filter(function(item) {
+          return item !== fieldName && item !== '-' + fieldName;
         });
 
-        // Handle server-side sorting.
-        $('.tablesorter.facet').tablesorter();
-        $('#reports-list').tablesorter({
-            headers: {
-                0: {  // disable the first column, `Crash ID`
-                    sorter: false,
-                },
-            },
+        // Now add it in the order that follows this sequence:
+        // ascending -> descending -> none
+        if (thisElt.hasClass('headerSortDown')) {
+          sortArr.unshift('-' + fieldName);
+        } else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+          sortArr.unshift(fieldName);
+        }
+
+        sortInput.select2('val', sortArr);
+        search();
+      });
+    }
+
+    // Enhance bug links.
+    BugLinks.enhance();
+  }
+
+  /**
+   * Query the search results and show them.
+   */
+  function queryResults(url) {
+    // Show loader.
+    try {
+      contentElt.tabs('destroy');
+    } catch (e) {
+      // It is possible that no tabs existed before, and that is fine.
+    }
+    contentElt.empty().append($('<div>', { class: 'loader' }));
+
+    // If a tracker is available, track that AJAX call.
+    Analytics.trackPageview(url);
+
+    $.ajax({
+      url: url,
+      success: showResults,
+      error: function(jqXHR) {
+        var errorContent = $('<div>', { class: 'error' });
+
+        if (jqXHR.status >= 400 && jqXHR.status < 500) {
+          errorContent
+            .append($('<h3>', { text: 'Oops, an error occured' }))
+            .append($('<p>', { text: 'Please fix the following issues:' }))
+            .append($(jqXHR.responseText));
+        } else {
+          // We have no interest data to display as a constructive
+          // error message to the user. So we'll have to show a
+          // generic error message.
+          errorContent.append($('<h3>', { text: 'An unexpected error occured :(' })).append(
+            $('<p>', {
+              text: 'We have been automatically informed ' + 'of that error, and are working on a ' + 'solution. ',
+            })
+          );
+        }
+
+        contentElt.empty().append(errorContent);
+      },
+      dataType: 'HTML',
+    });
+  }
+
+  /**
+   * Return a query string made from parameters, with the addition of search
+   * options (aggregations, columns, sort).
+   */
+  function prepareResultsQueryString(params) {
+    var sortArr = sortInput.select2('data');
+    params._sort = sortArr.map(function(x) {
+      return x.id;
+    });
+
+    var facets = facetsInput.select2('data');
+    if (facets) {
+      params._facets = facets.map(function(x) {
+        return x.id;
+      });
+    }
+
+    var columns = columnsInput.select2('data');
+    if (columns) {
+      params._columns = columns.map(function(x) {
+        return x.id;
+      });
+    }
+
+    var queryString = Qs.stringify(params, { indices: false });
+    return '?' + queryString;
+  }
+
+  /**
+   * Update the public API URL field in the form options.
+   */
+  function updatePublicApiUrl(params) {
+    // Update the public API URL.
+    var queryString = Qs.stringify(params, { indices: false });
+    queryString = queryString.replace(/!/g, '%21');
+    var BASE_URL = location.protocol + '//' + location.host;
+    $('input[name=_public_api_url]', form).val(BASE_URL + form.data('public-api-url') + '?' + queryString);
+  }
+
+  /**
+   * Push a new browser history state.
+   */
+  function pushHistoryState(params, url, hash, replace) {
+    var func = (replace && window.history.replaceState) || window.history.pushState;
+    if (!hash) {
+      hash = location.hash;
+    }
+    func.call(window.history, params, 'Search results', url + hash);
+  }
+
+  /**
+   * Return the current parameters defined by the search form.
+   */
+  function getParams() {
+    var params = form.dynamicForm('getParams');
+
+    // Add Simple Search parameters.
+    $('input.simple-search-input', simpleSearchContainer).each(function(i, item) {
+      var name = item.name;
+      var value = $(item).select2('val');
+      if (value.length) {
+        if (params[name]) {
+          params[name] = params[name].concat(value);
+        } else {
+          params[name] = value;
+        }
+      }
+    });
+
+    // Add dates from the date filters.
+    params.date = DateFilters.getDates();
+
+    return params;
+  }
+
+  /**
+   * Returns true if a value starts with a known operator.
+   */
+  function hasOperator(value) {
+    var operators = form.dynamicForm('getOperatorsList');
+    return operators.some(function(operator) {
+      if (operator === 'has') {
+        return false; // we don't care about that one
+      }
+      return value.indexOf(operator) === 0;
+    });
+  }
+
+  /**
+   * Update the search form with new parameters.
+   */
+  function setParams(params) {
+    // Set Simple Search parameters.
+    $('input', simpleSearchContainer).each(function(i, item) {
+      if (item.name in params) {
+        var values = params[item.name];
+        if (!Array.isArray(values)) {
+          values = [values];
+        }
+        // Sort values, simple ones (with no operator at the start)
+        // will go into the simple search select tags, while others
+        // will stay in `params` and end up in the advanced form.
+        var simpleValues = [];
+        params[item.name] = values.map(function(value) {
+          if (!hasOperator(value)) {
+            simpleValues.push(value);
+          } else {
+            return value;
+          }
         });
+        $(item).select2('val', simpleValues);
+      }
+    });
 
-        // Make sure there are more than 1 page of results. If not,
-        // do not activate server-side sorting, rely on the
-        // default client-side sorting.
-        if ($('.pagination a', contentElt).length) {
-            $('.sort-header', contentElt).click(function (e) {
-                e.preventDefault();
-
-                var thisElt = $(this);
-
-                // Update the sort field.
-                var fieldName = thisElt.data('field-name');
-                var sortArr = sortInput.select2('val');
-
-                // First remove all previous mentions of that field.
-                sortArr = sortArr.filter(function (item) {
-                    return item !== fieldName && item !== '-' + fieldName;
-                });
-
-                // Now add it in the order that follows this sequence:
-                // ascending -> descending -> none
-                if (thisElt.hasClass('headerSortDown')) {
-                    sortArr.unshift('-' + fieldName);
-                }
-                else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
-                    sortArr.unshift(fieldName);
-                }
-
-                sortInput.select2('val', sortArr);
-                search();
-            });
-        }
-
-        // Enhance bug links.
-        BugLinks.enhance();
+    // Set date filters values.
+    if (params.date) {
+      DateFilters.setDates(params.date);
+      delete params.date;
     }
 
-    /**
-     * Query the search results and show them.
-     */
-    function queryResults(url) {
-        // Show loader.
-        try {
-            contentElt.tabs('destroy');
-        }
-        catch (e) {
-            // It is possible that no tabs existed before, and that is fine.
-        }
-        contentElt.empty().append($('<div>', {'class': 'loader'}));
+    form.dynamicForm('setParams', params);
+  }
 
-        // If a tracker is available, track that AJAX call.
-        Analytics.trackPageview(url);
+  /**
+   * Add a new line to the search form with specified field and value.
+   * The operator will be 'is exactly' or the default operator for the field.
+   */
+  function addTerm(name, value) {
+    form.dynamicForm('newLine', {
+      field: name,
+      operator: '=', // will fall back to the default operator if 'is exactly' is not implemented for that field
+      value: value,
+    });
+  }
 
-        $.ajax({
-            url: url,
-            success: showResults,
-            error: function (jqXHR) {
-                var errorContent = $('<div>', {class: 'error'});
+  /**
+   * Handler for browser history state changes.
+   */
+  window.onpopstate = function(e) {
+    var queryString;
+    var params = e.state;
 
-                if (jqXHR.status >= 400 && jqXHR.status < 500) {
-                    errorContent.append(
-                        $('<h3>', {text: 'Oops, an error occured'})
-                    ).append(
-                        $('<p>', {text: 'Please fix the following issues:'})
-                    ).append($(jqXHR.responseText));
-                }
-                else {
-                    // We have no interest data to display as a constructive
-                    // error message to the user. So we'll have to show a
-                    // generic error message.
-                    errorContent.append(
-                        $('<h3>', {text: 'An unexpected error occured :('})
-                    ).append(
-                        $('<p>', {
-                            text: 'We have been automatically informed ' +
-                                  'of that error, and are working on a ' +
-                                  'solution. ',
-                        })
-                    );
-                }
-
-                contentElt.empty().append(errorContent);
-            },
-            dataType: 'HTML',
-        });
+    if (params === null) {
+      // No state was added, check if the URL contains parameters
+      queryString = window.location.search.substring(1);
+      params = socorro.search.parseQueryString(queryString);
     }
 
-    /**
-     * Return a query string made from parameters, with the addition of search
-     * options (aggregations, columns, sort).
-     */
-    function prepareResultsQueryString(params) {
-        var sortArr = sortInput.select2('data');
-        params._sort = sortArr.map(function (x) { return x.id; });
-
-        var facets = facetsInput.select2('data');
-        if (facets) {
-            params._facets = facets.map(function (x) { return x.id; });
-        }
-
-        var columns = columnsInput.select2('data');
-        if (columns) {
-            params._columns = columns.map(function (x) { return x.id; });
-        }
-
-        var queryString = Qs.stringify(params, { indices: false });
-        return '?' + queryString;
+    if (params) {
+      // If there are some parameters, fill the form with those params
+      // and run the search and show results
+      setParams(params);
+      search(true);
+    } else {
+      // If there are no parameters, empty the form and show the default content
+      form.dynamicForm('setParams', {});
+      form.dynamicForm('newLine');
+      $('select', simpleSearchContainer).select2('val', null);
+      contentElt.empty().append($('<p>', { text: 'Run a search to get some results. ' }));
     }
+  };
 
-    /**
-     * Update the public API URL field in the form options.
-     */
-    function updatePublicApiUrl(params) {
-        // Update the public API URL.
-        var queryString = Qs.stringify(params, { indices: false });
-        queryString = queryString.replace(/!/g, '%21');
-        var BASE_URL = location.protocol + '//' + location.host;
-        $('input[name=_public_api_url]', form).val(
-            BASE_URL + form.data('public-api-url') + '?' + queryString
-        );
-    }
+  /**
+   * Show the search form and initialize parts that were hidden. This
+   * function is called once the dynamicForm library is done loading the
+   * advanced search form.
+   */
+  function showForm() {
+    $('.loader', searchContainer).remove();
 
-    /**
-     * Push a new browser history state.
-     */
-    function pushHistoryState(params, url, hash, replace) {
-        var func = replace && window.history.replaceState || window.history.pushState;
-        if (!hash) {
-            hash = location.hash;
-        }
-        func.call(window.history, params, 'Search results', url + hash);
-    }
+    form.show();
 
-    /**
-     * Return the current parameters defined by the search form.
-     */
-    function getParams() {
-        var params = form.dynamicForm('getParams');
+    initSimpleSearch();
+    initFormButtons();
+    initFormOptions();
+  }
 
-        // Add Simple Search parameters.
-        $('input.simple-search-input', simpleSearchContainer).each(function (i, item) {
-            var name = item.name;
-            var value = $(item).select2('val');
-            if (value.length) {
-                if (params[name]) {
-                    params[name] = params[name].concat(value);
-                }
-                else {
-                    params[name] = value;
-                }
-            }
-        });
+  /**
+   * Initialize the search form, populating it with whatever parameters
+   * are passed in the query string.
+   */
+  function initForm() {
+    // Create the advanced search form.
+    var queryString = window.location.search.substring(1);
+    var initialParams = socorro.search.parseQueryString(queryString);
 
-        // Add dates from the date filters.
-        params.date = DateFilters.getDates();
+    var formCallback = function() {
+      showForm();
 
-        return params;
-    }
-
-    /**
-     * Returns true if a value starts with a known operator.
-     */
-    function hasOperator(value) {
-        var operators = form.dynamicForm('getOperatorsList');
-        return operators.some(function (operator) {
-            if (operator === 'has') {
-                return false; // we don't care about that one
-            }
-            return value.indexOf(operator) === 0;
-        });
-    }
-
-    /**
-     * Update the search form with new parameters.
-     */
-    function setParams(params) {
-        // Set Simple Search parameters.
-        $('input', simpleSearchContainer).each(function (i, item) {
-            if (item.name in params) {
-                var values = params[item.name];
-                if (!Array.isArray(values)) {
-                    values = [values];
-                }
-                // Sort values, simple ones (with no operator at the start)
-                // will go into the simple search select tags, while others
-                // will stay in `params` and end up in the advanced form.
-                var simpleValues = [];
-                params[item.name] = values.map(function (value) {
-                    if (!hasOperator(value)) {
-                        simpleValues.push(value);
-                    }
-                    else {
-                        return value;
-                    }
-                });
-                $(item).select2('val', simpleValues);
-            }
-        });
-
-        // Set date filters values.
-        if (params.date) {
-            DateFilters.setDates(params.date);
-            delete params.date;
-        }
-
-        form.dynamicForm('setParams', params);
-    }
-
-    /**
-     * Add a new line to the search form with specified field and value.
-     * The operator will be 'is exactly' or the default operator for the field.
-     */
-    function addTerm(name, value) {
-        form.dynamicForm('newLine', {
-            field: name,
-            operator: '=', // will fall back to the default operator if 'is exactly' is not implemented for that field
-            value: value,
-        });
-    }
-
-    /**
-     * Handler for browser history state changes.
-     */
-    window.onpopstate = function (e) {
-        var queryString;
-        var params = e.state;
-
-        if (params === null) {
-            // No state was added, check if the URL contains parameters
-            queryString = window.location.search.substring(1);
-            params = socorro.search.parseQueryString(queryString);
-        }
-
-        if (params) {
-            // If there are some parameters, fill the form with those params
-            // and run the search and show results
-            setParams(params);
-            search(true);
-        }
-        else {
-            // If there are no parameters, empty the form and show the default content
-            form.dynamicForm('setParams', {});
-            form.dynamicForm('newLine');
-            $('select', simpleSearchContainer).select2('val', null);
-            contentElt.empty().append($('<p>', {'text': 'Run a search to get some results. '}));
-        }
+      // By default, we simply create a new line in the form.
+      form.dynamicForm('newLine');
     };
 
-    /**
-     * Show the search form and initialize parts that were hidden. This
-     * function is called once the dynamicForm library is done loading the
-     * advanced search form.
-     */
-    function showForm() {
-        $('.loader', searchContainer).remove();
+    // If there are initial params, that means we should run the
+    // corresponding search right after the form has finished loading.
+    if (initialParams) {
+      var page = 1;
+      if (initialParams.page) {
+        page = initialParams.page;
+      }
+      var dontRun = initialParams._dont_run === '1';
 
-        form.show();
+      // Sanitize parameters.
+      initialParams = socorro.search.getFilteredParams(initialParams);
 
-        initSimpleSearch();
-        initFormButtons();
-        initFormOptions();
-    }
+      // When the form has finished loading, we get pass it our
+      // initial parameters for it to sanitize them. Then we run
+      // a regular search, which will use the sane parameters from
+      // the dynamicForm library. This will avoid strange behaviors
+      // that can be caused by manually set parameters, for example.
+      formCallback = function() {
+        showForm();
 
-    /**
-     * Initialize the search form, populating it with whatever parameters
-     * are passed in the query string.
-     */
-    function initForm() {
-        // Create the advanced search form.
-        var queryString = window.location.search.substring(1);
-        var initialParams = socorro.search.parseQueryString(queryString);
-
-        var formCallback = function () {
-            showForm();
-
-            // By default, we simply create a new line in the form.
-            form.dynamicForm('newLine');
-        };
-
-        // If there are initial params, that means we should run the
-        // corresponding search right after the form has finished loading.
-        if (initialParams) {
-            var page = 1;
-            if (initialParams.page) {
-                page = initialParams.page;
-            }
-            var dontRun = initialParams._dont_run === '1';
-
-            // Sanitize parameters.
-            initialParams = socorro.search.getFilteredParams(initialParams);
-
-            // When the form has finished loading, we get pass it our
-            // initial parameters for it to sanitize them. Then we run
-            // a regular search, which will use the sane parameters from
-            // the dynamicForm library. This will avoid strange behaviors
-            // that can be caused by manually set parameters, for example.
-            formCallback = function () {
-                showForm();
-
-                setParams(initialParams);
-                if (!dontRun) {
-                    search(false, page);
-                }
-            };
+        setParams(initialParams);
+        if (!dontRun) {
+          search(false, page);
         }
-
-        form.dynamicForm(
-            form.data('fields-url'),
-            null,
-            '#search-params-fieldset',
-            formCallback,
-            socorro.search.sortResults
-        );
+      };
     }
 
-    /**
-     * Initialize the simplified search form.
-     */
-    function initSimpleSearch() {
-        $('input[type=text]', simpleSearchContainer).each(function () {
-            var elt = $(this);
-            elt.select2({
-                'width': 'element',
-                'tags': elt.data('choices'),
-            });
-        });
-    }
+    form.dynamicForm(
+      form.data('fields-url'),
+      null,
+      '#search-params-fieldset',
+      formCallback,
+      socorro.search.sortResults
+    );
+  }
 
-    /**
-     * Bind the search buttons' events.
-     */
-    function initFormButtons() {
-        $('button[type=submit]', form).click(function (e) {
-            e.preventDefault();
-            search();
-        });
+  /**
+   * Initialize the simplified search form.
+   */
+  function initSimpleSearch() {
+    $('input[type=text]', simpleSearchContainer).each(function() {
+      var elt = $(this);
+      elt.select2({
+        width: 'element',
+        tags: elt.data('choices'),
+      });
+    });
+  }
 
-        $('.new-line', form).click(function (e) {
-            e.preventDefault();
-            form.dynamicForm('newLine');
-        });
+  /**
+   * Bind the search buttons' events.
+   */
+  function initFormButtons() {
+    $('button[type=submit]', form).click(function(e) {
+      e.preventDefault();
+      search();
+    });
 
-        $('.customize', form).click(function (e) {
-            e.preventDefault();
-            var params = getParams();
-            var url = prepareResultsQueryString(params);
+    $('.new-line', form).click(function(e) {
+      e.preventDefault();
+      form.dynamicForm('newLine');
+    });
 
-            window.location = form.data('custom-url') + url;
-        });
-    }
+    $('.customize', form).click(function(e) {
+      e.preventDefault();
+      var params = getParams();
+      var url = prepareResultsQueryString(params);
 
-    /**
-     * Initialize the form options fields, handling aggregations, sorting and more.
-     */
-    function initFormOptions() {
-        var COLUMNS = $('#mainbody').data('columns');
-        var FACETS = $('#mainbody').data('facets');
-        var sortFields = [];
-        COLUMNS.forEach(function (item) {
-            sortFields.push(item);
-            sortFields.push({
-                id: '-' + item.id,
-                text: item.text + ' (DESC)',
-            });
-        });
+      window.location = form.data('custom-url') + url;
+    });
+  }
 
-        sortInput.select2({
-            'data': sortFields,
-            'multiple': true,
-            'width': 'element',
-            'sortResults': socorro.search.sortResults,
-        });
-        facetsInput.select2({
-            'data': FACETS,
-            'multiple': true,
-            'width': 'element',
-            'sortResults': socorro.search.sortResults,
-        });
-        columnsInput.select2({
-            'data': COLUMNS,
-            'multiple': true,
-            'width': 'element',
-            'sortResults': socorro.search.sortResults,
-        });
+  /**
+   * Initialize the form options fields, handling aggregations, sorting and more.
+   */
+  function initFormOptions() {
+    var COLUMNS = $('#mainbody').data('columns');
+    var FACETS = $('#mainbody').data('facets');
+    var sortFields = [];
+    COLUMNS.forEach(function(item) {
+      sortFields.push(item);
+      sortFields.push({
+        id: '-' + item.id,
+        text: item.text + ' (DESC)',
+      });
+    });
 
-        // Make the columns input sortable
-        columnsInput.on('change', function () {
-            $('input[name=_columns]').val(columnsInput.val());
-        });
+    sortInput.select2({
+      data: sortFields,
+      multiple: true,
+      width: 'element',
+      sortResults: socorro.search.sortResults,
+    });
+    facetsInput.select2({
+      data: FACETS,
+      multiple: true,
+      width: 'element',
+      sortResults: socorro.search.sortResults,
+    });
+    columnsInput.select2({
+      data: COLUMNS,
+      multiple: true,
+      width: 'element',
+      sortResults: socorro.search.sortResults,
+    });
 
-        columnsInput.select2('container').find('ul.select2-choices').sortable({
-            containment: 'parent',
-            start: function () {
-                columnsInput.select2('onSortStart');
-            },
-            update: function () {
-                columnsInput.select2('onSortEnd');
-            },
-        });
+    // Make the columns input sortable
+    columnsInput.on('change', function() {
+      $('input[name=_columns]').val(columnsInput.val());
+    });
 
-        // Show or hide advanced options.
-        var optionsElt = $('fieldset.options', form);
-        $('h4', optionsElt).on('click', function () {
-            $('h4 + div', optionsElt).toggle();
-            $('span', this).toggleClass('hide');
-        });
-        $('h4 + div', optionsElt).hide();
-    }
+    columnsInput
+      .select2('container')
+      .find('ul.select2-choices')
+      .sortable({
+        containment: 'parent',
+        start: function() {
+          columnsInput.select2('onSortStart');
+        },
+        update: function() {
+          columnsInput.select2('onSortEnd');
+        },
+      });
 
-    /**
-     * Bind terms of the results to add new form lines.
-     */
-    function initContentBinding() {
-        // Make every value a link that adds a new line to the form.
-        contentElt.on('click', '.term', function (e) {
-            e.preventDefault();
+    // Show or hide advanced options.
+    var optionsElt = $('fieldset.options', form);
+    $('h4', optionsElt).on('click', function() {
+      $('h4 + div', optionsElt).toggle();
+      $('span', this).toggleClass('hide');
+    });
+    $('h4 + div', optionsElt).hide();
+  }
 
-            addTerm(
-                $(this).data('field'),
-                $(this).data('content')
-            );
+  /**
+   * Bind terms of the results to add new form lines.
+   */
+  function initContentBinding() {
+    // Make every value a link that adds a new line to the form.
+    contentElt.on('click', '.term', function(e) {
+      e.preventDefault();
 
-            // And then run the new, corresponding search.
-            search();
-        });
-    }
+      addTerm($(this).data('field'), $(this).data('content'));
 
-    /**
-     * Start it all!
-     */
-    function initialize() {
-        initForm();
-        initContentBinding();
-    }
-    initialize();
+      // And then run the new, corresponding search.
+      search();
+    });
+  }
+
+  /**
+   * Start it all!
+   */
+  function initialize() {
+    initForm();
+    initContentBinding();
+  }
+  initialize();
 });

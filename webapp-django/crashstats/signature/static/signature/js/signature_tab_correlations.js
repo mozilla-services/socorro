@@ -8,84 +8,85 @@
  * @extends {SignatureReport.Tab}
  * @inheritdoc
  */
-SignatureReport.CorrelationsTab = function (tabName) {
+SignatureReport.CorrelationsTab = function(tabName) {
+  var config = {
+    panels: false,
+    dataDisplayType: 'table',
+    pagination: false,
+  };
 
-    var config  = {
-        'panels': false,
-        'dataDisplayType': 'table',
-        'pagination': false,
-    };
-
-    SignatureReport.Tab.call(this, tabName, config);
-
+  SignatureReport.Tab.call(this, tabName, config);
 };
 
 SignatureReport.CorrelationsTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
 SignatureReport.CorrelationsTab.prototype.loadControls = function() {
-    var self = this;
+  var self = this;
 
-    var channels = $('#mainbody').data('channels');
+  var channels = $('#mainbody').data('channels');
 
-    // Create a select box for the product.
-    this.productSelect = $('<select>', {'class': 'products-list', id: 'correlations-products-list'});
-    this.productSelect.append($('<option>', { value: 'Firefox', text: 'Firefox'}));
-    this.productSelect.append($('<option>', { value: 'FennecAndroid', text: 'FennecAndroid'}));
+  // Create a select box for the product.
+  this.productSelect = $('<select>', { class: 'products-list', id: 'correlations-products-list' });
+  this.productSelect.append($('<option>', { value: 'Firefox', text: 'Firefox' }));
+  this.productSelect.append($('<option>', { value: 'FennecAndroid', text: 'FennecAndroid' }));
 
-    // Create a select box for the channel.
-    this.channelSelect = $('<select>', {'class': 'channels-list', id: 'correlations-channels-list'});
-    channels.forEach(function (channel) {
-        self.channelSelect.append($('<option>', {
-            'value': channel,
-            'text': channel,
-        }));
-    });
-
-    // Append the controls.
-    this.$controlsElement.append(
-        $('<label>', {for: 'correlations-products-list', text: 'Product: '}),
-        this.productSelect,
-        $('<label>', {for: 'correlations-channels-list', text: 'Channel: '}),
-        this.channelSelect,
-        $('<hr>')
+  // Create a select box for the channel.
+  this.channelSelect = $('<select>', { class: 'channels-list', id: 'correlations-channels-list' });
+  channels.forEach(function(channel) {
+    self.channelSelect.append(
+      $('<option>', {
+        value: channel,
+        text: channel,
+      })
     );
+  });
 
-    // Apply select2 to both select elements.
-    this.productSelect.select2();
-    this.channelSelect.select2();
+  // Append the controls.
+  this.$controlsElement.append(
+    $('<label>', { for: 'correlations-products-list', text: 'Product: ' }),
+    this.productSelect,
+    $('<label>', { for: 'correlations-channels-list', text: 'Channel: ' }),
+    this.channelSelect,
+    $('<hr>')
+  );
 
-    this.productSelect.on('change', this.loadCorrelations.bind(this));
-    this.channelSelect.on('change', this.loadCorrelations.bind(this));
+  // Apply select2 to both select elements.
+  this.productSelect.select2();
+  this.channelSelect.select2();
+
+  this.productSelect.on('change', this.loadCorrelations.bind(this));
+  this.channelSelect.on('change', this.loadCorrelations.bind(this));
 };
 
-SignatureReport.CorrelationsTab.prototype.onAjaxSuccess = function () {
-    SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
+SignatureReport.CorrelationsTab.prototype.onAjaxSuccess = function() {
+  SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
-    var defaultProduct = $('#correlations-wrapper').data('default-product');
-    var defaultChannel = $('#correlations-wrapper').data('default-channel');
+  var defaultProduct = $('#correlations-wrapper').data('default-product');
+  var defaultChannel = $('#correlations-wrapper').data('default-channel');
 
-    // Give the select elements a default value.
-    this.productSelect.select2('val', defaultProduct);
-    this.channelSelect.select2('val', defaultChannel);
+  // Give the select elements a default value.
+  this.productSelect.select2('val', defaultProduct);
+  this.channelSelect.select2('val', defaultChannel);
 
-    this.loadCorrelations();
+  this.loadCorrelations();
 };
 
-SignatureReport.CorrelationsTab.prototype.loadCorrelations = function () {
-    var contentElt = $('#correlations-wrapper pre');
-    contentElt.empty().append($('<div>', {'class': 'loader'}));
+SignatureReport.CorrelationsTab.prototype.loadCorrelations = function() {
+  var contentElt = $('#correlations-wrapper pre');
+  contentElt.empty().append($('<div>', { class: 'loader' }));
 
-    var product = this.productSelect.select2('val');
-    var channel = this.channelSelect.select2('val');
+  var product = this.productSelect.select2('val');
+  var channel = this.channelSelect.select2('val');
 
-    $('#correlations-wrapper h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
+  $('#correlations-wrapper h3').text(
+    'Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1)
+  );
 
-    window.correlations.getCorrelations(SignatureReport.signature, channel, product)
-    .then(function (results) {
-        var content = results;
-        if (Array.isArray(results)) {
-            content = results.join('\n');
-        }
-        contentElt.empty().text(content);
-    });
+  window.correlations.getCorrelations(SignatureReport.signature, channel, product).then(function(results) {
+    var content = results;
+    if (Array.isArray(results)) {
+      content = results.join('\n');
+    }
+    contentElt.empty().text(content);
+  });
 };

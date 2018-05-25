@@ -15,46 +15,37 @@
  * @cfg {boolean} pagination
  *      Should be true if the tab is displaying tables with pages
  */
-SignatureReport.Tab = function (tabName, config) {
+SignatureReport.Tab = function(tabName, config) {
+  // Set the name of the tab.
+  this.tabName = tabName;
 
-    // Set the name of the tab.
-    this.tabName = tabName;
+  // Set the configurations.
+  config = config || {};
+  this.panels = config.panels;
+  this.defaultOptions = config.defaultOptions;
+  this.dataDisplayType = config.dataDisplayType;
+  this.pagination = config.pagination;
+  this.page = SignatureReport.pageNum;
 
-    // Set the configurations.
-    config = config || {};
-    this.panels = config.panels;
-    this.defaultOptions = config.defaultOptions;
-    this.dataDisplayType = config.dataDisplayType;
-    this.pagination = config.pagination;
-    this.page = SignatureReport.pageNum;
+  // Tab is not loaded until this.showTab is called.
+  this.loaded = false;
+  this.dataUrl = SignatureReport.getURL(this.tabName);
 
-    // Tab is not loaded until this.showTab is called.
-    this.loaded = false;
-    this.dataUrl = SignatureReport.getURL(this.tabName);
+  // Make the HTML elements.
+  this.$panelElement = $('<section>', { class: 'panel tab-panel ' + this.tabName + '-panel' });
+  var $headerElement = $('<header>', { class: 'title' });
+  var $headingElement = $('<h2>', {
+    text: SignatureReport.capitalizeHeading(this.tabName),
+  });
+  var $bodyElement = $('<div>', { class: 'body' });
+  this.$controlsElement = $('<div>', { class: 'controls' });
+  this.$contentElement = $('<div>', { class: 'content' });
 
-    // Make the HTML elements.
-    this.$panelElement = $('<section>',
-        {'class': 'panel tab-panel ' + this.tabName + '-panel'}
-    );
-    var $headerElement = $('<header>', {'class': 'title'});
-    var $headingElement = $('<h2>', {
-        'text': SignatureReport.capitalizeHeading(this.tabName)}
-    );
-    var $bodyElement = $('<div>', {'class': 'body'});
-    this.$controlsElement = $('<div>', {'class': 'controls'});
-    this.$contentElement = $('<div>', {'class': 'content'});
-
-    // Append the elements.
-    this.$panelElement.append(
-        $headerElement.append(
-            $headingElement
-        ),
-        $bodyElement.append(
-            this.$controlsElement,
-            this.$contentElement
-        )
-    );
-
+  // Append the elements.
+  this.$panelElement.append(
+    $headerElement.append($headingElement),
+    $bodyElement.append(this.$controlsElement, this.$contentElement)
+  );
 };
 
 /*
@@ -62,40 +53,36 @@ SignatureReport.Tab = function (tabName, config) {
  */
 
 // Shows the tab. Also loads it if it is not already loaded.
-SignatureReport.Tab.prototype.showTab = function () {
+SignatureReport.Tab.prototype.showTab = function() {
+  // If tab hasn't been loaded, load it.
+  if (!this.loaded) {
+    // Load the controls.
+    // (If there are no controls this won't do anything.)
+    this.loadControls();
 
-    // If tab hasn't been loaded, load it.
-    if (!this.loaded) {
-
-        // Load the controls.
-        // (If there are no controls this won't do anything.)
-        this.loadControls();
-
-        // Next load the content.
-        // If there are no panels, load the content directly.
-        if (!this.panels) {
-            this.loadContent(this.$contentElement);
-        // If there are panels, load the default panels.
-        // (loadContent will be called by loadPanel.)
-        } else {
-            for (var i = 0; i < this.defaultOptions.length; i++ ) {
-                this.loadPanel(this.defaultOptions[i]);
-            }
-        }
-
-        // Record that this tab has now been loaded.
-        this.loaded = true;
-
+    // Next load the content.
+    // If there are no panels, load the content directly.
+    if (!this.panels) {
+      this.loadContent(this.$contentElement);
+      // If there are panels, load the default panels.
+      // (loadContent will be called by loadPanel.)
+    } else {
+      for (var i = 0; i < this.defaultOptions.length; i++) {
+        this.loadPanel(this.defaultOptions[i]);
+      }
     }
 
-    // Show this tab.
-    this.$panelElement.show();
+    // Record that this tab has now been loaded.
+    this.loaded = true;
+  }
 
+  // Show this tab.
+  this.$panelElement.show();
 };
 
 // Hides the tab.
-SignatureReport.Tab.prototype.hideTab = function () {
-    this.$panelElement.hide();
+SignatureReport.Tab.prototype.hideTab = function() {
+  this.$panelElement.hide();
 };
 
 /*
@@ -103,107 +90,99 @@ SignatureReport.Tab.prototype.hideTab = function () {
  */
 
 // Extend this to load any controls.
-SignatureReport.Tab.prototype.loadControls = function () {
-    // If there are no controls, nothing will happen.
+SignatureReport.Tab.prototype.loadControls = function() {
+  // If there are no controls, nothing will happen.
 };
 
 // Extend this if any extra parameters need to be added.
-SignatureReport.Tab.prototype.getParamsForUrl = function () {
-    var params = SignatureReport.getParamsWithSignature();
-    if (this.pagination) {
-        params.page = this.page || SignatureReport.pageNum;
-    }
-    return params;
+SignatureReport.Tab.prototype.getParamsForUrl = function() {
+  var params = SignatureReport.getParamsWithSignature();
+  if (this.pagination) {
+    params.page = this.page || SignatureReport.pageNum;
+  }
+  return params;
 };
 
 // Extend this if anything different needs to be added to the URL.
-SignatureReport.Tab.prototype.buildUrl = function (params, option) {
-    option = option ? option + '/' : '';
-    return this.dataUrl + option + '?' + Qs.stringify(params, { indices: false });
+SignatureReport.Tab.prototype.buildUrl = function(params, option) {
+  option = option ? option + '/' : '';
+  return this.dataUrl + option + '?' + Qs.stringify(params, { indices: false });
 };
 
 // Extend this if anything different should be done with the returned data.
-SignatureReport.Tab.prototype.onAjaxSuccess = function (contentElement, data) {
-    contentElement.empty().append($(data));
-    contentElement.addClass('loaded');
-    if (this.dataDisplayType === 'table') {
-        $('.tablesorter').tablesorter();
-    }
-    if (this.pagination) {
-        this.bindPaginationLinks(contentElement);
-    }
+SignatureReport.Tab.prototype.onAjaxSuccess = function(contentElement, data) {
+  contentElement.empty().append($(data));
+  contentElement.addClass('loaded');
+  if (this.dataDisplayType === 'table') {
+    $('.tablesorter').tablesorter();
+  }
+  if (this.pagination) {
+    this.bindPaginationLinks(contentElement);
+  }
 };
 
 // This should not need to be extended.
 // NB if panels are present, the tab is assumed to have a select as its controls.
-SignatureReport.Tab.prototype.loadPanel = function (option) {
+SignatureReport.Tab.prototype.loadPanel = function(option) {
+  // Initialize a new panel.
+  var panel = new SignatureReport.Panel(
+    option,
+    $.proxy(function() {
+      $('option[value=' + option + ']', this.$selectElement).prop('disabled', false);
+    }, this)
+  );
 
-    // Initialize a new panel.
-    var panel = new SignatureReport.Panel(
-        option,
-        $.proxy(function () {
-            $('option[value=' + option + ']', this.$selectElement).prop('disabled', false);
-        }, this)
-    );
+  // Append the new panel.
+  this.$contentElement.append(panel.$panelElement);
+  this.$contentElement.addClass('loaded');
 
-    // Append the new panel.
-    this.$contentElement.append(panel.$panelElement);
-    this.$contentElement.addClass('loaded');
+  // Disable the currently selected option.
+  $('option[value=' + option + ']', this.$selectElement).prop('disabled', true);
 
-    // Disable the currently selected option.
-    $('option[value=' + option + ']', this.$selectElement).prop('disabled', true);
-
-    // Now load the panel's content.
-    this.loadContent(panel.$contentElement, option);
-
+  // Now load the panel's content.
+  this.loadContent(panel.$contentElement, option);
 };
 
 // This should not need to be extended.
-SignatureReport.Tab.prototype.loadContent = function (contentElement, option) {
+SignatureReport.Tab.prototype.loadContent = function(contentElement, option) {
+  // Get the parameters for the URL to get the data.
+  var params = this.getParamsForUrl();
 
-    // Get the parameters for the URL to get the data.
-    var params = this.getParamsForUrl();
+  if (params) {
+    // Make the URL for getting the data.
+    var url = this.buildUrl(params, option);
 
-    if (params) {
+    // Define the returned data type according to whether we are getting a
+    // table or a graph.
+    var dataTypes = {
+      table: 'html',
+      graph: 'json',
+    };
 
-        // Make the URL for getting the data.
-        var url = this.buildUrl(params, option);
+    // Empty the content element and append a loader.
+    SignatureReport.addLoaderToElement(contentElement);
 
-        // Define the returned data type according to whether we are getting a
-        // table or a graph.
-        var dataTypes = {
-            'table': 'html',
-            'graph': 'json',
-        };
-
-        // Empty the content element and append a loader.
-        SignatureReport.addLoaderToElement(contentElement);
-
-        // Request the data.
-        $.ajax({
-            url: url,
-            success: $.proxy(this.onAjaxSuccess, this, contentElement),
-            error: function(jqXHR, textStatus, errorThrown) {
-                SignatureReport.handleError(contentElement, jqXHR, textStatus, errorThrown);
-            },
-            dataType: dataTypes[this.dataDisplayType],
-        });
-
-    }
-
-};
-
-// This should not need to be extended.
-SignatureReport.Tab.prototype.bindPaginationLinks = function (contentElement) {
-
-    // For accessing this inside functions.
-    var that = this;
-
-    $('.pagination a', contentElement).click(function (e) {
-        e.preventDefault();
-
-        that.page = $(this).data('page');
-        that.loadContent(contentElement);
+    // Request the data.
+    $.ajax({
+      url: url,
+      success: $.proxy(this.onAjaxSuccess, this, contentElement),
+      error: function(jqXHR, textStatus, errorThrown) {
+        SignatureReport.handleError(contentElement, jqXHR, textStatus, errorThrown);
+      },
+      dataType: dataTypes[this.dataDisplayType],
     });
+  }
+};
 
+// This should not need to be extended.
+SignatureReport.Tab.prototype.bindPaginationLinks = function(contentElement) {
+  // For accessing this inside functions.
+  var that = this;
+
+  $('.pagination a', contentElement).click(function(e) {
+    e.preventDefault();
+
+    that.page = $(this).data('page');
+    that.loadContent(contentElement);
+  });
 };
