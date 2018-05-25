@@ -10,9 +10,13 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "cssmin": "0.4.3",
+    "eslint": "^4.19.1",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-prettier": "^2.6.0",
     "graceful-fs": "4.1.11",
     "less": "3.0.2",
     "nsp": "3.2.1",
+    "prettier": "^1.12.1",
     "uglify-js": "3.3.23"
   },
   "dependencies": {
