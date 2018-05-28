@@ -25,7 +25,6 @@ import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
 import socorro.external.postgresql.signature_first_date
-import socorro.external.postgresql.server_status
 import socorro.external.postgresql.releases
 import socorro.external.boto.crash_data
 
@@ -931,20 +930,6 @@ class SignatureFirstDate(SocorroMiddleware):
                 )
                 dates[signature] = hit
         return dates
-
-
-class Status(SocorroMiddleware):
-
-    # This model uses an implementation that only really reads
-    # files off disk so it doesn't have to be protected from
-    # a stampeding herd.
-    cache_seconds = 0
-
-    API_WHITELIST = None
-
-    implementation = (
-        socorro.external.postgresql.server_status.ServerStatus
-    )
 
 
 class CrontabberState(SocorroMiddleware):

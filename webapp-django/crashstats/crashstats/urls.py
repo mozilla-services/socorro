@@ -18,14 +18,11 @@ urlpatterns = [
         views.robots_txt,
         name='robots_txt'),
 
-    # DEPRECATED(willkg): These next two endpoints should be deprecated in
+    # DEPRECATED(willkg): This endpoint should be deprecated in
     # favor of the dockerflow /__version__ one
     url(r'^status/json/$',
         views.status_json,
         name='status_json'),
-    url(r'^status/revision/$',
-        views.status_revision,
-        name='status_revision'),
 
     url(r'^crontabber-state/$',
         views.crontabber_state,

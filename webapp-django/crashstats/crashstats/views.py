@@ -1009,13 +1009,6 @@ def status_json(request):
     return redirect(reverse('api:model_wrapper', args=('Status',)))
 
 
-def status_revision(request):
-    return http.HttpResponse(
-        models.Status().get()['socorro_revision'],
-        content_type='text/plain'
-    )
-
-
 def dockerflow_version(requst):
     path = os.path.join(settings.SOCORRO_ROOT, 'version.json')
     if os.path.exists(path):

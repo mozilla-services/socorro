@@ -314,21 +314,6 @@ class TestModels(DjangoTestCase):
         }
         assert r == expected
 
-    def test_status(self):
-        def mocked_get(**options):
-            return {
-                'breakpad_revision': '1035',
-                'socorro_revision': (
-                    '017d7b3f7042ce76bc80949ae55b41d1e915ab62'
-                ),
-            }
-
-        models.Status.implementation().get.side_effect = mocked_get
-
-        response = models.Status().get('3')
-        assert response['breakpad_revision']
-        assert response['socorro_revision']
-
     def test_raw_crash(self):
         model = models.RawCrash
         api = model()
