@@ -13,15 +13,14 @@ set -v -e -x
 apt-get update
 
 # Install packages for building python packages, postgres, lxml, sasl, and cffi
-# as well as git and curl utilities
+# as well as git and gawk utilities
 apt-get install -y gcc apt-transport-https build-essential python-dev \
         libpq-dev \
         libxml2-dev libxslt1-dev \
         libsasl2-dev \
         libffi-dev \
         git \
-        gawk \
-        curl
+        gawk
 
 # Stomp on the bash prompt with something more useful for development.
 cat > /etc/bash.bashrc <<EOF

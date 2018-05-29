@@ -4,8 +4,9 @@ FROM local/socorro_webapp
 
 USER root
 
-COPY ./docker/set_up_sentry_cli.sh /tmp/
-RUN /tmp/set_up_sentry_cli.sh
+COPY ./crontabber/package.json /crontabber-deps/package.json
+COPY ./crontabber/package-lock.json /crontabber-deps/package-lock.json
+RUN cd /crontabber-deps/ && npm install
 
 ENV CONTAINERNAME crontabber
 
