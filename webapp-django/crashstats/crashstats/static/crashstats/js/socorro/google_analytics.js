@@ -1,3 +1,5 @@
+/* global ga */
+
 window.ga =
   window.ga ||
   function() {

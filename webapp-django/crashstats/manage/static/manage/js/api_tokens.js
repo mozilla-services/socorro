@@ -1,3 +1,5 @@
+/* global PaginationUtils */
+
 (function($, document) {
   'use strict';
 

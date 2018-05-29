@@ -1,3 +1,5 @@
+/* global SignatureReport */
+
 /**
  * Abstract class for a tab to show information on the signature report page.
  *

@@ -1,3 +1,5 @@
+/* global SignatureReport, socorro */
+
 /**
  * Tab for displaying reports table.
  * Does not have any panels.

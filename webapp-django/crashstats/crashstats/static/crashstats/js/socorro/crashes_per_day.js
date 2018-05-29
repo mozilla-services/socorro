@@ -1,3 +1,5 @@
+/* global MG, d3 */
+
 $(function() {
   'use strict';
 

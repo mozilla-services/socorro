@@ -1,4 +1,4 @@
-/* global jsSHA */
+/* global Promise, jsSHA */
 
 window.correlations = (function() {
   /**
@@ -116,7 +116,7 @@ window.correlations = (function() {
     var diff = prop1 - prop2;
 
     // Wald 95% confidence interval for the difference between the proportions.
-    var standard_error = Math.sqrt(prop1 * (1 - prop1) / total1 + prop2 * (1 - prop2) / total2);
+    var standard_error = Math.sqrt((prop1 * (1 - prop1)) / total1 + (prop2 * (1 - prop2)) / total2);
     var ci = [diff - 1.96 * standard_error, diff + 1.96 * standard_error];
 
     // Yates continuity correction for the confidence interval.

@@ -1,5 +1,5 @@
-/* eslint-disable no-unused-vars */
 /* global postData:true */
+/* exported branchAddProductVersionFill, hideShow */
 
 // Open the add product version form and fill the fields in with given input
 function branchAddProductVersionFill(product, version) {

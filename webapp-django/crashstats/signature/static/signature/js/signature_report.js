@@ -1,3 +1,5 @@
+/* global DateFilters, socorro */
+
 var SignatureReport = {
   // Function to help with inheritance.
   inherit: function(proto) {

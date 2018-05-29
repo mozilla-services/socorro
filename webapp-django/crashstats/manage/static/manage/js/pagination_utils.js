@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+/* exported PaginationUtils */
 
 var PaginationUtils = (function() {
   function show_pagination_links(count, batch_size, page) {

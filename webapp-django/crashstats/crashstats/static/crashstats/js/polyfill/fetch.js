@@ -1,4 +1,4 @@
-/* global ArrayBuffer, Symbol */
+/* global ArrayBuffer, Promise, Symbol */
 
 (function(self) {
   'use strict';

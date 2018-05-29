@@ -1,3 +1,5 @@
+/* global BugLinks, DateFilters, socorro */
+
 $(function() {
   'use strict';
 

@@ -1,4 +1,4 @@
-/* global gapi */
+/* global Promise, gapi */
 
 var OAuth2 = (function() {
   /* Generally the best documentation for working with GoogleAuth

@@ -1,3 +1,5 @@
+/* global SignatureReport */
+
 /**
  * Tab for displaying comments table.
  * Does not have any panels.

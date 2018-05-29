@@ -1,3 +1,5 @@
+/* global BugLinks, SignatureReport */
+
 /**
  * Tab for displaying Bugzilla table.
  * Does not have any panels.

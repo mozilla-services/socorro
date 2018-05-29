@@ -1,4 +1,4 @@
-/* global _ */
+/* global _, d3 */
 
 var margin = { top: 1, right: 20, bottom: 6, left: 10 };
 var width = d3.select('#crontabber-chart').property('scrollWidth') - margin.left - margin.right;

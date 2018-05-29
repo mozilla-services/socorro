@@ -9,21 +9,10 @@ env:
   jquery: true
 globals:
   $: false
-  alert: true
   Analytics: false
-  BugLinks: true
-  d3: false
-  DateFilters: false
-  ga: false
-  location: true
-  MG: false
+  browser: false
   moment: false
-  PaginationUtils: true
-  Promise: false
   Qs: false
-  SignatureReport: false
-  socorro: false
-  window: false
 extends:
   - eslint:recommended
   - plugin:prettier/recommended

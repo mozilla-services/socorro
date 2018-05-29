@@ -1,3 +1,5 @@
+/* global SignatureReport, MG, d3, socorro */
+
 /**
  * Tab for displaying graphs.
  * Has panels.

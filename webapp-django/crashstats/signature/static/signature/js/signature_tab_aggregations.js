@@ -1,3 +1,5 @@
+/* global SignatureReport, socorro */
+
 /**
  * Tab for displaying aggregations tables.
  * Has panels.

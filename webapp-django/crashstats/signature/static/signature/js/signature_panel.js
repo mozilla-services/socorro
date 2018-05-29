@@ -1,3 +1,5 @@
+/* global SignatureReport */
+
 SignatureReport.Panel = function(panelName, onDelete) {
   // For accessing this from inside functions.
   var that = this;

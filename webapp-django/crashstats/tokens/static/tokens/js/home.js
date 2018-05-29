@@ -3,18 +3,16 @@ $(function() {
 
   $('.token p.code[data-key]').each(function() {
     var p = $(this);
-    p
-      .prepend(
-        $('<code>')
-          .addClass('truncated')
-          .text(p.data('key').substr(0, 12) + '…')
-      )
-      .prepend(
-        $('<code>')
-          .addClass('whole')
-          .text(p.data('key'))
-          .hide()
-      );
+    p.prepend(
+      $('<code>')
+        .addClass('truncated')
+        .text(p.data('key').substr(0, 12) + '…')
+    ).prepend(
+      $('<code>')
+        .addClass('whole')
+        .text(p.data('key'))
+        .hide()
+    );
   });
 
   $('.token').on('click', 'p.code button', function(event) {

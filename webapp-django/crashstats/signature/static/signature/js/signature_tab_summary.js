@@ -1,3 +1,5 @@
+/* global SignatureReport */
+
 /**
  * Tab for displaying signature summary.
  * Does not have any panels.
