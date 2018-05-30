@@ -37,6 +37,9 @@ docs: my.env
 lint: my.env
 	${DC} run processor flake8
 
+eslint: my.env
+	${DC} run --workdir="/app/webapp-django" webapp /webapp-frontend-deps/node_modules/.bin/eslint /app/webapp-django
+
 .PHONY: dockerbuild dockersetup dockertest dockertestshell dockerrun
 
 DC := $(shell which docker-compose)
@@ -61,9 +64,6 @@ dockerbuild: my.env
 # postgres going forward and has the needed environment variables.
 dockersetup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup.sh
-
-dockerlint: my.env .docker-build
-	./docker/run_lints_in_docker.sh ${ARGS}
 
 dockertest: my.env .docker-build
 	./docker/run_tests_in_docker.sh ${ARGS}
