@@ -93,17 +93,3 @@ class CrashMeNowForm(BaseForm):
         )
     )
     exception_value = forms.CharField()
-
-
-class ReprocessingForm(BaseForm):
-
-    crash_id = forms.CharField(label='Crash ID')
-
-    def clean_crash_id(self):
-        value = self.cleaned_data['crash_id'].strip()
-        crash_id = find_crash_id(value)
-        if not crash_id:
-            raise forms.ValidationError(
-                'Does not appear to be a valid crash ID'
-            )
-        return crash_id

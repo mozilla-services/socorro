@@ -3,18 +3,14 @@ import hashlib
 from django import http
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.models import LogEntry, ADDITION, CHANGE
+from django.contrib.admin.models import LogEntry, ADDITION
 from django.core.cache import cache
-from django.core.urlresolvers import reverse
 from django.db import connection
 from django.shortcuts import redirect, render
 
 import requests
 
-from crashstats.crashstats.models import (
-    GraphicsDevices,
-    Reprocessing,
-)
+from crashstats.crashstats.models import GraphicsDevices
 from crashstats.supersearch.models import SuperSearchMissingFields
 from crashstats.crashstats.utils import json_view
 from crashstats.manage.decorators import superuser_required
@@ -183,44 +179,6 @@ def crash_me_now(request):
         form = forms.CrashMeNowForm(initial=initial)
     context = {'form': form}
     return render(request, 'manage/crash_me_now.html', context)
-
-
-@superuser_required
-def reprocessing(request):
-    if request.method == 'POST':
-        form = forms.ReprocessingForm(request.POST)
-        if form.is_valid():
-            crash_id = form.cleaned_data['crash_id']
-            url = reverse('manage:reprocessing')
-            worked = Reprocessing().post(crash_ids=[crash_id])
-            if worked:
-                url += '?crash_id={}'.format(crash_id)
-                messages.success(
-                    request,
-                    '{} sent in for reprocessing.'.format(crash_id)
-                )
-            else:
-                messages.error(
-                    request,
-                    'Currently unable to send in the crash ID '
-                    'for reprocessing.'
-                )
-            log_action(
-                user_id=request.user.id,
-                action_flag=CHANGE,
-                change_message='reprocessing: crash id: %s, worked: %s' % (
-                    crash_id, worked
-                )
-            )
-
-            return redirect(url)
-    else:
-        form = forms.ReprocessingForm()
-    context = {
-        'form': form,
-        'crash_id': request.GET.get('crash_id'),
-    }
-    return render(request, 'manage/reprocessing.html', context)
 
 
 @superuser_required
