@@ -16,7 +16,8 @@ Project info
 :Documentation: https://socorro.readthedocs.io/
 :Mailing list: https://lists.mozilla.org/listinfo/tools-socorro
 :IRC: `<irc://irc.mozilla.org/breakpad>`_
-:Bugs: https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
+:New bugs: https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
+:Bugs: https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro
 
 
 Contents
