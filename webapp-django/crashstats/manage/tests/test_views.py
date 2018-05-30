@@ -1,17 +1,15 @@
 import json
-import datetime
 import os
 import urlparse
 
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.admin.models import LogEntry, ADDITION
+from django.contrib.auth.models import Permission
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.utils import timezone
 
 import mock
 import pytest
-from pinax.eventlog.models import Log
 
 from crashstats.supersearch.models import (
     SuperSearchFields,
@@ -101,8 +99,8 @@ class TestViews(BaseTestViews):
         # certain links on that page
         fields_missing_url = reverse('manage:supersearch_fields_missing')
         assert fields_missing_url in response.content
-        events_url = reverse('manage:events')
-        assert events_url in response.content
+        graphics_url = reverse('manage:graphics_devices')
+        assert graphics_url in response.content
 
         user.is_active = False
         user.save()
@@ -199,11 +197,16 @@ class TestViews(BaseTestViews):
         assert response.status_code == 302
         assert url in response['location']
 
-        event, = Log.objects.all()
+        event = LogEntry.objects.all()[0]
         assert event.user == user
-        assert event.action == 'graphicsdevices.add'
-        assert event.extra['payload'] == [data]
-        assert event.extra['success'] is True
+        assert event.action_flag == ADDITION
+        assert (
+            event.change_message == (
+                'graphics_devices: added item: True '
+                '[(\'adapter_hex\', u\'xyz123\'), (\'adapter_name\', u\'Webcamera\'), '
+                '(\'vendor_hex\', u\'abc123\'), (\'vendor_name\', u\'Logictech\')]'
+            )
+        )
 
     def test_graphics_devices_csv_upload_pcidatabase_com(self):
         user = self._login()
@@ -237,12 +240,15 @@ class TestViews(BaseTestViews):
             assert response.status_code == 302
             assert url in response['location']
 
-        event, = Log.objects.all()
+        event = LogEntry.objects.all()[0]
         assert event.user == user
-        assert event.action == 'graphicsdevices.post'
-        assert event.extra['success'] is True
-        assert event.extra['database'] == 'pcidatabase.com'
-        assert event.extra['no_lines'] == 7
+        assert event.action_flag == ADDITION
+        assert (
+            event.change_message ==
+            (
+                'graphics_devices: CSV upload: result: True, lines: 7, u\'pcidatabase.com\''
+            )
+        )
 
     def test_graphics_devices_csv_upload_pci_ids(self):
         user = self._login()
@@ -276,12 +282,14 @@ class TestViews(BaseTestViews):
             assert response.status_code == 302
             assert url in response['location']
 
-        event, = Log.objects.all()
+        event = LogEntry.objects.all()[0]
         assert event.user == user
-        assert event.action == 'graphicsdevices.post'
-        assert event.extra['success'] is True
-        assert event.extra['database'] == 'pci.ids'
-        assert event.extra['no_lines'] == 6
+        assert event.action_flag == ADDITION
+        assert (
+            event.change_message == (
+                'graphics_devices: CSV upload: result: True, lines: 6, u\'pci.ids\''
+            )
+        )
 
     def test_supersearch_fields_missing(self):
         self._login()
@@ -326,130 +334,6 @@ class TestViews(BaseTestViews):
         assert 'field_a' in response.content
         assert 'namespace1.field_b' in response.content
         assert 'namespace2.subspace1.field_c' in response.content
-
-    def test_view_events_page(self):
-        url = reverse('manage:events')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        user = self._login()
-
-        # this page will iterate over all unique possible Log actions
-        Log.objects.create(
-            user=user,
-            action='actionA'
-        )
-        Log.objects.create(
-            user=user,
-            action='actionB'
-        )
-        Log.objects.create(
-            user=user,
-            action='actionA'
-        )
-        response = self.client.get(url)
-        assert response.status_code == 200
-        # for the action filter drop-downs
-        assert response.content.count('value="actionA"') == 1
-        assert response.content.count('value="actionB"') == 1
-
-    def test_events_data(self):
-        url = reverse('manage:events_data')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        user = self._login()
-
-        Log.objects.create(
-            user=user,
-            action='actionA',
-            extra={'foo': True}
-        )
-        other_user = User.objects.create(
-            username='other',
-            email='other@email.com'
-        )
-        Log.objects.create(
-            user=other_user,
-            action='actionB',
-            extra={'bar': False}
-        )
-        third_user = User.objects.create(
-            username='third',
-            email='third@user.com',
-        )
-        now = timezone.now()
-        for i in range(settings.EVENTS_ADMIN_BATCH_SIZE * 2):
-            Log.objects.create(
-                user=third_user,
-                action='actionX',
-                timestamp=now - datetime.timedelta(
-                    seconds=i + 1
-                )
-            )
-
-        response = self.client.get(url)
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 2 + settings.EVENTS_ADMIN_BATCH_SIZE * 2
-        # the most recent should be "actionB"
-        assert len(data['events']) == settings.EVENTS_ADMIN_BATCH_SIZE
-        first = data['events'][0]
-        assert first['action'] == 'actionB'
-        assert first['extra'] == {'bar': False}
-
-        # try to go to another page
-        response = self.client.get(url, {'page': 'xxx'})
-        assert response.status_code == 400
-        response = self.client.get(url, {'page': '0'})
-        assert response.status_code == 400
-
-        response = self.client.get(url, {'page': '2'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        first = data['events'][0]
-        # we should now be on one of the actionX events
-        assert first['action'] == 'actionX'
-
-        # we can filter by user
-        response = self.client.get(url, {'user': 'other'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 1
-
-        # we can filter by action
-        response = self.client.get(url, {'action': 'actionX'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == settings.EVENTS_ADMIN_BATCH_SIZE * 2
-
-    def test_events_data_urls(self):
-        """some logged events have a URL associated with them"""
-        user = self._login()
-
-        Log.objects.create(
-            user=user,
-            action='user.edit',
-            extra={'id': user.id}
-        )
-
-        group = Group.objects.create(name='Wackos')
-        Log.objects.create(
-            user=user,
-            action='group.add',
-            extra={'id': group.id}
-        )
-        Log.objects.create(
-            user=user,
-            action='group.edit',
-            extra={'id': group.id}
-        )
-        url = reverse('manage:events_data')
-        response = self.client.get(url)
-        data = json.loads(response.content)
-        assert data['count'] == 3
-        three, two, one = data['events']
-        assert one['url'] == reverse('admin:auth_user_change', args=(user.id,))
-        assert two['url'] == reverse('admin:auth_group_change', args=(group.id,))
-        assert three['url'] == reverse('admin:auth_group_change', args=(group.id,))
 
     def test_crash_me_now(self):
         url = reverse('manage:crash_me_now')

@@ -3,13 +3,12 @@ import hashlib
 from django import http
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.models import LogEntry, ADDITION, CHANGE
 from django.core.cache import cache
-from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.db import connection
 from django.shortcuts import redirect, render
 
-from pinax.eventlog.models import log, Log
 import requests
 
 from crashstats.crashstats.models import (
@@ -22,6 +21,17 @@ from crashstats.manage.decorators import superuser_required
 
 from . import forms
 from . import utils
+
+
+def log_action(user_id, action_flag, change_message):
+    LogEntry.objects.create(
+        user_id=user_id,
+        content_type_id=None,
+        object_id=None,
+        object_repr='',
+        action_flag=action_flag,
+        change_message=change_message
+    )
 
 
 @superuser_required
@@ -84,11 +94,13 @@ def graphics_devices(request):
             payload = list(function(upload_form.cleaned_data['file']))
             api = GraphicsDevices()
             result = api.post(data=payload)
-            log(request.user, 'graphicsdevices.post', {
-                'success': result,
-                'database': upload_form.cleaned_data['database'],
-                'no_lines': len(payload),
-            })
+            log_action(
+                user_id=request.user.id,
+                action_flag=ADDITION,
+                change_message='graphics_devices: CSV upload: result: %s, lines: %s, %r' % (
+                    result, len(payload), upload_form.cleaned_data['database']
+                )
+            )
             messages.success(
                 request,
                 'Graphics device CSV upload successfully saved.'
@@ -106,10 +118,13 @@ def graphics_devices(request):
             }]
             api = GraphicsDevices()
             result = api.post(data=payload)
-            log(request.user, 'graphicsdevices.add', {
-                'payload': payload,
-                'success': result
-            })
+            log_action(
+                user_id=request.user.id,
+                action_flag=ADDITION,
+                change_message='graphics_devices: added item: %s %r' % (
+                    result, sorted(payload[0].items())
+                )
+            )
             if result:
                 messages.success(
                     request,
@@ -146,73 +161,6 @@ def supersearch_fields_missing(request):
     context['missing_fields_count'] = missing_fields['total']
 
     return render(request, 'manage/supersearch_fields_missing.html', context)
-
-
-@superuser_required
-def events(request):
-    context = {}
-
-    # The reason we can't use `.distinct('action')` is because
-    # many developers use sqlite for local development and
-    # that's not supported.
-    # If you use postgres, `Log.objects.all().values('action').distinct()`
-    # will actually return a unique list of dicts.
-    # Either way it's no inefficient convert it to a set and back to a list
-    # because there are so few in local dev and moot in prod.
-    context['all_actions'] = list(set([
-        x['action'] for x in
-        Log.objects.all().values('action').distinct()
-    ]))
-    return render(request, 'manage/events.html', context)
-
-
-@json_view
-@superuser_required
-def events_data(request):
-    form = forms.FilterEventsForm(request.GET)
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-    events_ = Log.objects.all()
-    if form.cleaned_data['user']:
-        events_ = events_.filter(
-            user__email__icontains=form.cleaned_data['user']
-        )
-    if form.cleaned_data['action']:
-        events_ = events_.filter(
-            action=form.cleaned_data['action']
-        )
-    count = events_.count()
-    try:
-        page = int(request.GET.get('page', 1))
-        assert page >= 1
-    except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
-    items = []
-    batch_size = settings.EVENTS_ADMIN_BATCH_SIZE
-    batch = Paginator(events_.select_related('user'), batch_size)
-    batch_page = batch.page(page)
-
-    def _get_edit_url(action, extra):
-        if action == 'user.edit' and extra.get('id'):
-            return reverse('admin:auth_user_change', args=(extra.get('id'),))
-        if action in ('group.edit', 'group.add') and extra.get('id'):
-            return reverse('admin:auth_group_change', args=(extra.get('id'),))
-
-    for event in batch_page.object_list:
-        items.append({
-            'user': event.user.email,
-            'timestamp': event.timestamp.isoformat(),
-            'action': event.action,
-            'extra': event.extra,
-            'url': _get_edit_url(event.action, event.extra)
-        })
-
-    return {
-        'events': items,
-        'count': count,
-        'batch_size': batch_size,
-        'page': page,
-    }
 
 
 @superuser_required
@@ -257,10 +205,13 @@ def reprocessing(request):
                     'Currently unable to send in the crash ID '
                     'for reprocessing.'
                 )
-            log(request.user, 'reprocessing', {
-                'crash_id': crash_id,
-                'worked': worked,
-            })
+            log_action(
+                user_id=request.user.id,
+                action_flag=CHANGE,
+                change_message='reprocessing: crash id: %s, worked: %s' % (
+                    crash_id, worked
+                )
+            )
 
             return redirect(url)
     else:
