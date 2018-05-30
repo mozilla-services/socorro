@@ -103,217 +103,14 @@ class TestViews(BaseTestViews):
         # certain links on that page
         fields_missing_url = reverse('manage:supersearch_fields_missing')
         assert fields_missing_url in response.content
-        users_url = reverse('manage:users')
-        assert users_url in response.content
+        groups_url = reverse('manage:groups')
+        assert groups_url in response.content
 
         user.is_active = False
         user.save()
         home_url = reverse('manage:home')
         response = self.client.get(home_url)
         assert response.status_code == 302
-
-    def test_users_page(self):
-        url = reverse('manage:users')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        Group.objects.create(name='Wackos')
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert 'Wackos' in response.content
-
-    def test_users_data(self):
-        url = reverse('manage:users_data')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        user = self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 1
-        assert data['users'][0]['email'] == user.email
-        assert data['users'][0]['id'] == user.pk
-        assert data['users'][0]['is_superuser'] is True
-        assert data['users'][0]['is_active'] is True
-        assert data['users'][0]['groups'] == []
-
-        austrians = Group.objects.create(name='Austrians')
-        user.groups.add(austrians)
-
-        response = self.client.get(url)
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        groups = data['users'][0]['groups']
-        group = groups[0]
-        assert group['name'] == 'Austrians'
-        assert group['id'] == austrians.pk
-
-    def test_users_data_pagination(self):
-        url = reverse('manage:users_data')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        user = self._login()
-        user.last_login -= datetime.timedelta(days=365)
-        user.save()
-        now = timezone.now()
-        for i in range(1, 101):  # 100 times, 1-100
-            User.objects.create(
-                username='user%03d' % i,
-                email='user%03d@mozilla.com' % i,
-                last_login=now - datetime.timedelta(days=i)
-            )
-        response = self.client.get(url)
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 101
-        # because it's sorted by last_login
-        assert data['users'][0]['email'] == 'user001@mozilla.com'
-        assert len(data['users']) == settings.USERS_ADMIN_BATCH_SIZE
-        assert data['page'] == 1
-        assert data['batch_size'] == settings.USERS_ADMIN_BATCH_SIZE
-
-        # let's go to page 2
-        response = self.client.get(url, {'page': 2})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 101
-        # because it's sorted by last_login
-        assert data['users'][0]['email'] == 'user011@mozilla.com'
-        assert len(data['users']) == settings.USERS_ADMIN_BATCH_SIZE
-        assert data['page'] == 2
-        assert data['batch_size'] == settings.USERS_ADMIN_BATCH_SIZE
-
-        response = self.client.get(url, {'page': 11})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 101
-        # because it's sorted by last_login
-        assert data['users'][0]['email'] == user.email
-        assert len(data['users']) == 1
-        assert data['page'] == 11
-        assert data['batch_size'] == settings.USERS_ADMIN_BATCH_SIZE
-
-    def test_users_data_pagination_bad_request(self):
-        url = reverse('manage:users_data')
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        response = self.client.get(url, {'page': 0})
-        assert response.status_code == 400
-
-        response = self.client.get(url, {'page': -1})
-        assert response.status_code == 400
-
-        response = self.client.get(url, {'page': 'NaN'})
-        assert response.status_code == 400
-
-    def test_users_data_filter(self):
-        url = reverse('manage:users_data')
-        self._login()
-
-        group_a = Group.objects.create(name='Group A')
-        group_b = Group.objects.create(name='Group B')
-
-        def create_user(username, **kwargs):
-            return User.objects.create(
-                username=username,
-                email=username + '@example.com',
-                last_login=timezone.now(),
-                **kwargs
-            )
-
-        bob = create_user('bob')
-        bob.groups.add(group_a)
-
-        dick = create_user('dick')
-        dick.groups.add(group_b)
-
-        harry = create_user('harry')
-        harry.groups.add(group_b)
-        harry.groups.add(group_b)
-
-        create_user('bill', is_active=False)
-
-        # filter by email
-        response = self.client.get(url, {'email': 'b'})
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 2
-        assert ['bill@example.com', 'bob@example.com'] == [x['email'] for x in data['users']]
-
-        # filter by email and group
-        response = self.client.get(url, {
-            'email': 'b',
-            'group': group_a.pk
-        })
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 1
-        assert ['bob@example.com'] == [x['email'] for x in data['users']]
-
-        # filter by active and superuser
-        response = self.client.get(url, {
-            'active': '1',
-            'superuser': '-1'
-        })
-        assert response.status_code == 200
-        data = json.loads(response.content)
-        assert data['count'] == 3
-        expected = ['harry@example.com', 'dick@example.com', 'bob@example.com']
-        assert [x['email'] for x in data['users']] == expected
-
-        # don't send in junk
-        response = self.client.get(url, {
-            'group': 'xxx',
-        })
-        assert response.status_code == 400
-
-    def test_edit_user(self):
-        group_a = Group.objects.create(name='Group A')
-        group_b = Group.objects.create(name='Group B')
-
-        bob = User.objects.create(
-            username='bob',
-            email='bob@example.com',
-            is_active=False,
-            is_superuser=True
-        )
-        bob.groups.add(group_a)
-
-        url = reverse('manage:user', args=(bob.pk,))
-        response = self.client.get(url)
-        assert response.status_code == 302
-        user = self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert 'bob@example.com' in response.content
-
-        response = self.client.post(url, {
-            'groups': group_b.pk,
-            'is_active': 'true',
-            'is_superuser': ''
-        })
-        assert response.status_code == 302
-
-        # reload from database
-        bob = User.objects.get(pk=bob.pk)
-        assert bob.is_active
-        assert not bob.is_superuser
-        assert list(bob.groups.all()) == [group_b]
-
-        # check that the event got logged
-        event, = Log.objects.all()
-        assert event.user == user
-        assert event.action == 'user.edit'
-        assert event.extra['id'] == bob.pk
-        change = event.extra['change']
-        assert change['is_superuser'] == [True, False]
-        assert change['is_active'] == [False, True]
-        assert change['groups'] == [['Group A'], ['Group B']]
 
     def test_groups(self):
         url = reverse('manage:groups')
@@ -742,7 +539,7 @@ class TestViews(BaseTestViews):
         data = json.loads(response.content)
         assert data['count'] == 3
         three, two, one = data['events']
-        assert one['url'] == reverse('manage:user', args=(user.id,))
+        assert one['url'] == reverse('admin:auth_user_change', args=(user.id,))
         assert two['url'] == reverse('manage:group', args=(group.id,))
         assert three['url'] == reverse('manage:group', args=(group.id,))
 

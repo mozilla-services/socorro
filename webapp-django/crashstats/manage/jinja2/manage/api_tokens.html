@@ -76,7 +76,7 @@
             Create new API Token
         </h3>
 
-        <form action="{{ url('manage:api_tokens') }}" id="create" method="post" data-users-url="{{ url('manage:users_data') }}">
+        <form action="{{ url('manage:api_tokens') }}" id="create" method="post">
             {% csrf_token %}
             <table class="data-table">
                 {{ form }}

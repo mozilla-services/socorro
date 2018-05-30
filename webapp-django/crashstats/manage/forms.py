@@ -9,29 +9,6 @@ from crashstats.crashstats.utils import find_crash_id
 from crashstats.tokens.models import Token
 
 
-class EditUserForm(BaseModelForm):
-
-    class Meta:
-        model = User
-        fields = ('is_superuser', 'is_active', 'groups')
-
-
-class FilterUsersForm(BaseForm):
-
-    email = forms.CharField(required=False)
-    superuser = forms.CharField(required=False)
-    active = forms.CharField(required=False)
-    group = forms.ModelChoiceField(queryset=Group.objects, required=False)
-
-    def clean_superuser(self):
-        value = self.cleaned_data['superuser']
-        return {'0': None, '1': True, '-1': False}.get(value)
-
-    def clean_active(self):
-        value = self.cleaned_data['active']
-        return {'0': None, '1': True, '-1': False}.get(value)
-
-
 class FilterSymbolsUploadsForm(BaseForm):
 
     email = forms.CharField(required=False)

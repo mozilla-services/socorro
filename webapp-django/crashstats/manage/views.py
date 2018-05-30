@@ -6,7 +6,7 @@ import math
 from django import http
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.models import Group, Permission, User
+from django.contrib.auth.models import Group, Permission
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
@@ -35,7 +35,7 @@ from . import utils
 def notice_change(before, after):
     assert before.__class__ == after.__class__
     changes = {}
-    if isinstance(before, User) or isinstance(before, Group):
+    if isinstance(before, Group):
         for field in before._meta.get_fields():
             fieldname = getattr(field, 'attname', field.name)
             v1 = getattr(before, fieldname, None)
@@ -79,95 +79,6 @@ def notice_change(before, after):
 def home(request, default_context=None):
     context = default_context or {}
     return render(request, 'manage/home.html', context)
-
-
-@superuser_required
-def users(request):
-    context = {}
-    context['all_groups'] = Group.objects.all().order_by('name')
-    return render(request, 'manage/users.html', context)
-
-
-@json_view
-@superuser_required
-def users_data(request):
-    order_by = request.GET.get('order_by', 'last_login')
-    assert order_by in ('last_login', 'email')
-    if order_by == 'last_login':
-        order_by = '-last_login'
-    form = forms.FilterUsersForm(request.GET)
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-    users_ = User.objects.all().order_by(order_by)
-    if form.cleaned_data['email']:
-        users_ = users_.filter(email__icontains=form.cleaned_data['email'])
-    if form.cleaned_data['superuser'] is not None:
-        users_ = users_.filter(is_superuser=form.cleaned_data['superuser'])
-    if form.cleaned_data['active'] is not None:
-        users_ = users_.filter(is_active=form.cleaned_data['active'])
-    if form.cleaned_data['group']:
-        users_ = users_.filter(groups=form.cleaned_data['group'])
-
-    try:
-        page = int(request.GET.get('page', 1))
-        assert page >= 1
-    except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
-
-    count = users_.count()
-    user_items = []
-    batch_size = settings.USERS_ADMIN_BATCH_SIZE
-    m = (page - 1) * batch_size
-    n = page * batch_size
-    for user in users_[m:n]:
-        user_items.append({
-            'id': user.pk,
-            'email': user.email,
-            'is_superuser': user.is_superuser,
-            'is_active': user.is_active,
-            'last_login': user.last_login,
-            'groups': [
-                {'id': x.id, 'name': x.name}
-                for x in user.groups.all()
-            ]
-        })
-    return {
-        'users': user_items,
-        'count': count,
-        'batch_size': batch_size,
-        'page': page,
-    }
-
-
-@json_view
-@superuser_required
-@transaction.atomic
-def user(request, id):
-    context = {}
-    user_ = get_object_or_404(User, id=id)
-    if request.method == 'POST':
-        # make a copy because it's mutable in the form
-        before = copy.copy(user_)
-        # expand the many-to-many field before changing it in the form
-        before.__groups = [unicode(x) for x in before.groups.all()]
-
-        form = forms.EditUserForm(request.POST, instance=user_)
-        if form.is_valid():
-            form.save()
-            log(request.user, 'user.edit', {
-                'change': notice_change(before, user_),
-                'id': user_.id,
-            })
-            messages.success(
-                request,
-                'User %s update saved.' % user_.email
-            )
-            return redirect('manage:users')
-    else:
-        form = forms.EditUserForm(instance=user_)
-    context['form'] = form
-    context['edit_user'] = user_
-    return render(request, 'manage/user.html', context)
 
 
 @transaction.atomic
@@ -398,7 +309,7 @@ def events_data(request):
 
     def _get_edit_url(action, extra):
         if action == 'user.edit' and extra.get('id'):
-            return reverse('manage:user', args=(extra.get('id'),))
+            return reverse('admin:auth_user_change', args=(extra.get('id'),))
         if action in ('group.edit', 'group.add') and extra.get('id'):
             return reverse('manage:group', args=(extra.get('id'),))
 
