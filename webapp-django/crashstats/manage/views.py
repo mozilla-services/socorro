@@ -1,12 +1,11 @@
 import collections
-import copy
 import hashlib
 import math
 
 from django import http
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Permission
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
@@ -32,117 +31,10 @@ from . import forms
 from . import utils
 
 
-def notice_change(before, after):
-    assert before.__class__ == after.__class__
-    changes = {}
-    if isinstance(before, Group):
-        for field in before._meta.get_fields():
-            fieldname = getattr(field, 'attname', field.name)
-            v1 = getattr(before, fieldname, None)
-            v2 = getattr(after, fieldname, None)
-            if hasattr(v1, 'all'):
-                # many-to-many field!
-                # To be able to compare, the many-to-many field needs to
-                # have been converted to a list and attached to the object.
-                # If we don't do this, we won't notice the difference.
-                # Remember that many-to-many fields are stored in a different
-                # table. E.g. for a User:
-                #
-                #  user_id | group_id
-                #  --------|---------
-                #  3       | 45
-                #  3       | 89
-                #
-                # And all you have is a User instance with the ID 3,
-                # you can't find out what was in that many-to-many mapping
-                # table before because now it's 45 and 89.
-                # So it must have been expanded into a Python list and
-                # attached to the object itself.
-                if not hasattr(before, '__%s' % fieldname):
-                    continue
-                # these have to have been expanded before!
-                v1 = getattr(before, '__%s' % fieldname)
-
-                v2 = getattr(
-                    after,
-                    '__%s' % fieldname,
-                    [unicode(x) for x in v2.all()]
-                )
-
-            if v1 != v2:
-                changes[fieldname] = [v1, v2]
-        return changes
-    raise NotImplementedError(before.__class__.__name__)
-
-
 @superuser_required
 def home(request, default_context=None):
     context = default_context or {}
     return render(request, 'manage/home.html', context)
-
-
-@transaction.atomic
-@superuser_required
-def groups(request):
-    context = {}
-    if request.method == 'POST':
-        if request.POST.get('delete'):
-            group = get_object_or_404(Group, pk=request.POST['delete'])
-            group.delete()
-            log(request.user, 'group.delete', {'name': group.name})
-            messages.success(
-                request,
-                'Group deleted.'
-            )
-            return redirect('manage:groups')
-        form = forms.GroupForm(request.POST)
-        if form.is_valid():
-            group = form.save()
-            log(request.user, 'group.add', {
-                'id': group.id,
-                'name': group.name,
-                'permissions': [x.name for x in group.permissions.all()]
-            })
-            messages.success(
-                request,
-                'Group created.'
-            )
-            return redirect('manage:groups')
-    else:
-        form = forms.GroupForm()
-    context['form'] = form
-    context['groups'] = Group.objects.all().order_by('name')
-    context['permissions'] = Permission.objects.all().order_by('name')
-    return render(request, 'manage/groups.html', context)
-
-
-@superuser_required
-def group(request, id):
-    context = {}
-    group_ = get_object_or_404(Group, id=id)
-    if request.method == 'POST':
-        before = copy.copy(group_)
-        before.__permissions = [x.name for x in before.permissions.all()]
-        # print "permissions before", before.permissions.all()
-        form = forms.GroupForm(request.POST, instance=group_)
-        if form.is_valid():
-            form.save()
-            # print "permissions after", group_.permissions.all()
-            group_.__permissions = [x.name for x in group_.permissions.all()]
-            log(request.user, 'group.edit', {
-                'id': group_.id,
-                'change': notice_change(before, group_),
-            })
-            messages.success(
-                request,
-                'Group saved.'
-            )
-            return redirect('manage:groups')
-    else:
-        form = forms.GroupForm(instance=group_)
-    context['form'] = form
-    context['group'] = group_
-    return render(request, 'manage/group.html', context)
 
 
 @superuser_required
@@ -311,7 +203,7 @@ def events_data(request):
         if action == 'user.edit' and extra.get('id'):
             return reverse('admin:auth_user_change', args=(extra.get('id'),))
         if action in ('group.edit', 'group.add') and extra.get('id'):
-            return reverse('manage:group', args=(extra.get('id'),))
+            return reverse('admin:auth_group_change', args=(extra.get('id'),))
 
     for event in batch_page.object_list:
         items.append({

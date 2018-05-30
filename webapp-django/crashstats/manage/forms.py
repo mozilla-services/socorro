@@ -1,6 +1,6 @@
 import datetime
 
-from django.contrib.auth.models import Group, Permission, User
+from django.contrib.auth.models import Permission, User
 from django import forms
 from django.utils import timezone
 
@@ -97,27 +97,6 @@ class APITokenForm(BaseModelForm):
                         msg += ' %s has no permissions!' % user.email
                     raise forms.ValidationError(msg)
         return cleaned_data
-
-
-class GroupForm(BaseModelForm):
-
-    class Meta:
-        model = Group
-        fields = ('name', 'permissions')
-
-    def __init__(self, *args, **kwargs):
-        super(GroupForm, self).__init__(*args, **kwargs)
-        self.fields['permissions'].choices = [
-            (x.pk, x.name) for x in
-            Permission.objects
-            .filter(content_type__model='')
-        ]
-
-    def clean_permissions(self):
-        value = self.cleaned_data['permissions']
-        if not value:
-            raise forms.ValidationError('Must select at least one')
-        return value
 
 
 class GraphicsDeviceForm(BaseForm):

@@ -103,104 +103,14 @@ class TestViews(BaseTestViews):
         # certain links on that page
         fields_missing_url = reverse('manage:supersearch_fields_missing')
         assert fields_missing_url in response.content
-        groups_url = reverse('manage:groups')
-        assert groups_url in response.content
+        events_url = reverse('manage:events')
+        assert events_url in response.content
 
         user.is_active = False
         user.save()
         home_url = reverse('manage:home')
         response = self.client.get(home_url)
         assert response.status_code == 302
-
-    def test_groups(self):
-        url = reverse('manage:groups')
-        response = self.client.get(url)
-        assert response.status_code == 302
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        wackos = Group.objects.create(name='Wackos')
-        # Attach a known permission to it
-        permission = self._create_permission()
-        wackos.permissions.add(permission)
-
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert 'Wackos' in response.content
-        assert 'Mess Around' in response.content
-
-    def test_group(self):
-        url = reverse('manage:groups')
-        user = self._login()
-        ct = ContentType.objects.create(
-            model='',
-            app_label='crashstats.crashstats',
-        )
-        p1 = Permission.objects.create(
-            name='Mess Around',
-            codename='mess_around',
-            content_type=ct
-        )
-        p2 = Permission.objects.create(
-            name='Launch Missiles',
-            codename='launch_missiles',
-            content_type=ct
-        )
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert p1.name in response.content
-        assert p2.name in response.content
-
-        data = {
-            'name': 'New Group',
-            'permissions': [p2.id]
-        }
-        response = self.client.post(url, data)
-        assert response.status_code == 302
-
-        group = Group.objects.get(name=data['name'])
-        assert list(group.permissions.all()) == [p2]
-
-        # check that it got logged
-        event, = Log.objects.all()
-        assert event.user == user
-        assert event.action == 'group.add'
-        expected = {
-            'id': group.id,
-            'name': 'New Group',
-            'permissions': ['Launch Missiles']
-        }
-        assert event.extra == expected
-
-        # edit it
-        edit_url = reverse('manage:group', args=(group.pk,))
-        response = self.client.get(edit_url)
-        assert response.status_code == 200
-        data = {
-            'name': 'New New Group',
-            'permissions': [p1.id]
-        }
-        response = self.client.post(edit_url, data)
-        assert response.status_code == 302
-        group = Group.objects.get(name=data['name'])
-        assert list(group.permissions.all()) == [p1]
-
-        event, = Log.objects.all()[:1]
-        assert event.user == user
-        assert event.action == 'group.edit'
-        assert event.extra['change']['name'] == ['New Group', 'New New Group']
-        assert event.extra['change']['permissions'] == [['Launch Missiles'], ['Mess Around']]
-
-        # delete it
-        response = self.client.post(url, {'delete': group.pk})
-        assert response.status_code == 302
-        assert not Group.objects.filter(name=data['name'])
-
-        event, = Log.objects.all()[:1]
-        assert event.user == user
-        assert event.action == 'group.delete'
-        assert event.extra['name'] == data['name']
 
     def test_analyze_model_fetches(self):
         self._login()
@@ -540,8 +450,8 @@ class TestViews(BaseTestViews):
         assert data['count'] == 3
         three, two, one = data['events']
         assert one['url'] == reverse('admin:auth_user_change', args=(user.id,))
-        assert two['url'] == reverse('manage:group', args=(group.id,))
-        assert three['url'] == reverse('manage:group', args=(group.id,))
+        assert two['url'] == reverse('admin:auth_group_change', args=(group.id,))
+        assert three['url'] == reverse('admin:auth_group_change', args=(group.id,))
 
     def test_api_tokens(self):
         permission = self._create_permission()
