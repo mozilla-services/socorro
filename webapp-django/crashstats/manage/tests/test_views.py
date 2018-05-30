@@ -13,7 +13,6 @@ import mock
 import pytest
 from pinax.eventlog.models import Log
 
-from crashstats.status.models import StatusMessage
 from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchMissingFields,
@@ -451,76 +450,6 @@ class TestViews(BaseTestViews):
         assert one['url'] == reverse('admin:auth_user_change', args=(user.id,))
         assert two['url'] == reverse('admin:auth_group_change', args=(group.id,))
         assert three['url'] == reverse('admin:auth_group_change', args=(group.id,))
-
-    def test_status_message(self):
-        url = reverse('manage:status_message')
-
-        # Test while logged out.
-        response = self.client.get(url)
-        assert response.status_code == 302
-
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        # expects some severity options to be available as dropdowns
-        expected = '<option value="%s">%s</option>' % (
-            'critical',
-            'Critical'
-        )
-        assert expected in response.content
-
-    def test_create_status_message(self):
-        url = reverse('manage:status_message')
-
-        # Test while logged out.
-        response = self.client.post(url)
-        assert response.status_code == 302
-
-        user = self._login()
-        response = self.client.post(url)
-        assert response.status_code == 200
-        assert 'This field is required' in response.content
-
-        response = self.client.post(url, {
-            'message': 'Foo',
-            'severity': 'critical'
-        })
-        assert response.status_code == 302
-
-        event, = Log.objects.all()
-
-        assert event.user == user
-        assert event.action == 'status_message.create'
-        assert event.extra['severity'] == 'critical'
-
-    def test_disable_status_message(self):
-        url = reverse('manage:status_message_disable', args=('99999',))
-        response = self.client.get(url)
-        assert response.status_code == 302
-
-        user = self._login()
-        response = self.client.get(url)
-        assert response.status_code == 405
-        response = self.client.post(url)
-        assert response.status_code == 404
-
-        status = StatusMessage.objects.create(
-            message='foo',
-            severity='critical',
-        )
-        url = reverse('manage:status_message_disable', args=(status.id,))
-
-        response = self.client.post(url)
-        assert response.status_code == 302  # redirect on success
-
-        # Verify there is no enabled statuses anymore.
-        assert not StatusMessage.objects.filter(enabled=True)
-
-        event, = Log.objects.all()
-
-        assert event.user == user
-        assert event.action == 'status_message.disable'
 
     def test_crash_me_now(self):
         url = reverse('manage:crash_me_now')

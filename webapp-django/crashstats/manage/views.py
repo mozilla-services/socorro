@@ -1,5 +1,4 @@
 import hashlib
-import math
 
 from django import http
 from django.conf import settings
@@ -7,9 +6,8 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
-from django.db import connection, transaction
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.db import connection
+from django.shortcuts import redirect, render
 
 from pinax.eventlog.models import log, Log
 import requests
@@ -19,7 +17,6 @@ from crashstats.crashstats.models import (
     Reprocessing,
 )
 from crashstats.supersearch.models import SuperSearchMissingFields
-from crashstats.status.models import StatusMessage
 from crashstats.crashstats.utils import json_view
 from crashstats.manage.decorators import superuser_required
 
@@ -273,89 +270,6 @@ def reprocessing(request):
         'crash_id': request.GET.get('crash_id'),
     }
     return render(request, 'manage/reprocessing.html', context)
-
-
-@superuser_required
-@transaction.atomic
-def status_message(request):
-    if request.method == 'POST':
-        form = forms.StatusMessageForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            status = StatusMessage.objects.create(
-                message=data['message'],
-                severity=data['severity'],
-            )
-
-            log(request.user, 'status_message.create', {
-                'user': request.user.email,
-                'severity': status.severity,
-            })
-
-            messages.success(
-                request,
-                'Status Message created. '
-            )
-            return redirect('manage:status_message')
-    else:
-        form = forms.StatusMessageForm()
-
-    try:
-        page = int(request.GET.get('page', 1))
-        assert page >= 1
-    except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
-
-    statuses = (
-        StatusMessage.objects.all().order_by('-created_at')
-    )
-
-    count = statuses.count()
-    batch_size = settings.STATUS_MESSAGE_ADMIN_BATCH_SIZE
-    m = (page - 1) * batch_size
-    n = page * batch_size
-
-    current_query = request.GET.copy()
-    if 'page' in current_query:
-        del current_query['page']
-    current_url = '{}?{}'.format(
-        reverse('manage:status_message'),
-        current_query.urlencode()
-    )
-
-    context = {
-        'form': form,
-        'statuses': statuses[m:n],
-        'pagination_data': {
-            'page': page,
-            'current_url': current_url,
-            'total_pages': int(math.ceil(float(count) / batch_size)),
-            'total_count': count,
-        }
-    }
-    return render(request, 'manage/status_message.html', context)
-
-
-@superuser_required
-@require_POST
-@transaction.atomic
-def status_message_disable(request, id):
-    status = get_object_or_404(StatusMessage, id=id)
-
-    log(request.user, 'status_message.disable', {
-        'user': request.user.email,
-        'id': status.id,
-    })
-
-    status.enabled = False
-    status.save()
-
-    messages.success(
-        request,
-        'Status message successfully disabled.'
-    )
-
-    return redirect(reverse('manage:status_message'))
 
 
 @superuser_required
