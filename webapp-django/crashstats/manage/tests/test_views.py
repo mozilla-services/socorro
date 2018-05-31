@@ -3,7 +3,6 @@ import os
 import urlparse
 
 from django.core.urlresolvers import reverse
-from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.auth.models import Permission
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -169,7 +168,7 @@ class TestViews(BaseTestViews):
         assert content['hits'][0] == expected
 
     def test_graphics_devices_edit(self):
-        user = self._login()
+        self._login()
         url = reverse('manage:graphics_devices')
 
         def mocked_post(**payload):
@@ -197,19 +196,8 @@ class TestViews(BaseTestViews):
         assert response.status_code == 302
         assert url in response['location']
 
-        event = LogEntry.objects.all()[0]
-        assert event.user == user
-        assert event.action_flag == ADDITION
-        assert (
-            event.change_message == (
-                'graphics_devices: added item: True '
-                '[(\'adapter_hex\', u\'xyz123\'), (\'adapter_name\', u\'Webcamera\'), '
-                '(\'vendor_hex\', u\'abc123\'), (\'vendor_name\', u\'Logictech\')]'
-            )
-        )
-
     def test_graphics_devices_csv_upload_pcidatabase_com(self):
-        user = self._login()
+        self._login()
         url = reverse('manage:graphics_devices')
 
         def mocked_post(**payload):
@@ -240,18 +228,8 @@ class TestViews(BaseTestViews):
             assert response.status_code == 302
             assert url in response['location']
 
-        event = LogEntry.objects.all()[0]
-        assert event.user == user
-        assert event.action_flag == ADDITION
-        assert (
-            event.change_message ==
-            (
-                'graphics_devices: CSV upload: result: True, lines: 7, u\'pcidatabase.com\''
-            )
-        )
-
     def test_graphics_devices_csv_upload_pci_ids(self):
-        user = self._login()
+        self._login()
         url = reverse('manage:graphics_devices')
 
         def mocked_post(**payload):
@@ -281,15 +259,6 @@ class TestViews(BaseTestViews):
             })
             assert response.status_code == 302
             assert url in response['location']
-
-        event = LogEntry.objects.all()[0]
-        assert event.user == user
-        assert event.action_flag == ADDITION
-        assert (
-            event.change_message == (
-                'graphics_devices: CSV upload: result: True, lines: 6, u\'pci.ids\''
-            )
-        )
 
     def test_supersearch_fields_missing(self):
         self._login()

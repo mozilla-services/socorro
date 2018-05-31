@@ -3,7 +3,6 @@ import hashlib
 from django import http
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.models import LogEntry, ADDITION
 from django.core.cache import cache
 from django.db import connection
 from django.shortcuts import redirect, render
@@ -17,17 +16,6 @@ from crashstats.manage.decorators import superuser_required
 
 from . import forms
 from . import utils
-
-
-def log_action(user_id, action_flag, change_message):
-    LogEntry.objects.create(
-        user_id=user_id,
-        content_type_id=None,
-        object_id=None,
-        object_repr='',
-        action_flag=action_flag,
-        change_message=change_message
-    )
 
 
 @superuser_required
@@ -90,13 +78,6 @@ def graphics_devices(request):
             payload = list(function(upload_form.cleaned_data['file']))
             api = GraphicsDevices()
             result = api.post(data=payload)
-            log_action(
-                user_id=request.user.id,
-                action_flag=ADDITION,
-                change_message='graphics_devices: CSV upload: result: %s, lines: %s, %r' % (
-                    result, len(payload), upload_form.cleaned_data['database']
-                )
-            )
             messages.success(
                 request,
                 'Graphics device CSV upload successfully saved.'
@@ -114,13 +95,6 @@ def graphics_devices(request):
             }]
             api = GraphicsDevices()
             result = api.post(data=payload)
-            log_action(
-                user_id=request.user.id,
-                action_flag=ADDITION,
-                change_message='graphics_devices: added item: %s %r' % (
-                    result, sorted(payload[0].items())
-                )
-            )
             if result:
                 messages.success(
                     request,
