@@ -6,6 +6,7 @@
 """the processor_app converts raw_crashes into processed_crashes"""
 
 import os
+import six
 import sys
 import collections
 
@@ -283,11 +284,8 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             # Capture the error
             self._capture_error(crash_id, exc_type, exc_value, exc_tb)
 
-            # Why not just do `raise exception`?
-            # Because if we don't do it this way, the eventual traceback
-            # is going to point to *this* line (right after this comment)
-            # rather than the actual error where it originally happened.
-            raise exc_type, exc_value, exc_tb
+            # Re-raise the original exception with the correct traceback
+            six.reraise(exc_type, exc_value, exc_tb)
         finally:
             # earlier, we created the dumps as files on the file system,
             # we need to clean up after ourselves.

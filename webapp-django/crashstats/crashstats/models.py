@@ -7,6 +7,8 @@ import functools
 import hashlib
 import logging
 import time
+from past.builtins import basestring
+from builtins import str
 
 from configman import configuration, Namespace
 
@@ -255,7 +257,7 @@ class SocorroCommon(object):
         ):
             name = implementation.__class__.__name__
             cache_key = hashlib.md5(
-                name + unicode(params)
+                name + str(params)
             ).hexdigest()
 
             if not refresh_cache:

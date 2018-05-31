@@ -6,6 +6,7 @@ import json
 import socket
 import datetime
 import contextlib
+from past.builtins import basestring
 
 import boto
 import boto.s3.connection

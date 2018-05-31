@@ -1,11 +1,13 @@
 import copy
 import datetime
+from builtins import str
 from cStringIO import StringIO
 from unittest import TestCase
 import json
 
 from django.http import HttpResponse
 from django.test.client import RequestFactory
+from six import string_types
 
 from crashstats.crashstats import utils
 
@@ -523,8 +525,8 @@ class TestUtils(TestCase):
         ])
 
         result = out.getvalue()
-        assert isinstance(result, str)
-        u_result = unicode(result, 'utf-8')
+        assert isinstance(result, string_types)
+        u_result = str(result, 'utf-8')
         assert 'abc,' in u_result
         assert u'\xe4\xc3,' in u_result
         assert '123,' in u_result

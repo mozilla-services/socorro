@@ -6,6 +6,8 @@
 import re
 from distutils.version import Version
 
+from past.builtins import basestring, cmp
+
 
 class FirefoxVersion(Version):
     """Version numbering for Firefox.

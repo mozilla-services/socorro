@@ -5,6 +5,7 @@
 import mock
 from pkg_resources import resource_stream
 import pytest
+from past.builtins import basestring
 
 from socorro import siglists
 from socorro.unittest.testbase import TestCase

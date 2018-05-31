@@ -32,6 +32,8 @@ import os
 import tempfile
 import unicodedata
 import urllib2
+from past.builtins import basestring
+from past.builtins import str
 
 import pyhs2
 
@@ -238,7 +240,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
     @staticmethod
     def remove_control_characters(s):
         if isinstance(s, str):
-            s = unicode(s, 'utf-8', errors='replace')
+            s = str(s, 'utf-8', errors='replace')
         return ''.join(c for c in s if unicodedata.category(c)[0] != "C")
 
     def _database_transaction(

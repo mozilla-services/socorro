@@ -4,6 +4,7 @@
 
 import logging
 import time
+from past.builtins import xrange
 
 from mock import Mock
 

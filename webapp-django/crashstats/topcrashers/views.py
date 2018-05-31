@@ -1,4 +1,5 @@
 import datetime
+from builtins import str
 from collections import defaultdict
 
 from django import http
@@ -183,7 +184,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     form = TopCrashersForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(unicode(form.errors))
+        return http.HttpResponseBadRequest(str(form.errors))
 
     product = form.cleaned_data['product']
     versions = form.cleaned_data['version']
@@ -277,7 +278,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         'versions': versions,
         'crash_type': crash_type,
         'os_name': os_name,
-        'result_count': unicode(result_count),
+        'result_count': str(result_count),
         'mode': tcbs_mode,
         'range_type': range_type,
         'end_date': end_date,

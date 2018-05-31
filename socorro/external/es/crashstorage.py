@@ -4,6 +4,7 @@
 
 import json
 import re
+from past.builtins import basestring
 from threading import Thread
 from Queue import Queue
 from contextlib import contextmanager

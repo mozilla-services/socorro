@@ -2,6 +2,8 @@ import json
 import datetime
 import random
 import urlparse
+from past.builtins import basestring
+from builtins import str
 
 import mock
 import pytest
@@ -25,7 +27,7 @@ class Response(object):
     @property
     def text(self):
         # similar to content but with the right encoding
-        return unicode(self.content, 'utf-8')
+        return str(self.content, 'utf-8')
 
     def json(self):
         return self.raw
@@ -425,14 +427,14 @@ class TestModels(DjangoTestCase):
                     {
 
                         'build_type': 'aurora',
-                        'adi_count': 12327L,
+                        'adi_count': 12327,
                         'version': '2.0',
                         'date': datetime.date(2015, 8, 12),
 
                     },
                     {
                         'build_type': 'release',
-                        'adi_count': 4L,
+                        'adi_count': 4,
                         'version': '2.0',
                         'date': datetime.date(2016, 8, 12),
 

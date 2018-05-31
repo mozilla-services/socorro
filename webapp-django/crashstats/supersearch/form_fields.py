@@ -46,7 +46,7 @@ class PrefixedField(object):
     prefixed_value = None
 
     def to_python(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self.operator, value = split_on_operator(value)
 
         return super(PrefixedField, self).to_python(value)
@@ -64,7 +64,7 @@ class PrefixedField(object):
         """Return the value as a string. """
         if value is None:
             return None
-        return unicode(value)
+        return str(value)
 
 
 class MultipleValueField(forms.MultipleChoiceField):

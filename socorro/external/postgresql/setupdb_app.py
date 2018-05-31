@@ -200,7 +200,7 @@ class SocorroDBApp(App):
                 autocommit=False
         ) as db:
             if 'test' not in database_name and not self.config.force:
-                confirm = raw_input(
+                confirm = input(
                     'drop database %s [y/N]: ' % database_name
                 )
                 if not confirm == "y":

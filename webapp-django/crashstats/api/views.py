@@ -2,6 +2,8 @@ import json
 import re
 import datetime
 import inspect
+from past.builtins import basestring
+from builtins import str
 
 from django import http
 from django.shortcuts import render
@@ -246,12 +248,12 @@ def model_wrapper(request, model_name):
             raise
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
-                json.dumps({'error': unicode(exception)}),
+                json.dumps({'error': str(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
         except BAD_REQUEST_EXCEPTIONS as exception:
             return http.HttpResponseBadRequest(
-                json.dumps({'error': unicode(exception)}),
+                json.dumps({'error': str(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
 

@@ -5,6 +5,8 @@ import isodate
 import functools
 import json
 import re
+from past.builtins import basestring
+from builtins import str
 from collections import OrderedDict
 
 from six.moves import cStringIO
@@ -27,7 +29,7 @@ def parse_isodate(ds):
     """
     return a datetime object from a date string
     """
-    if isinstance(ds, unicode):
+    if isinstance(ds, str):
         # isodate struggles to convert unicode strings with
         # its parse_datetime() if the input string is unicode.
         ds = ds.encode('ascii')
@@ -318,7 +320,7 @@ class UnicodeWriter:
         self.encoder = codecs.getincrementalencoder(encoding)()
 
     def writerow(self, row):
-        self.writer.writerow([unicode(s).encode("utf-8") for s in row])
+        self.writer.writerow([str(s).encode("utf-8") for s in row])
         # Fetch UTF-8 output from the queue ...
         data = self.queue.getvalue()
         data = data.decode("utf-8")

@@ -7,6 +7,7 @@ import datetime
 import json
 import random
 import urlparse
+from builtins import int
 from cStringIO import StringIO
 
 import pyquery
@@ -764,7 +765,7 @@ class TestViews(BaseTestViews):
                 for version in ['20.0', '19.0']:
                     for build_type in ['beta', 'release']:
                         response['hits'].append({
-                            'adi_count': long(random.randint(100, 1000)),
+                            'adi_count': int(random.randint(100, 1000)),
                             'build_type': build_type,
                             'date': start_date,
                             'version': version
@@ -1101,7 +1102,7 @@ class TestViews(BaseTestViews):
                 for version in ['18.0b1', '18.0b2', '19.0']:
                     for build_type in ['beta', 'release']:
                         response['hits'].append({
-                            'adi_count': long(random.randint(100, 1000)),
+                            'adi_count': int(random.randint(100, 1000)),
                             'build_type': build_type,
                             'date': start_date,
                             'version': version
