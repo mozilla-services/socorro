@@ -3,10 +3,10 @@ import datetime
 import random
 import urlparse
 from past.builtins import basestring
-from builtins import str
 
 import mock
 import pytest
+from six import text_type
 
 from django.core.cache import cache
 from django.conf import settings
@@ -27,7 +27,7 @@ class Response(object):
     @property
     def text(self):
         # similar to content but with the right encoding
-        return str(self.content, 'utf-8')
+        return text_type(self.content, 'utf-8')
 
     def json(self):
         return self.raw

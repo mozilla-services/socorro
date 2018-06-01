@@ -6,10 +6,10 @@
 """the processor_app converts raw_crashes into processed_crashes"""
 
 import os
-import six
 import sys
 import collections
 
+from six import reraise
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -285,7 +285,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             self._capture_error(crash_id, exc_type, exc_value, exc_tb)
 
             # Re-raise the original exception with the correct traceback
-            six.reraise(exc_type, exc_value, exc_tb)
+            reraise(exc_type, exc_value, exc_tb)
         finally:
             # earlier, we created the dumps as files on the file system,
             # we need to clean up after ourselves.

@@ -2,7 +2,7 @@ import urllib
 import warnings
 import datetime
 from past.builtins import basestring
-from builtins import str
+from six import text_type
 
 from django_jinja import library
 import jinja2
@@ -59,7 +59,7 @@ def make_test_input(parameter, defaults):
     if parameter['type'] is not basestring:
         classes.append('validate-%s' % parameter['type'].__name__)
     if defaults.get(parameter['name']):
-        data['value'] = urllib.quote(str(defaults.get(parameter['name'])))
+        data['value'] = urllib.quote(text_type(defaults.get(parameter['name'])))
     else:
         data['value'] = ''
 

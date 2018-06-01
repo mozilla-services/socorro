@@ -8,9 +8,9 @@ import hashlib
 import logging
 import time
 from past.builtins import basestring
-from builtins import str
 
 from configman import configuration, Namespace
+from six import text_type
 
 from socorro.lib import BadArgumentError
 from socorro.external.es.base import ElasticsearchConfig
@@ -257,7 +257,7 @@ class SocorroCommon(object):
         ):
             name = implementation.__class__.__name__
             cache_key = hashlib.md5(
-                name + str(params)
+                name + text_type(params)
             ).hexdigest()
 
             if not refresh_cache:

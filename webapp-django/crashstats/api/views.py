@@ -3,7 +3,6 @@ import re
 import datetime
 import inspect
 from past.builtins import basestring
-from builtins import str
 
 from django import http
 from django.shortcuts import render
@@ -13,6 +12,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
+from six import text_type
 # explicit import because django.forms has an __all__
 from django.forms.forms import DeclarativeFieldsMetaclass
 
@@ -248,12 +248,12 @@ def model_wrapper(request, model_name):
             raise
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
-                json.dumps({'error': str(exception)}),
+                json.dumps({'error': text_type(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
         except BAD_REQUEST_EXCEPTIONS as exception:
             return http.HttpResponseBadRequest(
-                json.dumps({'error': str(exception)}),
+                json.dumps({'error': text_type(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
 

@@ -1,5 +1,6 @@
 from past.builtins import basestring
-from builtins import str
+
+from six import text_type
 
 
 def string_hex_to_hex_string(snippet):
@@ -39,11 +40,11 @@ def pcidatabase__parse_graphics_devices_iterable(iterable, delimiter='\t'):
         if line.startswith(';'):
             continue
         try:
-            line = str(line, 'utf-8')
+            line = text_type(line, 'utf-8')
         except UnicodeDecodeError:
             try:
                 # the PCIDatabase.com's CSV file uses this
-                line = str(line, 'cp1252')
+                line = text_type(line, 'cp1252')
             except UnicodeDecodeError:
                 continue
         split = [x.strip() for x in line.rstrip().split(delimiter)]
