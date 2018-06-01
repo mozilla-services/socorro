@@ -85,8 +85,20 @@ time {
     height: 18px;
     vertical-align: middle;
 }
+.logout-form {
+    display: inline;
+}
+button.sign-out-button {
+    background: none;
+    color: @blue-60;
+    font-size: @base-font-size;
+    padding: 0;
 
-
+    &:hover {
+        background: none;
+        text-decoration: underline;
+    }
+}
 
 /* --- */
 // #NOTE(amikulski): Below this line are the elements I could not verify exist on the site, and will
@@ -248,16 +260,6 @@ div.each-sparkline {
     h3 {
         margin: 0.75em 0 0 0;
     }
-}
-
-
-/* hide google ssIFrame */
-#ssIFrame_google {
-    display: none;
-}
-
-.google-signin {
-    &:extend(.float_right);
 }
 
 /* jQueryUI theme overrides */

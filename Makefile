@@ -54,7 +54,7 @@ my.env:
 build: my.env
 	${DC} build base
 	${DC} build webapp # crontabber is based off of the webapp image
-	${DC} build processor crontabber docs
+	${DC} build processor crontabber docs oidcprovider
 	touch .docker-build
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
