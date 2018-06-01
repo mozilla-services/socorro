@@ -1,20 +1,21 @@
-/*global ga */
+/* global ga */
+/* exported Analytics */
 
 var Analytics = (function() {
-    'use strict';
+  'use strict';
 
-    function wrap() {
-        if (typeof ga !== 'undefined') {
-            ga.apply(undefined, arguments);
-        }
+  function wrap() {
+    if (typeof ga !== 'undefined') {
+      ga.apply(undefined, arguments);
     }
+  }
 
-    return {
-        trackTabSwitch: function(page, id) {
-            wrap('send', 'event', 'tab', page, id);
-        },
-        trackPageview: function(url) {
-            wrap('send', 'pageview', url);
-        }
-    };
+  return {
+    trackTabSwitch: function(page, id) {
+      wrap('send', 'event', 'tab', page, id);
+    },
+    trackPageview: function(url) {
+      wrap('send', 'pageview', url);
+    },
+  };
 })();

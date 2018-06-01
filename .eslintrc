@@ -1,22 +1,18 @@
 rules:
-  indent:
-    - 2
-    - 4
-  quotes:
-    - 1
-    - single
   linebreak-style:
     - 2
     - unix
-  semi:
-    - 2
-    - always
-  comma-dangle:
-    - 1
-    - always-multiline
-  no-extra-semi:
+  no-console:
     - 1
 env:
   browser: true
   jquery: true
-extends: 'eslint:recommended'
+globals:
+  $: false
+  Analytics: false
+  browser: false
+  moment: false
+  Qs: false
+extends:
+  - eslint:recommended
+  - plugin:prettier/recommended

@@ -37,6 +37,9 @@ docs: my.env
 lint: my.env
 	${DC} run processor flake8
 
+eslint: my.env
+	${DC} run --workdir="/app/webapp-django" webapp /webapp-frontend-deps/node_modules/.bin/eslint /app/webapp-django
+
 .PHONY: dockerbuild dockersetup dockertest dockertestshell dockerrun
 
 DC := $(shell which docker-compose)

@@ -57,6 +57,11 @@ jobs:
             make dockerbuild
 
       - run:
+          name: Run eslint
+          working_directory: /socorro
+          command: docker run --workdir="/app/webapp-django" local/socorro_webapp /webapp-frontend-deps/node_modules/.bin/eslint /app/webapp-django
+
+      - run:
           name: Run tests
           working_directory: /socorro
           command: make dockertest
