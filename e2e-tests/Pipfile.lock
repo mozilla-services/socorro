@@ -188,11 +188,10 @@
         },
         "selenium": {
             "hashes": [
-                "sha256:2b6f018e55f50e9c67a67caec2f73f806f72c162fb38cf3ea79e0a8f6506bf56",
-                "sha256:5841fb30c3965866220c34d16de8e3d091e2833fcac385160a63db0c3522a297"
+                "sha256:1372101ad23798462038481f92ba1c7fab8385c788b05da6b44318f10ea52422",
+                "sha256:b8a2630fd858636c894960726ca3c94d8277e516ea3a9d81614fb819a5844764"
             ],
-            "index": "pypi",
-            "version": "==3.11.0"
+            "version": "==3.12.0"
         },
         "six": {
             "hashes": [
