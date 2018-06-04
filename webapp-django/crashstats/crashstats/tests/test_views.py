@@ -42,12 +42,6 @@ from .test_models import Response
 from socorro.external.es.super_search_fields import FIELDS
 
 
-SAMPLE_STATUS = {
-    'breakpad_revision': '1035',
-    'socorro_revision': '017d7b3f7042ce76bc80949ae55b41d1e915ab62',
-    'schema_revision': 'schema_12345',
-}
-
 _SAMPLE_META = {
     'InstallTime': '1339289895',
     'FramePoisonSize': '4096',
@@ -1290,18 +1284,6 @@ class TestViews(BaseTestViews):
         )
         assert response.status_code == 302
         assert response['location'].endswith(target)
-
-    def test_status_revision(self):
-        def mocked_get(**options):
-            return SAMPLE_STATUS
-
-        models.Status.implementation().get.side_effect = mocked_get
-
-        url = reverse('crashstats:status_revision')
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert response.content == '017d7b3f7042ce76bc80949ae55b41d1e915ab62'
-        assert 'text/plain' in response['content-type']
 
     def test_login_required(self):
         url = reverse(

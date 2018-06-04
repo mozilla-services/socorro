@@ -19,7 +19,6 @@ from crashstats.crashstats.models import (
     CrontabberState,
     Reprocessing,
     ProductBuildTypes,
-    Status,
     ProcessedCrash,
     RawCrash,
     UnredactedCrash,
@@ -94,14 +93,33 @@ class TestViews(BaseTestViews):
         """any use of model_wrapper should return a CORS header"""
 
         def mocked_get(**options):
+            dt = timezone.now()
             return {
-                "breakpad_revision": "1139",
-                "socorro_revision": "9cfa4de",
+                "state": {
+                    "automatic-emails": {
+                        "next_run": dt,
+                        "first_run": dt,
+                        "depends_on": [],
+                        "last_run": dt,
+                        "last_success": dt,
+                        "error_count": 0,
+                        "last_error": {}
+                    },
+                    "ftpscraper": {
+                        "next_run": dt,
+                        "first_run": dt,
+                        "depends_on": [],
+                        "last_run": dt,
+                        "last_success": dt,
+                        "error_count": 0,
+                        "last_error": {}
+                    }
+                }
             }
 
-        Status.implementation().get.side_effect = mocked_get
+        CrontabberState.implementation().get.side_effect = mocked_get
 
-        url = reverse('api:model_wrapper', args=('Status',))
+        url = reverse('api:model_wrapper', args=('CrontabberState',))
         response = self.client.get(url)
         assert response.status_code == 200
         assert response['Access-Control-Allow-Origin'] == '*'
@@ -539,23 +557,6 @@ class TestViews(BaseTestViews):
         res = json.loads(response.content)
         assert 'errors' in res
         assert len(res['errors']) == 3
-
-    def test_Status(self):
-
-        def mocked_get(**options):
-            return {
-                "breakpad_revision": "1139",
-                "socorro_revision": "9cfa4de",
-            }
-
-        Status.implementation().get.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('Status',))
-        response = self.client.get(url)
-        assert response.status_code == 200
-        dump = json.loads(response.content)
-        assert dump['socorro_revision']
-        assert dump['breakpad_revision']
 
     def test_CrontabberState(self):
         # The actual dates dont matter, but it matters that it's a
