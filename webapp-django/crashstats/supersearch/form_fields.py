@@ -1,6 +1,7 @@
 import operator
 
 import isodate
+from six import string_types
 
 from django import forms
 from django.utils.timezone import utc
@@ -46,7 +47,7 @@ class PrefixedField(object):
     prefixed_value = None
 
     def to_python(self, value):
-        if isinstance(value, str):
+        if isinstance(value, string_types):
             self.operator, value = split_on_operator(value)
 
         return super(PrefixedField, self).to_python(value)
