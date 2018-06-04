@@ -108,6 +108,7 @@ class CSignatureTool(SignatureTool):
 
         self.fixup_space = re.compile(r' (?=[\*&,])')
         self.fixup_comma = re.compile(r',(?! )')
+        self.fixup_hash = re.compile(r'::h[0-9a-fA-F]+$')
 
     @staticmethod
     def _is_exception(exception_list, remaining_original_line, line_up_to_current_position):
@@ -220,6 +221,8 @@ class CSignatureTool(SignatureTool):
             function = self.fixup_space.sub('', function)
             # Ensure a space after commas
             function = self.fixup_comma.sub(', ', function)
+            # Remove rust-generated uniqueness hashes
+            function = self.fixup_hash.sub('', function)
             return function
 
         # if source is not None and source_line is not None:
