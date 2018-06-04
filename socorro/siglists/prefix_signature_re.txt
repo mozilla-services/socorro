@@ -241,6 +241,7 @@ _VEC_memcpy
 _VEC_memzero
 .*WaitFor
 wcslen
+wcsrtombs
 __wrap_realloc
 WSARecv
 WSASend
