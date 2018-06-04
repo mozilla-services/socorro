@@ -185,12 +185,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/report-pending.min.css',
     },
-    'api_tokens': {
-        'source_filenames': (
-            'manage/css/api_tokens.less',
-        ),
-        'output_filename': 'css/api-tokens.min.css',
-    },
     'home': {
         'source_filenames': (
             'home/css/home.less',
@@ -210,12 +204,6 @@ PIPELINE_CSS = {
             'manage/css/supersearch_fields.less',
         ),
         'output_filename': 'css/manage-supersearch-fields.min.css',
-    },
-    'manage:status_message': {
-        'source_filenames': (
-            'manage/css/status_message.less',
-        ),
-        'output_filename': 'css/manage-status-message.min.css',
     },
     'profile': {
         'source_filenames': (
@@ -253,7 +241,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'js/tablesorter.min.css',
     },
-
 }
 
 #
@@ -262,12 +249,6 @@ PIPELINE_CSS = {
 
 
 PIPELINE_JS = {
-    'pagination': {
-        'source_filenames': (
-            'manage/js/pagination_utils.js',
-        ),
-        'output_filename': 'js/pagination.min.js',
-    },
     'date_filters': {
         'source_filenames': (
             'flatpickr/dist/flatpickr.min.js',
@@ -428,29 +409,11 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/report-pending.min.js',
     },
-    'api_tokens': {
-        'source_filenames': (
-            'manage/js/api_tokens.js',
-        ),
-        'output_filename': 'js/api-tokens.min.js',
-    },
-    'manage:events': {
-        'source_filenames': (
-            'manage/js/events.js',
-        ),
-        'output_filename': 'js/manage-events.min.js',
-    },
     'manage:graphics_devices': {
         'source_filenames': (
             'manage/js/graphics_devices.js',
         ),
         'output_filename': 'js/manage-graphics-devices.min.js',
-    },
-    'manage:groups': {
-        'source_filenames': (
-            'manage/js/groups.js',
-        ),
-        'output_filename': 'js/manage-groups.min.js',
     },
     'manage:supersearch_field': {
         'source_filenames': (
@@ -463,12 +426,6 @@ PIPELINE_JS = {
             'manage/js/supersearch_fields.js',
         ),
         'output_filename': 'js/manage-supersearch-fields.min.js',
-    },
-    'manage:users': {
-        'source_filenames': (
-            'manage/js/users.js',
-        ),
-        'output_filename': 'js/manage-users.min.js',
     },
     'signature_report': {
         'source_filenames': (
