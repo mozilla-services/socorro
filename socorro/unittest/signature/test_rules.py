@@ -119,6 +119,10 @@ class TestCSignatureTool:
             (('module', '', '', '23', '0xFFF'), 'module@0xFFF'),
             (('module', '', '', '', '0xFFF'), 'module@0xFFF'),
             ((None, '', '', '', '0xFFF'), '@0xFFF'),
+            (('module', 'expect_failed::h7f635057bfba806a', '', '', ''),
+             'expect_failed'),
+            (('module', 'expect_failed::h7f6350::blah', '', '', ''),
+             'expect_failed::h7f6350::blah'),
         ]
         for args, e in a:
             r = s.normalize_signature(*args)
