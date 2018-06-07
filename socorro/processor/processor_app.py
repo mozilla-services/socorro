@@ -9,6 +9,7 @@ import os
 import sys
 import collections
 
+from six import reraise
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -283,11 +284,8 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             # Capture the error
             self._capture_error(crash_id, exc_type, exc_value, exc_tb)
 
-            # Why not just do `raise exception`?
-            # Because if we don't do it this way, the eventual traceback
-            # is going to point to *this* line (right after this comment)
-            # rather than the actual error where it originally happened.
-            raise exc_type, exc_value, exc_tb
+            # Re-raise the original exception with the correct traceback
+            reraise(exc_type, exc_value, exc_tb)
         finally:
             # earlier, we created the dumps as files on the file system,
             # we need to clean up after ourselves.

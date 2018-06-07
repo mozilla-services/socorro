@@ -12,12 +12,13 @@ import os
 import re
 import sys
 
+import six
 from alembic import command
 from alembic.config import Config
 from configman import Namespace, class_converter
+from six.moves import cStringIO
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
-from six.moves import cStringIO
 
 from socorro.app.socorro_app import App
 from socorro.external.postgresql import staticdata
@@ -200,7 +201,7 @@ class SocorroDBApp(App):
                 autocommit=False
         ) as db:
             if 'test' not in database_name and not self.config.force:
-                confirm = raw_input(
+                confirm = six.moves.input(
                     'drop database %s [y/N]: ' % database_name
                 )
                 if not confirm == "y":

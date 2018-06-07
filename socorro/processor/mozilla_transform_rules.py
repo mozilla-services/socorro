@@ -7,6 +7,7 @@ import gzip
 import re
 from sys import maxint
 import time
+from past.builtins import basestring
 from urllib import unquote_plus
 
 import ujson

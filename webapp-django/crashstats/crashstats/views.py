@@ -9,6 +9,7 @@ from operator import itemgetter
 from io import BytesIO
 
 import isoweek
+from six import text_type
 
 from django import http
 from django.conf import settings
@@ -564,7 +565,7 @@ def crashes_per_day(request, default_context=None):
             _date_range_type
         )
     except BadArgumentError as exception:
-        return http.HttpResponseBadRequest(unicode(exception))
+        return http.HttpResponseBadRequest(text_type(exception))
 
     render_csv = request.GET.get('format') == 'csv'
     data_table = {

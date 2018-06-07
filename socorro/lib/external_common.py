@@ -8,6 +8,7 @@ Common functions for external modules.
 
 import json
 import datetime
+from past.builtins import basestring
 
 from socorro.lib import BadArgumentError
 from socorro.lib.util import DotDict

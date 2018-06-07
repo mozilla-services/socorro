@@ -169,7 +169,7 @@ class IntegrationTestADI(PostgreSQLTestCase):
 
         hit, = stats['hits']
         expected = {
-            'adi_count': 64L + 16L,
+            'adi_count': 64 + 16,
             'date': start.date(),
             'version': '40.0',
             'build_type': 'release'
@@ -186,7 +186,7 @@ class IntegrationTestADI(PostgreSQLTestCase):
         assert stats['total'] == 1
         hit, = stats['hits']
         expected = {
-            'adi_count': 4 + 1L,
+            'adi_count': 4 + 1,
             'date': start.date(),
             'version': '39.0b1',
             'build_type': 'release'
