@@ -85,8 +85,13 @@ SignatureReport.CorrelationsTab.prototype.loadCorrelations = function() {
   window.correlations.getCorrelations(SignatureReport.signature, channel, product).then(function(results) {
     var content = results;
     if (Array.isArray(results)) {
-      content = results.join('\n');
+      contentElt.empty();
+      for (var i = 0; i < results.length; i++) {
+        contentElt.append(document.createTextNode(results[i]));
+        contentElt.append(document.createElement('br'));
+      }
+    } else {
+      contentElt.empty().text(content);
     }
-    contentElt.empty().text(content);
   });
 };
