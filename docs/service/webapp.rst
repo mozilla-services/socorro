@@ -18,7 +18,7 @@ configuration.
 
 To ease debugging, you can run a shell in the container::
 
-  $ docker-compose run webapp /bin/bash
+  $ docker-compose run --service-ports webapp /bin/bash
 
 
 Then you can start and stop the webapp, adjust files, and debug.
