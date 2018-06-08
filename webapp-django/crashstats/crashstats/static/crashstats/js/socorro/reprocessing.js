@@ -19,12 +19,12 @@ $(function() {
       .done(function() {
         $('.reprocessing-success', parent).show();
       })
-      .error(function(jqXHR) {
+      .fail(function(jqXHR) {
         $('.reprocessing-error .status', parent).text(jqXHR.status);
         $('.reprocessing-error pre', parent).text(jqXHR.responseText);
         $('.reprocessing-error', parent).show();
       })
-      .complete(function() {
+      .always(function() {
         $('.waiting', parent).hide();
         $('form button', parent).prop('disabled', false);
       });
