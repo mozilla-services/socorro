@@ -1299,7 +1299,18 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_report_index(self):
-        dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
+        json_dump = {
+            'system_info': {
+                'os': 'Mac OS X',
+                'os_ver': '10.6.8 10K549',
+                'cpu_arch': 'amd64',
+                'cpu_info': 'family 6 mod',
+                'cpu_count': 1
+            },
+            'sensitive': {
+                'exploitability': 'high'
+            }
+        }
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@example.com'
         comment0 += '\nwww.p0rn.com'
@@ -1328,7 +1339,7 @@ class TestViews(BaseTestViews):
             assert 'datatype' in params
             if params['datatype'] == 'unredacted':
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
-                crash['dump'] = dump
+                crash['json_dump'] = json_dump
                 crash['user_comments'] = comment0
                 return crash
 
@@ -1532,16 +1543,22 @@ class TestViews(BaseTestViews):
         assert re.findall('contentish\s+\(java-applet\)', response.content)
 
     def test_report_index_with_additional_raw_dump_links(self):
-        # using \\n because it goes into the JSON string
-        dump = 'OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1'
+        json_dump = {
+            'system_info': {
+                'os': 'Mac OS X',
+                'os_ver': '10.6.8 10K549',
+                'cpu_arch': 'amd64',
+                'cpu_info': 'family 6 mod',
+                'cpu_count': 1
+            }
+        }
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
 
             if params['datatype'] == 'unredacted':
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
-                del crash['json_dump']
-                crash['dump'] = dump
+                crash['json_dump'] = json_dump
                 return crash
 
             raise NotImplementedError(params)

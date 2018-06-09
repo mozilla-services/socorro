@@ -862,12 +862,6 @@ def report_index(request, crash_id, default_context=None):
         )
         utils.enhance_json_dump(json_dump, settings.VCS_MAPPINGS)
         parsed_dump = json_dump
-    elif 'dump' in context['report']:
-        context['raw_stackwalker_output'] = context['report']['dump']
-        parsed_dump = utils.parse_dump(
-            context['report']['dump'],
-            settings.VCS_MAPPINGS
-        )
     else:
         context['raw_stackwalker_output'] = 'No dump available'
         parsed_dump = {}
