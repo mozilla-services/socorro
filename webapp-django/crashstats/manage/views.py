@@ -2,13 +2,9 @@ import hashlib
 from builtins import str
 
 from django import http
-from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
-from django.db import connection
 from django.shortcuts import redirect, render
-
-import requests
 
 from crashstats.crashstats.models import GraphicsDevices
 from crashstats.supersearch.models import SuperSearchMissingFields
@@ -132,63 +128,3 @@ def supersearch_fields_missing(request):
     context['missing_fields_count'] = missing_fields['total']
 
     return render(request, 'manage/supersearch_fields_missing.html', context)
-
-
-@superuser_required
-def site_status(request):
-    context = {}
-
-    # Get version information for deployed parts
-    version_info = {}
-    for url in settings.OVERVIEW_VERSION_URLS.split(','):
-        url = url.strip()
-        try:
-            data = requests.get(url).json()
-        except Exception as exc:
-            data = {'error': str(exc)}
-        version_info[url] = data
-
-    context['version_info'] = version_info
-
-    # Get alembic migration data
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute('SELECT version_num FROM alembic_version')
-            alembic_version = cursor.fetchone()[0]
-            alembic_error = ''
-    except Exception as exc:
-        alembic_version = ''
-        alembic_error = 'error: %s' % exc
-    context['alembic_version'] = alembic_version
-    context['alembic_error'] = alembic_error
-
-    # Get Django migration data
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute('SELECT id, app, name, applied FROM django_migrations')
-            cols = [col[0] for col in cursor.description]
-            django_db_data = [dict(zip(cols, row)) for row in cursor.fetchall()]
-            django_db_error = ''
-    except Exception as exc:
-        django_db_data = []
-        django_db_error = 'error: %s' % exc
-    context['django_db_data'] = django_db_data
-    context['django_db_error'] = django_db_error
-
-    # Get crontabber data
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                'SELECT app_name, next_run, last_run, last_success, error_count, last_error '
-                'FROM crontabber WHERE error_count > 0'
-            )
-            cols = [col[0] for col in cursor.description]
-            crontabber_data = [dict(zip(cols, row)) for row in cursor.fetchall()]
-            crontabber_error = ''
-    except Exception as exc:
-        crontabber_data = []
-        crontabber_error = 'error: %s' % exc
-    context['crontabber_data'] = crontabber_data
-    context['crontabber_error'] = crontabber_error
-
-    return render(request, 'manage/site_status.html', context)

@@ -302,13 +302,3 @@ class TestViews(BaseTestViews):
         assert 'field_a' in response.content
         assert 'namespace1.field_b' in response.content
         assert 'namespace2.subspace1.field_c' in response.content
-
-    def test_site_status(self):
-        """Basic test to make sure the page loads and has appropriate access"""
-        url = reverse('manage:site_status')
-        response = self.client.get(url)
-        assert response.status_code == 302
-
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200

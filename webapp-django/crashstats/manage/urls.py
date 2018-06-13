@@ -20,7 +20,4 @@ urlpatterns = [
     url('^supersearch-fields/missing/$',
         views.supersearch_fields_missing,
         name='supersearch_fields_missing'),
-    url('^sitestatus/$',
-        views.site_status,
-        name='site_status'),
 ]
