@@ -61,13 +61,35 @@ jobs:
           name: Push to Dockerhub
           working_directory: /socorro
           command: |
-            # set DOCKER_DEPLOY=true in Circle UI to push to Dockerhub
-            DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              scripts/deploy-dockerhub.sh "$CIRCLE_SHA1"
-            fi
+            function retry {
+              set +e
+              local n=0
+              local max=3
+              while true; do
+              "$@" && break || {
+                if [[ $n -lt $max ]]; then
+                  ((n++))
+                  echo "Command failed. Attempt $n/$max:"
+                else
+                  echo "Failed after $n attempts."
+                  exit 1
+                fi
+              }
+              done
+              set -e
+            }
+
+            export DOCKER_TAG="${CIRCLE_SHA1}"
             if [ -n "${CIRCLE_TAG}" ]; then
-              scripts/deploy-dockerhub.sh "$CIRCLE_TAG"
+              export DOCKER_TAG="${CIRCLE_TAG}"
+            fi
+            # push on master or git tag
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ -n "${CIRCLE_TAG}" ]; then
+              echo "${DOCKER_PASSWORD}" | docker login -u="${DOCKER_USERNAME}" --password-stdin
+              for image in "socorro_processor" "socorro_webapp" "socorro_crontabber"; do
+                retry docker tag "local/${image}:latest" "mozilla/${image}:${DOCKER_TAG}"
+                retry docker push "mozilla/${image}:${DOCKER_TAG}"
+              done
             fi
 
 workflows:
