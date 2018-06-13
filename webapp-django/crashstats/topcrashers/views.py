@@ -6,6 +6,7 @@ from django.conf import settings
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.http import urlquote
+from six import text_type
 
 from session_csrf import anonymous_csrf
 
@@ -183,7 +184,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     form = TopCrashersForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(unicode(form.errors))
+        return http.HttpResponseBadRequest(text_type(form.errors))
 
     product = form.cleaned_data['product']
     versions = form.cleaned_data['version']
@@ -277,7 +278,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         'versions': versions,
         'crash_type': crash_type,
         'os_name': os_name,
-        'result_count': unicode(result_count),
+        'result_count': text_type(result_count),
         'mode': tcbs_mode,
         'range_type': range_type,
         'end_date': end_date,

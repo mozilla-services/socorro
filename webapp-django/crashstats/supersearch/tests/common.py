@@ -1,4 +1,5 @@
 import ujson
+from past.builtins import basestring
 
 from crashstats.crashstats.tests.test_models import Response
 

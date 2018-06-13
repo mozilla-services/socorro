@@ -459,7 +459,7 @@ class TesDigitGroupSeparator(TestCase):
         assert digitgroupseparator(None) is None
         assert digitgroupseparator(1000) == '1,000'
         assert digitgroupseparator(-1000) == '-1,000'
-        assert digitgroupseparator(1000000L) == '1,000,000'
+        assert digitgroupseparator(1000000) == '1,000,000'
 
 
 class TestHumanizers(TestCase):

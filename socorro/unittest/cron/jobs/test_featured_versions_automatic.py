@@ -1,5 +1,6 @@
 import datetime
 import json
+from past.builtins import basestring
 
 import mock
 

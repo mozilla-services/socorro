@@ -11,6 +11,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from past.builtins import basestring
 from collections import Sequence, Mapping, defaultdict
 
 import mock

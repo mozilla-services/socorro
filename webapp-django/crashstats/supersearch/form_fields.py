@@ -1,6 +1,7 @@
 import operator
 
 import isodate
+from six import string_types, text_type
 
 from django import forms
 from django.utils.timezone import utc
@@ -46,7 +47,7 @@ class PrefixedField(object):
     prefixed_value = None
 
     def to_python(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
             self.operator, value = split_on_operator(value)
 
         return super(PrefixedField, self).to_python(value)
@@ -64,7 +65,7 @@ class PrefixedField(object):
         """Return the value as a string. """
         if value is None:
             return None
-        return unicode(value)
+        return text_type(value)
 
 
 class MultipleValueField(forms.MultipleChoiceField):

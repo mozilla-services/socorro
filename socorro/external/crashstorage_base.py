@@ -11,6 +11,7 @@ import sys
 import os
 import collections
 import datetime
+from past.builtins import basestring
 
 from socorro.lib.util import DotDict as SocorroDotDict
 

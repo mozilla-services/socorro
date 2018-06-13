@@ -5,6 +5,7 @@
 from itertools import islice
 import logging
 import re
+from past.builtins import basestring
 
 import ujson
 

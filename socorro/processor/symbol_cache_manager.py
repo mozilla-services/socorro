@@ -5,6 +5,7 @@
 import os
 import sys
 import tempfile
+from past.builtins import basestring
 from collections import OrderedDict
 
 from configman import Namespace, RequiredConfig

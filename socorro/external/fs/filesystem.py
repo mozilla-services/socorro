@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from past.builtins import cmp
 import errno
 import os
 from os.path import curdir
@@ -69,7 +70,7 @@ def visitPath(rootDir, fullPath, visit, osModule=os):
             raise OSError(errno.ENOENT, '%s does not exist' % (root))
 
 
-def makedirs(name, mode=0777, osModule=os):
+def makedirs(name, mode=777, osModule=os):
     """makedirs(path [, mode=0777])
 
     Super-mkdir; create a leaf directory and all intermediate ones.
