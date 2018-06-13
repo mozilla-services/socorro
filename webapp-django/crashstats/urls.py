@@ -7,6 +7,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import RedirectView
 from django.views.static import serve
 
+# from .manage.admin import admin_site
 from .base.monkeypatches import patch
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
@@ -46,6 +47,9 @@ urlpatterns = [
     url(r'^profile/', include('crashstats.profile.urls', namespace='profile')),
     url(r'^documentation/', include('crashstats.documentation.urls', namespace='documentation')),
 
+    # Static pages in Django admin
+    url(r'^siteadmin/', include('crashstats.manage.admin_urls', namespace='siteadmin')),
+    # Django-model backed pages in Django admin
     url(r'^siteadmin/', include(admin.site.urls)),
 ]
 

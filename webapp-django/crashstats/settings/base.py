@@ -99,6 +99,8 @@ INSTALLED_APPS = (
     'pinax.eventlog',
     'django_jinja',
 
+    # NOTE(willkg): This should be last so that the template loader picks
+    # up our admin index.html rather than the default admin one.
     'django.contrib.admin',
 )
 

@@ -135,28 +135,6 @@ def supersearch_fields_missing(request):
 
 
 @superuser_required
-def crash_me_now(request):
-    if request.method == 'POST':
-        form = forms.CrashMeNowForm(request.POST)
-        if form.is_valid():
-            klass = {
-                'NameError': NameError,
-                'ValueError': ValueError,
-                'AttributeError': AttributeError
-            }.get(form.cleaned_data['exception_type'])
-            # crash now!
-            raise klass(form.cleaned_data['exception_value'])
-    else:
-        initial = {
-            'exception_type': 'NameError',
-            'exception_value': 'Webapp Crash Me Now test error',
-        }
-        form = forms.CrashMeNowForm(initial=initial)
-    context = {'form': form}
-    return render(request, 'manage/crash_me_now.html', context)
-
-
-@superuser_required
 def site_status(request):
     context = {}
 

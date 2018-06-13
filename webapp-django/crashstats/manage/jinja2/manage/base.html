@@ -19,8 +19,6 @@
                     {% if url( 'manage:graphics_devices') in request.path_info %}class="selected"{% endif %}>Graphics Devices</a></li>
                 <li><a href="{{ url('manage:supersearch_fields_missing') }}"
                     {% if url( 'manage:supersearch_fields_missing') in request.path_info %}class="selected"{% endif %}>Super Search Fields</a></li>
-                <li><a href="{{ url('manage:crash_me_now') }}"
-                    {% if url( 'manage:crash_me_now') in request.path_info %}class="selected"{% endif %}>Crash Me Now</a></li>
                 <li><a href="{{ url('manage:site_status') }}"
                     {% if url( 'manage:site_status') in request.path_info %}class="selected"{% endif %}>Site Status</a></li>
             </ul>

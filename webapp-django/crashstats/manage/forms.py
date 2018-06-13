@@ -26,15 +26,3 @@ class GraphicsDeviceUploadForm(BaseForm):
             ('pci.ids', 'The PCI ID Repository (https://pci-ids.ucw.cz/)'),
         )
     )
-
-
-class CrashMeNowForm(BaseForm):
-
-    exception_type = forms.ChoiceField(
-        choices=(
-            ('NameError', 'NameError'),
-            ('ValueError', 'ValueError'),
-            ('AttributeError', 'AttributeError'),
-        )
-    )
-    exception_value = forms.CharField()

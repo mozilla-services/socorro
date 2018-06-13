@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 
 import mock
-import pytest
 
 from crashstats.supersearch.models import (
     SuperSearchFields,
@@ -303,24 +302,6 @@ class TestViews(BaseTestViews):
         assert 'field_a' in response.content
         assert 'namespace1.field_b' in response.content
         assert 'namespace2.subspace1.field_c' in response.content
-
-    def test_crash_me_now(self):
-        url = reverse('manage:crash_me_now')
-        response = self.client.get(url)
-        assert response.status_code == 302
-
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        with pytest.raises(NameError):
-            self.client.post(
-                url,
-                {
-                    'exception_type': 'NameError',
-                    'exception_value': 'Crash!'
-                }
-            )
 
     def test_site_status(self):
         """Basic test to make sure the page loads and has appropriate access"""
