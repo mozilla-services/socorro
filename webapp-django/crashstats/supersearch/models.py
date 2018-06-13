@@ -1,5 +1,6 @@
 import copy
 import functools
+from past.builtins import basestring
 
 from socorro.external.es import query
 from socorro.external.es import supersearch

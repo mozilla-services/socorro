@@ -8,6 +8,7 @@ Common functions for search-related external modules.
 
 import datetime
 import json
+from past.builtins import basestring
 
 from socorro.lib import (
     BadArgumentError,

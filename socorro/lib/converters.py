@@ -1,3 +1,4 @@
+from past.builtins import basestring
 from configman import RequiredConfig, Namespace, class_converter
 
 

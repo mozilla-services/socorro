@@ -190,15 +190,16 @@ window.correlations = (function() {
         var signatureData = data[product][channel].signatures[signature];
 
         if (!signatureData || !signatureData.results) {
-          return (
+          return [
             'No correlation data was generated for the signature "' +
-            signature +
-            '" on the "' +
-            channel +
-            '" channel, for the "' +
-            product +
-            '" product.'
-          );
+              signature +
+              '" on the "' +
+              channel +
+              '" channel, for the "' +
+              product +
+              '" product.',
+            'There may be correlation data available for other channels; please select another using the controls above.',
+          ];
         }
 
         var correlationData = signatureData.results;

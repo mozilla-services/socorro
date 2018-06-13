@@ -6,6 +6,7 @@ import json
 
 from django.http import HttpResponse
 from django.test.client import RequestFactory
+from six import text_type, binary_type
 
 from crashstats.crashstats import utils
 
@@ -521,10 +522,12 @@ class TestUtils(TestCase):
             123,
             1.23,
         ])
-
+        #NOTE: This probably needs to be a StringIO in Python 2 and a BytesIO in Python 3
+        # assuming UnicodeWriter even works in Python 3. I made change to binary_type for
+        # a simple fix until we run python 3 harness test in future.
         result = out.getvalue()
-        assert isinstance(result, str)
-        u_result = unicode(result, 'utf-8')
+        assert isinstance(result, binary_type)
+        u_result = text_type(result, 'utf-8')
         assert 'abc,' in u_result
         assert u'\xe4\xc3,' in u_result
         assert '123,' in u_result

@@ -1,16 +1,11 @@
 [[source]]
-
 url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [dev-packages]
 
-
-
 [packages]
-
 mozlog = "*"
 PyPOM = "*"
 pytest = "*"
@@ -22,3 +17,4 @@ pytest-variables = "*"
 pytest-xdist = "*"
 selenium = "*"
 requests = "*"
+future = "*"

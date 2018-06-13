@@ -6,6 +6,7 @@ import re
 import datetime
 import isodate  # 3rd party
 import json
+from past.builtins import basestring
 
 UTC = isodate.UTC
 

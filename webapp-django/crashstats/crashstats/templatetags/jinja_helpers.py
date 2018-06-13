@@ -2,11 +2,14 @@ import datetime
 import json
 import re
 import urllib
+from past.builtins import basestring
+from past.builtins import long
 
 import isodate
 import jinja2
 import humanfriendly
 from django_jinja import library
+from six import text_type
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
@@ -41,7 +44,7 @@ def urlencode(txt):
     if not isinstance(txt, basestring):
         # Do nothing on non-strings.
         return txt
-    if isinstance(txt, unicode):
+    if isinstance(txt, text_type):
         txt = txt.encode('utf-8')
     return urllib.quote_plus(txt).replace('+', '%20')
 

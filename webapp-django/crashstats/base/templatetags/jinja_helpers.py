@@ -1,5 +1,6 @@
 import urlparse
 import urllib
+from past.builtins import basestring
 
 import jinja2
 from django_jinja import library
