@@ -99,3 +99,25 @@ dockertest3: my.env .docker-build3
 
 dockertestshell3: my.env .docker-build3
 	USEPYTHON=3 ./docker/run_tests_in_docker.sh --shell
+
+# FIXME(willkg): We deprecated these make rules in favor of ones without
+# the "docker" prefix. Remove these after August 2018.
+.PHONY: dockerbuild dockertest dockertestshell dockerrun dockersetup dockerupdatedata
+
+dockerbuild:
+	$(error DEPRECATED: use "make build" instead)
+
+dockertest:
+	$(error DEPRECATED: use "make test" instead)
+
+dockertestshell:
+	$(error DEPRECATED: use "make testshell" instead)
+
+dockerrun:
+	$(error DEPRECATED: use "make run" instead)
+
+dockersetup:
+	$(error DEPRECATED: use "make setup" instead)
+
+dockerupdatedata:
+	$(error DEPRECATED: use "make updatedata" instead)
