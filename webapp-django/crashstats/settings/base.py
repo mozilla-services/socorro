@@ -71,6 +71,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'session_csrf',
+    'django.contrib.admin.apps.SimpleAdminConfig',
 
     # Application base, containing global templates.
     'crashstats.base',
@@ -98,10 +99,6 @@ INSTALLED_APPS = (
     'waffle',
     'pinax.eventlog',
     'django_jinja',
-
-    # NOTE(willkg): This should be last so that the template loader picks
-    # up our admin index.html rather than the default admin one.
-    'django.contrib.admin',
 )
 
 

@@ -2,12 +2,11 @@ import os
 
 from django.conf import settings
 from django.conf.urls import include, url
-from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import RedirectView
 from django.views.static import serve
 
-# from .manage.admin import admin_site
+from .manage import admin_site
 from .base.monkeypatches import patch
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
@@ -50,7 +49,7 @@ urlpatterns = [
     # Static pages in Django admin
     url(r'^siteadmin/', include('crashstats.manage.admin_urls', namespace='siteadmin')),
     # Django-model backed pages in Django admin
-    url(r'^siteadmin/', include(admin.site.urls)),
+    url(r'^siteadmin/', include(admin_site.site.urls)),
 ]
 
 # In DEBUG mode, serve media files through Django.
