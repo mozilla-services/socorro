@@ -45,7 +45,7 @@ jobs:
           working_directory: /socorro
           command: |
             docker info
-            make dockerbuild
+            make build
 
       - run:
           name: Run eslint
