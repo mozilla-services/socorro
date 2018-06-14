@@ -147,12 +147,12 @@ them to the constraints file::
 
 Then rebuild your docker environment::
 
-  make dockerbuild
+  make build
 
 If there are problems, it'll tell you.
 
 .. note:: If you're unsure what dependencies to add to the constraints file,
-   the error from running ``make dockerbuild`` should include a list of
+   the error from running ``make build`` should include a list of
    dependencies that were missing, including their version numbers and hashes.
 
 
@@ -169,7 +169,7 @@ You can add new dependencies using ``npm`` (you must use version 5 or higher):
 
 Then rebuild your docker environment::
 
-  make dockerbuild
+  make build
 
 If there are problems, it'll tell you.
 

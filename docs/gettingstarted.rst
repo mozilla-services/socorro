@@ -43,7 +43,7 @@ Quickstart
 
 3. From the root of this repository, run::
 
-     $ make dockerbuild
+     $ make build
 
    That will build the Docker images required for development: processor,
    webapp, and crontabber.
@@ -127,7 +127,7 @@ After you do that, you'll need to update other things.
 If there were changes to the requirements files or setup scripts, you'll need to
 build new images::
 
-  $ make dockerbuild
+  $ make build
 
 
 If there were changes to the database tables, stored procedures, types,
