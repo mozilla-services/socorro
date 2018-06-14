@@ -4,7 +4,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import sys
-import os
 
 from configman import Namespace, class_converter
 from crontabber.app import (
@@ -58,12 +57,6 @@ STAGE_NEW_JOBS = ', '.join(
     DEFAULT_JOBS_BASE + [
         'socorro.cron.jobs.fetch_adi_alt.RawADIMoverCronApp|1d|08:20'
     ]
-)
-
-ROOT = os.path.join(
-    os.path.dirname(__file__),
-    os.pardir,
-    os.pardir,
 )
 
 
@@ -184,11 +177,6 @@ class CronTabberApp(CronTabberBase, App):
             self._remember_success(job_class, success_date=now, duration=0)
 
     def main(self):
-        version_json_path = os.path.join(ROOT, "version.json")
-        if os.path.exists(version_json_path):
-            with open(version_json_path, 'r') as fp:
-                self.config.logger.info('version.json: ' + fp.read().strip())
-
         if self.config.get('mark-success'):
             self.mark_success(self.config.get('mark-success'))
             return 0
