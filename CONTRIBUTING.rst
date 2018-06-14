@@ -197,7 +197,7 @@ The tests in ``webapp-django/`` use `pytest <https://pytest.org/>`_.
 
 To run the tests, do::
 
-  $ make dockertest
+  $ make test
 
 
 That runs the ``/app/docker/run_test.sh`` script in the webapp container using
@@ -206,7 +206,7 @@ test configuration.
 To run specific tests or specify arguments, you'll want to start a shell in the
 test container::
 
-  $ make dockertestshell
+  $ make testshell
 
 
 Then you can run pytest or the webapp tests as you like.

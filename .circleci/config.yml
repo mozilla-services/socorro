@@ -55,7 +55,7 @@ jobs:
       - run:
           name: Run tests
           working_directory: /socorro
-          command: make dockertest
+          command: make test
 
       - run:
           name: Push to Dockerhub

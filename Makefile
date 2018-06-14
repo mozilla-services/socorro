@@ -17,12 +17,12 @@ help:
 	@echo "  shell            - open a shell in the base container"
 	@echo "  clean            - remove all build, test, coverage and Python artifacts"
 	@echo "  lint             - check style with flake8"
-	@echo "  dockertest       - run unit tests"
-	@echo "  dockertestshell  - open a shell in the systemtest container"
+	@echo "  test             - run unit tests"
+	@echo "  testshell        - open a shell for running tests"
 	@echo "  docs             - generate Sphinx HTML documentation, including API docs"
 	@echo ""
-	@echo "  dockersetup      - set up Postgres, Elasticsearch, and local S3"
-	@echo "  dockerupdatedata - add/update necessary database data"
+	@echo "  setup            - set up Postgres, Elasticsearch, and local S3"
+	@echo "  updatedata       - add/update necessary database data"
 	@echo ""
 	@echo "See https://socorro.readthedocs.io/ for more documentation."
 
@@ -40,7 +40,7 @@ lint: my.env
 eslint: my.env
 	${DC} run --workdir="/app/webapp-django" webapp /webapp-frontend-deps/node_modules/.bin/eslint /app/webapp-django
 
-.PHONY: build dockersetup dockertest dockertestshell dockerrun
+.PHONY: build setup test testshell run dependencycheck stop
 
 DC := $(shell which docker-compose)
 
@@ -62,25 +62,25 @@ build: my.env
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
 # postgres going forward and has the needed environment variables.
-dockersetup: my.env .docker-build
+setup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup.sh
 
-dockertest: my.env .docker-build
+test: my.env .docker-build
 	./docker/run_tests_in_docker.sh ${ARGS}
 
-dockertestshell: my.env .docker-build
+testshell: my.env .docker-build
 	./docker/run_tests_in_docker.sh --shell
 
-dockerupdatedata: my.env
+updatedata: my.env
 	./docker/run_update_data.sh
 
-dockerrun: my.env
+run: my.env
 	${DC} up webapp processor
 
-dockerstop: my.env
+stop: my.env
 	${DC} stop
 
-dockerdependencycheck: my.env
+dependencycheck: my.env
 	${DC} run crontabber ./docker/run_dependency_checks.sh
 
 # Python 3 transition related things
