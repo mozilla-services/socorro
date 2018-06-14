@@ -11,7 +11,7 @@ default:
 help:
 	@echo "Socorro make rules:"
 	@echo ""
-	@echo "  dockerbuild      - build docker containers for dev"
+	@echo "  build            - build docker containers for dev"
 	@echo "  dockerrun        - docker-compose up the entire system for dev"
 	@echo ""
 	@echo "  shell            - open a shell in the base container"
@@ -40,7 +40,7 @@ lint: my.env
 eslint: my.env
 	${DC} run --workdir="/app/webapp-django" webapp /webapp-frontend-deps/node_modules/.bin/eslint /app/webapp-django
 
-.PHONY: dockerbuild dockersetup dockertest dockertestshell dockerrun
+.PHONY: build dockersetup dockertest dockertestshell dockerrun
 
 DC := $(shell which docker-compose)
 
@@ -52,9 +52,9 @@ my.env:
 	fi
 
 .docker-build:
-	make dockerbuild
+	make build
 
-dockerbuild: my.env
+build: my.env
 	${DC} build base
 	${DC} build webapp # crontabber is based off of the webapp image
 	${DC} build processor crontabber docs
