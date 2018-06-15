@@ -45,7 +45,7 @@ jobs:
           working_directory: /socorro
           command: |
             docker info
-            make dockerbuild
+            make build
 
       - run:
           name: Run eslint
@@ -55,7 +55,7 @@ jobs:
       - run:
           name: Run tests
           working_directory: /socorro
-          command: make dockertest
+          command: make test
 
       - run:
           name: Push to Dockerhub

@@ -147,12 +147,12 @@ them to the constraints file::
 
 Then rebuild your docker environment::
 
-  make dockerbuild
+  make build
 
 If there are problems, it'll tell you.
 
 .. note:: If you're unsure what dependencies to add to the constraints file,
-   the error from running ``make dockerbuild`` should include a list of
+   the error from running ``make build`` should include a list of
    dependencies that were missing, including their version numbers and hashes.
 
 
@@ -169,7 +169,7 @@ You can add new dependencies using ``npm`` (you must use version 5 or higher):
 
 Then rebuild your docker environment::
 
-  make dockerbuild
+  make build
 
 If there are problems, it'll tell you.
 
@@ -197,7 +197,7 @@ The tests in ``webapp-django/`` use `pytest <https://pytest.org/>`_.
 
 To run the tests, do::
 
-  $ make dockertest
+  $ make test
 
 
 That runs the ``/app/docker/run_test.sh`` script in the webapp container using
@@ -206,7 +206,7 @@ test configuration.
 To run specific tests or specify arguments, you'll want to start a shell in the
 test container::
 
-  $ make dockertestshell
+  $ make testshell
 
 
 Then you can run pytest or the webapp tests as you like.

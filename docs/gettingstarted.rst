@@ -43,7 +43,7 @@ Quickstart
 
 3. From the root of this repository, run::
 
-     $ make dockerbuild
+     $ make build
 
    That will build the Docker images required for development: processor,
    webapp, and crontabber.
@@ -54,7 +54,7 @@ Quickstart
 4. Then you need to set up the Postgres database and Elasticssearch. To do that,
    run::
 
-     $ make dockersetup
+     $ make setup
 
    This creates the Postgres database and sets up tables, stored procedures,
    integrity rules, types, and a bunch of other things. It also adds a bunch of
@@ -63,7 +63,7 @@ Quickstart
    For Elasticsearch, it sets up Supersearch fields and the index for raw and
    processed crash data.
 
-   You can run ``make dockersetup`` any time you want to wipe the Postgres
+   You can run ``make setup`` any time you want to wipe the Postgres
    database and Elasticsearch to pick up changes to those storage systems or
    reset your environment.
 
@@ -72,7 +72,7 @@ Quickstart
 
    To do that, run::
 
-     $ make dockerupdatedata
+     $ make updatedata
 
    This adds data that changes day-to-day. Things like product builds and
    normalization data.
@@ -127,19 +127,19 @@ After you do that, you'll need to update other things.
 If there were changes to the requirements files or setup scripts, you'll need to
 build new images::
 
-  $ make dockerbuild
+  $ make build
 
 
 If there were changes to the database tables, stored procedures, types,
 migrations, or anything like that, you'll need to wipe the Postgres database and
 Elasticsearch::
 
-  $ make dockersetup
+  $ make setup
 
 
 After doing that, you'll definitely want to update data::
 
-  $ make dockerupdatedata
+  $ make updatedata
 
 
 Wiping crash storage and state
@@ -148,7 +148,7 @@ Wiping crash storage and state
 Any time you want to wipe all the crash storage destinations, remove all the
 data, and reset the state of the system, run::
 
-  $ make dockersetup
+  $ make setup
 
 
 Updating release data
@@ -163,7 +163,7 @@ Updating that data is done with a single make rule.
 
 Run::
 
-  $ make dockerupdatedata
+  $ make updatedata
 
 
 .. Note::

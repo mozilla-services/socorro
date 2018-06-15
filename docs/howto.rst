@@ -9,7 +9,7 @@ You can run the crontabber job that checks for security vulnerabilities locally:
 
 ::
 
-   make dockerdependencycheck
+   make dependencycheck
 
 
 Connect to PostgreSQL Database
