@@ -2,20 +2,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from past.builtins import basestring
+
 import mock
 from pkg_resources import resource_stream
 import pytest
-from past.builtins import basestring
 
 from socorro import siglists
-from socorro.unittest.testbase import TestCase
 
 
 def _fake_stream(pkg, filepath):
     return resource_stream(__name__, filepath)
 
 
-class TestSigLists(TestCase):
+class TestSigLists:
     def test_loading_files(self):
         all_lists = (
             'IRRELEVANT_SIGNATURE_RE',
