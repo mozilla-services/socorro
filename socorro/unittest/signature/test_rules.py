@@ -10,7 +10,6 @@ import re
 import mock
 import pytest
 
-from socorro.lib.util import DotDict
 from socorro.signature.rules import (
     AbortSignature,
     CSignatureTool,
@@ -343,8 +342,7 @@ class TestJavaSignatureTool:
         assert notes == e
 
     def test_frame_missing_second_line(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
+        j = JavaSignatureTool()
         java_stack_trace = 'SomeJavaException: totally made up  '
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
@@ -353,8 +351,7 @@ class TestJavaSignatureTool:
         assert notes == e
 
     def test_frame_with_leading_whitespace(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
+        j = JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException: totally made up  \n'
             'at org.mozilla.lars.myInvention('
@@ -370,8 +367,7 @@ class TestJavaSignatureTool:
         # In general addresses of the form ``@xxxxxxxx`` are to be replaced
         # with the literal ``<addr>``, however in this case, the hex address is
         # not in the expected location and should therefore be left alone
-        config = DotDict()
-        j = JavaSignatureTool(config)
+        j = JavaSignatureTool()
         java_stack_trace = ('SomeJavaException: totally made up  \n'
                             'at org.mozilla.lars.myInvention('
                             'larsFile.java:@abef1234)')
@@ -383,8 +379,7 @@ class TestJavaSignatureTool:
         assert notes == []
 
     def test_replace_address(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
+        j = JavaSignatureTool()
         java_stack_trace = """
 java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
 \tat android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
@@ -414,8 +409,7 @@ java.lang.IllegalArgumentException: Given view not a child of android.widget.Abs
         assert notes == []
 
     def test_replace_address_with_trailing_text(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
+        j = JavaSignatureTool()
         java_stack_trace = """
 android.view.WindowManager$BadTokenException: Unable to add window -- token android.os.BinderProxy@406237c0 is not valid; is your activity running?
 \tat android.view.ViewRoot.setView(ViewRoot.java:533)
@@ -444,8 +438,7 @@ android.view.WindowManager$BadTokenException: Unable to add window -- token andr
         assert notes == []
 
     def test_replace_address_trailing_whitespace(self):
-        config = DotDict()
-        j = JavaSignatureTool(config)
+        j = JavaSignatureTool()
         java_stack_trace = """
 java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoNetworkManager@405afea8
 \tat android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:610)
