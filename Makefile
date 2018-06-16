@@ -83,7 +83,7 @@ updatedata: my.env
 	./docker/run_update_data.sh
 
 run: my.env
-	${DC} up webapp processor
+	${DC} up webapp processor webpack
 
 stop: my.env
 	${DC} stop

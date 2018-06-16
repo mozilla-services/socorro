@@ -2,20 +2,14 @@ rules:
   linebreak-style:
     - 2
     - unix
-  no-console:
-    - 1
   max-len: "off" # Use prettier default line length
 env:
   browser: true
-  jquery: true
+  es6: true
 parserOptions:
   ecmaVersion: 7
-globals:
-  $: false
-  Analytics: false
-  browser: false
-  moment: false
-  Qs: false
+  sourceType: module
 extends:
   - eslint:recommended
   - plugin:prettier/recommended
+  - plugin:react/recommended

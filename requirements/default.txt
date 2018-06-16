@@ -220,3 +220,6 @@ mozilla-django-oidc==1.0.0 \
 glom==18.1.1 \
     --hash=sha256:c5a2b7626821c281cd3900385076f9415ad4da0a3dca493f9290e705f60ea230 \
     --hash=sha256:dc64bfe2906277cdfaafa93ce9f1a071b3357a48d0312707e2d8a1ae380ee2a1
+django-webpack-loader==0.6.0 \
+    --hash=sha256:60bab6b9a037a5346fad12d2a70a6bc046afb33154cf75ed640b93d3ebd5f520 \
+    --hash=sha256:970b968c2a8975fb7eff56a3bab5d0d90d396740852d1e0c50c5cfe2b824199a
