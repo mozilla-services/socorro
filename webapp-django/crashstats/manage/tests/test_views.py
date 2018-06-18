@@ -106,12 +106,6 @@ class TestViews(BaseTestViews):
         response = self.client.get(home_url)
         assert response.status_code == 302
 
-    def test_analyze_model_fetches(self):
-        self._login()
-        url = reverse('manage:analyze_model_fetches')
-        response = self.client.get(url)
-        assert response.status_code == 200
-
     def test_render_graphics_devices_page(self):
         url = reverse('manage:graphics_devices')
         response = self.client.get(url)
