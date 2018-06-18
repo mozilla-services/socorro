@@ -95,9 +95,6 @@ def pass_default_context(view):
             # regular users will see a 404.
             if 'version' in str(e):
                 return redirect(reverse('home:home', args=(product,)))
-            elif request.user.is_superuser:
-                url = '%s?product=%s' % (reverse('manage:products'), product)
-                return redirect(url)
             raise
         return view(request, *args, **kwargs)
     return inner
