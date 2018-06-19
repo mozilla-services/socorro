@@ -409,11 +409,11 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/report-pending.min.js',
     },
-    'manage:graphics_devices': {
+    'siteadmin:graphics_devices': {
         'source_filenames': (
             'manage/js/graphics_devices.js',
         ),
-        'output_filename': 'js/manage-graphics-devices.min.js',
+        'output_filename': 'js/siteadmin-graphics-devices.min.js',
     },
     'manage:supersearch_field': {
         'source_filenames': (
