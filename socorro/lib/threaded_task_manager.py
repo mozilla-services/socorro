@@ -5,10 +5,10 @@ consists of a function and the data applied to the function."""
 
 import time
 import threading
-import Queue
 
 from configman import Namespace
 from configman.converters import class_converter
+from six.moves import queue
 
 from socorro.lib.task_manager import (
     default_task_func,
@@ -76,7 +76,7 @@ class ThreadedTaskManager(TaskManager):
         )
         self.thread_list = []  # the thread object storage
         self.number_of_threads = config.number_of_threads
-        self.task_queue = Queue.Queue(config.maximum_queue_size)
+        self.task_queue = queue.Queue(config.maximum_queue_size)
 
     def start(self):
         """this function will start the queing thread that executes the

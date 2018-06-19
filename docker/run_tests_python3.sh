@@ -16,11 +16,11 @@ WORKING_TESTS=(
     socorro/unittest/lib/test_external_common.py
     socorro/unittest/lib/test_ooid.py
     socorro/unittest/lib/test_search_common.py
-    # socorro/unittest/lib/test_task_manager.py
-    # socorro/unittest/lib/test_threaded_task_manager.py
+    socorro/unittest/lib/test_task_manager.py
+    socorro/unittest/lib/test_threaded_task_manager.py
     socorro/unittest/lib/test_transform_rules.py
     socorro/unittest/lib/test_treelib.py
-    # socorro/unittest/lib/test_util.py
+    socorro/unittest/lib/test_util.py
     socorro/unittest/lib/test_vertools.py
 )
 
