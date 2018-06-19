@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
+from socorro.lib import BadArgumentError
 
 
 class Response(object):
@@ -334,6 +335,16 @@ class TestModels(DjangoTestCase):
         r = api.get(crash_id='some-crash-id')
         assert r['Vendor'] == 'Mozilla'
         assert 'Email' in r  # no filtering at this level
+
+    def test_raw_crash_invalid_id(self):
+        # NOTE(alexisdeschamps): this undoes the mocking of the implementation so we can test
+        # the implementation code.
+        models.RawCrash.implementation = self._mockeries[models.RawCrash]
+        model = models.RawCrash
+        api = model()
+
+        with pytest.raises(BadArgumentError):
+            api.get(crash_id='821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh')
 
     def test_raw_crash_raw_data(self):
 

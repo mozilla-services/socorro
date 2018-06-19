@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.lib import external_common, MissingArgumentError, BadArgumentError
+from socorro.lib import external_common, MissingArgumentError, BadArgumentError, ooid
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
     CrashIDNotFound,
@@ -58,6 +58,9 @@ class SimplifiedCrashData(BotoS3CrashStorage):
 
         if not params.uuid:
             raise MissingArgumentError('uuid')
+
+        if not ooid.is_crash_id_valid(params.uuid):
+            raise BadArgumentError('uuid')
 
         if not params.datatype:
             raise MissingArgumentError('datatype')

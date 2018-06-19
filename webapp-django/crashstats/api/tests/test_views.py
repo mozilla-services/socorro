@@ -445,6 +445,16 @@ class TestViews(BaseTestViews):
         assert response['Content-Disposition'] == 'attachment; filename="abc.dmp"'
         assert response['Content-Type'] == 'application/octet-stream'
 
+    def test_RawCrash_invalid_crash_id(self):
+        # NOTE(alexisdeschamps): this undoes the mocking of the implementation so we can test
+        # the implementation code.
+        RawCrash.implementation = self._mockeries[RawCrash]
+        url = reverse('api:model_wrapper', args=('RawCrash',))
+        response = self.client.get(url, {
+            'crash_id': '821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh'
+        })
+        assert response.status_code == 400
+
     def test_Bugs(self):
         url = reverse('api:model_wrapper', args=('Bugs',))
         response = self.client.get(url)
