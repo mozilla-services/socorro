@@ -14,7 +14,4 @@ urlpatterns = [
     url('^graphics-devices/lookup/$',
         views.graphics_devices_lookup,
         name='graphics_devices_lookup'),
-    url('^supersearch-fields/missing/$',
-        views.supersearch_fields_missing,
-        name='supersearch_fields_missing'),
 ]

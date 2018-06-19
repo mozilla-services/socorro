@@ -7,12 +7,6 @@ from django.contrib.auth.models import Permission
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 
-import mock
-
-from crashstats.supersearch.models import (
-    SuperSearchFields,
-    SuperSearchMissingFields,
-)
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
@@ -86,25 +80,6 @@ class TestViews(BaseTestViews):
             'to reach the resource you requested.'
         )
         assert msg in response.content
-
-    def test_home_page_signed_in(self):
-        user = self._login()
-        # at the moment it just redirects
-        home_url = reverse('manage:home')
-        response = self.client.get(home_url)
-        assert response.status_code == 200
-
-        # certain links on that page
-        fields_missing_url = reverse('manage:supersearch_fields_missing')
-        assert fields_missing_url in response.content
-        graphics_url = reverse('manage:graphics_devices')
-        assert graphics_url in response.content
-
-        user.is_active = False
-        user.save()
-        home_url = reverse('manage:home')
-        response = self.client.get(home_url)
-        assert response.status_code == 302
 
     def test_render_graphics_devices_page(self):
         url = reverse('manage:graphics_devices')
@@ -252,47 +227,3 @@ class TestViews(BaseTestViews):
             })
             assert response.status_code == 302
             assert url in response['location']
-
-    def test_supersearch_fields_missing(self):
-        self._login()
-        url = reverse('manage:supersearch_fields_missing')
-
-        def mocked_supersearchfields(**params):
-            return {
-                'product': {
-                    'name': 'product',
-                    'namespace': 'processed_crash',
-                    'in_database_name': 'product',
-                    'query_type': 'enum',
-                    'form_field_choices': None,
-                    'permissions_needed': [],
-                    'default_value': None,
-                    'is_exposed': True,
-                    'is_returned': True,
-                    'is_mandatory': False,
-                }
-            }
-
-        def mocked_supersearchfields_get_missing_fields(**params):
-            return {
-                'hits': [
-                    'field_a',
-                    'namespace1.field_b',
-                    'namespace2.subspace1.field_c',
-                ],
-                'total': 3
-            }
-
-        supersearchfields_mock_get = mock.Mock()
-        supersearchfields_mock_get.side_effect = mocked_supersearchfields
-        SuperSearchFields.get = supersearchfields_mock_get
-
-        SuperSearchMissingFields.implementation().get.side_effect = (
-            mocked_supersearchfields_get_missing_fields
-        )
-
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert 'field_a' in response.content
-        assert 'namespace1.field_b' in response.content
-        assert 'namespace2.subspace1.field_c' in response.content

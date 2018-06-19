@@ -13,4 +13,7 @@ urlpatterns = [
     url('^sitestatus/$',
         admin.site_status,
         name='site_status'),
+    url('^supersearch-fields/missing/$',
+        admin.supersearch_fields_missing,
+        name='supersearch_fields_missing'),
 ]

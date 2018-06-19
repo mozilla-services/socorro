@@ -15,8 +15,6 @@
                     {% if request.path_info == url('manage:home') %}class="selected"{% endif %}>Home</a></li>
                 <li><a href="{{ url('manage:graphics_devices') }}"
                     {% if url( 'manage:graphics_devices') in request.path_info %}class="selected"{% endif %}>Graphics Devices</a></li>
-                <li><a href="{{ url('manage:supersearch_fields_missing') }}"
-                    {% if url( 'manage:supersearch_fields_missing') in request.path_info %}class="selected"{% endif %}>Super Search Fields</a></li>
             </ul>
         </nav>
     </div>

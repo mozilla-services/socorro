@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 
 from crashstats.crashstats.models import GraphicsDevices
-from crashstats.supersearch.models import SuperSearchMissingFields
 from crashstats.crashstats.utils import json_view
 from crashstats.manage.decorators import superuser_required
 
@@ -81,14 +80,3 @@ def graphics_devices_lookup(request):
         return result
     else:
         return http.HttpResponseBadRequest(str(form.errors))
-
-
-@superuser_required
-def supersearch_fields_missing(request):
-    context = {}
-    missing_fields = SuperSearchMissingFields().get()
-
-    context['missing_fields'] = missing_fields['hits']
-    context['missing_fields_count'] = missing_fields['total']
-
-    return render(request, 'manage/supersearch_fields_missing.html', context)
