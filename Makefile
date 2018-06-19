@@ -35,10 +35,7 @@ docs: my.env
 	./docker/as_me.sh --container docs ./docker/run_build_docs.sh
 
 lint: my.env
-	${DC} run processor flake8
-
-eslint: my.env
-	${DC} run --workdir="/app/webapp-django" webapp /webapp-frontend-deps/node_modules/.bin/eslint /app/webapp-django
+	${DC} run webapp ./docker/run_lint.sh
 
 .PHONY: build setup test testshell run dependencycheck stop
 

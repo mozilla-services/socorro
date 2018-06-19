@@ -48,9 +48,9 @@ jobs:
             make build
 
       - run:
-          name: Run eslint
+          name: Lint
           working_directory: /socorro
-          command: docker run --workdir="/app/webapp-django" local/socorro_webapp /webapp-frontend-deps/node_modules/.bin/eslint /app/webapp-django
+          command: docker run local/socorro_webapp ./docker/run_lint.sh
 
       - run:
           name: Run tests

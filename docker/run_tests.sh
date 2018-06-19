@@ -25,7 +25,6 @@ DATABASE_URL=${database_url:-"postgres://postgres:aPassword@postgresql:5432/soco
 ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
 
 export PYTHONPATH=/app/:$PYTHONPATH
-FLAKE8="$(which flake8)"
 PYTEST="$(which pytest)"
 PYTHON="$(which python)"
 ALEMBIC="$(which alembic)"
@@ -44,9 +43,6 @@ urlwait "${ELASTICSEARCH_URL}" 10
 # Test the last migration
 "${ALEMBIC}" -c "${alembic_config}" downgrade -1
 "${ALEMBIC}" -c "${alembic_config}" upgrade heads
-
-# Run linting
-"${FLAKE8}"
 
 if [ "${USEPYTHON:-2}" == "2" ]; then
     # Run tests
