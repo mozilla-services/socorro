@@ -16,9 +16,7 @@ SUCCESS = 0
 
 
 class CreateRecentESIndicesApp(App):
-    """Creates week-based crash indices in Elasticsearch for upcoming
-    weeks.
-    """
+    """Creates week-based crash indices in Elasticsearch previous 2 weeks and upcoming weeks"""
     app_name = 'create_recent_es_indices'
     app_version = '1.0'
     app_description = __doc__
@@ -43,7 +41,7 @@ class CreateRecentESIndicesApp(App):
         today = date.today()
         current_monday = today - timedelta(days=today.weekday())
 
-        for week_diff in range(-1, self.config.elasticsearch_weeks_to_create):
+        for week_diff in range(-2, self.config.elasticsearch_weeks_to_create):
             week_monday = current_monday + timedelta(weeks=week_diff)
             index = week_monday.strftime(index_name_template)
             index_creator.create_socorro_index(index)
