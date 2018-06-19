@@ -41,8 +41,6 @@ urlpatterns = [
     url(r'^symbols/.*',
         RedirectView.as_view(url='https://symbols.mozilla.org/'),
         name='redirect-to-tecken'),
-    # if we ever use the Django admin we might want to change this URL
-    url(r'^admin/', include('crashstats.manage.urls', namespace='manage')),
     url(r'^profile/', include('crashstats.profile.urls', namespace='profile')),
     url(r'^documentation/', include('crashstats.documentation.urls', namespace='documentation')),
 

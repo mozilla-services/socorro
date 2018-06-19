@@ -191,20 +191,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/home.min.css',
     },
-    'manage:home': {
-        'source_filenames': (
-            'font-awesome/css/font-awesome.css',
-            'crashstats/css/base/fonts.less',
-            'manage/css/home.less',
-        ),
-        'output_filename': 'css/manage-home.min.css',
-    },
-    'manage:supersearch_fields': {
-        'source_filenames': (
-            'manage/css/supersearch_fields.less',
-        ),
-        'output_filename': 'css/manage-supersearch-fields.min.css',
-    },
     'profile': {
         'source_filenames': (
             'profile/css/profile.less',
@@ -222,12 +208,6 @@ PIPELINE_CSS = {
             'tokens/css/home.less',
         ),
         'output_filename': 'css/tokens.min.css',
-    },
-    'analyze-model-fetches': {
-        'source_filenames': (
-            'manage/css/analyze-model-fetches.less',
-        ),
-        'output_filename': 'css/analyze-model-fetches.min.css',
     },
     'topcrashers': {
         'source_filenames': (
@@ -332,12 +312,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/topcrashers.min.js',
     },
-    'analyze-model-fetches': {
-        'source_filenames': (
-            'manage/js/analyze-model-fetches.js',
-        ),
-        'output_filename': 'js/analyze-model-fetches.min.js',
-    },
     'crashstats_base': {
         'source_filenames': (
             'jquery/dist/jquery.js',
@@ -414,18 +388,6 @@ PIPELINE_JS = {
             'manage/js/graphics_devices.js',
         ),
         'output_filename': 'js/siteadmin-graphics-devices.min.js',
-    },
-    'manage:supersearch_field': {
-        'source_filenames': (
-            'manage/js/supersearch_field.js',
-        ),
-        'output_filename': 'js/manage-supersearch-field.min.js',
-    },
-    'manage:supersearch_fields': {
-        'source_filenames': (
-            'manage/js/supersearch_fields.js',
-        ),
-        'output_filename': 'js/manage-supersearch-fields.min.js',
     },
     'signature_report': {
         'source_filenames': (
