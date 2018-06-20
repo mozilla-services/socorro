@@ -73,7 +73,7 @@ class TestThreadedTaskManager(TestCase):
             ttm.start()
             time.sleep(0.2)
             assert len(my_list) == 10
-            assert my_list == range(10)
+            assert my_list == list(range(10))
             ttm.stop()
         except Exception:
             # we got threads to join
@@ -100,7 +100,7 @@ class TestThreadedTaskManager(TestCase):
             time.sleep(0.2)
             assert len(ttm.thread_list) == 2
             assert len(my_list) == 10
-            assert sorted(my_list) == range(10)
+            assert sorted(my_list) == list(range(10))
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -128,7 +128,7 @@ class TestThreadedTaskManager(TestCase):
             time.sleep(0.2)
             assert len(ttm.thread_list) == 2
             assert len(my_list) == 5
-            assert sorted(my_list) == range(5)
+            assert sorted(my_list) == list(range(5))
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()

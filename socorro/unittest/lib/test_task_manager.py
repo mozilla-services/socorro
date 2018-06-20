@@ -48,7 +48,7 @@ class TestTaskManager(TestCase):
             config,
             job_source_iterator=range(1),
         )
-        assert tm._get_iterator() == [0]
+        assert list(tm._get_iterator()) == [0]
 
         def an_iter(self):
             for i in range(5):

@@ -11,7 +11,17 @@
 # This is the list of known working tests by directory/filename. When you
 # have tests in a directory/file working, add it to this list as a new line.
 WORKING_TESTS=(
+    socorro/unittest/lib/test_converters.py
+    socorro/unittest/lib/test_datetimeutil.py
+    socorro/unittest/lib/test_external_common.py
     socorro/unittest/lib/test_ooid.py
+    socorro/unittest/lib/test_search_common.py
+    socorro/unittest/lib/test_task_manager.py
+    socorro/unittest/lib/test_threaded_task_manager.py
+    socorro/unittest/lib/test_transform_rules.py
+    socorro/unittest/lib/test_treelib.py
+    socorro/unittest/lib/test_util.py
+    socorro/unittest/lib/test_vertools.py
 )
 
 pytest ${WORKING_TESTS[@]}
