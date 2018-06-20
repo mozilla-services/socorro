@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import print_function
-import sys
+import six
 
 from itertools import islice
 
@@ -41,15 +41,18 @@ def drop_unicode(text):
     :returns: text with all unicode characters dropped
 
     """
-    if sys.version_info < (3,):
+    if six.PY2:
         if isinstance(text, str):
             # Convert ascii to unicode in python 2
             text = text.decode('unicode_escape')
         # Convert it back to a acsii string and drop any non-ascii characters
         return text.encode('ascii', 'ignore')
 
-    # Python 3 ONLY, python 3 needs unicode string to return
-    return text.encode('ascii', 'ignore').decode('unicode_escape')
+    # Python 3 ONLY, strip non ascii characters
+    ALLOWED_CHARS = [chr(c) for c in range(32, 127)]
+    text = ''.join([c for c in text if c in ALLOWED_CHARS])
+
+    return text
 
 
 # utilities
