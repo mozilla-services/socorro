@@ -1,31 +1,32 @@
-{% extends "manage/base.html" %}
-{% block page_title %}{{ super() }} - {{ page_title }}{% endblock %}
+{% extends 'admin/base_site.html' %}
+{% load i18n admin_urls static admin_list pipeline %}
 
-{% block site_css %}
-{{ super() }}
-<style type="text/css">
-    table.data-table th {
-        width: 250px;
-    }
-</style>
+{% if not is_popup %}
+    {% block breadcrumbs %}
+        <div class="breadcrumbs">
+            <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+            &rsaquo; Management pages
+            &rsaquo; Graphics devices
+        </div>
+    {% endblock %}
+{% endif %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/changelists.css"%}">
+    <style type="text/css">
+        table.data-table th {
+            width: 250px;
+        }
+    </style>
 {% endblock %}
 
-{% block admin_title %}{{ super() }} - {{ page_title }}{% endblock %}
-
-{% block site_js %}
-{{ super() }}
-{% javascript 'manage:graphics_devices' %}
-{% endblock %}
-
-{% block mainbody %}
-
-<div class="panel">
-    <div class="body">
-
-        <h3>Edit or Add a Graphic Device</h3>
-        <form class="edit" action="" method="post" data-lookup-url="{{ url('manage:graphics_devices_lookup') }}">
+{% block content %}
+    <div class="content-main">
+        <h2>Edit or Add a Graphic Device</h2>
+            <form class="edit" action="" method="post" data-lookup-url="{% url 'siteadmin:graphics_devices_lookup'  %}">
             {% csrf_token %}
-            <table class="data-table">
+            <table>
                 {{ form }}
                 <tr>
                     <th>&nbsp;</th>
@@ -36,9 +37,9 @@
             </table>
         </form>
 
-        <h3>CSV Upload</h3>
+        <h2>CSV Upload</h2>
         <form class="upload" action="" method="post" enctype="multipart/form-data">{% csrf_token %}
-            <table class="data-table">
+            <table>
                 {{ upload_form }}
                 <tr>
                     <th>&nbsp;</th>
@@ -53,8 +54,7 @@
                 </tr>
             </table>
         </form>
-
     </div>
-</div>
 
+    {% javascript 'siteadmin:graphics_devices' %}
 {% endblock %}

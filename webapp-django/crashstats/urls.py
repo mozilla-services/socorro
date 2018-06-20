@@ -2,11 +2,11 @@ import os
 
 from django.conf import settings
 from django.conf.urls import include, url
-from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import RedirectView
 from django.views.static import serve
 
+from .manage import admin_site
 from .base.monkeypatches import patch
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
@@ -41,12 +41,13 @@ urlpatterns = [
     url(r'^symbols/.*',
         RedirectView.as_view(url='https://symbols.mozilla.org/'),
         name='redirect-to-tecken'),
-    # if we ever use the Django admin we might want to change this URL
-    url(r'^admin/', include('crashstats.manage.urls', namespace='manage')),
     url(r'^profile/', include('crashstats.profile.urls', namespace='profile')),
     url(r'^documentation/', include('crashstats.documentation.urls', namespace='documentation')),
 
-    url(r'^siteadmin/', include(admin.site.urls)),
+    # Static pages in Django admin
+    url(r'^siteadmin/', include('crashstats.manage.admin_urls', namespace='siteadmin')),
+    # Django-model backed pages in Django admin
+    url(r'^siteadmin/', include(admin_site.site.urls)),
 ]
 
 # In DEBUG mode, serve media files through Django.

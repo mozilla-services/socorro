@@ -71,6 +71,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'session_csrf',
+    'django.contrib.admin.apps.SimpleAdminConfig',
 
     # Application base, containing global templates.
     'crashstats.base',
@@ -98,8 +99,6 @@ INSTALLED_APPS = (
     'waffle',
     'pinax.eventlog',
     'django_jinja',
-
-    'django.contrib.admin',
 )
 
 

@@ -166,9 +166,7 @@
                     <a href="{{ url('tokens:home') }}">API Tokens</a>
                     {% if request.user.is_superuser %}
                     |
-                    <a href="{{ url('admin:index') }}">Django Admin</a>
-                    |
-                    <a href="{{ url('manage:home') }}">Admin</a>
+                    <a href="{{ url('admin:index') }}">Admin</a>
                     {% endif %}
                     |
                     {% if request.session.get('signin_method') == 'google' %}
