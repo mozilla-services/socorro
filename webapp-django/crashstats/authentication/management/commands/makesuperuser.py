@@ -4,8 +4,6 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.six.moves import input
 
-from crashstats.authentication.views import default_username
-
 
 def get_input(text):
     return input(text).strip()
@@ -27,7 +25,7 @@ class Command(BaseCommand):
                 user = User.objects.get(email__iexact=email)
             except User.DoesNotExist:
                 user = User.objects.create(
-                    username=default_username(email),
+                    username=email,
                     email=email,
                 )
                 user.set_unusable_password()

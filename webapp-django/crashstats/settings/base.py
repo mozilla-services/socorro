@@ -72,6 +72,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'session_csrf',
     'django.contrib.admin.apps.SimpleAdminConfig',
+    'mozilla_django_oidc',
 
     # Application base, containing global templates.
     'crashstats.base',
@@ -102,12 +103,13 @@ INSTALLED_APPS = (
 )
 
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'session_csrf.CsrfMiddleware',
+    'mozilla_django_oidc.middleware.SessionRefresh',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
@@ -123,7 +125,7 @@ MIDDLEWARE = (
     'ratelimit.middleware.RatelimitMiddleware',
     'crashstats.tokens.middleware.APIAuthenticationMiddleware',
     'crashstats.crashstats.middleware.Pretty400Errors',
-)
+]
 
 
 # Allow inactive users to authenticate
@@ -131,6 +133,7 @@ MIDDLEWARE = (
 # the default backend, which does not authenticate inactive users.
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.AllowAllUsersModelBackend',
+    'mozilla_django_oidc.auth.OIDCAuthenticationBackend',
 )
 
 
@@ -142,10 +145,8 @@ _CONTEXT_PROCESSORS = (
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
     'django.template.context_processors.request',
-    'crashstats.authentication.context_processors.oauth2',
     'crashstats.base.context_processors.settings',
     'crashstats.status.context_processors.status_message',
-    'crashstats.crashstats.context_processors.help_urls',
 )
 
 TEMPLATES = [
@@ -632,24 +633,15 @@ CRONTABBER_STALE_MINUTES = config(
     default=60 * 2
 )
 
-# OAuth2 credentials are needed to be able to connect with Google OpenID
-# Connect. Credentials can be retrieved from the
-# Google Developers Console at
-# https://console.developers.google.com/apis/credentials
-OAUTH2_CLIENT_ID = config(
-    'OAUTH2_CLIENT_ID',
-    ''
-)
-OAUTH2_CLIENT_SECRET = config(
-    'OAUTH2_CLIENT_SECRET',
-    ''
-)
 
-OAUTH2_VALID_ISSUERS = config(
-    'OAUTH2_VALID_ISSUERS',
-    default='accounts.google.com',
-    cast=Csv()
-)
+# OIDC credentials are needed to be able to connect with OpenID Connect.
+# Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
+OIDC_RP_CLIENT_ID = config('OIDC_RP_CLIENT_ID', '')
+OIDC_RP_CLIENT_SECRET = config('OIDC_RP_CLIENT_SECRET', '')
+OIDC_OP_AUTHORIZATION_ENDPOINT = config('OIDC_OP_AUTHORIZATION_ENDPOINT', '')
+OIDC_OP_TOKEN_ENDPOINT = config('OIDC_OP_TOKEN_ENDPOINT', '')
+OIDC_OP_USER_ENDPOINT = config('OIDC_OP_USER_ENDPOINT', '')
+LOGOUT_REDIRECT_URL = '/'
 
 # Max number of seconds you are allowed to be signed in with OAuth2.
 # When the user has been signed in >= this number, the user is automatically
@@ -660,8 +652,6 @@ LAST_LOGIN_MAX = config(
     cast=int
 )
 
-
-GOOGLE_AUTH_HELP_URL = 'https://wiki.mozilla.org/Socorro/GoogleAuth'
 
 CSP_DEFAULT_SRC = (
     "'self'",
@@ -682,10 +672,6 @@ CSP_IMG_SRC = (
     "'self'",
     'https://www.google-analytics.com',
     'data:',  # what jquery.tablesorter.js's CSS uses
-)
-CSP_FRAME_SRC = (
-    "'self'",
-    'https://accounts.google.com',  # Google Sign-In uses an iframe
 )
 CSP_CONNECT_SRC = (
     "'self'",

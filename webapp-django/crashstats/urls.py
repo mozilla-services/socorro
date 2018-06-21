@@ -10,7 +10,6 @@ from .manage import admin_site
 from .base.monkeypatches import patch
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
-from .authentication import urls as auth_urls
 from .monitoring import urls as monitoring_urls
 
 
@@ -33,7 +32,6 @@ urlpatterns = [
     url(r'^topcrashers/', include('crashstats.topcrashers.urls', namespace='topcrashers')),
     url(r'^sources/', include('crashstats.sources.urls', namespace='sources')),
     url(r'^home/', include('crashstats.home.urls', namespace='home')),
-    url(r'', include(auth_urls, namespace='auth')),
     url(r'^monitoring/', include(monitoring_urls, namespace='monitoring')),
     url(r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     url(r'^api/', include('crashstats.api.urls', namespace='api')),
@@ -48,6 +46,7 @@ urlpatterns = [
     url(r'^siteadmin/', include('crashstats.manage.admin_urls', namespace='siteadmin')),
     # Django-model backed pages in Django admin
     url(r'^siteadmin/', include(admin_site.site.urls)),
+    url(r'^oidc/', include('mozilla_django_oidc.urls')),
 ]
 
 # In DEBUG mode, serve media files through Django.

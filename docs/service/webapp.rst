@@ -58,40 +58,16 @@ Run this::
 You can do this as many times as you like.
 
 
-Setting up the webapp for Google Sign-In
-----------------------------------------
+Setting up the webapp for OpenID Connect Login
+----------------------------------------------
 
-In order to authenticate in the webapp using the "Google signin" button, you
-need to get a set of oauth credentials.
+In order to authenticate in the webapp using the "Login" button, you
+need to add the following entry to your ``/etc/hosts`` (or equivalent) file::
+  
+  127.0.0.1 oidcprovider
 
-1. Go to https://console.developers.google.com/apis/credentials
-
-2. Create a project
-
-3. Set up credentials:
-
-   * authorized js origin: ``http://localhost:8000``
-   * callback url: ``http://localhost:8000/oauth2/signin/``
-
-   .. Note::
-
-      There is no trailing slash on the JS origin, but there is a trailing slash
-      on the callback url.
-
-4. Open ``my.env`` in an editor and change these lines::
-
-       OAUTH2_CLIENT_ID=<client id>
-       OAUTH2_CLIENT_SECRET=<secret>
-
-   where ``<client id>`` is the oauth client id and ``<secret>`` is the oauth
-   client secret that you got from step 3
-
-5. If you see a "Signed in to Google, but unable to sign in on the server." with
-   a 403 CSRF error, mark the callback url as csrf_exempt e.g. with `this patch
-   <https://github.com/g-k/socorro/commit/2afeb8d44a485d2936f0f9a06fa3572d5baea6d6#diff-2fef780ed0ba541e7eb26fd5c32022f4>`_
-
-
-After that, Google Sign-In should work.
+This allows your host machine to properly handle the authentication provided by
+the `oidcprovider` docker container.
 
 
 About Permissions, User and Groups

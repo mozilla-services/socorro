@@ -71,8 +71,5 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
     }
 }
 
-# During testing we want to pretend that we've set up the OAuth2
-# credentials.
-OAUTH2_CLIENT_ID = '12345-example.apps.googleusercontent.com'
-OAUTH2_CLIENT_SECRET = 'somethingsomethingsecret'
-OAUTH2_VALID_ISSUERS = ['accounts.example.com']
+# Remove SessionRefresh middleware so that tests don't need to have a non-expired OIDC token
+MIDDLEWARE.remove('mozilla_django_oidc.middleware.SessionRefresh') # noqa

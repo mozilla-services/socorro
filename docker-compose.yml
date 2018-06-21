@@ -55,11 +55,21 @@ services:
       - elasticsearch
       - rabbitmq
       - memcached
+      - oidcprovider
     command: ["/app/docker/run_webapp.sh", "--dev"]
     ports:
       - "8000:8000"
     volumes:
       - .:/app
+
+  # OpenID Connect provider
+  oidcprovider:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.oidcprovider
+    image: local/socorro_oidcprovider
+    ports:
+      - "8080:8080"
 
   # Crontabber app
   crontabber:
@@ -132,7 +142,7 @@ services:
   statsd:
     image: hopsoft/graphite-statsd
     ports:
-      - "8080:80"
+      - "8081:80"
       - "2003-2004:2003-2004"
       - "2023-2024:2023-2024"
       - "8125:8125/udp"
