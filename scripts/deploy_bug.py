@@ -108,9 +108,10 @@ def main(argv):
         if len(commit['parents']) > 1:
             continue
 
-        print('%s: %s' % (
+        print('%s: %s (%s)' % (
             commit['sha'][:7],
-            commit['commit']['message'].splitlines()[0][:80]
+            commit['commit']['message'].splitlines()[0][:80],
+            (commit['author'] or {}).get('login', '?')
         ))
 
     print('(next tag: %s - %s)' % (next_tag, commits[-1]['sha'][:7]))
