@@ -81,11 +81,11 @@ def main(argv):
     next_tag = current_tag + 1
 
     # Figure out the current version
-    sha = fetch_current_revision(HOST)
+    deployed_sha = fetch_current_revision(HOST)
 
     # Get the commits between the currently deployed version and what's in
     # master tip and if there's nothing to deploy, then we're done!
-    resp = fetch_history_from_github('mozilla-services', 'socorro', sha)
+    resp = fetch_history_from_github('mozilla-services', 'socorro', deployed_sha)
     if resp['status'] != 'ahead':
         print('Nothing to deploy!')
         return
@@ -101,20 +101,33 @@ def main(argv):
     print()
     print('It consists of the following:')
     print()
-    print('(current tag: %s - %s)' % (current_tag, sha[:7]))
+    print('(current tag: %s - %s)' % (current_tag, deployed_sha[:7]))
 
     # Print the commits out skipping merge commits
     for commit in commits:
         if len(commit['parents']) > 1:
             continue
 
-        print('%s: %s (%s)' % (
-            commit['sha'][:7],
-            commit['commit']['message'].splitlines()[0][:80],
-            (commit['author'] or {}).get('login', '?')
-        ))
+        # Use the first 7 characters of the commit sha
+        sha = commit['sha'][:7]
 
-    print('(next tag: %s - %s)' % (next_tag, commits[-1]['sha'][:7]))
+        # Use the first line of the commit message which is the summary and
+        # truncate it to 80 characters
+        summary = commit['commit']['message']
+        summary = summary.splitlines()[0]
+        summary = summary[:80]
+
+        # Figure out who did the commit prefering GitHub usernames
+        who = commit['author']
+        if not who:
+            who = '?'
+        else:
+            who = who.get('login', '?')
+
+        print('%s: %s (%s)' % (sha, summary, who))
+
+    head_sha = commits[-1]['sha'][:7]
+    print('(next tag: %s - %s)' % (next_tag, head_sha))
     print()
 
     # Any additional things to note
