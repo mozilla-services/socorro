@@ -6,6 +6,7 @@ import json
 import socket
 import datetime
 import contextlib
+import time
 from past.builtins import basestring
 
 import boto
@@ -14,6 +15,7 @@ import boto.exception
 
 from configman import Namespace, RequiredConfig, class_converter
 from configman.converters import str_to_boolean
+import markus
 
 from socorro.lib.converters import change_default
 from socorro.lib.ooid import dateFromOoid
@@ -87,7 +89,7 @@ class ConnectionContextBase(RequiredConfig):
             return True
         return False
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         self.config = config
 
         self._CreateError = boto.exception.StorageCreateError
@@ -97,6 +99,7 @@ class ConnectionContextBase(RequiredConfig):
         )
 
         self._bucket_cache = {}
+        self.metrics = markus.get_metrics(namespace)
 
     def _connect(self):
         try:
@@ -192,15 +195,28 @@ class ConnectionContextBase(RequiredConfig):
         """
         # can only submit strings to boto
         assert isinstance(thing, basestring), type(thing)
+        try:
+            start_time = time.time()
 
-        conn = self._connect()
-        bucket = self._get_or_create_bucket(conn, self.config.bucket_name)
+            conn = self._connect()
+            bucket = self._get_or_create_bucket(conn, self.config.bucket_name)
 
-        all_keys = self.build_keys(self.config.prefix, name_of_thing, id)
-        # Always submit using the first key
-        key = all_keys[0]
-        key_object = bucket.new_key(key)
-        key_object.set_contents_from_string(thing)
+            all_keys = self.build_keys(self.config.prefix, name_of_thing, id)
+            # Always submit using the first key
+            key = all_keys[0]
+            key_object = bucket.new_key(key)
+            key_object.set_contents_from_string(thing)
+            index_outcome = 'successful'
+        except Exception:
+            index_outcome = 'failed'
+            raise
+        finally:
+            elapsed_time = time.time() - start_time
+            self.metrics.histogram(
+                'submit',
+                value=elapsed_time * 1000.0,
+                tags=['kind:' + name_of_thing, 'outcome:' + index_outcome]
+            )
 
     def fetch(self, id, name_of_thing):
         """retrieve something from boto.
@@ -269,8 +285,8 @@ class S3ConnectionContext(ConnectionContextBase):
         likely_to_be_changed=True,
     )
 
-    def __init__(self, config, quit_check_callback=None):
-        super(S3ConnectionContext, self).__init__(config)
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        super(S3ConnectionContext, self).__init__(config, namespace=namespace)
 
         self._connect_to_endpoint = boto.connect_s3
         self._calling_format = config.calling_format
@@ -302,8 +318,8 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
         'boto.s3.connection.OrdinaryCallingFormat'
     )
 
-    def __init__(self, config, quit_check_callback=None):
-        super(RegionalS3ConnectionContext, self).__init__(config)
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        super(RegionalS3ConnectionContext, self).__init__(config, namespace=namespace)
         self._region = config.region
         self._connect_to_endpoint = boto.s3.connect_to_region
 

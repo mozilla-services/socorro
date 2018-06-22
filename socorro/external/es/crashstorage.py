@@ -4,6 +4,7 @@
 
 import json
 import re
+import time
 from past.builtins import basestring
 from threading import Thread
 from Queue import Queue
@@ -319,6 +320,27 @@ class ESCrashStorage(CrashStorageBase):
             # later.
             self.config.logger.exception('something went wrong when capturing processed_crash_size')
 
+    def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
+        try:
+            start_time = time.time()
+            connection.index(
+                index=es_index,
+                doc_type=es_doctype,
+                body=crash_document,
+                id=crash_id
+            )
+            index_outcome = 'successful'
+        except Exception:
+            index_outcome = 'failed'
+            raise
+        finally:
+            elapsed_time = time.time() - start_time
+            self.metrics.histogram(
+                'index',
+                value=elapsed_time * 1000.0,
+                tags=['outcome:' + index_outcome]
+            )
+
     def _submit_crash_to_elasticsearch(self, connection, crash_document):
         """Submit a crash report to elasticsearch"""
         es_index = self.get_index_for_crash(
@@ -337,12 +359,7 @@ class ESCrashStorage(CrashStorageBase):
         # case of an unhandled exception.
         for attempt in range(5):
             try:
-                connection.index(
-                    index=es_index,
-                    doc_type=es_doctype,
-                    body=crash_document,
-                    id=crash_id
-                )
+                self._index_crash(connection, es_index, es_doctype, crash_document, crash_id)
                 break
             except elasticsearch.exceptions.TransportError as e:
                 field_name = None
