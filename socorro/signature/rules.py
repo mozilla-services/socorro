@@ -508,7 +508,7 @@ class OOMSignature(Rule):
         processed_crash['original_signature'] = processed_crash['signature']
         try:
             size = int(raw_crash['OOMAllocationSize'])
-        except (TypeError, AttributeError, KeyError):
+        except (TypeError, AttributeError, KeyError, ValueError):
             processed_crash['signature'] = "OOM | unknown | " + processed_crash['signature']
             return True
 
