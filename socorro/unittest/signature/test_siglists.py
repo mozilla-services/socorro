@@ -8,7 +8,7 @@ import mock
 from pkg_resources import resource_stream
 import pytest
 
-from socorro import siglists
+from socorro.signature import siglists
 
 
 def _fake_stream(pkg, filepath):
@@ -33,7 +33,7 @@ class TestSigLists:
                 if isinstance(line, basestring):
                     assert not line.startswith('#')
 
-    @mock.patch('socorro.siglists.resource_stream')
+    @mock.patch('socorro.signature.siglists.resource_stream')
     def test_valid_entries(self, mocked_stream):
         mocked_stream.side_effect = _fake_stream
 
@@ -45,7 +45,7 @@ class TestSigLists:
         content = siglists._get_file_content('test-valid-sig-list')
         assert content == expected
 
-    @mock.patch('socorro.siglists.resource_stream')
+    @mock.patch('socorro.signature.siglists.resource_stream')
     def test_invalid_entry(self, mocked_stream):
         mocked_stream.side_effect = _fake_stream
 

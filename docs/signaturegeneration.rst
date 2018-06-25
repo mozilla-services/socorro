@@ -22,7 +22,7 @@ https://github.com/mozilla-services/socorro/tree/master/socorro/signature
 
 The lists for configuring the C signature generation class are here:
 
-https://github.com/mozilla-services/socorro/tree/master/socorro/siglists
+https://github.com/mozilla-services/socorro/tree/master/socorro/signature/siglists
 
 
 How to request a change to signature generation
@@ -88,4 +88,4 @@ to `reprocess the affected signatures <https://github.com/adngdb/reprocess>`_.
 .. include:: ../socorro/signature/README.rst
 
 
-.. include:: ../socorro/siglists/README.rst
+.. include:: ../socorro/signature/siglists/README.rst

@@ -10,8 +10,8 @@ from past.builtins import basestring
 from glom import glom
 import ujson
 
-from socorro import siglists
 from socorro.lib.util import drop_unicode
+from socorro.signature import siglists
 
 
 SIGNATURE_MAX_LENGTH = 255
