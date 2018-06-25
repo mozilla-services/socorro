@@ -579,13 +579,6 @@ class TestViews(BaseTestViews):
             assert 'signature' in params
             assert params['signature'] == ['=' + DUMB_SIGNATURE]
 
-            if '_aggs.product.version' in params:
-                assert 'product' not in params
-                assert 'version' not in params
-            else:
-                assert '_histogram.uptime' in params
-                assert '_facets' in params
-
             res = {
                 "hits": [],
                 "total": 4,

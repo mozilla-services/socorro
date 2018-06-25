@@ -417,6 +417,7 @@ def signature_summary(request, params):
     params['_aggs.android_cpu_abi.android_manufacturer.android_model'] = [
         'android_version'
     ]
+    params['_aggs.product.version'] = ['_cardinality.install_time']
 
     # If the user has permissions, show exploitability.
     all_fields = SuperSearchFields().get()
@@ -437,33 +438,13 @@ def signature_summary(request, params):
 
     facets = search_results['facets']
 
-    # We need to make a separate query so that we can show all versions and
-    # not just the one asked for.
-    params_copy = {
-        'signature': params['signature'],
-        '_aggs.product.version': ['_cardinality.install_time'],
-    }
-
-    try:
-        product_results = api.get(**params_copy)
-    except BadArgumentError as e:
-        # We need to return the error message in some HTML form for jQuery
-        # to pick it up.
-        return http.HttpResponseBadRequest(render_exception(e))
-
-    if 'product' in product_results['facets']:
-        facets['product'] = product_results['facets']['product']
-    else:
-        facets['product'] = []
-
-    context['product_version_total'] = product_results['total']
-
     _transform_uptime_summary(facets)
     _transform_graphics_summary(facets)
     _transform_mobile_summary(facets)
     _transform_exploitability_summary(facets)
 
     context['query'] = search_results
+    context['product_version_total'] = search_results['total']
 
     return render(request, 'signature/signature_summary.html', context)
 
