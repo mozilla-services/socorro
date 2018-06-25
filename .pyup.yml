@@ -7,9 +7,3 @@ requirements:
   - docs/requirements.txt:
       update: all
       pin: true
-  - e2e-tests/Pipfile.lock:
-       update: all
-       pin: true
-  - e2e-tests/pipenv.txt:
-       update: all
-       pin: true
