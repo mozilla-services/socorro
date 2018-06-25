@@ -11,9 +11,9 @@ import logging.config
 import os
 import sys
 
+from glom import glom
 import requests
 
-from socorro.lib.treelib import tree_get
 from socorro.signature.generator import SignatureGenerator
 
 
@@ -247,12 +247,12 @@ def main(argv=None):
             processed_crash_minimal = {
                 'hang_type': processed_crash.get('hang_type', None),
                 'json_dump': {
-                    'threads': tree_get(processed_crash, 'json_dump.threads', default=[]),
+                    'threads': glom(processed_crash, 'json_dump.threads', default=[]),
                     'system_info': {
-                        'os': tree_get(processed_crash, 'json_dump.system_info.os', default=''),
+                        'os': glom(processed_crash, 'json_dump.system_info.os', default=''),
                     },
                     'crash_info': {
-                        'crashing_thread': tree_get(
+                        'crashing_thread': glom(
                             processed_crash, 'json_dump.crash_info.crashing_thread', default=None
                         ),
                     },
@@ -260,7 +260,7 @@ def main(argv=None):
                 # NOTE(willkg): Classifications aren't available via the public API.
                 'classifications': {
                     'jit': {
-                        'category': tree_get(processed_crash, 'classifications.jit.category', ''),
+                        'category': glom(processed_crash, 'classifications.jit.category', ''),
                     },
                 },
                 'mdsw_status_string': processed_crash.get('mdsw_status_string', None),
