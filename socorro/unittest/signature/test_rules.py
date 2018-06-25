@@ -1157,6 +1157,21 @@ class TestOOMSignature:
         assert processed_crash['original_signature'] == 'hello'
         assert processed_crash['signature'] == 'OOM | large | hello'
 
+    def test_action_invalid_value(self):
+        processed_crash = {
+            'signature': 'hello'
+        }
+        raw_crash = {
+            'OOMAllocationSize': 'BOWWOWOW'
+        }
+
+        rule = OOMSignature()
+        action_result = rule.action(raw_crash, processed_crash, [])
+
+        assert action_result is True
+        assert processed_crash['original_signature'] == 'hello'
+        assert processed_crash['signature'] == 'OOM | unknown | hello'
+
 
 class TestAbortSignature:
 
