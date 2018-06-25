@@ -11,7 +11,7 @@ from glom import glom
 import ujson
 
 from socorro.lib.util import drop_unicode
-from socorro.signature import siglists
+from socorro.signature import siglists_utils
 
 
 SIGNATURE_MAX_LENGTH = 255
@@ -92,18 +92,18 @@ class CSignatureTool(SignatureTool):
         super(CSignatureTool, self).__init__(quit_check_callback)
 
         self.irrelevant_signature_re = re.compile(
-            '|'.join(siglists.IRRELEVANT_SIGNATURE_RE)
+            '|'.join(siglists_utils.IRRELEVANT_SIGNATURE_RE)
         )
         self.prefix_signature_re = re.compile(
-            '|'.join(siglists.PREFIX_SIGNATURE_RE)
+            '|'.join(siglists_utils.PREFIX_SIGNATURE_RE)
         )
         self.signatures_with_line_numbers_re = re.compile(
-            '|'.join(siglists.SIGNATURES_WITH_LINE_NUMBERS_RE)
+            '|'.join(siglists_utils.SIGNATURES_WITH_LINE_NUMBERS_RE)
         )
         self.trim_dll_signature_re = re.compile(
-            '|'.join(siglists.TRIM_DLL_SIGNATURE_RE)
+            '|'.join(siglists_utils.TRIM_DLL_SIGNATURE_RE)
         )
-        self.signature_sentinels = siglists.SIGNATURE_SENTINELS
+        self.signature_sentinels = siglists_utils.SIGNATURE_SENTINELS
 
         self.collapse_arguments = True
 

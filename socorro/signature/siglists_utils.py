@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
 import re
 
 from pkg_resources import resource_stream
@@ -34,8 +35,9 @@ def _get_file_content(source):
     """Return a tuple, each value being a line of the source file.
 
     Remove empty lines and comments (lines starting with a '#').
+
     """
-    filepath = source + '.txt'
+    filepath = os.path.join('siglists', source + '.txt')
 
     lines = []
     with resource_stream(__name__, filepath) as f:
