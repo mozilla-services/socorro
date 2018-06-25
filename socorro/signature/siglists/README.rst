@@ -175,6 +175,6 @@ in the repository, but don't care much about what happens in the rest of the
 Socorro repo, you can easily set a filter in your email client to do that.
 Here's an example filter you can use today:
 
-.. raw:: html
+::
 
-   <pre>to:(socorro@noreply.github.com) ("A socorro/siglists/" OR "M socorro/siglists/" OR "D socorro/siglists")</pre>
+   to:(socorro@noreply.github.com) ("A socorro/signature/siglists/" OR "M socorro/signature/siglists/" OR "D socorro/signature/siglists")
