@@ -7,10 +7,10 @@ import logging
 import re
 from past.builtins import basestring
 
+from glom import glom
 import ujson
 
 from socorro import siglists
-from socorro.lib.treelib import tree_get
 from socorro.lib.util import drop_unicode
 
 
@@ -431,7 +431,7 @@ class SignatureGenerationRule(Rule):
         return frame_signatures_list
 
     def _get_crashing_thread(self, processed_crash):
-        return tree_get(processed_crash, 'json_dump.crash_info.crashing_thread', default=None)
+        return glom(processed_crash, 'json_dump.crash_info.crashing_thread', default=None)
 
     def action(self, raw_crash, processed_crash, notes):
         # If this is a Java crash, then generate a Java signature
@@ -452,13 +452,13 @@ class SignatureGenerationRule(Rule):
             if processed_crash.get('hang_type', None) == 1:
                 # Force the signature to come from thread 0
                 signature_list = self._create_frame_list(
-                    tree_get(processed_crash, 'json_dump.threads.[0]'),
-                    tree_get(processed_crash, 'json_dump.system_info.os') == 'Windows NT'
+                    glom(processed_crash, 'json_dump.threads.0'),
+                    glom(processed_crash, 'json_dump.system_info.os', default=None) == 'Windows NT'
                 )
             elif crashed_thread is not None:
                 signature_list = self._create_frame_list(
-                    tree_get(processed_crash, 'json_dump.threads.[%d]' % crashed_thread),
-                    tree_get(processed_crash, 'json_dump.system_info.os') == 'Windows NT'
+                    glom(processed_crash, 'json_dump.threads.%d' % crashed_thread),
+                    glom(processed_crash, 'json_dump.system_info.os', default=None) == 'Windows NT'
                 )
             else:
                 signature_list = []
@@ -701,7 +701,7 @@ class SignatureJitCategory(Rule):
     """replaces the signature if there is a JIT classification in the crash"""
 
     def predicate(self, raw_crash, processed_crash):
-        return bool(tree_get(processed_crash, 'classifications.jit.category', default=None))
+        return bool(glom(processed_crash, 'classifications.jit.category', default=None))
 
     def action(self, raw_crash, processed_crash, notes):
         notes.append(
@@ -709,7 +709,7 @@ class SignatureJitCategory(Rule):
             'was: "{}"'.format(processed_crash.get('signature', ''))
         )
         processed_crash['signature'] = "jit | {}".format(
-            tree_get(processed_crash, 'classifications.jit.category')
+            glom(processed_crash, 'classifications.jit.category')
         )
         return True
 
