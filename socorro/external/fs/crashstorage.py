@@ -5,8 +5,6 @@
 import json
 import os
 import gzip
-import shutil
-import stat
 
 from contextlib import contextmanager, closing
 
@@ -34,18 +32,19 @@ def using_umask(n):
     os.umask(old_n)
 
 
-class FSRadixTreeStorage(CrashStorageBase):
-    """
+class FSPermanentStorage(CrashStorageBase):
+    """File-system crash storage
+
     This class implements basic radix tree storage. It stores crashes using the
-    crash_id radix scheme under ``fs_root``.
+    ``crash_id`` radix scheme under ``fs_root``.
 
     Files are stored in the following scheme::
 
-        root/yyyymmdd/name_branch_base/radix.../crash_id/<files>
+        root/yyyymmdd/name_branch_base/radix.../<files>
 
-    The depth of directory is specified by the seventh directory from the right,
-    i.e. the first 0 in 2009 in the example. By default, if the value is 0, the
-    nesting is 4.
+    The depth of directory is specified by the seventh directory from the
+    right, i.e. the first 0 in 2009 in the example. By default, if the value is
+    0, the nesting is 4.
 
     The leaf directory contains the raw crash information, exported as JSON,
     and the various associated dump files -- or, if being used as processed
@@ -58,11 +57,12 @@ class FSRadixTreeStorage(CrashStorageBase):
 
     0bba929f-8721-460c-dead-a43c20071025 is stored in::
 
-        root/20071025/name/0b/ba/92/9f/0bba929f-8721-460c-dead-a43c20071025
+        root/20071025/name/0b/ba/92/9f/
 
     This storage does not implement ``new_crashes``, but is able to store
     processed crashes. Used alone, it is intended to store only processed
     crashes.
+
     """
 
     required_config = Namespace()
@@ -114,7 +114,7 @@ class FSRadixTreeStorage(CrashStorageBase):
     )
 
     def __init__(self, *args, **kwargs):
-        super(FSRadixTreeStorage, self).__init__(*args, **kwargs)
+        super(FSPermanentStorage, self).__init__(*args, **kwargs)
         try:
             with using_umask(self.config.umask):
                 os.makedirs(self.config.fs_root)
@@ -155,12 +155,6 @@ class FSRadixTreeStorage(CrashStorageBase):
             date = utc_now()
         date_formatted = "%4d%02d%02d" % (date.year, date.month, date.day)
         return [self.config.fs_root, date_formatted]
-
-    def _get_radixed_parent_directory(self, crash_id):
-        return os.sep.join(self._get_base(crash_id) +
-                           [self.config.name_branch_base] +
-                           self._get_radix(crash_id) +
-                           [crash_id])
 
     def _dump_names_from_paths(self, pathnames):
         dump_names = []
@@ -256,23 +250,6 @@ class FSRadixTreeStorage(CrashStorageBase):
         with closing(gzip.GzipFile(pathname, 'rb')) as f:
             return json.load(f, object_hook=DotDict)
 
-    def remove(self, crash_id):
-        parent_dir = self._get_radixed_parent_directory(crash_id)
-        if not os.path.exists(parent_dir):
-            raise CrashIDNotFound
-        shutil.rmtree(parent_dir)
-
-
-class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
-    """
-    The legacy radix tree storage implements a variant of the radix tree
-    storage, designed to be backwards-compatible with the old filesystem
-    module.
-
-    This filesystem storage does not create a subdirectory with the crash ID
-    in the radix tree to store crashes -- instead, it just stores it in the
-    final radix part.
-    """
     def _get_radixed_parent_directory(self, crash_id):
         return os.sep.join(self._get_base(crash_id) +
                            [self.config.name_branch_base] +
@@ -288,13 +265,16 @@ class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
             list(self.get_raw_dumps_as_files(crash_id).values())
         )
 
+        # Remove all the files related to the crash
         for cand in removal_candidates:
             try:
                 os.unlink(cand)
             except OSError:
-                self.config.logger.error("could not delete: %s", cand,
-                                         exc_info=True)
+                self.config.logger.error("could not delete: %s", cand, exc_info=True)
 
-
-# more user friendly aliases for commonly used classes
-FSPermanentStorage = FSLegacyRadixTreeStorage
+        # If the directory is empty, clean it up
+        if len(os.listdir(parent_dir)) == 0:
+            try:
+                os.rmdir(parent_dir)
+            except OSError:
+                self.config.logger.error("could not delete: %s", parent_dir, exc_info=True)
