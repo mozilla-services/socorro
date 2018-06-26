@@ -5,11 +5,11 @@ from configman import ConfigurationManager
 from mock import Mock
 import pytest
 
-from socorro.external.fs.crashstorage import FSPermanentStorage
 from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
+from socorro.external.fs.crashstorage import FSPermanentStorage
 from socorro.unittest.testbase import TestCase
 
 
