@@ -20,5 +20,4 @@ help:
 # Copy the e2e-test README to this directory because otherwise we can't pull it
 # in because there isn't a way to do a file include for Markdown files.
 %: Makefile
-	cp ../e2e-tests/README.md tests/e2e_readme.md
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
