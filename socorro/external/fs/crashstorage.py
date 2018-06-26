@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
 import json
 import os
 import gzip
@@ -16,7 +15,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from configman import Namespace, class_converter
+from configman import Namespace
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
@@ -676,117 +675,3 @@ class FSTemporaryStorage(FSLegacyDatedRadixTreeStorage):
 # more user friendly aliases for commonly used classes
 FSPermanentStorage = FSLegacyRadixTreeStorage
 FSDatedPermanentStorage = FSLegacyDatedRadixTreeStorage
-
-
-class TarFileWritingCrashStore(CrashStorageBase):
-    required_config = Namespace()
-    required_config.add_option(
-        name='tarball_name',
-        doc='pathname to a the target tarfile',
-        default=datetime.datetime.now().strftime("%Y%m%d")
-    )
-    required_config.add_option(
-        name='tarfile_module',
-        doc='a module that supplies the tarfile interface',
-        default='tarfile',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        name='gzip_module',
-        doc='a module that supplies the gzip interface',
-        default='gzip',
-        from_string_converter=class_converter
-    )
-
-    def _create_tarfile(self):
-        """subclasses that have a different way of openning or creating
-        the tar file pointer can override this method.  Useful for creating
-        text buffer tarfiles or using temporary files"""
-        return self.tarfile_module.open(self.config.tarball_name, 'w')
-
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super(TarFileWritingCrashStore, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
-        self.tarfile_module = config.tarfile_module
-        self.gzip_module = config.gzip_module
-        self.tar_fp = self._create_tarfile()
-
-    def close(self):
-        self.tar_fp.close()
-
-    def save_processed(self, processed_crash):
-        processed_crash_as_string = json.dumps(
-            processed_crash,
-            cls=JsonDTISOEncoder
-        )
-        crash_id = processed_crash["crash_id"]
-
-        compressed_crash = StringIO()
-        gzip_file = self.gzip_module.GzipFile(fileobj=compressed_crash, mode='w')
-        gzip_file.write(processed_crash_as_string)
-        gzip_file.close()
-        compressed_crash.seek(0)
-        tarinfo = self.tarfile_module.TarInfo('%s.jsonz' % crash_id)
-        tarinfo.size = len(compressed_crash.getvalue())
-        self.tar_fp.addfile(tarinfo, compressed_crash)
-        self.config.logger.debug(
-            'TarFileCrashStore saved - %s to %s',
-            crash_id,
-            self.config.tarball_name
-        )
-
-
-class TarFileSequentialReadingCrashStore(CrashStorageBase):
-    required_config = Namespace()
-    required_config.add_option(
-        name='tarball_name',
-        doc='pathname to a the target tarfile',
-        default='fred.tar'
-    )
-    required_config.add_option(
-        name='tarfile_module',
-        doc='a module that supplies the tarfile interface',
-        default='tarfile',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        name='gzip_module',
-        doc='a module that supplies the gzip interface',
-        default='gzip',
-        from_string_converter=class_converter
-    )
-
-    def _create_tarfile(self):
-        """subclasses that have a different way of openning or creating
-        the tar file pointer can override this method.  Useful for creating
-        text buffer tarfiles or using temporary files"""
-        return self.tarfile_module.open(self.config.tarball_name, 'r')
-
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super(TarFileSequentialReadingCrashStore, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
-        self.tarfile_module = config.tarfile_module
-        self.gzip_module = config.gzip_module
-        self.tar_fp = self._create_tarfile()
-
-    def close(self):
-        self.tar_fp.close()
-
-    def get_unredacted_processed(self, crash_id_ignored):
-        """we don't implement random access in this class, the next
-        one is all you get no matter what you ask for"""
-        a_tar_info_object = self.tar_fp.next()
-        if a_tar_info_object is None:
-            raise CrashIDNotFound(crash_id_ignored)
-        result_gzip_fp = gzip.GzipFile(
-            fileobj=self.tar_fp.extractfile(a_tar_info_object)
-        )
-        reconstituted_processed_crash_as_str = result_gzip_fp.read().strip()
-        processed_crash = json.loads(reconstituted_processed_crash_as_str)
-        return processed_crash
