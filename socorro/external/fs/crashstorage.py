@@ -2,12 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
+import gzip
 import json
 import os
-import gzip
-import shutil
-import stat
 
 from contextlib import contextmanager, closing
 
@@ -16,7 +13,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from configman import Namespace, class_converter
+from configman import Namespace
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
@@ -35,18 +32,19 @@ def using_umask(n):
     os.umask(old_n)
 
 
-class FSRadixTreeStorage(CrashStorageBase):
-    """
+class FSPermanentStorage(CrashStorageBase):
+    """File-system crash storage
+
     This class implements basic radix tree storage. It stores crashes using the
-    crash_id radix scheme under ``fs_root``.
+    ``crash_id`` radix scheme under ``fs_root``.
 
     Files are stored in the following scheme::
 
-        root/yyyymmdd/name_branch_base/radix.../crash_id/<files>
+        root/yyyymmdd/name_branch_base/radix.../<files>
 
-    The depth of directory is specified by the seventh directory from the right,
-    i.e. the first 0 in 2009 in the example. By default, if the value is 0, the
-    nesting is 4.
+    The depth of directory is specified by the seventh directory from the
+    right, i.e. the first 0 in 2009 in the example. By default, if the value is
+    0, the nesting is 4.
 
     The leaf directory contains the raw crash information, exported as JSON,
     and the various associated dump files -- or, if being used as processed
@@ -59,11 +57,12 @@ class FSRadixTreeStorage(CrashStorageBase):
 
     0bba929f-8721-460c-dead-a43c20071025 is stored in::
 
-        root/20071025/name/0b/ba/92/9f/0bba929f-8721-460c-dead-a43c20071025
+        root/20071025/name/0b/ba/92/9f/
 
     This storage does not implement ``new_crashes``, but is able to store
     processed crashes. Used alone, it is intended to store only processed
     crashes.
+
     """
 
     required_config = Namespace()
@@ -115,7 +114,7 @@ class FSRadixTreeStorage(CrashStorageBase):
     )
 
     def __init__(self, *args, **kwargs):
-        super(FSRadixTreeStorage, self).__init__(*args, **kwargs)
+        super(FSPermanentStorage, self).__init__(*args, **kwargs)
         try:
             with using_umask(self.config.umask):
                 os.makedirs(self.config.fs_root)
@@ -156,12 +155,6 @@ class FSRadixTreeStorage(CrashStorageBase):
             date = utc_now()
         date_formatted = "%4d%02d%02d" % (date.year, date.month, date.day)
         return [self.config.fs_root, date_formatted]
-
-    def _get_radixed_parent_directory(self, crash_id):
-        return os.sep.join(self._get_base(crash_id) +
-                           [self.config.name_branch_base] +
-                           self._get_radix(crash_id) +
-                           [crash_id])
 
     def _dump_names_from_paths(self, pathnames):
         dump_names = []
@@ -257,23 +250,6 @@ class FSRadixTreeStorage(CrashStorageBase):
         with closing(gzip.GzipFile(pathname, 'rb')) as f:
             return json.load(f, object_hook=DotDict)
 
-    def remove(self, crash_id):
-        parent_dir = self._get_radixed_parent_directory(crash_id)
-        if not os.path.exists(parent_dir):
-            raise CrashIDNotFound
-        shutil.rmtree(parent_dir)
-
-
-class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
-    """
-    The legacy radix tree storage implements a variant of the radix tree
-    storage, designed to be backwards-compatible with the old filesystem
-    module.
-
-    This filesystem storage does not create a subdirectory with the crash ID
-    in the radix tree to store crashes -- instead, it just stores it in the
-    final radix part.
-    """
     def _get_radixed_parent_directory(self, crash_id):
         return os.sep.join(self._get_base(crash_id) +
                            [self.config.name_branch_base] +
@@ -289,504 +265,16 @@ class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
             list(self.get_raw_dumps_as_files(crash_id).values())
         )
 
+        # Remove all the files related to the crash
         for cand in removal_candidates:
             try:
                 os.unlink(cand)
             except OSError:
-                self.config.logger.error("could not delete: %s", cand,
-                                         exc_info=True)
+                self.config.logger.error("could not delete: %s", cand, exc_info=True)
 
-
-class FSDatedRadixTreeStorage(FSRadixTreeStorage):
-    """This storage class extends ``FSRadixTreeStorage`` to include a date
-    branch. The date branch implements an indexing scheme so that the rough
-    order in which the crashes arrived is known. The directory structure
-    consists of the hour, the minute and the interval of seconds the crash
-    was received for processing -- for instance, if a crash was received at
-    3:30:12pm, the directory structure would look something like::
-
-        root/yyyymmdd/date_branch_base/hour/minute_(minute_slice)/crash_id
-
-    minute_slice is computed by taking the second of the current timestamp
-    and floor dividing by minute_slice_interval, e.g. a minute slice of 4
-    provides slots from 0..14.
-
-    For example::
-
-        .../20090514/date/15/30_03/38a4f01e...20090514
-
-    The 03 in 30_03 corresponds to an interval slice of 4: ``12 // 4 = 3``,
-
-    In the example, the date 20090514 corresponds to the date assigned by the
-    collector from the crash's ID, rather than the date the crash was received by
-    the processor.
-
-    The crash ID in the dated folder is a symbolic link to the same folder in the
-    radix tree, e.g. the directory given in the example would be linked to
-    ``.../20090514/name/38/a4/f0/1e/38a4f01e...20090514``. A corresponding link,
-    named ``date_root``, is created in the folder which is linked to
-    ``.../20090514/date/15/30_03``. This is so that jumps can be made between the
-    two directory hierarchies -- crash data can be obtained by visiting the dated
-    hierarchy, and a crash's location in the dated hierarchy can be found by
-    looking the crash up by its ID.
-
-    This dated directory structure enables efficient traversal of the folder
-    hierarchy for new crashes -- first, all the date directories in the root are
-    traversed to find all the symbolic links to the radix directories. When one is
-    found, it is unlinked from the filesystem and the ID yielded to the interested
-    caller. This proceeds until we exhaust all the directories to visit, by which
-    time all the crashes should be visited.
-
-    In order to prevent race conditions, the process will compute the current slot
-    and decline to enter any slots with a number greater than the current slot --
-    this is because a process may already be currently writing to it.
-
-    This is a symlink to the items stored in the base radix tree storage.
-    Additionally, a symlink is created in the base radix tree directory called
-    ``date_root` which links to the
-    ``minute_(minute_slice)`` folder.
-
-    This storage class is suitable for use as raw crash storage, as it supports
-    the ``new_crashes`` method.
-
-    """
-
-    required_config = Namespace()
-    required_config.add_option(
-        'date_branch_base',
-        doc='the directory base name to use for the dated radix tree storage',
-        default='date',
-        reference_value_from='resource.fs',
-    )
-    required_config.add_option(
-        'minute_slice_interval',
-        doc='how finely to slice minutes into slots, e.g. 4 means every 4 '
-            'seconds a new slot will be allocated',
-        default=4,
-        reference_value_from='resource.fs',
-    )
-
-    # This is just a constant for len(self._current_slot()).
-    SLOT_DEPTH = 2
-    DIR_DEPTH = 2
-
-    def _get_current_date(self):
-        date = utc_now()
-        return "%02d%02d%02d" % (date.year, date.month, date.day)
-
-    def _get_date_root_name(self, crash_id):
-        return 'date_root'
-
-    def _get_dump_file_name(self, crash_id, dump_name):
-        if dump_name == self.config.dump_field or dump_name is None:
-            return crash_id + self.config.dump_file_suffix
-        else:
-            return "%s.%s%s" % (crash_id,
-                                dump_name,
-                                self.config.dump_file_suffix)
-
-    def _get_dated_parent_directory(self, crash_id, slot):
-        return os.sep.join(self._get_base(crash_id) +
-                           [self.config.date_branch_base] + slot)
-
-    def _current_slot(self):
-        now = utc_now()
-        return ["%02d" % now.hour,
-                "%02d_%02d" % (now.minute,
-                               now.second // self.config.minute_slice_interval)]
-
-    def _create_name_to_date_symlink(self, crash_id, slot):
-        """we traverse the path back up from date/slot... to make a link:
-           src:  "name"/radix.../crash_id (or "name"/radix... for legacy mode)
-           dest: "date"/slot.../crash_id"""
-        self._get_radixed_parent_directory(crash_id)
-
-        root = os.sep.join([os.path.pardir] * (self.SLOT_DEPTH + 1))
-        os.symlink(os.sep.join([root, self.config.name_branch_base] +
-                               self._get_radix(crash_id) +
-                               [crash_id]),
-                   os.sep.join([self._get_dated_parent_directory(crash_id,
-                                                                 slot),
-                                crash_id]))
-
-    def _create_date_to_name_symlink(self, crash_id, slot):
-        """the path is something like name/radix.../crash_id, so what we do is
-           add 2 to the directories to go up _dir_depth + len(radix).
-           we make a link:
-           src:  "date"/slot...
-           dest: "name"/radix.../crash_id/date_root_name"""
-        radixed_parent_dir = self._get_radixed_parent_directory(crash_id)
-
-        root = os.sep.join([os.path.pardir] *
-                           (len(self._get_radix(crash_id)) + self.DIR_DEPTH))
-        os.symlink(os.sep.join([root, self.config.date_branch_base] + slot),
-                   os.sep.join([radixed_parent_dir,
-                                self._get_date_root_name(crash_id)]))
-
-    def save_raw_crash(self, raw_crash, dumps, crash_id):
-        super(FSDatedRadixTreeStorage, self).save_raw_crash(raw_crash,
-                                                            dumps, crash_id)
-
-        slot = self._current_slot()
-        parent_dir = self._get_dated_parent_directory(crash_id, slot)
-
-        try:
-            os.makedirs(parent_dir)
-        except OSError:
-            # probably already created, ignore
-            pass
-
-        with using_umask(self.config.umask):
-            # If we've saved a crash with this crash_id before, then we'll kick
-            # up an OSError when creating the name symlink, but not the date
-            # symlink. Thus it's important to have these two tied together and
-            # try creating the name symlink first so if that fails we don't end
-            # up with an extra date symlink.
+        # If the directory is empty, clean it up
+        if len(os.listdir(parent_dir)) == 0:
             try:
-                self._create_date_to_name_symlink(crash_id, slot)
-                self._create_name_to_date_symlink(crash_id, slot)
-            except OSError as exc:
-                self.logger.info('failed to create symlink: %s', str(exc))
-
-    def remove(self, crash_id):
-        dated_path = os.path.realpath(
-            os.sep.join([self._get_radixed_parent_directory(crash_id),
-                         self._get_date_root_name(crash_id)]))
-
-        try:
-            # We can just unlink the symlink and later new_crashes will clean
-            # up for us.
-            os.unlink(os.sep.join([dated_path, crash_id]))
-        except OSError:
-            # we might be trying to remove a visited crash and that's okay
-            pass
-
-        # Now we actually remove the crash.
-        super(FSDatedRadixTreeStorage, self).remove(crash_id)
-
-    def _visit_minute_slot(self, minute_slot_base):
-        for crash_id in os.listdir(minute_slot_base):
-            namedir = os.sep.join([minute_slot_base, crash_id])
-            st_result = os.lstat(namedir)
-
-            if stat.S_ISLNK(st_result.st_mode):
-                # This is a link, so we can dereference it to find
-                # crashes.
-                if os.path.isfile(
-                    os.sep.join([namedir,
-                                 crash_id +
-                                 self.config.json_file_suffix])):
-                    date_root_path = os.sep.join([
-                        namedir,
-                        self._get_date_root_name(crash_id)
-                    ])
-                    yield crash_id
-
-                    try:
-                        os.unlink(date_root_path)
-                    except OSError:
-                        self.logger.error("could not find a date root in "
-                                          "%s; is crash corrupt?",
-                                          namedir,
-                                          exc_info=True)
-
-                    os.unlink(namedir)
-
-    def new_crashes(self):
-        """
-        The ``new_crashes`` method returns a generator that visits all new
-        crashes like so:
-
-        * Traverse the date root to find all crashes.
-
-        * If we find a symlink in a slot, then we dereference the link and
-          check if the directory has crash data.
-
-        * if the directory does, then we remove the symlink in the slot,
-          clean up the parent directories if they're empty and then yield
-          the crash_id.
-        """
-        current_slot = self._current_slot()
-        current_date = self. _get_current_date()
-
-        dates = os.listdir(self.config.fs_root)
-        for date in dates:
-            dated_base = os.sep.join([self.config.fs_root, date,
-                                      self.config.date_branch_base])
-
-            try:
-                hour_slots = os.listdir(dated_base)
+                os.rmdir(parent_dir)
             except OSError:
-                # it is okay that the date root doesn't exist - skip on to
-                # the next date
-                #self.logger.info("date root for %s doesn't exist" % date)
-                continue
-
-            for hour_slot in hour_slots:
-                skip_dir = False
-                hour_slot_base = os.sep.join([dated_base, hour_slot])
-                for minute_slot in os.listdir(hour_slot_base):
-                    minute_slot_base = os.sep.join([hour_slot_base,
-                                                    minute_slot])
-                    slot = [hour_slot, minute_slot]
-
-                    if slot >= current_slot and date >= current_date:
-                        # the slot is currently being used, we want to skip it
-                        # for now
-                        self.logger.info("not processing slot: %s/%s" %
-                                         tuple(slot))
-                        skip_dir = True
-                        continue
-
-                    for x in self._visit_minute_slot(minute_slot_base):
-                        yield x
-
-                    try:
-                        # We've finished processing the slot, so we can remove
-                        # it.
-                        os.rmdir(minute_slot_base)
-                    except OSError:
-                        self.logger.error("could not fully remove directory: "
-                                          "%s; are there more crashes in it?",
-                                          minute_slot_base,
-                                          exc_info=True)
-
-                if not skip_dir and hour_slot < current_slot[0]:
-                    try:
-                        # If the current slot is greater than the hour slot
-                        # we're processing, then we can conclude the directory
-                        # is safe to remove.
-                        os.rmdir(hour_slot_base)
-                    except OSError:
-                        self.logger.error("could not fully remove directory: "
-                                          "%s; are there more crashes in it?",
-                                          hour_slot_base,
-                                          exc_info=True)
-
-
-class FSLegacyDatedRadixTreeStorage(FSDatedRadixTreeStorage,
-                                    FSLegacyRadixTreeStorage):
-    """
-    This legacy radix tree storage implements a backwards-compatible with the
-    old filesystem storage by setting the symlinks up correctly.
-
-    The rationale for creating a diamond structure for multiple inheritance is
-    two-fold:
-
-     * The implementation of ``_get_radixed_parent_directory`` is required from
-       ``FSLegacyRadixTreeStorage`` and ``FSDatedRadixTreeStorage`` requires
-       the behavior of the implementation from ``FSLegacyRadixTreeStorage`` to
-       function correctly.
-
-     * The implementation of ``remove`` is also required from
-       ``FSDatedRadixTreeStorage``, and the order is dependent as it requires
-       the MRO to resolve ``remove`` from the ``FSDatedRadixTreeStorage``
-       first, over ``FSLegacyRadixTreeStorage``.
-    """
-    DIR_DEPTH = 1
-
-    def _get_date_root_name(self, crash_id):
-        return crash_id
-
-    def _create_name_to_date_symlink(self, crash_id, slot):
-        root = os.sep.join([os.path.pardir] * (self.SLOT_DEPTH + 1))
-        os.symlink(os.sep.join([root, self.config.name_branch_base] +
-                               self._get_radix(crash_id)),
-                   os.sep.join([self._get_dated_parent_directory(crash_id,
-                                                                 slot),
-                                crash_id]))
-
-    def _visit_minute_slot(self, minute_slot_base):
-        for crash_id_or_webhead in os.listdir(minute_slot_base):
-            namedir = os.sep.join([minute_slot_base, crash_id_or_webhead])
-            st_result = os.lstat(namedir)
-
-            if stat.S_ISLNK(st_result.st_mode):
-                crash_id = crash_id_or_webhead
-
-                # This is a link, so we can dereference it to find
-                # crashes.
-                if os.path.isfile(
-                    os.sep.join([namedir,
-                                 crash_id +
-                                 self.config.json_file_suffix])):
-                    date_root_path = os.sep.join([
-                        namedir,
-                        self._get_date_root_name(crash_id)
-                    ])
-
-                    yield crash_id
-
-                    try:
-                        os.unlink(date_root_path)
-                    except OSError:
-                        self.logger.error("could not find a date root in "
-                                          "%s; is crash corrupt?",
-                                          date_root_path,
-                                          exc_info=True)
-                # Bug 971496 - by outdenting this line one level we make sure
-                # that we can delete any orphan symlinks created by duplicate
-                # crash_ids in the file system
-                os.unlink(namedir)
-
-            elif stat.S_ISDIR(st_result.st_mode):
-                webhead_slot = crash_id_or_webhead
-                webhead_slot_base = os.sep.join([minute_slot_base,
-                                                 webhead_slot])
-
-                # This is actually a webhead slot, but we can visit it as if
-                # it was a minute slot.
-                for x in self._visit_minute_slot(webhead_slot_base):
-                    yield x
-
-                try:
-                    os.rmdir(webhead_slot_base)
-                except OSError:
-                    self.logger.error("could not fully remove directory: "
-                                      "%s; are there more crashes in it?",
-                                      webhead_slot_base,
-                                      exc_info=True)
-            else:
-                self.logger.critical("unknown file %s found", namedir)
-
-
-class FSTemporaryStorage(FSLegacyDatedRadixTreeStorage):
-    """This crash storage system uses only the day of the month as the root of
-    the daily directories.  This means that it will recycle directories
-    starting at the beginning of each month"""
-
-    def _get_current_date(self):
-        date = utc_now()
-        return "%02d" % date.day
-
-    def _get_base(self, crash_id):
-        """this method overrides the base method to define the daily file
-        system root directory name.  While the default class is to use a
-        YYYYMMDD form, this class substitutes a simple DD form.  This is the
-        mechanism of directory recycling as at the first day of a new month
-        we return to the same directiory structures that were created on the
-        first day of the previous month"""
-        date = dateFromOoid(crash_id)
-        if not date:
-            date = utc_now()
-        date_formatted = "%02d" % (date.day,)
-        return [self.config.fs_root, date_formatted]
-
-
-# more user friendly aliases for commonly used classes
-FSPermanentStorage = FSLegacyRadixTreeStorage
-FSDatedPermanentStorage = FSLegacyDatedRadixTreeStorage
-
-
-class TarFileWritingCrashStore(CrashStorageBase):
-    required_config = Namespace()
-    required_config.add_option(
-        name='tarball_name',
-        doc='pathname to a the target tarfile',
-        default=datetime.datetime.now().strftime("%Y%m%d")
-    )
-    required_config.add_option(
-        name='tarfile_module',
-        doc='a module that supplies the tarfile interface',
-        default='tarfile',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        name='gzip_module',
-        doc='a module that supplies the gzip interface',
-        default='gzip',
-        from_string_converter=class_converter
-    )
-
-    def _create_tarfile(self):
-        """subclasses that have a different way of openning or creating
-        the tar file pointer can override this method.  Useful for creating
-        text buffer tarfiles or using temporary files"""
-        return self.tarfile_module.open(self.config.tarball_name, 'w')
-
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super(TarFileWritingCrashStore, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
-        self.tarfile_module = config.tarfile_module
-        self.gzip_module = config.gzip_module
-        self.tar_fp = self._create_tarfile()
-
-    def close(self):
-        self.tar_fp.close()
-
-    def save_processed(self, processed_crash):
-        processed_crash_as_string = json.dumps(
-            processed_crash,
-            cls=JsonDTISOEncoder
-        )
-        crash_id = processed_crash["crash_id"]
-
-        compressed_crash = StringIO()
-        gzip_file = self.gzip_module.GzipFile(fileobj=compressed_crash, mode='w')
-        gzip_file.write(processed_crash_as_string)
-        gzip_file.close()
-        compressed_crash.seek(0)
-        tarinfo = self.tarfile_module.TarInfo('%s.jsonz' % crash_id)
-        tarinfo.size = len(compressed_crash.getvalue())
-        self.tar_fp.addfile(tarinfo, compressed_crash)
-        self.config.logger.debug(
-            'TarFileCrashStore saved - %s to %s',
-            crash_id,
-            self.config.tarball_name
-        )
-
-
-class TarFileSequentialReadingCrashStore(CrashStorageBase):
-    required_config = Namespace()
-    required_config.add_option(
-        name='tarball_name',
-        doc='pathname to a the target tarfile',
-        default='fred.tar'
-    )
-    required_config.add_option(
-        name='tarfile_module',
-        doc='a module that supplies the tarfile interface',
-        default='tarfile',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        name='gzip_module',
-        doc='a module that supplies the gzip interface',
-        default='gzip',
-        from_string_converter=class_converter
-    )
-
-    def _create_tarfile(self):
-        """subclasses that have a different way of openning or creating
-        the tar file pointer can override this method.  Useful for creating
-        text buffer tarfiles or using temporary files"""
-        return self.tarfile_module.open(self.config.tarball_name, 'r')
-
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super(TarFileSequentialReadingCrashStore, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
-        self.tarfile_module = config.tarfile_module
-        self.gzip_module = config.gzip_module
-        self.tar_fp = self._create_tarfile()
-
-    def close(self):
-        self.tar_fp.close()
-
-    def get_unredacted_processed(self, crash_id_ignored):
-        """we don't implement random access in this class, the next
-        one is all you get no matter what you ask for"""
-        a_tar_info_object = self.tar_fp.next()
-        if a_tar_info_object is None:
-            raise CrashIDNotFound(crash_id_ignored)
-        result_gzip_fp = gzip.GzipFile(
-            fileobj=self.tar_fp.extractfile(a_tar_info_object)
-        )
-        reconstituted_processed_crash_as_str = result_gzip_fp.read().strip()
-        processed_crash = json.loads(reconstituted_processed_crash_as_str)
-        return processed_crash
+                self.config.logger.error("could not delete: %s", parent_dir, exc_info=True)

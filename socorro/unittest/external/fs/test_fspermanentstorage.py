@@ -5,34 +5,34 @@ from configman import ConfigurationManager
 from mock import Mock
 import pytest
 
-from socorro.external.fs.crashstorage import FSRadixTreeStorage
 from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
+from socorro.external.fs.crashstorage import FSPermanentStorage
 from socorro.unittest.testbase import TestCase
 
 
 FS_ROOT = os.environ['resource.fs.fs_root']
 
 
-class TestFSRadixTreeStorage(TestCase):
+class TestFSPermanentStorage(TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
     CRASH_ID_3 = "0bba929f-8721-460c-dead-a43c20071027"
 
     def setUp(self):
-        super(TestFSRadixTreeStorage, self).setUp()
+        super(TestFSPermanentStorage, self).setUp()
         with self._common_config_setup().context() as config:
-            self.fsrts = FSRadixTreeStorage(config)
+            self.fsrts = FSPermanentStorage(config)
 
     def tearDown(self):
-        super(TestFSRadixTreeStorage, self).tearDown()
+        super(TestFSPermanentStorage, self).tearDown()
         shutil.rmtree(self.fsrts.config.fs_root)
 
     def _common_config_setup(self):
         mock_logging = Mock()
-        required_config = FSRadixTreeStorage.get_required_config()
+        required_config = FSPermanentStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
             [required_config],
