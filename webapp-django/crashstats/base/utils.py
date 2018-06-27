@@ -77,3 +77,45 @@ def requests_retry_session(
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     return session
+
+
+def get_signature_startup_stats(signature):
+    startup_stats = {'crash_count': signature['count']}
+
+    # Number of plugin crashes.
+    startup_stats['plugin_count'] = 0
+    sig_process = signature['facets']['process_type']
+    for row in sig_process:
+        if row['term'].lower() == 'plugin':
+            startup_stats['plugin_count'] = row['count']
+
+    # Number of hang crashes.
+    startup_stats['hang_count'] = 0
+    sig_hang = signature['facets']['hang_type']
+    for row in sig_hang:
+        # Hangs have weird values in the database: a value of 1 or -1
+        # means it is a hang, a value of 0 or missing means it is not.
+        if row['term'] in (1, -1):
+            startup_stats['hang_count'] += row['count']
+
+    # Number of crashes happening during startup. This is defined by
+    # the client, as opposed to the next method which relies on
+    # the uptime of the client.
+    startup_stats['startup_count'] = sum(
+        row['count'] for row in signature['facets']['startup_crash']
+        if row['term'] in ('T', '1')
+    )
+
+    # Is a startup crash if more than half of the crashes are happening
+    # in the first minute after launch.
+    startup_stats['startup_crash'] = False
+    sig_uptime = signature['facets']['histogram_uptime']
+    for row in sig_uptime:
+        # Aggregation buckets use the lowest value of the bucket as
+        # term. So for everything between 0 and 60 excluded, the
+        # term will be `0`.
+        if row['term'] < 60:
+            ratio = 1.0 * row['count'] / signature['count']
+            startup_stats['startup_crash'] = ratio > 0.5
+
+    return startup_stats

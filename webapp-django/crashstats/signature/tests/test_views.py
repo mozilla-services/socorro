@@ -17,6 +17,43 @@ DUMB_SIGNATURE = 'hang | mozilla::wow::such_signature(smth*)'
 class TestViews(BaseTestViews):
 
     def test_signature_report(self):
+        def mocked_supersearch_get(**params):
+            assert 'signature' in params
+            assert params['signature'] == ['=' + DUMB_SIGNATURE]
+            assert '_aggs.signature' in params
+
+            results = {
+                "total": 1,
+                "hits": [],
+                "errors": [],
+                "facets": {
+                    "signature": [{
+                        "count": 1,
+                        "term": "JS::Rooted<T>::operator=",
+                        "facets": {
+                            "histogram_uptime": [{
+                                "count": 1,
+                                "term": 0
+                            }],
+                            "startup_crash": [{
+                                "count": 1,
+                                "term": "T"
+                            }],
+                            "process_type": [],
+                            "hang_type": [{
+                                "count": 1,
+                                "term": 0
+                            }]
+                        }
+                    }]
+                }
+            }
+            return results
+
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
         url = reverse('signature:signature_report')
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
