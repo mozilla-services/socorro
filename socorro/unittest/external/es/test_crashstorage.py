@@ -947,6 +947,36 @@ class TestESCrashStorage(ElasticsearchTestCase):
             assert mm.has_record('histogram', stat='processor.es.raw_crash_size', value=27)
             assert mm.has_record('histogram', stat='processor.es.processed_crash_size', value=1785)
 
+    def test_index_data_capture(self):
+        """Verify we capture index data in ES crashstorage"""
+        with MetricsMock() as mm:
+            es_storage = ESCrashStorage(config=self.config, namespace='processor.es')
+
+            mock_connection = mock.Mock()
+            # Do a successful indexing
+            es_storage._index_crash(
+                connection=mock_connection,
+                es_index=None,
+                es_doctype=None,
+                crash_document=None,
+                crash_id=None
+            )
+            # Do a failed indexing
+            mock_connection.index.side_effect = Exception
+            with pytest.raises(Exception):
+                es_storage._index_crash(
+                    connection=mock_connection,
+                    es_index=None,
+                    es_doctype=None,
+                    crash_document=None,
+                    crash_id=None
+                )
+
+            assert len(mm.filter_records(stat='processor.es.index',
+                                         tags=['outcome:successful'])) == 1
+            assert len(mm.filter_records(stat='processor.es.index',
+                                         tags=['outcome:failed'])) == 1
+
 
 class Test_get_fields_by_analyzer:
     @pytest.mark.parametrize('fields', [
