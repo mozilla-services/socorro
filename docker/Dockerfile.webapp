@@ -21,9 +21,10 @@ ENV LESS_BINARY /webapp-frontend-deps/node_modules/.bin/lessc
 ENV UGLIFYJS_BINARY /webapp-frontend-deps/node_modules/.bin/uglifyjs
 ENV CSSMIN_BINARY /webapp-frontend-deps/node_modules/.bin/cssmin
 ENV NPM_ROOT_PATH /webapp-frontend-deps/
+ENV NODE_PATH /webapp-frontend-deps/node_modules/
 
 # Build webpack-defined frontend bundles
-RUN cd /app/webapp-django/ && $WEBPACK_BINARY --mode=production
+RUN cd /app/webapp-django/ && $WEBPACK_BINARY --mode=production --bail
 
 # Run collectstatic in container which puts files in the default place for
 # static files.

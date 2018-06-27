@@ -23,4 +23,15 @@ module.exports = {
       filename: './webpack-stats.json',
     }),
   ],
+
+  // Depedencies are installed in the /webapp-frontend-deps folder in the
+  // container. resolve handles imports in compiled bundles, while resolveLoader
+  // handles importing loaders used by webpack for bundling.
+  resolve: {
+    modules: [path.join('/webapp-frontend-deps', 'node_modules')],
+  },
+  resolveLoader: {
+    modules: [path.join('/webapp-frontend-deps', 'node_modules')],
+  },
+
 };
