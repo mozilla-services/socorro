@@ -159,8 +159,8 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                                 <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
                             </div>
                             <div class="signature-icons">
-                                {% if crash.startup_count > 0 %}
-                                {% if crash.startup_count == crash.count %}
+                                {% if crash.startup_stats.startup_count > 0 %}
+                                {% if crash.startup_stats.startup_count == crash.count %}
                                 <img src="{{ static('img/3rdparty/silk/flag_red.png') }}"
                                     alt="red flag"
                                     title="Startup Crash, all crashes happened during startup"
@@ -169,13 +169,13 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                                 {% else %}
                                 <img src="{{ static('img/3rdparty/silk/flag_yellow.png') }}"
                                     alt="yellow flag"
-                                    title="Potential Startup Crash, {{ crash.startup_count }} out of {{ crash.count }} crashes happened during startup"
+                                    title="Potential Startup Crash, {{ crash.startup_stats.startup_count }} out of {{ crash.count }} crashes happened during startup"
                                     class="startup" height="16" width="16"
                                 />
                                 {% endif %}
                                 {% endif %}
 
-                                {% if crash.startup_crash %}
+                                {% if crash.startup_stats.startup_crash %}
                                 <img
                                     src="{{ static('img/icons/rocket_fly.png') }}"
                                     alt="rocket"
@@ -184,11 +184,11 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                                 />
                                 {% endif %}
 
-                                {% if crash.hang_count > 0 %}
+                                {% if crash.startup_stats.hang_count > 0 %}
                                 <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="stop sign" title="Hanged Crash" class="hang" height="16" width="16">
                                 {% endif %}
 
-                                {% if crash.plugin_count > 0 %}
+                                {% if crash.startup_stats.plugin_count > 0 %}
                                 <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" alt="brick" title="Plugin Crash" class="plugin" height="16" width="16">
                                 {% else %}
                                 <img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}" width="16" height="16" alt="application" title="Browser Crash" class="browser" />
@@ -197,9 +197,9 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                         </td>
                         {% if not os_name %}
                         <td>{{ crash.count }}</td>
-                        <td>{{ crash.win_count }}</td>
-                        <td>{{ crash.mac_count }}</td>
-                        <td>{{ crash.lin_count }}</td>
+                        <td>{{ crash.platforms.win_count }}</td>
+                        <td>{{ crash.platforms.mac_count }}</td>
+                        <td>{{ crash.platforms.lin_count }}</td>
                         {% elif os_name == 'Windows' %}
                         <td>{{ crash.win_count }}</td>
                         {% elif os_name == 'Linux' %}
