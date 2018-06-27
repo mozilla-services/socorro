@@ -33,5 +33,4 @@ module.exports = {
   resolveLoader: {
     modules: [path.join('/webapp-frontend-deps', 'node_modules')],
   },
-
 };
