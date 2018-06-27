@@ -50,6 +50,7 @@ if [ "${USEPYTHON:-2}" == "2" ]; then
 
     # Collect static and then run py.test in the webapp
     pushd webapp-django
+    "${WEBPACK_BINARY}" --mode=production --bail
     python manage.py collectstatic --noinput
     "${PYTEST}"
     popd
