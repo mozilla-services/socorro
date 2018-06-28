@@ -260,7 +260,11 @@ def main(argv=None):
                 # NOTE(willkg): Classifications aren't available via the public API.
                 'classifications': {
                     'jit': {
-                        'category': glom(processed_crash, 'classifications.jit.category', default=''),
+                        'category': glom(
+                            processed_crash,
+                            'classifications.jit.category',
+                            default=''
+                        ),
                     },
                 },
                 'mdsw_status_string': processed_crash.get('mdsw_status_string', None),
