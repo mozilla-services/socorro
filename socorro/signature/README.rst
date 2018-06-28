@@ -23,23 +23,25 @@ like that like this::
 
 
 Once you're in your Socorro environment, you can run signature generation.
-This gives you command help::
+You can pass it crash ids via the command line as arguments::
 
-    $ socorro-cmd signature --help
+    socorro-cmd signature CRASHID [CRASHID...]
 
 
-Pulling crash ids from the file ``crashids.txt``::
+It can also take crash ids from stdin.
+
+Some examples:
+
+* pulling crash ids from the file ``crashids.txt``::
 
     $ cat crashids.txt | socorro-cmd signature
 
-
-Pulling crash ids from another script::
+* pulling crash ids from another script::
 
     $ socorro-cmd fetch_crashids --num=10 | socorro-cmd signature
 
-
-Spitting output in CSV format to more easily analyze results for generating
-signatures for multiple crashes::
+* spitting output in CSV format to more easily analyze results for generating
+  signatures for multiple crashes::
 
     $ cat crashids.txt | socorro-cmd signature --format=csv
 
