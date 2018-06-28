@@ -5,6 +5,9 @@
 import json
 
 import mock
+import pytest
+
+from markus.testing import MetricsMock
 
 from socorro.external.boto.connection_context import (
     S3ConnectionContext,
@@ -56,7 +59,7 @@ def setup_mocked_s3_storage(cls=S3ConnectionContext, **extra):
         values_source=values_source
     )
 
-    s3_conn = cls(config)
+    s3_conn = cls(config, namespace='processor.s3')
     s3_conn._connect_to_endpoint = mock.Mock()
     s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
     s3_conn._calling_format.return_value = mock.Mock()
@@ -125,6 +128,31 @@ class TestConnectionContext:
             '{"a": "some a", "c": 16, "b": "some b", "d": '
             '{"db": "same db", "da": "some da"}}'
         )
+
+    def test_submit_data_capture(self):
+        with MetricsMock() as mm:
+            conn = setup_mocked_s3_storage()
+
+            # Do a successful submit
+            conn.submit(
+                'fff13cf0-5671-4496-ab89-47a922141114',
+                'name_of_thing',
+                thing_as_str
+            )
+            # Do a failed submit
+            conn._connect = mock.Mock()
+            conn._connect.side_effect = Exception
+            with pytest.raises(Exception):
+                conn.submit(
+                    'fff13cf0-5671-4496-ab89-47a922141114',
+                    'name_of_thing',
+                    thing_as_str
+                )
+
+            assert len(mm.filter_records(stat='processor.s3.submit',
+                                         tags=['kind:name_of_thing', 'outcome:successful'])) == 1
+            assert len(mm.filter_records(stat='processor.s3.submit',
+                                         tags=['kind:name_of_thing', 'outcome:failed'])) == 1
 
     def test_fetch(self):
         # setup some internal behaviors and fake outs
