@@ -15,9 +15,17 @@ signature and the newly generated one.
 This can be used for testing signature generation changes, regression testing,
 and astounding your friends at parties.
 
-To use::
+You need to run this inside a Socorro environment. For example, you could
+run this in the processor Docker container. You can start a container
+like that like this::
 
-    $ socorro-cmd signature CRASHID [CRASHID ...]
+    $ docker-compose run processor bash
+
+
+Once you're in your Socorro environment, you can run signature generation.
+This gives you command help::
+
+    $ socorro-cmd signature --help
 
 
 Pulling crash ids from the file ``crashids.txt``::
@@ -27,7 +35,7 @@ Pulling crash ids from the file ``crashids.txt``::
 
 Pulling crash ids from another script::
 
-    $ ./scripts/fetch_crashids.py --num=10 | socorro-cmd signature
+    $ socorro-cmd fetch_crashids --num=10 | socorro-cmd signature
 
 
 Spitting output in CSV format to more easily analyze results for generating
@@ -39,15 +47,6 @@ signatures for multiple crashes::
 For more argument help, see::
 
     $ socorro-cmd signature --help
-
-
-.. Note::
-
-   You need to run this inside a Socorro environment. For example, you could
-   do this::
-
-     $ docker-compose run processor bash
-     app@.../app$ socorro-cmd signature --help
 
 
 library
