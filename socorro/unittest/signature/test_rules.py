@@ -1575,6 +1575,21 @@ class TestSignatureIPCChannelError:
         expected = ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
         assert notes == expected
 
+    def test_action_non_ascii(self):
+        rule = SignatureIPCChannelError()
+
+        raw_crash = {
+            'ipc_channel_error': u'\u5fae\u8f6f\u96c5\u9ed1'
+        }
+
+        processed_crash = {
+            'signature': 'foo, bar'
+        }
+        notes = []
+
+        action_result = rule.action(raw_crash, processed_crash, notes)
+        assert action_result is True
+
 
 class TestSignatureShutdownTimeout:
 

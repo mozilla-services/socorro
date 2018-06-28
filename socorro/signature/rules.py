@@ -725,7 +725,7 @@ class SignatureIPCChannelError(Rule):
             new_sig = 'IPCError-browser | {}'
         else:
             new_sig = 'IPCError-content | {}'
-        new_sig = new_sig.format(raw_crash['ipc_channel_error'][:100])
+        new_sig = new_sig.format(drop_unicode(raw_crash['ipc_channel_error'])[:100])
 
         notes.append(
             'Signature replaced with an IPC Channel Error, '
