@@ -1,0 +1,40 @@
+{% macro signature_startup_stats_icons(startup_stats) %}
+{% if startup_stats %}
+<div class="signature-icons">
+    {% if startup_stats.startup_count > 0 %}
+    {% if startup_stats.startup_count == startup_stats.crash_count %}
+    <img src="{{ static('img/3rdparty/silk/flag_red.png') }}"
+        alt="red flag"
+        title="Startup Crash, all crashes happened during startup"
+        class="startup" height="16" width="16"
+    />
+    {% else %}
+    <img src="{{ static('img/3rdparty/silk/flag_yellow.png') }}"
+        alt="yellow flag"
+        title="Potential Startup Crash, {{ startup_stats.startup_count }} out of {{ startup_stats.count }} crashes happened during startup"
+        class="startup" height="16" width="16"
+    />
+    {% endif %}
+    {% endif %}
+
+    {% if startup_stats.startup_crash %}
+    <img
+        src="{{ static('img/icons/rocket_fly.png') }}"
+        alt="rocket"
+        title="Potential Startup Crash, more than half of the crashes happened during the first minute after launch"
+        class="startup" height="16" width="16"
+    />
+    {% endif %}
+
+    {% if startup_stats.hang_count > 0 %}
+    <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="stop sign" title="Hanged Crash" class="hang" height="16" width="16">
+    {% endif %}
+
+    {% if startup_stats.plugin_count > 0 %}
+    <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" alt="brick" title="Plugin Crash" class="plugin" height="16" width="16">
+    {% else %}
+    <img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}" width="16" height="16" alt="application" title="Browser Crash" class="browser" />
+    {% endif %}
+</div>
+{% endif %}
+{%- endmacro %}

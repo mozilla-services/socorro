@@ -9,7 +9,7 @@ from django.shortcuts import render
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
-from crashstats.base.utils import render_exception, urlencode_obj
+from crashstats.base.utils import get_signature_startup_stats, render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
@@ -109,6 +109,27 @@ def signature_report(request, params, default_context=None):
         'start_date': start_date,
         'end_date': end_date,
     }
+
+    startup_stats_params = {}
+    startup_stats_params['signature'] = '=' + signature
+    startup_stats_params['_aggs.signature'] = [
+        'hang_type',
+        'process_type',
+        'startup_crash',
+        '_histogram.uptime',
+    ]
+    startup_stats_params['_results_number'] = 0
+    api = SuperSearchUnredacted()
+    try:
+        search_results = api.get(**startup_stats_params)
+    except BadArgumentError as e:
+        # We need to return the error message in some HTML form for jQuery to
+        # pick it up.
+        return http.HttpResponseBadRequest(render_exception(e))
+
+    if search_results['total'] > 0:
+        signature = search_results['facets']['signature'][0]
+        context['startup_stats'] = get_signature_startup_stats(signature)
 
     return render(request, 'signature/signature_report.html', context)
 

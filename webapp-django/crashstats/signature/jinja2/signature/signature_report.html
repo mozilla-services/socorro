@@ -1,4 +1,5 @@
 {% from "supersearch/macros/date_filters.html" import date_filters %}
+{% from "macros/signature_startup_stats_icons.html" import signature_startup_stats_icons %}
 
 {% extends "crashstats_base.html" %}
 {% block page_title %}{{ signature }} - Signature report - Mozilla Crash Reports{% endblock %}
@@ -32,6 +33,7 @@
 >
     <div class="page-heading">
         <h2>Signature report for <em>{{ signature }}</em></h2>
+        {{ signature_startup_stats_icons(startup_stats) }}
         <p>
             <a
                 href="#"
