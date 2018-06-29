@@ -100,10 +100,6 @@ You can get command help::
   $ docker-compose run processor ./socorro-cmd fetch_crash_data --help
 
 
-You should run this with ``docker-compose run processor`` so that the files that get saved to
-the file system are owned by the user/group of the account you're using on your
-host.
-
 .. Note::
 
    This script requires that you have a valid API token from the
