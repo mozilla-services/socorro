@@ -24,18 +24,14 @@ apt-get install -y gcc apt-transport-https build-essential python-dev \
 
 # Stomp on the bash prompt with something more useful for development.
 cat > /etc/bash.bashrc <<EOF
-# Get the name for the current uid and drop error messages.
-MYUSER="\$(id -u -n 2> /dev/null)"
-
-# If id -u -n 2 didn't return a 0 exit code, then it's because there is
-# no name for that uid in the container. So set it to "you".
-if [[ "\$?" != "0" ]]; then
-    MYUSER="you"
-fi
+# Get the name for the current uid.
+MYUSER="\$(id -u -n)"
 
 # Set the prompt to use the username we just figured out plus the container
 # name which is in an environment variable. If there is no CONTAINERNAME,
 # then use the host name.
 PS1="\${MYUSER}@\${CONTAINERNAME:-\h}:\w\$ "
+
+# Add current directory to path.
 PATH=\${PATH}:.
 EOF

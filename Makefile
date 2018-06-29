@@ -4,6 +4,12 @@
 
 .PHONY: clean default docs help lint
 
+# Set these in the environment to override them. This is helpful for
+# development if you have file ownership problems because the user
+# in the container doesn't match the user on your host.
+SOCORRO_UID ?= 10001
+SOCORRO_GID ?= 10001
+
 default:
 	@echo "You need to specify a subcommand. See \"make help\" for options."
 	@exit 1
@@ -11,7 +17,7 @@ default:
 help:
 	@echo "Socorro make rules:"
 	@echo ""
-	@echo "  build            - build docker containers for dev"
+	@echo "  build            - build docker containers"
 	@echo "  dockerrun        - docker-compose up the entire system for dev"
 	@echo ""
 	@echo "  shell            - open a shell in the base container"
@@ -32,7 +38,7 @@ clean:
 	cd minidump-stackwalk && make clean
 
 docs: my.env
-	./docker/as_me.sh --container docs ./docker/run_build_docs.sh
+	${DC} run docs ./docker/run_build_docs.sh
 
 lint: my.env
 	${DC} run webapp ./docker/run_lint.sh
@@ -52,8 +58,8 @@ my.env:
 	make build
 
 build: my.env
-	${DC} build base
-	${DC} build webapp # crontabber is based off of the webapp image
+	${DC} build --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} base
+	${DC} build webapp  # crontabber is based off of the webapp image
 	${DC} build processor crontabber docs oidcprovider
 	touch .docker-build
 
