@@ -4,6 +4,11 @@
 
 .PHONY: clean default docs help lint
 
+# Include my.env and export it so variables set in there are available
+# in the Makefile.
+include my.env
+export
+
 # Set these in the environment to override them. This is helpful for
 # development if you have file ownership problems because the user
 # in the container doesn't match the user on your host.
