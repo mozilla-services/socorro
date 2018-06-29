@@ -14,7 +14,9 @@ app_process@0x
 AppleIntelHD3000GraphicsGLDriver@
 core\.odex@0x
 core::panicking::
+CrashReporter::TerminateHandler
 CrashStatsLogForwarder::CrashAction
+__cxa_throw
 _CxxThrowException
 dalvik-heap
 dalvik-jit-code-cache
@@ -67,6 +69,7 @@ NS_ProcessNextEvent
 (Nt|Zw)?WaitForMultipleObjects(Ex)?
 NtWaitForAlertByThreadId
 nvmap@0x
+objc_begin_catch
 org\.mozilla\.f.*-\d\.apk@0x
 PR_WaitCondVar
 RaiseException
@@ -80,6 +83,7 @@ SleepConditionVariableCS
 SleepConditionVariableSRW
 std::_Atomic_fetch_add_4
 std::panicking::
+std::__terminate
 system@framework@.*\.jar@classes\.dex@0x
 ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
 WaitForSingleObjectExImplementation
