@@ -51,6 +51,17 @@ Quickstart
    Each of these images covers a single Socorro component: processor, webapp,
    and crontabber.
 
+   .. NOTE::
+
+      If you're on Linux and want the host user id to match the user id in the
+      containers, then you should do::
+
+        $ SOCORRO_UID=$(id -u) SOCORRO_GID=$(id -g) make build
+
+
+      Probably best to make a script out of that if you do it often.
+
+
 4. Then you need to set up the Postgres database and Elasticssearch. To do that,
    run::
 
