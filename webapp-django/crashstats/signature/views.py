@@ -9,7 +9,7 @@ from django.shortcuts import render
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
-from crashstats.base.utils import SignatureStartupStats, render_exception, urlencode_obj
+from crashstats.base.utils import SignatureStats, render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
@@ -452,7 +452,8 @@ def signature_summary(request, params):
     context['query'] = search_results
     context['product_version_total'] = search_results['total']
     if 'signature' in facets and len(facets['signature']) > 0:
-        context['startup_stats'] = SignatureStartupStats(search_results['facets']['signature'][0])
+        context['signature_stats'] = SignatureStats(search_results['facets']['signature'][0],
+                                                    search_results['total'])
 
     return render(request, 'signature/signature_summary.html', context)
 

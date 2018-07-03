@@ -10,7 +10,7 @@ from six import text_type
 
 from session_csrf import anonymous_csrf
 
-from crashstats.base.utils import get_signatures_stats
+from crashstats.base.utils import get_comparison_signatures, SignatureStats
 from crashstats.crashstats import models
 from crashstats.crashstats.decorators import (
     check_days_parameter,
@@ -26,7 +26,7 @@ def datetime_to_build_id(date):
     return date.strftime('%Y%m%d%H%M%S')
 
 
-def get_topcrashers_results(**kwargs):
+def get_topcrashers_stats(**kwargs):
     """Return the results of a search. """
     params = kwargs
     range_type = params.pop('_range_type')
@@ -80,10 +80,18 @@ def get_topcrashers_results(**kwargs):
             ]
 
         previous_range_results = api.get(**params)
-        platforms = models.Platforms().get_all()['hits']
+        previous_signatures = get_comparison_signatures(previous_range_results)
 
-        signatures_stats = get_signatures_stats(search_results, previous_range_results, platforms)
-
+        signatures_stats = []
+        for index, signature in enumerate(search_results['facets']['signature']):
+            previous_signature = previous_signatures.get(signature['term'])
+            signatures_stats.append(SignatureStats(
+                signature=signature,
+                num_total_crashes=search_results['total'],
+                rank=index,
+                platforms=models.Platforms().get_all()['hits'],
+                previous_signature=previous_signature,
+            ))
     return signatures_stats
 
 
@@ -196,7 +204,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         'start_date': end_date - datetime.timedelta(days=days),
     }
 
-    api_results = get_topcrashers_results(
+    topcrashers_stats = get_topcrashers_stats(
         product=product,
         version=versions,
         platform=os_name,
@@ -209,18 +217,16 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         _range_type=range_type,
     )
 
-    tcbs = api_results
-
     count_of_included_crashes = 0
     signatures = []
 
-    for crash in tcbs[:int(result_count)]:
-        signatures.append(crash.signature)
-        count_of_included_crashes += crash.count
+    for topcrasher_stats in topcrashers_stats[:int(result_count)]:
+        signatures.append(topcrasher_stats.signature_term)
+        count_of_included_crashes += topcrasher_stats.num_crashes
 
     context['number_of_crashes'] = count_of_included_crashes
-    context['total_percentage'] = len(api_results) and (
-        100.0 * count_of_included_crashes / len(api_results)
+    context['total_percentage'] = len(topcrashers_stats) and (
+        100.0 * count_of_included_crashes / len(topcrashers_stats)
     )
 
     # Get augmented bugs data.
@@ -238,10 +244,10 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         # of SignatureFirstDate().get() that returns a dict of
         # signature --> dates.
         first_dates = sig_api.get_dates(signatures)
-        for sig, dates in first_dates.items():
-            sig_date_data[sig] = dates['first_date']
+        for signature_term, dates in first_dates.items():
+            sig_date_data[signature_term] = dates['first_date']
 
-    for crash in tcbs:
+    for topcrasher_stats in topcrashers_stats:
         crash_counts = []
         # Due to the inconsistencies of OS usage and naming of
         # codes and props for operating systems the hacky bit below
@@ -253,30 +259,30 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
                 continue
             os_code = operating_system['code'][0:3].lower()
             key = '%s_count' % os_code
-            crash_counts.append([crash.platforms[key], operating_system['name']])
+            crash_counts.append([topcrasher_stats.num_crashes_per_platform[key],
+                                operating_system['name']])
 
-        sig = crash.signature
-
+        signature_term = topcrasher_stats.signature_term
         # Augment with bugs.
-        if sig in bugs:
-            if hasattr(crash, 'bugs'):
-                crash.bugs.extend(bugs[sig])
+        if signature_term in bugs:
+            if hasattr(topcrasher_stats, 'bugs'):
+                topcrasher_stats.bugs.extend(bugs[signature_term])
             else:
-                crash.bugs = bugs[sig]
+                topcrasher_stats.bugs = bugs[signature_term]
 
         # Augment with first appearance dates.
-        if sig in sig_date_data:
-            crash.first_report = sig_date_data[sig]
+        if signature_term in sig_date_data:
+            topcrasher_stats.first_report = sig_date_data[signature_term]
 
-        if hasattr(crash, 'bugs'):
-            crash.bugs.sort(reverse=True)
+        if hasattr(topcrasher_stats, 'bugs'):
+            topcrasher_stats.bugs.sort(reverse=True)
 
-    context['tcbs'] = tcbs
+    context['topcrashers_stats'] = topcrashers_stats
     context['days'] = days
     context['report'] = 'topcrasher'
     context['possible_days'] = possible_days
     context['total_crashing_signatures'] = len(signatures)
-    context['total_number_of_crashes'] = len(api_results)
+    context['total_number_of_crashes'] = len(topcrashers_stats)
     context['process_type_values'] = []
     for option in settings.PROCESS_TYPES:
         if option == 'all':

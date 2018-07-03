@@ -1,59 +1,55 @@
-{% if startup_stats %}
-<div class="panel tab-inner-panel">
-    <div class="status-message severity-warning">
-        {% if startup_stats.startup_count > 0 %}
-        {% if startup_stats.startup_count == startup_stats.count %}
-        <div>
-            <img src="{{ static('img/3rdparty/silk/flag_red.png') }}"
-                alt="red flag"
-                title="Startup Crash, all crashes happened during startup"
-                class="startup" height="16" width="16"
-            />
-            Startup Crash, all crashes happened during startup
-        </div>
-        {% else %}
-        <div>
-            <img src="{{ static('img/3rdparty/silk/flag_yellow.png') }}"
-                alt="yellow flag"
-                title="Potential Startup Crash, {{ startup_stats.startup_count }} out of {{ startup_stats.count }} crashes happened during startup"
-                class="startup" height="16" width="16"
-            />
-            Potential Startup Crash, {{ startup_stats.startup_count }} out of {{ startup_stats.count }} crashes happened during startup
-        </div>
-        {% endif %}
-        {% endif %}
+{% from "macros/signature_startup_icons.html" import startup_crash_icon,
+                                                     potential_startup_crash_icon,
+                                                     potential_startup_window_crash_icon,
+                                                     hang_crash_icon, plugin_crash_icon,
+                                                     browser_crash_icon %}
 
-        {% if startup_stats.startup_crash %}
-        <div>
-            <img
-            src="{{ static('img/icons/rocket_fly.png') }}"
-            alt="rocket"
-            title="Potential Startup Crash, more than half of the crashes happened during the first minute after launch"
-            class="startup" height="16" width="16"
-            />
-            Potential Startup Crash, more than half of the crashes happened during the first minute after launch
-        </div>
-        {% endif %}
-
-        {% if startup_stats.hang_count > 0 %}
-        <div>
-            <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="stop sign" title="Hanged Crash" class="hang" height="16" width="16">
-            Hanged Crash
-        </div>
-        {% endif %}
-
-        {% if startup_stats.plugin_count > 0 %}
-        <div>
-            <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" alt="brick" title="Plugin Crash" class="plugin" height="16" width="16">
-            Plugin Crash
-        </div>
-        {% else %}
-        <div>
-            <img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}" width="16" height="16" alt="application" title="Browser Crash" class="browser" />
-            Browser Crash
-        </div>
-        {% endif %}
+{% if signature_stats %}
+<div class="panel tab-inner-panel crash-type-indicators-panel
+            {% if signature_stats.is_startup_related_crash %} startup-crash-warning {% endif %}">
+    {% if signature_stats.is_startup_crash %}
+    <div class="crash-type-indicator-container">
+        {{ startup_crash_icon() }}
+        Startup Crash, all crashes happened during startup
     </div>
+    {% endif %}
+
+    {% if signature_stats.is_potential_startup_crash %}
+    <div class="crash-type-indicator-container">
+        {{ potential_startup_crash_icon(
+            num_startup_crashes=signature_stats.num_startup_crashes,
+            num_crashes=signature_stats.num_crashes,
+        ) }}
+        Potential Startup Crash, {{ signature_stats.num_startup_crashes }}
+        out of {{ signature_stats.num_crashes }} crashes happened during startup
+    </div>
+    {% endif %}
+
+    {% if signature_stats.is_startup_window_crash %}
+    <div class="crash-type-indicator-container">
+        {{ potential_startup_window_crash_icon() }}
+        Potential Startup Crash, more than half of the crashes happened during the first minute after launch
+    </div>
+    {% endif %}
+
+    {% if signature_stats.is_hang_crash %}
+    <div class="crash-type-indicator-container">
+        {{ hang_crash_icon() }}
+        Hanged Crash
+    </div>
+    {% endif %}
+
+    {% if signature_stats.is_plugin_crash %}
+    <div class="crash-type-indicator-container">
+        {{ plugin_crash_icon() }}
+        Plugin Crash
+    </div>
+    {% else %}
+    <div class="crash-type-indicator-container">
+        {{ browser_crash_icon() }}
+        Browser Crash
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 

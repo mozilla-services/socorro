@@ -5,6 +5,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 from django.template import engines
+from django.utils.functional import cached_property
 
 
 def render_exception(exception):
@@ -79,119 +80,136 @@ def requests_retry_session(
     return session
 
 
-def get_signatures_stats(results, previous_range_results, platforms):
-    signatures = results['facets']['signature']
-    num_signatures = results['total']
-    platform_codes = [x['code'] for x in platforms if x['code'] != 'unknown']
-
-    signatures_stats = []
-    for i, signature in enumerate(signatures):
-        signatures_stats.append(SignatureStats(signature, i, num_signatures, platform_codes))
-
-    if num_signatures > 0 and 'signature' in previous_range_results['facets']:
-        previous_signatures = get_comparison_signatures(previous_range_results)
-        for signature_stats in signatures_stats:
-            previous_signature = previous_signatures.get(signature_stats.signature)
-            if previous_signature:
-                signature_stats.diff = previous_signature['percent'] - signature_stats.percent
-                signature_stats.rank_diff = previous_signature['rank'] - signature_stats.rank
-                signature_stats.previous_percent = previous_signature['percent']
-            else:
-                signature_stats.diff = 'new'
-                signature_stats.rank_diff = 0
-                signature_stats.previous_percent = 0
-
-    return signatures_stats
-
-
-class SignatureStats:
-    def __init__(self, signature, rank, num_signatures, platform_codes):
-        self.signature = signature['term']
+class SignatureStats(object):
+    def __init__(
+        self,
+        signature,
+        num_total_crashes,
+        rank=0,
+        platforms=None,
+        previous_signature=None
+    ):
+        self.signature = signature
+        self.num_total_crashes = num_total_crashes
         self.rank = rank
-        self.percent = 100.0 * signature['count'] / num_signatures
-        self.count = signature['count']
-        self.platforms = get_num_crashes_per_platform(signature['facets']['platform'],
-                                                      platform_codes)
-        self.is_gc_count = get_num_crashes_in_garbage_collection(
-            signature['facets']['is_garbage_collecting'])
-        self.installs_count = (signature['facets']['cardinality_install_time']['value'])
-        self.startup_stats = SignatureStartupStats(signature)
+        self.platforms = platforms
+        self.previous_signature = previous_signature
 
+    @cached_property
+    def platform_codes(self):
+        return [x['code'] for x in self.platforms if x['code'] != 'unknown']
 
-class SignatureStartupStats:
-    def __init__(self, signature):
-        self.count = signature['count']
-        self.plugin_count = get_num_plugin_crashes(signature['facets']['process_type'])
-        self.hang_count = get_num_hang_crashes(signature['facets']['hang_type'])
-        self.startup_count = get_num_startup_crashes(signature['facets']['startup_crash'])
-        self.startup_crash = get_is_startup_crash(signature['facets']['histogram_uptime'],
-                                                  signature['count'])
+    @cached_property
+    def signature_term(self):
+        return self.signature['term']
 
+    @cached_property
+    def percent_of_total_crashes(self):
+        return 100.0 * self.signature['count'] / self.num_total_crashes
 
-def get_num_crashes_per_platform(platform_facet, platform_codes):
-    num_crashes_per_platform = {}
-    for platform in platform_codes:
-        num_crashes_per_platform[platform + '_count'] = 0
-    for platform in platform_facet:
-        code = platform['term'][:3].lower()
-        if code in platform_codes:
-            num_crashes_per_platform[code + '_count'] = platform['count']
-    return num_crashes_per_platform
+    @cached_property
+    def num_crashes(self):
+        return self.signature['count']
 
+    @cached_property
+    def num_crashes_per_platform(self):
+        num_crashes_per_platform = {platform + '_count': 0 for platform in self.platform_codes}
+        for platform in self.signature['facets']['platform']:
+            code = platform['term'][:3].lower()
+            if code in self.platform_codes:
+                num_crashes_per_platform[code + '_count'] = platform['count']
+        return num_crashes_per_platform
 
-def get_num_crashes_in_garbage_collection(is_garbage_collecting_facet):
-    num_crashes_in_garbage_collection = 0
-    for row in is_garbage_collecting_facet:
-        if row['term'].lower() == 't':
-            num_crashes_in_garbage_collection = row['count']
-    return num_crashes_in_garbage_collection
+    @cached_property
+    def num_crashes_in_garbage_collection(self):
+        num_crashes_in_garbage_collection = 0
+        for row in self.signature['facets']['is_garbage_collecting']:
+            if row['term'].lower() == 't':
+                num_crashes_in_garbage_collection = row['count']
+        return num_crashes_in_garbage_collection
 
+    @cached_property
+    def num_installs(self):
+        return self.signature['facets']['cardinality_install_time']['value']
 
-def get_num_plugin_crashes(process_type_facet):
-    num_plugin_crashes = 0
-    for row in process_type_facet:
-        if row['term'].lower() == 'plugin':
-            num_plugin_crashes = row['count']
-    return num_plugin_crashes
+    @cached_property
+    def percent_of_total_crashes_diff(self):
+        if self.previous_signature:
+            return self.previous_signature.percent_of_total_crashes - self.percent_of_total_crashes
+        return 'new'
 
+    @cached_property
+    def rank_diff(self):
+        if self.previous_signature:
+            return self.previous_signature.rank - self.rank
+        return 0
 
-def get_num_hang_crashes(hang_type_facet):
-    num_hang_crashes = 0
-    for row in hang_type_facet:
-        # Hangs have weird values in the database: a value of 1 or -1
-        # means it is a hang, a value of 0 or missing means it is not.
-        if row['term'] in (1, -1):
-            num_hang_crashes += row['count']
-    return num_hang_crashes
+    @cached_property
+    def previous_percent_of_total_crashes(self):
+        if self.previous_signature:
+            return self.previous_signature.percent_of_total_crashes
+        return 0
 
+    @cached_property
+    def num_startup_crashes(self):
+        return sum(
+            row['count'] for row in self.signature['facets']['startup_crash']
+            if row['term'] in ('T', '1')
+        )
 
-def get_num_startup_crashes(startup_crash_facet):
-    return sum(
-        row['count'] for row in startup_crash_facet
-        if row['term'] in ('T', '1')
-    )
+    @cached_property
+    def is_startup_crash(self):
+        return self.num_startup_crashes == self.num_crashes
 
+    @cached_property
+    def is_potential_startup_crash(self):
+        return self.num_startup_crashes > 0 and self.num_startup_crashes < self.num_crashes
 
-def get_is_startup_crash(histogram_uptime_facet, crash_count):
-    is_startup_crash = False
-    for row in histogram_uptime_facet:
-        # Aggregation buckets use the lowest value of the bucket as
-        # term. So for everything between 0 and 60 excluded, the
-        # term will be `0`.
-        if row['term'] < 60:
-            ratio = 1.0 * row['count'] / crash_count
-            is_startup_crash = ratio > 0.5
-    return is_startup_crash
+    @cached_property
+    def is_startup_window_crash(self):
+        is_startup_window_crash = False
+        for row in self.signature['facets']['histogram_uptime']:
+            # Aggregation buckets use the lowest value of the bucket as
+            # term. So for everything between 0 and 60 excluded, the
+            # term will be `0`.
+            if row['term'] < 60:
+                ratio = 1.0 * row['count'] / self.num_crashes
+                is_startup_window_crash = ratio > 0.5
+        return is_startup_window_crash
+
+    @cached_property
+    def is_hang_crash(self):
+        num_hang_crashes = 0
+        for row in self.signature['facets']['hang_type']:
+            # Hangs have weird values in the database: a value of 1 or -1
+            # means it is a hang, a value of 0 or missing means it is not.
+            if row['term'] in (1, -1):
+                num_hang_crashes += row['count']
+        return num_hang_crashes > 0
+
+    @cached_property
+    def is_plugin_crash(self):
+        for row in self.signature['facets']['process_type']:
+            if row['term'].lower() == 'plugin':
+                return row['count'] > 0
+        return False
+
+    @cached_property
+    def is_startup_related_crash(self):
+        return self.is_startup_crash \
+            or self.is_potential_startup_crash \
+            or self.is_startup_window_crash
 
 
 def get_comparison_signatures(results):
-    signatures = results['facets']['signature']
-    num_signatures = results['total']
     comparison_signatures = {}
-    for i, signature in enumerate(signatures):
-        comparison_signatures[signature['term']] = {
-            'count': signature['count'],
-            'rank': i + 1,
-            'percent': 100.0 * signature['count'] / num_signatures
-        }
+    for index, signature in enumerate(results['facets']['signature']):
+        signature_stats = SignatureStats(
+            signature=signature,
+            rank=index,
+            num_total_crashes=results['total'],
+            platforms=None,
+            previous_signature=None,
+        )
+        comparison_signatures[signature_stats.signature_term] = signature_stats
     return comparison_signatures
