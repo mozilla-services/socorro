@@ -249,7 +249,7 @@ class ConnectionContextBase(RequiredConfig):
         return json.dumps(a_mapping, cls=JSONISOEncoder)
 
     def _convert_list_to_string(self, a_list):
-        return json.dumps(a_list)
+        return json.dumps(list(a_list))
 
     def _convert_string_to_list(self, a_string):
         return json.loads(a_string)

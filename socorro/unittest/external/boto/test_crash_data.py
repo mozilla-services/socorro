@@ -48,7 +48,7 @@ class TestSimplifiedCrashData:
         boto_helper.set_contents_from_string(
             bucket_name='crashstats',
             key='/v1/dump/0bba929f-8721-460c-dead-a43c20071027',
-            value='\xa0'
+            value=b'\xa0'
         )
 
         boto_s3_store = self.get_s3_store()
@@ -57,7 +57,7 @@ class TestSimplifiedCrashData:
             uuid='0bba929f-8721-460c-dead-a43c20071027',
             datatype='raw',
         )
-        assert result == '\xa0'
+        assert result == b'\xa0'
 
     @mock_s3_deprecated
     def test_get_raw_dump_not_found(self, boto_helper):
