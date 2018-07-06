@@ -88,7 +88,7 @@ class BotoCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
-        self.connection_source = config.resource_class(config, namespace=namespace)
+        self.connection_source = config.resource_class(config)
         self.transaction = config.transaction_executor_class(
             config,
             self.connection_source,

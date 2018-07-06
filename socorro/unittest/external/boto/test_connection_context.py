@@ -50,6 +50,7 @@ def setup_mocked_s3_storage(cls=S3ConnectionContext, **extra):
     values_source = {
         'bucket_name': 'silliness',
         'prefix': 'dev',
+        'boto_metrics_prefix': 'processor.s3',
         'calling_format': mock.Mock()
     }
     values_source.update(extra)
@@ -59,7 +60,7 @@ def setup_mocked_s3_storage(cls=S3ConnectionContext, **extra):
         values_source=values_source
     )
 
-    s3_conn = cls(config, namespace='processor.s3')
+    s3_conn = cls(config)
     s3_conn._connect_to_endpoint = mock.Mock()
     s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
     s3_conn._calling_format.return_value = mock.Mock()

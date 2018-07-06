@@ -67,6 +67,12 @@ class ConnectionContextBase(RequiredConfig):
         reference_value_from='resource.boto',
         likely_to_be_changed=True,
     )
+    required_config.add_option(
+        'boto_metrics_prefix',
+        doc="a prefix to use for boto metrics",
+        default='',
+        reference_value_from='resource.boto'
+    )
 
     operational_exceptions = (
         socket.timeout,
@@ -89,7 +95,7 @@ class ConnectionContextBase(RequiredConfig):
             return True
         return False
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
+    def __init__(self, config, quit_check_callback=None):
         self.config = config
 
         self._CreateError = boto.exception.StorageCreateError
@@ -99,7 +105,7 @@ class ConnectionContextBase(RequiredConfig):
         )
 
         self._bucket_cache = {}
-        self.metrics = markus.get_metrics(namespace)
+        self.metrics = markus.get_metrics(config.boto_metrics_prefix)
 
     def _connect(self):
         try:
@@ -285,8 +291,8 @@ class S3ConnectionContext(ConnectionContextBase):
         likely_to_be_changed=True,
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super(S3ConnectionContext, self).__init__(config, namespace=namespace)
+    def __init__(self, config, quit_check_callback=None):
+        super(S3ConnectionContext, self).__init__(config)
 
         self._connect_to_endpoint = boto.connect_s3
         self._calling_format = config.calling_format
@@ -318,8 +324,8 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
         'boto.s3.connection.OrdinaryCallingFormat'
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super(RegionalS3ConnectionContext, self).__init__(config, namespace=namespace)
+    def __init__(self, config, quit_check_callback=None):
+        super(RegionalS3ConnectionContext, self).__init__(config)
         self._region = config.region
         self._connect_to_endpoint = boto.s3.connect_to_region
 
