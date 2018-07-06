@@ -106,6 +106,7 @@ CONFIG_DEFAULTS = {
     'resource': {
         'boto': {
             'prefix': '',
+            'boto_metrics_prefix': 'processor.s3'
         },
 
         'elasticsearch': {
