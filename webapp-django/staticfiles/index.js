@@ -1,4 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import ReportIndex from './report-index';
 
-ReactDOM.render(<h1>New crash report page placeholder</h1>, document.getElementById('crash-report-container'));
+ReactDOM.render(<ReportIndex />, document.getElementById('crash-report-container'));

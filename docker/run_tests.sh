@@ -16,6 +16,7 @@
 # Failures should cause setup to fail
 set -v -e -x
 
+echo ">>> pytest"
 # Set up environment variables
 
 # NOTE(willkg): This has to be "database_url" all lowercase because configman.
@@ -53,6 +54,10 @@ if [ "${USEPYTHON:-2}" == "2" ]; then
     "${WEBPACK_BINARY}" --mode=production --bail
     python manage.py collectstatic --noinput
     "${PYTEST}"
+
+    # Run Jest tests in webapp/staticfiles
+    cd /app/webapp-django
+    /webapp-frontend-deps/node_modules/.bin/jest staticfiles
     popd
 else
     # Run the tests we know work in Python 3

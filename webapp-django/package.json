@@ -14,11 +14,14 @@
     "babel-preset-env": "1.7.0",
     "babel-preset-react": "6.24.1",
     "cssmin": "0.4.3",
+    "enzyme": "3.3.0",
+    "enzyme-adapter-react-16": "1.1.1",
     "eslint": "4.19.1",
     "eslint-config-prettier": "2.9.0",
     "eslint-plugin-prettier": "2.6.0",
     "eslint-plugin-react": "7.9.1",
     "graceful-fs": "4.1.11",
+    "jest": "23.3.0",
     "less": "3.0.2",
     "nsp": "3.2.1",
     "prettier": "1.13.2",
@@ -42,10 +45,14 @@
     "metrics-graphics": "2.14.0",
     "moment": "2.22.1",
     "photon-colors": "3.0.1",
+    "prop-types": "^15.6.2",
     "qs": "6.5.1",
     "react": "16.4.1",
     "react-dom": "16.4.1",
     "tablesorter": "2.30.3",
     "underscore": "1.9.0"
+  },
+  "jest": {
+    "setupTestFrameworkScriptFile": "<rootDir>/staticfiles/setup-tests.js"
   }
 }
