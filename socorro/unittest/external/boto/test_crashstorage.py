@@ -196,7 +196,7 @@ class TestBotoS3CrashStorage:
         boto_s3_store.save_raw_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
             MemoryDumpsMapping(
-                {'dump': 'fake dump', 'flash_dump': 'fake flash dump'}
+                {'dump': b'fake dump', 'flash_dump': b'fake flash dump'}
             ),
             "0bba929f-8721-460c-dead-a43c20071027"
         )
@@ -228,13 +228,13 @@ class TestBotoS3CrashStorage:
             bucket_name='crash_storage',
             key='dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'
         )
-        assert dump == 'fake dump'
+        assert dump == b'fake dump'
 
         flash_dump = boto_helper.get_contents_as_string(
             bucket_name='crash_storage',
             key='dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'
         )
-        assert flash_dump == 'fake flash dump'
+        assert flash_dump == b'fake flash dump'
 
     @mock_s3_deprecated
     def test_save_processed(self, boto_helper):
@@ -326,13 +326,13 @@ class TestBotoS3CrashStorage:
         boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
-            value='this is a raw dump'
+            value=b'this is a raw dump'
         )
 
         # the tested call
         boto_s3_store = setup_mocked_s3_storage()
         result = boto_s3_store.get_raw_dump('936ce666-ff3b-4c7a-9674-367fe2120408')
-        assert result == 'this is a raw dump'
+        assert result == b'this is a raw dump'
 
     @mock_s3_deprecated
     def test_get_raw_dump_not_found(self):
@@ -347,7 +347,7 @@ class TestBotoS3CrashStorage:
         boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
-            value='this is a raw dump'
+            value=b'this is a raw dump'
         )
 
         # the tested call
@@ -357,7 +357,7 @@ class TestBotoS3CrashStorage:
             name='upload_file_minidump'
         )
 
-        assert result == 'this is a raw dump'
+        assert result == b'this is a raw dump'
 
     @mock_s3_deprecated
     def test_get_raw_dump_empty_string(self, boto_helper):
@@ -365,13 +365,13 @@ class TestBotoS3CrashStorage:
         boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408',
-            value='this is a raw dump'
+            value=b'this is a raw dump'
         )
 
         # the tested call
         boto_s3_store = setup_mocked_s3_storage()
         result = boto_s3_store.get_raw_dump('936ce666-ff3b-4c7a-9674-367fe2120408', name='')
-        assert result == 'this is a raw dump'
+        assert result == b'this is a raw dump'
 
     @mock_s3_deprecated
     def test_get_raw_dumps(self, boto_helper):
@@ -393,7 +393,7 @@ class TestBotoS3CrashStorage:
         boto_helper.set_contents_from_string(
             bucket_name='crash_storage',
             key='dev/v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408',
-            value='this is "city_dump", the last one'
+            value=b'this is "city_dump", the last one'
         )
 
         # the tested call
@@ -401,9 +401,9 @@ class TestBotoS3CrashStorage:
         result = boto_s3_store.get_raw_dumps('936ce666-ff3b-4c7a-9674-367fe2120408')
         assert (
             result == {
-                'dump': 'this is "dump", the first one',
-                'flash_dump': 'this is "flash_dump", the second one',
-                'city_dump': 'this is "city_dump", the last one',
+                'dump': b'this is "dump", the first one',
+                'flash_dump': b'this is "flash_dump", the second one',
+                'city_dump': b'this is "city_dump", the last one',
             }
         )
 

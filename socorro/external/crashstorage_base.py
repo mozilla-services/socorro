@@ -14,6 +14,7 @@ import datetime
 from past.builtins import basestring
 
 from socorro.lib.util import DotDict as SocorroDotDict
+from future.utils import iteritems
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, str_to_list
@@ -63,7 +64,7 @@ class MemoryDumpsMapping(dict):
         """convert this MemoryDumpMapping into a FileDumpsMappng by writing
         each of the dump to a filesystem."""
         name_to_pathname_mapping = FileDumpsMapping()
-        for a_dump_name, a_dump in self.iteritems():
+        for a_dump_name, a_dump in iteritems(self):
             if a_dump_name in (None, '', 'dump'):
                 a_dump_name = 'upload_file_minidump'
             dump_pathname = os.path.join(

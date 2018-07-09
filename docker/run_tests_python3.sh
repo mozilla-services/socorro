@@ -21,6 +21,33 @@ WORKING_TESTS=(
     socorro/unittest/lib/test_transform_rules.py
     socorro/unittest/lib/test_util.py
     socorro/unittest/lib/test_vertools.py
+
+    socorro/unittest/external/boto/test_connection_context.py
+    socorro/unittest/external/boto/test_crash_data.py
+    socorro/unittest/external/boto/test_crashstorage.py
+    socorro/unittest/external/boto/test_upload_telemetry_schema.py
+
+    socorro/unittest/external/es/test_analyzers.py
+    socorro/unittest/external/es/test_connection_context.py
+    socorro/unittest/external/es/test_index_creator.py
+    socorro/unittest/external/es/test_new_crash_source.py
+    socorro/unittest/external/es/test_query.py
+
+    socorro/unittest/external/postgresql/test_adi.py
+    socorro/unittest/external/postgresql/test_base.py
+    socorro/unittest/external/postgresql/test_bugs.py
+    socorro/unittest/external/postgresql/test_connection_context.py
+    socorro/unittest/external/postgresql/test_crontabber_state.py
+    socorro/unittest/external/postgresql/test_dbapi2_util.py
+    socorro/unittest/external/postgresql/test_graphics_devices.py
+    socorro/unittest/external/postgresql/test_platforms.py
+    socorro/unittest/external/postgresql/test_product_build_types.py
+    socorro/unittest/external/postgresql/test_releases.py
+    socorro/unittest/external/postgresql/test_setupdb_app.py
+    socorro/unittest/external/postgresql/test_signature_first_date.py
+
+    socorro/unittest/external/rabbitmq/test_reprocessing.py
+    socorro/unittest/external/rabbitmq/test_rmq_new_crash_source.py
 )
 
 pytest ${WORKING_TESTS[@]}

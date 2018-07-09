@@ -6,6 +6,7 @@ import json
 
 import json_schema_reducer
 from socorro.lib.converters import change_default
+from future.utils import iteritems
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
@@ -133,7 +134,7 @@ class BotoCrashStorage(CrashStorageBase):
         # however, that by calling the memory_dump_mapping method, we will
         # get a MemoryDumpMapping which is exactly what we need.
         dumps = dumps.as_memory_dumps_mapping()
-        for dump_name, dump in dumps.iteritems():
+        for dump_name, dump in iteritems(dumps):
             if dump_name in (None, '', 'upload_file_minidump'):
                 dump_name = 'dump'
             boto_connection.submit(crash_id, dump_name, dump)
