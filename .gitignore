@@ -36,6 +36,8 @@ socorro.egg-info/
 dist/
 socorro-*.rpm
 webapp-django/.env
+webapp-django/webpack-stats.json
+webapp-django/webpack_bundles/
 
 # exclude filesystem storage directories
 primaryCrashStore/

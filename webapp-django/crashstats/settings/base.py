@@ -57,6 +57,9 @@ STATIC_ROOT = config('STATIC_ROOT', path('static'))
 # URL prefix for static files
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    os.path.join(ROOT, 'webpack_bundles'),
+]
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '', cast=Csv())
 
@@ -173,6 +176,7 @@ TEMPLATES = [
                 'django_jinja.builtins.extensions.DjangoFiltersExtension',
                 'pipeline.jinja2.PipelineExtension',
                 'waffle.jinja.WaffleExtension',
+                'webpack_loader.contrib.jinja2ext.WebpackExtension',
             ],
             'globals': {}
         }
@@ -474,6 +478,17 @@ PIPELINE = {
 }
 
 NPM_ROOT_PATH = config('NPM_ROOT_PATH', ROOT)
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'CACHE': not DEBUG,
+        'BUNDLE_DIR_NAME': '/',  # must end with slash
+        'STATS_FILE': os.path.join(ROOT, 'webpack-stats.json'),
+        'POLL_INTERVAL': 0.1,
+        'TIMEOUT': None,
+        'IGNORE': ['.+\.map'],
+    },
+}
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
 # FIXME remove this default when we are out of PHX

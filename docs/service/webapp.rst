@@ -7,14 +7,13 @@ Service: Crash Stats Webapp
 Running the webapp
 ==================
 
-To run the webapp using the webapp configuration, do::
+To run the webapp, do::
 
-  $ docker-compose up webapp
+  $ docker-compose up webapp webpack
 
 
 That will bring up all the services the webapp requires to run and start the
-webapp using the ``/app/docker/run_webapp.sh`` script using the webapp
-configuration.
+webapp using the ``/app/docker/run_webapp.sh`` script.
 
 To ease debugging, you can run a shell in the container::
 
@@ -38,6 +37,15 @@ Then you can start and stop the webapp, adjust files, and debug.
    in a ``docker-compose.override.yml`` file.
 
    https://docs.docker.com/compose/extends/
+
+.. note::
+
+   The ``webpack`` service watches for changes to certain frontend files and
+   rebuilds bundles when they change. If you make changes to the Webpack
+   config, you must restart the service for the changes to take effect.
+
+   If the ``webpack`` service is not running, certain pages may not update when
+   you change the frontend files they rely on.
 
 
 
@@ -63,7 +71,7 @@ Setting up the webapp for OpenID Connect Login
 
 In order to authenticate in the webapp using the "Login" button, you
 need to add the following entry to your ``/etc/hosts`` (or equivalent) file::
-  
+
   127.0.0.1 oidcprovider
 
 This allows your host machine to properly handle the authentication provided by

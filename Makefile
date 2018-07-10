@@ -23,7 +23,7 @@ help:
 	@echo "Socorro make rules:"
 	@echo ""
 	@echo "  build            - build docker containers"
-	@echo "  dockerrun        - docker-compose up the entire system for dev"
+	@echo "  run              - docker-compose up the entire system for dev"
 	@echo ""
 	@echo "  shell            - open a shell in the base container"
 	@echo "  clean            - remove all build, test, coverage and Python artifacts"
@@ -83,7 +83,7 @@ updatedata: my.env
 	./docker/run_update_data.sh
 
 run: my.env
-	${DC} up webapp processor
+	${DC} up webapp processor webpack
 
 stop: my.env
 	${DC} stop

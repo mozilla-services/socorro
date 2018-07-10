@@ -1230,3 +1230,9 @@ def about_throttling(request, default_context=None):
     """Return a simple page that explains about how throttling works."""
     context = default_context or {}
     return render(request, 'crashstats/about_throttling.html', context)
+
+
+@pass_default_context
+def new_report_index(request, crash_id, default_context=None):
+    context = default_context or {}
+    return render(request, 'crashstats/new_report_index.html', context)

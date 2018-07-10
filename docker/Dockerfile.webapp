@@ -3,8 +3,8 @@ FROM local/socorro_base
 # Install nodejs and npm from Nodesource's 8.x branch
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y curl
 RUN curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
-    echo 'deb https://deb.nodesource.com/node_8.x jessie main' > /etc/apt/sources.list.d/nodesource.list && \
-    echo 'deb-src https://deb.nodesource.com/node_8.x jessie main' >> /etc/apt/sources.list.d/nodesource.list
+    echo 'deb https://deb.nodesource.com/node_10.x jessie main' > /etc/apt/sources.list.d/nodesource.list && \
+    echo 'deb-src https://deb.nodesource.com/node_10.x jessie main' >> /etc/apt/sources.list.d/nodesource.list
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
 
@@ -16,10 +16,15 @@ ENV CONTAINERNAME webapp
 
 COPY . /app/
 
+ENV WEBPACK_BINARY /webapp-frontend-deps/node_modules/.bin/webpack
 ENV LESS_BINARY /webapp-frontend-deps/node_modules/.bin/lessc
 ENV UGLIFYJS_BINARY /webapp-frontend-deps/node_modules/.bin/uglifyjs
 ENV CSSMIN_BINARY /webapp-frontend-deps/node_modules/.bin/cssmin
 ENV NPM_ROOT_PATH /webapp-frontend-deps/
+ENV NODE_PATH /webapp-frontend-deps/node_modules/
+
+# Build webpack-defined frontend bundles
+RUN cd /app/webapp-django/ && $WEBPACK_BINARY --mode=production --bail
 
 # Run collectstatic in container which puts files in the default place for
 # static files.

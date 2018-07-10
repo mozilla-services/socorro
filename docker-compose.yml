@@ -71,6 +71,18 @@ services:
     ports:
       - "8080:8080"
 
+  # Webpack watcher
+  webpack:
+    image: local/socorro_webapp
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
+    working_dir: /app/webapp-django/
+    command: ["/webapp-frontend-deps/node_modules/.bin/webpack", "--watch"]
+    volumes:
+      - .:/app
+
   # Crontabber app
   crontabber:
     build:
