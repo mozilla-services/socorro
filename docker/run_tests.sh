@@ -30,6 +30,7 @@ PYTEST="$(which pytest)"
 PYTHON="$(which python)"
 ALEMBIC="$(which alembic)"
 SETUPDB="/app/socorro/external/postgresql/setupdb_app.py"
+JEST="/webapp-frontend-deps/node_modules/.bin/jest"
 
 # Wait for postgres and elasticsearch services to be ready
 urlwait "${DATABASE_URL}" 10
@@ -55,9 +56,9 @@ if [ "${USEPYTHON:-2}" == "2" ]; then
     python manage.py collectstatic --noinput
     "${PYTEST}"
 
+    echo ">>> jest (frontend)"
     # Run Jest tests in webapp/staticfiles
-    cd /app/webapp-django
-    /webapp-frontend-deps/node_modules/.bin/jest staticfiles
+    "${JEST}" staticfiles
     popd
 else
     # Run the tests we know work in Python 3

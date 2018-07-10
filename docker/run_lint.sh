@@ -17,4 +17,4 @@ flake8
 
 echo ">>> eslint (js)"
 cd /app/webapp-django
-/webapp-frontend-deps/node_modules/.bin/eslint . --ignore-pattern "node_modules/"
+/webapp-frontend-deps/node_modules/.bin/eslint .

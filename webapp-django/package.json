@@ -10,7 +10,10 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "babel-core": "6.26.3",
+    "babel-eslint": "8.2.5",
     "babel-loader": "7.1.4",
+    "babel-plugin-transform-class-properties": "6.24.1",
+    "babel-plugin-webpack-alias": "2.1.2",
     "babel-preset-env": "1.7.0",
     "babel-preset-react": "6.24.1",
     "cssmin": "0.4.3",
