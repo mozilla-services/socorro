@@ -1,7 +1,11 @@
 FROM python:2.7.14-slim
 
+ARG groupid=10001
+ARG userid=10001
+
 WORKDIR /app/
-RUN groupadd --gid 10001 app && useradd -g app --uid 10001 --shell /usr/sbin/nologin app
+RUN groupadd --gid $groupid app && \
+    useradd -g app --uid $userid --shell /usr/sbin/nologin app
 
 # Install OS-level things
 COPY ./docker/set_up_ubuntu.sh /tmp/

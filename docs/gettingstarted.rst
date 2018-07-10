@@ -38,12 +38,34 @@ Quickstart
 
        Install `git <https://git-scm.com/>`_.
 
-2. Clone the repository so you have a copy on your host machine. Instructions
-   are `on GitHub <https://github.com/mozilla-services/socorro>`_.
+2. Clone the repository so you have a copy on your host machine.
 
-3. From the root of this repository, run::
+   Instructions for cloning are `on the Socorro page in GitHub
+   <https://github.com/mozilla-services/socorro>`_.
+
+
+3. (*Optional/Advanced*) Set UID and GID for Docker container user.
+
+   If you're on Linux or you want to set the UID/GID of the app user that
+   runs in the Docker containers, run::
+
+     $ make my.env
+
+
+   Then edit the file and set the ``SOCORRO_UID`` and ``SOCORRO_GID``
+   variables. These will get used when creating the app user in the base
+   image.
+
+   If you ever want different values, change them in ``my.env`` and re-run
+   ``make build``.
+
+
+4. Build Docker images for Socorro services.
+
+   From the root of this repository, run::
 
      $ make build
+
 
    That will build the Docker images required for development: processor,
    webapp, and crontabber.
@@ -51,7 +73,10 @@ Quickstart
    Each of these images covers a single Socorro component: processor, webapp,
    and crontabber.
 
-4. Then you need to set up the Postgres database and Elasticssearch. To do that,
+
+5. Initialize Postgres and Elasticsearch data stores.
+
+   Then you need to set up the Postgres database and Elasticssearch. To do that,
    run::
 
      $ make setup
@@ -67,7 +92,9 @@ Quickstart
    database and Elasticsearch to pick up changes to those storage systems or
    reset your environment.
 
-5. Then you need to pull in product release and some other data that makes
+6. Populate data stores with required data.
+
+   Then you need to pull in product release and some other data that makes
    Socorro go.
 
    To do that, run::
