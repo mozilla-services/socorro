@@ -3,7 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
-import ReportIndex from 'socorro/report-index';
+import PageHeading from 'socorro/report-index/page-heading';
 
-ReactDOM.render(<ReportIndex />, document.getElementById('crash-report-container'));
+export default class ReportIndex extends React.Component {
+  render() {
+    return <PageHeading product="product" version="version" signature="signature" />;
+  }
+}

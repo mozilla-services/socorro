@@ -29,6 +29,7 @@ module.exports = {
   // handles importing loaders used by webpack for bundling.
   resolve: {
     modules: [path.join('/webapp-frontend-deps', 'node_modules')],
+    alias: { socorro: path.resolve(__dirname, 'staticfiles') },
   },
   resolveLoader: {
     modules: [path.join('/webapp-frontend-deps', 'node_modules')],
