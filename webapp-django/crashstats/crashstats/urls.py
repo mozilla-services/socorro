@@ -27,9 +27,6 @@ urlpatterns = [
     url(r'^crontabber-state/$',
         views.crontabber_state,
         name='crontabber_state'),
-    url('^crashes-per-day/$',
-        views.crashes_per_day,
-        name='crashes_per_day'),
     url(r'^exploitability/$',
         views.exploitability_report,
         name='exploitability_report'),
@@ -90,11 +87,15 @@ urlpatterns = [
             permanent=True
         )),
 
-    # redirect deceased Daily Crashes URL to Crasher per Day
+    # redirect deceased Daily Crashes URL to Mission Control
     url(r'^daily$',
         RedirectView.as_view(
-            pattern_name='crashstats:crashes_per_day',
-            query_string=True,
+            url="https://missioncontrol.telemetry.mozilla.org/#/",
+            permanent=True
+        )),
+    url('^crashes-per-day/$',
+        RedirectView.as_view(
+            url="https://missioncontrol.telemetry.mozilla.org/#/",
             permanent=True
         )),
 

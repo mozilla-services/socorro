@@ -119,11 +119,7 @@ class TestMatviews(IntegrationTestBase):
 
         config_manager = self._setup_config_manager(
             'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
-            'socorro.unittest.cron.jobs.test_matviews.FetchADIFromHiveCronApp|1d\n'
-            ''
             'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
-            'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
-            'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
         )
 
         with config_manager.context() as config:
@@ -132,10 +128,7 @@ class TestMatviews(IntegrationTestBase):
 
         information = self._load_structure()
 
-        for app_name in ('product-versions-matview',
-                         'adu-matview',
-                         'build-adu-matview'):
-
+        for app_name in ('product-versions-matview',):
             assert app_name in information
             assert not information[app_name]['last_error']
             assert information[app_name]['last_success']
@@ -150,7 +143,3 @@ class _Job(base.BaseCronApp):
 
 class FTPScraperJob(_Job):
     app_name = 'ftpscraper'
-
-
-class FetchADIFromHiveCronApp(_Job):
-    app_name = 'fetch-adi-from-hive'

@@ -61,25 +61,3 @@ class ProductVersionsCronApp(_MatViewBase):
     """
     proc_name = 'update_product_versions'
     app_name = 'product-versions-matview'
-
-
-class ADUCronApp(_MatViewBackfillBase):
-    """Runs update_adu stored procedure
-
-    Updates product_adu table from raw_adi.
-
-    """
-    proc_name = 'update_adu'
-    app_name = 'adu-matview'
-    depends_on = ('fetch-adi-from-hive',)
-
-
-class BuildADUCronApp(_MatViewBackfillBase):
-    """Runs update_build_adu stored procedure
-
-    Updates build_adu table using data from raw_adi.
-
-    """
-    proc_name = 'update_build_adu'
-    app_name = 'build-adu-matview'
-    depends_on = ('fetch-adi-from-hive',)

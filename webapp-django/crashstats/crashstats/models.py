@@ -24,7 +24,6 @@ import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
-import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
 import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.releases
@@ -1101,24 +1100,6 @@ class GraphicsDevices(SocorroMiddleware):
                 names[key] = name_pair
 
         return names
-
-
-class ADI(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.adi.ADI
-
-    required_params = (
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-        'product',
-        ('versions', list),
-        ('platforms', list),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
 
 
 class ProductBuildTypes(SocorroMiddleware):

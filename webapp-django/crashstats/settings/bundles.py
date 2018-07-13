@@ -142,12 +142,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/api-documentation.min.css',
     },
-    'crashes_per_day': {
-        'source_filenames': (
-            'crashstats/css/pages/crashes_per_day.less',
-        ),
-        'output_filename': 'css/crashes-per-day.min.css',
-    },
     'crontabber_state': {
         'source_filenames': (
             'crashstats/css/pages/crontabber_state.less',
@@ -324,12 +318,6 @@ PIPELINE_JS = {
             'api/js/testdrive.js'
         ),
         'output_filename': 'js/api-documentation.min.js',
-    },
-    'crashes_per_day': {
-        'source_filenames': (
-            'crashstats/js/socorro/crashes_per_day.js',
-        ),
-        'output_filename': 'js/crashes-per-day.min.js',
     },
     'crontabber_state': {
         'source_filenames': (
