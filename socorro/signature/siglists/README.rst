@@ -129,7 +129,7 @@ File a bug in the `Socorro::Signature
 <https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=Signature>`__,
 describe the changes you want to make, and assign it to you.
 
-Then proceed to making those changes and create a pull request.
+Then proceed to making those changes and creating a pull request.
 
 
 Using the command line
