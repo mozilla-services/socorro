@@ -249,3 +249,14 @@ class TestGraphicsDevices(SiteAdminTestViews):
             })
             assert response.status_code == 302
             assert url in response['location']
+
+
+class TestDebugView(SiteAdminTestViews):
+    def test_view_loads(self):
+        """Tests that the page loads--doesn't verify any information"""
+        url = reverse('siteadmin:debug_view')
+        response = self.client.get(url)
+        assert response.status_code == 302
+
+        self._login()
+        self.client.get(url)
