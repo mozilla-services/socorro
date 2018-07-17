@@ -1,5 +1,6 @@
 import hashlib
 
+from collections import OrderedDict
 import requests
 from six.moves.urllib.parse import urlparse
 
@@ -197,3 +198,23 @@ def graphics_devices_lookup(request):
         return result
     else:
         return http.HttpResponseBadRequest(str(form.errors))
+
+
+@superuser_required
+def debug_view(request):
+    """This view is for ephemeral debugging of issues"""
+
+    context = {}
+
+    # Map of key -> val that will get displayed in a big table in the debug
+    # view in the order they were inserted
+    debug_info = OrderedDict()
+
+    # Add IP address related headers to figure out rate-limiting issues. #1475993
+    for meta_header in ['HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR', 'HTTP_X_REAL_IP']:
+        debug_info['request.META["' + meta_header + '"]'] = request.META.get(meta_header, 'none')
+
+    context['debug_info'] = debug_info
+    context['title'] = 'Debug information'
+
+    return render(request, 'admin/debug_view.html', context)
