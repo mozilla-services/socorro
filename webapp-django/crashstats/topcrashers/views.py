@@ -82,7 +82,6 @@ def get_topcrashers_stats(**kwargs):
         previous_range_results = api.get(**params)
         previous_signatures = get_comparison_signatures(previous_range_results)
 
-        signatures_stats = []
         for index, signature in enumerate(search_results['facets']['signature']):
             previous_signature = previous_signatures.get(signature['term'])
             signatures_stats.append(SignatureStats(
@@ -220,9 +219,9 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     count_of_included_crashes = 0
     signatures = []
 
-    for topcrasher_stats in topcrashers_stats[:int(result_count)]:
-        signatures.append(topcrasher_stats.signature_term)
-        count_of_included_crashes += topcrasher_stats.num_crashes
+    for topcrashers_stats_item in topcrashers_stats[:int(result_count)]:
+        signatures.append(topcrashers_stats_item.signature_term)
+        count_of_included_crashes += topcrashers_stats_item.num_crashes
 
     context['number_of_crashes'] = count_of_included_crashes
     context['total_percentage'] = len(topcrashers_stats) and (
@@ -247,7 +246,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         for signature_term, dates in first_dates.items():
             sig_date_data[signature_term] = dates['first_date']
 
-    for topcrasher_stats in topcrashers_stats:
+    for topcrashers_stats_item in topcrashers_stats:
         crash_counts = []
         # Due to the inconsistencies of OS usage and naming of
         # codes and props for operating systems the hacky bit below
@@ -259,23 +258,23 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
                 continue
             os_code = operating_system['code'][0:3].lower()
             key = '%s_count' % os_code
-            crash_counts.append([topcrasher_stats.num_crashes_per_platform[key],
+            crash_counts.append([topcrashers_stats_item.num_crashes_per_platform[key],
                                 operating_system['name']])
 
-        signature_term = topcrasher_stats.signature_term
+        signature_term = topcrashers_stats_item.signature_term
         # Augment with bugs.
         if signature_term in bugs:
-            if hasattr(topcrasher_stats, 'bugs'):
-                topcrasher_stats.bugs.extend(bugs[signature_term])
+            if hasattr(topcrashers_stats_item, 'bugs'):
+                topcrashers_stats_item.bugs.extend(bugs[signature_term])
             else:
-                topcrasher_stats.bugs = bugs[signature_term]
+                topcrashers_stats_item.bugs = bugs[signature_term]
 
         # Augment with first appearance dates.
         if signature_term in sig_date_data:
-            topcrasher_stats.first_report = sig_date_data[signature_term]
+            topcrashers_stats_item.first_report = sig_date_data[signature_term]
 
-        if hasattr(topcrasher_stats, 'bugs'):
-            topcrasher_stats.bugs.sort(reverse=True)
+        if hasattr(topcrashers_stats_item, 'bugs'):
+            topcrashers_stats_item.bugs.sort(reverse=True)
 
     context['topcrashers_stats'] = topcrashers_stats
     context['days'] = days
