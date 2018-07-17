@@ -29,18 +29,8 @@ Different server environments use different jobs specifications based on
 What runs crontabber?
 =====================
 
-In our current infrastructure, ``crontabber`` is run by ``crontab`` with
-a spec like this::
-
-    */5 * * * * PYTHONPATH="..." crontabber
-
 Every 5 minutes, ``crontabber`` runs, updates crontabber jobs bookkeeping,
 checks which jobs need to run, and runs those jobs.
-
-In our new infrastructure, ``crontabber`` runs, then sleeps for 5 minutes, then
-runs again. This is different than running every 5 minutes. Amongst other
-things, we're guaranteed to only have one ``crontabber`` process running on a
-node.
 
 
 Crontabber theory
@@ -65,7 +55,7 @@ Crontabber has several command line arguments that let you override the job spec
 to run things manually. For example, you can override dependencies for a job
 with the ``--force`` parameter like this::
 
-    ./crontabber --job=BarCronApp --force
+    socorro-cmd crontabber --job=BarCronApp --force
 
 Dependencies inside the cron apps are defined by settings a class attribute on
 the cron app. The attribute is called ``depends_on`` and its value can be a
@@ -172,7 +162,7 @@ All errors that happen are reported to the standard python ``logging`` module.
 Also, the latest error (type, value and traceback) is stored in the JSON
 database too. If any of your cron apps have an error you can see it with::
 
-    python socorro/cron/crontabber_app.py --list-jobs
+    socorro-cmd crontabber --list-jobs
 
 
 Here's a sample output::
@@ -219,7 +209,7 @@ Running a job manually
 Suppose you inspect the error and write a fix. If you're impatient and don't
 want to wait till it's time to run again, you can start it again like this::
 
-    python socorro/cron/crontabber_app.py --job=my-app-name
+    socorro-cmd crontabber --job=my-app-name
 
 
 This will attempt it again and no matter if it works or errors it will pick up
@@ -232,7 +222,7 @@ Resetting a job
 If you want to pretend that a job has never run before you can use the
 ``--reset`` switch. It expects the name of the app. Like this::
 
-    python socorro/cron/crontabber_app.py --reset=my-app-name
+    socorro-cmd crontabber --reset=my-app-name
 
 That's going to wipe that job out of the state database rendering basically as
 if it's never run before. That can make this tool useful for bootstrapping new
@@ -269,7 +259,7 @@ it should run. This format has to be in the 24-hour format of ``HH:MM``.
 If you're ever uncertain that your recent changes to the configuration file is
 correct or not, instead of waiting around you can check it with::
 
-  python socorro/cron/crontabber_app.py --configtest
+  socorro-cmd crontabber --configtest
 
 
 which will do nothing if all is OK.
@@ -307,8 +297,8 @@ rather than waiting for the next available time period for running them.
 
 Example::
 
-    $ python socorro/cron/crontabber_app.py --reset-job=ftpscraper
+    $ socorro-cmd crontabber --reset-job=ftpscraper
 
 Then you can run them::
 
-    $ python socorro/cron/crontabber_app.py --job=ftpscraper
+    $ socorro-cmd crontabber --job=ftpscraper

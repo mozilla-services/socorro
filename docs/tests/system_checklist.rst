@@ -154,10 +154,6 @@ Checklist
 
       To check for errors, grep that for "ERROR".
 
-    * Run QA Selenium WebDriver tests:
-
-      http://socorro.readthedocs.io/en/latest/tests/e2e_readme.html#set-up-and-run-socorro-tests
-
     Do webapp errors make it to Sentry?
 
     * Log into the webapp, go to the Admin, and use the Crash Me Now tool

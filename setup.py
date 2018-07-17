@@ -29,7 +29,7 @@ setup(
     author='Mozilla',
     author_email='socorro-dev@mozilla.com',
     license='MPL',
-    url='https://github.com/mozilla/socorro',
+    url='https://github.com/mozilla-services/socorro',
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',

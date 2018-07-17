@@ -162,12 +162,12 @@ processing you'd use ``socorro.priority``.
 
 Usage from host::
 
-  $ ./docker-compose run processor ./socorro-cmd add_crashid_to_queue <queue> <crashid> [<crashid> ...]
+  $ docker-compose run processor ./socorro-cmd add_crashid_to_queue <queue> <crashid> [<crashid> ...]
 
 
 For example::
 
-  $ ./docker-compose run processor ./socorro-cmd add_crashid_to_queue socorro.normal 5c9cecba-75dc-435f-b9d0-289a50170818
+  $ docker-compose run processor ./socorro-cmd add_crashid_to_queue socorro.normal 5c9cecba-75dc-435f-b9d0-289a50170818
 
 
 .. Note::
