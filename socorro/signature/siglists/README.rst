@@ -122,12 +122,14 @@ How to edit these lists
 -----------------------
 
 The first thing we will ask you to do is to file a bug. We keep track of every
-change in Socorro via bugs, so it's important that each commit has one
-associated to it. File a bug in the `Socorro::General component
-<https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General>`__,
+change and ensuing discussions in Socorro via bugs, so it's important that each
+commit has one associated to it.
+
+File a bug in the `Socorro::Signature
+<https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=Signature>`__,
 describe the changes you want to make, and assign it to you.
 
-Then proceed to making those changes...
+Then proceed to making those changes and creating a pull request.
 
 
 Using the command line
