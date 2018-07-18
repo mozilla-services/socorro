@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 
-class SetRemoteAddrFromForwardedFor(object):
+class SetRemoteAddrFromRealIP(object):
     """
     Middleware that sets REMOTE_ADDR based on HTTP_X_REAL_IP, if the
     latter is set. This is useful if you're sitting behind a reverse proxy that

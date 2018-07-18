@@ -1,14 +1,14 @@
 from django.test.client import RequestFactory
 
 from crashstats.base.tests.testbase import DjangoTestCase
-from crashstats.crashstats.middleware import SetRemoteAddrFromForwardedFor
+from crashstats.crashstats.middleware import SetRemoteAddrFromRealIP
 
 
-class TestSetRemoteAddrFromForwardedFor(DjangoTestCase):
+class TestSetRemoteAddrFromRealIP(DjangoTestCase):
 
     def test_no_headers(self):
         """Should not break if there is no HTTP_X_REAL_IP"""
-        middleware = SetRemoteAddrFromForwardedFor()
+        middleware = SetRemoteAddrFromRealIP()
         request = RequestFactory().get('/')
         response = middleware.process_request(request)
         assert response is None
@@ -18,7 +18,7 @@ class TestSetRemoteAddrFromForwardedFor(DjangoTestCase):
         request.META['REMOTE_ADDR'].
 
         """
-        middleware = SetRemoteAddrFromForwardedFor()
+        middleware = SetRemoteAddrFromRealIP()
         request = RequestFactory(**{
             'HTTP_X_REAL_IP': '100.100.100.100',
             'REMOTE_ADDR': '123.123.123.123',

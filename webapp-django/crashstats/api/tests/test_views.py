@@ -68,7 +68,7 @@ class TestViews(BaseTestViews):
         super(TestViews, self).setUp()
         self._middleware_classes = settings.MIDDLEWARE_CLASSES
         settings.MIDDLEWARE_CLASSES += (
-            'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
+            'crashstats.crashstats.middleware.SetRemoteAddrFromRealIP',
         )
 
     def tearDown(self):
