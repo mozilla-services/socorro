@@ -12,8 +12,8 @@ You can run the crontabber job that checks for security vulnerabilities locally:
    make dependencycheck
 
 
-Connect to PostgreSQL Database
-==============================
+Connect to PostgreSQL Database in local dev environment
+=======================================================
 
 The local development environment's PostgreSQL database exposes itself on a
 non-standard port when run with docker-compose. You can connect to it with
@@ -69,57 +69,3 @@ This reprocesses crashes all crashes with a specified signature::
    the reprocessing queue such that the rate of crashes being added is roughly
    the rate of crashes being processed. Otherwise, you'll exceed our alert
    triggers for queue sizes and it'll page people.
-
-
-.. Warning::
-
-   August 17th, 2017: Everything below this point is outdated.
-
-
-Populate PostgreSQL Database
-============================
-
-Load Socorro schema plus test products:
-
-::
-
-   socorro setupdb --database_name=breakpad --createdb
-
-
-Create partitioned tables
-=========================
-
-Normally this is handled automatically by the cronjob scheduler
-:ref:`crontabber-chapter` but can be run as a one-off:
-
-::
-
-   python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
-
-
-Populate Elasticsearch database
-===============================
-
-.. Note::
-
-   See the chapter about :ref:`elasticsearch-chapter` for more information.
-
-Once you have populated your PostgreSQL database with "fake data",
-you can migrate that data into Elasticsearch:
-
-::
-
-   python socorro/external/postgresql/crash_migration_app.py
-
-
-Sync Django database
-====================
-
-Django needs to write its ORM tables:
-
-::
-
-   export SECRET_KEY="..."
-   cd webapp-django
-   ./manage.py migrate auth
-   ./manage.py migrate

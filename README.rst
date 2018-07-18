@@ -30,17 +30,17 @@ collector out of Socorro into a separate repository. Because of that, we're
 going to start removing code.
 
 If you rely on that collector, the last good release is `270
-<https://github.com/mozilla/socorro/releases/tag/270>`_.
+<https://github.com/mozilla-services/socorro/releases/tag/270>`_.
 
 You can get it with something like this::
 
-    git clone https://github.com/mozilla/socorro
+    git clone https://github.com/mozilla-services/socorro
     git checkout 270
 
 
  Or get the tarball::
 
-    wget https://github.com/mozilla/socorro/archive/270.tar.gz
+    wget https://github.com/mozilla-services/socorro/archive/270.tar.gz
 
 
 Installation
@@ -55,7 +55,7 @@ Releases
 
 We use continuous development, so we release quite often. See our list of releases:
 
-https://github.com/mozilla/socorro/releases
+https://github.com/mozilla-services/socorro/releases
 
 
 Communication
@@ -68,9 +68,3 @@ Please help each other.
 
 Devs hang out in the Socorro/Breakpad IRC channel:
 `<irc://irc.mozilla.org/breakpad>`_
-
-
-Development
-===========
-
-Current deployment status: https://whatsdeployed.io/s-7M7
