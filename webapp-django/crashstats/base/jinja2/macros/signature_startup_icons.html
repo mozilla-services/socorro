@@ -1,0 +1,60 @@
+{% macro startup_crash_icon() %}
+<img src="{{ static('img/3rdparty/silk/flag_red.png') }}"
+    alt="red flag"
+    title="Startup Crash, all crashes happened during startup"
+    class="startup"
+    height="16"
+    width="16"
+/>
+{%- endmacro %}
+
+{% macro potential_startup_crash_icon(num_startup_crashes, num_crashes) %}
+<img src="{{ static('img/3rdparty/silk/flag_yellow.png') }}"
+    alt="yellow flag"
+    title="Potential Startup Crash, {{ num_startup_crashes }} out of {{ num_crashes }} crashes happened during startup"
+    class="startup"
+    height="16"
+    width="16"
+/>
+{%- endmacro %}
+
+{% macro potential_startup_window_crash_icon() %}
+<img
+    src="{{ static('img/icons/rocket_fly.png') }}"
+    alt="rocket"
+    title="Potential Startup Crash, more than half of the crashes happened during the first minute after launch"
+    class="startup"
+    height="16"
+    width="16"
+/>
+{%- endmacro %}
+
+{% macro hang_crash_icon() %}
+<img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}"
+    alt="stop sign"
+    title="Hanged Crash"
+    class="hang"
+    height="16"
+    width="16"
+/>
+{%- endmacro %}
+
+{% macro plugin_crash_icon() %}
+<img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}"
+    alt="brick"
+    title="Plugin Crash"
+    class="plugin"
+    height="16"
+    width="16"
+/>
+{%- endmacro %}
+
+{% macro browser_crash_icon() %}
+<img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}"
+    alt="application"
+    title="Browser Crash"
+    class="browser"
+    width="16"
+    height="16"
+/>
+{%- endmacro %}

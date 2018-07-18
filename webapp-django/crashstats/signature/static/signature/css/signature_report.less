@@ -143,6 +143,24 @@ section.summary-panel {
             width: 30%;
         }
     }
+
+    .crash-type-indicators-panel {
+        background-color: @grey-90-a10;
+        padding: 15px;
+
+        &.startup-crash-warning {
+            background-color: @yellow-50;
+        }
+
+        .crash-type-indicator-container {
+            align-items: center;
+            display: flex;
+
+            img {
+                margin-right: 5px;
+            }
+        }
+    }
 }
 section.summary-panel .panel {
     header {
