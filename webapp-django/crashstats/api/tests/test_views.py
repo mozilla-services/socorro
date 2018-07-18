@@ -652,12 +652,12 @@ class TestViews(BaseTestViews):
             # Double to avoid
             # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
             for __ in range(current_limit * 2):
-                response = self.client.get(url, HTTP_X_FORWARDED_FOR='12.12.12.12')
+                response = self.client.get(url, HTTP_X_REAL_IP='12.12.12.12')
             assert response.status_code == 429
 
-            # But it'll work if you use a different X-Forwarded-For IP
+            # But it'll work if you use a different X-Real-IP
             # because the rate limit is based on your IP address
-            response = self.client.get(url, HTTP_X_FORWARDED_FOR='11.11.11.11')
+            response = self.client.get(url, HTTP_X_REAL_IP='11.11.11.11')
             assert response.status_code == 200
 
             user = User.objects.create(username='test')
