@@ -4,6 +4,8 @@
 How app and an example works using configman
 ============================================
 
+**July 18th, 2018:** This file is outdated.
+
 The minimum app
 ===============
 
