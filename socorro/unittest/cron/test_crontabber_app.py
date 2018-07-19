@@ -12,7 +12,6 @@ class TestJobsConverter:
         'ElasticsearchCleanupCronApp',
         'FTPScraperCronApp',
         'FeaturedVersionsAutomaticCronApp',
-        'ProductVersionsCronApp',
         'UpdateSignaturesCronApp',
     ]
 

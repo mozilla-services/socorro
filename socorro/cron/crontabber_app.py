@@ -27,7 +27,6 @@ DEFAULT_JOBS = ','.join([
     # Product/version maintenance
     'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h',
     'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h',
-    'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00',
 
     # Crash data analysis
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
