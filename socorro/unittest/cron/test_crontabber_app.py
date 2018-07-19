@@ -8,6 +8,7 @@ from socorro.cron.crontabber_app import jobs_converter, DEFAULT_JOBS
 class TestJobsConverter:
     expected_job_names = [
         'BugzillaCronApp',
+        'DependencySecurityCheckCronApp',
         'ElasticsearchCleanupCronApp',
         'FTPScraperCronApp',
         'FeaturedVersionsAutomaticCronApp',

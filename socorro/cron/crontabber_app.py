@@ -19,8 +19,8 @@ from socorro.app.socorro_app import App
 from socorro.lib.datetimeutil import utc_now
 
 
-# NOTE(willkg): This is what we have in -prod. Times are in UTC.
-DEFAULT_JOBS_BASE = [
+# NOTE(willkg): Times are in UTC.
+DEFAULT_JOBS = ','.join([
     # DB partition table and ES maintenance
     'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d|06:00',
 
@@ -32,22 +32,10 @@ DEFAULT_JOBS_BASE = [
     # Crash data analysis
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
     'socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h',
-]
 
-DEFAULT_JOBS = ', '.join(DEFAULT_JOBS_BASE)
-
-# Jobs that run in the -stage environment
-STAGE_JOBS = ', '.join(
-    DEFAULT_JOBS_BASE + [
-        'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
-    ]
-)
-
-
-# Jobs that run in the -stage-new and -prod-new environments
-STAGE_NEW_JOBS = ', '.join(
-    DEFAULT_JOBS_BASE + []
-)
+    # Dependency checking
+    'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
+])
 
 
 def jobs_converter(path_or_jobs):
