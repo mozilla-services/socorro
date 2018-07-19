@@ -128,10 +128,10 @@ class TestMatviews(IntegrationTestBase):
 
         information = self._load_structure()
 
-        for app_name in ('product-versions-matview',):
-            assert app_name in information
-            assert not information[app_name]['last_error']
-            assert information[app_name]['last_success']
+        app_name = 'product-versions-matview'
+        assert app_name in information
+        assert not information[app_name]['last_error']
+        assert information[app_name]['last_success']
 
 
 class _Job(base.BaseCronApp):
