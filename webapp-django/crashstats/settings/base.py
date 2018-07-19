@@ -117,11 +117,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     # If you run crashstats behind a load balancer, your `REMOTE_ADDR` header
-    # will be that of the load balancer instead of the actual user.
-    # The solution is to instead rely on the `X-Forwarded-For` header.
-    # You ONLY want this if you know you can trust `X-Forwarded-For`.
-    # Make sure this is *before* the `RatelimitMiddleware` middleware.
-    'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
+    # will be that of the load balancer instead of the actual user. The
+    # solution is to instead rely on the `X-Real-IP' header set by nginx
+    # module or something else.
+    #
+    # You ONLY want this if you know you can trust `X-Real-IP`. Make sure this
+    # is *before* the `RatelimitMiddleware` middleware. Otherwise that
+    # middleware is operating on the wrong value.
+    'crashstats.crashstats.middleware.SetRemoteAddrFromRealIP',
 
     'csp.middleware.CSPMiddleware',
     'waffle.middleware.WaffleMiddleware',
