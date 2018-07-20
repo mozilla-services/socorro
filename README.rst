@@ -18,6 +18,7 @@ alternatives:
 
 * run your own: `electron/mini-breakpad-server <https://github.com/electron/mini-breakpad-server>`_
 * run your own: `wk8/sentry_breakpad <https://github.com/wk8/sentry_breakpad>`_
+* run your own: `RedisDesktop/OopsyPad <https://github.com/RedisDesktop/OopsyPad>`_
 * hosted/on-premise: `Backtrace <https://backtrace.io/>`_
 
 
