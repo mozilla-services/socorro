@@ -757,6 +757,7 @@ class RawCrash(SocorroMiddleware):
         'InstallTime',
         'IsGarbageCollecting',
         'Min_ARM_Version',
+        'MinidumpSha256Hash',
         'Notes',
         'NumberOfProcessors',
         'OOMAllocationSize',
