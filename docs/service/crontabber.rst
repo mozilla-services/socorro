@@ -91,7 +91,7 @@ you need to change is the configuration that refers to it.
 Best practice recommendation is this:
 
 * Name the class like a typical Python class, i.e. capitalize and optionally
-  camel case the rest. For example: ``UpdateADUCronApp``
+  camel case the rest. For example: ``FooCronApp``
 
 * Optional but good practice is to keep the suffix ``CronApp`` to the class
   name.

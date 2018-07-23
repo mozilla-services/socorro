@@ -94,12 +94,6 @@
                     </optgroup>
                     <optgroup label=" ">
                         <option
-                            value="daily"
-                            data-url-product="{{ url('crashstats:crashes_per_day') }}?p=__PRODUCT__"
-                            data-url-version="{{ url('crashstats:crashes_per_day') }}?p=__PRODUCT__&amp;v=__VERSION__"
-                            {% if report == 'daily' %}selected{% endif %}
-                        >Crashes per Day</option>
-                        <option
                             value="topcrasher"
                             data-url-product="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__"
                             data-url-version="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__&amp;version=__VERSION__"

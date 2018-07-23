@@ -19,45 +19,22 @@ from socorro.app.socorro_app import App
 from socorro.lib.datetimeutil import utc_now
 
 
-# NOTE(willkg): This is what we have in -prod. Note that the
-# FetchADIFromHiveCronApp job runs on a separate box with a separate crontabber
-# configuration. Times are in UTC.
-DEFAULT_JOBS_BASE = [
+# NOTE(willkg): Times are in UTC.
+DEFAULT_JOBS = ','.join([
     # DB partition table and ES maintenance
     'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d|06:00',
-
-    # ADI maintenance
-    'socorro.cron.jobs.clean_raw_adi.CleanRawADICronApp|1d|06:00',
-    'socorro.cron.jobs.matviews.ADUCronApp|1d|08:30',
-    'socorro.cron.jobs.matviews.BuildADUCronApp|1d|08:30',
 
     # Product/version maintenance
     'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h',
     'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h',
-    'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00',
 
     # Crash data analysis
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
     'socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h',
-]
 
-DEFAULT_JOBS = ', '.join(DEFAULT_JOBS_BASE)
-
-# Jobs that run in the -stage environment
-STAGE_JOBS = ', '.join(
-    DEFAULT_JOBS_BASE + [
-        'socorro.cron.jobs.fetch_adi_alt.FAKEFetchADIFromHiveCronApp|1d|08:20',
-        'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
-    ]
-)
-
-
-# Jobs that run in the -stage-new and -prod-new environments
-STAGE_NEW_JOBS = ', '.join(
-    DEFAULT_JOBS_BASE + [
-        'socorro.cron.jobs.fetch_adi_alt.RawADIMoverCronApp|1d|08:20'
-    ]
-)
+    # Dependency checking
+    'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
+])
 
 
 def jobs_converter(path_or_jobs):

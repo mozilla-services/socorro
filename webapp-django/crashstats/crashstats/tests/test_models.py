@@ -418,53 +418,6 @@ class TestModels(DjangoTestCase):
         assert 'Unknown' not in settings.DISPLAY_OS_NAMES
         assert r[1] == {'code': 'unk', 'name': 'Unknown', 'display': False}
 
-    def test_adi(self):
-        model = models.ADI
-        api = model()
-
-        def mocked_get(**options):
-
-            assert 'product' in options
-            assert options['product'] == 'WaterWolf'
-
-            assert 'versions' in options
-            assert options['versions'] == ['2.0']
-
-            assert 'start_date' in options
-            assert 'end_date' in options
-
-            return {
-                'hits': [
-                    {
-
-                        'build_type': 'aurora',
-                        'adi_count': 12327,
-                        'version': '2.0',
-                        'date': datetime.date(2015, 8, 12),
-
-                    },
-                    {
-                        'build_type': 'release',
-                        'adi_count': 4,
-                        'version': '2.0',
-                        'date': datetime.date(2016, 8, 12),
-
-                    }
-                ],
-                'total': 2
-            }
-
-        models.ADI.implementation().get.side_effect = mocked_get
-
-        r = api.get(
-            product='WaterWolf',
-            versions=['2.0'],
-            platforms=['Windows', 'Linux'],
-            start_date=datetime.date(2015, 8, 12),
-            end_date=datetime.date(2015, 8, 13),
-        )
-        assert r['total'] == 2
-
     def test_graphics_devices(self):
         api = models.GraphicsDevices()
 

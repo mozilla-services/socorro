@@ -23,7 +23,6 @@ from sqlalchemy.dialects.postgresql import (
     BOOLEAN,
     VARCHAR,
     ARRAY,
-    BIGINT,
     SMALLINT,
 )
 from sqlalchemy.dialects.postgresql.base import ischema_names
@@ -214,61 +213,6 @@ ischema_names['build_type_enum'] = build_type_enum
 ###############################
 
 
-class RawAdiLogs(DeclarativeBase):
-    __tablename__ = 'raw_adi_logs'
-
-    # column definitions
-    report_date = Column(u'report_date', DATE())
-    product_name = Column(u'product_name', TEXT())
-    product_os_platform = Column(u'product_os_platform', TEXT())
-    product_os_version = Column(u'product_os_version', TEXT())
-    product_version = Column(u'product_version', TEXT())
-    build = Column(u'build', TEXT())
-    build_channel = Column(u'build_channel', TEXT())
-    product_guid = Column(u'product_guid', TEXT())
-    count = Column(u'count', INTEGER())
-
-    __mapper_args__ = {"primary_key": (
-        report_date,
-        product_name,
-        product_os_platform,
-        product_os_version,
-        product_version,
-        build,
-        build_channel,
-        product_guid,
-        count
-    )}
-
-
-class RawAdi(DeclarativeBase):
-    __tablename__ = 'raw_adi'
-
-    # column definitions
-    adi_count = Column(u'adi_count', INTEGER())
-    date = Column(u'date', DATE())
-    product_name = Column(u'product_name', TEXT())
-    product_os_platform = Column(u'product_os_platform', TEXT())
-    product_os_version = Column(u'product_os_version', TEXT())
-    product_version = Column(u'product_version', TEXT())
-    build = Column(u'build', TEXT())
-    product_guid = Column(u'product_guid', TEXT())
-    update_channel = Column(u'update_channel', TEXT())
-    received_at = Column(u'received_at', TIMESTAMP(
-        timezone=True), server_default=text('NOW()'))
-
-    __mapper_args__ = {
-        "primary_key": (
-            adi_count, date, product_name, product_version,
-            product_os_platform, product_os_version, build, product_guid, update_channel
-        )
-    }
-    __table_args__ = (
-        Index(u'raw_adi_1_idx', date, product_name, product_version,
-              product_os_platform, product_os_version),
-    )
-
-
 class AlembicVersion(DeclarativeBase):
     __tablename__ = 'alembic_version'
 
@@ -286,24 +230,6 @@ class BugAssociation(DeclarativeBase):
     bug_id = Column(u'bug_id', INTEGER(), primary_key=True,
                     nullable=False, index=True)
     signature = Column(u'signature', TEXT(), primary_key=True, nullable=False)
-
-
-class BuildAdu(DeclarativeBase):
-    __tablename__ = 'build_adu'
-
-    # column definitions
-    product_version_id = Column(u'product_version_id', INTEGER(),
-                                primary_key=True, nullable=False, autoincrement=False)
-    build_date = Column(u'build_date', DATE(),
-                        primary_key=True, nullable=False)
-    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    adu_count = Column(u'adu_count', INTEGER(), nullable=False)
-
-    __table_args__ = (
-        Index('build_adu_key', product_version_id,
-              build_date, adu_date, os_name, unique=True),
-    )
 
 
 class OsName(DeclarativeBase):
@@ -363,18 +289,6 @@ class Product(DeclarativeBase):
         secondary='SignatureProductsRollup',
         secondaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id'
     )
-
-
-class ProductAdu(DeclarativeBase):
-    __tablename__ = 'product_adu'
-
-    # column definitions
-    adu_count = Column(u'adu_count', BIGINT(),
-                       nullable=False, server_default=text('0'))
-    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(),
-                                primary_key=True, nullable=False, autoincrement=False)
 
 
 class ProductProductidMap(DeclarativeBase):

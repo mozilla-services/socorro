@@ -28,8 +28,5 @@ docker-compose run -u "${HOSTUSER}" crontabber ${CRONTABBERCMD} \
 docker-compose run crontabber ${CRONTABBERCMD} --job=featured-versions-automatic \
               --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
 
-# Fetch normalization data for versions we know about
-docker-compose run processor python docker/fetch_normalization_data.py --products=${PRODUCTS}
-
 # Create ES indexes for the next few weeks
 docker-compose run processor socorro/external/es/create_recent_indices_app.py

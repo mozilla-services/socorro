@@ -33,7 +33,6 @@ WORKING_TESTS=(
     socorro/unittest/external/es/test_new_crash_source.py
     socorro/unittest/external/es/test_query.py
 
-    socorro/unittest/external/postgresql/test_adi.py
     socorro/unittest/external/postgresql/test_base.py
     socorro/unittest/external/postgresql/test_bugs.py
     socorro/unittest/external/postgresql/test_connection_context.py
