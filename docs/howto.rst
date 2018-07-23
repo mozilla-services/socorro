@@ -54,18 +54,9 @@ permission. You can use this token in conjunction with the
 For example, this reprocesses a single crash::
 
     $ docker-compose run processor bash
-    app@processor:app$ ./scripts/reprocess.py c2815fd1-e87b-45e9-9630-765060180110
+    app@processor:app$ socorro-cmd reprocess c2815fd1-e87b-45e9-9630-765060180110
 
 This reprocesses crashes all crashes with a specified signature::
 
     $ docker-compose run processor bash
-    app@processor:app$ ./scripts/fetch_crashids.py --signature="some | signature" | ./scripts/reprocess.py
-
-
-.. Warning::
-
-   If you're reprocessing more than 10,000 crashes, make sure to add a sleep
-   argument of 10 seconds (``--sleep 10``). This will slow down adding items to
-   the reprocessing queue such that the rate of crashes being added is roughly
-   the rate of crashes being processed. Otherwise, you'll exceed our alert
-   triggers for queue sizes and it'll page people.
+    app@processor:app$ socorro-cmd fetch_crashids --signature="some | signature" | socorro-cmd reprocess
