@@ -20,6 +20,11 @@ urlpatterns = [
         name='supersearch_api',
     ),
     url(
+        r'^memory_dump_access/$',
+        views.memory_dump_access,
+        name='memory_dump_access',
+    ),
+    url(
         r'^$',
         views.home,
         name='home',

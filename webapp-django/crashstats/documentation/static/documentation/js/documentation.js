@@ -21,6 +21,10 @@ $(function() {
     .append(tableOfContent)
     .show();
 
+  // If there are h1 with no h2 under them, then we end up with <ol></ol>.
+  // Let's remove those so we don't end up with weird vertical spacing.
+  $('#table-of-content ol:empty').remove();
+
   // Add a command to all examples.
   $('.example pre code')
     .prepend('"')

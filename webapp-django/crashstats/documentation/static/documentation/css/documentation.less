@@ -50,12 +50,14 @@
     }
 
     ol {
+        margin-top: 0;
+        margin-bottom: 10px;
 
         li {
             list-style: decimal inside;
-
-            li {
-                padding-left: 20px;
+            padding-left: 1em;
+            ol {
+                margin-bottom: 0;
             }
         }
     }
@@ -299,7 +301,6 @@ ul.main-links {
     background-color: @white;
     border: 1px solid @light-grey;
     border-radius: 4px;
-    display: none;
     float: right;
     margin: 8px 8px 20px 30px;
     padding: 10px;

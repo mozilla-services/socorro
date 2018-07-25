@@ -1,0 +1,49 @@
+{% extends "documentation/docs_base.html" %}
+
+{% block doc_title %}Memory Dump Access{% endblock %}
+
+{% block doc_content %}
+<div class="body">
+    <h1 id="policy">Access to memory dumps</h1>
+    <p>
+        Crash reports include memory dumps which contain sensitive information
+        and is not publicly available on Crash Stats. Memory dumps are important
+        for diagnosing and debugging issues. As such, users can request access
+        to memory dumps in order to debug issues.
+    </p>
+    <p>
+        Anyone with access to memory dumps and private data agrees to the following:
+    </p>
+    <pre>* Crash dumps contain memory contents, and may contain private user data
+* Only access dumps as necessary
+* Keep data securely on Mozilla hardware
+* When finished with a dump, delete it (within 30 days)
+* Do not share personal data from the dump publicly (on bugzilla, irc, etc)
+* Do not share personal data with non-employees, including partner organizations, without
+  consultation and explicit permission from Lonnen (lonnen@mozilla.com); a signed NDA and
+  other arrangements will be required of the other organization
+* It is fine to share stack traces, analysis, and other non-personal data
+* Access is conditional on employment and will be revoked upon departure from Mozilla
+* Access will be removed after a year of inactivity
+
+The most recent copy of this agreement is at: https://crash-stats.mozilla.com/documentation/pii_access/</pre>
+
+
+    <h1 id="requestaccess">How to request memory dump access</h1>
+    <p>
+        To request access to memory dumps, please:
+    </p>
+    <ol>
+        <li>Log into <a href="https://crash-stats.mozilla.com/">Crash Stats</a>
+            using your LDAP account.
+        </li>
+        <li>Fill out a
+            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General&short_desc=grant%20YOURNAME%20access%20to%20raw%20dumps">bug report</a>.
+        </li>
+    </ol>
+    <p>
+        A Crash Stats admin will field the request as soon as they are able.
+        If you need access immediately, please note that in the bug.
+    </p>
+</div>
+{% endblock %}
