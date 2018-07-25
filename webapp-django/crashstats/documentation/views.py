@@ -29,6 +29,13 @@ def home(request, default_context=None):
 
 
 @pass_default_context
+def pii_access(request, default_context=None):
+    context = default_context or {}
+
+    return render(request, 'documentation/pii_access.html', context)
+
+
+@pass_default_context
 def supersearch_home(request, default_context=None):
     context = default_context or {}
     return render(request, 'documentation/supersearch/home.html', context)

@@ -20,6 +20,11 @@ urlpatterns = [
         name='supersearch_api',
     ),
     url(
+        r'^pii_access/$',
+        views.pii_access,
+        name='pii_access',
+    ),
+    url(
         r'^$',
         views.home,
         name='home',
