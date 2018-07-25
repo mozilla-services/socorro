@@ -1,57 +1,21 @@
-{% extends "crashstats_base.html" %}
+{% extends "documentation/docs_base.html" %}
 
-{% block page_title %}User Documentation{% endblock %}
+{% block doc_title %}Home{% endblock %}
 
-{% block site_css %}
-    {{ super() }}
-    {% stylesheet 'documentation' %}
-{% endblock %}
-
-{% block site_js %}
-    {{ super() }}
-    {% javascript 'documentation' %}
-{% endblock %}
-
-{% block content %}
-<div id="mainbody">
-    <div class="page-heading">
-        <h2>Crash Stats User Documentation</h2>
-    </div>
-
-    <div class="panel">
-        <div id="table-of-content">
-            <h2>Table of contents</h2>
-        </div>
-
-        <div class="body">
-            <h1 id="bug">How to file a bug</h1>
-            <p>
-                Crash Stats has bugs. If you notice one, please
-                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General">file a bug report</a>.
-            </p>
+{% block doc_content %}
+<div class="body">
+    <h1 id="filebug">How to file a bug</h1>
+    <p>
+        Crash Stats has bugs. If you notice one, please
+        <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General">file a bug report</a>.
+    </p>
 
 
-            <h1 id="request">How to request memory dump and private data access</h1>
-            <p>
-                To request access to memory dumps and private data, please:
-            </p>
-            <ol>
-                <li>Log into <a href="https://crash-stats.mozilla.com/>">Crash Stats</a>
-                    using your LDAP account.
-                </li>
-                <li>Fill out a
-                    <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General&short_desc=grant+NAME+access+to+raw+dumps">bug
-                        report</a>.
-                </li>
-            </ol>
-            <p>
-                A Crash Stats admin will field the request as soon as they are able.
-                If you need access immediately, please note that in the bug.
-            </p>
-            <p>
-                Anyone with access to memory dumps and private data agrees to the following:
-            </p>
-            <pre>* Crash dumps contain memory contents, and may contain private user data
+    <h1 id="requestaccess">How to request memory dump and private data access</h1>
+    <p>
+        Anyone with access to memory dumps and private data agrees to the following:
+    </p>
+    <pre>* Crash dumps contain memory contents, and may contain private user data
 * Only access dumps as necessary
 * Keep data securely on Mozilla hardware
 * When finished with a dump, delete it (within 30 days)
@@ -62,31 +26,39 @@
 * It is fine to share stack traces, analysis, and other non-personal data
 * Access is conditional on employment and will be revoked upon departure from Mozilla
 * Access will be removed after a year of inactivity</pre>
+    <p>
+        To request access to memory dumps and private data, please:
+    </p>
+    <ol>
+        <li>Log into <a href="https://crash-stats.mozilla.com/">Crash Stats</a>
+           using your LDAP account.
+        </li>
+        <li>Fill out a
+           <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General&short_desc=grant%20YOURNAME%20access%20to%20raw%20dumps">bug report</a>.
+        </li>
+    </ol>
+    <p>
+        A Crash Stats admin will field the request as soon as they are able.
+        If you need access immediately, please note that in the bug.
+    </p>
 
 
-            <h1 id="signature">How to change signature generation</h1>
-            <p>
-                For documentation on how Socorro's signature generation works
-                and how to request and make changes to it, see the
-                <a href="https://socorro.readthedocs.io/en/latest/signaturegeneration.html">Socorro
-                signature generation documentation</a>.
-            </p>
+    <h1 id="signature">How to fix signature generation</h1>
+    <p>
+        For documentation on how Socorro's signature generation works
+        and how to request and make changes to it, see the
+        <a href="https://socorro.readthedocs.io/en/latest/signaturegeneration.html">Socorro
+        signature generation documentation</a>.
+    </p>
 
 
-            <h1 id="code">Socorro code</h1>
-            <p>
-                For documentation on the code that runs Socorro including how to
-                make changes, submit pull requests, and setting up a local
-                development environment, see the
-                <a href="https://socorro.readthedocs.io/">Socorro code/developer
-                documentation</a>.
-            </p>
-
-            <ul>
-                <li><a href="{{ url('documentation:supersearch_home') }}">Super Search API documentation</a></li>
-                <li><a href="{{ url('api:documentation') }}">General API documentation</a></li>
-            </ul>
-        </div>
-    </div>
+    <h1 id="code">Socorro developer documentation</h1>
+    <p>
+        For documentation on the code that runs Socorro including how to
+        make changes, submit pull requests, and setting up a local
+        development environment, see the
+        <a href="https://socorro.readthedocs.io/">Socorro code/developer
+        documentation</a>.
+    </p>
 </div>
 {% endblock %}

@@ -23,7 +23,7 @@ from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import is_crash_id_valid
 
 import crashstats
-from crashstats.crashstats.decorators import track_api_pageview
+from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.supersearch import models as supersearch_models
@@ -354,7 +354,10 @@ def model_wrapper(request, model_name):
     return result, headers
 
 
-def documentation(request):
+@pass_default_context
+def documentation(request, default_context=None):
+    context = default_context or {}
+
     endpoints = []
 
     all_models = []
@@ -397,11 +400,11 @@ def documentation(request):
         your_tokens = Token.objects.active().filter(user=request.user)
     else:
         your_tokens = Token.objects.none()
-    context = {
+    context.update({
         'endpoints': endpoints,
         'base_url': base_url,
         'count_tokens': your_tokens.count()
-    }
+    })
     return render(request, 'api/documentation.html', context)
 
 
