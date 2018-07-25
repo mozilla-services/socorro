@@ -20,9 +20,9 @@ urlpatterns = [
         name='supersearch_api',
     ),
     url(
-        r'^pii_access/$',
-        views.pii_access,
-        name='pii_access',
+        r'^memory_dump_access/$',
+        views.memory_dump_access,
+        name='memory_dump_access',
     ),
     url(
         r'^$',

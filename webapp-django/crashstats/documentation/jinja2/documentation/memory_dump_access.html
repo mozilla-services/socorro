@@ -1,15 +1,15 @@
 {% extends "documentation/docs_base.html" %}
 
-{% block doc_title %}PII Access{% endblock %}
+{% block doc_title %}Memory Dump Access{% endblock %}
 
 {% block doc_content %}
 <div class="body">
-    <h1 id="policy">Access to sensitive data</h1>
+    <h1 id="policy">Access to memory dumps</h1>
     <p>
-        Some information in crash reports can contain sensitive information and
-        is not publicly available on Crash Stats. The parts of the crash report
-        this information is in can help diagnose and debug bugs. As such, users
-        can request access to this information in order to debug issues.
+        Crash reports include memory dumps which contain sensitive information
+        and is not publicly available on Crash Stats. Memory dumps are important
+        for diagnosing and debugging issues. As such, users can request access
+        to memory dumps in order to debug issues.
     </p>
     <p>
         Anyone with access to memory dumps and private data agrees to the following:
@@ -29,9 +29,9 @@
 The most recent copy of this agreement is at: https://crash-stats.mozilla.com/documentation/pii_access/</pre>
 
 
-    <h1 id="requestaccess">How to request memory dump and private data access</h1>
+    <h1 id="requestaccess">How to request memory dump access</h1>
     <p>
-        To request access to memory dumps and private data, please:
+        To request access to memory dumps, please:
     </p>
     <ol>
         <li>Log into <a href="https://crash-stats.mozilla.com/">Crash Stats</a>
