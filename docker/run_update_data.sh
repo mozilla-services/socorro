@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 # Updates product release and other data in the docker environment.
 #
 # Usage: docker/run_update_data.sh
@@ -7,9 +11,6 @@
 set -eo pipefail
 
 HOSTUSER=$(id -u):$(id -g)
-
-# The assumption is that you're running this from /app inside the container
-CACHEDIR=/app/.cache/ftpscraper
 
 # Fetch and update release information for these products (comma-delimited)
 PRODUCTS="firefox,mobile"
@@ -21,7 +22,6 @@ CRONTABBERCMD="./socorro/cron/crontabber_app.py"
 docker-compose run crontabber ${CRONTABBERCMD} --reset-job=ftpscraper
 docker-compose run -u "${HOSTUSER}" crontabber ${CRONTABBERCMD} \
                --job=ftpscraper \
-               --crontabber.class-FTPScraperCronApp.cachedir=${CACHEDIR} \
                --crontabber.class-FTPScraperCronApp.products=${PRODUCTS}
 
 # Update featured versions data based on release data
