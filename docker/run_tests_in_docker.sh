@@ -17,8 +17,8 @@ set -v -e -x
 PS4="+ (run_tests_in_docker.sh): "
 
 DC="$(which docker-compose)"
-APP_UID="10001"
-APP_GID="10001"
+SOCORRO_UID=${SOCORRO_UID:-"10001"}
+SOCORRO_GID=${SOCORRO_GID:-"10001"}
 
 # Use the same image we use for building docker images because it's cached.
 # Otherwise this doesn't make any difference.
@@ -49,7 +49,7 @@ if [ "$1" == "--shell" ]; then
 
     docker run \
            --rm \
-           --user "${APP_UID}" \
+           --user "${SOCORRO_UID}" \
            --volume "$(pwd)":/app \
            --workdir /app \
            --network socorro_default \
@@ -71,7 +71,7 @@ else
         echo "Creating socorro-repo container..."
         docker create \
                -v /app \
-               --user "${APP_UID}" \
+               --user "${SOCORRO_UID}" \
                --name socorro-repo \
                "${BASEIMAGENAME}" /bin/true
     fi
@@ -98,13 +98,13 @@ else
            --user root \
            --volumes-from socorro-repo \
            --workdir /app \
-           "${TESTIMAGE}" chown -R "${APP_UID}:${APP_GID}" /app
+           "${TESTIMAGE}" chown -R "${SOCORRO_UID}:${SOCORRO_GID}" /app
 
     # Run cmd in that environment and then remove the container
     echo "Running tests..."
     docker run \
            --rm \
-           --user "${APP_UID}" \
+           --user "${SOCORRO_UID}" \
            --volumes-from socorro-repo \
            --workdir /app \
            --network socorro_default \
