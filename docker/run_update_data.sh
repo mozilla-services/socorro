@@ -25,6 +25,7 @@ docker-compose run -u "${HOSTUSER}" crontabber ${CRONTABBERCMD} \
                --crontabber.class-FTPScraperCronApp.products=${PRODUCTS}
 
 # Update featured versions data based on release data
+docker-compose run crontabber ${CRONTABBERCMD} --reset-job=featured-versions-automatic
 docker-compose run crontabber ${CRONTABBERCMD} --job=featured-versions-automatic \
               --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
 
