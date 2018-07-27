@@ -40,6 +40,7 @@ help:
 clean:
 	-rm .docker-build
 	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz
+	-rm -rf .cache
 	cd minidump-stackwalk && make clean
 
 docs: my.env

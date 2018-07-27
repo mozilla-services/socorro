@@ -17,12 +17,9 @@ PRODUCTS="firefox,mobile"
 CRONTABBERCMD="./socorro/cron/crontabber_app.py"
 
 
-# Fetch release data -- do it as the user so it can cache things, but reset
-# the ftpscraper job first
-docker-compose run crontabber ${CRONTABBERCMD} --reset-job=ftpscraper
-docker-compose run -u "${HOSTUSER}" crontabber ${CRONTABBERCMD} \
-               --job=ftpscraper \
-               --crontabber.class-FTPScraperCronApp.products=${PRODUCTS}
+# Fetch release data -- use the ftpscraper wrapper which will use cached
+# data if it's available and run ftpscraper as a 20-minute last resort
+./docker/run_ftpscraper_wrapper.sh
 
 # Update featured versions data based on release data
 docker-compose run crontabber ${CRONTABBERCMD} --reset-job=featured-versions-automatic

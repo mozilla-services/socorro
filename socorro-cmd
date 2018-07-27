@@ -81,6 +81,7 @@ COMMANDS = [
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
             'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
+            'replay_ftpscraper': 'socorro.scripts.replay_ftpscraper.main',
         }
     ),
     Group(
