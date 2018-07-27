@@ -53,5 +53,5 @@ def main(argv=None):
             params = line[line.find('('):line.find(')') + 1]
             params = eval(params)
 
-            print('adding %s' % (params,))
+            print('(replay) adding %s' % (params,))
             insert_build(cursor, *params, ignore_duplicates=True)
