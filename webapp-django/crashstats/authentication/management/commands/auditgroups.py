@@ -44,7 +44,7 @@ class Command(BaseCommand):
             if not user.is_active:
                 users_to_remove.append((user, '!is_active'))
             elif not user.email.endswith(VALID_EMAIL_DOMAINS):
-                users_to_remove.append((user, 'invalid email'))
+                users_to_remove.append((user, 'invalid email domain'))
             elif user.last_login and user.last_login < cutoff:
                 # This user is inactive. Check for active API tokens.
                 active_tokens = [

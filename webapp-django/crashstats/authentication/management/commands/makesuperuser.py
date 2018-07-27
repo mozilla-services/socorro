@@ -55,6 +55,5 @@ class Command(BaseCommand):
                     hackers_group.user_set.add(user)
                     self.stdout.write('{} added to Hackers group.'.format(user.email))
                     user.save()
-
             except Group.DoesNotExist:
                 self.stdout.write('"Hackers" group does not exist.')

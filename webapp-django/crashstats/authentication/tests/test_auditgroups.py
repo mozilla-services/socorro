@@ -53,7 +53,7 @@ class TestAuditGroupsCommand(DjangoTestCase):
         buffer = StringIO()
         call_command('auditgroups', dryrun=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
-        assert 'Removing: bob@example.com (invalid email)' in buffer.getvalue()
+        assert 'Removing: bob@example.com (invalid email domain)' in buffer.getvalue()
 
     def test_old_user_with_active_api_tokens_is_not_removed(self):
         hackers_group = Group.objects.get(name='Hackers')
