@@ -1,4 +1,5 @@
 import argparse
+import os
 
 
 class WrappedTextHelpFormatter(argparse.HelpFormatter):
@@ -70,3 +71,9 @@ class FlagAction(argparse.Action):
         else:
             value = True
         setattr(namespace, self.dest, value)
+
+
+def get_envvar(key, default=None):
+    if default is None:
+        return os.environ[key]
+    return os.environ.get(key, default)

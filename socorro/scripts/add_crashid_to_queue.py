@@ -12,7 +12,7 @@ import sys
 import pika
 
 from socorro.lib.ooid import is_crash_id_valid
-from socorro.scripts import WrappedTextHelpFormatter
+from socorro.scripts import get_envvar, WrappedTextHelpFormatter
 
 
 EPILOG = """
@@ -26,12 +26,6 @@ Queues:
 * socorro.priority - priority processing
 
 """
-
-
-def get_envvar(key, default=None):
-    if default is None:
-        return os.environ[key]
-    return os.environ.get(key, default)
 
 
 def build_pika_connection(host, port, virtual_host, user, password):
