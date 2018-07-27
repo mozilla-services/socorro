@@ -8,24 +8,24 @@ from mock import MagicMock, patch
 import pytest
 
 from socorro.lib.ooid import create_new_ooid
-from socorro.scripts.add_crashid_to_queue import (
-    main,
-)
+from socorro.scripts.add_crashid_to_queue import main
+from socorro.unittest.scripts import with_scriptname
 
 
 def test_missing_args(capsys):
-    # Make sure that running main with no args causes the script to exit with exit_code 2
-    with pytest.raises(SystemExit) as exc_info:
-        main([])
-    assert exc_info.exconly() == 'SystemExit: 2'
+    with with_scriptname('add_crashid_to_queue'):
+        # Make sure that running main with no args causes the script to exit with exit_code 2
+        with pytest.raises(SystemExit) as exc_info:
+            main([])
+        assert exc_info.exconly() == 'SystemExit: 2'
 
-    # Make sure it prints some stuff to stdout
-    out, err = capsys.readouterr()
-    usage_text = (
-        'usage: add_crashid_to_queue.py [-h] queue crashid [crashid ...]\n'
-        'add_crashid_to_queue.py: error: too few arguments\n'
-    )
-    assert err == usage_text
+        # Make sure it prints some stuff to stdout
+        out, err = capsys.readouterr()
+        usage_text = (
+            'usage: add_crashid_to_queue [-h] queue [crashid [crashid ...]]\n'
+            'add_crashid_to_queue: error: too few arguments\n'
+        )
+        assert err == usage_text
 
 
 def test_bad_crashid(capsys):
