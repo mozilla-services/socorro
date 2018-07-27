@@ -9,18 +9,19 @@
 
 set -eo pipefail
 
-# Fetch and update release information for these products (comma-delimited)
+# Fetch and update release information for these products (comma-delimited).
 PRODUCTS="firefox,mobile"
 CRONTABBERCMD="./socorro-cmd crontabber"
 CACHEDIR="./.cache"
 CACHEFILE="${CACHEDIR}/ftpscraper.log"
 
+# If the cache file exists...
 if [[ -e "${CACHEFILE}" ]]; then
-    # FIXME(willkg): check to see if it's older than a week.
-    FILEMODDATE=$(stat -c %Y ${CACHEFILE})
+    FILEMODDATE=$(date -r ${CACHEFILE} '+%s')
     NOW=$(date +%s)
     FILEAGE=$(((NOW - FILEMODDATE) / 60 / 60 / 24))
 
+    # And it's less than a week old... replay.
     if [[ ${FILEAGE} -lt 7 ]]; then
         echo "Found recent (${FILEAGE}d) ftpscraper log--replaying...."
         docker-compose run crontabber ./socorro-cmd replay_ftpscraper "${CACHEFILE}"
