@@ -7,7 +7,7 @@ import json
 from StringIO import StringIO
 
 from configman.dotdict import DotDict as CDotDict
-from mock import Mock, patch
+from mock import call, Mock, patch
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.util import DotDict
@@ -28,11 +28,14 @@ from socorro.processor.mozilla_transform_rules import (
     PluginUserComment,
     ProductRewrite,
     ProductRule,
+    SignatureGeneratorRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
     Winsock_LSPRule,
 )
+from socorro.signature.generator import SignatureGenerator
+from socorro.unittest import WHATEVER
 from socorro.unittest.testbase import TestCase
 from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
 
@@ -1591,3 +1594,70 @@ class TestThemePrettyNameRule(TestCase):
             'elemhidehelper@adblockplus.org:1.2.1',
         ]
         assert processed_crash.addons == expected_addon_list
+
+
+class TestSignatureGeneratorRule:
+    def test_empty_raw_and_processed_crashes(self):
+        rule = SignatureGeneratorRule(get_basic_config())
+        raw_crash = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        ret = rule._action(raw_crash, {}, processed_crash, processor_meta)
+        assert ret is True
+
+        # NOTE(willkg): This is what the current pipeline yields. If any of
+        # those parts change, this might change, too. The point of this test is
+        # that we can pass in empty dicts and the SignatureGeneratorRule and
+        # the generation rules in the default pipeline don't fall over.
+        assert processed_crash['signature'] == 'EMPTY: no crashing thread identified'
+        assert processor_meta['processor_notes'] == [
+            'CSignatureTool: No signature could be created because we do not know '
+            'which thread crashed'
+        ]
+
+    @patch('socorro.lib.raven_client.raven')
+    def test_rule_fail_and_capture_error(self, mock_raven):
+        exc_value = Exception('Cough')
+
+        class BadRule(object):
+            def predicate(self, raw_crash, processed_crash):
+                raise exc_value
+
+        sentry_dsn = 'https://blahblah:blahblah@sentry.example.com/'
+
+        config = get_basic_config()
+        config.sentry = CDotDict()
+        config.sentry.dsn = sentry_dsn
+        rule = SignatureGeneratorRule(config)
+
+        # Override the regular SigntureGenerator with one with a BadRule
+        # in the pipeline
+        rule.generator = SignatureGenerator(
+            pipeline=[BadRule()],
+            error_handler=rule._error_handler
+        )
+
+        raw_crash = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        ret = rule._action(raw_crash, {}, processed_crash, processor_meta)
+        assert ret is True
+
+        # NOTE(willkg): The signature is an empty string because there are no
+        # working rules that add anything to it.
+        assert processed_crash['signature'] == ''
+        assert processor_meta['processor_notes'] == [
+            'Rule BadRule failed: Cough'
+        ]
+
+        # Make sure the client was instantiated with the sentry_dsn
+        mock_raven.Client.assert_called_once_with(dsn=sentry_dsn)
+
+        # Make sure captureExeption was called with the right args.
+        assert (
+            mock_raven.Client().captureException.call_args_list == [
+                call((Exception, exc_value, WHATEVER))
+            ]
+        )

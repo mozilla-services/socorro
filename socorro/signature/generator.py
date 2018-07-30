@@ -4,7 +4,6 @@
 
 import logging
 
-from socorro.lib import raven_client
 from socorro.signature.rules import (
     SignatureGenerationRule,
     StackwalkerErrorSignatureRule,
@@ -43,9 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 class SignatureGenerator:
-    def __init__(self, pipeline=None, sentry_dsn=None, debug=False):
+    def __init__(self, pipeline=None, error_handler=None, debug=False):
         self.pipeline = pipeline or list(DEFAULT_PIPELINE)
-        self.sentry_dsn = sentry_dsn
+        self.error_handler = error_handler
         self.debug = debug
 
     def generate(self, raw_crash, processed_crash):
@@ -72,14 +71,11 @@ class SignatureGenerator:
                         ))
 
             except Exception as exc:
-                raven_client.capture_error(
-                    self.sentry_dsn,
-                    logger,
-                    extra={
+                if self.error_handler:
+                    self.error_handler({
                         'rule': rule.__class__.__name__,
                         'uuid': raw_crash.get('uuid', None),
-                    }
-                )
+                    })
                 notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
 
             if notes:
