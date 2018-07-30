@@ -5,6 +5,7 @@
 import mock
 
 from socorro.signature.generator import SignatureGenerator
+from socorro.unittest import WHATEVER
 
 
 class TestSignatureGenerator:
@@ -41,10 +42,13 @@ class TestSignatureGenerator:
 
         assert ret == expected
 
-    @mock.patch('socorro.signature.generator.raven')
+    @mock.patch('socorro.lib.raven_client.raven')
     def test_sentry_dsn(self, mock_raven):
+        exc_value = Exception('Cough')
+
         class BadRule(object):
-            pass
+            def predicate(self, raw_crash, processed_crash):
+                raise exc_value
 
         sentry_dsn = 'https://blahblah:blahblah@sentry.example.com/'
         generator = SignatureGenerator(pipeline=[BadRule()], sentry_dsn=sentry_dsn)
@@ -53,5 +57,9 @@ class TestSignatureGenerator:
         # Make sure the client was instantiated with the sentry_dsn
         mock_raven.Client.assert_called_once_with(dsn=sentry_dsn)
 
-        # Make sure captureExeption was called
-        mock_raven.Client().captureException.assert_called_once_with()
+        # Make sure captureExeption was called with the right args.
+        assert (
+            mock_raven.Client().captureException.call_args_list == [
+                mock.call((Exception, exc_value, WHATEVER))
+            ]
+        )

@@ -4,11 +4,7 @@
 
 import logging
 
-try:
-    import raven
-except ImportError:
-    raven = None
-
+from socorro.lib import raven_client
 from socorro.signature.rules import (
     SignatureGenerationRule,
     StackwalkerErrorSignatureRule,
@@ -52,36 +48,6 @@ class SignatureGenerator:
         self.sentry_dsn = sentry_dsn
         self.debug = debug
 
-    def _send_to_sentry(self, rule, raw_crash, processed_crash):
-        """Sends an unhandled error to Sentry
-
-        If self.sentry_dsn is non-None, it will try to send it to Sentry.
-
-        """
-        if self.sentry_dsn is None:
-            logger.warning('Sentry DSN is not configured and an exception happened')
-            return
-
-        extra = {
-            'rule': rule.__class__.__name__,
-        }
-
-        if 'uuid' in raw_crash:
-            extra['crash_id'] = raw_crash['uuid']
-
-        try:
-            client = raven.Client(dsn=self.sentry_dsn)
-            client.context.activate()
-            client.context.merge({'extra': extra})
-            try:
-                identifier = client.captureException()
-                logger.info('Error captured in Sentry! Reference: {}'.format(identifier))
-
-            finally:
-                client.context.clear()
-        except Exception:
-            logger.error('Unable to report error with Raven', exc_info=True)
-
     def generate(self, raw_crash, processed_crash):
         """Takes data and returns a signature
 
@@ -106,7 +72,14 @@ class SignatureGenerator:
                         ))
 
             except Exception as exc:
-                self._send_to_sentry(rule, raw_crash, processed_crash)
+                raven_client.capture_error(
+                    self.sentry_dsn,
+                    logger,
+                    extra={
+                        'rule': rule.__class__.__name__,
+                        'uuid': raw_crash.get('uuid', None),
+                    }
+                )
                 notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
 
             if notes:

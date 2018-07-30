@@ -177,42 +177,24 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         reference_value_from='secrets.sentry',
     )
 
-    def _capture_error(self, crash_id, exc_type, exc_value, exc_tb):
+    def _capture_error(self, crash_id, exc_info):
         """Capture an error in sentry if able
 
-        The `exc_*` arguments come from calling `sys.exc_info`.
-
         :arg crash_id: a crash id
-        :arg exc_type: the exc class
-        :arg exc_value: the exception
-        :arg exc_tb: the traceback for the exception
+        :arg exc_info: the exc info as it comes from sys.exc_info()
 
         """
-
         if self.config.sentry and self.config.sentry.dsn:
-            try:
-                if isinstance(exc_value, collections.Sequence):
-                    # Then it's already an iterable!
-                    exceptions = exc_value
-                else:
-                    exceptions = [exc_value]
-                client = raven_client.get_client(self.config.sentry.dsn)
-                client.context.activate()
-                client.context.merge({'extra': {
-                    'crash_id': crash_id,
-                }})
-                try:
-                    for exception in exceptions:
-                        identifier = client.captureException(exception)
-                        self.config.logger.info(
-                            'Error captured in Sentry! Reference: {}'.format(identifier)
-                        )
-                finally:
-                    client.context.clear()
-            except Exception:
-                self.config.logger.error('Unable to report error with Raven', exc_info=True)
+            sentry_dsn = self.config.sentry.dsn
         else:
-            self.config.logger.warning('Sentry DSN is not configured and an exception happened')
+            sentry_dsn = None
+
+        raven_client.capture_error(
+            sentry_dsn,
+            self.config.logger,
+            exc_info,
+            extra={'crash_id': crash_id}
+        )
 
     def _transform(self, crash_id):
         """this implementation is the framework on how a raw crash is
@@ -233,8 +215,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             return
         except Exception as x:
             # We don't know what this error is, so we should capture it
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            self._capture_error(crash_id, exc_type, exc_value, exc_tb)
+            self._capture_error(crash_id, sys.exc_info())
 
             self.config.logger.warning(
                 'error loading crash %s',
@@ -282,8 +263,15 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             # so we can't reference `sys.exc_info()` later.
             exc_type, exc_value, exc_tb = sys.exc_info()
 
-            # Capture the error
-            self._capture_error(crash_id, exc_type, exc_value, exc_tb)
+            # PolyStorage can throw a PolyStorageException which is a sequence
+            # of exc_info items.
+            if isinstance(exc_value, collections.Sequence):
+                exc_info = exc_value
+            else:
+                exc_info = [(exc_type, exc_value, exc_tb)]
+
+            for exc_info_item in exc_info:
+                self._capture_error(crash_id, exc_info_item)
 
             # Re-raise the original exception with the correct traceback
             reraise(exc_type, exc_value, exc_tb)
