@@ -12,28 +12,29 @@ from mock import Mock, patch
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.util import DotDict
 from socorro.processor.mozilla_transform_rules import (
-    ProductRule,
-    UserDataRule,
-    EnvironmentRule,
-    PluginRule,
     AddonsRule,
+    AuroraVersionFixitRule,
+    BetaVersionRule,
     DatesAndTimesRule,
-    JavaProcessRule,
-    OutOfMemoryBinaryRule,
-    ProductRewrite,
     ESRVersionRewrite,
-    PluginContentURL,
-    PluginUserComment,
+    EnvironmentRule,
     ExploitablityRule,
     FlashVersionRule,
-    Winsock_LSPRule,
-    TopMostFilesRule,
-    BetaVersionRule,
-    AuroraVersionFixitRule,
+    JavaProcessRule,
     OSPrettyVersionRule,
+    OutOfMemoryBinaryRule,
+    PluginContentURL,
+    PluginRule,
+    PluginUserComment,
+    ProductRewrite,
+    ProductRule,
     ThemePrettyNameRule,
+    TopMostFilesRule,
+    UserDataRule,
+    Winsock_LSPRule,
 )
 from socorro.unittest.testbase import TestCase
+from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
 
 
 canonical_standard_raw_crash = DotDict({
@@ -151,27 +152,14 @@ cannonical_processed_crash = DotDict({
 
 
 class TestProductRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
         # does it even instantiate?
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ProductRule(config)
 
@@ -188,7 +176,7 @@ class TestProductRule(TestCase):
 
     def test_stuff_missing(self):
         # does it even instantiate?
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         del raw_crash.Version
@@ -198,7 +186,7 @@ class TestProductRule(TestCase):
 
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ProductRule(config)
 
@@ -215,25 +203,13 @@ class TestProductRule(TestCase):
 
 
 class TestUserDataRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = UserDataRule(config)
 
@@ -246,7 +222,7 @@ class TestUserDataRule(TestCase):
         assert processed_crash.user_id == ""
 
     def test_stuff_missing(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         del raw_crash.URL
@@ -255,7 +231,7 @@ class TestUserDataRule(TestCase):
 
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = UserDataRule(config)
 
@@ -268,26 +244,13 @@ class TestUserDataRule(TestCase):
 
 
 class TestEnvironmentRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = EnvironmentRule(config)
 
@@ -297,14 +260,14 @@ class TestEnvironmentRule(TestCase):
         assert processed_crash.app_notes == raw_crash.Notes
 
     def test_stuff_missing(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         del raw_crash.Notes
 
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = EnvironmentRule(config)
 
@@ -315,21 +278,8 @@ class TestEnvironmentRule(TestCase):
 
 
 class TestPluginRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_plugin_hang(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.PluginHang = 1
@@ -340,7 +290,7 @@ class TestPluginRule(TestCase):
         raw_crash.PluginVersion = '0.0'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = PluginRule(config)
 
@@ -355,14 +305,14 @@ class TestPluginRule(TestCase):
         assert processed_crash.PluginVersion == '0.0'
 
     def test_browser_hang(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.Hang = 1
         raw_crash.ProcessType = 'browser'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = PluginRule(config)
 
@@ -378,26 +328,13 @@ class TestPluginRule(TestCase):
 
 
 class TestAddonsRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_action_nothing_unexpected(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule(config)
 
@@ -425,14 +362,14 @@ class TestAddonsRule(TestCase):
         assert processed_crash.addons_checked
 
     def test_action_colon_in_addon_version(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash['Add-ons'] = 'adblockpopups@jessehakanen.net:0:3:1'
         raw_crash['EMCheckCompatibility'] = 'Nope'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule(config)
 
@@ -445,13 +382,13 @@ class TestAddonsRule(TestCase):
         assert not processed_crash.addons_checked
 
     def test_action_addon_is_nonsense(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash['Add-ons'] = 'naoenut813teq;mz;<[`19ntaotannn8999anxse `'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule(config)
 
@@ -465,19 +402,6 @@ class TestAddonsRule(TestCase):
 
 
 class TestDatesAndTimesRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_get_truncate_or_warn(self):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         processor_notes = []
@@ -526,12 +450,12 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_notes == expected
 
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -549,13 +473,13 @@ class TestDatesAndTimesRule(TestCase):
         assert processed_crash.last_crash == 86985
 
     def test_bad_timestamp(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.timestamp = 'hi there'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -574,14 +498,14 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_meta.processor_notes == ['non-integer value of "timestamp"']
 
     def test_bad_timestamp_and_no_crash_time(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.timestamp = 'hi there'
         del raw_crash.CrashTime
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -605,14 +529,14 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_meta.processor_notes == expected
 
     def test_no_startup_time_bad_timestamp(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.timestamp = 'hi there'
         del raw_crash.StartupTime
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -635,13 +559,13 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_meta.processor_notes == expected
 
     def test_no_startup_time(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         del raw_crash.StartupTime
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -660,13 +584,13 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_meta.processor_notes == []
 
     def test_bad_startup_time(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.StartupTime = 'feed the goats'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -685,13 +609,13 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_meta.processor_notes == ['non-integer value of "StartupTime"']
 
     def test_bad_install_time(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.InstallTime = 'feed the goats'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -710,13 +634,13 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_meta.processor_notes == ['non-integer value of "InstallTime"']
 
     def test_bad_seconds_since_last_crash(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.SecondsSinceLastCrash = 'feed the goats'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
 
@@ -736,27 +660,14 @@ class TestDatesAndTimesRule(TestCase):
 
 
 class TestJavaProcessRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = JavaProcessRule(config)
 
@@ -766,14 +677,14 @@ class TestJavaProcessRule(TestCase):
         assert processed_crash.java_stack_trace == raw_crash.JavaStackTrace
 
     def test_stuff_missing(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         del raw_crash.Notes
 
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = JavaProcessRule(config)
 
@@ -784,24 +695,11 @@ class TestJavaProcessRule(TestCase):
 
 
 class TestOutOfMemoryBinaryRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_extract_memory_info(self):
         config = CDotDict()
         config.logger = Mock()
 
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         with patch(
             'socorro.processor.mozilla_transform_rules.gzip.open'
@@ -827,7 +725,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         with patch(
             'socorro.processor.mozilla_transform_rules.gzip.open'
@@ -875,7 +773,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         with patch(
             'socorro.processor.mozilla_transform_rules.gzip.open'
@@ -903,7 +801,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         with patch(
             'socorro.processor.mozilla_transform_rules.gzip.open'
@@ -930,13 +828,13 @@ class TestOutOfMemoryBinaryRule(TestCase):
                 assert processed_crash.memory_report_error == expected
 
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         class MyOutOfMemoryBinaryRule(OutOfMemoryBinaryRule):
 
@@ -954,13 +852,13 @@ class TestOutOfMemoryBinaryRule(TestCase):
             assert processed_crash.memory_report == 'mysterious-awesome-memory'
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = OutOfMemoryBinaryRule(config)
 
@@ -971,27 +869,14 @@ class TestOutOfMemoryBinaryRule(TestCase):
 
 
 class TestProductRewrite(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash['ProductID'] = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ProductRewrite(config)
 
@@ -1004,12 +889,12 @@ class TestProductRewrite(TestCase):
         assert processed_crash == DotDict()
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ProductRewrite(config)
 
@@ -1023,27 +908,14 @@ class TestProductRewrite(TestCase):
 
 
 class TestESRVersionRewrite(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.ReleaseChannel = 'esr'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite(config)
 
@@ -1056,13 +928,13 @@ class TestESRVersionRewrite(TestCase):
         assert processed_crash == DotDict()
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.ReleaseChannel = 'not_esr'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite(config)
 
@@ -1075,14 +947,14 @@ class TestESRVersionRewrite(TestCase):
         assert processed_crash == DotDict()
 
     def test_this_is_really_broken(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.ReleaseChannel = 'esr'
         del raw_crash.Version
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite(config)
 
@@ -1097,28 +969,15 @@ class TestESRVersionRewrite(TestCase):
 
 
 class TestPluginContentURL(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.PluginContentURL = 'http://mozilla.com'
         raw_crash.URL = 'http://google.com'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = PluginContentURL(config)
 
@@ -1131,13 +990,13 @@ class TestPluginContentURL(TestCase):
         assert processed_crash == DotDict()
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.URL = 'http://google.com'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = PluginContentURL(config)
 
@@ -1151,28 +1010,15 @@ class TestPluginContentURL(TestCase):
 
 
 class TestPluginUserComment(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.PluginUserComment = 'I hate it when this happens'
         raw_crash.Comments = 'I wrote something here, too'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = PluginUserComment(config)
 
@@ -1185,13 +1031,13 @@ class TestPluginUserComment(TestCase):
         assert processed_crash == DotDict()
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.Comments = 'I wrote something here'
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = PluginUserComment(config)
 
@@ -1205,26 +1051,13 @@ class TestPluginUserComment(TestCase):
 
 
 class TestExploitablityRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = copy.copy(cannonical_processed_crash)
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ExploitablityRule(config)
 
@@ -1237,12 +1070,12 @@ class TestExploitablityRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ExploitablityRule(config)
 
@@ -1256,21 +1089,8 @@ class TestExploitablityRule(TestCase):
 
 
 class TestFlashVersionRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_get_flash_version(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         rule = FlashVersionRule(config)
 
@@ -1306,12 +1126,12 @@ class TestFlashVersionRule(TestCase):
         assert ret == '9.0.16.0'
 
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = copy.copy(cannonical_processed_crash)
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = FlashVersionRule(config)
 
@@ -1325,28 +1145,15 @@ class TestFlashVersionRule(TestCase):
 
 
 class TestWinsock_LSPRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_crash.Winsock_LSP = 'really long string'
         expected_raw_crash = copy.copy(raw_crash)
         raw_dumps = {}
         processed_crash = copy.copy(cannonical_processed_crash)
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
 
@@ -1359,14 +1166,14 @@ class TestWinsock_LSPRule(TestCase):
         assert raw_crash == expected_raw_crash
 
     def test_missing_key(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         del raw_crash.Winsock_LSP
         expected_raw_crash = copy.copy(raw_crash)
         raw_dumps = {}
         processed_crash = copy.copy(cannonical_processed_crash)
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
 
@@ -1380,21 +1187,8 @@ class TestWinsock_LSPRule(TestCase):
 
 
 class TestTopMostFilesRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1427,7 +1221,7 @@ class TestTopMostFilesRule(TestCase):
             ]
         }
 
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = TopMostFilesRule(config)
 
@@ -1440,13 +1234,13 @@ class TestTopMostFilesRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
     def test_missing_key(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         expected_raw_crash = copy.copy(raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = TopMostFilesRule(config)
 
@@ -1459,7 +1253,7 @@ class TestTopMostFilesRule(TestCase):
         assert raw_crash == expected_raw_crash
 
     def test_missing_key_2(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1477,7 +1271,7 @@ class TestTopMostFilesRule(TestCase):
             }
         }
 
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = TopMostFilesRule(config)
 
@@ -1491,21 +1285,8 @@ class TestTopMostFilesRule(TestCase):
 
 
 class TestBetaVersion(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
         config.database_class = Mock()
         config.transaction_executor_class = Mock()
 
@@ -1515,7 +1296,7 @@ class TestBetaVersion(TestCase):
         processed_crash.date_processed = '2014-12-31'
         processed_crash.product = 'WaterWolf'
 
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         transaction = Mock()
         config.transaction_executor_class.return_value = transaction
@@ -1576,7 +1357,7 @@ class TestBetaVersion(TestCase):
         """Verify the version change is applied to crash reports with a
         release channel of "aurora".
         """
-        config = self.get_basic_config()
+        config = get_basic_config()
         config.database_class = Mock()
         config.transaction_executor_class = Mock()
 
@@ -1586,7 +1367,7 @@ class TestBetaVersion(TestCase):
         processed_crash.date_processed = '2014-12-31'
         processed_crash.product = 'WaterWolf'
 
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         transaction = Mock()
         config.transaction_executor_class.return_value = transaction
@@ -1605,14 +1386,8 @@ class TestBetaVersion(TestCase):
 
 
 class TestAuroraVersionFixitRule:
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
     def test_predicate(self):
-        rule = AuroraVersionFixitRule(self.get_basic_config())
+        rule = AuroraVersionFixitRule(get_basic_config())
 
         # No BuildID and wrong BuildID lead to False
         assert rule._predicate({}, {}, {}, {}) is False
@@ -1622,7 +1397,7 @@ class TestAuroraVersionFixitRule:
         assert rule._predicate({'BuildID': '20170612224034'}, {}, {}, {}) is True
 
     def test_action(self):
-        rule = AuroraVersionFixitRule(self.get_basic_config())
+        rule = AuroraVersionFixitRule(get_basic_config())
 
         raw_crash = {
             # This is the build id for Firefox aurora 55.0b1
@@ -1637,16 +1412,13 @@ class TestAuroraVersionFixitRule:
 
 
 class TestOsPrettyName(TestCase):
-
     def test_everything_we_hoped_for(self):
-        config = CDotDict()
-        config.logger = Mock()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
 
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
+        processor_meta = get_basic_processor_meta()
 
         rule = OSPrettyVersionRule(config)
 
@@ -1728,26 +1500,13 @@ class TestOsPrettyName(TestCase):
 
 
 class TestThemePrettyNameRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ThemePrettyNameRule(config)
 
@@ -1788,10 +1547,10 @@ class TestThemePrettyNameRule(TestCase):
         assert processed_crash.addons == expected_addon_list
 
     def test_missing_key(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = ThemePrettyNameRule(config)
 
@@ -1813,11 +1572,11 @@ class TestThemePrettyNameRule(TestCase):
         assert not res
 
     def test_with_malformed_addons_field(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
         rule = ThemePrettyNameRule(config)
 
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         processed_crash.addons = [
             'addon_with_no_version',
