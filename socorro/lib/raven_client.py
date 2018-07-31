@@ -46,7 +46,7 @@ def capture_error(sentry_dsn, logger, exc_info=None, extra=None):
             # Try to send the exception.
             try:
                 identifier = client.captureException(exc_info)
-                logger.info('Error captured in Sentry! Reference: {}'.format(identifier))
+                logger.info('Error captured in Sentry! Reference: %s' % identifier)
 
                 # At this point, if everything is good, the exceptions were
                 # successfully sent to sentry and we can return.
