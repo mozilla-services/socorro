@@ -72,10 +72,11 @@ class SignatureGenerator:
 
             except Exception as exc:
                 if self.error_handler:
-                    self.error_handler({
-                        'rule': rule.__class__.__name__,
-                        'uuid': raw_crash.get('uuid', None),
-                    })
+                    self.error_handler(
+                        raw_crash,
+                        processed_crash,
+                        extra={'rule': rule.__class__.__name__}
+                    )
                 notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
 
             if notes:

@@ -56,9 +56,10 @@ class TestSignatureGenerator:
         # Make sure error_handler was called with right extra
         assert (
             error_handler.call_args_list == [
-                mock.call(({
-                    'rule': 'BadRule',
-                    'uuid': 'ou812'
-                }))
+                mock.call(
+                    {'uuid': 'ou812'},
+                    {},
+                    extra={'rule': 'BadRule'}
+                )
             ]
         )

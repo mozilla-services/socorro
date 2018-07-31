@@ -863,8 +863,9 @@ class SignatureGeneratorRule(Rule):
         self.sentry_dsn = sentry_dsn
         self.generator = SignatureGenerator(error_handler=self._error_handler)
 
-    def _error_handler(self, extra):
+    def _error_handler(self, raw_crash, processed_crash, extra):
         """Captures errors from signature generation"""
+        extra['uuid'] = raw_crash.get('uuid', None)
         raven_client.capture_error(self.sentry_dsn, self.config.logger, extra=extra)
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
