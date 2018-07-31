@@ -4,9 +4,6 @@
 
 import copy
 
-from configman.dotdict import DotDict as CDotDict
-from mock import Mock
-
 from socorro.lib.util import DotDict
 from socorro.processor.general_transform_rules import (
     IdentifierRule,
