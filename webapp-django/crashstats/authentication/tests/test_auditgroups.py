@@ -40,7 +40,7 @@ class TestAuditGroupsCommand(DjangoTestCase):
         buffer = StringIO()
         call_command('auditgroups', dryrun=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
-        assert 'Removing: bob@mozilla.com (inactive since cutoff, no tokens)' in buffer.getvalue()
+        assert 'Removing: bob@mozilla.com (inactive 366d, no tokens)' in buffer.getvalue()
 
     def test_user_with_invalid_email_removed(self):
         hackers_group = Group.objects.get(name='Hackers')
@@ -69,7 +69,9 @@ class TestAuditGroupsCommand(DjangoTestCase):
         buffer = StringIO()
         call_command('auditgroups', dryrun=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
-        assert 'SKIP: bob@mozilla.com (inactive, but has active tokens: 1)' in buffer.getvalue()
+        assert (
+            'SKIP: bob@mozilla.com (inactive 366d, but has active tokens: 1)' in buffer.getvalue()
+        )
 
     def test_active_user_is_not_removed(self):
         hackers_group = Group.objects.get(name='Hackers')
@@ -95,4 +97,4 @@ class TestAuditGroupsCommand(DjangoTestCase):
         buffer = StringIO()
         call_command('auditgroups', dryrun=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
-        assert 'Removing: bob@mozilla.com (inactive since cutoff, no tokens)' in buffer.getvalue()
+        assert 'Removing: bob@mozilla.com (inactive 366d, no tokens)' in buffer.getvalue()
