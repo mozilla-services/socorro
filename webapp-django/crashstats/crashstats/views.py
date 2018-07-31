@@ -301,20 +301,11 @@ def report_index(request, crash_id, default_context=None):
     if context['report']['signature'].startswith('shutdownhang'):
         # For shutdownhang signatures, we want to use thread 0 as the
         # crashing thread, because that's the thread that actually contains
-        # the usefull data about the what happened.
+        # the useful data about what happened.
         context['crashing_thread'] = 0
 
     context['parsed_dump'] = parsed_dump
     context['bug_product_map'] = settings.BUG_PRODUCT_MAP
-
-    process_type = 'unknown'
-    if context['report']['process_type'] is None:
-        process_type = 'browser'
-    elif context['report']['process_type'] == 'plugin':
-        process_type = 'plugin'
-    elif context['report']['process_type'] == 'content':
-        process_type = 'content'
-    context['process_type'] = process_type
 
     bugs_api = models.Bugs()
     hits = bugs_api.get(signatures=[context['report']['signature']])['hits']
