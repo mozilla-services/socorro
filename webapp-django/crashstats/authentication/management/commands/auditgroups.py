@@ -14,6 +14,11 @@ from django.utils import timezone
 VALID_EMAIL_DOMAINS = ('mozilla.com', 'mozilla.org')
 
 
+def delta_days(since_datetime):
+    """Return the delta in days between now and since_datetime"""
+    return (timezone.now() - since_datetime).days
+
+
 class Command(BaseCommand):
     help = 'Audits Django groups and removes inactive users.'
 
@@ -29,7 +34,7 @@ class Command(BaseCommand):
         # Figure out the cutoff date for inactivity
         cutoff = timezone.now() - datetime.timedelta(days=365)
 
-        self.stdout.write('Using cutoff: {}'.format(cutoff))
+        self.stdout.write('Using cutoff: %s' % cutoff)
 
         # Get all users in the "Hackers" group
         try:
@@ -46,25 +51,29 @@ class Command(BaseCommand):
             elif not user.email.endswith(VALID_EMAIL_DOMAINS):
                 users_to_remove.append((user, 'invalid email domain'))
             elif user.last_login and user.last_login < cutoff:
+                days = delta_days(user.last_login)
+
                 # This user is inactive. Check for active API tokens.
                 active_tokens = [
                     token for token in user.token_set.all()
                     if not token.is_expired
                 ]
                 if not active_tokens:
-                    users_to_remove.append((user, 'inactive since cutoff, no tokens'))
+                    users_to_remove.append((user, 'inactive %sd, no tokens' % days))
                 else:
                     self.stdout.write(
-                        'SKIP: {} (inactive, but has active tokens: {})'.format(
-                            user.email, len(active_tokens)
+                        'SKIP: %s (inactive %sd, but has active tokens: %s)' % (
+                            user.email, days, len(active_tokens)
                         )
                     )
 
         # Log or remove the users that have been marked
-        for user, reason in users_to_remove:
-            self.stdout.write('Removing: {} ({})'.format(user.email, reason))
+        for user, reason in sorted(users_to_remove, key=lambda item: (item[1], item[0])):
+            self.stdout.write('Removing: %s (%s)' % (user.email, reason))
             if not dryrun:
                 hackers_group.user_set.remove(user)
+
+        self.stdout.write('Total removed: %s' % len(users_to_remove))
 
     def handle(self, **options):
         dryrun = options['dryrun']
