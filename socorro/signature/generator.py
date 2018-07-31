@@ -3,11 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-
-try:
-    import raven
-except ImportError:
-    raven = None
+import sys
 
 from socorro.signature.rules import (
     SignatureGenerationRule,
@@ -47,40 +43,10 @@ logger = logging.getLogger(__name__)
 
 
 class SignatureGenerator:
-    def __init__(self, pipeline=None, sentry_dsn=None, debug=False):
+    def __init__(self, pipeline=None, error_handler=None, debug=False):
         self.pipeline = pipeline or list(DEFAULT_PIPELINE)
-        self.sentry_dsn = sentry_dsn
+        self.error_handler = error_handler
         self.debug = debug
-
-    def _send_to_sentry(self, rule, raw_crash, processed_crash):
-        """Sends an unhandled error to Sentry
-
-        If self.sentry_dsn is non-None, it will try to send it to Sentry.
-
-        """
-        if self.sentry_dsn is None:
-            logger.warning('Sentry DSN is not configured and an exception happened')
-            return
-
-        extra = {
-            'rule': rule.__class__.__name__,
-        }
-
-        if 'uuid' in raw_crash:
-            extra['crash_id'] = raw_crash['uuid']
-
-        try:
-            client = raven.Client(dsn=self.sentry_dsn)
-            client.context.activate()
-            client.context.merge({'extra': extra})
-            try:
-                identifier = client.captureException()
-                logger.info('Error captured in Sentry! Reference: {}'.format(identifier))
-
-            finally:
-                client.context.clear()
-        except Exception:
-            logger.error('Unable to report error with Raven', exc_info=True)
 
     def generate(self, raw_crash, processed_crash):
         """Takes data and returns a signature
@@ -106,7 +72,13 @@ class SignatureGenerator:
                         ))
 
             except Exception as exc:
-                self._send_to_sentry(rule, raw_crash, processed_crash)
+                if self.error_handler:
+                    self.error_handler(
+                        raw_crash,
+                        processed_crash,
+                        exc_info=sys.exc_info(),
+                        extra={'rule': rule.__class__.__name__}
+                    )
                 notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
 
             if notes:

@@ -11,6 +11,7 @@ from socorro.external.crashstorage_base import (
     PolyStorageError,
 )
 from socorro.processor.processor_app import ProcessorApp
+from socorro.unittest import WHATEVER
 from socorro.unittest.testbase import TestCase
 
 
@@ -240,7 +241,11 @@ class TestProcessorApp(TestCase):
             pa.transform('mycrashid')
 
         # Assert that we sent the exception to Sentry
-        raven_mock_client.captureException.assert_called_once_with(expected_exception)
+        assert (
+            raven_mock_client.captureException.call_args_list == [
+                mock.call((ValueError, expected_exception, WHATEVER))
+            ]
+        )
 
         # Assert that the logger logged the appropriate thing
         config.logger.info.assert_called_with(
@@ -266,7 +271,11 @@ class TestProcessorApp(TestCase):
         pa.transform('mycrashid')
 
         # Assert that the processor sent something to Sentry
-        raven_mock_client.captureException.assert_called_once_with(expected_exception)
+        assert (
+            raven_mock_client.captureException.call_args_list == [
+                mock.call((ValueError, expected_exception, WHATEVER))
+            ]
+        )
 
         # Assert that the logger logged the appropriate thing
         config.logger.info.assert_called_with(
@@ -288,10 +297,11 @@ class TestProcessorApp(TestCase):
         pa.source.get_raw_crash.return_value = DotDict({'raw': 'crash'})
         pa.source.get_raw_dumps_as_files.return_value = {}
 
+        first_exc_info = (NameError, NameError('waldo'), 'fake tb 1')
+        second_exc_info = (AssertionError, AssertionError(False), 'fake tb 2')
         expected_exception = PolyStorageError()
-        expected_exception.exceptions.append(NameError('waldo'))
-        expected_exception.exceptions.append(AssertionError(False))
-
+        expected_exception.exceptions.append(first_exc_info)
+        expected_exception.exceptions.append(second_exc_info)
         pa.destination.save_raw_and_processed.side_effect = expected_exception
 
         # Make sure the PolyStorageError is raised and not the error from
@@ -299,7 +309,13 @@ class TestProcessorApp(TestCase):
         with pytest.raises(PolyStorageError):
             pa.transform('mycrashid')
 
-        # Assert that the logger logged raven isn't right
-        config.logger.error.assert_called_with(
-            'Unable to report error with Raven', exc_info=True
+        # Assert calls to logger--one set for each of the errors in
+        # PolyStorageError
+        assert (
+            config.logger.error.call_args_list == [
+                mock.call('Unable to report error with Raven', exc_info=True),
+                mock.call('Exception occurred', exc_info=first_exc_info),
+                mock.call('Unable to report error with Raven', exc_info=True),
+                mock.call('Exception occurred', exc_info=second_exc_info)
+            ]
         )

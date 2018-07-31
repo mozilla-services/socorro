@@ -17,6 +17,7 @@ from socorro.processor.breakpad_transform_rules import (
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
+from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
 from socorro.unittest.testbase import TestCase
 
 
@@ -198,27 +199,14 @@ class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
 
 
 class TestCrashingThreadRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-        processor_meta.quit_check = lambda: False
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processed_crash.json_dump = copy.copy(cannonical_stackwalker_output)
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule(config)
 
@@ -228,13 +216,13 @@ class TestCrashingThreadRule(TestCase):
         assert processed_crash.crashedThread == 0
 
     def test_stuff_missing(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processed_crash.json_dump = {}
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule(config)
 
@@ -246,39 +234,27 @@ class TestCrashingThreadRule(TestCase):
 
 
 class TestMinidumpSha256HashRule(object):
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-        processor_meta.quit_check = lambda: False
-
-        return processor_meta
-
     def test_hash_not_in_raw_crash(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = DotDict()
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = MinidumpSha256Rule(config)
 
         assert rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta) is False
 
     def test_hash_in_raw_crash(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = DotDict({
             'MinidumpSha256Hash': 'hash'
         })
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = MinidumpSha256Rule(config)
 
@@ -297,8 +273,7 @@ cannonical_external_output_str = ujson.dumps(cannonical_external_output)
 class TestExternalProcessRule(TestCase):
 
     def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
+        config = get_basic_config()
         config.dump_field = 'upload_file_minidump'
         config.command_line = (
             'timeout -s KILL 30 {command_pathname} '
@@ -317,13 +292,6 @@ class TestExternalProcessRule(TestCase):
         config.result_key = 'bogus_command_result'
         config.return_code_key = 'bogus_command_return_code'
         return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-        processor_meta.quit_check = lambda: False
-
-        return processor_meta
 
     def test_dot_save(self):
         d = {}
@@ -349,7 +317,7 @@ class TestExternalProcessRule(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -384,7 +352,7 @@ class TestExternalProcessRule(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = \
             mocked_subprocess_module.Popen.return_value
@@ -407,7 +375,7 @@ class TestExternalProcessRule(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -432,8 +400,7 @@ class TestExternalProcessRule(TestCase):
 class TestBreakpadTransformRule2015(TestCase):
 
     def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
+        config = get_basic_config()
         config.dump_field = 'upload_file_minidump'
         config.command_line = (
             BreakpadStackwalkerRule2015.required_config .command_line.default
@@ -446,13 +413,6 @@ class TestBreakpadTransformRule2015(TestCase):
         config.temporary_file_system_storage_path = '/tmp'
         return config
 
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-        processor_meta.quit_check = lambda: False
-
-        return processor_meta
-
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -460,7 +420,7 @@ class TestBreakpadTransformRule2015(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -487,7 +447,7 @@ class TestBreakpadTransformRule2015(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = \
             mocked_subprocess_module.Popen.return_value
@@ -512,7 +472,7 @@ class TestBreakpadTransformRule2015(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -576,13 +536,6 @@ class TestJitCrashCategorizeRule(TestCase):
         config.temporary_file_system_storage_path = '/tmp'
         return config
 
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-        processor_meta.quit_check = lambda: False
-
-        return processor_meta
-
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -597,7 +550,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -629,7 +582,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -674,7 +627,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -707,7 +660,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -739,7 +692,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -771,7 +724,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -803,7 +756,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value
@@ -835,7 +788,7 @@ class TestJitCrashCategorizeRule(TestCase):
             DotDict({'module': 'a-module'}),
             DotDict({'not_module': 'not-a-module'}),
         ]
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = (
             mocked_subprocess_module.Popen.return_value

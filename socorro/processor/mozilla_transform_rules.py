@@ -19,6 +19,7 @@ from socorro.lib.datetimeutil import (
     datetime_from_isodate_string,
 )
 from socorro.lib.ooid import dateFromOoid
+from socorro.lib import raven_client
 from socorro.lib.transform_rules import Rule
 from socorro.signature.generator import SignatureGenerator
 
@@ -857,10 +858,17 @@ class SignatureGeneratorRule(Rule):
         try:
             sentry_dsn = self.config.sentry.dsn
         except KeyError:
-            # DotDict raises a KeyError when things are missing
+            # NOTE(willkg): DotDict raises a KeyError when things are missing
             sentry_dsn = None
+        self.sentry_dsn = sentry_dsn
+        self.generator = SignatureGenerator(error_handler=self._error_handler)
 
-        self.generator = SignatureGenerator(sentry_dsn=sentry_dsn)
+    def _error_handler(self, raw_crash, processed_crash, exc_info, extra):
+        """Captures errors from signature generation"""
+        extra['uuid'] = raw_crash.get('uuid', None)
+        raven_client.capture_error(
+            self.sentry_dsn, self.config.logger, exc_info=exc_info, extra=extra
+        )
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
