@@ -24,10 +24,14 @@ class TestAuditGroupsCommand(DjangoTestCase):
         bob.groups.add(hackers_group)
         bob.save()
 
+        assert hackers_group.user_set.count() == 1
+
         buffer = StringIO()
-        call_command('auditgroups', dryrun=False, stdout=buffer)
+        call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert 'Removing: bob@mozilla.com (!is_active)' in buffer.getvalue()
+
+        assert hackers_group.user_set.count() == 0
 
     def test_old_user_is_removed(self):
         hackers_group = Group.objects.get(name='Hackers')
@@ -38,7 +42,7 @@ class TestAuditGroupsCommand(DjangoTestCase):
         bob.save()
 
         buffer = StringIO()
-        call_command('auditgroups', dryrun=False, stdout=buffer)
+        call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert 'Removing: bob@mozilla.com (inactive 366d, no tokens)' in buffer.getvalue()
 
@@ -51,7 +55,7 @@ class TestAuditGroupsCommand(DjangoTestCase):
         bob.save()
 
         buffer = StringIO()
-        call_command('auditgroups', dryrun=False, stdout=buffer)
+        call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert 'Removing: bob@example.com (invalid email domain)' in buffer.getvalue()
 
@@ -67,7 +71,7 @@ class TestAuditGroupsCommand(DjangoTestCase):
         token.save()
 
         buffer = StringIO()
-        call_command('auditgroups', dryrun=False, stdout=buffer)
+        call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
         assert (
             'SKIP: bob@mozilla.com (inactive 366d, but has active tokens: 1)' in buffer.getvalue()
@@ -82,11 +86,11 @@ class TestAuditGroupsCommand(DjangoTestCase):
         bob.save()
 
         buffer = StringIO()
-        call_command('auditgroups', dryrun=False, stdout=buffer)
+        call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
         assert 'Removing:' not in buffer.getvalue()
 
-    def test_dryrun(self):
+    def test_persist_false(self):
         hackers_group = Group.objects.get(name='Hackers')
 
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
@@ -94,7 +98,11 @@ class TestAuditGroupsCommand(DjangoTestCase):
         bob.groups.add(hackers_group)
         bob.save()
 
+        assert hackers_group.user_set.count() == 1
+
         buffer = StringIO()
-        call_command('auditgroups', dryrun=True, stdout=buffer)
+        call_command('auditgroups', persist=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
         assert 'Removing: bob@mozilla.com (inactive 366d, no tokens)' in buffer.getvalue()
+
+        assert hackers_group.user_set.count() == 1

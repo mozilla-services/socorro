@@ -26,11 +26,11 @@ class Command(BaseCommand):
         # FIXME(willkg): change this to default to False after we've tested
         # it.
         parser.add_argument(
-            '--dryrun', type=bool, default=True,
-            help='enables dry run which will not persist changes to db'
+            '--persist', action='store_true',
+            help='persists recommended changes to db'
         )
 
-    def audit_hackers_group(self, dryrun):
+    def audit_hackers_group(self, persist=False):
         # Figure out the cutoff date for inactivity
         cutoff = timezone.now() - datetime.timedelta(days=365)
 
@@ -70,12 +70,13 @@ class Command(BaseCommand):
         # Log or remove the users that have been marked
         for user, reason in users_to_remove:
             self.stdout.write('Removing: %s (%s)' % (user.email, reason))
-            if not dryrun:
+            if persist is True:
                 hackers_group.user_set.remove(user)
 
         self.stdout.write('Total removed: %s' % len(users_to_remove))
 
     def handle(self, **options):
-        dryrun = options['dryrun']
-
-        self.audit_hackers_group(dryrun)
+        persist = options['persist']
+        if not persist:
+            self.stdout.write('Dry run--this is what we think should happen.')
+        self.audit_hackers_group(persist)
