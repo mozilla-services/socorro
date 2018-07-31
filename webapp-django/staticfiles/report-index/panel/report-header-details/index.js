@@ -5,20 +5,19 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-export default class PageHeading extends React.Component {
+export default class ReportHeaderDetails extends React.Component {
   static propTypes = {
-    product: PropTypes.string.isRequired,
-    version: PropTypes.string.isRequired,
+    uuid: PropTypes.string.isRequired,
     signature: PropTypes.string.isRequired,
   };
 
   render() {
-    const { product, version, signature } = this.props;
+    const { uuid, signature } = this.props;
     return (
-      <div className="page-heading">
-        <h2>
-          {product} {version} Crash Report [@ {signature} ]
-        </h2>
+      <div>
+        ID: <code>{uuid}</code>
+        <br />
+        Signature: <code>{signature}</code>
       </div>
     );
   }
