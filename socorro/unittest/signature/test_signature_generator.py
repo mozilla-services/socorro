@@ -5,6 +5,7 @@
 import mock
 
 from socorro.signature.generator import SignatureGenerator
+from socorro.unittest import WHATEVER
 
 
 class TestSignatureGenerator:
@@ -59,6 +60,7 @@ class TestSignatureGenerator:
                 mock.call(
                     {'uuid': 'ou812'},
                     {},
+                    exc_info=(Exception, exc_value, WHATEVER),
                     extra={'rule': 'BadRule'}
                 )
             ]

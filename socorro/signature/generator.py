@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
+import sys
 
 from socorro.signature.rules import (
     SignatureGenerationRule,
@@ -75,6 +76,7 @@ class SignatureGenerator:
                     self.error_handler(
                         raw_crash,
                         processed_crash,
+                        exc_info=sys.exc_info(),
                         extra={'rule': rule.__class__.__name__}
                     )
                 notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
