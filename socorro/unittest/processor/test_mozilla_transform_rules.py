@@ -36,8 +36,8 @@ from socorro.processor.mozilla_transform_rules import (
 )
 from socorro.signature.generator import SignatureGenerator
 from socorro.unittest import WHATEVER
-from socorro.unittest.testbase import TestCase
 from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
+from socorro.unittest.testbase import TestCase
 
 
 canonical_standard_raw_crash = DotDict({
