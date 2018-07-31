@@ -68,7 +68,7 @@ class Command(BaseCommand):
                     )
 
         # Log or remove the users that have been marked
-        for user, reason in sorted(users_to_remove, key=lambda item: (item[1], item[0])):
+        for user, reason in users_to_remove:
             self.stdout.write('Removing: %s (%s)' % (user.email, reason))
             if not dryrun:
                 hackers_group.user_set.remove(user)
