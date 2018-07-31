@@ -24,10 +24,14 @@ class TestAuditGroupsCommand(DjangoTestCase):
         bob.groups.add(hackers_group)
         bob.save()
 
+        assert hackers_group.user_set.count() == 1
+
         buffer = StringIO()
         call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert 'Removing: bob@mozilla.com (!is_active)' in buffer.getvalue()
+
+        assert hackers_group.user_set.count() == 0
 
     def test_old_user_is_removed(self):
         hackers_group = Group.objects.get(name='Hackers')
