@@ -4,6 +4,10 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+
 import ReportIndex from 'socorro/report-index';
 
-ReactDOM.render(<ReportIndex />, document.getElementById('crash-report-container'));
+const crashReportContainer = document.getElementById('crash-report-container');
+const crashId = crashReportContainer.dataset.crashId;
+
+ReactDOM.render(<ReportIndex crashId={crashId} />, crashReportContainer);

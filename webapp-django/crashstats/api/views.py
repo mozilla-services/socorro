@@ -594,5 +594,6 @@ def report_details(request):
         crashing_thread=crashing_thread,
         parsed_dump=parsed_dump,
         descriptions=descriptions,
+        user=request.user,
     )
     return data
