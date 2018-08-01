@@ -33,28 +33,6 @@ def chunkify(iterable, n):
             return
 
 
-def drop_unicode(text):
-    """Takes a text and drops all unicode characters
-
-    :arg str/unicode text: the text to fix
-
-    :returns: text with all unicode characters dropped
-
-    """
-    if six.PY2:
-        if isinstance(text, str):
-            # Convert ascii to unicode in python 2
-            text = text.decode('unicode_escape')
-        # Convert it back to a acsii string and drop any non-ascii characters
-        return text.encode('ascii', 'ignore')
-
-    # Python 3 ONLY, strip non ascii characters
-    ALLOWED_CHARS = [chr(c) for c in range(32, 127)]
-    text = ''.join([c for c in text if c in ALLOWED_CHARS])
-
-    return text
-
-
 # utilities
 
 def backoff_seconds_generator():

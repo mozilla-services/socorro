@@ -10,7 +10,7 @@ from past.builtins import basestring
 from glom import glom
 import ujson
 
-from socorro.lib.util import drop_unicode
+from .utils import drop_bad_characters
 from socorro.signature import siglists_utils
 
 
@@ -558,7 +558,7 @@ class AbortSignature(Rule):
                 if end_paren != -1:
                     abort_message = abort_message[:open_paren] + abort_message[end_paren + 1:]
 
-        abort_message = drop_unicode(abort_message).strip()
+        abort_message = drop_bad_characters(abort_message).strip()
 
         if len(abort_message) > 80:
             abort_message = abort_message[:77] + '...'
@@ -725,7 +725,7 @@ class SignatureIPCChannelError(Rule):
             new_sig = 'IPCError-browser | {}'
         else:
             new_sig = 'IPCError-content | {}'
-        new_sig = new_sig.format(drop_unicode(raw_crash['ipc_channel_error'])[:100])
+        new_sig = new_sig.format(drop_bad_characters(raw_crash['ipc_channel_error'])[:100])
 
         notes.append(
             'Signature replaced with an IPC Channel Error, '
