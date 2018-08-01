@@ -284,7 +284,3 @@ def main(argv=None):
 
             if not args.different or old_signature != ret['signature']:
                 out.data(crash_id, old_signature, ret['signature'], ret['notes'])
-
-
-if __name__ == '__main__':
-    sys.exit(main())
