@@ -3,29 +3,18 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-import copy
+import importlib
 import json
 import re
 
 import mock
 import pytest
 
-from socorro.signature.rules import (
-    AbortSignature,
-    CSignatureTool,
-    JavaSignatureTool,
-    OOMSignature,
-    StackwalkerErrorSignatureRule,
-    SignatureIPCChannelError,
-    SignatureGenerationRule,
-    SignatureJitCategory,
-    SignatureRunWatchDog,
-    SigFixWhitespace,
-    SigTruncate,
-    SignatureShutdownTimeout,
-    SignatureIPCMessageName,
-    SignatureParentIDNotEqualsChildID,
-)
+# NOTE(willkg): We do this so that we can extract signature generation into its
+# own namespace as an external library. This allows the tests to run if it's in
+# "siggen" or "socorro.signature".
+base_module = '.'.join(__name__.split('.')[:-2])
+rules = importlib.import_module(base_module + '.rules')
 
 
 class TestCSignatureTool:
@@ -39,13 +28,13 @@ class TestCSignatureTool:
         ss=('sentinel', ('sentinel2', lambda x: 'ff' in x)),
     ):
 
-        with mock.patch('socorro.signature.rules.siglists_utils') as mocked_siglists:
+        with mock.patch(base_module + '.rules.siglists_utils') as mocked_siglists:
             mocked_siglists.IRRELEVANT_SIGNATURE_RE = ig
             mocked_siglists.PREFIX_SIGNATURE_RE = pr
             mocked_siglists.SIGNATURES_WITH_LINE_NUMBERS_RE = si
             mocked_siglists.TRIM_DLL_SIGNATURE_RE = td
             mocked_siglists.SIGNATURE_SENTINELS = ss
-            return CSignatureTool()
+            return rules.CSignatureTool()
 
     def test_c_config_tool_init(self):
         """test_C_config_tool_init: constructor test"""
@@ -76,7 +65,7 @@ class TestCSignatureTool:
             (('module', 'f( *s , &n)', 's', '23', '0xFFF'), 'f'),
             # this next one looks like a bug to me, but perhaps the situation
             # never comes up
-            #(('module', 'f(  *s , &n)', 's', '23', '0xFFF'), 'f(*s, &n)'),
+            # (('module', 'f(  *s , &n)', 's', '23', '0xFFF'), 'f(*s, &n)'),
             (('module', 'f3(s,t,u)', 's', '23', '0xFFF'), 'f3'),
             (
                 (
@@ -268,14 +257,14 @@ class TestCSignatureTool:
 
 class TestJavaSignatureTool:
     def test_bad_stack(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = 17
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         assert sig == "EMPTY: Java stack trace not in expected format"
         assert notes == ['JavaSignatureTool: stack trace not in expected format']
 
     def test_basic_stack_frame_with_line_number(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = (
             'SomeJavaException: totally made up  \n'
             'at org.mozilla.lars.myInvention(larsFile.java:666)'
@@ -286,7 +275,7 @@ class TestJavaSignatureTool:
         assert notes == []
 
     def test_basic_stack_frame(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = (
             'SomeJavaException: totally made up  \n'
             'at org.mozilla.lars.myInvention(larsFile.java)'
@@ -297,7 +286,7 @@ class TestJavaSignatureTool:
         assert notes == []
 
     def test_long_exception_description(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException: %s \nat org.mozilla.lars.myInvention(larsFile.java)' %
             ('t' * 1000)
@@ -309,7 +298,7 @@ class TestJavaSignatureTool:
         assert notes == expected
 
     def test_long_exception_description_with_line_number(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException: %s  \nat org.mozilla.lars.myInvention(larsFile.java:1234)' %
             ('t' * 1000)
@@ -321,7 +310,7 @@ class TestJavaSignatureTool:
         assert notes == expected
 
     def test_no_description(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException\n'
             'at org.mozilla.lars.myInvention(larsFile.java:1234)'
@@ -333,7 +322,7 @@ class TestJavaSignatureTool:
         assert notes == e
 
     def test_frame_with_line_ending_but_missing_second_line(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = 'SomeJavaException: totally made up  \n'
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
@@ -342,7 +331,7 @@ class TestJavaSignatureTool:
         assert notes == e
 
     def test_frame_missing_second_line(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = 'SomeJavaException: totally made up  '
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
@@ -351,7 +340,7 @@ class TestJavaSignatureTool:
         assert notes == e
 
     def test_frame_with_leading_whitespace(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = (
             '   SomeJavaException: totally made up  \n'
             'at org.mozilla.lars.myInvention('
@@ -367,7 +356,7 @@ class TestJavaSignatureTool:
         # In general addresses of the form ``@xxxxxxxx`` are to be replaced
         # with the literal ``<addr>``, however in this case, the hex address is
         # not in the expected location and should therefore be left alone
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = ('SomeJavaException: totally made up  \n'
                             'at org.mozilla.lars.myInvention('
                             'larsFile.java:@abef1234)')
@@ -379,7 +368,7 @@ class TestJavaSignatureTool:
         assert notes == []
 
     def test_replace_address(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = """
 java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
 \tat android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
@@ -409,7 +398,7 @@ java.lang.IllegalArgumentException: Given view not a child of android.widget.Abs
         assert notes == []
 
     def test_replace_address_with_trailing_text(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = """
 android.view.WindowManager$BadTokenException: Unable to add window -- token android.os.BinderProxy@406237c0 is not valid; is your activity running?
 \tat android.view.ViewRoot.setView(ViewRoot.java:533)
@@ -438,7 +427,7 @@ android.view.WindowManager$BadTokenException: Unable to add window -- token andr
         assert notes == []
 
     def test_replace_address_trailing_whitespace(self):
-        j = JavaSignatureTool()
+        j = rules.JavaSignatureTool()
         java_stack_trace = """
 java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoNetworkManager@405afea8
 \tat android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:610)
@@ -480,468 +469,426 @@ java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.G
 #  rules testing section
 
 frames_from_json_dump = {
-    u'frames': [
+    'frames': [
         {
-            u'frame': 0,
-            u'function': u'NtWaitForMultipleObjects',
-            u'function_offset': u'0x15',
-            u'module': u'ntdll.dll',
-            u'module_offset': u'0x2015d',
-            u'offset': u'0x77ad015d',
-            u'registers': {
-                u'eax': u'0x00000040',
-                u'ebp': u'0x0025e968',
-                u'ebx': u'0x0025e91c',
-                u'ecx': u'0x00000000',
-                u'edi': u'0x00000000',
-                u'edx': u'0x00000000',
-                u'efl': u'0x00200246',
-                u'eip': u'0x77ad015d',
-                u'esi': u'0x00000004',
-                u'esp': u'0x0025e8cc'
+            'frame': 0,
+            'function': 'NtWaitForMultipleObjects',
+            'function_offset': '0x15',
+            'module': 'ntdll.dll',
+            'module_offset': '0x2015d',
+            'offset': '0x77ad015d',
+            'registers': {
+                'eax': '0x00000040',
+                'ebp': '0x0025e968',
+                'ebx': '0x0025e91c',
+                'ecx': '0x00000000',
+                'edi': '0x00000000',
+                'edx': '0x00000000',
+                'efl': '0x00200246',
+                'eip': '0x77ad015d',
+                'esi': '0x00000004',
+                'esp': '0x0025e8cc'
             },
-            u'trust': u'context'
+            'trust': 'context'
         },
         {
-            u'frame': 1,
-            u'function': u'WaitForMultipleObjectsEx',
-            u'function_offset': u'0xff',
-            u'module': u'KERNELBASE.dll',
-            u'module_offset': u'0x115f6',
-            u'offset': u'0x775e15f6',
-            u'trust': u'cfi'
+            'frame': 1,
+            'function': 'WaitForMultipleObjectsEx',
+            'function_offset': '0xff',
+            'module': 'KERNELBASE.dll',
+            'module_offset': '0x115f6',
+            'offset': '0x775e15f6',
+            'trust': 'cfi'
         },
         {
-            u'frame': 2,
-            u'function': u'WaitForMultipleObjectsExImplementation',
-            u'function_offset': u'0x8d',
-            u'module': u'kernel32.dll',
-            u'module_offset': u'0x119f7',
-            u'offset': u'0x766119f7',
-            u'trust': u'cfi'
+            'frame': 2,
+            'function': 'WaitForMultipleObjectsExImplementation',
+            'function_offset': '0x8d',
+            'module': 'kernel32.dll',
+            'module_offset': '0x119f7',
+            'offset': '0x766119f7',
+            'trust': 'cfi'
         },
         {
-            u'frame': 3,
-            u'function': u'RealMsgWaitForMultipleObjectsEx',
-            u'function_offset': u'0xe1',
-            u'module': u'user32.dll',
-            u'module_offset': u'0x20869',
-            u'offset': u'0x77370869',
-            u'trust': u'cfi'
+            'frame': 3,
+            'function': 'RealMsgWaitForMultipleObjectsEx',
+            'function_offset': '0xe1',
+            'module': 'user32.dll',
+            'module_offset': '0x20869',
+            'offset': '0x77370869',
+            'trust': 'cfi'
         },
         {
-            u'frame': 4,
-            u'function': u'MsgWaitForMultipleObjects',
-            u'function_offset': u'0x1e',
-            u'module': u'user32.dll',
-            u'module_offset': u'0x20b68',
-            u'offset': u'0x77370b68',
-            u'trust': u'cfi'
+            'frame': 4,
+            'function': 'MsgWaitForMultipleObjects',
+            'function_offset': '0x1e',
+            'module': 'user32.dll',
+            'module_offset': '0x20b68',
+            'offset': '0x77370b68',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F117835525________________________________________',
-            u'frame': 5,
-            u'function': u'F_1152915508__________________________________',
-            u'function_offset': u'0xbb',
-            u'line': 118,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x36a13b',
-            u'offset': u'0x5e3aa13b',
-            u'trust': u'cfi'
+            'file': 'F117835525________________________________________',
+            'frame': 5,
+            'function': 'F_1152915508__________________________________',
+            'function_offset': '0xbb',
+            'line': 118,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x36a13b',
+            'offset': '0x5e3aa13b',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 6,
-            u'function': u'F2166389______________________________________',
-            u'function_offset': u'0xe5',
-            u'line': 552,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35faf5',
-            u'offset': u'0x5e39faf5',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 6,
+            'function': 'F2166389______________________________________',
+            'function_offset': '0xe5',
+            'line': 552,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35faf5',
+            'offset': '0x5e39faf5',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 7,
-            u'function': u'F_917831355___________________________________',
-            u'function_offset': u'0x29b',
-            u'line': 488,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x360a7b',
-            u'offset': u'0x5e3a0a7b',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 7,
+            'function': 'F_917831355___________________________________',
+            'function_offset': '0x29b',
+            'line': 488,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x360a7b',
+            'offset': '0x5e3a0a7b',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 8,
-            u'function': u'F1315696776________________________________',
-            u'function_offset': u'0xd',
-            u'line': 439,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35e2fd',
-            u'offset': u'0x5e39e2fd',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 8,
+            'function': 'F1315696776________________________________',
+            'function_offset': '0xd',
+            'line': 439,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35e2fd',
+            'offset': '0x5e39e2fd',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_766591945_______________________________________',
-            u'frame': 9,
-            u'function': u'F_1428703866________________________________',
-            u'function_offset': u'0xc1',
-            u'line': 203,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35bf21',
-            u'offset': u'0x5e39bf21',
-            u'trust': u'cfi'
+            'file': 'F_766591945_______________________________________',
+            'frame': 9,
+            'function': 'F_1428703866________________________________',
+            'function_offset': '0xc1',
+            'line': 203,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35bf21',
+            'offset': '0x5e39bf21',
+            'trust': 'cfi'
         }
     ],
-    u'threads_index': 0,
-    u'total_frames': 32
+    'threads_index': 0,
+    'frame_count': 32
 }
 
 frames_from_json_dump_with_templates = {
-    u'frames': [
+    'frames': [
         {
-            u'frame': 0,
-            u'function': u'NtWaitForMultipleObjects',
-            u'function_offset': u'0x15',
-            u'module': u'ntdll.dll',
-            u'module_offset': u'0x2015d',
-            u'offset': u'0x77ad015d',
-            u'registers': {
-                u'eax': u'0x00000040',
-                u'ebp': u'0x0025e968',
-                u'ebx': u'0x0025e91c',
-                u'ecx': u'0x00000000',
-                u'edi': u'0x00000000',
-                u'edx': u'0x00000000',
-                u'efl': u'0x00200246',
-                u'eip': u'0x77ad015d',
-                u'esi': u'0x00000004',
-                u'esp': u'0x0025e8cc'
+            'frame': 0,
+            'function': 'NtWaitForMultipleObjects',
+            'function_offset': '0x15',
+            'module': 'ntdll.dll',
+            'module_offset': '0x2015d',
+            'offset': '0x77ad015d',
+            'registers': {
+                'eax': '0x00000040',
+                'ebp': '0x0025e968',
+                'ebx': '0x0025e91c',
+                'ecx': '0x00000000',
+                'edi': '0x00000000',
+                'edx': '0x00000000',
+                'efl': '0x00200246',
+                'eip': '0x77ad015d',
+                'esi': '0x00000004',
+                'esp': '0x0025e8cc'
             },
-            u'trust': u'context'
+            'trust': 'context'
         },
         {
-            u'frame': 1,
-            u'function': u'Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>',
-            u'function_offset': u'0xff',
-            u'module': u'KERNELBASE.dll',
-            u'module_offset': u'0x115f6',
-            u'offset': u'0x775e15f6',
-            u'trust': u'cfi'
+            'frame': 1,
+            'function': 'Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>',
+            'function_offset': '0xff',
+            'module': 'KERNELBASE.dll',
+            'module_offset': '0x115f6',
+            'offset': '0x775e15f6',
+            'trust': 'cfi'
         },
         {
-            u'frame': 2,
-            u'function': u'WaitForMultipleObjectsExImplementation',
-            u'function_offset': u'0x8d',
-            u'module': u'kernel32.dll',
-            u'module_offset': u'0x119f7',
-            u'offset': u'0x766119f7',
-            u'trust': u'cfi'
+            'frame': 2,
+            'function': 'WaitForMultipleObjectsExImplementation',
+            'function_offset': '0x8d',
+            'module': 'kernel32.dll',
+            'module_offset': '0x119f7',
+            'offset': '0x766119f7',
+            'trust': 'cfi'
         },
         {
-            u'frame': 3,
-            u'function': u'RealMsgWaitForMultipleObjectsEx(void **fakeargs)',
-            u'function_offset': u'0xe1',
-            u'module': u'user32.dll',
-            u'module_offset': u'0x20869',
-            u'offset': u'0x77370869',
-            u'trust': u'cfi'
+            'frame': 3,
+            'function': 'RealMsgWaitForMultipleObjectsEx(void **fakeargs)',
+            'function_offset': '0xe1',
+            'module': 'user32.dll',
+            'module_offset': '0x20869',
+            'offset': '0x77370869',
+            'trust': 'cfi'
         },
         {
-            u'frame': 4,
-            u'function': u'MsgWaitForMultipleObjects',
-            u'function_offset': u'0x1e',
-            u'module': u'user32.dll',
-            u'module_offset': u'0x20b68',
-            u'offset': u'0x77370b68',
-            u'trust': u'cfi'
+            'frame': 4,
+            'function': 'MsgWaitForMultipleObjects',
+            'function_offset': '0x1e',
+            'module': 'user32.dll',
+            'module_offset': '0x20b68',
+            'offset': '0x77370b68',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F117835525________________________________________',
-            u'frame': 5,
-            u'function': u'F_1152915508__________________________________',
-            u'function_offset': u'0xbb',
-            u'line': 118,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x36a13b',
-            u'offset': u'0x5e3aa13b',
-            u'trust': u'cfi'
+            'file': 'F117835525________________________________________',
+            'frame': 5,
+            'function': 'F_1152915508__________________________________',
+            'function_offset': '0xbb',
+            'line': 118,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x36a13b',
+            'offset': '0x5e3aa13b',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 6,
-            u'function': u'F2166389______________________________________',
-            u'function_offset': u'0xe5',
-            u'line': 552,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35faf5',
-            u'offset': u'0x5e39faf5',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 6,
+            'function': 'F2166389______________________________________',
+            'function_offset': '0xe5',
+            'line': 552,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35faf5',
+            'offset': '0x5e39faf5',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 7,
-            u'function': u'F_917831355___________________________________',
-            u'function_offset': u'0x29b',
-            u'line': 488,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x360a7b',
-            u'offset': u'0x5e3a0a7b',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 7,
+            'function': 'F_917831355___________________________________',
+            'function_offset': '0x29b',
+            'line': 488,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x360a7b',
+            'offset': '0x5e3a0a7b',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 8,
-            u'function': u'F1315696776________________________________',
-            u'function_offset': u'0xd',
-            u'line': 439,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35e2fd',
-            u'offset': u'0x5e39e2fd',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 8,
+            'function': 'F1315696776________________________________',
+            'function_offset': '0xd',
+            'line': 439,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35e2fd',
+            'offset': '0x5e39e2fd',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_766591945_______________________________________',
-            u'frame': 9,
-            u'function': u'F_1428703866________________________________',
-            u'function_offset': u'0xc1',
-            u'line': 203,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35bf21',
-            u'offset': u'0x5e39bf21',
-            u'trust': u'cfi'
+            'file': 'F_766591945_______________________________________',
+            'frame': 9,
+            'function': 'F_1428703866________________________________',
+            'function_offset': '0xc1',
+            'line': 203,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35bf21',
+            'offset': '0x5e39bf21',
+            'trust': 'cfi'
         }
     ],
-    u'threads_index': 0,
-    u'total_frames': 32
+    'threads_index': 0,
+    'total_frames': 32
 }
 
 frames_from_json_dump_with_templates_and_special_case = {
-    u'frames': [
+    'frames': [
         {
-            u'frame': 0,
-            u'function': u'NtWaitForMultipleObjects',
-            u'function_offset': u'0x15',
-            u'module': u'ntdll.dll',
-            u'module_offset': u'0x2015d',
-            u'offset': u'0x77ad015d',
-            u'registers': {
-                u'eax': u'0x00000040',
-                u'ebp': u'0x0025e968',
-                u'ebx': u'0x0025e91c',
-                u'ecx': u'0x00000000',
-                u'edi': u'0x00000000',
-                u'edx': u'0x00000000',
-                u'efl': u'0x00200246',
-                u'eip': u'0x77ad015d',
-                u'esi': u'0x00000004',
-                u'esp': u'0x0025e8cc'
+            'frame': 0,
+            'function': 'NtWaitForMultipleObjects',
+            'function_offset': '0x15',
+            'module': 'ntdll.dll',
+            'module_offset': '0x2015d',
+            'offset': '0x77ad015d',
+            'registers': {
+                'eax': '0x00000040',
+                'ebp': '0x0025e968',
+                'ebx': '0x0025e91c',
+                'ecx': '0x00000000',
+                'edi': '0x00000000',
+                'edx': '0x00000000',
+                'efl': '0x00200246',
+                'eip': '0x77ad015d',
+                'esi': '0x00000004',
+                'esp': '0x0025e8cc'
             },
-            u'trust': u'context'
+            'trust': 'context'
         },
         {
-            u'frame': 1,
-            u'function': u'<name omitted>',
-            u'function_offset': u'0xff',
-            u'module': u'KERNELBASE.dll',
-            u'module_offset': u'0x115f6',
-            u'offset': u'0x775e15f6',
-            u'trust': u'cfi'
+            'frame': 1,
+            'function': '<name omitted>',
+            'function_offset': '0xff',
+            'module': 'KERNELBASE.dll',
+            'module_offset': '0x115f6',
+            'offset': '0x775e15f6',
+            'trust': 'cfi'
         },
         {
-            u'frame': 2,
-            u'function': u'IPC::ParamTraits<mozilla::net::NetAddr>::Write',
-            u'function_offset': u'0x8d',
-            u'module': u'kernel32.dll',
-            u'module_offset': u'0x119f7',
-            u'offset': u'0x766119f7',
-            u'trust': u'cfi'
+            'frame': 2,
+            'function': 'IPC::ParamTraits<mozilla::net::NetAddr>::Write',
+            'function_offset': '0x8d',
+            'module': 'kernel32.dll',
+            'module_offset': '0x119f7',
+            'offset': '0x766119f7',
+            'trust': 'cfi'
         },
         {
-            u'frame': 3,
-            u'function': u'RealMsgWaitForMultipleObjectsEx(void **fakeargs)',
-            u'function_offset': u'0xe1',
-            u'module': u'user32.dll',
-            u'module_offset': u'0x20869',
-            u'offset': u'0x77370869',
-            u'trust': u'cfi'
+            'frame': 3,
+            'function': 'RealMsgWaitForMultipleObjectsEx(void **fakeargs)',
+            'function_offset': '0xe1',
+            'module': 'user32.dll',
+            'module_offset': '0x20869',
+            'offset': '0x77370869',
+            'trust': 'cfi'
         },
         {
-            u'frame': 4,
-            u'function': u'MsgWaitForMultipleObjects',
-            u'function_offset': u'0x1e',
-            u'module': u'user32.dll',
-            u'module_offset': u'0x20b68',
-            u'offset': u'0x77370b68',
-            u'trust': u'cfi'
+            'frame': 4,
+            'function': 'MsgWaitForMultipleObjects',
+            'function_offset': '0x1e',
+            'module': 'user32.dll',
+            'module_offset': '0x20b68',
+            'offset': '0x77370b68',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F117835525________________________________________',
-            u'frame': 5,
-            u'function': u'F_1152915508__________________________________',
-            u'function_offset': u'0xbb',
-            u'line': 118,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x36a13b',
-            u'offset': u'0x5e3aa13b',
-            u'trust': u'cfi'
+            'file': 'F117835525________________________________________',
+            'frame': 5,
+            'function': 'F_1152915508__________________________________',
+            'function_offset': '0xbb',
+            'line': 118,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x36a13b',
+            'offset': '0x5e3aa13b',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 6,
-            u'function': u'F2166389______________________________________',
-            u'function_offset': u'0xe5',
-            u'line': 552,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35faf5',
-            u'offset': u'0x5e39faf5',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 6,
+            'function': 'F2166389______________________________________',
+            'function_offset': '0xe5',
+            'line': 552,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35faf5',
+            'offset': '0x5e39faf5',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 7,
-            u'function': u'F_917831355___________________________________',
-            u'function_offset': u'0x29b',
-            u'line': 488,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x360a7b',
-            u'offset': u'0x5e3a0a7b',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 7,
+            'function': 'F_917831355___________________________________',
+            'function_offset': '0x29b',
+            'line': 488,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x360a7b',
+            'offset': '0x5e3a0a7b',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_851861807_______________________________________',
-            u'frame': 8,
-            u'function': u'F1315696776________________________________',
-            u'function_offset': u'0xd',
-            u'line': 439,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35e2fd',
-            u'offset': u'0x5e39e2fd',
-            u'trust': u'cfi'
+            'file': 'F_851861807_______________________________________',
+            'frame': 8,
+            'function': 'F1315696776________________________________',
+            'function_offset': '0xd',
+            'line': 439,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35e2fd',
+            'offset': '0x5e39e2fd',
+            'trust': 'cfi'
         },
         {
-            u'file': u'F_766591945_______________________________________',
-            u'frame': 9,
-            u'function': u'F_1428703866________________________________',
-            u'function_offset': u'0xc1',
-            u'line': 203,
-            u'module': u'NPSWF32_14_0_0_125.dll',
-            u'module_offset': u'0x35bf21',
-            u'offset': u'0x5e39bf21',
-            u'trust': u'cfi'
+            'file': 'F_766591945_______________________________________',
+            'frame': 9,
+            'function': 'F_1428703866________________________________',
+            'function_offset': '0xc1',
+            'line': 203,
+            'module': 'NPSWF32_14_0_0_125.dll',
+            'module_offset': '0x35bf21',
+            'offset': '0x5e39bf21',
+            'trust': 'cfi'
         }
     ],
-    u'threads_index': 0,
-    u'total_frames': 32
-}
-
-
-sample_json_dump = {
-    u'json_dump': {
-        u'system_info': {
-            'os': 'Windows NT'
-        },
-        u'crash_info': {
-            u'address': u'0x77ad015d',
-            u'crashing_thread': 0,
-            u'type': u'EXCEPTION_BREAKPOINT'
-        },
-        u'crashing_thread': frames_from_json_dump,
-        u'threads': [frames_from_json_dump]
-
-    }
-}
-
-sample_json_dump_with_templates = {
-    u'json_dump': {
-        u'system_info': {
-            'os': 'Windows NT'
-        },
-        u'crash_info': {
-            u'address': u'0x77ad015d',
-            u'crashing_thread': 0,
-            u'type': u'EXCEPTION_BREAKPOINT'
-        },
-        u'crashing_thread': frames_from_json_dump_with_templates,
-        u'threads': [frames_from_json_dump_with_templates]
-
-    }
-}
-
-sample_json_dump_with_templates_and_special_case = {
-    u'json_dump': {
-        u'system_info': {
-            'os': 'Windows NT'
-        },
-        u'crash_info': {
-            u'address': u'0x77ad015d',
-            u'crashing_thread': 0,
-            u'type': u'EXCEPTION_BREAKPOINT'
-        },
-        u'crashing_thread':
-            frames_from_json_dump_with_templates_and_special_case,
-        u'threads': [frames_from_json_dump_with_templates_and_special_case]
-
-    }
+    'threads_index': 0,
+    'total_frames': 32
 }
 
 
 class TestSignatureGeneration:
 
     def test_create_frame_list(self):
-        sgr = SignatureGenerationRule()
+        sgr = rules.SignatureGenerationRule()
         frame_signatures_list = sgr._create_frame_list(frames_from_json_dump)
         expected = [
-            u'NtWaitForMultipleObjects',
-            u'WaitForMultipleObjectsEx',
-            u'WaitForMultipleObjectsExImplementation',
-            u'RealMsgWaitForMultipleObjectsEx',
-            u'MsgWaitForMultipleObjects',
-            u'F_1152915508__________________________________',
-            u'F2166389______________________________________',
-            u'F_917831355___________________________________',
-            u'F1315696776________________________________',
-            u'F_1428703866________________________________'
+            'NtWaitForMultipleObjects',
+            'WaitForMultipleObjectsEx',
+            'WaitForMultipleObjectsExImplementation',
+            'RealMsgWaitForMultipleObjectsEx',
+            'MsgWaitForMultipleObjects',
+            'F_1152915508__________________________________',
+            'F2166389______________________________________',
+            'F_917831355___________________________________',
+            'F1315696776________________________________',
+            'F_1428703866________________________________'
         ]
         assert frame_signatures_list == expected
         assert 'normalized' in frames_from_json_dump['frames'][0]
         assert frames_from_json_dump['frames'][0]['normalized'] == expected[0]
 
-    def test_action_1(self):
-        sgr = SignatureGenerationRule()
+    def test_java_stack_trace(self):
+        sgr = rules.SignatureGenerationRule()
 
-        raw_crash = {
-            'JavaStackTrace': (
+        crash_data = {
+            'java_stack_trace': (
                 '   SomeJavaException: %s  \nat org.mozilla.lars.myInvention(larsFile.java)' %
                 ('t' * 1000)
             )
         }
 
-        processed_crash = {}
-        notes = []
+        signature = {
+            'signature': '',
+            'notes': []
+        }
 
         # the call to be tested
-        assert sgr.action(raw_crash, processed_crash, notes) is True
+        assert sgr.action(crash_data, signature) is True
 
         expected = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
-        assert processed_crash['signature'] == expected
-        assert 'proto_signature' not in processed_crash
+        assert signature['signature'] == expected
+        assert 'proto_signature' not in signature
         expected = ['JavaSignatureTool: dropped Java exception description due to length']
-        assert notes == expected
+        assert signature['notes'] == expected
 
-    def test_action_2(self):
-        sgr = SignatureGenerationRule()
+    def test_c_stack_trace(self):
+        sgr = rules.SignatureGenerationRule()
 
-        raw_crash = {}
-        processed_crash = dict(sample_json_dump)
-        notes = []
+        crash_data = {
+            'os': 'Windows NT',
+            'threads': [frames_from_json_dump]
+        }
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
         # the call to be tested
-        assert sgr.action(raw_crash, processed_crash, notes) is True
+        assert sgr.action(crash_data, result) is True
 
         expected = 'MsgWaitForMultipleObjects | F_1152915508__________________________________'
-        assert processed_crash['signature'] == expected
+        assert result['signature'] == expected
+
         expected = (
             'NtWaitForMultipleObjects | WaitForMultipleObjectsEx | '
             'WaitForMultipleObjectsExImplementation | '
@@ -952,20 +899,26 @@ class TestSignatureGeneration:
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        assert processed_crash['proto_signature'] == expected
-        assert notes == []
+        assert result['proto_signature'] == expected
+        assert result['notes'] == []
 
     def test_action_2_with_templates(self):
-        sgr = SignatureGenerationRule()
+        sgr = rules.SignatureGenerationRule()
 
-        raw_crash = {}
-        processed_crash = dict(sample_json_dump_with_templates)
-        notes = []
+        crash_data = {
+            'os': 'Windows NT',
+            'crashing_thread': 0,
+            'threads': [frames_from_json_dump_with_templates]
+        }
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
         # the call to be tested
-        assert sgr.action(raw_crash, processed_crash, notes) is True
+        assert sgr.action(crash_data, result) is True
 
-        assert processed_crash['signature'] == 'Alpha<T>::Echo<T>'
+        assert result['signature'] == 'Alpha<T>::Echo<T>'
         expected = (
             'NtWaitForMultipleObjects | Alpha<T>::Echo<T> | '
             'WaitForMultipleObjectsExImplementation | '
@@ -977,21 +930,27 @@ class TestSignatureGeneration:
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        assert processed_crash['proto_signature'] == expected
-        assert notes == []
+        assert result['proto_signature'] == expected
+        assert result['notes'] == []
 
     def test_action_2_with_templates_and_special_case(self):
-        sgr = SignatureGenerationRule()
+        sgr = rules.SignatureGenerationRule()
 
-        raw_crash = {}
-        processed_crash = dict(sample_json_dump_with_templates_and_special_case)
-        notes = []
+        crash_data = {
+            'os': 'Windows NT',
+            'crashing_thread': 0,
+            'threads': [frames_from_json_dump_with_templates_and_special_case]
+        }
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
         # the call to be tested
-        assert sgr.action(raw_crash, processed_crash, notes) is True
+        assert sgr.action(crash_data, result) is True
 
         expected = '<name omitted> | IPC::ParamTraits<mozilla::net::NetAddr>::Write'
-        assert processed_crash['signature'] == expected
+        assert result['signature'] == expected
         expected = (
             'NtWaitForMultipleObjects | '
             '<name omitted> | '
@@ -1004,238 +963,223 @@ class TestSignatureGeneration:
             'F1315696776________________________________ | '
             'F_1428703866________________________________'
         )
-        assert processed_crash['proto_signature'] == expected
-        assert notes == []
+        assert result['proto_signature'] == expected
+        assert result['notes'] == []
 
     def test_action_3(self):
-        sgr = SignatureGenerationRule()
+        sgr = rules.SignatureGenerationRule()
 
-        raw_crash = {}
-        processed_crash = {
-            'json_dump': {
-                'crashing_thread': {
-                    'frames': []
-                }
-            }
+        crash_data = {
+            'thread': [[]],
         }
-        processed_crash['frames'] = []
-        notes = []
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
         # the call to be tested
-        assert sgr.action(raw_crash, processed_crash, notes) is True
+        assert sgr.action(crash_data, result) is True
 
-        assert processed_crash['signature'] == 'EMPTY: no crashing thread identified'
-        assert processed_crash['proto_signature'] == ''
+        assert result['signature'] == 'EMPTY: no crashing thread identified'
+        assert 'proto_signature' not in result
         expected = [
             'CSignatureTool: No signature could be created because we do '
             'not know which thread crashed'
         ]
-        assert notes == expected
+        assert result['notes'] == expected
 
     def test_lower_case_modules(self):
-        sgr = SignatureGenerationRule()
+        sgr = rules.SignatureGenerationRule()
 
-        raw_crash = {}
-        processed_crash = copy.deepcopy(sample_json_dump)
-        processed_crash['json_dump']['threads'] = [
-            {
+        crash_data = {
+            'os': 'Windows NT',
+            'threads': [{
                 "frames": [
                     {
-                        u'offset': u'0x5e39bf21',
-                        u'trust': u'cfi'
+                        'offset': '0x5e39bf21',
+                        'trust': 'cfi'
                     },
                     {
-                        u'offset': u'0x5e39bf21',
-                        u'trust': u'cfi'
+                        'offset': '0x5e39bf21',
+                        'trust': 'cfi'
                     },
                     {
-                        u'offset': u'0x5e39bf21',
-                        u'trust': u'cfi'
+                        'offset': '0x5e39bf21',
+                        'trust': 'cfi'
                     },
                     {
-                        u'frame': 3,
-                        u'module': u'USER2.dll',
-                        u'module_offset': u'0x20869',
-                        u'offset': u'0x77370869',
-                        u'trust': u'cfi'
+                        'frame': 3,
+                        'module': 'USER2.dll',
+                        'module_offset': '0x20869',
+                        'offset': '0x77370869',
+                        'trust': 'cfi'
                     },
                 ]
-            },
-        ]
-        notes = []
+            }]
+        }
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
         # the call to be tested
-        assert sgr.action(raw_crash, processed_crash, notes) is True
-
-        assert processed_crash['signature'] == 'user2.dll@0x20869'
+        assert sgr.action(crash_data, result) is True
+        assert result['signature'] == 'user2.dll@0x20869'
         expected = '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
-        assert processed_crash['proto_signature'] == expected
-        assert notes == []
+        assert result['proto_signature'] == expected
+        assert result['notes'] == []
 
 
 class TestOOMSignature:
-
     def test_predicate_no_match(self):
-        processed_crash = {
-            'signature': 'hello'
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        predicate_result = OOMSignature().predicate({}, processed_crash)
-        assert predicate_result is False
+        rule = rules.OOMSignature()
+        assert rule.predicate({}, result) is False
 
     def test_predicate(self):
-        raw_crash = {
-            'OOMAllocationSize': 17
+        crash_data = {
+            'oom_allocation_size': 17
         }
-        processed_crash = {
-            'signature': 'hello'
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        rule = OOMSignature()
-        predicate_result = rule.predicate(raw_crash, processed_crash)
-        assert predicate_result is True
+        rule = rules.OOMSignature()
+        assert rule.predicate(crash_data, result) is True
 
     def test_predicate_signature_fragment_1(self):
-        processed_crash = {
-            'signature': 'this | is | a | NS_ABORT_OOM | signature'
+        crash_data = {}
+        result = {
+            'signature': 'this | is | a | NS_ABORT_OOM | signature',
+            'notes': []
         }
-        rule = OOMSignature()
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is True
+        rule = rules.OOMSignature()
+        assert rule.predicate(crash_data, result) is True
 
     def test_predicate_signature_fragment_2(self):
-        processed_crash = {
-            'signature': 'mozalloc_handle_oom | this | is | bad'
+        crash_data = {}
+        result = {
+            'signature': 'mozalloc_handle_oom | this | is | bad',
+            'notes': []
         }
-        rule = OOMSignature()
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is True
+        rule = rules.OOMSignature()
+        assert rule.predicate(crash_data, result) is True
 
     def test_predicate_signature_fragment_3(self):
-        processed_crash = {
-            'signature': 'CrashAtUnhandlableOOM'
+        crash_data = {}
+        result = {
+            'signature': 'CrashAtUnhandlableOOM',
+            'notes': []
         }
-        rule = OOMSignature()
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is True
+        rule = rules.OOMSignature()
+        assert rule.predicate(crash_data, result) is True
 
     def test_action_success(self):
-        processed_crash = {
-            'signature': 'hello'
+        crash_data = {}
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        rule = OOMSignature()
-        action_result = rule.action({}, processed_crash, [])
+        rule = rules.OOMSignature()
+        action_result = rule.action(crash_data, result)
 
         assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'OOM | unknown | hello'
+        assert result['signature'] == 'OOM | unknown | hello'
 
     def test_action_small(self):
-        processed_crash = {
-            'signature': 'hello'
+        crash_data = {
+            'oom_allocation_size': 17
         }
-        raw_crash = {
-            'OOMAllocationSize': 17
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        rule = OOMSignature()
-        action_result = rule.action(raw_crash, processed_crash, [])
+        rule = rules.OOMSignature()
+        action_result = rule.action(crash_data, result)
 
         assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'OOM | small'
+        assert result['signature'] == 'OOM | small'
 
     def test_action_large(self):
-        processed_crash = {
-            'signature': 'hello'
+        crash_data = {
+            'oom_allocation_size': 17000000
         }
-        raw_crash = {
-            'OOMAllocationSize': 17000000
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
 
-        rule = OOMSignature()
-        action_result = rule.action(raw_crash, processed_crash, [])
+        rule = rules.OOMSignature()
+        action_result = rule.action(crash_data, result)
 
         assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'OOM | large | hello'
-
-    def test_action_invalid_value(self):
-        processed_crash = {
-            'signature': 'hello'
-        }
-        raw_crash = {
-            'OOMAllocationSize': 'BOWWOWOW'
-        }
-
-        rule = OOMSignature()
-        action_result = rule.action(raw_crash, processed_crash, [])
-
-        assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'OOM | unknown | hello'
+        assert result['signature'] == 'OOM | large | hello'
 
 
 class TestAbortSignature:
 
     def test_predicate(self):
-        rule = AbortSignature()
-        raw_crash = {
-            'AbortMessage': 'something'
+        rule = rules.AbortSignature()
+        crash_data = {
+            'abort_message': 'something'
         }
-        processed_crash = {
-            'signature': 'hello'
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        predicate_result = rule.predicate(raw_crash, processed_crash)
-        assert predicate_result is True
+        assert rule.predicate(crash_data, result) is True
 
     def test_predicate_no_match(self):
-        rule = AbortSignature()
+        rule = rules.AbortSignature()
         # No AbortMessage
-        raw_crash = {}
-        processed_crash = {
+        crash_data = {}
+        result = {
             'signature': 'hello'
         }
-        predicate_result = rule.predicate(raw_crash, processed_crash)
-        assert predicate_result is False
+        assert rule.predicate(crash_data, result) is False
 
     def test_predicate_empty_message(self):
-        rule = AbortSignature()
-        raw_crash = {
-            'AbortMessage': ''
+        rule = rules.AbortSignature()
+        crash_data = {
+            'abort_message': ''
         }
-        processed_crash = {
-            'signature': 'hello'
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        predicate_result = rule.predicate(raw_crash, processed_crash)
-        assert predicate_result is False
+        assert rule.predicate(crash_data, result) is False
 
     def test_action_success(self):
-        rule = AbortSignature()
-        raw_crash = {
-            'AbortMessage': 'unknown'
+        rule = rules.AbortSignature()
+        crash_data = {
+            'abort_message': 'unknown'
         }
-        processed_crash = {
-            'signature': 'hello'
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        action_result = rule.action(raw_crash, processed_crash, [])
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'Abort | unknown | hello'
+        assert result['signature'] == 'Abort | unknown | hello'
 
     def test_action_success_long_message(self):
-        rule = AbortSignature()
+        rule = rules.AbortSignature()
 
-        raw_crash = {
-            'AbortMessage': 'a' * 81
+        crash_data = {
+            'abort_message': 'a' * 81
         }
-        processed_crash = {
-            'signature': 'hello'
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
 
-        action_result = rule.action(raw_crash, processed_crash, [])
+        action_result = rule.action(crash_data, result)
 
         assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        expected_sig = 'Abort | {}... | hello'.format('a' * 77)
-        assert processed_crash['signature'] == expected_sig
+        assert result['signature'] == 'Abort | {}... | hello'.format('a' * 77)
 
     @pytest.mark.parametrize('abort_msg, expected', [
         # Test with just the "ABOR" thing at the start
@@ -1271,61 +1215,61 @@ class TestAbortSignature:
 
         # Test with "unable to find a usable font" case
         (
-            u'unable to find a usable font (\u5fae\u8f6f\u96c5\u9ed1)',
+            'unable to find a usable font (\u5fae\u8f6f\u96c5\u9ed1)',
             'Abort | unable to find a usable font | hello'
         ),
     ])
     def test_action_success_remove_unwanted_parts(self, abort_msg, expected):
-        rule = AbortSignature()
+        rule = rules.AbortSignature()
 
-        raw_crash = {
-            'AbortMessage': abort_msg
+        crash_data = {
+            'abort_message': abort_msg
         }
-        processed_crash = {
+        result = {
             'signature': 'hello'
         }
 
-        action_result = rule.action(raw_crash, processed_crash, [])
+        action_result = rule.action(crash_data, result)
 
         assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == expected
+        assert result['signature'] == expected
 
     def test_action_non_ascii_abort_message(self):
         # Non-ascii characters are removed from abort messages
-        rule = AbortSignature()
-        raw_crash = {
-            'AbortMessage': u'\u018a unknown'
+        rule = rules.AbortSignature()
+        crash_data = {
+            'abort_message': '\u018a unknown'
         }
-        processed_crash = {
-            'signature': 'hello'
+        result = {
+            'signature': 'hello',
+            'notes': []
         }
-        action_result = rule.action(raw_crash, processed_crash, [])
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert processed_crash['original_signature'] == 'hello'
-        assert processed_crash['signature'] == 'Abort | unknown | hello'
+        assert result['signature'] == 'Abort | unknown | hello'
 
 
 class TestSigFixWhitespace:
 
     def test_predicate_no_match(self):
-        rule = SigFixWhitespace()
+        rule = rules.SigFixWhitespace()
 
-        processed_crash = {}
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate({}, result) is True
 
-        processed_crash['signature'] = 42
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
+        result['signature'] = 42
+        assert rule.predicate({}, result) is False
 
     def test_predicate(self):
-        rule = SigFixWhitespace()
-        processed_crash = {
-            'signature': 'fooo::baar'
+        rule = rules.SigFixWhitespace()
+        result = {
+            'signature': 'fooo::baar',
+            'notes': []
         }
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is True
+        assert rule.predicate({}, result) is True
 
     @pytest.mark.parametrize('signature, expected', [
         # Leading and trailing whitespace are removed
@@ -1342,316 +1286,341 @@ class TestSigFixWhitespace:
         ('all  |  good', 'all | good'),
     ])
     def test_whitespace_fixing(self, signature, expected):
-        rule = SigFixWhitespace()
-        processed_crash = {
-            'signature': signature
+        rule = rules.SigFixWhitespace()
+        result = {
+            'signature': signature,
+            'notes': []
         }
-        action_result = rule.action({}, processed_crash, [])
+        action_result = rule.action({}, result)
         assert action_result is True
-        assert processed_crash['signature'] == expected
+        assert result['signature'] == expected
 
 
 class TestSigTruncate:
 
     def test_predicate_no_match(self):
-        rule = SigTruncate()
-        processed_crash = {
-            'signature': '0' * 100
+        rule = rules.SigTruncate()
+        result = {
+            'signature': '0' * 100,
+            'notes': []
         }
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
+        assert rule.predicate({}, result) is False
 
     def test_predicate(self):
-        rule = SigTruncate()
-        processed_crash = {
-            'signature': '9' * 256
+        rule = rules.SigTruncate()
+        result = {
+            'signature': '9' * 256,
+            'notes': []
         }
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is True
+        assert rule.predicate({}, result) is True
 
     def test_action_success(self):
-        rule = SigTruncate()
-        processed_crash = {
-            'signature': '9' * 256
+        rule = rules.SigTruncate()
+        result = {
+            'signature': '9' * 256,
+            'notes': []
         }
-        action_result = rule.action({}, processed_crash, [])
+        action_result = rule.action({}, result)
         assert action_result is True
-        assert len(processed_crash['signature']) == 255
-        assert processed_crash['signature'].endswith('9...')
+        assert len(result['signature']) == 255
+        assert result['signature'].endswith('9...')
 
 
 class TestStackwalkerErrorSignatureRule:
 
     def test_predicate_no_match_signature(self):
-        rule = StackwalkerErrorSignatureRule()
-        processed_crash = {
-            'signature': '0' * 100
+        rule = rules.StackwalkerErrorSignatureRule()
+        result = {
+            'signature': '0' * 100,
+            'notes': []
         }
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
+        assert rule.predicate({}, result) is False
 
     def test_predicate_no_match_missing_mdsw_status_string(self):
-        rule = StackwalkerErrorSignatureRule()
-        processed_crash = {
-            'signature': 'EMPTY: like my soul'
+        rule = rules.StackwalkerErrorSignatureRule()
+        result = {
+            'signature': 'EMPTY: like my soul',
+            'notes': []
         }
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
+        assert rule.predicate({}, result) is False
 
     def test_predicate(self):
-        rule = StackwalkerErrorSignatureRule()
-        processed_crash = {
-            'signature': 'EMPTY: like my soul',
+        rule = rules.StackwalkerErrorSignatureRule()
+        crash_data = {
             'mdsw_status_string': 'catastrophic stackwalker failure'
         }
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is True
+        result = {
+            'signature': 'EMPTY: like my soul',
+            'notes': []
+        }
+        assert rule.predicate(crash_data, result) is True
 
     def test_action_success(self):
-        rule = StackwalkerErrorSignatureRule()
-        processed_crash = {
-            'signature': 'EMPTY: like my soul',
+        rule = rules.StackwalkerErrorSignatureRule()
+        crash_data = {
             'mdsw_status_string': 'catastrophic stackwalker failure'
         }
-        action_result = rule.action({}, processed_crash, [])
+        result = {
+            'signature': 'EMPTY: like my soul',
+            'notes': []
+        }
+        action_result = rule.action(crash_data, result)
         assert action_result is True
         expected = 'EMPTY: like my soul; catastrophic stackwalker failure'
-        assert processed_crash['signature'] == expected
+        assert result['signature'] == expected
 
 
 class TestSignatureWatchDogRule:
 
     def test_instantiation(self):
-        srwd = SignatureRunWatchDog()
+        srwd = rules.SignatureRunWatchDog()
 
-        assert isinstance(srwd.c_signature_tool, CSignatureTool)
-        assert isinstance(srwd.java_signature_tool, JavaSignatureTool)
+        assert isinstance(srwd.c_signature_tool, rules.CSignatureTool)
+        assert isinstance(srwd.java_signature_tool, rules.JavaSignatureTool)
 
         assert srwd._get_crashing_thread({}) == 0
 
     def test_predicate(self):
-        srwd = SignatureRunWatchDog()
+        srwd = rules.SignatureRunWatchDog()
 
-        fake_processed_crash = {
+        result = {
             'signature': "I'm not real",
+            'notes': []
         }
-        assert srwd.predicate({}, fake_processed_crash) is False
+        assert srwd.predicate({}, result) is False
 
-        fake_processed_crash = {
+        result = {
             'signature': "mozilla::`anonymous namespace''::RunWatchdog(void*)",
+            'notes': []
         }
-        assert srwd.predicate({}, fake_processed_crash) is True
+        assert srwd.predicate({}, result) is True
 
-        fake_processed_crash = {
+        result = {
             'signature': "mozilla::(anonymous namespace)::RunWatchdog",
+            'notes': []
         }
-        assert srwd.predicate({}, fake_processed_crash) is True
+        assert srwd.predicate({}, result) is True
 
     def test_action(self):
-        sgr = SignatureRunWatchDog()
+        sgr = rules.SignatureRunWatchDog()
 
-        processed_crash = copy.deepcopy(sample_json_dump)
-        # Set a fake signature
-        processed_crash['signature'] = 'foo::bar'
-        notes = []
+        crash_data = {
+            'os': 'Windows NT',
+            'crashing_thread': 0,
+            'threads': [frames_from_json_dump]
+        }
+        result = {
+            'signature': 'foo::bar',
+            'notes': []
+        }
 
         # the call to be tested
-        assert sgr.action({}, processed_crash, notes) is True
+        assert sgr.action(crash_data, result) is True
 
         # Verify the signature has been re-generated based on thread 0.
         expected = (
             'shutdownhang | MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________'
         )
-        assert processed_crash['signature'] == expected
-        assert notes == []
+        assert result['signature'] == expected
+        assert result['notes'] == []
 
 
 class TestSignatureJitCategory:
 
     def test_predicate_no_match(self):
-        rule = SignatureJitCategory()
+        rule = rules.SignatureJitCategory()
 
-        processed_crash = {
-            'classifications': {}
+        crash_data = {}
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate(crash_data, result) is False
+
+        crash_data = {
+            'jit_category': ''
+        }
+        result = {
+            'signature': '',
+            'notes': []
         }
 
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
-
-        processed_crash['classifications']['jit'] = {}
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
-
-        processed_crash['classifications']['jit']['category'] = ''
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is False
+        assert rule.predicate(crash_data, result) is False
 
     def test_predicate(self):
-        rule = SignatureJitCategory()
+        rule = rules.SignatureJitCategory()
 
-        processed_crash = {
-            'classifications': {
-                'jit': {
-                    'category': 'JIT Crash'
-                }
-            }
+        crash_data = {
+            'jit_category': 'JIT Crash'
+        }
+        result = {
+            'signature': '',
+            'notes': []
         }
 
-        predicate_result = rule.predicate({}, processed_crash)
-        assert predicate_result is True
+        assert rule.predicate(crash_data, result) is True
 
     def test_action_success(self):
-        rule = SignatureJitCategory()
+        rule = rules.SignatureJitCategory()
 
-        processed_crash = {
-            'signature': 'foo::bar',
-            'classifications': {
-                'jit': {
-                    'category': 'JIT Crash'
-                }
-            }
+        crash_data = {
+            'jit_category': 'JIT Crash'
         }
-        notes = []
+        result = {
+            'signature': 'foo::bar',
+            'notes': []
+        }
 
-        action_result = rule.action({}, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert processed_crash['signature'] == 'jit | JIT Crash'
-        expected = ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
-        assert notes == expected
+        assert result['signature'] == 'jit | JIT Crash'
+        assert (
+            result['notes'] ==
+            ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
+        )
 
 
 class TestSignatureIPCChannelError:
 
     def test_predicate_no_match(self):
-        rule = SignatureIPCChannelError()
+        rule = rules.SignatureIPCChannelError()
 
-        raw_crash = {}
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is False
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
-        raw_crash['ipc_channel_error'] = ''
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is False
+        assert rule.predicate({}, result) is False
+
+        crash_data = {
+            'ipc_channel_error': ''
+        }
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate(crash_data, result) is False
 
     def test_predicate(self):
-        rule = SignatureIPCChannelError()
+        rule = rules.SignatureIPCChannelError()
 
-        raw_crash = {
+        crash_data = {
             'ipc_channel_error': 'foo, bar'
         }
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is True
+        assert rule.predicate(crash_data, result) is True
 
     def test_action_success(self):
-        rule = SignatureIPCChannelError()
+        rule = rules.SignatureIPCChannelError()
 
-        raw_crash = {
+        crash_data = {
             'ipc_channel_error': 'ipc' * 50
         }
-        processed_crash = {
-            'signature': 'foo::bar'
+        result = {
+            'signature': 'foo::bar',
+            'notes': []
         }
-        notes = []
 
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
         expected = 'IPCError-content | {}'.format(('ipc' * 50)[:100])
-        assert processed_crash['signature'] == expected
-        expected = ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
-        assert notes == expected
+        assert result['signature'] == expected
+        assert (
+            result['notes'] ==
+            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        )
 
         # Now test with a browser crash.
-        processed_crash['signature'] = 'foo::bar'
-        raw_crash['additional_minidumps'] = 'browser'
-        notes = []
-
-        action_result = rule.action(raw_crash, processed_crash, notes)
-        assert action_result is True
-
-        expected = 'IPCError-browser | {}'.format(('ipc' * 50)[:100])
-        assert processed_crash['signature'] == expected
-        expected = ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
-        assert notes == expected
-
-    def test_action_non_ascii(self):
-        rule = SignatureIPCChannelError()
-
-        raw_crash = {
-            'ipc_channel_error': u'\u5fae\u8f6f\u96c5\u9ed1'
+        crash_data['additional_minidumps'] = 'browser'
+        result = {
+            'signature': 'foo::bar',
+            'notes': []
         }
 
-        processed_crash = {
-            'signature': 'foo, bar'
-        }
-        notes = []
-
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
+
+        assert result['signature'] == 'IPCError-browser | {}'.format(('ipc' * 50)[:100])
+        assert (
+            result['notes'] ==
+            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        )
 
 
 class TestSignatureShutdownTimeout:
 
     def test_predicate_no_match(self):
-        rule = SignatureShutdownTimeout()
-        predicate_result = rule.predicate({}, {})
-        assert predicate_result is False
+        rule = rules.SignatureShutdownTimeout()
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate({}, result) is False
 
     def test_predicate(self):
-        rule = SignatureShutdownTimeout()
+        rule = rules.SignatureShutdownTimeout()
 
-        raw_crash = {
-            'AsyncShutdownTimeout': '{"foo": "bar"}'
+        crash_data = {
+            'async_shutdown_timeout': '{"foo": "bar"}'
         }
-
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is True
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate(crash_data, result) is True
 
     def test_action_missing_valueerror(self):
-        rule = SignatureShutdownTimeout()
+        rule = rules.SignatureShutdownTimeout()
 
-        raw_crash = {
-            'AsyncShutdownTimeout': '{{{{'
+        crash_data = {
+            'async_shutdown_timeout': '{{{{'
         }
-        processed_crash = {
-            'signature': 'foo'
+        result = {
+            'signature': 'foo',
+            'notes': []
         }
-        notes = []
 
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert processed_crash['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
+        assert result['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
 
-        assert 'Error parsing AsyncShutdownTimeout:' in notes[0]
-        assert 'Expected object or value' in notes[0]
-        assert notes[1] == 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert 'Error parsing AsyncShutdownTimeout:' in result['notes'][0]
+        assert 'Expected object or value' in result['notes'][0]
+        assert (
+            'Signature replaced with a Shutdown Timeout signature, was: "foo"' in result['notes'][1]
+        )
 
     def test_action_missing_keyerror(self):
-        rule = SignatureShutdownTimeout()
+        rule = rules.SignatureShutdownTimeout()
 
-        raw_crash = {
-            'AsyncShutdownTimeout': json.dumps({
-                'no': 'phase or condition'
-            })
+        crash_data = {
+            'async_shutdown_timeout': json.dumps({'no': 'phase or condition'})
         }
-        processed_crash = {
-            'signature': 'foo'
+        result = {
+            'signature': 'foo',
+            'notes': []
         }
-        notes = []
 
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert processed_crash['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
+        assert result['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
 
-        assert notes[0] == "Error parsing AsyncShutdownTimeout: 'phase'"
-        assert notes[1] == 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        assert result['notes'][0] == "Error parsing AsyncShutdownTimeout: 'phase'"
+        assert (
+            result['notes'][1] ==
+            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        )
 
     def test_action_success(self):
-        rule = SignatureShutdownTimeout()
+        rule = rules.SignatureShutdownTimeout()
 
-        raw_crash = {
-            'AsyncShutdownTimeout': json.dumps({
+        crash_data = {
+            'async_shutdown_timeout': json.dumps({
                 'phase': 'beginning',
                 'conditions': [
                     {'name': 'A'},
@@ -1659,129 +1628,148 @@ class TestSignatureShutdownTimeout:
                 ]
             })
         }
-        processed_crash = {
-            'signature': 'foo'
+        result = {
+            'signature': 'foo',
+            'notes': []
         }
-        notes = []
 
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-
-        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | A,B'
+        assert result['signature'] == 'AsyncShutdownTimeout | beginning | A,B'
         expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        assert notes[0] == expected
+        assert result['notes'][0] == expected
 
     def test_action_success_string_conditions(self):
-        rule = SignatureShutdownTimeout()
+        rule = rules.SignatureShutdownTimeout()
 
-        raw_crash = {
-            'AsyncShutdownTimeout': json.dumps({
+        crash_data = {
+            'async_shutdown_timeout': json.dumps({
                 'phase': 'beginning',
                 'conditions': ['A', 'B', 'C']
             })
         }
-        processed_crash = {
-            'signature': 'foo'
+        result = {
+            'signature': 'foo',
+            'notes': []
         }
-        notes = []
 
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-
-        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | A,B,C'
+        assert result['signature'] == 'AsyncShutdownTimeout | beginning | A,B,C'
         expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        assert notes[0] == expected
+        assert result['notes'][0] == expected
 
     def test_action_success_empty_conditions_key(self):
-        rule = SignatureShutdownTimeout()
+        rule = rules.SignatureShutdownTimeout()
 
-        raw_crash = {
-            'AsyncShutdownTimeout': json.dumps({
+        crash_data = {
+            'async_shutdown_timeout': json.dumps({
                 'phase': 'beginning',
                 'conditions': []
             })
         }
-        processed_crash = {
-            'signature': 'foo'
+        result = {
+            'signature': 'foo',
+            'notes': []
         }
-        notes = []
 
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-
-        assert processed_crash['signature'] == 'AsyncShutdownTimeout | beginning | (none)'
+        assert result['signature'] == 'AsyncShutdownTimeout | beginning | (none)'
         expected = 'Signature replaced with a Shutdown Timeout signature, was: "foo"'
-        assert notes[0] == expected
+        assert result['notes'][0] == expected
 
 
 class TestSignatureIPCMessageName:
 
-    def test_predicate_no_match(self):
-        rule = SignatureIPCMessageName()
+    def test_predicate_no_ipc_message_name(self):
+        rule = rules.SignatureIPCMessageName()
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate({}, result) is False
 
-        raw_crash = {}
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is False
-
-        raw_crash['IPCMessageName'] = ''
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is False
+    def test_predicate_empty_string(self):
+        rule = rules.SignatureIPCMessageName()
+        crash_data = {
+            'ipc_message_name': ''
+        }
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate(crash_data, result) is False
 
     def test_predicate(self):
-        rule = SignatureIPCMessageName()
-
-        raw_crash = {
-            'IPCMessageName': 'foo, bar'
+        rule = rules.SignatureIPCMessageName()
+        crash_data = {
+            'ipc_message_name': 'foo, bar'
         }
-        processed_crash = {
-            'signature': 'fooo::baar'
+        result = {
+            'signature': 'fooo::baar',
+            'notes': []
         }
-
-        predicate_result = rule.predicate(raw_crash, processed_crash)
-        assert predicate_result is True
+        assert rule.predicate(crash_data, result) is True
 
     def test_action_success(self):
-        rule = SignatureIPCMessageName()
-        raw_crash = {
-            'IPCMessageName': 'foo, bar'
+        rule = rules.SignatureIPCMessageName()
+        crash_data = {
+            'ipc_message_name': 'foo, bar'
         }
-        processed_crash = {
-            'signature': 'fooo::baar'
+        result = {
+            'signature': 'fooo::baar',
+            'notes': []
         }
-        action_result = rule.action(raw_crash, processed_crash, [])
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert processed_crash['signature'] == 'fooo::baar | IPC_Message_Name=foo, bar'
+        assert result['signature'] == 'fooo::baar | IPC_Message_Name=foo, bar'
 
 
 class TestSignatureParentIDNotEqualsChildID:
 
-    def test_predicate_no_match(self):
-        rule = SignatureParentIDNotEqualsChildID()
-
-        raw_crash = {}
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is False
-
-        raw_crash['MozCrashReason'] = ''
-        predicate_result = rule.predicate(raw_crash, {})
-        assert predicate_result is False
-
-    def test_success(self):
-        rule = SignatureParentIDNotEqualsChildID()
-
-        raw_crash = {
-            'MozCrashReason': 'MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)'
+    def test_predicate_no_moz_crash_reason(self):
+        rule = rules.SignatureParentIDNotEqualsChildID()
+        result = {
+            'signature': '',
+            'notes': []
         }
-        processed_crash = {
-            'signature': 'fooo::baar'
+        assert rule.predicate({}, result) is False
+
+    def test_predicate_empty_moz_crash_reason(self):
+        rule = rules.SignatureParentIDNotEqualsChildID()
+        crash_data = {
+            'moz_crash_reason': ''
         }
-        notes = []
+        result = {
+            'signature': '',
+            'notes': []
+        }
+        assert rule.predicate(crash_data, result) is False
 
-        predicate_result = rule.predicate(raw_crash, processed_crash)
-        assert predicate_result is True
+    def test_predicate_match(self):
+        rule = rules.SignatureParentIDNotEqualsChildID()
+        crash_data = {
+            'moz_crash_reason': 'MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)'
+        }
+        result = {
+            'signature': 'fooo::baar',
+            'notes': []
+        }
 
-        action_result = rule.action(raw_crash, processed_crash, notes)
+        assert rule.predicate(crash_data, result) is True
+
+    def test_action(self):
+        rule = rules.SignatureParentIDNotEqualsChildID()
+        crash_data = {
+            'moz_crash_reason': 'MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)'
+        }
+        result = {
+            'signature': 'fooo::baar',
+            'notes': []
+        }
+
+        action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert processed_crash['signature'] == 'parentBuildID != childBuildID'
-        expected = 'Signature replaced with MozCrashAssert, was: "fooo::baar"'
-        assert notes[0] == expected
+        assert result['signature'] == 'parentBuildID != childBuildID'
+        assert result['notes'][0] == 'Signature replaced with MozCrashAssert, was: "fooo::baar"'

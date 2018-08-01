@@ -12,7 +12,6 @@ def int_or_none(data):
         try:
             return int(data)
         except ValueError:
-            printerr('int_or_none: value is not an int: %r' % data)
             return None
     return data
 
@@ -32,7 +31,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
     # We want to generate fresh signatures, so we remove the "normalized" field
     # from stack frames from the processed crash because this is essentially
     # cached data from previous processing
-    for thread in processed_crash['json_dump'].get('threads', []):
+    for thread in glom(processed_crash, 'json_dump.threads', default=[]):
         for frame in thread.get('frames', []):
             if 'normalized' in frame:
                 del frame['normalized']

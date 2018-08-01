@@ -14,7 +14,8 @@ import sys
 from glom import glom
 import requests
 
-from socorro.signature.generator import SignatureGenerator
+from .generator import SignatureGenerator
+from .utils import convert_to_crash_data
 
 
 DESCRIPTION = """
@@ -210,17 +211,6 @@ def main(argv=None):
                 out.warning('Error fetching raw crash: %s' % raw_crash['error'])
                 return 1
 
-            raw_crash_minimal = {
-                'JavaStackTrace': raw_crash.get('JavaStackTrace', None),
-                'OOMAllocationSize': raw_crash.get('OOMAllocationSize', None),
-                'AbortMessage': raw_crash.get('AbortMessage', None),
-                'AsyncShutdownTimeout': raw_crash.get('AsyncShutdownTimeout', None),
-                'ipc_channel_error': raw_crash.get('ipc_channel_error', None),
-                'additional_minidumps': raw_crash.get('additional_minidumps', None),
-                'IPCMessageName': raw_crash.get('IPCMessageName', None),
-                'MozCrashReason': raw_crash.get('MozCrashReason', None),
-            }
-
             resp = fetch('/ProcessedCrash/', crash_id, api_token)
             if resp.status_code == 404:
                 out.warning('%s: does not have processed crash.' % crash_id)
@@ -243,44 +233,9 @@ def main(argv=None):
                 return 1
 
             old_signature = processed_crash['signature']
+            crash_data = convert_to_crash_data(raw_crash, processed_crash)
 
-            processed_crash_minimal = {
-                'hang_type': processed_crash.get('hang_type', None),
-                'json_dump': {
-                    'threads': glom(processed_crash, 'json_dump.threads', default=[]),
-                    'system_info': {
-                        'os': glom(processed_crash, 'json_dump.system_info.os', default=''),
-                    },
-                    'crash_info': {
-                        'crashing_thread': glom(
-                            processed_crash, 'json_dump.crash_info.crashing_thread', default=None
-                        ),
-                    },
-                },
-                # NOTE(willkg): Classifications aren't available via the public API.
-                'classifications': {
-                    'jit': {
-                        'category': glom(
-                            processed_crash,
-                            'classifications.jit.category',
-                            default=''
-                        ),
-                    },
-                },
-                'mdsw_status_string': processed_crash.get('mdsw_status_string', None),
-
-                # This needs to be an empty string--the signature generator fills it in.
-                'signature': ''
-            }
-
-            # We want to generate fresh signatures, so we remove the "normalized" field from stack
-            # frames because this is essentially cached data from processing
-            for thread in processed_crash_minimal['json_dump'].get('threads', []):
-                for frame in thread.get('frames', []):
-                    if 'normalized' in frame:
-                        del frame['normalized']
-
-            ret = generator.generate(raw_crash_minimal, processed_crash_minimal)
+            ret = generator.generate(crash_data)
 
             if not args.different or old_signature != ret['signature']:
                 out.data(crash_id, old_signature, ret['signature'], ret['notes'])

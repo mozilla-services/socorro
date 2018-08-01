@@ -122,10 +122,10 @@ How to edit these lists
 -----------------------
 
 The first thing we will ask you to do is to file a bug. We keep track of every
-change and ensuing discussions in Socorro via bugs, so it's important that each
-commit has one associated to it.
+change in Socorro via bugs, so it's important that each commit has one
+associated to it.
 
-File a bug in the `Socorro::Signature
+File a bug in the `Socorro::Signature component
 <https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=Signature>`__,
 describe the changes you want to make, and assign it to you.
 
@@ -155,7 +155,7 @@ conventions, and a bot that will automatically close bugs, so please make your
 commit message following this pattern: *Fixes bug XYZ - Desciption of the
 change*. Once you are ready, click *Propose file change*.
 
-That will create a branch in your fork of the socorro project, and take you to
+That will create a branch in your fork of the Socorro project, and take you to
 the commit you just created. You can verify that the changes you made are
 correct, and then click *Create pull request*, and then *Create pull request*
 again. Once the pull request is opened, `Circle CI
@@ -179,4 +179,4 @@ Here's an example filter you can use today:
 
 ::
 
-   to:(socorro@noreply.github.com) ("A socorro/signature/siglists/" OR "M socorro/signature/siglists/" OR "D socorro/signature/siglists")
+  to:(socorro@noreply.github.com) ("A socorro/signature/siglists/" OR "M socorro/signature/siglists/" OR "D socorro/signature/siglists")

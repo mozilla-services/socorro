@@ -4,7 +4,7 @@
 
 import sys
 
-from socorro.signature.rules import (
+from .rules import (
     SignatureGenerationRule,
     StackwalkerErrorSignatureRule,
     OOMSignature,
@@ -40,47 +40,56 @@ DEFAULT_PIPELINE = [
 
 class SignatureGenerator:
     def __init__(self, pipeline=None, error_handler=None, debug=False):
+        """
+        :arg pipeline: list of rules to use for signature generation
+        :arg error_handler: error handling function with signature
+            ``fun(signature_data, exc_info, extra)``
+        :arg debug: whether or not to be in debug mode which shows verbose
+            output about what happend
+
+        """
         self.pipeline = pipeline or list(DEFAULT_PIPELINE)
         self.error_handler = error_handler
         self.debug = debug
 
-    def generate(self, raw_crash, processed_crash):
+    def generate(self, signature_data):
         """Takes data and returns a signature
 
-        :arg dict raw_crash: the raw crash data
-        :arg dict processed_crash: the processed crash data
+        :arg dict signature_data: data to use to generate a signature
 
         :returns: dict containing ``signature`` and ``notes`` keys representing the
             signature and processor notes
 
         """
-        all_notes = []
+        # NOTE(willkg): Rules mutate the result structure in-place
+        result = {
+            'signature': '',
+            'notes': []
+        }
 
         for rule in self.pipeline:
-            notes = []
             try:
-                if rule.predicate(raw_crash, processed_crash):
-                    sig = processed_crash.get('signature', '')
-                    rule.action(raw_crash, processed_crash, notes)
+                if rule.predicate(signature_data, result):
+                    old_sig = result['signature']
+                    rule.action(signature_data, result)
+
                     if self.debug:
-                        notes.append('%s: %s -> %s' % (
-                            rule.__class__.__name__, sig, processed_crash['signature']
-                        ))
+                        result['notes'].append(
+                            '%s: %s -> %s' % (
+                                rule.__class__.__name__,
+                                old_sig,
+                                result['signature']
+                            )
+                        )
 
             except Exception as exc:
                 if self.error_handler:
                     self.error_handler(
-                        raw_crash,
-                        processed_crash,
+                        signature_data,
                         exc_info=sys.exc_info(),
                         extra={'rule': rule.__class__.__name__}
                     )
-                notes.append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
 
-            if notes:
-                all_notes.extend(notes)
+                result['notes'].append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
 
-        return {
-            'signature': processed_crash.get('signature', ''),
-            'notes': all_notes
-        }
+        return result

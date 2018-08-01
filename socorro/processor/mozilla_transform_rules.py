@@ -22,6 +22,7 @@ from socorro.lib.ooid import dateFromOoid
 from socorro.lib import raven_client
 from socorro.lib.transform_rules import Rule
 from socorro.signature.generator import SignatureGenerator
+from socorro.signature.utils import convert_to_crash_data
 
 
 class ProductRule(Rule):
@@ -863,16 +864,17 @@ class SignatureGeneratorRule(Rule):
         self.sentry_dsn = sentry_dsn
         self.generator = SignatureGenerator(error_handler=self._error_handler)
 
-    def _error_handler(self, raw_crash, processed_crash, exc_info, extra):
+    def _error_handler(self, crash_data, exc_info, extra):
         """Captures errors from signature generation"""
-        extra['uuid'] = raw_crash.get('uuid', None)
+        extra['uuid'] = crash_data.get('uuid', None)
         raven_client.capture_error(
             self.sentry_dsn, self.config.logger, exc_info=exc_info, extra=extra
         )
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
-        ret = self.generator.generate(raw_crash, processed_crash)
+        crash_data = convert_to_crash_data(raw_crash, processed_crash)
+        ret = self.generator.generate(crash_data)
         processed_crash['signature'] = ret['signature']
         processor_meta['processor_notes'].extend(ret['notes'])
         return True
