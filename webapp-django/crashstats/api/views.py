@@ -592,6 +592,7 @@ def report_details(request):
         report=report,
         raw_crash=raw_crash,
         crashing_thread=crashing_thread,
-        parsed_dump=parsed_dump
+        parsed_dump=parsed_dump,
+        descriptions=descriptions,
     )
-    return http.HttpResponse(json.dumps(data), content_type='application/json')
+    return data
