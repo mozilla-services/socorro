@@ -13,6 +13,9 @@ class TokenAdmin(admin.ModelAdmin):
         'notes',
     ]
 
+    list_filter = ['permissions']
+    search_fields = ['user__email', 'notes']
+
     def key_truncated(self, obj):
         return obj.key[:12] + '...'
 
