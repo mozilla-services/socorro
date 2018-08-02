@@ -18,9 +18,13 @@ from ..utils import drop_bad_characters
     ('1\xc6\x8a23', '123'),
     (u'1\u018a23', '123'),
 
+    # Drop non-space whitespace characters
+    ('\r\n\t1 23', '1 23'),
+    (u'\r\n\t1 23', '1 23'),
+
     # Drop non-printable characters
-    ('\r\n\t\b1 23', '1 23'),
-    (u'\r\n\t\b1 23', '1 23'),
+    ('\0\b1 23', '1 23'),
+    (u'\0\b1 23', '1 23'),
 ])
 def test_drop_bad_characters(text, expected):
     assert drop_bad_characters(text) == expected

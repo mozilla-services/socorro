@@ -92,11 +92,12 @@ ALLOWED_CHARS = [chr(c) for c in range(32, 127)]
 
 
 def drop_bad_characters(text):
-    """Takes a text and drops all non-printable and non-ascii characters
+    """Takes a text and drops all non-printable and non-ascii characters and
+    also any whitespace characters that aren't space.
 
     :arg str/unicode text: the text to fix
 
-    :returns: text with all non-printable and non-ascii characters dropped
+    :returns: text with all bad characters dropped
 
     """
     if six.PY2:
