@@ -6,8 +6,6 @@ from __future__ import print_function
 
 import argparse
 import csv
-import logging
-import logging.config
 import os
 import sys
 
@@ -27,38 +25,8 @@ Note: In order for the SignatureJitCategory rule to work, you need a valid API t
 Socorro that has "View Personally Identifiable Information" permission.
 """
 
-logger = logging.getLogger('socorro.signature')
-
-
 # FIXME(willkg): This hits production. We might want it configurable.
 API_URL = 'https://crash-stats.mozilla.com/api'
-
-
-def setup_logging(logging_level):
-    dc = {
-        'version': 1,
-        'disable_existing_loggers': True,
-        'formatters': {
-            'bare': {
-                'format': '%(levelname)s: %(message)s'
-            }
-        },
-        'handlers': {
-            'console': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-                'formatter': 'bare',
-            },
-        },
-        'loggers': {
-            'socorro': {
-                'propagate': False,
-                'handlers': ['console'],
-                'level': logging_level,
-            },
-        },
-    }
-    logging.config.dictConfig(dc)
 
 
 class OutputBase:
@@ -168,14 +136,7 @@ def main(argv=None):
     else:
         outputter = TextOutput
 
-    if args.verbose:
-        logging_level = 'DEBUG'
-    else:
-        logging_level = 'INFO'
-
     api_token = os.environ.get('SOCORRO_API_TOKEN', '')
-
-    setup_logging(logging_level)
 
     generator = SignatureGenerator(debug=args.verbose)
     crashids_iterable = args.crashids or sys.stdin
