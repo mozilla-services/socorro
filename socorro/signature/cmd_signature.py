@@ -11,7 +11,6 @@ import logging.config
 import os
 import sys
 
-from glom import glom
 import requests
 
 from .generator import SignatureGenerator

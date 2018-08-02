@@ -68,6 +68,8 @@ class SignatureGenerator:
         }
 
         for rule in self.pipeline:
+            rule_name = rule.__class__.__name__
+
             try:
                 if rule.predicate(signature_data, result):
                     old_sig = result['signature']
@@ -75,11 +77,7 @@ class SignatureGenerator:
 
                     if self.debug:
                         result['notes'].append(
-                            '%s: %s -> %s' % (
-                                rule.__class__.__name__,
-                                old_sig,
-                                result['signature']
-                            )
+                            '%s: %s -> %s' % (rule_name, old_sig, result['signature'])
                         )
 
             except Exception as exc:
@@ -87,9 +85,9 @@ class SignatureGenerator:
                     self.error_handler(
                         signature_data,
                         exc_info=sys.exc_info(),
-                        extra={'rule': rule.__class__.__name__}
+                        extra={'rule': rule_name}
                     )
 
-                result['notes'].append('Rule %s failed: %s' % (rule.__class__.__name__, exc))
+                result['notes'].append('Rule %s failed: %s' % (rule_name, exc))
 
         return result
