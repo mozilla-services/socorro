@@ -8,12 +8,10 @@ import six
 
 
 def int_or_none(data):
-    if data:
-        try:
-            return int(data)
-        except ValueError:
-            return None
-    return data
+    try:
+        return int(data)
+    except (TypeError, ValueError):
+        return None
 
 
 def convert_to_crash_data(raw_crash, processed_crash):
