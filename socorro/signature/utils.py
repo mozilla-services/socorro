@@ -85,7 +85,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
     return crash_data
 
 
-#: List of printable ascii characters
+#: List of allowed characters: ascii, printable, and non-whitespace except space
 ALLOWED_CHARS = [chr(c) for c in range(32, 127)]
 
 
