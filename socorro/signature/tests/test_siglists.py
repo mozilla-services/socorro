@@ -2,13 +2,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from past.builtins import basestring
+import importlib
 
 import mock
 from pkg_resources import resource_stream
 import pytest
 
-from socorro.signature import siglists_utils
+# NOTE(willkg): We do this so that we can extract signature generation into its
+# own namespace as an external library. This allows the tests to run if it's in
+# "siggen" or "socorro.signature".
+base_module = '.'.join(__name__.split('.')[:-2])
+siglists_utils = importlib.import_module(base_module + '.siglists_utils')
 
 
 def _fake_stream(pkg, filepath):
@@ -33,7 +37,7 @@ class TestSigLists:
                 if isinstance(line, basestring):
                     assert not line.startswith('#')
 
-    @mock.patch('socorro.signature.siglists_utils.resource_stream')
+    @mock.patch(base_module + '.siglists_utils.resource_stream')
     def test_valid_entries(self, mocked_stream):
         mocked_stream.side_effect = _fake_stream
 
@@ -45,7 +49,7 @@ class TestSigLists:
         content = siglists_utils._get_file_content('test-valid-sig-list')
         assert content == expected
 
-    @mock.patch('socorro.signature.siglists_utils.resource_stream')
+    @mock.patch(base_module + '.siglists_utils.resource_stream')
     def test_invalid_entry(self, mocked_stream):
         mocked_stream.side_effect = _fake_stream
 

@@ -82,7 +82,7 @@ def main(argv=None):
     elif not sys.stdin.isatty():
         # If a script is piping to this script, then isatty() returns False. If there is no script
         # piping to this script, then isatty() returns True and if we do list(sys.stdin), it'll
-        # block waiting for intput.
+        # block waiting for input.
         crash_ids = list(sys.stdin)
     else:
         crash_ids = []
