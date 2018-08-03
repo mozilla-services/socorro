@@ -658,6 +658,16 @@ OIDC_RP_CLIENT_SECRET = config('OIDC_RP_CLIENT_SECRET', '')
 OIDC_OP_AUTHORIZATION_ENDPOINT = config('OIDC_OP_AUTHORIZATION_ENDPOINT', '')
 OIDC_OP_TOKEN_ENDPOINT = config('OIDC_OP_TOKEN_ENDPOINT', '')
 OIDC_OP_USER_ENDPOINT = config('OIDC_OP_USER_ENDPOINT', '')
+# List of urls that are exempt from session refresh because they're used in XHR
+# contexts and that doesn't handle redirecting.
+OIDC_EXEMPT_URLS = [
+    # Used by supersearch page as an XHR
+    '/search/fields/',
+    '/search/results/',
+
+    # Used by signature report as an XHR
+    '/signature/summary/',
+]
 LOGOUT_REDIRECT_URL = '/'
 
 # Max number of seconds you are allowed to be signed in with OAuth2.
