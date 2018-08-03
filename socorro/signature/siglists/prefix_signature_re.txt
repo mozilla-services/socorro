@@ -213,6 +213,7 @@ SocketWrite
 SocketWritev
 ssl_
 SSL_
+std::alloc::rust_oom
 std::_Allocate
 std::_Hash<T>::
 std::list<.*>::
