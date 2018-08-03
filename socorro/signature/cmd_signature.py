@@ -139,7 +139,19 @@ def main(argv=None):
     api_token = os.environ.get('SOCORRO_API_TOKEN', '')
 
     generator = SignatureGenerator(debug=args.verbose)
-    crashids_iterable = args.crashids or sys.stdin
+    if args.crashids:
+        crashids_iterable = args.crashids
+    elif not sys.stdin.isatty():
+        # If a script is piping to this script, then isatty() returns False. If
+        # there is no script piping to this script, then isatty() returns True
+        # and if we do list(sys.stdin), it'll block waiting for input.
+        crashids_iterable = list(sys.stdin)
+    else:
+        crashids_iterable = []
+
+    if not crashids_iterable:
+        parser.print_help()
+        return 0
 
     with outputter() as out:
         for crash_id in crashids_iterable:
