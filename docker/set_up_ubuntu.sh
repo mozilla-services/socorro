@@ -12,17 +12,43 @@ set -v -e -x
 # Update the operating system and install OS-level dependencies
 apt-get update
 
-# Install packages for building python packages, postgres, lxml, sasl, and cffi
-# as well as git and gawk utilities
-apt-get install -y gcc apt-transport-https build-essential python-dev \
-        libpq-dev \
-        libxml2-dev libxslt1-dev \
-        libsasl2-dev \
-        libffi-dev \
-        git \
-        gawk
+PACKAGES_TO_INSTALL=(
+    apt-transport-https
 
-# Stomp on the bash prompt with something more useful for development.
+    # For building Python libraries
+    build-essential
+    python-dev
+    libpq-dev
+    libxml2-dev libxslt1-dev
+    libsasl2-dev
+    libffi-dev
+
+    # For scripts
+    git
+    gawk
+
+    # For building breakpad
+    pkg-config
+    libcurl3
+    libcurl3-gnutls
+    libcurl4-gnutls-dev
+    wget
+
+    # For nodejs and npm
+    curl
+)
+
+# Install Ubuntu packages
+apt-get install -y ${PACKAGES_TO_INSTALL[@]}
+
+# Install nodejs and npm from Nodesource's 8.x branch
+curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+echo 'deb https://deb.nodesource.com/node_10.x jessie main' > /etc/apt/sources.list.d/nodesource.list
+echo 'deb-src https://deb.nodesource.com/node_10.x jessie main' >> /etc/apt/sources.list.d/nodesource.list
+apt-get update
+apt-get install -y nodejs
+
+# Stomp on the bash prompt with something more useful
 cat > /etc/bash.bashrc <<EOF
 # Get the name for the current uid.
 MYUSER="\$(id -u -n)"
@@ -30,7 +56,7 @@ MYUSER="\$(id -u -n)"
 # Set the prompt to use the username we just figured out plus the container
 # name which is in an environment variable. If there is no CONTAINERNAME,
 # then use the host name.
-PS1="\${MYUSER}@\${CONTAINERNAME:-\h}:\w\$ "
+PS1="\${MYUSER}@socorro:\w\$ "
 
 # Add current directory to path.
 PATH=\${PATH}:.

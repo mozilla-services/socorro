@@ -3,28 +3,23 @@
 # Note: Requires docker-comopse 1.10+.
 version: "2"
 services:
-  # Socorro base image
-  base:
+  # Socorro app image
+  app:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-    image: local/socorro_base
-
-  # Docs building container
-  docs:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.docs
-    image: local/socorro_docs
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
     volumes:
       - .:/app
 
-  # Processor app
+  # For development
+
   processor:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.processor
-    image: local/socorro_processor
+    image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
       - docker/config/never_on_a_server.env
@@ -34,15 +29,26 @@ services:
       - localstack-s3
       - elasticsearch
       - rabbitmq
+    command: ["processor"]
     volumes:
       - .:/app
 
-  # Webapp app
+  crontabber:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
+    depends_on:
+      - statsd
+      - postgresql
+      - elasticsearch
+    command: ["crontabber"]
+    volumes:
+      - .:/app
+
   webapp:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.webapp
-    image: local/socorro_webapp
+    image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
       - docker/config/never_on_a_server.env
@@ -55,9 +61,17 @@ services:
       - rabbitmq
       - memcached
       - oidcprovider
-    command: ["/app/docker/run_webapp.sh", "--dev"]
+    command: ["webapp", "--dev"]
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
+
+  # Webpack watcher
+  webpack:
+    image: local/socorro_app
+    working_dir: /app/webapp-django/
+    command: ["webpack"]
     volumes:
       - .:/app
 
@@ -70,33 +84,12 @@ services:
     ports:
       - "8080:8080"
 
-  # Webpack watcher
-  webpack:
-    image: local/socorro_webapp
-    env_file:
-      - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
-      - my.env
-    working_dir: /app/webapp-django/
-    command: ["/webapp-frontend-deps/node_modules/.bin/webpack", "--watch"]
-    volumes:
-      - .:/app
-
-  # Crontabber app
-  crontabber:
+  # Docs building container
+  docs:
     build:
       context: .
-      dockerfile: ./docker/Dockerfile.crontabber
-    image: local/socorro_crontabber
-    env_file:
-      - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
-      - my.env
-    depends_on:
-      - localstack-s3
-      - postgresql
-      - elasticsearch
-      - rabbitmq
+      dockerfile: ./docker/Dockerfile.docs
+    image: local/socorro_docs
     volumes:
       - .:/app
 
