@@ -25,6 +25,11 @@ urlpatterns = [
         name='memory_dump_access',
     ),
     url(
+        r'^products/$',
+        views.products,
+        name='products',
+    ),
+    url(
         r'^$',
         views.home,
         name='home',
