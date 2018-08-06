@@ -664,7 +664,7 @@ OIDC_EXEMPT_URLS = [
     # Used by supersearch page as an XHR
     '/search/fields/',
     '/search/results/',
-    '/buginfo/',
+    '/buginfo/bug',
 
     # Used by signature report as an XHR
     '/signature/summary/',
