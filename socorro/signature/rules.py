@@ -73,9 +73,11 @@ class SignatureTool(object):
 
 
 class CSignatureTool(SignatureTool):
-    """This is the class for signature generation tools that work on breakpad C/C++
-    stacks. It provides a method to normalize signatures and then defines its
-    own '_do_generate' method.
+    """Generates signature from C/C++/Rust stacks
+
+    This is the class for signature generation tools that work on breakpad
+    C/C++ stacks. It normalizes frames and then runs them through the siglists
+    to determine which frames should be part of the signature.
 
     """
 
@@ -123,17 +125,25 @@ class CSignatureTool(SignatureTool):
         replacement_open_string,
         close_string,
         replacement_close_string,
-        exception_substring_list=[],
+        exception_substring_list=None,
     ):
-        """this method takes a string representing a C/C++ function signature
-        and replaces anything between to possibly nested delimiters
+        """Replaces bits between two (possibly nested) delimiters
 
+        this method takes a string representing a C/C++ function signature and
+        replaces anything between two possibly nested delimiters
+
+        :arg str function_signature_str: the original string
+        :arg str open_string: the open string. e.g. "<"
+        :arg str replacement_open_string: the string to replace the open string with
+        :arg str close_string: the close string. e.g. ">"
+        :arg str replacement_close_string: the string to replace the closestring with
         :arg list exception_substring_list: list of exceptions that shouldn't collapse
 
         """
         target_counter = 0
         collapsed_list = []
         exception_mode = False
+        exception_substring_list = exception_substring_list or []
 
         def append_if_not_in_collapse_mode(a_character):
             if not target_counter:
@@ -164,7 +174,76 @@ class CSignatureTool(SignatureTool):
         edited_function = ''.join(collapsed_list)
         return edited_function
 
-    def normalize_signature(
+    def normalize_rust_function(self, function, line):
+        """Normalizes a single rust frame with a function"""
+        function = self._collapse(
+            function,
+            open_string='<',
+            replacement_open_string='<',
+            close_string='>',
+            replacement_close_string='T>',
+            exception_substring_list=('name omitted', 'IPC::ParamTraits')
+        )
+        if self.collapse_arguments:
+            function = self._collapse(
+                function,
+                open_string='(',
+                replacement_open_string='',
+                close_string=')',
+                replacement_close_string='',
+                exception_substring_list=('anonymous namespace', 'operator')
+            )
+
+        if self.signatures_with_line_numbers_re.match(function):
+            function = "%s:%s" % (function, line)
+
+        # Remove spaces before all stars, ampersands, and commas
+        function = self.fixup_space.sub('', function)
+
+        # Ensure a space after commas
+        function = self.fixup_comma.sub(', ', function)
+
+        # Remove rust-generated uniqueness hashes
+        function = self.fixup_hash.sub('', function)
+        return function
+
+    def normalize_cpp_function(self, function, line):
+        """Normalizes a single cpp frame with a function"""
+        function = self._collapse(
+            function,
+            open_string='<',
+            replacement_open_string='<',
+            close_string='>',
+            replacement_close_string='T>',
+            exception_substring_list=('name omitted', 'IPC::ParamTraits')
+        )
+        if self.collapse_arguments:
+            function = self._collapse(
+                function,
+                open_string='(',
+                replacement_open_string='',
+                close_string=')',
+                replacement_close_string='',
+                exception_substring_list=('anonymous namespace', 'operator')
+            )
+        if 'clone .cold' in function:
+            # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
+            function = self._collapse(
+                function,
+                open_string='[',
+                replacement_open_string='',
+                close_string=']',
+                replacement_close_string=''
+            )
+        if self.signatures_with_line_numbers_re.match(function):
+            function = "%s:%s" % (function, line)
+        # Remove spaces before all stars, ampersands, and commas
+        function = self.fixup_space.sub('', function)
+        # Ensure a space after commas
+        function = self.fixup_comma.sub(', ', function)
+        return function
+
+    def normalize_frame(
         self,
         module=None,
         function=None,
@@ -175,7 +254,7 @@ class CSignatureTool(SignatureTool):
         normalized=None,
         **kwargs  # eat any extra kwargs passed in
     ):
-        """Normalizes a single frame into a signature part
+        """Normalizes a single frame
 
         Returns a structured conglomeration of the input parameters to serve as
         a signature. The parameter names of this function reflect the exact
@@ -191,43 +270,20 @@ class CSignatureTool(SignatureTool):
         if normalized is not None:
             return normalized
 
-        # If there's a function (and optionally line), use that
         if function:
-            function = self._collapse(
-                function,
-                '<',
-                '<',
-                '>',
-                'T>',
-                ('name omitted', 'IPC::ParamTraits')
-            )
-            if self.collapse_arguments:
-                function = self._collapse(
-                    function,
-                    '(',
-                    '',
-                    ')',
-                    '',
-                    ('anonymous namespace', 'operator')
+            # If there's a filename and it ends in .rs, then normalize using Rust
+            # rules
+            if file and file.endswith('.rs'):
+                return self.normalize_rust_function(
+                    function=function,
+                    line=line
                 )
-            if 'clone .cold' in function:
-                # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
-                function = self._collapse(
-                    function,
-                    '[',
-                    '',
-                    ']',
-                    ''
+            else:
+                # Otherwise normalize it with C/C++ rules
+                return self.normalize_cpp_function(
+                    function=function,
+                    line=line
                 )
-            if self.signatures_with_line_numbers_re.match(function):
-                function = "%s:%s" % (function, line)
-            # Remove spaces before all stars, ampersands, and commas
-            function = self.fixup_space.sub('', function)
-            # Ensure a space after commas
-            function = self.fixup_comma.sub(', ', function)
-            # Remove rust-generated uniqueness hashes
-            function = self.fixup_hash.sub('', function)
-            return function
 
         # If there's a file and line number, use that
         if file and line:
@@ -429,10 +485,9 @@ class SignatureGenerationRule(Rule):
             if make_modules_lower_case and 'module' in a_frame:
                 a_frame['module'] = a_frame['module'].lower()
 
-            normalized_signature = self.c_signature_tool.normalize_signature(**a_frame)
-            if 'normalized' not in a_frame:
-                a_frame['normalized'] = normalized_signature
-            frame_signatures_list.append(normalized_signature)
+            normalized_frame = self.c_signature_tool.normalize_frame(**a_frame)
+            a_frame['normalized'] = normalized_frame
+            frame_signatures_list.append(normalized_frame)
         return frame_signatures_list
 
     def _get_crashing_thread(self, crash_data):
