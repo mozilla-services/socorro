@@ -1,0 +1,88 @@
+{% extends "documentation/docs_base.html" %}
+
+{% block doc_title %}Products{% endblock %}
+
+{% block doc_content %}
+<div class="body">
+    <h1 id="policy">Products on Crash Stats</h1>
+    <p>
+        The Socorro crash ingestion pipeline handles incoming crash reports for
+        Mozilla products. Crash reports are collected, processed, and
+        available for search and analysis using the Crash Stats web site.
+    </p>
+    <p>
+        Incoming crash reports have a <code>ProductName</code> key which
+        specifies which product the crash report is for. For example, incoming
+        crash reports for Firefox desktop have <code>Firefox</code> as the
+        key. This corresponds to the <code>MOZ_APP_NAME</code> value which is
+        set when building the product.
+    </p>
+    <p>
+        Crash reports for products that Socorro doesn't recognize are
+        discarded.
+    </p>
+    <p>
+        Socorro collects build information for products. Currently, build
+        information is scraped from
+        <a href="https://archive.mozilla.org/pub/">archive.mozilla.org</a>. In
+        the future, we plan to switch to using
+        <a href="https://mozilla-services.github.io/buildhub/">BuildHub</a>.
+    </p>
+    <p>
+        Build information is required to:
+    </p>
+    <ul>
+        <li>fix version numbers in processing</li>
+        <li>drive the product home page in the Crash Stats site</li>
+        <li>support forms in the Top Crashers page in the Crash Stats site</li>
+        <li>support forms in the Exploitability page in the Crash Stats
+            site</li>
+        <li>suggest products in the "Product" field in the Super Search page in
+            the Crash Stats site</li>
+    </ul>
+    <p>
+        If your product doesn't have build information on archive.mozilla.org,
+        then parts of the site won't work for your product.
+    </p>
+    <p>
+        Socorro collects active version information from
+        <a href="https://product-details.mozilla.org">product-details.mozilla.org</a>.
+    </p>
+    <p>
+        Current active version information is required to:
+    </p>
+    <ul>
+        <li>drive the product home page in the Crash Stats site</li>
+        <li>support forms in the Top Crashers page in the Crash Stats site</li>
+        <li>support forms in the Exploitability page in the Crash Stats site</li>
+    </ul>
+    <p>
+        If your product doesn't have active version information on
+        product-details.mozilla.org, then parts of the site won't work for your
+        product.
+    </p>
+
+    <h1 id="requestaccess">How to request a new product on Socorro</h1>
+    <p>
+        To request a new product be added, please file
+        <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General&short_desc=new%20product:%20YOURPRODUCT">a bug report</a>.
+    </p>
+    <p>
+        In the bug report, please specify the following things:
+    </p>
+    <ol>
+        <li>The name of the product as you want it to show up in the Crash Stats
+            web interface.</li>
+        <li>The <code>MOZ_APP_NAME</code> used when building the binaries for the
+            product. This is the value of the <code>ProductName</code> field in
+            incoming crash reports.</li>
+        <li>(Optional) The URL for build information for your product--parts of
+            the site won't work without it.</li>
+        <li>(Optional) The URL for active version information--parts of the site
+            won't work without it.</li>
+    </ol>
+    <p>
+        If you have any questions or additional needs, please email us.
+    </ol>
+</div>
+{% endblock %}
