@@ -1,10 +1,10 @@
+import humanfriendly
+
 from crashstats.base.templatetags.jinja_helpers import is_dangerous_cpu
 from crashstats.base.utils import urlencode_obj
 from crashstats.crashstats.templatetags.jinja_helpers import (
     booleanish_to_boolean,
     human_readable_iso_date,
-    show_duration,
-    show_filesize,
     timestamp_to_date
 )
 
@@ -14,12 +14,9 @@ def transform_report_details(report, raw_crash, crashing_thread, parsed_dump, de
         'uuid': report.get('uuid'),
         'signature': report.get('signature'),
         'dateProcessed': human_readable_iso_date(report.get('date_processed')),
-        'uptime': show_duration(report.get('uptime')),
-        'lastCrash': show_duration(report.get('last_crash'), 'seconds before submission'),
-        'installAge': show_duration(
-            report.get('install_age'),
-            'seconds since version was first installed'
-        ),
+        'uptime': get_duration_data(report.get('uptime')),
+        'lastCrash': get_duration_data(report.get('last_crash')),
+        'installAge': get_duration_data(report.get('install_age')),
         'product': report.get('product'),
         'releaseChannel': report.get('release_channel'),
         'version': report.get('version'),
@@ -47,39 +44,41 @@ def transform_report_details(report, raw_crash, crashing_thread, parsed_dump, de
         'androidModel': raw_crash.get('Android_Model'),
         'androidCpuAbi': raw_crash.get('Android_CPU_ABI'),
         'adapterVendorId': raw_crash.get('AdapterVendorID'),
-        'adapterDeviceId': raw_crash.get('AdapterVendorID'),
+        'adapterDeviceId': raw_crash.get('AdapterDeviceID'),
         'statupCrash': raw_crash.get('StatupCrash'),
         'isStartupCrash': booleanish_to_boolean(raw_crash.get('StartupCrash')),
         'remoteType': raw_crash.get('RemoteType'),
         'flashProcessDump': raw_crash.get('FlashProcessDump'),
         'mozCrashReason': raw_crash.get('MozCrashReason'),
-        'totalVirtualMemory': show_filesize(raw_crash.get('TotalVirtualMemory')),
-        'availableVirtualMemory': show_filesize(raw_crash.get('AvailableVirtualMemory')),
-        'availablePageFile': show_filesize(raw_crash.get('AvailablePageFile')),
-        'availablePhysicalMemory': show_filesize(raw_crash.get('AvailablePhysicalMemory')),
-        'oomAllocationSize': show_filesize(raw_crash.get('OOMAllocationSize')),
+        'totalVirtualMemory': get_filesize_data(raw_crash.get('TotalVirtualMemory')),
+        'availableVirtualMemory': get_filesize_data(raw_crash.get('AvailableVirtualMemory')),
+        'availablePageFile': get_filesize_data(raw_crash.get('AvailablePageFile')),
+        'availablePhysicalMemory': get_filesize_data(raw_crash.get('AvailablePhysicalMemory')),
+        'oomAllocationSize': get_filesize_data(raw_crash.get('OOMAllocationSize')),
         'javaStackTrace': raw_crash.get('JavaStackTrace'),
+        'systemMemoryUsePercentage': raw_crash.get('SystemMemoryUsePercentage'),
         'accessibility': raw_crash.get('Accessibility'),
     }
     memeory_measures_data = {}
     if 'memory_measures' in report:
         memeory_measures_data = {
-            'memory_measures': show_filesize(report.memory_measures.explicit),
-            'gfx_textures': show_filesize(report.memory_measures.gfx_textures),
-            'ghost_windows': show_filesize(report.memory_measures.ghost_windows),
-            'heap_allocated': show_filesize(report.memory_measures.heap_allocated),
-            'heap_overhead': show_filesize(report.memory_measures.heap_overhead),
-            'heap_unclassified': show_filesize(report.memory_measures.heap_unclassified),
-            'host_object_urls': show_filesize(report.memory_measures.host_object_urls),
-            'images': show_filesize(report.memory_measures.images),
-            'js_main_runtime': show_filesize(report.memory_measures.js_main_runtime),
-            'private': show_filesize(report.memory_measures.private),
-            'resident': show_filesize(report.memory_measures.resident),
-            'resident_unique': show_filesize(report.memory_measures.resident_unique),
-            'system_heap_allocated': show_filesize(report.memory_measures.system_heap_allocated),
-            'top_none_detached': show_filesize(report.memory_measures.top_none_detached),
-            'vsize': show_filesize(report.memory_measures.vsize),
-            'vsize_max_contiguous': show_filesize(report.memory_measures.vsize_max_contiguous),
+            'memory_measures': get_filesize_data(report.memory_measures.explicit),
+            'gfx_textures': get_filesize_data(report.memory_measures.gfx_textures),
+            'ghost_windows': get_filesize_data(report.memory_measures.ghost_windows),
+            'heap_allocated': get_filesize_data(report.memory_measures.heap_allocated),
+            'heap_overhead': get_filesize_data(report.memory_measures.heap_overhead),
+            'heap_unclassified': get_filesize_data(report.memory_measures.heap_unclassified),
+            'host_object_urls': get_filesize_data(report.memory_measures.host_object_urls),
+            'images': get_filesize_data(report.memory_measures.images),
+            'js_main_runtime': get_filesize_data(report.memory_measures.js_main_runtime),
+            'private': get_filesize_data(report.memory_measures.private),
+            'resident': get_filesize_data(report.memory_measures.resident),
+            'resident_unique': get_filesize_data(report.memory_measures.resident_unique),
+            'system_heap_allocated':
+                get_filesize_data(report.memory_measures.system_heap_allocated),
+            'top_none_detached': get_filesize_data(report.memory_measures.top_none_detached),
+            'vsize': get_filesize_data(report.memory_measures.vsize),
+            'vsize_max_contiguous': get_filesize_data(report.memory_measures.vsize_max_contiguous),
         }
     threads_data = []
     if crashing_thread is not None:
@@ -125,11 +124,12 @@ def transform_report_details(report, raw_crash, crashing_thread, parsed_dump, de
             'appNotes': descriptions.get('processed_crash.app_notes'),
             'processorNotes': descriptions.get('processed_crash.processor_notes'),
         },
-        'crash': {
+        'rawCrash': {
             'installTime': descriptions.get('raw_crash.InstallTime'),
             'androidVersion': descriptions.get('raw_crash.Android_Version'),
             'b2gOsVersion': descriptions.get('raw_crash.B2G_OS_Version'),
             'androidManufacturer': descriptions.get('raw_crash.Android_Manufacturer'),
+            'androidModel': descriptions.get('raw_crash.Android_Model'),
             'androidCpuAbi': descriptions.get('raw_crash.Android_CPU_ABI'),
             'adapterVendorId': descriptions.get('raw_crash.AdapterVendorID'),
             'adapterDeviceId': descriptions.get('raw_crash.AdapterDeviceID'),
@@ -157,4 +157,24 @@ def transform_report_details(report, raw_crash, crashing_thread, parsed_dump, de
         'descriptions': descriptions_data,
         'sumoLink': 'https://support.mozilla.org/search?{}'.format(query_string),
         'mdnLink': 'https://developer.mozilla.org/en-US/docs/Understanding_crash_reports',
+    }
+
+
+def get_filesize_data(bytes):
+    if bytes is None:
+            return {}
+    return {
+        'formatted': format(int(bytes), ','),
+        'bytes': bytes,
+        'humanfriendly': humanfriendly.format_size(int(bytes))
+    }
+
+
+def get_duration_data(seconds):
+    if seconds is None:
+        return {}
+    return {
+        'formatted': format(int(seconds), ','),
+        'seconds': seconds,
+        'humanfriendly': humanfriendly.format_timespan(int(seconds)),
     }
