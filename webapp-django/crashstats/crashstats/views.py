@@ -656,4 +656,5 @@ def about_throttling(request, default_context=None):
 @pass_default_context
 def new_report_index(request, crash_id, default_context=None):
     context = default_context or {}
+    context['crash_id'] = crash_id
     return render(request, 'crashstats/new_report_index.html', context)

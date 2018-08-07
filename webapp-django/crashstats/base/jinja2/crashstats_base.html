@@ -160,7 +160,7 @@
                     |
                     <form class="logout-form" action="{{ url('oidc_logout') }}" method="POST">
                         {% csrf_token %}
-                        <button class="sign-out-button" type="submit">Sign out</button>
+                        <button class="text-button" type="submit">Sign out</button>
                     </form>
                 {% else %}
                     <a href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Sign in</a>
