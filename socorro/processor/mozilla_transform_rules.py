@@ -363,10 +363,14 @@ class ProductRewrite(Rule):
         return '2.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-            return raw_crash.get('ProductID') in self.PRODUCT_MAP
+        return raw_crash.get('ProductID') in self.PRODUCT_MAP
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        raw_crash['ProductName'] = self.PRODUCT_MAP.get(raw_crash['ProductID'])
+        new_name = self.PRODUCT_MAP[raw_crash['ProductID']]
+        processor_meta.processor_notes.append(
+            'Rewriting ProductName from "%s" to "%s"' % (raw_crash.get('ProductName'), new_name)
+        )
+        raw_crash['ProductName'] = new_name
         return True
 
 
