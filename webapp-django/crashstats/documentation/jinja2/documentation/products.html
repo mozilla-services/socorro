@@ -14,8 +14,8 @@
         Incoming crash reports have a <code>ProductName</code> key which
         specifies which product the crash report is for. For example, incoming
         crash reports for Firefox desktop have <code>Firefox</code> as the
-        key. This corresponds to the <code>MOZ_APP_NAME</code> value which is
-        set when building the product.
+        key. The crash reporter sets this using the value of
+        <code>MOZ_APP_BASENAME</code> in <code>browser/confvars.sh</code>.
     </p>
     <p>
         Crash reports for products that Socorro doesn't recognize are
@@ -73,9 +73,9 @@
     <ol>
         <li>The name of the product as you want it to show up in the Crash Stats
             web interface.</li>
-        <li>The <code>MOZ_APP_NAME</code> used when building the binaries for the
-            product. This is the value of the <code>ProductName</code> field in
-            incoming crash reports.</li>
+        <li>The <code>MOZ_APP_BASENAME</code> used when building the binaries
+            for the product. This is used to set the <code>ProductName</code>
+            value by the crash reporter for incoming crash reports.</li>
         <li>(Optional) The URL for build information for your product--parts of
             the site won't work without it.</li>
         <li>(Optional) The URL for active version information--parts of the site
