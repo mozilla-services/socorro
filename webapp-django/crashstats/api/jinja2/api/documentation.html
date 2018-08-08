@@ -5,6 +5,11 @@
 {% stylesheet 'api_documentation' %}
 {% endblock %}
 
+{% block site_js %}
+{{ super() }}
+{% javascript 'api_documentation' %}
+{% endblock %}
+
 {% block doc_title %}API Reference{% endblock %}
 
 {% block main_content %}
