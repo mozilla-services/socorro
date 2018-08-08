@@ -109,10 +109,9 @@ canonical_standard_raw_crash = DotDict({
     "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
     "Distributor": "Mozilla",
     "Distributor_version": "12.0",
-
 })
 
-cannonical_processed_crash = DotDict({
+canonical_processed_crash = DotDict({
     'json_dump': {
         'sensitive': {
             'exploitability': 'high'
@@ -1059,7 +1058,7 @@ class TestExploitablityRule(TestCase):
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(cannonical_processed_crash)
+        processed_crash = copy.copy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = ExploitablityRule(config)
@@ -1133,7 +1132,7 @@ class TestFlashVersionRule(TestCase):
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(cannonical_processed_crash)
+        processed_crash = copy.copy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = FlashVersionRule(config)
@@ -1155,7 +1154,7 @@ class TestWinsock_LSPRule(TestCase):
         raw_crash.Winsock_LSP = 'really long string'
         expected_raw_crash = copy.copy(raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(cannonical_processed_crash)
+        processed_crash = copy.copy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
@@ -1175,7 +1174,7 @@ class TestWinsock_LSPRule(TestCase):
         del raw_crash.Winsock_LSP
         expected_raw_crash = copy.copy(raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(cannonical_processed_crash)
+        processed_crash = copy.copy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
@@ -1597,6 +1596,42 @@ class TestThemePrettyNameRule(TestCase):
 
 
 class TestSignatureGeneratorRule:
+    def test_signature(self):
+        rule = SignatureGeneratorRule(get_basic_config())
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        processed_crash = DotDict({
+            'json_dump': {
+                'crash_info': {
+                    'crashing_thread': 0
+                },
+                'crashing_thread': 0,
+                'threads': [
+                    {
+                        'frames': [
+                            {
+                                'frame': 0,
+                                'function': 'Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>',
+                                'file': 'foo.cpp',
+                            },
+                            {
+                                'frame': 1,
+                                'function': 'std::something::something',
+                                'file': 'foo.rs',
+                            },
+                        ]
+                    },
+                ]
+            }
+        })
+        processor_meta = get_basic_processor_meta()
+
+        ret = rule._action(raw_crash, {}, processed_crash, processor_meta)
+        assert ret is True
+
+        assert processed_crash['signature'] == 'Alpha<T>::Echo<T>'
+        assert processed_crash['proto_signature'] == 'Alpha<T>::Echo<T> | std::something::something'
+        assert processor_meta['processor_notes'] == []
+
     def test_empty_raw_and_processed_crashes(self):
         rule = SignatureGeneratorRule(get_basic_config())
         raw_crash = {}
@@ -1611,6 +1646,7 @@ class TestSignatureGeneratorRule:
         # that we can pass in empty dicts and the SignatureGeneratorRule and
         # the generation rules in the default pipeline don't fall over.
         assert processed_crash['signature'] == 'EMPTY: no crashing thread identified'
+        assert 'proto_signature' not in processed_crash
         assert processor_meta['processor_notes'] == [
             'CSignatureTool: No signature could be created because we do not know '
             'which thread crashed'
@@ -1648,6 +1684,7 @@ class TestSignatureGeneratorRule:
         # NOTE(willkg): The signature is an empty string because there are no
         # working rules that add anything to it.
         assert processed_crash['signature'] == ''
+        assert 'proto_signature' not in processed_crash
         assert processor_meta['processor_notes'] == [
             'Rule BadRule failed: Cough'
         ]
