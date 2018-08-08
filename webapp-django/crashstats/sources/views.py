@@ -11,6 +11,9 @@ from django.utils.six.moves.urllib.parse import urlparse
 # user in highlight_file view.
 ALLOWED_SOURCE_HOSTS = ['gecko-generated-sources.s3.amazonaws.com']
 
+# List of allowed schemes
+ALLOWED_SCHEMES = ['http', 'https']
+
 
 def highlight_url(request):
     """Retrieves a generated source file and syntax highlights it
@@ -38,6 +41,9 @@ def highlight_url(request):
     # We will only pull urls from allowed hosts
     if parsed.netloc not in ALLOWED_SOURCE_HOSTS:
         return http.HttpResponseForbidden('Document at disallowed host.')
+
+    if parsed.scheme not in ALLOWED_SCHEMES:
+        return http.HttpResponseForbidden('Document at disallowed scheme.')
 
     resp = requests.get(url)
     if resp.status_code != 200:
