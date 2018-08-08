@@ -876,5 +876,7 @@ class SignatureGeneratorRule(Rule):
         crash_data = convert_to_crash_data(raw_crash, processed_crash)
         ret = self.generator.generate(crash_data)
         processed_crash['signature'] = ret['signature']
+        if 'proto_signature' in ret:
+            processed_crash['proto_signature'] = ret['proto_signature']
         processor_meta['processor_notes'].extend(ret['notes'])
         return True
