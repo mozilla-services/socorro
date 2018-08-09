@@ -9,7 +9,7 @@ from glom import glom
 import ujson
 
 from . import siglists_utils
-from .utils import drop_bad_characters
+from .utils import drop_bad_characters, parse_source_file
 
 
 SIGNATURE_MAX_LENGTH = 255
@@ -271,19 +271,21 @@ class CSignatureTool(SignatureTool):
             return normalized
 
         if function:
-            # If there's a filename and it ends in .rs, then normalize using Rust
-            # rules
-            if file and file.endswith('.rs'):
-                return self.normalize_rust_function(
-                    function=function,
-                    line=line
-                )
-            else:
-                # Otherwise normalize it with C/C++ rules
-                return self.normalize_cpp_function(
-                    function=function,
-                    line=line
-                )
+            # If there's a filename and it ends in .rs, then normalize using
+            # Rust rules
+            if file:
+                source_file = parse_source_file(file)
+                if source_file and source_file.endswith('.rs'):
+                    return self.normalize_rust_function(
+                        function=function,
+                        line=line
+                    )
+
+            # Otherwise normalize it with C/C++ rules
+            return self.normalize_cpp_function(
+                function=function,
+                line=line
+            )
 
         # If there's a file and line number, use that
         if file and line:

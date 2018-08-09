@@ -93,6 +93,19 @@ class TestCSignatureTool:
                 (None, '', '', '', '0xFFF'),
                 '@0xFFF'
             ),
+
+            # Make sure frame normalization uses the right function: normalize
+            # Rust frame (has a Rust fingerprint)
+            (
+                (
+                    'module',
+                    'expect_failed::h7f635057bfba806a',
+                    'hg:hg.mozilla.org/a/b:servio/wrapper.rs:44444444444',
+                    '23',
+                    '0xFFF'
+                ),
+                'expect_failed'
+            ),
         ]
         for args, e in a:
             r = s.normalize_frame(*args)
