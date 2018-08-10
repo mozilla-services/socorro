@@ -8,6 +8,7 @@ from django import http
 from django.shortcuts import render
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django import forms
@@ -23,6 +24,7 @@ from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import is_crash_id_valid
 
 import crashstats
+from crashstats.api.utils import transform_report_details
 from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
@@ -529,3 +531,69 @@ def crash_verify(request):
     data['s3_telemetry_crash'] = has_telemetry_crash
 
     return http.HttpResponse(json.dumps(data), content_type='application/json')
+
+
+@csrf_exempt
+@utils.add_CORS_header
+@utils.json_view
+def report_details(request):
+    crash_id = request.GET.get('crash_id', None)
+
+    valid_crash_id = utils.find_crash_id(crash_id)
+    if not valid_crash_id:
+        return http.JsonResponse({'error': 'Invalid crash ID'}, status=400)
+
+    refresh_cache = request.GET.get('refresh') == 'cache'
+    raw_api = models.RawCrash()
+    try:
+        raw_crash = raw_api.get(crash_id=crash_id, refresh_cache=refresh_cache)
+    except CrashIDNotFound:
+        return http.JsonResponse({'error': 'Could not find report index'}, status=404)
+
+    api = models.UnredactedCrash()
+    try:
+        report = api.get(crash_id=crash_id, refresh_cache=refresh_cache)
+    except CrashIDNotFound:
+        # ...if we haven't already done so.
+        cache_key = 'priority_job:{}'.format(crash_id)
+        if not cache.get(cache_key):
+            priority_api = models.Priorityjob()
+            priority_api.post(crash_ids=[crash_id])
+            cache.set(cache_key, True, 60)
+        return http.JsonResponse({'error': 'Report index is pending'}, status=404)
+
+    if 'json_dump' in report:
+        json_dump = report['json_dump']
+        if 'sensitive' in json_dump and not request.user.has_perm('crashstats.view_pii'):
+            del json_dump['sensitive']
+        utils.enhance_json_dump(json_dump, settings.VCS_MAPPINGS)
+        parsed_dump = json_dump
+    else:
+        parsed_dump = {}
+
+    crashing_thread = parsed_dump.get('crash_info', {}).get('crashing_thread')
+    if report['signature'].startswith('shutdownhang'):
+        # For shutdownhang signatures, we want to use thread 0 as the
+        # crashing thread, because that's the thread that actually contains
+        # the usefull data about what happened.
+        crashing_thread = 0
+
+    all_fields = supersearch_models.SuperSearchFields().get()
+    descriptions = {}
+    for field in all_fields.values():
+        key = '{}.{}'.format(field['namespace'], field['in_database_name'])
+        descriptions[key] = '{} Search: {}'.format(
+            field.get('description', '').strip() or
+            'No description for this field.',
+            field['is_exposed'] and field['name'] or 'N/A',
+        )
+
+    data = transform_report_details(
+        report=report,
+        raw_crash=raw_crash,
+        crashing_thread=crashing_thread,
+        parsed_dump=parsed_dump,
+        descriptions=descriptions,
+        user=request.user,
+    )
+    return data
