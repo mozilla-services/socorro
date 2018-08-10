@@ -661,6 +661,14 @@ def new_report_index(request, crash_id, default_context=None):
     return render(request, 'crashstats/new_report_index.html', context)
 
 
+@pass_default_context
+def home(request, default_context=None):
+    context = default_context or {}
+    api = models.Products()
+    context['products'] = api.get()['hits']
+    return render(request, 'crashstats/home.html', context)
+
+
 def handle_missing_product(view):
     """Handle a 404 due to missing product
 

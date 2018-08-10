@@ -1,0 +1,22 @@
+{% extends "crashstats_base.html" %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="panel">
+        <ul id="product-cards" class="card-grid">
+            {% for product in products %}
+            <li>
+                <a class="cf" href="{{ url('crashstats:product_home', product=product.product_name) }}">
+                    <span class="productname">{{ product.product_name }}</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <p>
+        Want to see your Mozilla product here? <a href="{{ url('documentation:products') }}">Follow
+        the new product guide.</a>
+    </p>
+</div>
+
+{% endblock %}
