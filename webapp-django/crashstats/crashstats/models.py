@@ -493,6 +493,17 @@ class SocorroMiddleware(SocorroCommon):
                 }
 
 
+class Products(SocorroMiddleware):
+    implementation = socorro.external.postgresql.products.Products
+
+    possible_params = ()
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
+
+
 class ProductVersions(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.products.ProductVersions

@@ -15,7 +15,7 @@ from crashstats.manage.decorators import superuser_required
 from crashstats.manage import forms
 from crashstats.manage import utils
 from crashstats.supersearch.models import SuperSearchMissingFields
-from crashstats.crashstats.models import GraphicsDevices
+from crashstats.crashstats.models import GraphicsDevices, Products
 from crashstats.crashstats.utils import json_view
 
 
@@ -203,7 +203,6 @@ def graphics_devices_lookup(request):
 @superuser_required
 def debug_view(request):
     """This view is for ephemeral debugging of issues"""
-
     context = {}
 
     # Map of key -> val that will get displayed in a big table in the debug
@@ -218,3 +217,13 @@ def debug_view(request):
     context['title'] = 'Debug information'
 
     return render(request, 'admin/debug_view.html', context)
+
+
+@superuser_required
+def products(request):
+    context = {}
+    api = Products()
+    context['products'] = api.get()['hits']
+    context['title'] = 'Products'
+
+    return render(request, 'admin/products.html', context)
