@@ -29,7 +29,7 @@ def handle_missing_product(view):
 
 @handle_missing_product
 @pass_default_context
-def home(request, product, default_context=None):
+def product_home(request, product, default_context=None):
     context = default_context or {}
 
     # Figure out versions
@@ -48,14 +48,14 @@ def home(request, product, default_context=None):
             for x in context['active_versions'][product]
         ][:settings.NUMBER_OF_FEATURED_VERSIONS]
 
-    return render(request, 'home/home.html', context)
+    return render(request, 'home/product_home.html', context)
 
 
 class LegacyHomeRedirectView(RedirectView):
 
     permanent = settings.PERMANENT_LEGACY_REDIRECTS
     query_string = False
-    pattern_name = 'home:home'
+    pattern_name = 'home:product_home'
 
     def get_redirect_url(self, *args, **kwargs):
         versions = None

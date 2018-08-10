@@ -7,8 +7,8 @@ app_name = 'home'
 urlpatterns = [
     url(
         r'^product/(?P<product>\w+)$',
-        views.home,
-        name='home',
+        views.product_home,
+        name='product_home',
     ),
 
     # Redirect old home page to the new one.

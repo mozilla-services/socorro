@@ -67,27 +67,27 @@ class TestURL(TestCase):
         assert output == reverse('crashstats:login')
 
         # now with a arg
-        output = url('home:home', 'Firefox')
-        assert output == reverse('home:home', args=('Firefox',))
+        output = url('home:product_home', 'Firefox')
+        assert output == reverse('home:product_home', args=('Firefox',))
 
         # now with a kwarg
-        output = url('home:home', product='Waterfox')
-        assert output == reverse('home:home', args=('Waterfox',))
+        output = url('home:product_home', product='Waterfox')
+        assert output == reverse('home:product_home', args=('Waterfox',))
 
     def test_arg_cleanup(self):
-        output = url('home:home', 'Firefox\n')
-        assert output == reverse('home:home', args=('Firefox',))
+        output = url('home:product_home', 'Firefox\n')
+        assert output == reverse('home:product_home', args=('Firefox',))
 
-        output = url('home:home', product='\tWaterfox')
-        assert output == reverse('home:home', args=('Waterfox',))
+        output = url('home:product_home', product='\tWaterfox')
+        assert output == reverse('home:product_home', args=('Waterfox',))
 
         # this is something we've seen in the "wild"
-        output = url('home:home', u'Winterfox\\\\nn')
-        assert output == reverse('home:home', args=('Winterfoxnn',))
+        output = url('home:product_home', u'Winterfox\\\\nn')
+        assert output == reverse('home:product_home', args=('Winterfoxnn',))
 
         # check that it works if left as a byte string too
-        output = url('home:home', 'Winterfox\\\\nn')
-        assert output == reverse('home:home', args=('Winterfoxnn',))
+        output = url('home:product_home', 'Winterfox\\\\nn')
+        assert output == reverse('home:product_home', args=('Winterfoxnn',))
 
 
 class TestIsDangerousCPU:

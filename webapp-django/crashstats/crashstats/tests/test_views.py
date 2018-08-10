@@ -1489,7 +1489,7 @@ class TestViews(BaseTestViews):
 
         # there shouldn't be any links to reports for the product
         # mentioned in the processed JSON
-        bad_url = reverse('home:home', args=('SummerWolf',))
+        bad_url = reverse('home:product_home', args=('SummerWolf',))
         assert bad_url not in response.content
 
     def test_report_index_no_dump(self):
