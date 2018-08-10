@@ -57,12 +57,16 @@ urlpatterns = [
     url(r'^about/throttling/$',
         views.about_throttling,
         name='about_throttling'),
+    url(r'^home/product/(?P<product>\w+)$',
+        views.product_home,
+        name='product_home'),
 
     # Dockerflow endpoints
     url(r'__version__',
         views.dockerflow_version,
         name='dockerflow_version'),
 
+    # FIXME(willkg): Fix this
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',
@@ -108,23 +112,6 @@ urlpatterns = [
     url(r'^permissions/$',
         RedirectView.as_view(
             url='/profile/',
-            permanent=perm_legacy_redirect
-        )),
-
-    # handle old-style URLs
-    url(r'^products/(?P<product>\w+)/$',
-        RedirectView.as_view(
-            url='/home/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
-    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/$',
-        RedirectView.as_view(
-            url='/home/products/%(product)s/versions/%(versions)s',
-            permanent=perm_legacy_redirect
-        )),
-    url('^home' + products + '/versions/$',
-        RedirectView.as_view(
-            url='/home/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
 ]

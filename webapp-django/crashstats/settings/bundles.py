@@ -173,11 +173,11 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/report-pending.min.css',
     },
-    'home': {
+    'product_home': {
         'source_filenames': (
-            'home/css/home.less',
+            'crashstats/css/pages/product_home.less',
         ),
-        'output_filename': 'css/home.min.css',
+        'output_filename': 'css/product-home.min.css',
     },
     'profile': {
         'source_filenames': (
