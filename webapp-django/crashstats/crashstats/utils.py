@@ -168,8 +168,11 @@ def build_default_context(product=None, versions=None):
     a dict. If there's any left-over, raise a 404 error
     """
     context = {}
+
+    # Build product version information
     api = models.ProductVersions()
     active_versions = OrderedDict()  # so that products are in order
+
     # Turn the list of all product versions into a dict, one per product.
     for pv in api.get(active=True)['hits']:
         if pv['product'] not in active_versions:

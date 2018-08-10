@@ -133,6 +133,7 @@ BLACKLIST = (
     'GraphicsDevices',
     'GraphicsReport',
     'Priorityjob',
+    'Products',
     'TelemetryCrash',
 )
 
