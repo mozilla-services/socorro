@@ -4,7 +4,7 @@
 
 import pytest
 
-from ..utils import drop_bad_characters, parse_source_file
+from ..utils import collapse, drop_bad_characters, parse_source_file
 
 
 @pytest.mark.parametrize('text, expected', [
@@ -58,3 +58,49 @@ def test_drop_bad_characters(text, expected):
 ])
 def test_parse_source_file(source_file, expected):
     assert parse_source_file(source_file) == expected
+
+
+@pytest.mark.parametrize('function, expected', [
+    ('', ''),
+
+    # Test parsing variations
+    ('HeapFree', 'HeapFree'),
+    ('Foo<bar>', 'Foo<T>'),
+    ('<bar>Foo', '<T>Foo'),
+    ('<bar>', '<T>'),
+    ('Foo<bar', 'Foo<T>'),
+    ('Foo<bar <baz> >', 'Foo<T>'),
+    ('Foo<bar<baz>', 'Foo<T>'),
+
+    (
+        'CLayeredObjectWithCLS<CCryptoSession>::Release()',
+        'CLayeredObjectWithCLS<T>::Release()'
+    ),
+    (
+        'core::ptr::drop_in_place<style::stylist::CascadeData>',
+        'core::ptr::drop_in_place<T>'
+    ),
+
+    # Test exceptions
+    (
+        '<rayon_core::job::HeapJob<BODY> as rayon_core::job::Job>::execute',
+        '<rayon_core::job::HeapJob<BODY> as rayon_core::job::Job>::execute'
+    ),
+    (
+        '<name omitted>',
+        '<name omitted>'
+    ),
+    (
+        'IPC::ParamTraits<nsTSubstring<char> >::Write(IPC::Message *,nsTSubstring<char> const &)',
+        'IPC::ParamTraits<nsTSubstring<T> >::Write(IPC::Message *,nsTSubstring<T> const &)'
+    ),
+])
+def test_collapse(function, expected):
+    params = {
+        'function': function,
+        'open_string': '<',
+        'close_string': '>',
+        'replacement': '<T>',
+        'exceptions': ['name omitted', 'IPC::ParamTraits', ' as ']
+    }
+    assert collapse(**params) == expected
