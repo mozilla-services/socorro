@@ -2,16 +2,12 @@
 
 {% block content %}
 <div id="mainbody">
-    <div class="panel">
-        <ul id="product-cards" class="card-grid">
-            {% for product in products %}
-            <li>
-                <a class="cf" href="{{ url('crashstats:product_home', product=product.product_name) }}">
-                    <span class="productname">{{ product.product_name }}</span>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+    <div class="panel product-grid">
+    {% for product in products %}
+        <a class="product" href="{{ url('crashstats:product_home', product=product.product_name) }}">
+            {{ product.product_name }}
+        </a>
+    {% endfor %}
     </div>
     <p>
         Want to see your Mozilla product here? <a href="{{ url('documentation:products') }}">Follow

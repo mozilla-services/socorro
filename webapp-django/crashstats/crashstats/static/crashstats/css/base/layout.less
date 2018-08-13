@@ -118,69 +118,24 @@ body {
     }
 }
 
-#product-cards {
-    list-style: none;
-    margin: 0 auto;
-    padding: 20px 0 0 0;
-    width: 940px;
+.product-grid {
+    .shadow(0px, 1px, 4px, 0, @grey-90-a10);
 
-    > li {
-        background: #ccc;
-        background: linear-gradient(to bottom, #ddd, #bbb);
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        display: inline-block;
-        margin: 0 8px 20px;
-        min-height: 156px;
-        padding: 30px 1px 1px 1px;
-        position: relative;
-        width: 290px;
-        word-wrap: break-word;
-        z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
 
-        text-align: center;
-
-        &:before {
-            background: #fff;
-            border-radius: 5px;
-            bottom: 1px;
-            content: '';
-            left: 1px;
-            position: absolute;
-            right: 1px;
-            top: 1px;
-            z-index: -1;
-        }
-
-        > a {
-            display: block;
-            padding: 20px;
-            text-decoration: none;
-        }
-    }
-
-    a,
-    a:visited {
+    .product {
+        // background: #dadee1;
+        background: #fff;
+        border: 1px gray solid;
+        border-radius: 5px;
         color: @base-link-color;
-        display: block;
-    }
-
-    .productname {
+        flex: 1 0 210px;
         font-size: 22px;
-    }
-
-    /* Clearfix */
-    .cf {
-        &:before,
-        &:after {
-            display: table;
-            content: "";
-            // Fixes Opera/contenteditable bug:
-            // http://nicolasgallagher.com/micro-clearfix-hack/#comment-36952
-            line-height: 0;
-        }
-        &:after {
-            clear: both;
-        }
+        height: 170px;
+        line-height: 170px;
+        margin: 20px;
+        text-align: center;
+        text-decoration: none;
     }
 }
