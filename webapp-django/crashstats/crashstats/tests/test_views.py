@@ -1489,7 +1489,7 @@ class TestViews(BaseTestViews):
 
         # there shouldn't be any links to reports for the product
         # mentioned in the processed JSON
-        bad_url = reverse('home:home', args=('SummerWolf',))
+        bad_url = reverse('crashstats:product_home', args=('SummerWolf',))
         assert bad_url not in response.content
 
     def test_report_index_no_dump(self):
@@ -2274,3 +2274,26 @@ class TestDockerflow:
             assert resp.status_code == 200
             assert resp['Content-Type'] == 'application/json'
             assert resp.content == text
+
+
+class TestProductHomeViews(BaseTestViews):
+    def test_home_product_home(self):
+        url = reverse('crashstats:product_home', args=('WaterWolf',))
+        response = self.client.get(url)
+        assert response.status_code == 200
+        assert 'WaterWolf Crash Data' in response.content
+        assert 'WaterWolf 19.0' in response.content
+
+    def test_home_product_missing(self):
+        url = reverse('crashstats:product_home', args=('PickleParty',))
+        response = self.client.get(url)
+        assert response.status_code == 404
+        assert 'Missing product: PickleParty' in response.content
+
+    def test_home_product_without_featured_versions(self):
+        url = reverse('crashstats:product_home', args=('SeaMonkey',))
+        response = self.client.get(url)
+        assert response.status_code == 200
+        assert 'SeaMonkey Crash Data' in response.content
+        assert 'SeaMonkey 10.5' in response.content
+        assert 'SeaMonkey 9.5' in response.content

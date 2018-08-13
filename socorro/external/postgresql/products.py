@@ -43,7 +43,7 @@ class Products(PostgreSQLBase):
                 rapid_beta_version,
                 rapid_release_version
             FROM products
-            ORDER BY product_name
+            ORDER BY sort
         """
         results = self.query(sql, sql_params).zipped()
 

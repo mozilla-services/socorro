@@ -114,7 +114,7 @@ class TestViews(BaseTestViews):
         """This test isn't specifically for the profile page, because
         it ultimately tests the crashstats_base.html template. But
         that template has a link to the profile page."""
-        url = reverse('home:home', args=('WaterWolf',))
+        url = reverse('crashstats:product_home', args=('WaterWolf',))
         response = self.client.get(url)
         assert response.status_code == 200
         profile_url = reverse('profile:profile')

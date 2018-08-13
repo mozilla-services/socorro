@@ -57,19 +57,19 @@ urlpatterns = [
     url(r'^about/throttling/$',
         views.about_throttling,
         name='about_throttling'),
+    url(r'^home/product/(?P<product>\w+)$',
+        views.product_home,
+        name='product_home'),
+
+    # Home page
+    url(r'^$',
+        views.home,
+        name='home'),
 
     # Dockerflow endpoints
     url(r'__version__',
         views.dockerflow_version,
         name='dockerflow_version'),
-
-    # if we do a permanent redirect, the browser will "cache" the redirect and
-    # it will make it very hard to ever change the DEFAULT_PRODUCT
-    url(r'^$',
-        RedirectView.as_view(
-            url='/home/product/%s' % settings.DEFAULT_PRODUCT,
-            permanent=False  # this is not a legacy URL
-        )),
 
     # redirect deceased Advanced Search URL to Super Search
     url(r'^query/$',
@@ -108,23 +108,6 @@ urlpatterns = [
     url(r'^permissions/$',
         RedirectView.as_view(
             url='/profile/',
-            permanent=perm_legacy_redirect
-        )),
-
-    # handle old-style URLs
-    url(r'^products/(?P<product>\w+)/$',
-        RedirectView.as_view(
-            url='/home/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
-    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/$',
-        RedirectView.as_view(
-            url='/home/products/%(product)s/versions/%(versions)s',
-            permanent=perm_legacy_redirect
-        )),
-    url('^home' + products + '/versions/$',
-        RedirectView.as_view(
-            url='/home/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
 ]

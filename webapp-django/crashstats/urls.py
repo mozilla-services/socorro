@@ -31,7 +31,6 @@ urlpatterns = [
     url(r'^signature/', include('crashstats.signature.urls', namespace='signature')),
     url(r'^topcrashers/', include('crashstats.topcrashers.urls', namespace='topcrashers')),
     url(r'^sources/', include('crashstats.sources.urls', namespace='sources')),
-    url(r'^home/', include('crashstats.home.urls', namespace='home')),
     url(r'^monitoring/', include(monitoring_urls, namespace='monitoring')),
     url(r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     url(r'^api/', include('crashstats.api.urls', namespace='api')),
