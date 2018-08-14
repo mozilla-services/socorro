@@ -153,7 +153,7 @@
                     </a>
                     |
                     <a href="{{ url('tokens:home') }}">API Tokens</a>
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_staff %}
                     |
                     <a href="{{ url('admin:index') }}">Admin</a>
                     {% endif %}
