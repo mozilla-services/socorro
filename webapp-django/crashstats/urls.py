@@ -29,6 +29,7 @@ urlpatterns = [
     url(r'', include(urls, namespace='crashstats')),
     url(r'', include(supersearch_urls)),
     url(r'', include('crashstats.exploitability.urls', namespace='exploitability')),
+    url(r'', include('crashstats.graphics.urls', namespace='graphics')),
     url(r'^signature/', include('crashstats.signature.urls', namespace='signature')),
     url(r'^topcrashers/', include('crashstats.topcrashers.urls', namespace='topcrashers')),
     url(r'^sources/', include('crashstats.sources.urls', namespace='sources')),

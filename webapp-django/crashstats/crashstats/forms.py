@@ -63,9 +63,3 @@ class BugInfoForm(BaseForm):
 
 def make_choices(seq):
     return [(x, x) for x in seq]
-
-
-class GraphicsReportForm(BaseForm):
-
-    date = forms.DateField()
-    product = forms.CharField(required=False)
