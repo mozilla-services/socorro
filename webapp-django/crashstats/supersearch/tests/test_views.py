@@ -19,8 +19,8 @@ from crashstats.supersearch.models import Query, SuperSearchUnredacted
 class TestViews(BaseTestViews):
 
     def test_search_waffle_switch(self):
-        url_custom = reverse('supersearch.search_custom')
-        url_query = reverse('supersearch.search_query')
+        url_custom = reverse('supersearch:search_custom')
+        url_query = reverse('supersearch:search_query')
 
         response = self.client.get(url_custom)
         # By default, it's available, but it redirects because
@@ -50,7 +50,7 @@ class TestViews(BaseTestViews):
 
     def test_search(self):
         self._login()
-        url = reverse('supersearch.search')
+        url = reverse('supersearch:search')
         response = self.client.get(url)
         assert response.status_code == 200
         assert 'Run a search to get some results' in response.content
@@ -62,7 +62,7 @@ class TestViews(BaseTestViews):
     def test_search_fields(self):
 
         user = self._login()
-        url = reverse('supersearch.search_fields')
+        url = reverse('supersearch:search_fields')
         response = self.client.get(url)
         assert response.status_code == 200
         assert 'WaterWolf' in response.content
@@ -248,7 +248,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_results')
+        url = reverse('supersearch:search_results')
         response = self.client.get(
             url,
             {'product': 'WaterWolf'}
@@ -337,7 +337,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_results')
+        url = reverse('supersearch:search_results')
         limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
         params = {'product': 'WaterWolf'}
         # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
@@ -361,7 +361,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_results')
+        url = reverse('supersearch:search_results')
         params = {'product': 'WaterWolf'}
         response = self.client.get(
             url,
@@ -457,7 +457,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_results')
+        url = reverse('supersearch:search_results')
 
         # Logged in user, can see the email field
         user = self._login()
@@ -546,7 +546,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_results')
+        url = reverse('supersearch:search_results')
 
         response = self.client.get(
             url, {
@@ -590,7 +590,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_results')
+        url = reverse('supersearch:search_results')
 
         response = self.client.get(
             url,
@@ -635,7 +635,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_custom')
+        url = reverse('supersearch:search_custom')
 
         response = self.client.get(url)
         assert response.status_code == 302
@@ -657,7 +657,7 @@ class TestViews(BaseTestViews):
 
         self.create_custom_query_perm()
 
-        url = reverse('supersearch.search_custom')
+        url = reverse('supersearch:search_custom')
         response = self.client.get(url)
         assert response.status_code == 200
         assert 'Run a search to get some results' in response.content
@@ -679,7 +679,7 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        url = reverse('supersearch.search_custom')
+        url = reverse('supersearch:search_custom')
         response = self.client.get(url, {'signature': 'nsA'})
         assert response.status_code == 200
         assert 'Run a search to get some results' in response.content
@@ -699,7 +699,7 @@ class TestViews(BaseTestViews):
             mocked_query_get
         )
 
-        url = reverse('supersearch.search_query')
+        url = reverse('supersearch:search_query')
         response = self.client.post(url, {'query': '{"query": {}}'})
         assert response.status_code == 200
 

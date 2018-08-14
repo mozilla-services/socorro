@@ -1,11 +1,7 @@
-from collections import defaultdict
 import datetime
 import functools
-import gzip
-from io import BytesIO
 import json
 import os
-import urllib
 
 from django import http
 from django.conf import settings
@@ -15,7 +11,6 @@ from django.core.cache import cache
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils.http import urlquote
-from django.utils import timezone
 
 from csp.decorators import csp_update
 
@@ -23,11 +18,7 @@ from socorro.external.crashstorage_base import CrashIDNotFound
 from . import forms, models, utils
 from .decorators import pass_default_context
 
-from crashstats.supersearch.models import (
-    SuperSearchFields,
-    SuperSearchUnredacted,
-    SuperSearch,
-)
+from crashstats.supersearch.models import SuperSearchFields
 
 
 # To prevent running in to a known Python bug
@@ -35,39 +26,6 @@ from crashstats.supersearch.models import (
 # we, here at "import time" (as opposed to run time) make use of time.strptime
 # at least once
 datetime.datetime.strptime('2013-07-15 10:00:00', '%Y-%m-%d %H:%M:%S')
-
-
-GRAPHICS_REPORT_HEADER = (
-    'signature',
-    'url',
-    'crash_id',
-    'client_crash_date',
-    'date_processed',
-    'last_crash',
-    'product',
-    'version',
-    'build',
-    'branch',
-    'os_name',
-    'os_version',
-    'cpu_info',
-    'address',
-    'bug_list',
-    'user_comments',
-    'uptime_seconds',
-    'email',
-    'topmost_filenames',
-    'addons_checked',
-    'flash_version',
-    'hangid',
-    'reason',
-    'process_type',
-    'app_notes',
-    'install_age',
-    'duplicate_of',
-    'release_channel',
-    'productid',
-)
 
 
 def ratelimit_blocked(request, exception):
@@ -109,123 +67,6 @@ def build_id_to_date(build_id):
         yyyymmdd[4:6],
         yyyymmdd[6:8],
     )
-
-
-@pass_default_context
-@permission_required('crashstats.view_exploitability')
-def exploitability_report(request, default_context=None):
-    context = default_context or {}
-
-    if not request.GET.get('product'):
-        url = reverse('crashstats:exploitability_report')
-        url += '?' + urllib.urlencode({
-            'product': settings.DEFAULT_PRODUCT
-        })
-        return redirect(url)
-
-    form = forms.ExploitabilityReportForm(
-        request.GET,
-        active_versions=context['active_versions'],
-    )
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    product = form.cleaned_data['product']
-    version = form.cleaned_data['version']
-
-    api = SuperSearchUnredacted()
-    params = {
-        'product': product,
-        'version': version,
-        '_results_number': 0,
-        # This aggregates on crashes that do NOT contain these
-        # key words. For example, if a crash has
-        # {'exploitability': 'error: unable to analyze dump'}
-        # then it won't get included.
-        'exploitability': ['!error', '!interesting'],
-        '_aggs.signature': 'exploitability',
-        '_facets_size': settings.EXPLOITABILITY_BATCH_SIZE,
-    }
-    results = api.get(**params)
-
-    base_signature_report_dict = {
-        'product': product,
-    }
-    if version:
-        base_signature_report_dict['version'] = version
-
-    crashes = []
-    categories = ('high', 'none', 'low', 'medium', 'null')
-    for signature_facet in results['facets']['signature']:
-        # this 'signature_facet' will look something like this:
-        #
-        #  {
-        #      'count': 1234,
-        #      'term': 'My | Signature',
-        #      'facets': {
-        #          'exploitability': [
-        #              {'count': 1, 'term': 'high'},
-        #              {'count': 23, 'term': 'medium'},
-        #              {'count': 11, 'term': 'other'},
-        #
-        # And we only want to include those where:
-        #
-        #   low or medium or high are greater than 0
-        #
-
-        exploitability = signature_facet['facets']['exploitability']
-        if not any(
-            x['count']
-            for x in exploitability
-            if x['term'] in ('high', 'medium', 'low')
-        ):
-            continue
-        crash = {
-            'bugs': [],
-            'signature': signature_facet['term'],
-            'high_count': 0,
-            'medium_count': 0,
-            'low_count': 0,
-            'none_count': 0,
-            'url': (
-                reverse('signature:signature_report') + '?' +
-                urllib.urlencode(dict(
-                    base_signature_report_dict,
-                    signature=signature_facet['term']
-                ))
-            ),
-        }
-        for cluster in exploitability:
-            if cluster['term'] in categories:
-                crash['{}_count'.format(cluster['term'])] = (
-                    cluster['count']
-                )
-        crash['med_or_high'] = (
-            crash.get('high_count', 0) +
-            crash.get('medium_count', 0)
-        )
-        crashes.append(crash)
-
-    # Sort by the 'med_or_high' key first (descending),
-    # and by the signature second (ascending).
-    crashes.sort(key=lambda x: (-x['med_or_high'], x['signature']))
-
-    # now, let's go back and fill in the bugs
-    signatures = [x['signature'] for x in crashes]
-    if signatures:
-        api = models.Bugs()
-        bugs = defaultdict(list)
-        for b in api.get(signatures=signatures)['hits']:
-            bugs[b['signature']].append(b['id'])
-
-        for crash in crashes:
-            crash['bugs'] = bugs.get(crash['signature'], [])
-
-    context['crashes'] = crashes
-    context['product'] = product
-    context['version'] = version
-    context['report'] = 'exploitable'
-    return render(request, 'crashstats/exploitability_report.html', context)
 
 
 @csp_update(CONNECT_SRC='analysis-output.telemetry.mozilla.org')
@@ -460,11 +301,11 @@ def quick_search(request):
         )
     elif query:
         url = '%s?signature=%s' % (
-            reverse('supersearch.search'),
+            reverse('supersearch:search'),
             urlquote('~%s' % query)
         )
     else:
-        url = reverse('supersearch.search')
+        url = reverse('supersearch:search')
 
     return redirect(url)
 
@@ -508,143 +349,6 @@ def raw_data(request, crash_id, extension, name=None):
         response.write(json.dumps(data))
     else:
         response.write(data)
-    return response
-
-
-def graphics_report(request):
-    """Return a CSV output of all crashes for a specific date for a
-    particular day and a particular product."""
-    if (
-        not request.user.is_active or
-        not request.user.has_perm('crashstats.run_long_queries')
-    ):
-        return http.HttpResponseForbidden(
-            "You must have the 'Run long queries' permission"
-        )
-    form = forms.GraphicsReportForm(
-        request.GET,
-    )
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    batch_size = 1000
-    product = form.cleaned_data['product'] or settings.DEFAULT_PRODUCT
-    date = form.cleaned_data['date']
-    params = {
-        'product': product,
-        'date': [
-            '>={}'.format(date.strftime('%Y-%m-%d')),
-            '<{}'.format(
-                (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            )
-        ],
-        '_columns': (
-            'signature',
-            'uuid',
-            'date',
-            'product',
-            'version',
-            'build_id',
-            'platform',
-            'platform_version',
-            'cpu_name',
-            'cpu_info',
-            'address',
-            'uptime',
-            'topmost_filenames',
-            'reason',
-            'app_notes',
-            'release_channel',
-        ),
-        '_results_number': batch_size,
-        '_results_offset': 0,
-    }
-    api = SuperSearch()
-    # Do the first query. That'll give us the total and the first page's
-    # worth of crashes.
-    data = api.get(**params)
-    assert 'hits' in data
-
-    accept_gzip = 'gzip' in request.META.get('HTTP_ACCEPT_ENCODING', '')
-    response = http.HttpResponse(content_type='text/csv')
-    out = BytesIO()
-    writer = utils.UnicodeWriter(out, delimiter='\t')
-    writer.writerow(GRAPHICS_REPORT_HEADER)
-    pages = data['total'] // batch_size
-    # if there is a remainder, add one more page
-    if data['total'] % batch_size:
-        pages += 1
-    alias = {
-        'crash_id': 'uuid',
-        'os_name': 'platform',
-        'os_version': 'platform_version',
-        'date_processed': 'date',
-        'build': 'build_id',
-        'uptime_seconds': 'uptime',
-    }
-    # Make sure that we don't have an alias for a header we don't need
-    alias_excess = set(alias.keys()) - set(GRAPHICS_REPORT_HEADER)
-    if alias_excess:
-        raise ValueError(
-            'Not all keys in the map of aliases are in '
-            'the header ({!r})'.format(alias_excess)
-        )
-
-    def get_value(row, key):
-        """Return the appropriate output from the row of data, one key
-        at a time. The output is what's used in writing the CSV file.
-
-        The reason for doing these "hacks" is to match what used to be
-        done with the SELECT statement in SQL in the ancient, but now
-        replaced, report.
-        """
-        value = row.get(alias.get(key, key))
-        if key == 'cpu_info':
-            value = '{cpu_name} | {cpu_info}'.format(
-                cpu_name=row.get('cpu_name', ''),
-                cpu_info=row.get('cpu_info', ''),
-            )
-        if value is None:
-            return ''
-        if key == 'date_processed':
-            value = timezone.make_aware(datetime.datetime.strptime(
-                value.split('.')[0],
-                '%Y-%m-%dT%H:%M:%S'
-            ))
-            value = value.strftime('%Y%m%d%H%M')
-        if key == 'uptime_seconds' and value == 0:
-            value = ''
-        return value
-
-    for page in range(pages):
-        if page > 0:
-            params['_results_offset'] = batch_size * page
-            data = api.get(**params)
-
-        for row in data['hits']:
-            # Each row is a dict, we want to turn it into a list of
-            # exact order as the `header` tuple above.
-            # However, because the csv writer module doesn't "understand"
-            # python's None, we'll replace those with '' to make the
-            # CSV not have the word 'None' where the data is None.
-            writer.writerow([
-                get_value(row, x)
-                for x in GRAPHICS_REPORT_HEADER
-            ])
-
-    payload = out.getvalue()
-    if accept_gzip:
-        zbuffer = BytesIO()
-        zfile = gzip.GzipFile(mode='wb', compresslevel=6, fileobj=zbuffer)
-        zfile.write(payload)
-        zfile.close()
-        compressed_payload = zbuffer.getvalue()
-        response.write(compressed_payload)
-        response['Content-Length'] = len(compressed_payload)
-        response['Content-Encoding'] = 'gzip'
-    else:
-        response.write(payload)
-        response['Content-Length'] = len(payload)
     return response
 
 

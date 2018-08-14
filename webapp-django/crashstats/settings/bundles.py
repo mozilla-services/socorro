@@ -341,7 +341,7 @@ PIPELINE_JS = {
     },
     'exploitability_report': {
         'source_filenames': (
-            'crashstats/js/socorro/exploitability_report.js',
+            'exploitability/js/report.js',
         ),
         'output_filename': 'js/exploitability-report.min.js',
     },

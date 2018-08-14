@@ -102,8 +102,8 @@
                         {% if request.user.has_perm('crashstats.view_exploitability') %}
                         <option
                             value="exploitable"
-                            data-url-product="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__"
-                            data-url-version="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__&amp;version=__VERSION__"
+                            data-url-product="{{ url('exploitability:report') }}?product=__PRODUCT__"
+                            data-url-version="{{ url('exploitability:report') }}?product=__PRODUCT__&amp;version=__VERSION__"
                             {% if report == 'exploitable' %}selected{% endif %}
                         >Exploitable Crashes</option>
                         {% endif %}
@@ -114,7 +114,7 @@
     {% endblock %}
 
         <div class="search">
-            <a href="{{ url('supersearch.search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
+            <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
                 Super Search
             </a>
         </div>

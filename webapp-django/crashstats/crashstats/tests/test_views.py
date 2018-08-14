@@ -2,10 +2,8 @@
 
 import re
 import copy
-import csv
 import datetime
 import json
-from cStringIO import StringIO
 
 import pyquery
 import mock
@@ -28,12 +26,7 @@ from socorro.external.crashstorage_base import CrashIDNotFound
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.signals import PERMISSIONS
-from crashstats.supersearch.models import (
-    SuperSearchFields,
-    SuperSearchUnredacted,
-    SuperSearch,
-)
-from crashstats.crashstats.views import GRAPHICS_REPORT_HEADER
+from crashstats.supersearch.models import SuperSearchFields
 from .test_models import Response
 from socorro.external.es.super_search_fields import FIELDS
 
@@ -592,161 +585,13 @@ class TestViews(BaseTestViews):
         cache_key = 'buginfo:987'
         assert cache.get(cache_key) == struct['bugs'][0]
 
-    def test_exploitability_report(self):
-        url = reverse('crashstats:exploitability_report')
-
-        def mocked_bugs_threesigs(**options):
-            return {
-                'hits': [
-                    {'id': '111111111', 'signature': 'FakeSignature 1'},
-                    {'id': '222222222', 'signature': 'FakeSignature 3'},
-                    {'id': '101010101', 'signature': 'FakeSignature'}
-                ]
-            }
-
-        models.Bugs.implementation().get.side_effect = mocked_bugs_threesigs
-
-        queried_versions = []
-
-        def mocked_supersearch_get(**params):
-            assert params['product'] == ['WaterWolf']
-            queried_versions.append(params.get('version'))
-            assert params['_aggs.signature'] == ['exploitability']
-            assert params['_facets_size'] == settings.EXPLOITABILITY_BATCH_SIZE
-            assert params['exploitability']
-            assert params['_fields']
-            facets = [
-                {
-                    'count': 229,
-                    'facets': {
-                        'exploitability': [
-                            {'count': 210, 'term': u'none'},
-                            {'count': 19, 'term': u'low'},
-                        ]
-                    },
-                    'term': 'FakeSignature 1'
-                },
-                {
-                    'count': 124,
-                    'facets': {
-                        'exploitability': [
-                            {'count': 120, 'term': u'none'},
-                            {'count': 1, 'term': 'high'},
-                            {'count': 4, 'term': 'interesting'},
-                        ]
-                    },
-                    'term': 'FakeSignature 3'
-                },
-                {
-                    'count': 104,
-                    'facets': {
-                        'exploitability': [
-                            {'count': 93, 'term': u'low'},
-                            {'count': 11, 'term': u'medium'},
-                        ]
-                    },
-                    'term': 'Other Signature',
-                },
-                {
-                    'count': 222,
-                    'facets': {
-                        'exploitability': [
-                            # one that doesn't add up to 4
-                            {'count': 10, 'term': u'null'},
-                            {'count': 20, 'term': u'none'},
-                        ]
-                    },
-                    'term': 'FakeSignature',
-                },
-            ]
-            return {
-                'facets': {
-                    'signature': facets,
-                },
-                'hits': [],
-                'total': 1234
-            }
-
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
-
-        response = self.client.get(url, {'product': 'WaterWolf'})
-        assert response.status_code == 302
-
-        user = self._login()
-        response = self.client.get(url, {'product': 'WaterWolf'})
-        assert response.status_code == 302
-
-        group = self._create_group_with_permission('view_exploitability')
-        user.groups.add(group)
-        assert user.has_perm('crashstats.view_exploitability')
-
-        # unrecognized product
-        response = self.client.get(url, {'product': 'XXXX'})
-        assert response.status_code == 400
-
-        # unrecognized version
-        response = self.client.get(
-            url,
-            {'product': 'WaterWolf', 'version': '0000'}
-        )
-        assert response.status_code == 400
-
-        # valid version but not for WaterWolf
-        response = self.client.get(
-            url,
-            {'product': 'WaterWolf', 'version': '1.5'}
-        )
-        assert response.status_code == 400
-
-        # if you omit the product, it'll redirect and set the default product
-        response = self.client.get(url)
-        assert response.status_code == 302
-
-        assert response['Location'].endswith(url + '?product=%s' % settings.DEFAULT_PRODUCT)
-
-        response = self.client.get(
-            url,
-            {'product': 'WaterWolf', 'version': '19.0'}
-        )
-        assert response.status_code == 200
-
-        doc = pyquery.PyQuery(response.content)
-
-        # We expect a table with 3 different signatures
-        # The signature with the highest high+medium count is
-        # 'Other Signature' etc.
-        tds = doc('table.data-table tbody td:first-child a')
-        texts = [x.text for x in tds]
-        assert texts == ['Other Signature', 'FakeSignature 3', 'FakeSignature 1']
-
-        # The first signature doesn't have any bug associations,
-        # but the second and the third does.
-        rows = doc('table.data-table tbody tr')
-        texts = [
-            [x.text for x in doc('td.bug_ids_more a', row)]
-            for row in rows
-        ]
-        expected = [
-            [],
-            ['222222222'],
-            ['111111111']
-        ]
-        assert texts == expected
-
-        assert queried_versions == [['19.0']]
-        response = self.client.get(url, {'product': 'WaterWolf'})
-        assert response.status_code == 200
-        assert queried_versions == [['19.0'], None]
-
     def test_quick_search(self):
         url = reverse('crashstats:quick_search')
 
         # Test with no parameter.
         response = self.client.get(url)
         assert response.status_code == 302
-        target = reverse('supersearch.search')
+        target = reverse('supersearch:search')
         assert response['location'].endswith(target)
 
         # Test with a signature.
@@ -755,7 +600,7 @@ class TestViews(BaseTestViews):
             {'query': 'moz'}
         )
         assert response.status_code == 302
-        target = reverse('supersearch.search') + '?signature=%7Emoz'
+        target = reverse('supersearch:search') + '?signature=%7Emoz'
         assert response['location'].endswith(target)
 
         # Test with a crash_id.
@@ -779,14 +624,6 @@ class TestViews(BaseTestViews):
         )
         assert response.status_code == 302
         assert response['location'].endswith(target)
-
-    def test_login_required(self):
-        url = reverse(
-            'crashstats:exploitability_report',
-        )
-        response = self.client.get(url)
-        assert response.status_code == 302
-        assert settings.LOGIN_URL in response['Location'] + '?next=%s' % url
 
     def test_crontabber_state(self):
         url = reverse('crashstats:crontabber_state')
@@ -2121,9 +1958,17 @@ class TestViews(BaseTestViews):
         assert response['Content-Type'] == 'application/octet-stream'
         assert 'binary stuff' in response.content, response.content
 
+    def test_login_required(self):
+        url = reverse(
+            'exploitability:report',
+        )
+        response = self.client.get(url)
+        assert response.status_code == 302
+        assert settings.LOGIN_URL in response['Location'] + '?next=%s' % url
+
     def test_unauthenticated_user_redirected_from_protected_page(self):
         url = reverse(
-            'crashstats:exploitability_report',
+            'exploitability:report',
         )
         response = self.client.get(url)
         self.assertRedirects(
@@ -2147,95 +1992,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         assert 'Login Required' not in response.content
         assert 'Insufficient Privileges' in response.content
-
-    def test_graphics_report(self):
-
-        def mocked_supersearch_get(**params):
-            assert params['product'] == [settings.DEFAULT_PRODUCT]
-            hits = [
-                {
-                    'signature': 'my signature',
-                    'date': '2015-10-08T23:22:21.1234 +00:00',
-                    'cpu_name': 'arm',
-                    'cpu_info': 'ARMv7 ARM',
-                },
-                {
-                    'signature': 'other signature',
-                    'date': '2015-10-08T13:12:11.1123 +00:00',
-                    'cpu_info': 'something',
-                    # note! no cpu_name
-                },
-            ]
-            # Value for each of these needs to be in there
-            # supplement missing ones from the fixtures we intend to return.
-            for hit in hits:
-                for head in GRAPHICS_REPORT_HEADER:
-                    if head not in hit:
-                        hit[head] = None
-            return {
-                'hits': hits,
-                'total': 2
-            }
-
-        SuperSearch.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
-
-        url = reverse('crashstats:graphics_report')
-
-        # viewing this report requires that you're signed in
-        response = self.client.get(url)
-        assert response.status_code == 403
-
-        # But being signed in isn't good enough, you need the right
-        # permissions too.
-        user = self._login()
-        response = self.client.get(url)
-        assert response.status_code == 403
-
-        # Add the user to the Hackers group which has run_long_queries
-        # permission
-        group = Group.objects.get(name='Hackers')
-        user.groups.add(group)
-
-        # But even with the right permissions you still need to
-        # provide the right minimal parameters.
-        response = self.client.get(url)
-        assert response.status_code == 400
-
-        # Let's finally get it right. Permission AND the date parameter.
-        data = {'date': datetime.datetime.utcnow().date()}
-        response = self.client.get(url, data)
-        assert response.status_code == 200
-        assert response['Content-Type'] == 'text/csv'
-        assert response['Content-Length'] == str(len(response.content))
-
-        # the response content should be parseable
-        length = len(response.content)
-        inp = StringIO(response.content)
-        reader = csv.reader(inp, delimiter='\t')
-        lines = list(reader)
-        assert len(lines) == 3
-        header = lines[0]
-        assert header == list(GRAPHICS_REPORT_HEADER)
-        first = lines[1]
-        assert first[GRAPHICS_REPORT_HEADER.index('signature')] == 'my signature'
-        assert first[GRAPHICS_REPORT_HEADER.index('date_processed')] == '201510082322'
-
-        # now fetch it with gzip
-        response = self.client.get(url, data, HTTP_ACCEPT_ENCODING='gzip')
-        assert response.status_code == 200
-        assert response['Content-Type'] == 'text/csv'
-        assert response['Content-Length'] == str(len(response.content))
-        assert response['Content-Encoding'] == 'gzip'
-        assert len(response.content) < length
-
-    def test_graphics_report_not_available_via_regular_web_api(self):
-        # check that the model isn't available in the API documentation
-        api_url = reverse('api:model_wrapper', args=('GraphicsReport',))
-        response = self.client.get(reverse('api:documentation'))
-        assert response.status_code == 200
-        assert api_url not in response.content
 
     def test_about_throttling(self):
         # the old url used to NOT have a trailing slash
