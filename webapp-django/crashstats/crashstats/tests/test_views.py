@@ -26,7 +26,7 @@ from socorro.external.crashstorage_base import CrashIDNotFound
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.signals import PERMISSIONS
-from crashstats.supersearch.models import SuperSearchFields
+from crashstats.supersearch.models import SuperSearchFields, SuperSearchUnredacted
 from .test_models import Response
 from socorro.external.es.super_search_fields import FIELDS
 
@@ -227,6 +227,55 @@ class BaseTestViews(DjangoTestCase):
 
         models.Platforms.implementation().get.side_effect = (
             mocked_platforms_get
+        )
+
+        def mocked_products(**params):
+            hits = [
+                # These have versions in the mocked ProductVersions
+                {
+                    'product_name': 'WaterWolf',
+                    'release_name': 'waterwolf',
+                    'sort': 1,
+                    'rapid_beta_version': '1.0',
+                    'rapid_release_version': '999.0',
+                },
+                {
+                    'product_name': 'NightTrain',
+                    'release_name': 'nighttrain',
+                    'sort': 2,
+                    'rapid_beta_version': '1.0',
+                    'rapid_release_version': '999.0',
+                },
+                {
+                    'product_name': 'SeaMonkey',
+                    'release_name': 'seamonkey',
+                    'sort': 3,
+                    'rapid_beta_version': '1.0',
+                    'rapid_release_version': '999.0',
+                },
+                {
+                    'product_name': 'LandCrab',
+                    'release_name': 'landcrab',
+                    'sort': 4,
+                    'rapid_beta_version': '1.0',
+                    'rapid_release_version': '999.0',
+                },
+                # This does not have versions in the mocked ProductVersions
+                {
+                    'product_name': 'Tinkerbell',
+                    'release_name': 'tinkerbell',
+                    'sort': 5,
+                    'rapid_beta_version': '1.0',
+                    'rapid_release_version': '999.0',
+                }
+            ]
+            return {
+                'hits': hits,
+                'total': len(hits),
+            }
+
+        models.Products.implementation().get.side_effect = (
+            mocked_products
         )
 
         def mocked_product_versions(**params):
@@ -2033,23 +2082,44 @@ class TestDockerflow:
 
 
 class TestProductHomeViews(BaseTestViews):
-    def test_home_product_home(self):
+    def test_product_home(self):
         url = reverse('crashstats:product_home', args=('WaterWolf',))
         response = self.client.get(url)
         assert response.status_code == 200
         assert 'WaterWolf Crash Data' in response.content
         assert 'WaterWolf 19.0' in response.content
 
-    def test_home_product_missing(self):
-        url = reverse('crashstats:product_home', args=('PickleParty',))
-        response = self.client.get(url)
-        assert response.status_code == 404
-        assert 'Missing product: PickleParty' in response.content
-
-    def test_home_product_without_featured_versions(self):
+    def test_product_without_featured_versions(self):
         url = reverse('crashstats:product_home', args=('SeaMonkey',))
         response = self.client.get(url)
         assert response.status_code == 200
         assert 'SeaMonkey Crash Data' in response.content
         assert 'SeaMonkey 10.5' in response.content
         assert 'SeaMonkey 9.5' in response.content
+
+    def test_product_without_any_version_info(self):
+        with mock.patch('crashstats.supersearch.models.SuperSearchUnredacted') as mocked_ssu:
+            mocked_ssu().get.return_value = {
+                'hits': [],
+                'total': 0,
+                'facets': {
+                    'version': [
+                        {'count': 1, 'term': u'53.0b'},
+
+                        # These two have the same major version
+                        {'count': 5, 'term': u'52.9.1'},
+                        {'count': 2, 'term': u'52.9.0'},
+                    ]
+                }
+            }
+
+            url = reverse('crashstats:product_home', args=('Tinkerbell',))
+            response = self.client.get(url)
+            assert response.status_code == 200
+            assert 'Tinkerbell Crash Data' in response.content
+            assert 'Tinkerbell 53.0b' in response.content
+            assert 'Tinkerbell 52.9.1' in response.content
+
+            # This shouldn't show up in the output since it's not the latest of
+            # the major version
+            assert 'Tinkerbell 52.9.0' not in response.content

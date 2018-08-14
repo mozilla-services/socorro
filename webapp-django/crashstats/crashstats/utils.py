@@ -13,8 +13,10 @@ from six import text_type
 
 from django import http
 from django.conf import settings
+from django.utils import timezone
 
 from . import models
+import crashstats.supersearch.models as supersearch_models
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -162,12 +164,78 @@ def enhance_json_dump(dump, vcs_mappings):
     return dump
 
 
+def get_recent_versions_for_product(product):
+    """Returns recent versions for specified product
+
+    This looks at the crash reports submitted for this product in the last week
+    and returns the versions of those crash reports.
+
+    If SuperSearch returns an error, this returns an empty list.
+
+    NOTE(willkg): This data can be noisy in cases where crash reports return
+    junk versions. We might want to add a "minimum to matter" number.
+
+    :arg product: the product to query for
+
+    :returns: list of versions sorted in reverse order or ``[]``
+
+    """
+    api = supersearch_models.SuperSearchUnredacted()
+    now = timezone.now()
+
+    # Find versions for specified product in crash reports reported in
+    # the last week
+    params = {
+        'product': product,
+        '_results_number': 0,
+        '_facets': 'version',
+        '_facets_size': 100,
+        'date': [
+            '>=' + (now - datetime.timedelta(days=7)).isoformat(),
+            '<' + now.isoformat()
+        ]
+    }
+
+    def intify(item):
+        try:
+            return int(item)
+        except ValueError:
+            return item
+
+    ret = api.get(**params)
+    if 'facets' not in ret:
+        return []
+
+    # Map of major version (int) -> list of versions (str)
+    versions = {}
+    for version in ret['facets']['version']:
+        version = version['term']
+        parts = [intify(part) for part in version.split('.')]
+        if parts and isinstance(parts[0], int):
+            versions.setdefault(parts[0], []).append(version)
+
+    return [
+        {
+            'product': product,
+            'version': versions[major][0],
+            'is_featured': True,
+        }
+        for major in sorted(versions.keys(), reverse=True)
+    ]
+
+
 def build_default_context(product=None, versions=None):
     """
     from ``product`` and ``versions`` transfer to
     a dict. If there's any left-over, raise a 404 error
     """
     context = {}
+
+    # Build product information
+    api = models.Products()
+    context['products'] = {
+        hit['product_name']: hit for hit in api.get()['hits']
+    }
 
     # Build product version information
     api = models.ProductVersions()
@@ -180,17 +248,23 @@ def build_default_context(product=None, versions=None):
         active_versions[pv['product']].append(pv)
     context['active_versions'] = active_versions
 
+    if product:
+        if product not in context['products']:
+            raise http.Http404('Not a recognized product')
+
+        if product not in active_versions:
+            # This is a product that doesn't have version information in
+            # product_versions, so we pull it from supersearch
+            active_versions[product] = get_recent_versions_for_product(product)
+
+        context['product'] = product
+    else:
+        context['product'] = settings.DEFAULT_PRODUCT
+
     if versions is None:
         versions = []
     elif isinstance(versions, basestring):
         versions = versions.split(';')
-
-    if product:
-        if product not in context['active_versions']:
-            raise http.Http404('Not a recognized product')
-        context['product'] = product
-    else:
-        context['product'] = settings.DEFAULT_PRODUCT
 
     if versions:
         assert isinstance(versions, list)

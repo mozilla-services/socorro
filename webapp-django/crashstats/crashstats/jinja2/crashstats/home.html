@@ -3,9 +3,9 @@
 {% block content %}
 <div id="mainbody">
     <div class="panel product-grid">
-    {% for product in products %}
-        <a class="product" href="{{ url('crashstats:product_home', product=product.product_name) }}">
-            {{ product.product_name }}
+    {% for product_name, product_info in products.items() %}
+        <a class="product" href="{{ url('crashstats:product_home', product=product_name) }}">
+            {{ product_name }}
         </a>
     {% endfor %}
     </div>
