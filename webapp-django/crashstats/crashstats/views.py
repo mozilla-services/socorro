@@ -1,5 +1,4 @@
 import datetime
-import functools
 import json
 import os
 
@@ -8,7 +7,6 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
-from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils.http import urlquote
 
@@ -368,48 +366,33 @@ def new_report_index(request, crash_id, default_context=None):
 @pass_default_context
 def home(request, default_context=None):
     context = default_context or {}
-    api = models.Products()
-    context['products'] = api.get()['hits']
     return render(request, 'crashstats/home.html', context)
 
 
-def handle_missing_product(view):
-    """Handle a 404 due to missing product
-
-    We want a more user-friendly "missing product" page with instructions and
-    other things.
-
-    """
-    @functools.wraps(view)
-    def inner(request, *args, **kwargs):
-        try:
-            return view(request, *args, **kwargs)
-        except Http404:
-            context = utils.build_default_context()
-            context['product'] = kwargs.get('product', 'No product')
-            return render(request, 'crashstats/missing_product.html', context, status=404)
-    return inner
-
-
-@handle_missing_product
 @pass_default_context
 def product_home(request, product, default_context=None):
     context = default_context or {}
 
     # Figure out versions
-    context['versions'] = [
-        x['version']
-        for x in context['active_versions'][product]
-        if x['is_featured']
-    ]
-    # If there are no featured versions but there are active
-    # versions, then fall back to use that instead.
-    if not context['versions'] and context['active_versions'][product]:
-        # But when we do that, we have to make a manual cut-off of
-        # the number of versions to return. So make it max 4.
+    if product not in context['products']:
+        raise http.Http404('Not a recognized product')
+
+    if product in context['active_versions']:
         context['versions'] = [
             x['version']
             for x in context['active_versions'][product]
-        ][:settings.NUMBER_OF_FEATURED_VERSIONS]
+            if x['is_featured']
+        ]
+        # If there are no featured versions but there are active
+        # versions, then fall back to use that instead.
+        if not context['versions'] and context['active_versions'][product]:
+            # But when we do that, we have to make a manual cut-off of
+            # the number of versions to return. So make it max 4.
+            context['versions'] = [
+                x['version']
+                for x in context['active_versions'][product]
+            ][:settings.NUMBER_OF_FEATURED_VERSIONS]
+    else:
+        context['versions'] = []
 
     return render(request, 'crashstats/product_home.html', context)

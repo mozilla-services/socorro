@@ -44,8 +44,8 @@
             <li>
                 <label for="products_select" class="visually-hidden">Select Product</label>
                 <select id="products_select">
-                {% for p in active_versions %}
-                    <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
+                {% for product_name, product_info in products.items() %}
+                    <option value="{{ product_name }}" {% if product_name == product %}selected{% endif %}>{{ product_name }}</option>
                 {% endfor %}
                 </select>
             </li>
@@ -153,7 +153,7 @@
                     </a>
                     |
                     <a href="{{ url('tokens:home') }}">API Tokens</a>
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_staff %}
                     |
                     <a href="{{ url('admin:index') }}">Admin</a>
                     {% endif %}
