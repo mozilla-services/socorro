@@ -26,7 +26,7 @@ from socorro.external.crashstorage_base import CrashIDNotFound
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.signals import PERMISSIONS
-from crashstats.supersearch.models import SuperSearchFields, SuperSearchUnredacted
+from crashstats.supersearch.models import SuperSearchFields
 from .test_models import Response
 from socorro.external.es.super_search_fields import FIELDS
 
