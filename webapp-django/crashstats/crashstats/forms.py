@@ -59,7 +59,3 @@ class BugInfoForm(BaseForm):
                 (', '.join(repr(x) for x in nasty_bug_ids))
             )
         return bug_ids
-
-
-def make_choices(seq):
-    return [(x, x) for x in seq]
