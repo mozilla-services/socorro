@@ -591,7 +591,7 @@ class TestViews(BaseTestViews):
         # Test with no parameter.
         response = self.client.get(url)
         assert response.status_code == 302
-        target = reverse('supersearch.search')
+        target = reverse('supersearch:search')
         assert response['location'].endswith(target)
 
         # Test with a signature.
@@ -600,7 +600,7 @@ class TestViews(BaseTestViews):
             {'query': 'moz'}
         )
         assert response.status_code == 302
-        target = reverse('supersearch.search') + '?signature=%7Emoz'
+        target = reverse('supersearch:search') + '?signature=%7Emoz'
         assert response['location'].endswith(target)
 
         # Test with a crash_id.

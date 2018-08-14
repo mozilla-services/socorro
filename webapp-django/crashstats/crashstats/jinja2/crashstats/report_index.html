@@ -117,7 +117,7 @@
                                 <td>
                                     {{ report.signature }}
                                     <a href="{{ url('signature:signature_report') }}?{{ make_query_string(product=report.product, signature=report.signature) }}" class="sig-overview" title="View more reports of this type">More Reports</a>
-                                    <a href="{{ url('supersearch.search') }}?{{ make_query_string(product=report.product, signature='=' + report.signature) }}" class="sig-search" title="Search for more reports of this type">Search</a>
+                                    <a href="{{ url('supersearch:search') }}?{{ make_query_string(product=report.product, signature='=' + report.signature) }}" class="sig-search" title="Search for more reports of this type">Search</a>
                                 </td>
                             </tr>
                             <tr title="{{ fields_desc['processed_crash.uuid'] }}">

@@ -222,7 +222,7 @@ def search_results(request):
     params['_results_offset'] = context['results_offset']
 
     context['current_url'] = '%s?%s' % (
-        reverse('supersearch.search'),
+        reverse('supersearch:search'),
         urlencode_obj(current_query)
     )
 

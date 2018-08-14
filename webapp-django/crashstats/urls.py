@@ -8,9 +8,6 @@ from django.views.static import serve
 
 from .manage import admin_site
 from .base.monkeypatches import patch
-from .crashstats import urls
-from .supersearch import urls as supersearch_urls
-from .monitoring import urls as monitoring_urls
 
 
 patch()
@@ -26,14 +23,14 @@ urlpatterns = [
     url(r'^(?P<path>favicon\.ico)$', serve, {
         'document_root': os.path.join(settings.ROOT, 'crashstats', 'base', 'static', 'img'),
     }),
-    url(r'', include(urls, namespace='crashstats')),
-    url(r'', include(supersearch_urls)),
+    url(r'', include('crashstats.crashstats.urls', namespace='crashstats')),
+    url(r'', include('crashstats.supersearch.urls', namespace='supersearch')),
     url(r'', include('crashstats.exploitability.urls', namespace='exploitability')),
     url(r'', include('crashstats.graphics.urls', namespace='graphics')),
     url(r'^signature/', include('crashstats.signature.urls', namespace='signature')),
     url(r'^topcrashers/', include('crashstats.topcrashers.urls', namespace='topcrashers')),
     url(r'^sources/', include('crashstats.sources.urls', namespace='sources')),
-    url(r'^monitoring/', include(monitoring_urls, namespace='monitoring')),
+    url(r'^monitoring/', include('crashstats.monitoring.urls', namespace='monitoring')),
     url(r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     url(r'^api/', include('crashstats.api.urls', namespace='api')),
     # redirect all symbols/ requests to Tecken

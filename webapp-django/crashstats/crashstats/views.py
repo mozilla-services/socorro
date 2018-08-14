@@ -301,11 +301,11 @@ def quick_search(request):
         )
     elif query:
         url = '%s?signature=%s' % (
-            reverse('supersearch.search'),
+            reverse('supersearch:search'),
             urlquote('~%s' % query)
         )
     else:
-        url = reverse('supersearch.search')
+        url = reverse('supersearch:search')
 
     return redirect(url)
 
