@@ -91,7 +91,6 @@ INSTALLED_APPS = (
     'crashstats.signature',
     'crashstats.status',
     'crashstats.supersearch',
-    'crashstats.symbols',
     'crashstats.tokens',
     'crashstats.tools',
     'crashstats.topcrashers',
