@@ -9,7 +9,7 @@ from glom import glom
 import ujson
 
 from . import siglists_utils
-from .utils import drop_bad_characters, parse_source_file
+from .utils import collapse, drop_bad_characters, parse_source_file
 
 
 SIGNATURE_MAX_LENGTH = 255
@@ -109,89 +109,21 @@ class CSignatureTool(SignatureTool):
         self.fixup_comma = re.compile(r',(?! )')
         self.fixup_hash = re.compile(r'::h[0-9a-fA-F]+$')
 
-    @staticmethod
-    def _is_exception(exception_list, remaining_original_line, line_up_to_current_position):
-        for an_exception in exception_list:
-            if remaining_original_line.startswith(an_exception):
-                return True
-            if line_up_to_current_position.endswith(an_exception):
-                return True
-        return False
-
-    def _collapse(
-        self,
-        function_signature_str,
-        open_string,
-        replacement_open_string,
-        close_string,
-        replacement_close_string,
-        exception_substring_list=None,
-    ):
-        """Replaces bits between two (possibly nested) delimiters
-
-        this method takes a string representing a C/C++ function signature and
-        replaces anything between two possibly nested delimiters
-
-        :arg str function_signature_str: the original string
-        :arg str open_string: the open string. e.g. "<"
-        :arg str replacement_open_string: the string to replace the open string with
-        :arg str close_string: the close string. e.g. ">"
-        :arg str replacement_close_string: the string to replace the closestring with
-        :arg list exception_substring_list: list of exceptions that shouldn't collapse
-
-        """
-        target_counter = 0
-        collapsed_list = []
-        exception_mode = False
-        exception_substring_list = exception_substring_list or []
-
-        def append_if_not_in_collapse_mode(a_character):
-            if not target_counter:
-                collapsed_list.append(a_character)
-
-        for index, a_character in enumerate(function_signature_str):
-            if a_character == open_string:
-                if self._is_exception(
-                    exception_substring_list,
-                    function_signature_str[index + 1:],
-                    function_signature_str[:index]
-                ):
-                    exception_mode = True
-                    append_if_not_in_collapse_mode(a_character)
-                    continue
-                append_if_not_in_collapse_mode(replacement_open_string)
-                target_counter += 1
-            elif a_character == close_string:
-                if exception_mode:
-                    append_if_not_in_collapse_mode(a_character)
-                    exception_mode = False
-                else:
-                    target_counter -= 1
-                    append_if_not_in_collapse_mode(replacement_close_string)
-            else:
-                append_if_not_in_collapse_mode(a_character)
-
-        edited_function = ''.join(collapsed_list)
-        return edited_function
-
     def normalize_rust_function(self, function, line):
         """Normalizes a single rust frame with a function"""
-        function = self._collapse(
+        function = collapse(
             function,
             open_string='<',
-            replacement_open_string='<',
             close_string='>',
-            replacement_close_string='T>',
-            exception_substring_list=('name omitted', 'IPC::ParamTraits')
+            replacement='<T>',
+            exceptions=(' as ',)
         )
         if self.collapse_arguments:
-            function = self._collapse(
+            function = collapse(
                 function,
                 open_string='(',
-                replacement_open_string='',
                 close_string=')',
-                replacement_close_string='',
-                exception_substring_list=('anonymous namespace', 'operator')
+                replacement=''
             )
 
         if self.signatures_with_line_numbers_re.match(function):
@@ -209,31 +141,28 @@ class CSignatureTool(SignatureTool):
 
     def normalize_cpp_function(self, function, line):
         """Normalizes a single cpp frame with a function"""
-        function = self._collapse(
+        function = collapse(
             function,
             open_string='<',
-            replacement_open_string='<',
             close_string='>',
-            replacement_close_string='T>',
-            exception_substring_list=('name omitted', 'IPC::ParamTraits')
+            replacement='<T>',
+            exceptions=('name omitted', 'IPC::ParamTraits')
         )
         if self.collapse_arguments:
-            function = self._collapse(
+            function = collapse(
                 function,
                 open_string='(',
-                replacement_open_string='',
                 close_string=')',
-                replacement_close_string='',
-                exception_substring_list=('anonymous namespace', 'operator')
+                replacement='',
+                exceptions=('anonymous namespace', 'operator')
             )
         if 'clone .cold' in function:
             # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
-            function = self._collapse(
+            function = collapse(
                 function,
                 open_string='[',
-                replacement_open_string='',
                 close_string=']',
-                replacement_close_string=''
+                replacement=''
             )
         if self.signatures_with_line_numbers_re.match(function):
             function = "%s:%s" % (function, line)

@@ -202,8 +202,7 @@ class TestCSignatureTool:
             'expect_failed::h7f6350::blah', '23',
             'expect_failed::h7f6350::blah'
         ),
-        # FIXME(willkg): The type/trait handling here is wrong for Rust. That'll
-        # get fixed in bug #1477013
+        # Handle types and traits
         # FIXME(willkg): the specifiers and return types should get removed.
         # That's covered in bug #1478383.
         (
@@ -211,16 +210,13 @@ class TestCSignatureTool:
             'static void servo_arc::Arc<T>::drop_slow<T>'
         ),
         (
-            'static void core::ptr::drop_in_place<hashglobe::table::RawTable<style::gecko_string_cache::Atom, smallvec::SmallVec<[style::stylist::Rule; 1]>>>(struct hashglobe::table::RawTable<style::gecko_string_cache::Atom, smallvec::SmallVec<[style::stylist::Rule; 1]>>*)', '23',  # noqa
-            'static void core::ptr::drop_in_place<T>'
-        ),
-        (
             'static void core::ptr::drop_in_place<style::stylist::CascadeData>(struct style::stylist::CascadeData*)', '23',  # noqa
             'static void core::ptr::drop_in_place<T>'
         ),
+        # Handle trait methods by not collapsing them
         (
             '<rayon_core::job::HeapJob<BODY> as rayon_core::job::Job>::execute', '23',
-            '<T>::execute'
+            '<rayon_core::job::HeapJob<BODY> as rayon_core::job::Job>::execute'
         ),
     ])
     def test_normalize_rust_function(self, function, line, expected):
