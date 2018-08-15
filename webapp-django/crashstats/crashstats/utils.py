@@ -245,7 +245,7 @@ def get_recent_versions_for_product(product):
     }
 
     ret = api.get(**params)
-    if 'facets' not in ret:
+    if 'facets' not in ret or 'version' not in ret['facets']:
         return []
 
     versions = [
