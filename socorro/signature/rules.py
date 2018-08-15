@@ -116,15 +116,14 @@ class CSignatureTool(SignatureTool):
             open_string='<',
             close_string='>',
             replacement='<T>',
-            exceptions=('name omitted', 'IPC::ParamTraits', ' as ')
+            exceptions=(' as ',)
         )
         if self.collapse_arguments:
             function = collapse(
                 function,
                 open_string='(',
                 close_string=')',
-                replacement='',
-                exceptions=('anonymous namespace', 'operator')
+                replacement=''
             )
 
         if self.signatures_with_line_numbers_re.match(function):
