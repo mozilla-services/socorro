@@ -267,8 +267,10 @@ class Product(DeclarativeBase):
     rapid_beta_version = Column(u'rapid_beta_version', MAJOR_VERSION())
     rapid_release_version = Column(u'rapid_release_version', MAJOR_VERSION())
     release_name = Column(u'release_name', CITEXT(), nullable=False)
-    sort = Column(u'sort', SMALLINT(), nullable=False,
-                  server_default=text('0'))
+
+    # This is the sort order for products in product listings. A -1 here means
+    # the product is inactive and should not show up in listings.
+    sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
 
     # relationship definitions
     release_channels = relationship(

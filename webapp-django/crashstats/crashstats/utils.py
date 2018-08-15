@@ -290,6 +290,10 @@ def build_default_context(product=None, versions=None):
     # sorted by sort order and we don't want to lose that ordering
     all_products = OrderedDict()
     for item in api.get()['hits']:
+        if item['sort'] == -1:
+            # A sort of -1 means this item is inactive and we shouldn't show it
+            # in product lists
+            continue
         all_products[item['product_name']] = item
     context['products'] = all_products
 

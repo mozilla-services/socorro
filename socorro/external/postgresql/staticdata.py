@@ -84,11 +84,12 @@ class Products(BaseTable):
         'product_name', 'sort', 'rapid_release_version', 'release_name', 'rapid_beta_version'
     ]
     rows = [
-        ['Fennec', '3', '5.0', 'mobile', '999.0'],
-        ['Thunderbird', '2', '6.0', 'thunderbird', '999.0'],
         ['Firefox', '1', '5.0', 'firefox', '23.0'],
-        ['SeaMonkey', '6', '2.3', 'seamonkey', '999.0'],
-        ['FennecAndroid', '4', '5.0', '**SPECIAL**', '999.0'],
+        ['FennecAndroid', '2', '5.0', '**SPECIAL**', '999.0'],
+        ['Thunderbird', '80', '6.0', 'thunderbird', '999.0'],
+        ['SeaMonkey', '90', '2.3', 'seamonkey', '999.0'],
+        ['Fennec', '100', '5.0', 'mobile', '999.0'],
+        ['InactiveProduct', '-1', '5.0', 'inactive', '999.0'],
     ]
 
 
