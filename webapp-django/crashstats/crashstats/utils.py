@@ -164,6 +164,54 @@ def enhance_json_dump(dump, vcs_mappings):
     return dump
 
 
+def parse_version(version):
+    """Parses a version string into a comparable tuple
+
+    >>> parse_version('59.0')
+    (59, 0, 0, 'zz')
+    >>> parse_version('59.0.2')
+    (59, 0, 2, 'zz')
+    >>> parse_version('59.0b1')
+    (59, 0, 0, 'b1')
+    >>> parse_version('59.0a1')
+    (59, 0, 0, 'a1')
+
+    This is a good key for sorting:
+
+    >>> versions = ['59.0', '59.0b2', '59.0.2', '59.0a1']
+    >>> sorted(versions, key=parse_version, reverse=1)
+    ['59.0.2', '59.0', '59.0b2', '59.0a1']
+
+    :arg version: version string like "59.0b1" or "59.0.2"
+
+    :returns: tuple for comparing
+
+    """
+    try:
+        if 'a' in version:
+            version, ending = version.split('a')
+            ending = ['a' + ending]
+        elif 'b' in version:
+            version, ending = version.split('b')
+            ending = ['b' + ending]
+        elif 'esr' in version:
+            version = version.replace('esr', '')
+            # Add zz, then esr so that esr is bigger than release versions.
+            ending = ['zz', 'esr']
+        else:
+            ending = ['zz']
+
+        version = [int(part) for part in version.split('.')]
+        while len(version) < 3:
+            version.append(0)
+        version.extend(ending)
+        return tuple(version)
+    except (ValueError, IndexError):
+        # If we hit an error, it's probably junk data so return an tuple with a
+        # -1 in it which put it at the bottom of the pack
+        return (-1)
+
+
 def get_recent_versions_for_product(product):
     """Returns recent versions for specified product
 
@@ -196,31 +244,36 @@ def get_recent_versions_for_product(product):
         ]
     }
 
-    def intify(item):
-        try:
-            return int(item)
-        except ValueError:
-            return item
-
     ret = api.get(**params)
     if 'facets' not in ret:
         return []
 
+    versions = [
+        item['term'] for item in ret['facets']['version']
+    ]
+    versions.sort(
+        key=lambda version: parse_version(version),
+        reverse=1
+    )
+
     # Map of major version (int) -> list of versions (str)
-    versions = {}
-    for version in ret['facets']['version']:
-        version = version['term']
-        parts = [intify(part) for part in version.split('.')]
-        if parts and isinstance(parts[0], int):
-            versions.setdefault(parts[0], []).append(version)
+    major_to_versions = {}
+    for version in versions:
+        try:
+            major = int(version.split('.', 1)[0])
+            major_to_versions.setdefault(major, []).append(version)
+        except ValueError:
+            # If the first thing in the major version isn't an int, then skip
+            # it
+            continue
 
     return [
         {
             'product': product,
-            'version': versions[major][0],
+            'version': major_to_versions[major_key][0],
             'is_featured': True,
         }
-        for major in sorted(versions.keys(), reverse=True)
+        for major_key in sorted(major_to_versions.keys(), reverse=True)
     ]
 
 
