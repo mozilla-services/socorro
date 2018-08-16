@@ -272,6 +272,7 @@ def get_recent_versions_for_product(product):
             'product': product,
             'version': major_to_versions[major_key][0],
             'is_featured': True,
+            'has_builds': False
         }
         for major_key in sorted(major_to_versions.keys(), reverse=True)
     ]

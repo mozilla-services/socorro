@@ -274,7 +274,7 @@ class TestViews(BaseTestViews):
 
     def test_topcrashers_400_by_bad_days(self):
         response = self.client.get(self.base_url, {
-            'product': 'SnowLion',
+            'product': 'WaterWolf',
             'version': '0.1',
             'days': 'xxxxxx',
         })
@@ -291,13 +291,13 @@ class TestViews(BaseTestViews):
         assert 'Enter a whole number' in response.content
         assert response['Content-Type'] == 'text/html; charset=utf-8'
 
-    def test_topcrasher_with_product_sans_release(self):
-        # SnowLion is not a product at all
+    def test_topcrasher_with_unsupported_product(self):
+        # SnowLion is not in the mocked Products list
         response = self.client.get(self.base_url, {
             'product': 'SnowLion',
             'version': '0.1',
         })
-        assert response.status_code == 400
+        assert response.status_code == 404
 
     def test_topcrasher_without_any_signatures(self):
         url = self.base_url + '?product=WaterWolf&version=19.0'
