@@ -351,8 +351,10 @@ class OutOfMemoryBinaryRule(Rule):
 
 
 class ProductRewrite(Rule):
-    """This rule rewrites the product name for products that fail to report
-    a useful product name
+    """Fix ProductName in raw crash for certain situations
+
+    NOTE(willkg): This changes the raw crash which is gross.
+
     """
 
     PRODUCT_MAP = {
@@ -363,14 +365,29 @@ class ProductRewrite(Rule):
         return '2.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return raw_crash.get('ProductID') in self.PRODUCT_MAP
+        return True
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        new_name = self.PRODUCT_MAP[raw_crash['ProductID']]
-        processor_meta.processor_notes.append(
-            'Rewriting ProductName from %r to %r' % (raw_crash.get('ProductName'), new_name)
-        )
-        raw_crash['ProductName'] = new_name
+        product_name = raw_crash.get('ProductName', '')
+        original_product_name = product_name
+
+        # Rewrite from PRODUCT_MAP fixes.
+        if raw_crash.get('ProductID', '') in self.PRODUCT_MAP:
+            product_name = self.PRODUCT_MAP[raw_crash['ProductID']]
+
+        # Rewrite Focus crashes (bug #1481696).
+        if product_name == 'FennecAndroid' and raw_crash.get('ProcessType', '') == 'content':
+            product_name = 'Focus'
+
+        # If we made any product name changes, persist them and keep the
+        # original one so we can look at things later
+        if product_name != original_product_name:
+            processor_meta.processor_notes.append(
+                'Rewriting ProductName from %r to %r' % (original_product_name, product_name)
+            )
+            raw_crash['ProductName'] = product_name
+            raw_crash['OriginalProductName'] = original_product_name
+
         return True
 
 
