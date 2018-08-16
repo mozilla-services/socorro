@@ -154,15 +154,13 @@ class TestCSignatureTool:
             'mozilla::layers::BasicImageLayer::Paint(mozilla::gfx::DrawTarget*, mozilla::gfx::PointTyped<mozilla::gfx::UnknownUnits, float> const&, mozilla::layers::Layer*)', '23',  # noqa
             'mozilla::layers::BasicImageLayer::Paint'
         ),
-        # FIXME(willkg): the specifiers and return types should get removed.
-        # That's covered in bug #1478383.
         (
             'void nsDocumentViewer::DestroyPresShell()', '23',
-            'void nsDocumentViewer::DestroyPresShell'
+            'nsDocumentViewer::DestroyPresShell'
         ),
         (
             'bool CCGraphBuilder::BuildGraph(class js::SliceBudget& const)', '23',
-            'bool CCGraphBuilder::BuildGraph'
+            'CCGraphBuilder::BuildGraph'
         ),
 
         # Handle converting types to generic
@@ -178,11 +176,10 @@ class TestCSignatureTool:
             'thread_start<unsigned int (__cdecl*)(void* __ptr64)>', '23',
             'thread_start<T>'
         ),
-        # FIXME(willkg): the specifiers and return types should get removed.
-        # That's covered in bug #1478383.
+        # Handle prefixes and return types
         (
             'class JSObject* DoCallback<JSObject*>(class JS::CallbackTracer*, class JSObject**, const char*)', '23',  # noqa
-            'class JSObject* DoCallback<T>'
+            'DoCallback<T>'
         ),
 
         # FIXME(willkg): increase tests here
@@ -202,16 +199,14 @@ class TestCSignatureTool:
             'expect_failed::h7f6350::blah', '23',
             'expect_failed::h7f6350::blah'
         ),
-        # Handle types and traits
-        # FIXME(willkg): the specifiers and return types should get removed.
-        # That's covered in bug #1478383.
+        # Handle prefixes, return types, types, and traits
         (
             'static void servo_arc::Arc<style::gecko_properties::ComputedValues>::drop_slow<style::gecko_properties::ComputedValues>()', '23',  # noqa
-            'static void servo_arc::Arc<T>::drop_slow<T>'
+            'servo_arc::Arc<T>::drop_slow<T>'
         ),
         (
             'static void core::ptr::drop_in_place<style::stylist::CascadeData>(struct style::stylist::CascadeData*)', '23',  # noqa
-            'static void core::ptr::drop_in_place<T>'
+            'core::ptr::drop_in_place<T>'
         ),
         # Handle trait methods by not collapsing them
         (

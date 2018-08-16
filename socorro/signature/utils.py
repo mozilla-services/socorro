@@ -174,7 +174,7 @@ def collapse(
     replacement='',
     exceptions=None,
 ):
-    """Collapses the text between two delimiters
+    """Collapses the text between two delimiters in a frame function value
 
     This collapses the text between two delimiters and either removes the text
     altogether or replaces it with a replacement string.
@@ -196,7 +196,7 @@ def collapse(
         ^                              ^^^^ exception string inside token
         open token
 
-    :arg function: the function string to collapse tokens in
+    :arg function: the function value from a frame to collapse tokens in
     :arg open_string: the open delimiter; e.g. ``(``
     :arg close_string: the close delimiter; e.g. ``)``
     :arg replacement: what to replace the token with; e.g. ``<T>``
@@ -245,3 +245,73 @@ def collapse(
             collapsed.append(replacement)
 
     return ''.join(collapsed)
+
+
+def drop_prefix_and_return_type(function):
+    """Takes the function value from a frame and drops prefix and return type
+
+    For example::
+
+        static void * Allocator<MozJemallocBase>::malloc(unsigned __int64)
+        ^      ^^^^^^ return type
+        prefix
+
+    This gets changes to this::
+
+        Allocator<MozJemallocBase>::malloc(unsigned __int64)
+
+    This tokenizes on space, but takes into account types, generics, traits,
+    function arguments, and other parts of the function signature delimited by
+    things like `', <>, {}, [], and () for both C/C++ and Rust.
+
+    After tokenizing, this returns the last token since that's comprised of the
+    function name and its arguments.
+
+    :arg function: the function value in a frame to drop bits from
+
+    :returns: adjusted function value
+
+    """
+    DELIMITERS = {
+        '(': ')',
+        '{': '}',
+        '[': ']',
+        '<': '>',
+        '`': "'"
+    }
+    OPEN = DELIMITERS.keys()
+    CLOSE = DELIMITERS.values()
+
+    # The list of tokens accumulated so far
+    tokens = []
+
+    # Keeps track of open delimiters so we can match and close them
+    levels = []
+
+    # The current token we're building
+    current = []
+
+    for i, char in enumerate(function):
+        if char in OPEN:
+            levels.append(char)
+            current.append(char)
+        elif char in CLOSE:
+            if levels and DELIMITERS[levels[-1]] == char:
+                levels.pop()
+                current.append(char)
+            else:
+                # This is an unmatched close.
+                current.append(char)
+        elif char == ' ':
+            if levels:
+                current.append(char)
+            else:
+                tokens.append(''.join(current))
+                current = []
+        else:
+            current.append(char)
+
+    if current:
+        tokens.append(''.join(current))
+
+    return tokens[-1]

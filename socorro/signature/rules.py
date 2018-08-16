@@ -9,7 +9,12 @@ from glom import glom
 import ujson
 
 from . import siglists_utils
-from .utils import collapse, drop_bad_characters, parse_source_file
+from .utils import (
+    collapse,
+    drop_bad_characters,
+    drop_prefix_and_return_type,
+    parse_source_file,
+)
 
 
 SIGNATURE_MAX_LENGTH = 255
@@ -111,6 +116,10 @@ class CSignatureTool(SignatureTool):
 
     def normalize_rust_function(self, function, line):
         """Normalizes a single rust frame with a function"""
+        # Drop the prefix and return type if there is any
+        function = drop_prefix_and_return_type(function)
+
+        # Collapse types
         function = collapse(
             function,
             open_string='<',
@@ -118,6 +127,8 @@ class CSignatureTool(SignatureTool):
             replacement='<T>',
             exceptions=(' as ',)
         )
+
+        # Collapse arguments
         if self.collapse_arguments:
             function = collapse(
                 function,
@@ -137,10 +148,15 @@ class CSignatureTool(SignatureTool):
 
         # Remove rust-generated uniqueness hashes
         function = self.fixup_hash.sub('', function)
+
         return function
 
     def normalize_cpp_function(self, function, line):
         """Normalizes a single cpp frame with a function"""
+        # Drop the prefix and return type if there is any
+        function = drop_prefix_and_return_type(function)
+
+        # Collapse types
         function = collapse(
             function,
             open_string='<',
@@ -148,6 +164,8 @@ class CSignatureTool(SignatureTool):
             replacement='<T>',
             exceptions=('name omitted', 'IPC::ParamTraits')
         )
+
+        # Collapse arguments
         if self.collapse_arguments:
             function = collapse(
                 function,
@@ -156,8 +174,8 @@ class CSignatureTool(SignatureTool):
                 replacement='',
                 exceptions=('anonymous namespace', 'operator')
             )
+        # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
         if 'clone .cold' in function:
-            # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
             function = collapse(
                 function,
                 open_string='[',
@@ -166,10 +184,13 @@ class CSignatureTool(SignatureTool):
             )
         if self.signatures_with_line_numbers_re.match(function):
             function = "%s:%s" % (function, line)
+
         # Remove spaces before all stars, ampersands, and commas
         function = self.fixup_space.sub('', function)
+
         # Ensure a space after commas
         function = self.fixup_comma.sub(', ', function)
+
         return function
 
     def normalize_frame(
@@ -202,13 +223,11 @@ class CSignatureTool(SignatureTool):
         if function:
             # If there's a filename and it ends in .rs, then normalize using
             # Rust rules
-            if file:
-                source_file = parse_source_file(file)
-                if source_file and source_file.endswith('.rs'):
-                    return self.normalize_rust_function(
-                        function=function,
-                        line=line
-                    )
+            if file and (parse_source_file(file) or '').endswith('.rs'):
+                return self.normalize_rust_function(
+                    function=function,
+                    line=line
+                )
 
             # Otherwise normalize it with C/C++ rules
             return self.normalize_cpp_function(
