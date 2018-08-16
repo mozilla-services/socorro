@@ -153,6 +153,10 @@ class CSignatureTool(SignatureTool):
 
     def normalize_cpp_function(self, function, line):
         """Normalizes a single cpp frame with a function"""
+        # If the function ends in "const", drop that
+        if function.endswith(' const'):
+            function = function[:-6]
+
         # Drop the prefix and return type if there is any
         function = drop_prefix_and_return_type(function)
 

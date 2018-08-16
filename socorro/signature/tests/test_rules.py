@@ -176,13 +176,18 @@ class TestCSignatureTool:
             'thread_start<unsigned int (__cdecl*)(void* __ptr64)>', '23',
             'thread_start<T>'
         ),
+
         # Handle prefixes and return types
         (
             'class JSObject* DoCallback<JSObject*>(class JS::CallbackTracer*, class JSObject**, const char*)', '23',  # noqa
             'DoCallback<T>'
         ),
 
-        # FIXME(willkg): increase tests here
+        # Drop "const" at end
+        (
+            'JSObject::allocKindForTenure const', '23',
+            'JSObject::allocKindForTenure'
+        )
     ])
     def test_normalize_cpp_function(self, function, line, expected):
         """Test normalization for cpp functions"""
