@@ -79,8 +79,8 @@ def pass_default_context(view):
     """
     @functools.wraps(view)
     def inner(request, *args, **kwargs):
-        product = kwargs.get('product', None)
-        versions = kwargs.get('versions', None)
+        product = kwargs.get('product', request.GET.get('product', None))
+        versions = kwargs.get('versions', request.GET.get('versions', None))
         try:
             kwargs['default_context'] = utils.build_default_context(
                 product,

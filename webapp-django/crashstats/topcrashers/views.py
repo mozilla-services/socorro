@@ -117,7 +117,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     if not tcbs_mode or tcbs_mode not in ('realtime', 'byday'):
         tcbs_mode = 'realtime'
 
-    if product not in context['active_versions']:
+    if product not in context['products']:
         return http.HttpResponseBadRequest('Unrecognized product')
 
     context['product'] = product
