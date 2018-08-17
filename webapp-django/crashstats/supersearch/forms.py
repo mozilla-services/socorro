@@ -33,6 +33,7 @@ class SearchForm(forms.Form):
     def __init__(
         self,
         all_fields,
+        products,
         product_versions,
         current_platforms,
         user,
@@ -45,7 +46,7 @@ class SearchForm(forms.Form):
 
         # Default values loaded from a database.
         product_names = list(set(
-            x['product'] for x in product_versions
+            x['product_name'] for x in products
         ))
         if 'product' in self.all_fields:
             self.all_fields['product']['form_field_choices'] = product_names
