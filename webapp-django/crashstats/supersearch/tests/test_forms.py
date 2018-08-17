@@ -6,6 +6,20 @@ from socorro.external.es.super_search_fields import FIELDS
 class TestForms(TestCase):
 
     def setUp(self):
+        self.products = [
+            {
+                'product_name': 'WaterWolf',
+            },
+            {
+                'product_name': 'NightTrain',
+            },
+            {
+                'product_name': 'SeaMonkey',
+            },
+            {
+                'product_name': 'Tinkerbell',
+            }
+        ]
         self.product_versions = [
             {
                 'product': 'WaterWolf',
@@ -57,6 +71,7 @@ class TestForms(TestCase):
 
             return forms.SearchForm(
                 self.all_fields,
+                self.products,
                 self.product_versions,
                 self.current_platforms,
                 User(),
@@ -109,6 +124,7 @@ class TestForms(TestCase):
 
             return forms.SearchForm(
                 self.all_fields,
+                self.products,
                 self.product_versions,
                 self.current_platforms,
                 User(),
@@ -160,6 +176,7 @@ class TestForms(TestCase):
 
             return forms.SearchForm(
                 self.all_fields,
+                self.products,
                 self.product_versions,
                 self.current_platforms,
                 User(),
