@@ -7,13 +7,13 @@ import re
 import time
 from past.builtins import basestring
 from threading import Thread
-from Queue import Queue
 from contextlib import contextmanager
 
 import elasticsearch
 from configman import Namespace
 from configman.converters import class_converter, list_converter
 import markus
+from six.moves.queue import Queue
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
 from socorro.external.es.super_search_fields import FIELDS
