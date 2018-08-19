@@ -27,7 +27,6 @@ class TransactionExecutor(RequiredConfig):
         self.config = config
         self.db_conn_context_source = db_conn_context_source
         self.quit_check = quit_check_callback or (lambda: False)
-        self.do_quit_check = True
 
     @property
     def connection_source_type(self):
@@ -35,8 +34,7 @@ class TransactionExecutor(RequiredConfig):
 
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
-        if self.do_quit_check:
-            self.quit_check()
+        self.quit_check()
         with self.db_conn_context_source() as connection:
             try:
                 #self.config.logger.debug('starting transaction')
@@ -101,8 +99,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
         """execute a function within the context of a transaction"""
         for wait_in_seconds in self.backoff_generator():
             try:
-                if self.do_quit_check:
-                    self.quit_check()
+                self.quit_check()
                 # self.db_conn_context_source is an instance of a
                 # wrapper class on the actual connection driver
                 with self.db_conn_context_source() as connection:
