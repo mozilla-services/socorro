@@ -104,7 +104,7 @@ dependencycheck: my.env
 
 # Python 3 transition related things
 
-.PHONY: dockerbuild3 dockertest3 dockertestshell3
+.PHONY: dockerbuild3 test3 testshell3
 
 .docker-build3:
 	make dockerbuild3
@@ -113,15 +113,16 @@ dockerbuild3: my.env
 	${DC} build testpython3
 	touch .docker-build3
 
-dockertest3: my.env .docker-build3
+test3: my.env .docker-build3
 	USEPYTHON=3 ./docker/run_tests_in_docker.sh ${ARGS}
 
-dockertestshell3: my.env .docker-build3
+testshell3: my.env .docker-build3
 	USEPYTHON=3 ./docker/run_tests_in_docker.sh --shell
+
 
 # FIXME(willkg): We deprecated these make rules in favor of ones without
 # the "docker" prefix. Remove these after August 2018.
-.PHONY: dockerbuild dockertest dockertestshell dockerrun dockersetup dockerupdatedata
+.PHONY: dockerbuild dockertest dockertestshell dockerrun dockersetup dockerupdatedata dockertest3 dockertestshell3
 
 dockerbuild:
 	$(error DEPRECATED: use "make build" instead)
@@ -140,3 +141,9 @@ dockersetup:
 
 dockerupdatedata:
 	$(error DEPRECATED: use "make updatedata" instead)
+
+dockertest3:
+	$(error DEPRECATED: use "make test3" instead)
+
+dockertestshell3:
+	$(error DEPRECATED: use "make testshell3" instead)
