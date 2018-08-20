@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
 import time
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace
+from six import reraise
 
 from socorro.external.postgresql.dbapi2_util import DBApiUtilNonFatalBaseException
 
@@ -55,7 +57,7 @@ class TransactionExecutor(RequiredConfig):
                         self.connection_source_type,
                         exc_info=True)
                     self.db_conn_context_source.force_reconnect()
-                raise
+                reraise(*sys.exc_info())
 
 
 class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
@@ -93,6 +95,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
 
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
+        last_failure = None
         for wait_in_seconds in self.backoff_generator():
             try:
                 self.quit_check()
@@ -105,7 +108,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         return result
                     except Exception:
                         connection.rollback()
-                        raise
+                        last_failure = sys.exc_info()
+                        reraise(*last_failure)
 
             except self.db_conn_context_source.conditional_exceptions as x:
                 # these exceptions may or may not be retriable
@@ -122,7 +126,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         )
                     else:
                         print('Unrecoverable %s transaction error' % self.connection_source_type)
-                    raise
+                    reraise(*last_failure)
                 self.config.logger.critical(
                     '%s transaction error eligible for retry',
                     self.connection_source_type,
@@ -140,7 +144,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         '%s transaction intentionally abandoned by exception',
                         self.connection_source_type)
                     return
-                raise
+                reraise(*last_failure)
 
             self.db_conn_context_source.force_reconnect()
             self.config.logger.debug(
@@ -151,7 +155,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                 'waiting for retry after failure in %s transaction' %
                 self.connection_source_type,
             )
-        raise
+        if last_failure is not None:
+            reraise(*last_failure)
 
 
 class TransactionExecutorWithLimitedBackoff(TransactionExecutorWithInfiniteBackoff):
