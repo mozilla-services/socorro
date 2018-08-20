@@ -20,8 +20,6 @@ def string_to_list_of_ints(a_string):
 class TransactionExecutor(RequiredConfig):
     required_config = Namespace()
 
-    is_infinite = False
-
     def __init__(self, config, db_conn_context_source,
                  quit_check_callback=None):
         self.config = config
@@ -71,8 +69,6 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     required_config.add_option('wait_log_interval',
                                default=10,
                                doc='seconds between log during retries')
-
-    is_infinite = True
 
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
@@ -159,9 +155,6 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
 
 
 class TransactionExecutorWithLimitedBackoff(TransactionExecutorWithInfiniteBackoff):
-    # the `is_infinite` flag is informative for uses of this class
-    is_infinite = False
-
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
         between retries."""
