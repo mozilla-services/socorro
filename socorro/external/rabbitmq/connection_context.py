@@ -8,7 +8,7 @@ import pika
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace
-
+from six import iteritems
 
 class Connection(object):
     """A facade in front of a RabbitMQ channel that standardizes certain gross
@@ -292,7 +292,7 @@ class ConnectionContextPooled(ConnectionContext):
                 super(ConnectionContextPooled, self).close_connection(connection, force)
             except self.operational_exceptions:
                 self.config.logger.error('RabbitMQPooled - failed closing')
-            for name, conn in self.pool.iteritems():
+            for name, conn in list(iteritems(self.pool)):
                 if conn is connection:
                     break
             del self.pool[name]
@@ -302,7 +302,7 @@ class ConnectionContextPooled(ConnectionContext):
         self.config.logger.debug(
             "RabbitMQPooled - shutting down connection pool"
         )
-        for name, connection in list(self.pool.iteritems()):
+        for name, connection in list(iteritems(self.pool)):
             self.close_connection(connection, force=True)
             self.config.logger.debug(
                 "RabbitMQPooled - channel %s closed",
