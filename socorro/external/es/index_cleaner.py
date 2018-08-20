@@ -5,6 +5,7 @@
 import datetime
 import re
 
+from six import iterkeys
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
@@ -65,7 +66,7 @@ class IndexCleaner(RequiredConfig):
             # aliased to the expected format of 'socorro%Y%W'. In such cases,
             # replace the index with the alias.
             if index in aliases and 'aliases' in aliases[index]:
-                index_aliases = aliases[index]['aliases'].keys()
+                index_aliases = list(iterkeys(aliases[index]['aliases']))
                 if index_aliases:
                     index = index_aliases[0]
 
