@@ -4,9 +4,9 @@
 
 import datetime
 import logging
-import itertools
 
 import psycopg2
+from six.moves import map
 
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.external.postgresql.base import PostgreSQLBase
@@ -20,10 +20,10 @@ logger = logging.getLogger("webapi")
 class SmartDate(object):
 
     def clean(self, value):
-        if any(itertools.imap(value.startswith, ('>=', '<='))):
+        if any(map(value.startswith, ('>=', '<='))):
             op = value[:2]
             value = value[2:]
-        elif any(itertools.imap(value.startswith, ('=', '>', '<'))):
+        elif any(map(value.startswith, ('=', '>', '<'))):
             op = value[:1]
             value = value[1:]
         else:
