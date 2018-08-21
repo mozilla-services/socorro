@@ -1,4 +1,4 @@
-"""bug 1481696 focus
+"""bug 1481696 focus - add Focus product
 
 Revision ID: b8da3a85f665
 Revises: 9f7bb4445d7a
@@ -24,5 +24,7 @@ def upgrade():
 
 
 def downgrade():
-    # There is no downgrade
-    pass
+    op.execute("""
+        DELETE FROM products
+        WHERE product_name = 'Focus'
+    """)
