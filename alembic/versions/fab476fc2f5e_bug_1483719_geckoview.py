@@ -1,8 +1,8 @@
-"""bug 1481696 focus - add Focus product
+"""bug 1483719 geckoview - add GeckoView catchall product
 
-Revision ID: b8da3a85f665
-Revises: 9f7bb4445d7a
-Create Date: 2018-08-15 17:30:38.808486
+Revision ID: fab476fc2f5e
+Revises: b8da3a85f665
+Create Date: 2018-08-21 15:03:31.778855
 
 """
 
@@ -10,8 +10,8 @@ from alembic import op
 
 
 # revision identifiers, used by Alembic.
-revision = 'b8da3a85f665'
-down_revision = '9f7bb4445d7a'
+revision = 'fab476fc2f5e'
+down_revision = 'b8da3a85f665'
 
 
 def upgrade():
@@ -19,12 +19,12 @@ def upgrade():
         INSERT INTO products
         (product_name, sort, release_name, rapid_beta_version, rapid_release_version)
         VALUES
-        ('Focus', 3, 'focus', 1.0, 1.0)
+        ('GeckoView', 10, 'geckoview', 1.0, 1.0)
     """)
 
 
 def downgrade():
     op.execute("""
         DELETE FROM products
-        WHERE product_name = 'Focus'
+        WHERE product_name = 'GeckoView'
     """)
