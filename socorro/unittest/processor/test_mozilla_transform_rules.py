@@ -1664,7 +1664,7 @@ class TestSignatureGeneratorRule:
             def predicate(self, raw_crash, processed_crash):
                 raise exc_value
 
-        sentry_dsn = 'https://blahblah:blahblah@sentry.example.com/'
+        sentry_dsn = 'https://username:password@sentry.example.com/'
 
         config = get_basic_config()
         config.sentry = CDotDict()
