@@ -15,8 +15,7 @@ SOCORRO_REVISION = get_revision_data().get('version', 'unknown')
 
 def get_client(dsn, **kwargs):
     kwargs['dsn'] = dsn
-    if not kwargs.get('release') and SOCORRO_REVISION:
-        kwargs['release'] = SOCORRO_REVISION
+    kwargs['release'] = kwargs.get('release') or SOCORRO_REVISION
     return raven.Client(**kwargs)
 
 
