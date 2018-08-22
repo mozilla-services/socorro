@@ -1694,7 +1694,7 @@ class TestSignatureGeneratorRule:
         ]
 
         # Make sure the client was instantiated with the sentry_dsn
-        mock_raven.Client.assert_called_once_with(dsn=sentry_dsn)
+        mock_raven.Client.assert_called_once_with(dsn=sentry_dsn, release='unknown')
 
         # Make sure captureExeption was called with the right args.
         assert (
