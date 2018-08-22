@@ -3,7 +3,6 @@
 # variables.
 
 import os
-from pkg_resources import resource_string
 
 import dj_database_url
 from decouple import config, Csv
