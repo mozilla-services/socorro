@@ -11,6 +11,7 @@ from future.utils import iteritems
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
 
+
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,

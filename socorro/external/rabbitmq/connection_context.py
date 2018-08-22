@@ -10,6 +10,7 @@ from configman.config_manager import RequiredConfig
 from configman import Namespace
 from six import iteritems
 
+
 class Connection(object):
     """A facade in front of a RabbitMQ channel that standardizes certain gross
     elements of its API with those of other connection types.  Clients of this
