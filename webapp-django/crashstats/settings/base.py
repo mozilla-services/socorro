@@ -8,7 +8,7 @@ import dj_database_url
 from decouple import config, Csv
 
 from .bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
-from socorro.lib.revision_data import get_revision_data
+from socorro.lib.revision_data import get_version
 
 
 ROOT = os.path.abspath(
@@ -509,10 +509,7 @@ SESSION_COOKIE_HTTPONLY = config('SESSION_COOKIE_HTTPONLY', True, cast=bool)
 # decorator on specific views that can be in a frame.
 X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', 'DENY')
 
-# When Socorro is deployed, it generates a version.json file which has
-# a version number in it. Get that if available.
-_revision_data = get_revision_data()
-SOCORRO_REVISION = _revision_data.get('version') or _revision_data.get('commit') or 'unknown'
+SOCORRO_REVISION = get_version()
 
 # Comma-separated list of urls that serve version information in JSON format
 OVERVIEW_VERSION_URLS = config('OVERVIEW_VERSION_URLS', '')

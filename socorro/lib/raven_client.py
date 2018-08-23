@@ -6,17 +6,12 @@ import sys
 
 import raven
 
-from socorro.lib.revision_data import get_revision_data
-
-
-# Get version data or "unknown"
-_revision_data = get_revision_data()
-SOCORRO_REVISION = _revision_data.get('version') or _revision_data.get('commit') or 'unknown'
+from socorro.lib.revision_data import get_version
 
 
 def get_client(dsn, **kwargs):
     kwargs['dsn'] = dsn
-    kwargs['release'] = kwargs.get('release') or SOCORRO_REVISION
+    kwargs['release'] = kwargs.get('release') or get_version()
     return raven.Client(**kwargs)
 
 
