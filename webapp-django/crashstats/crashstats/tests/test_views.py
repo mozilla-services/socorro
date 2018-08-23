@@ -1269,10 +1269,6 @@ class TestViews(BaseTestViews):
         assert 'id="telemetryenvironment-json"' in response.content
 
     def test_report_index_fennecandroid_report(self):
-        comment0 = 'This is a comment\nOn multiple lines'
-        comment0 += '\npeterbe@mozilla.com'
-        comment0 += '\nwww.p0rn.com'
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1319,11 +1315,8 @@ class TestViews(BaseTestViews):
     def test_report_index_odd_product_and_version(self):
         """If the processed JSON references an unfamiliar product and
         version it should not use that to make links in the nav to
-        reports for that unfamiliar product and version."""
-        comment0 = 'This is a comment\nOn multiple lines'
-        comment0 += '\npeterbe@mozilla.com'
-        comment0 += '\nwww.p0rn.com'
-
+        reports for that unfamiliar product and version.
+        """
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':

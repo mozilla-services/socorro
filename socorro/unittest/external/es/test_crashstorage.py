@@ -89,7 +89,7 @@ a_processed_crash = {
     'topmost_filenames': [],
     'truncated': False,
     'uptime': 170,
-    'url': 'http://embarasing.porn.com',
+    'url': 'http://embarasing.example.com',
     'user_comments': None,
     'user_id': None,
     'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408',
@@ -945,7 +945,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             # in them. If we changed a_processed_crash and a_raw_crash, then
             # these numbers will change.
             assert mm.has_record('histogram', stat='processor.es.raw_crash_size', value=27)
-            assert mm.has_record('histogram', stat='processor.es.processed_crash_size', value=1785)
+            assert mm.has_record('histogram', stat='processor.es.processed_crash_size', value=1788)
 
     def test_index_data_capture(self):
         """Verify we capture index data in ES crashstorage"""

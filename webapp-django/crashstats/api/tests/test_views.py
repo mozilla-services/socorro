@@ -365,7 +365,7 @@ class TestViews(BaseTestViews):
                     "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
                     "AsyncShutdownTimeout": 12345,
                     "BIOS_Manufacturer": "abc123",
-                    "Comments": "I visited http://p0rn.com and mail@email.com",
+                    "Comments": "I visited http://example.com and mail@example.com",
                     "upload_file_minidump_browser": "a crash",
                     "upload_file_minidump_flash1": "a crash",
                     "upload_file_minidump_flash2": "a crash",

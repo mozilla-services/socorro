@@ -49,7 +49,7 @@ a_processed_crash = {
     'topmost_filenames': [],
     'truncated': False,
     'uptime': 170,
-    'url': 'http://embarasing.porn.com',
+    'url': 'http://embarasing.example.com',
     'user_comments': None,
     'user_id': None,
     'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408',
