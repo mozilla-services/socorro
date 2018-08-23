@@ -10,6 +10,7 @@ from configman.dotdict import DotDict as CDotDict
 from mock import call, Mock, patch
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
+from socorro.lib.revision_data import get_revision_data
 from socorro.lib.util import DotDict
 from socorro.processor.mozilla_transform_rules import (
     AddonsRule,
@@ -1664,7 +1665,13 @@ class TestSignatureGeneratorRule:
             def predicate(self, raw_crash, processed_crash):
                 raise exc_value
 
-        sentry_dsn = 'https://blahblah:blahblah@sentry.example.com/'
+        # NOTE(willkg): In a local development environment, there's no
+        # version.json file, so this ends up as "unknown". But in CI,
+        # there is a version.json file and the version is "". We need to
+        # account for the variation in the two test contexts.
+        release = get_revision_data().get('version', 'unknown')
+
+        sentry_dsn = 'https://username:password@sentry.example.com/'
 
         config = get_basic_config()
         config.sentry = CDotDict()
@@ -1694,7 +1701,7 @@ class TestSignatureGeneratorRule:
         ]
 
         # Make sure the client was instantiated with the sentry_dsn
-        mock_raven.Client.assert_called_once_with(dsn=sentry_dsn)
+        mock_raven.Client.assert_called_once_with(dsn=sentry_dsn, release=release)
 
         # Make sure captureExeption was called with the right args.
         assert (

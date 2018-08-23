@@ -4,22 +4,18 @@
 
 import sys
 
-from pkg_resources import resource_string
 import raven
 
-# When socorro is installed (python setup.py install), it will create
-# a file in site-packages for socorro called "socorro/socorro_revision.txt".
-# If this socorro was installed like that, let's pick it up and use it.
-try:
-    SOCORRO_REVISION = resource_string('socorro', 'socorro_revision.txt').strip()
-except IOError:
-    SOCORRO_REVISION = None
+from socorro.lib.revision_data import get_revision_data
+
+
+# Get version data or "unknown"
+SOCORRO_REVISION = get_revision_data().get('version', 'unknown')
 
 
 def get_client(dsn, **kwargs):
     kwargs['dsn'] = dsn
-    if not kwargs.get('release') and SOCORRO_REVISION:
-        kwargs['release'] = SOCORRO_REVISION
+    kwargs['release'] = kwargs.get('release') or SOCORRO_REVISION
     return raven.Client(**kwargs)
 
 

@@ -33,16 +33,11 @@ from configman import (
 )
 from configman.converters import py_obj_to_str, str_to_python_object, str_to_list
 import markus
+from socorro.lib.revision_data import get_revision_data
 
 
 # for use with SIGHUP for apps that run as daemons
 restart = True
-
-ROOT = os.path.join(
-    os.path.dirname(__file__),
-    os.pardir,
-    os.pardir,
-)
 
 
 def respond_to_SIGHUP(signal_number, frame, logger=None):
@@ -55,13 +50,6 @@ def respond_to_SIGHUP(signal_number, frame, logger=None):
     if logger:
         logger.info('detected SIGHUP')
     raise KeyboardInterrupt
-
-
-def spit_out_version_json(logger):
-    version_json_path = os.path.join(ROOT, "version.json")
-    if os.path.exists(version_json_path):
-        with open(version_json_path, 'r') as fp:
-            logger.info('version.json: ' + fp.read().strip())
 
 
 def klass_to_pypath(klass):
@@ -209,7 +197,17 @@ class SocorroApp(RequiredConfig):
             config.executor_identity = (
                 lambda: threading.currentThread().getName()
             )
-            spit_out_version_json(config.logger)
+
+            # Log revision information
+            revision_data = get_revision_data()
+            revision_items = sorted(revision_data.items())
+            config.logger.info(
+                'version.json: {%s}',
+                ', '.join(
+                    ['%r: %r' % (key, val) for key, val in revision_items]
+                )
+            )
+
             try:
                 config_manager.log_config(config.logger)
                 respond_to_SIGHUP_with_logging = functools.partial(

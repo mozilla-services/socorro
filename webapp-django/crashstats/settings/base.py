@@ -3,12 +3,12 @@
 # variables.
 
 import os
-from pkg_resources import resource_string
 
 import dj_database_url
 from decouple import config, Csv
 
 from .bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
+from socorro.lib.revision_data import get_revision_data
 
 
 ROOT = os.path.abspath(
@@ -509,13 +509,9 @@ SESSION_COOKIE_HTTPONLY = config('SESSION_COOKIE_HTTPONLY', True, cast=bool)
 # decorator on specific views that can be in a frame.
 X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', 'DENY')
 
-# When socorro is installed (python setup.py install), it will create
-# a file in site-packages for socorro called "socorro/socorro_revision.txt".
-# If this socorro was installed like that, let's pick it up and use it.
-try:
-    SOCORRO_REVISION = resource_string('socorro', 'socorro_revision.txt')
-except IOError:
-    SOCORRO_REVISION = None
+# When Socorro is deployed, it generates a version.json file which has
+# a version number in it. Get that if available.
+SOCORRO_REVISION = get_revision_data().get('version', 'unknown')
 
 # Comma-separated list of urls that serve version information in JSON format
 OVERVIEW_VERSION_URLS = config('OVERVIEW_VERSION_URLS', '')

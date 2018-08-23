@@ -53,12 +53,7 @@ setup(
             glob.glob('socorro/external/postgresql/raw_sql/views/*.sql')),
         ('socorro/external/postgresql/raw_sql/types',
             glob.glob('socorro/external/postgresql/raw_sql/types/*.sql')),
-        ('socorro', [
-            'socorro_revision.txt',
-            'breakpad_revision.txt',
-            'JENKINS_BUILD_NUMBER'
-        ]),
-        ('socorro/siglists', glob.glob('socorro/siglists/*.txt')),
+        ('socorro/siglists', glob.glob('socorro/signature/siglists/*.txt')),
         ('socorro/schemas', glob.glob('socorro/schemas/*.json')),
     ],
 )
