@@ -18,7 +18,6 @@ from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_str
 
-from crashstats import scrubber
 from crashstats.crashstats.utils import parse_isodate
 
 
@@ -167,13 +166,6 @@ def human_readable_iso_date(dt):
 
     format = '%Y-%m-%d %H:%M:%S'
     return dt.strftime(format)
-
-
-@library.filter
-def scrub_pii(content):
-    content = scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
-    content = scrubber.scrub_string(content, scrubber.URL, '(URL removed)')
-    return content
 
 
 @library.filter

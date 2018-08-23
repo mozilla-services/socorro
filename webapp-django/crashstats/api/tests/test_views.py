@@ -365,7 +365,7 @@ class TestViews(BaseTestViews):
                     "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
                     "AsyncShutdownTimeout": 12345,
                     "BIOS_Manufacturer": "abc123",
-                    "Comments": "I visited http://p0rn.com and mail@email.com",
+                    "Comments": "I visited http://example.com and mail@example.com",
                     "upload_file_minidump_browser": "a crash",
                     "upload_file_minidump_flash1": "a crash",
                     "upload_file_minidump_flash2": "a crash",
@@ -395,11 +395,6 @@ class TestViews(BaseTestViews):
         assert 'upload_file_minidump_flash1' in dump
         assert 'upload_file_minidump_flash2' in dump
         assert 'upload_file_minidump_plugin' in dump
-
-        # `Comments` is scrubbed
-        assert 'I visited' in dump['Comments']
-        assert 'http://p0rn.com' not in dump['Comments']
-        assert 'mail@email.com' not in dump['Comments']
 
     def test_RawCrash_binary_blob(self):
 
@@ -734,9 +729,6 @@ class TestViews(BaseTestViews):
         assert 'exploitability' not in res['hits']
         assert 'url' not in res['hits']
 
-        # Verify user comments are scrubbed.
-        assert 'thebig@lebowski.net' not in res['hits'][0]['user_comments']
-
         # Verify it's not possible to use restricted parameters.
         response = self.client.get(url, {
             'exploitability': 'high',
@@ -810,8 +802,6 @@ class TestViews(BaseTestViews):
         assert 'email' in res['hits'][0]
         assert 'exploitability' in res['hits'][0]
         assert 'url' in res['hits'][0]
-
-        # Verify user comments are not scrubbed.
         assert 'thebig@lebowski.net' in res['hits'][0]['user_comments']
 
         # Verify values can be lists.

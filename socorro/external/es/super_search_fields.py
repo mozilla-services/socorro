@@ -330,7 +330,9 @@ FIELDS = {
         'is_returned': True,
         'name': 'Comments',
         'namespace': 'raw_crash',
-        'permissions_needed': [],
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
         'query_type': 'enum',
         'storage_mapping': None
     },
@@ -4244,7 +4246,9 @@ FIELDS = {
         'is_returned': True,
         'name': 'user_comments',
         'namespace': 'processed_crash',
-        'permissions_needed': [],
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
         'query_type': 'string',
         'storage_mapping': {
             'fields': {

@@ -1,8 +1,6 @@
 import re
 import warnings
 
-from crashstats import scrubber
-
 
 class Cleaner(object):
     """
@@ -33,9 +31,8 @@ class Cleaner(object):
 
     ANY = '__any__'
 
-    def __init__(self, whitelist, clean_scrub=None, debug=False):
+    def __init__(self, whitelist, debug=False):
         self.whitelist = whitelist
-        self.clean_scrub = clean_scrub
         self.debug = debug
 
     def start(self, data):
@@ -80,12 +77,6 @@ class Cleaner(object):
                     msg = 'Skipping %r' % (key,)
                     warnings.warn(msg)
                 del data[key]
-
-        if self.clean_scrub:
-            scrubber.scrub_dict(
-                data,
-                clean_fields=self.clean_scrub,
-            )
 
     def _scrub_list(self, sequence, whitelist):
         for i, data in enumerate(sequence):

@@ -38,7 +38,8 @@ _SAMPLE_META = {
     'Version': '5.0a1',
     'Email': 'some@emailaddress.com',
     'Vendor': 'Mozilla',
-    'URL': 'someaddress.com'
+    'URL': 'someaddress.com',
+    'Comments': 'this is a comment'
 }
 
 _SAMPLE_UNREDACTED = {
@@ -69,6 +70,7 @@ _SAMPLE_UNREDACTED = {
     'address': '0x8',
     'completeddatetime': '2012-06-11T06:08:57',
     'success': True,
+    'user_comments': 'this is a comment',
     'json_dump': {
         'status': 'OK',
         'sensitive': {
@@ -692,9 +694,6 @@ class TestViews(BaseTestViews):
                 'exploitability': 'high'
             }
         }
-        comment0 = 'This is a comment\nOn multiple lines'
-        comment0 += '\npeterbe@example.com'
-        comment0 += '\nwww.p0rn.com'
 
         def mocked_bugs_get(**options):
             return {
@@ -721,17 +720,13 @@ class TestViews(BaseTestViews):
             if params['datatype'] == 'unredacted':
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
                 crash['json_dump'] = json_dump
-                crash['user_comments'] = comment0
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
         # which bug IDs appear is important and the order matters too
@@ -748,16 +743,7 @@ class TestViews(BaseTestViews):
         # Verify the "AMD CPU bug" marker is there.
         assert 'Possible AMD CPU bug related crash report' in response.content
 
-        comment_transformed = (
-            comment0
-            .replace('\n', '<br />')
-            .replace('peterbe@example.com', '(email removed)')
-            .replace('www.p0rn.com', '(URL removed)')
-        )
-
-        assert comment_transformed in response.content
-        # but the email should have been scrubbed
-        assert 'peterbe@example.com' not in response.content
+        assert _SAMPLE_UNREDACTED['user_comments'] not in response.content
         assert _SAMPLE_META['Email'] not in response.content
         assert _SAMPLE_META['URL'] not in response.content
         assert 'You need to be signed in to download raw dumps.' in response.content
@@ -776,7 +762,7 @@ class TestViews(BaseTestViews):
         assert user.has_perm('crashstats.view_pii')
 
         response = self.client.get(url)
-        assert 'peterbe@example.com' in response.content
+        assert _SAMPLE_UNREDACTED['user_comments'] in response.content
         assert _SAMPLE_META['Email'] in response.content
         assert _SAMPLE_META['URL'] in response.content
         assert '&#34;sensitive&#34;' in response.content
@@ -795,7 +781,7 @@ class TestViews(BaseTestViews):
         user.save()
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'peterbe@example.com' not in response.content
+        assert _SAMPLE_UNREDACTED['user_comments'] not in response.content
         assert _SAMPLE_META['Email'] not in response.content
         assert _SAMPLE_META['URL'] not in response.content
 
@@ -1283,10 +1269,6 @@ class TestViews(BaseTestViews):
         assert 'id="telemetryenvironment-json"' in response.content
 
     def test_report_index_fennecandroid_report(self):
-        comment0 = 'This is a comment\nOn multiple lines'
-        comment0 += '\npeterbe@mozilla.com'
-        comment0 += '\nwww.p0rn.com'
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1333,11 +1315,8 @@ class TestViews(BaseTestViews):
     def test_report_index_odd_product_and_version(self):
         """If the processed JSON references an unfamiliar product and
         version it should not use that to make links in the nav to
-        reports for that unfamiliar product and version."""
-        comment0 = 'This is a comment\nOn multiple lines'
-        comment0 += '\npeterbe@mozilla.com'
-        comment0 += '\nwww.p0rn.com'
-
+        reports for that unfamiliar product and version.
+        """
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':

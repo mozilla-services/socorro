@@ -36,7 +36,6 @@ from django.core.cache import cache
 from django.utils.encoding import iri_to_uri
 from django.template.defaultfilters import slugify
 
-from crashstats import scrubber
 from crashstats.base.utils import requests_retry_session
 
 
@@ -638,7 +637,6 @@ class ProcessedCrash(SocorroMiddleware):
         'success',
         'truncated',
         'uptime',
-        'user_comments',
         'uuid',
         'version',
         'install_age',
@@ -670,11 +668,6 @@ class ProcessedCrash(SocorroMiddleware):
     API_WHITELIST = get_api_whitelist(
         'processed_crash',
         baseline=API_WHITELIST
-    )
-
-    API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL),
-        ('user_comments', scrubber.URL),
     )
 
 
@@ -755,7 +748,6 @@ class RawCrash(SocorroMiddleware):
         'B2G_OS_Version',
         'BIOS_Manufacturer',
         'BuildID',
-        'Comments',
         'CpuUsageFlashProcess1',
         'CpuUsageFlashProcess2',
         'CrashTime',
@@ -809,11 +801,6 @@ class RawCrash(SocorroMiddleware):
     # for getting the complete list is because we're apparently way behind
     # on having all of these added to the Super Search Fields.
     API_WHITELIST = get_api_whitelist('raw_crash', baseline=API_WHITELIST)
-
-    API_CLEAN_SCRUB = (
-        ('Comments', scrubber.EMAIL),
-        ('Comments', scrubber.URL),
-    )
 
     # If this is matched in the query string parameters, then
     # we will return the response in binary format in the API
