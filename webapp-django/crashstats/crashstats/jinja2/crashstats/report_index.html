@@ -343,35 +343,31 @@
                             {# Personal user info #}
 
                             {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
-                            <tr title="{{ fields_desc['processed_crash.url'] }}">
-                                <th scope="row">URL</th>
-                                <td>
-                                    {% if raw.URL %}
-                                    <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ sensitive_warning(your_crash) }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            <tr title="{{ fields_desc['processed_crash.email'] }}">
-                                <th scope="row">Email Address</th>
-                                <td>
-                                    {% if raw.Email %}
-                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ sensitive_warning(your_crash) }}
-                                    {% endif %}
-                                </td>
-                            </tr>
+                                <tr title="{{ fields_desc['processed_crash.url'] }}">
+                                    <th scope="row">URL</th>
+                                    <td>
+                                        {% if raw.URL %}
+                                        <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ sensitive_warning(your_crash) }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr title="{{ fields_desc['processed_crash.email'] }}">
+                                    <th scope="row">Email Address</th>
+                                    <td>
+                                        {% if raw.Email %}
+                                        <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ sensitive_warning(your_crash) }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
+                                    <th scope="row">User Comments</th>
+                                    <td>
+                                        {% if report.user_comments %}
+                                        {{ report.user_comments | linebreaks }} - {{ sensitive_warning(your_crash) }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
                             {% endif %}
-                            <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
-                                <th scope="row">User Comments</th>
-                                <td>
-                                    {% if report.user_comments %}
-                                    {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
-                                    {{ report.user_comments | linebreaks }}
-                                    {% else %}
-                                    {{ report.user_comments | scrub_pii | linebreaks }}
-                                    {% endif %}
-                                    {% endif %}
-                                </td>
-                            </tr>
 
                             {# Memory usage #}
 

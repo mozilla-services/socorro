@@ -396,11 +396,6 @@ class TestViews(BaseTestViews):
         assert 'upload_file_minidump_flash2' in dump
         assert 'upload_file_minidump_plugin' in dump
 
-        # `Comments` is scrubbed
-        assert 'I visited' in dump['Comments']
-        assert 'http://p0rn.com' not in dump['Comments']
-        assert 'mail@email.com' not in dump['Comments']
-
     def test_RawCrash_binary_blob(self):
 
         def mocked_get(**params):
@@ -733,9 +728,6 @@ class TestViews(BaseTestViews):
         assert 'email' not in res['hits']
         assert 'exploitability' not in res['hits']
         assert 'url' not in res['hits']
-
-        # Verify user comments are scrubbed.
-        assert 'thebig@lebowski.net' not in res['hits'][0]['user_comments']
 
         # Verify it's not possible to use restricted parameters.
         response = self.client.get(url, {
