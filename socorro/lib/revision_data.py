@@ -44,3 +44,17 @@ def get_revision_data():
         with open(REVISION_DATA_PATH, 'r') as fp:
             return json.load(fp)
     return {}
+
+
+def get_version():
+    """Returns the Socorro version
+
+    This pulls revision data and then returns the best version-y thing
+    available: the tag, the commit, or "unknown" if there's no revision
+    data.
+
+    :returns: string
+
+    """
+    revision_data = get_revision_data()
+    return revision_data.get('version') or revision_data.get('commit') or 'unknown'
