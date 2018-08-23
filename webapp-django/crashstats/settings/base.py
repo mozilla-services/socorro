@@ -511,7 +511,8 @@ X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', 'DENY')
 
 # When Socorro is deployed, it generates a version.json file which has
 # a version number in it. Get that if available.
-SOCORRO_REVISION = get_revision_data().get('version', 'unknown')
+_revision_data = get_revision_data()
+SOCORRO_REVISION = _revision_data.get('version') or _revision_data.get('commit') or 'unknown'
 
 # Comma-separated list of urls that serve version information in JSON format
 OVERVIEW_VERSION_URLS = config('OVERVIEW_VERSION_URLS', '')

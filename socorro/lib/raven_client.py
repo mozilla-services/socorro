@@ -10,7 +10,8 @@ from socorro.lib.revision_data import get_revision_data
 
 
 # Get version data or "unknown"
-SOCORRO_REVISION = get_revision_data().get('version', 'unknown')
+_revision_data = get_revision_data()
+SOCORRO_REVISION = _revision_data.get('version') or _revision_data.get('commit') or 'unknown'
 
 
 def get_client(dsn, **kwargs):
