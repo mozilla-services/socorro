@@ -298,8 +298,6 @@ def model_wrapper(request, model_name):
                 )
 
         elif not request.user.has_perm('crashstats.view_pii'):
-            clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
-
             if callable(model.API_WHITELIST):
                 whitelist = model.API_WHITELIST()
             else:
@@ -308,7 +306,6 @@ def model_wrapper(request, model_name):
             if result and whitelist:
                 cleaner = Cleaner(
                     whitelist,
-                    clean_scrub=clean_scrub,
                     # if True, uses warnings.warn() to show fields
                     # not whitelisted
                     debug=settings.DEBUG,

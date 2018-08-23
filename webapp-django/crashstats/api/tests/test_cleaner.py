@@ -2,7 +2,6 @@ import mock
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.api.cleaner import Cleaner, SmartWhitelistMatcher
-from crashstats import scrubber
 
 
 class TestCleaner(TestCase):
@@ -204,40 +203,6 @@ class TestCleaner(TestCase):
                     'bar': 11,
                 }
             },
-        }
-        assert data == expect
-
-    def test_with_scrubber_cleaning(self):
-        whitelist = {'hits': ('foo', 'bar', 'baz')}
-        data = {
-            'hits': [
-                {'foo': "Bla bla",
-                 'bar': "contact me on big@penis.com",
-                 'baz': "when I visited http://www.p0rn.com"},
-                {'foo': "Ble ble unconfiged@email.com",
-                 'bar': "other things on https://google.com here",
-                 'baz': "talk to bill@gates.com"},
-            ]
-        }
-        cleaner = Cleaner(
-            whitelist,
-            clean_scrub=(
-                ('bar', scrubber.EMAIL),
-                ('bar', scrubber.URL),
-                ('baz', scrubber.URL),
-            )
-        )
-        cleaner.start(data)
-        expect = {
-            'hits': [
-                {'foo': "Bla bla",
-                 'bar': "contact me on ",
-                 'baz': "when I visited "},
-                {'foo': "Ble ble unconfiged@email.com",
-                 'bar': "other things on  here",
-                 # because 'baz' doesn't have an EMAIL scrubber
-                 'baz': "talk to bill@gates.com"},
-            ]
         }
         assert data == expect
 

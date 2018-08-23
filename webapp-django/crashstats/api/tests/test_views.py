@@ -802,8 +802,6 @@ class TestViews(BaseTestViews):
         assert 'email' in res['hits'][0]
         assert 'exploitability' in res['hits'][0]
         assert 'url' in res['hits'][0]
-
-        # Verify user comments are not scrubbed.
         assert 'thebig@lebowski.net' in res['hits'][0]['user_comments']
 
         # Verify values can be lists.

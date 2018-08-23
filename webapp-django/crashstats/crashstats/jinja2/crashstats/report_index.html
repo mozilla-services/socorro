@@ -687,11 +687,7 @@
                                         <i>empty key</i>
                                     {% endif %}
                                 </th>
-                                {% if key == 'Comments' %}
-                                <td><pre>{{ raw[key] | scrub_pii }}</pre></td>
-                                {% else %}
                                 <td><pre>{{ raw[key] }}</pre></td>
-                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
