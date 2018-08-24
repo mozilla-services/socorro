@@ -1314,7 +1314,7 @@ class TestBetaVersion(TestCase):
         transaction.return_value = (('3.0b1',),)
         processed_crash.version = '3.0'
         processed_crash.release_channel = 'beta'
-        processed_crash.build = 20001001101010
+        processed_crash.build = '20001001101010'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '3.0b1'
@@ -1324,7 +1324,7 @@ class TestBetaVersion(TestCase):
         transaction.return_value = tuple()
         processed_crash.version = '2.0'
         processed_crash.release_channel = 'release'
-        processed_crash.build = 20000801101010
+        processed_crash.build = '20000801101010'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '2.0'
@@ -1334,7 +1334,7 @@ class TestBetaVersion(TestCase):
         transaction.return_value = tuple()
         processed_crash.version = '5.0a1'
         processed_crash.release_channel = 'nightly'
-        processed_crash.build = 20000105101010
+        processed_crash.build = '20000105101010'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '5.0a1'
@@ -1354,7 +1354,7 @@ class TestBetaVersion(TestCase):
         transaction.return_value = tuple()
         processed_crash.version = '3.0'
         processed_crash.release_channel = 'beta'
-        processed_crash.build = 20000101101011
+        processed_crash.build = '20000101101011'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '3.0b0'
@@ -1385,7 +1385,7 @@ class TestBetaVersion(TestCase):
         transaction.return_value = (('3.0b1',),)
         processed_crash.version = '3.0'
         processed_crash.release_channel = 'aurora'
-        processed_crash.build = 20001001101010
+        processed_crash.build = '20001001101010'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '3.0b1'
