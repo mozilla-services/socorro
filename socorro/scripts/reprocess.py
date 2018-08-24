@@ -8,12 +8,8 @@ import argparse
 import os
 import sys
 import time
-import urlparse
 
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
+from socorro.lib.requestslib import session_with_retries
 from socorro.lib.util import chunkify
 from socorro.scripts import WrappedTextHelpFormatter
 
@@ -37,18 +33,6 @@ they should increase the number of processor nodes.
 DEFAULT_HOST = 'https://crash-stats.mozilla.com'
 CHUNK_SIZE = 50
 SLEEP_DEFAULT = 1
-
-
-def session_with_retries(url):
-    base_url = urlparse.urlparse(url).netloc
-    scheme = urlparse.urlparse(url).scheme
-
-    retries = Retry(total=32, backoff_factor=1, status_forcelist=[429])
-
-    s = requests.Session()
-    s.mount(scheme + '://' + base_url, HTTPAdapter(max_retries=retries))
-
-    return s
 
 
 def main(argv=None):
@@ -95,7 +79,7 @@ def main(argv=None):
     crash_ids = [item.strip() for item in crash_ids]
 
     print('Sending reprocessing requests to: %s' % url)
-    session = session_with_retries(url)
+    session = session_with_retries()
 
     print('Reprocessing %s crashes sleeping %s seconds between groups...' % (
         len(crash_ids), args.sleep

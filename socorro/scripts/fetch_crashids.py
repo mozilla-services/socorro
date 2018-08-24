@@ -12,11 +12,8 @@ from functools import total_ordering
 import sys
 from urlparse import urlparse, parse_qs
 
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
 from socorro.lib.datetimeutil import utc_now
+from socorro.lib.requestslib import session_with_retries
 from socorro.scripts import WrappedTextHelpFormatter
 
 
@@ -78,11 +75,7 @@ def fetch_crashids(params, num_results):
     """
     url = HOST + '/api/SuperSearch/'
 
-    # Set up retrying on 429s
-    retries = Retry(total=32, backoff_factor=1, status_forcelist=[429])
-    session = requests.Session()
-    session.mount('http://', HTTPAdapter(max_retries=retries))
-    session.mount('https://', HTTPAdapter(max_retries=retries))
+    session = session_with_retries()
 
     # Set up first page
     params['_results_offset'] = 0
