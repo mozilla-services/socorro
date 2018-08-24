@@ -659,22 +659,18 @@ class BetaVersionRule(Rule):
         return self._versions_data_cache.get(key)
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            # We apply this Rule only if the release channel is beta, because
-            # beta versions are the only ones sending an "incorrect" version
-            # number in their data.
-            # 2017-06-14: Ohai! This is not true anymore! With the removal of
-            # the aurora channel, there is now a new type of build called
-            # "DevEdition", that is released on the aurora channel, but has
-            # the same version naming logic as builds on the beta channel.
-            # We thus want to apply the same logic to aurora builds
-            # as well now. Note that older crash reports won't be affected,
-            # because they have a "correct" version number, usually containing
-            # the letter 'a' (like '50.0a2').
-            return processed_crash['release_channel'].lower() in ('beta', 'aurora')
-        except KeyError:
-            # No release_channel.
-            return False
+        # We apply this Rule only if the release channel is beta, because
+        # beta versions are the only ones sending an "incorrect" version
+        # number in their data.
+        # 2017-06-14: Ohai! This is not true anymore! With the removal of
+        # the aurora channel, there is now a new type of build called
+        # "DevEdition", that is released on the aurora channel, but has
+        # the same version naming logic as builds on the beta channel.
+        # We thus want to apply the same logic to aurora builds
+        # as well now. Note that older crash reports won't be affected,
+        # because they have a "correct" version number, usually containing
+        # the letter 'a' (like '50.0a2').
+        return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
