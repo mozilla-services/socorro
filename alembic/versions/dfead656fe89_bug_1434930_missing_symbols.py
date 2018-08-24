@@ -7,7 +7,6 @@ Create Date: 2018-02-14 17:49:19.481892
 """
 
 from alembic import op
-from socorro.lib import citexttype, jsontype, buildtype
 from socorro.lib.migrations import fix_permissions, load_stored_proc
 
 import sqlalchemy as sa

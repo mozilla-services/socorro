@@ -21,11 +21,6 @@ from django.utils.encoding import smart_str
 from crashstats.crashstats.utils import parse_isodate
 
 
-@library.filter
-def split(value, separator):
-    return value.split(separator)
-
-
 @library.global_function
 def truncatechars(str_, max_length):
     if len(str_) < max_length:
@@ -54,20 +49,6 @@ def digitgroupseparator(number):
     if not isinstance(number, (long, int)):
         return number
     return format(number, ',')
-
-
-@library.global_function
-def recursive_state_filter(state, root):
-    apps = []
-    for app_name in state:
-        if not root:
-            if not state[app_name].get('depends_on', []):
-                apps.append((app_name, state[app_name]))
-        elif root in state[app_name].get('depends_on', []):
-            apps.append((app_name, state[app_name]))
-
-    apps.sort()
-    return apps
 
 
 @library.filter
@@ -169,13 +150,6 @@ def human_readable_iso_date(dt):
 
 
 @library.filter
-def json_dumps(data):
-    return jinja2.Markup(
-        json.dumps(data).replace('</', '<\\/')
-    )
-
-
-@library.filter
 def to_json(data):
     return json.dumps(data).replace('</', '<\\/')
 
@@ -207,14 +181,6 @@ def show_bug_link(bug_id):
     )
     data['class'] = ' '.join(data['class'])
     return jinja2.Markup(tmpl) % data
-
-
-@library.global_function
-def read_crash_column(crash, column_key):
-    if 'raw_crash' in crash:
-        raw_crash = crash['raw_crash'] or {}
-        return raw_crash.get(column_key, crash.get(column_key, ''))
-    return crash.get(column_key, '')
 
 
 @library.global_function

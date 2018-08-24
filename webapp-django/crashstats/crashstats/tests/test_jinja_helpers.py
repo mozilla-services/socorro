@@ -10,7 +10,6 @@ from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.templatetags.jinja_helpers import (
     bugzilla_submit_url,
     digitgroupseparator,
-    recursive_state_filter,
     replace_bugzilla_links,
     show_bug_link,
     show_duration,
@@ -83,31 +82,6 @@ class TestTimeTag(TestCase):
             'Wed, Sep 07 00:38 +00:00'
         )
         assert output == expected
-
-
-class TestRecursiveStateFilter(TestCase):
-
-    def test_basic_recursion(self):
-        state = {
-            'app1': {'key': 'value1'},
-            'app2': {'key': 'value2', 'depends_on': ['app1']},
-            'appX': {'key': 'valueX'},
-        }
-        apps = recursive_state_filter(state, None)
-        expected = [
-            ('app1', {'key': 'value1'}),
-            ('appX', {'key': 'valueX'})
-        ]
-        assert apps == expected
-
-        apps = recursive_state_filter(state, 'app1')
-        expected = [
-            ('app2', {'key': 'value2', 'depends_on': ['app1']}),
-        ]
-        assert apps == expected
-
-        apps = recursive_state_filter(state, 'XXXX')
-        assert apps == []
 
 
 class TestBugzillaLink(TestCase):

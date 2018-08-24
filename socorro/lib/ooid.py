@@ -117,7 +117,6 @@ def is_crash_id_valid(crash_id):
     """Returns whether this is a valid crash id
 
     :arg str crash_id: the crash id in question
-    :arg boolean strict: whether or not to be strict about the throttle character
 
     :returns: True if it's valid, False if not
 

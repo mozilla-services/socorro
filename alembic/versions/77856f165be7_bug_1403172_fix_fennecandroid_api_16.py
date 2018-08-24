@@ -11,7 +11,6 @@ revision = '77856f165be7'
 down_revision = 'a38b03765a79'
 
 from alembic import op
-from socorro.lib import citexttype, jsontype, buildtype
 from socorro.lib.migrations import fix_permissions, load_stored_proc
 
 import sqlalchemy as sa
