@@ -44,6 +44,11 @@ class ExpiringCache(MutableMapping):
 
     """
     def __init__(self, max_size=128, ttl=600):
+        """
+        :arg max_size: maximum number of items in the cache
+        :arg ttl: ttl for items in the cache in seconds
+
+        """
         if max_size <= 0:
             raise ValueError('max_size must be greater than 0')
         if ttl <= 0:

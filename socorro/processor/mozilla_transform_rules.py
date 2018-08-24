@@ -12,7 +12,7 @@ from urllib import unquote_plus
 
 import ujson
 
-from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
+from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import (
     UTC,
@@ -20,6 +20,7 @@ from socorro.lib.datetimeutil import (
 )
 from socorro.lib.ooid import dateFromOoid
 from socorro.lib import raven_client
+from socorro.lib.requestslib import session_with_retries
 from socorro.lib.transform_rules import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
@@ -605,20 +606,27 @@ class TopMostFilesRule(Rule):
         return True
 
 
+class NoVersionString(Exception):
+    pass
+
+
 class BetaVersionRule(Rule):
+    #: Hold at most 1000 items in cache
+    CACHE_MAX_SIZE = 1000
+
+    #: Items in cache expire after 30 minutes
+    CACHE_TTL = 60 * 30
+
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
         # NOTE(willkg): These config values come from Processor2015 instance.
-        database = config.database_class(config)
-        self.transaction = config.transaction_executor_class(
-            config,
-            database,
-        )
-        self._versions_data_cache = {}
+        self.version_string_api = config.version_string_api
+        self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, ttl=self.CACHE_TTL)
 
     def version(self):
         return '1.0'
 
+    # FIXME(willkg): add ttl cache here
     def _get_version_data(self, product, version, build_id):
         """Return the real version number of a specific product, version and
         build.
@@ -628,48 +636,35 @@ class BetaVersionRule(Rule):
         is 54.0). This database call returns the actual version number of said
         build (i.e. 54.0b3 for the previous example).
         """
+        print((product, version, build_id))
+        if not (product and version and build_id):
+            return None
+
         key = '%s:%s:%s' % (product, version, build_id)
+        if key in self.cache:
+            return self.cache[key]
 
-        if key in self._versions_data_cache:
-            return self._versions_data_cache[key]
+        # FIXME(willkg): take the request/retry code in socorro/scripts/ and
+        # put that in lib. Then reuse it here.
+        session = session_with_retries(self.version_string_api)
 
-        sql = """
-            SELECT
-                pv.version_string
-            FROM product_versions pv
-                LEFT JOIN product_version_builds pvb ON
-                    (pv.product_version_id = pvb.product_version_id)
-            WHERE pv.product_name = %(product)s
-            AND pv.release_version = %(version)s
-            AND pvb.build_id = %(build_id)s
-        """
-        params = {
+        resp = session.get(self.version_string_api, params={
             'product': product,
             'version': version,
-            'build_id': build_id,
-        }
-        results = self.transaction(
-            execute_query_fetchall,
-            sql,
-            params
-        )
-        for real_version, in results:
-            self._versions_data_cache[key] = real_version
+            'build_id': build_id
+        })
 
-        return self._versions_data_cache.get(key)
+        if resp.status_code == 200:
+            hits = resp.json()['hits']
+            if hits:
+                self.cache[key] = hits[0]
+                return hits[0]
+
+        return None
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        # We apply this Rule only if the release channel is beta, because
-        # beta versions are the only ones sending an "incorrect" version
-        # number in their data.
-        # 2017-06-14: Ohai! This is not true anymore! With the removal of
-        # the aurora channel, there is now a new type of build called
-        # "DevEdition", that is released on the aurora channel, but has
-        # the same version naming logic as builds on the beta channel.
-        # We thus want to apply the same logic to aurora builds
-        # as well now. Note that older crash reports won't be affected,
-        # because they have a "correct" version number, usually containing
-        # the letter 'a' (like '50.0a2').
+        # Beta and aurora versions send the wrong version in the crash report,
+        # so we need to fix them.
         return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
@@ -689,10 +684,8 @@ class BetaVersionRule(Rule):
             if real_version:
                 processed_crash['version'] = real_version
             else:
-                # This is a beta version but we do not have data about it. It
-                # could be because we don't have it yet (if the cron jobs are
-                # running late for example), so we mark this crash. This way,
-                # we can reprocess it later to give it the correct version.
+                # We don't have a real version to use, so we tack on "b0" to
+                # make it better and match the channel.
                 processed_crash['version'] += 'b0'
                 processor_meta.processor_notes.append(
                     'release channel is %s but no version data was found '

@@ -8,6 +8,7 @@ from StringIO import StringIO
 
 from configman.dotdict import DotDict as CDotDict
 from mock import call, Mock, patch
+import requests_mock
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.revision_data import get_version
@@ -1291,11 +1292,12 @@ class TestTopMostFilesRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
 
-class TestBetaVersion(TestCase):
+class TestBetaVersionRule:
+    API_URL = 'https://example.com/api/VersionString'
+
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
+        config.version_string_api = self.API_URL
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1303,70 +1305,89 @@ class TestBetaVersion(TestCase):
         processed_crash.date_processed = '2014-12-31'
         processed_crash.product = 'WaterWolf'
 
-        processor_meta = get_basic_processor_meta()
-
-        transaction = Mock()
-        config.transaction_executor_class.return_value = transaction
-
         rule = BetaVersionRule(config)
 
-        # A normal beta crash, with a know version.
-        transaction.return_value = (('3.0b1',),)
-        processed_crash.version = '3.0'
-        processed_crash.release_channel = 'beta'
-        processed_crash.build = '20001001101010'
-
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert processed_crash['version'] == '3.0b1'
-        assert len(processor_meta.processor_notes) == 0
-
         # A release crash, version won't get changed.
-        transaction.return_value = tuple()
-        processed_crash.version = '2.0'
-        processed_crash.release_channel = 'release'
-        processed_crash.build = '20000801101010'
+        with requests_mock.Mocker() as req_mock:
+            processed_crash.version = '2.0'
+            processed_crash.release_channel = 'release'
+            processed_crash.build = '20000801101010'
+            processor_meta = get_basic_processor_meta()
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert processed_crash['version'] == '2.0'
-        assert len(processor_meta.processor_notes) == 0
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '2.0'
+            assert len(processor_meta.processor_notes) == 0
 
-        # An unkwown version.
-        transaction.return_value = tuple()
-        processed_crash.version = '5.0a1'
-        processed_crash.release_channel = 'nightly'
-        processed_crash.build = '20000105101010'
+        # A normal beta crash, with a known version.
+        with requests_mock.Mocker() as req_mock:
+            req_mock.get(
+                self.API_URL + '?product=WaterWolf&version=3.0&build_id=20001001101010',
+                json={
+                    'hits': ['3.0b1']
+                }
+            )
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert processed_crash['version'] == '5.0a1'
-        assert len(processor_meta.processor_notes) == 0
+            processed_crash.version = '3.0'
+            processed_crash.release_channel = 'beta'
+            processed_crash.build = '20001001101010'
+            processor_meta = get_basic_processor_meta()
+
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '3.0b1'
+            assert processor_meta.processor_notes == []
+
+        # A nightly.
+        with requests_mock.Mocker() as req_mock:
+            processed_crash.version = '5.0a1'
+            processed_crash.release_channel = 'nightly'
+            processed_crash.build = '20000105101010'
+            processor_meta = get_basic_processor_meta()
+
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '5.0a1'
+            assert processor_meta.processor_notes == []
 
         # An incorrect build id.
-        transaction.return_value = tuple()
-        processed_crash.version = '5.0'
-        processed_crash.release_channel = 'beta'
-        processed_crash.build = '",381,,"'
+        with requests_mock.Mocker() as req_mock:
+            processed_crash.version = '5.0'
+            processed_crash.release_channel = 'beta'
+            processed_crash.build = '",381,,"'
+            processor_meta = get_basic_processor_meta()
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert processed_crash['version'] == '5.0b0'
-        assert len(processor_meta.processor_notes) == 1
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '5.0b0'
+            assert processor_meta.processor_notes == [
+                'release channel is beta but no version data was found - '
+                'added "b0" suffix to version number'
+            ]
 
         # A beta crash with an unknown version, gets a special mark.
-        transaction.return_value = tuple()
-        processed_crash.version = '3.0'
-        processed_crash.release_channel = 'beta'
-        processed_crash.build = '20000101101011'
+        with requests_mock.Mocker() as req_mock:
+            req_mock.get(
+                self.API_URL + '?product=WaterWolf&version=3.0&build_id=20000101101011',
+                json={
+                    'hits': []
+                }
+            )
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert processed_crash['version'] == '3.0b0'
-        assert len(processor_meta.processor_notes) == 2
+            processed_crash.version = '3.0'
+            processed_crash.release_channel = 'beta'
+            processed_crash.build = '20000101101011'
+            processor_meta = get_basic_processor_meta()
+
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '3.0b0'
+            assert processor_meta.processor_notes == [
+                'release channel is beta but no version data was found - '
+                'added "b0" suffix to version number'
+            ]
 
     def test_with_aurora_channel(self):
         """Verify the version change is applied to crash reports with a
         release channel of "aurora".
         """
         config = get_basic_config()
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
+        config.version_string_api = self.API_URL
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1374,22 +1395,25 @@ class TestBetaVersion(TestCase):
         processed_crash.date_processed = '2014-12-31'
         processed_crash.product = 'WaterWolf'
 
-        processor_meta = get_basic_processor_meta()
-
-        transaction = Mock()
-        config.transaction_executor_class.return_value = transaction
-
         rule = BetaVersionRule(config)
 
-        # A normal beta crash, with a known version.
-        transaction.return_value = (('3.0b1',),)
-        processed_crash.version = '3.0'
-        processed_crash.release_channel = 'aurora'
-        processed_crash.build = '20001001101010'
+        # A normal aurora crash, with a known version.
+        with requests_mock.Mocker() as req_mock:
+            req_mock.get(
+                self.API_URL + '?product=WaterWolf&version=3.0&build_id=20001001101010',
+                json={
+                    'hits': ['3.0b1']
+                }
+            )
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert processed_crash['version'] == '3.0b1'
-        assert len(processor_meta.processor_notes) == 0
+            processed_crash.version = '3.0'
+            processed_crash.release_channel = 'aurora'
+            processed_crash.build = '20001001101010'
+            processor_meta = get_basic_processor_meta()
+
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '3.0b1'
+            assert processor_meta.processor_notes == []
 
 
 class TestAuroraVersionFixitRule:
