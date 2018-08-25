@@ -72,9 +72,7 @@ class SuperSearchFields(ElasticsearchBase):
         all_existing_fields = set()
         for index in indices:
             try:
-                mapping = index_client.get_mapping(
-                    index=index,
-                )
+                mapping = index_client.get_mapping(index=index)
                 properties = mapping[index]['mappings'][doctype]['properties']
                 all_existing_fields.update(parse_mapping(properties, None))
             except elasticsearch.exceptions.NotFoundError as e:
@@ -141,6 +139,23 @@ class SuperSearchFields(ElasticsearchBase):
         for field in all_fields.values():
             if not field.get('storage_mapping'):
                 continue
+
+            storage_mapping = field['storage_mapping']
+
+            # Add "doc_values": True to any non-string field or string field that
+            # doesn't have an analyzer
+            # NOTE(willkg): Elasticsearch 2.0+ does this automatically, so we
+            # can nix this.
+            if storage_mapping.get('fields'):
+                for subfield in storage_mapping.get('fields', {}).keys():
+                    field_mapping = storage_mapping['fields'][subfield]
+                    if ((field_mapping.get('type') != 'string' or
+                         field_mapping.get('index') == 'not_analyzed')):
+                        field_mapping['doc_values'] = True
+
+            if ((storage_mapping.get('type') != 'string' or
+                 storage_mapping.get('index') == 'not_analyzed')):
+                storage_mapping['doc_values'] = True
 
             namespaces = field['namespace'].split('.')
 

@@ -163,13 +163,19 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         assert 'fake_field' not in properties['raw_crash']['properties']
 
         # Those fields have a `storage_mapping`.
-        assert processed_crash['release_channel'] == {'analyzer': 'keyword', 'type': 'string'}
+        assert processed_crash['release_channel'] == {
+            'analyzer': 'keyword',
+            'type': 'string'
+        }
 
         # Test nested objects.
         assert 'json_dump' in processed_crash
         assert 'properties' in processed_crash['json_dump']
         assert 'write_combine_size' in processed_crash['json_dump']['properties']
-        assert processed_crash['json_dump']['properties']['write_combine_size'] == {'type': 'long'}
+        assert processed_crash['json_dump']['properties']['write_combine_size'] == {
+            'type': 'long',
+            'doc_values': True
+        }
 
         # Test overwriting a field.
         mapping = self.api.get_mapping(overwrite_mapping={
