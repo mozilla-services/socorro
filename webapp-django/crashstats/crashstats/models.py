@@ -24,7 +24,6 @@ import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
-import socorro.external.postgresql.product_build_types
 import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.releases
 import socorro.external.boto.crash_data
@@ -1098,23 +1097,6 @@ class GraphicsDevices(SocorroMiddleware):
                 names[key] = name_pair
 
         return names
-
-
-class ProductBuildTypes(SocorroMiddleware):
-
-    cache_seconds = 60 * 60 * 24
-
-    implementation = (
-        socorro.external.postgresql.product_build_types.ProductBuildTypes
-    )
-
-    required_params = (
-        'product',
-    )
-
-    API_WHITELIST = (
-        'hits',
-    )
 
 
 class Reprocessing(SocorroMiddleware):
