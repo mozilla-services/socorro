@@ -10,6 +10,7 @@ import time
 from past.builtins import basestring
 from urllib import unquote_plus
 
+from requests import RequestException
 import ujson
 
 from socorro.lib.cache import ExpiringCache
@@ -606,10 +607,6 @@ class TopMostFilesRule(Rule):
         return True
 
 
-class NoVersionString(Exception):
-    pass
-
-
 class BetaVersionRule(Rule):
     #: Hold at most 1000 items in cache
     CACHE_MAX_SIZE = 1000
@@ -636,7 +633,6 @@ class BetaVersionRule(Rule):
         is 54.0). This database call returns the actual version number of said
         build (i.e. 54.0b3 for the previous example).
         """
-        print((product, version, build_id))
         if not (product and version and build_id):
             return None
 
@@ -695,6 +691,12 @@ class BetaVersionRule(Rule):
                 )
         except KeyError:
             return False
+        except RequestException:
+            processed_crash['version'] += 'b0'
+            processor_meta.processor_notes.append(
+                'could not connect to VersionString API '
+                '- added "b0" suffix to version number'
+            )
         return True
 
 
