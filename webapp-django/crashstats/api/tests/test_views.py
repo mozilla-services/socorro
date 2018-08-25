@@ -18,7 +18,6 @@ from crashstats.crashstats.models import (
     ProductVersions,
     CrontabberState,
     Reprocessing,
-    ProductBuildTypes,
     ProcessedCrash,
     RawCrash,
     UnredactedCrash,
@@ -129,25 +128,31 @@ class TestViews(BaseTestViews):
         set a Cache-Control header."""
 
         def mocked_get(**options):
-            assert options['product'] == settings.DEFAULT_PRODUCT
+            assert options['product'] == [settings.DEFAULT_PRODUCT]
             return {
-                'hits': {
-                    'release': 0.1,
-                    'nightly': 1.0,
-                    'beta': 1.0,
-                    'aurora': 1.0,
-                    'esr': 1.0,
-                }
+                "hits": [
+                    {
+                        "product": settings.DEFAULT_PRODUCT,
+                        "throttle": 100.0,
+                        "end_date": "2018-10-29",
+                        "is_featured": True,
+                        "build_type": "nightly",
+                        "version": "63.0a1",
+                        "start_date": "2018-06-25",
+                        "has_builds": True,
+                        "is_rapid_beta": False
+                    },
+                ]
             }
 
-        ProductBuildTypes.implementation().get.side_effect = mocked_get
+        ProductVersions.implementation().get.side_effect = mocked_get
 
-        url = reverse('api:model_wrapper', args=('ProductBuildTypes',))
+        url = reverse('api:model_wrapper', args=('ProductVersions',))
         response = self.client.get(url, {'product': settings.DEFAULT_PRODUCT})
         assert response.status_code == 200
         assert response['Cache-Control']
         assert 'private' in response['Cache-Control']
-        cache_seconds = ProductBuildTypes.cache_seconds
+        cache_seconds = ProductVersions.cache_seconds
         assert 'max-age={}'.format(cache_seconds) in response['Cache-Control']
 
     def test_ProductVersions(self):
