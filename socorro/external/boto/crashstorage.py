@@ -9,7 +9,7 @@ from socorro.lib.converters import change_default
 from future.utils import iteritems
 
 from configman import Namespace
-from configman.converters import class_converter, py_obj_to_str
+from configman.converters import class_converter
 
 
 from socorro.external.crashstorage_base import (
