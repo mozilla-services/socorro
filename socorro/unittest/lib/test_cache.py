@@ -7,7 +7,8 @@ import datetime
 import mock
 import pytest
 
-from socorro.lib.cache import ExpiringCache, UTC
+from socorro.lib.cache import ExpiringCache
+from socorro.lib.datetimeutil import utc_now
 
 
 class TestExpiringCache:
@@ -19,25 +20,26 @@ class TestExpiringCache:
         cache['foo'] = 'bar'
         assert cache['foo'] == 'bar'
 
-    @mock.patch('socorro.lib.cache._utc_now')
+    @mock.patch('socorro.lib.cache.utc_now')
     def test_expiration(self, mock_utc_now):
-        NOW = datetime.datetime.now(UTC)
-        # Mock _utc_now to return the current time so we can set the expiry for
+        # Mock utc_now to return the current time so we can set the expiry for
         # the key
-        mock_utc_now.return_value = NOW
+        now = utc_now()
+        mock_utc_now.return_value = now
+
         cache = ExpiringCache(ttl=100)
         cache['foo'] = 'bar'
         assert len(cache._data) == 1
 
         # ttl is 100, so 99 seconds into the future, we should get back the
         # cached value
-        mock_utc_now.return_value = NOW + datetime.timedelta(seconds=99)
+        mock_utc_now.return_value = now + datetime.timedelta(seconds=99)
         assert cache['foo'] == 'bar'
         assert len(cache._data) == 1
 
         # ttl is 100, so 101 seconds into the future, we should get a KeyError
         # and the key should be removed from the dict
-        mock_utc_now.return_value = NOW + datetime.timedelta(seconds=101)
+        mock_utc_now.return_value = now + datetime.timedelta(seconds=101)
         with pytest.raises(KeyError):
             cache['foo']
         assert len(cache._data) == 0
@@ -56,41 +58,41 @@ class TestExpiringCache:
 
         assert cache.keys() == ['foo2', 'foo3', 'foo4', 'foo5', 'foo6']
 
-    @mock.patch('socorro.lib.cache._utc_now')
+    @mock.patch('socorro.lib.cache.utc_now')
     def test_flush(self, mock_utc_now):
-        NOW = datetime.datetime.now(UTC)
-        NOW_PLUS_10 = NOW + datetime.timedelta(seconds=10)
-        NOW_PLUS_20 = NOW + datetime.timedelta(seconds=20)
+        now = utc_now()
+        now_plus_10 = now + datetime.timedelta(seconds=10)
+        now_plus_20 = now + datetime.timedelta(seconds=20)
 
-        mock_utc_now.return_value = NOW
+        mock_utc_now.return_value = now
         cache = ExpiringCache(ttl=100)
 
-        # At time NOW
+        # At time now
         cache['foo'] = 'bar'
 
-        # At time NOW + 10
-        mock_utc_now.return_value = NOW_PLUS_10
+        # At time now + 10
+        mock_utc_now.return_value = now_plus_10
         cache['foo10'] = 'bar'
 
-        # At time NOW + 20
-        mock_utc_now.return_value = NOW_PLUS_20
+        # At time now + 20
+        mock_utc_now.return_value = now_plus_20
         cache['foo20'] = 'bar'
 
         assert (
             cache._data == {
-                'foo': [NOW + cache._ttl, 'bar'],
-                'foo10': [NOW_PLUS_10 + cache._ttl, 'bar'],
-                'foo20': [NOW_PLUS_20 + cache._ttl, 'bar'],
+                'foo': [now + cache._ttl, 'bar'],
+                'foo10': [now_plus_10 + cache._ttl, 'bar'],
+                'foo20': [now_plus_20 + cache._ttl, 'bar'],
             }
         )
 
-        # Set to NOW + 105 which expires the first, but not the other two
-        mock_utc_now.return_value = NOW + datetime.timedelta(seconds=105)
+        # Set to now + 105 which expires the first, but not the other two
+        mock_utc_now.return_value = now + datetime.timedelta(seconds=105)
         cache.flush()
 
         assert (
             cache._data == {
-                'foo10': [NOW_PLUS_10 + cache._ttl, 'bar'],
-                'foo20': [NOW_PLUS_20 + cache._ttl, 'bar'],
+                'foo10': [now_plus_10 + cache._ttl, 'bar'],
+                'foo20': [now_plus_20 + cache._ttl, 'bar'],
             }
         )

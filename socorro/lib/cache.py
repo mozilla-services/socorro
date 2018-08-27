@@ -10,18 +10,11 @@ from collections import MutableMapping, OrderedDict
 import datetime
 import threading
 
-import isodate
-
-
-UTC = isodate.UTC
+from socorro.lib.datetimeutil import utc_now
 
 
 #: Default time-to-live for keys in seconds
 DEFAULT_TTL = 600
-
-
-def _utc_now():
-    return datetime.datetime.now(UTC)
 
 
 class ExpiringCache(MutableMapping):
@@ -62,7 +55,7 @@ class ExpiringCache(MutableMapping):
     def flush(self):
         """Removes all expired keys"""
         with self._lock:
-            NOW = _utc_now()
+            NOW = utc_now()
 
             for key, value_record in self._data.items():
                 if value_record[0] < NOW:
@@ -72,14 +65,14 @@ class ExpiringCache(MutableMapping):
         with self._lock:
             value_record = self._data[key]
 
-            if value_record[0] < _utc_now():
+            if value_record[0] < utc_now():
                 del self._data[key]
                 raise KeyError()
 
             return value_record[1]
 
     def __setitem__(self, key, value):
-        self._data[key] = [_utc_now() + self._ttl, value]
+        self._data[key] = [utc_now() + self._ttl, value]
 
         # If we've exceeded the max size, remove the oldest one
         if len(self._data) > self._max_size:
