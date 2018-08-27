@@ -699,12 +699,12 @@ class BetaVersionRule(Rule):
                 )
         except KeyError:
             return False
-        except RequestException:
+        except RequestException as exc:
             processed_crash['version'] += 'b0'
             processor_meta.processor_notes.append(
-                'could not connect to VersionString API '
-                '- added "b0" suffix to version number'
+                'could not connect to VersionString API - added "b0" suffix to version number'
             )
+            self.config.logger.exception('%s when connecting to %s', exc, self.version_string_api)
         return True
 
 
