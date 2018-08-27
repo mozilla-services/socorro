@@ -623,15 +623,23 @@ class BetaVersionRule(Rule):
     def version(self):
         return '1.0'
 
-    # FIXME(willkg): add ttl cache here
     def _get_version_data(self, product, version, build_id):
-        """Return the real version number of a specific product, version and
-        build.
+        """Return the real version number of a specific product, version and build
 
-        For example, beta builds of Firefox declare their version
-        number as the major version (i.e. version 54.0b3 would say its version
-        is 54.0). This database call returns the actual version number of said
-        build (i.e. 54.0b3 for the previous example).
+        For example, beta builds of Firefox declare their version number as the
+        major version (i.e. version 54.0b3 would say its version is 54.0). This
+        database call returns the actual version number of said build (i.e.
+        54.0b3 for the previous example).
+
+        :arg product: the product
+        :arg version: the version as a string. e.g. "56.0"
+        :arg build_id: the build_id as a string.
+
+        :returns: ``None`` or the version string that should be used
+
+        :raises requests.RequestException: raised if it has connection issues with
+            the host specified in ``version_string_api``
+
         """
         if not (product and version and build_id):
             return None
