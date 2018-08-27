@@ -36,7 +36,7 @@ class ExpiringCache(MutableMapping):
     KeyError: 'key1'
 
     """
-    def __init__(self, max_size=128, ttl=600):
+    def __init__(self, max_size=128, ttl=DEFAULT_TTL):
         """
         :arg max_size: maximum number of items in the cache
         :arg ttl: ttl for items in the cache in seconds
