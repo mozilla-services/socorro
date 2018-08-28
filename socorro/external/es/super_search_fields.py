@@ -70,8 +70,8 @@ def is_doc_values_friendly(field_value):
     if not field_type:
         return False
 
-    # boolean, object, and multi_fields fields don't work with doc_values=True
-    if field_type in ('boolean', 'object', 'multi_field'):
+    # object, and multi_fields fields don't work with doc_values=True
+    if field_type in ('object', 'multi_field'):
         return False
 
     # analyzed string fields don't work with doc_values=True
