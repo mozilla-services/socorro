@@ -369,28 +369,6 @@ class TestModels(DjangoTestCase):
         r = api.get(crash_id='some-crash-id', format='raw', name='other')
         assert r == '\xe0\xe0'
 
-    def test_create_release(self):
-        model = models.Releases
-        api = model()
-
-        def mocked_post(**params):
-            return True
-
-        model.implementation().post.side_effect = mocked_post
-
-        now = datetime.datetime.utcnow()
-        r = api.post(**{
-            'product': 'Firefox',
-            'version': '1.0',
-            'update_channel': 'beta',
-            'build_id': now.strftime('%Y%m%d%H%M'),
-            'platform': 'Windows',
-            'beta_number': '0',
-            'release_channel': 'Beta',
-            'throttle': '1'
-        })
-        assert r is True
-
     def test_platforms(self):
         api = models.Platforms()
 

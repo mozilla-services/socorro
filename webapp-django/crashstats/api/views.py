@@ -122,8 +122,6 @@ class FormWrapper(forms.Form):
 
 # Names of models we don't want to serve at all
 BLACKLIST = (
-    # only used for doing posts
-    'Releases',
     # because it's only used for the admin
     'Field',
     'SuperSearchMissingFields',
