@@ -279,8 +279,7 @@ def test_validate_super_search_fields(name, properties):
     # No type -> False
     ({}, False),
 
-    # Boolean or object -> False
-    ({'type': 'boolean'}, False),
+    # object -> False
     ({'type': 'object'}, False),
 
     # Analyzed string -> False
