@@ -8,7 +8,12 @@ import datetime
 import pytest
 
 from socorro.lib import BadArgumentError
-from socorro.external.es.super_search_fields import FIELDS, SuperSearchFields
+from socorro.external.es.super_search_fields import (
+    FIELDS,
+    is_doc_values_friendly,
+    add_doc_values,
+    SuperSearchFields,
+)
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
@@ -268,3 +273,65 @@ def test_validate_super_search_fields(name, properties):
 
     # The name in the mapping should be the same as the name in properties
     assert properties['name'] == name
+
+
+@pytest.mark.parametrize('value, expected', [
+    # No type -> False
+    ({}, False),
+
+    # Boolean or object -> False
+    ({'type': 'boolean'}, False),
+    ({'type': 'object'}, False),
+
+    # Analyzed string -> False
+    ({'type': 'string'}, False),
+    ({'type': 'string', 'analyzer': 'keyword'}, False),
+
+    # Unanalyzed string -> True
+    ({'type': 'string', 'index': 'not_analyzed'}, True),
+
+    # Anything else -> True
+    ({'type': 'long'}, True),
+])
+def test_is_doc_values_friendly(value, expected):
+    assert is_doc_values_friendly(value) == expected
+
+
+def test_add_doc_values():
+    data = {'type': 'short'}
+    add_doc_values(data)
+    assert data == {
+        'type': 'short',
+        'doc_values': True
+    }
+
+    data = {
+        'fields': {
+            'AsyncShutdownTimeout': {
+                'analyzer': 'standard',
+                'index': 'analyzed',
+                'type': 'string',
+            },
+            'full': {
+                'index': 'not_analyzed',
+                'type': 'string',
+            }
+        },
+        'type': 'multi_field',
+    }
+    add_doc_values(data)
+    assert data == {
+        'fields': {
+            'AsyncShutdownTimeout': {
+                'analyzer': 'standard',
+                'index': 'analyzed',
+                'type': 'string',
+            },
+            'full': {
+                'index': 'not_analyzed',
+                'type': 'string',
+                'doc_values': True,
+            }
+        },
+        'type': 'multi_field',
+    }
