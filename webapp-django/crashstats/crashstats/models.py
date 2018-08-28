@@ -25,7 +25,6 @@ import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.signature_first_date
-import socorro.external.postgresql.releases
 import socorro.external.boto.crash_data
 
 from socorro.app import socorro_app
@@ -520,28 +519,6 @@ class ProductVersions(SocorroMiddleware):
     API_WHITELIST = (
         'hits',
         'total',
-    )
-
-    def post(self, **data):
-        return self.get_implementation().post(**data)
-
-
-class Releases(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.releases.Releases
-
-    possible_params = (
-        ('beta_number', int),
-    )
-
-    required_params = (
-        'product',
-        'version',
-        'update_channel',
-        'build_id',
-        'platform',
-        'release_channel',
-        ('throttle', int),
     )
 
     def post(self, **data):
