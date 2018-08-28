@@ -136,26 +136,53 @@ class SuperSearchFields(ElasticsearchBase):
                 field,
             )
 
+        def is_doc_values_friendly(field_mapping):
+            field_type = field_mapping.get('type')
+
+            # No clue what type this is--probably false
+            if not field_type:
+                return False
+
+            # boolean fields don't work with doc_values=True
+            if field_type == 'boolean':
+                return False
+
+            # object fields shouldn't get doc_values=True
+            if field_type == 'object':
+                return False
+
+            # analyzed string fields don't work with doc_values=True
+            if field_type == 'string' and field_mapping.get('index') != 'not_analyzed':
+                return False
+
+            # Everything is fine! Yay!
+            return True
+
+        def add_doc_values(props):
+            """Add "doc_values": True to properties
+
+            NOTE(willkg): Elasticsearch 2.0+ does this automatically, so we
+            can nix this.
+
+            """
+            if is_doc_values_friendly(props):
+                props['doc_values'] = True
+
+            # Handle subfields
+            if props.get('fields'):
+                for field in props.get('fields', {}).values():
+                    add_doc_values(field)
+
+            # Handle objects with nested properties
+            if props.get('properties'):
+                for field in props['properties'].values():
+                    add_doc_values(field)
+
         for field in all_fields.values():
             if not field.get('storage_mapping'):
                 continue
 
-            storage_mapping = field['storage_mapping']
-
-            # Add "doc_values": True to any non-string field or string field that
-            # doesn't have an analyzer
-            # NOTE(willkg): Elasticsearch 2.0+ does this automatically, so we
-            # can nix this.
-            if storage_mapping.get('fields'):
-                for subfield in storage_mapping.get('fields', {}).keys():
-                    field_mapping = storage_mapping['fields'][subfield]
-                    if ((field_mapping.get('type') != 'string' or
-                         field_mapping.get('index') == 'not_analyzed')):
-                        field_mapping['doc_values'] = True
-
-            if ((storage_mapping.get('type') != 'string' or
-                 storage_mapping.get('index') == 'not_analyzed')):
-                storage_mapping['doc_values'] = True
+            add_doc_values(field['storage_mapping'])
 
             namespaces = field['namespace'].split('.')
 
