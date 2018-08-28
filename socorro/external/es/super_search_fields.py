@@ -10,6 +10,104 @@ from socorro.external.es.base import ElasticsearchBase
 from socorro.lib import datetimeutil, BadArgumentError
 
 
+def add_field_to_properties(properties, namespaces, field):
+    """Add a field to a mapping properties
+
+    An Elasticsearch mapping is a specification for how to index all
+    the fields for a document type. This builds that mapping one field
+    at a time taking into account that some fields are nested and
+    the nesting needs to be built before that field can be added at
+    the proper place.
+
+    Note: This inserts things in-place and recurses on namespaces.
+
+    :arg properties: the mapping we're adding the field to
+    :namespaces: a list of strings denoting the branch the field
+        needs to be inserted at
+    :arg field: the field value from super search fields containing
+        the ``storage_mapping`` to be added to the properties
+
+    """
+    if not namespaces or not namespaces[0]:
+        properties[field['in_database_name']] = (
+            field['storage_mapping']
+        )
+        return
+
+    namespace = namespaces.pop(0)
+
+    if namespace not in properties:
+        properties[namespace] = {
+            'type': 'object',
+            'dynamic': 'true',
+            'properties': {}
+        }
+
+    add_field_to_properties(
+        properties[namespace]['properties'],
+        namespaces,
+        field,
+    )
+
+
+def is_doc_values_friendly(field_value):
+    """Predicate denoting whether this field should have doc_values added
+
+    ``doc_values=True`` is a thing we can add to certain fields to reduce the
+    memory they use in Elasticsearch.
+
+    This predicate determines whether we should add it or not for a given
+    field.
+
+    :arg field_value: a field value from super search fields
+
+    :returns: True if ``doc_values=True` should be added; False otherwise
+
+    """
+    field_type = field_value.get('type')
+
+    # No clue what type this is--probably false
+    if not field_type:
+        return False
+
+    # boolean, object, and multi_fields fields don't work with doc_values=True
+    if field_type in ('boolean', 'object', 'multi_field'):
+        return False
+
+    # analyzed string fields don't work with doc_values=True
+    if field_type == 'string' and field_value.get('index') != 'not_analyzed':
+        return False
+
+    # Everything is fine! Yay!
+    return True
+
+
+def add_doc_values(value):
+    """Add "doc_values": True to storage mapping of field value
+
+    NOTE(willkg): Elasticsearch 2.0+ does this automatically, so we
+    can nix this when we upgrade.
+
+    Note: This makes changes in-place and recurses on the structure
+    of value.
+
+    :arg value: the storage mapping of a field value
+
+    """
+    if is_doc_values_friendly(value):
+        value['doc_values'] = True
+
+    # Handle subfields
+    if value.get('fields'):
+        for field in value.get('fields', {}).values():
+            add_doc_values(field)
+
+    # Handle objects with nested properties
+    if value.get('properties'):
+        for field in value['properties'].values():
+            add_doc_values(field)
+
+
 class SuperSearchFields(ElasticsearchBase):
 
     # Defining some filters that need to be considered as lists.
@@ -113,70 +211,6 @@ class SuperSearchFields(ElasticsearchBase):
                 all_fields[field].update(overwrite_mapping)
             else:
                 all_fields[field] = overwrite_mapping
-
-        def add_field_to_properties(properties, namespaces, field):
-            if not namespaces or not namespaces[0]:
-                properties[field['in_database_name']] = (
-                    field['storage_mapping']
-                )
-                return
-
-            namespace = namespaces.pop(0)
-
-            if namespace not in properties:
-                properties[namespace] = {
-                    'type': 'object',
-                    'dynamic': 'true',
-                    'properties': {}
-                }
-
-            add_field_to_properties(
-                properties[namespace]['properties'],
-                namespaces,
-                field,
-            )
-
-        def is_doc_values_friendly(field_mapping):
-            field_type = field_mapping.get('type')
-
-            # No clue what type this is--probably false
-            if not field_type:
-                return False
-
-            # boolean fields don't work with doc_values=True
-            if field_type == 'boolean':
-                return False
-
-            # object fields shouldn't get doc_values=True
-            if field_type == 'object':
-                return False
-
-            # analyzed string fields don't work with doc_values=True
-            if field_type == 'string' and field_mapping.get('index') != 'not_analyzed':
-                return False
-
-            # Everything is fine! Yay!
-            return True
-
-        def add_doc_values(props):
-            """Add "doc_values": True to properties
-
-            NOTE(willkg): Elasticsearch 2.0+ does this automatically, so we
-            can nix this.
-
-            """
-            if is_doc_values_friendly(props):
-                props['doc_values'] = True
-
-            # Handle subfields
-            if props.get('fields'):
-                for field in props.get('fields', {}).values():
-                    add_doc_values(field)
-
-            # Handle objects with nested properties
-            if props.get('properties'):
-                for field in props['properties'].values():
-                    add_doc_values(field)
 
         for field in all_fields.values():
             if not field.get('storage_mapping'):
