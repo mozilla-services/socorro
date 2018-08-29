@@ -7,6 +7,7 @@ import importlib
 import mock
 from pkg_resources import resource_stream
 import pytest
+import six
 
 # NOTE(willkg): We do this so that we can extract signature generation into its
 # own namespace as an external library. This allows the tests to run if it's in
@@ -34,7 +35,7 @@ class TestSigLists:
 
             for line in content:
                 assert line
-                if isinstance(line, basestring):
+                if isinstance(line, six.string_types):
                     assert not line.startswith('#')
 
     @mock.patch(base_module + '.siglists_utils.resource_stream')
@@ -57,6 +58,6 @@ class TestSigLists:
             siglists_utils._get_file_content('test-invalid-sig-list')
 
         msg = exc_info.exconly()
-        assert msg.startswith('BadRegularExpressionLineError: Regex error: ')
+        assert 'BadRegularExpressionLineError: Regex error: ' in msg
         assert msg.endswith('at line 3')
         assert 'test-invalid-sig-list.txt' in msg

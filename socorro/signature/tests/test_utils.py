@@ -45,12 +45,12 @@ def test_drop_bad_characters(text, expected):
         'src/libcore/cmp.rs'
     ),
     (
-        'f:\dd\vctools\crt\crtw32\mbstring\mbsnbico.c',
-        '\dd\vctools\crt\crtw32\mbstring\mbsnbico.c'
+        'f:\\dd\\vctools\\crt\\crtw32\\mbstring\\mbsnbico.c',
+        '\\dd\\vctools\\crt\\crtw32\\mbstring\\mbsnbico.c'
     ),
     (
-        'd:\w7rtm\com\rpc\ndrole\udt.cxx',
-        '\w7rtm\com\rpc\ndrole\udt.cxx'
+        'd:\\w7rtm\\com\\rpc\\ndrole\\udt.cxx',
+        '\\w7rtm\\com\\rpc\\ndrole\\udt.cxx'
     ),
     (
         '/build/firefox-Kq_6Wg/firefox-54.0+build3/memory/mozjemalloc/jemalloc.c',
