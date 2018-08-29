@@ -6,6 +6,7 @@ from itertools import islice
 import re
 
 from glom import glom
+import six
 import ujson
 
 from . import siglists_utils
@@ -624,7 +625,7 @@ class SigFixWhitespace(Rule):
     CONSECUTIVE_WHITESPACE_RE = re.compile('\s\s+')
 
     def predicate(self, crash_data, result):
-        return isinstance(result.get('signature'), basestring)
+        return isinstance(result.get('signature'), six.string_types)
 
     def action(self, crash_data, result):
         sig = result['signature']
