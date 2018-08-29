@@ -89,3 +89,6 @@ to `reprocess the affected signatures <https://github.com/adngdb/reprocess>`_.
 
 
 .. include:: ../socorro/signature/siglists/README.rst
+
+
+.. include:: ../socorro/signature/pipeline.rst

@@ -93,7 +93,8 @@ COMMANDS = [
     Group(
         'Miscellaneous', {
             'showcommands': showcommands_cmd,
-            'signature': 'socorro.signature.cmd_signature.main'
+            'signature': 'socorro.signature.cmd_signature.main',
+            'signature-doc': 'socorro.signature.cmd_doc.main',
         }
     )
 ]
