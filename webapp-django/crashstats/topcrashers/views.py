@@ -154,7 +154,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context['versions_have_builds'] = versions_have_builds
 
     # Used to pick a version in the dropdown menu.
-    context['version'] = versions[0]
+    context['version'] = versions[0] if versions else ''
 
     if tcbs_mode == 'realtime':
         end_date = timezone.now().replace(microsecond=0)
