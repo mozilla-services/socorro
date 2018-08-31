@@ -28,6 +28,17 @@
     </div>
 </div>
 
+<div class="panel">
+    <div class="title"><h2>Contents</h2></div>
+    <div class="body">
+        <ul>
+            {% for endpoint in endpoints %}
+            <li><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
 {% for endpoint in endpoints %}
 <div class="panel" id="{{ endpoint.name }}">
     <div class="title">
