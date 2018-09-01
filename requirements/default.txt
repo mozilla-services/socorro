@@ -219,9 +219,9 @@ moto==1.3.5 \
 six==1.11.0 \
     --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9
-mozilla-django-oidc==1.0.0 \
-    --hash=sha256:1e29a3d448cde77f0a96d4274dd67bfe5749554a5d6220007507d05d91cd50df \
-    --hash=sha256:8d0336d0a1e628f148c045f6cfdec3f1259cf9060335e514f8dd6be8e337784b
+mozilla-django-oidc==1.1.2 \
+    --hash=sha256:0da273be7753c3775f8893bc228acf4d1dfffdc58c073a0df044917796ad5e0d \
+    --hash=sha256:efd9df9d8d3b58f84cdedf548387afa31146facaac11945e53f67314f57244af
 glom==18.2.0 \
     --hash=sha256:59c7f5f7ba9a5745555bb07c416ffeabceb4fa8c7182bbc18b2e7b0109026c34 \
     --hash=sha256:23dafd2b7a365a83e1ec4863e733b47062ea3e64a76c2c5b494379f65201c0a4
