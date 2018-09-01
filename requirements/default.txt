@@ -222,9 +222,9 @@ six==1.11.0 \
 mozilla-django-oidc==1.1.2 \
     --hash=sha256:0da273be7753c3775f8893bc228acf4d1dfffdc58c073a0df044917796ad5e0d \
     --hash=sha256:efd9df9d8d3b58f84cdedf548387afa31146facaac11945e53f67314f57244af
-glom==18.2.0 \
-    --hash=sha256:59c7f5f7ba9a5745555bb07c416ffeabceb4fa8c7182bbc18b2e7b0109026c34 \
-    --hash=sha256:23dafd2b7a365a83e1ec4863e733b47062ea3e64a76c2c5b494379f65201c0a4
+glom==18.3.1 \
+    --hash=sha256:3af9d29c72c8e972f823f3274f1c3200dcea366462fd90ecec49ca1fb36ab3ea \
+    --hash=sha256:db2842c1d222d8fa1320c43a6264afb56faa872cedb6ad34ab036cf3705f2a83
 django-webpack-loader==0.6.0 \
     --hash=sha256:60bab6b9a037a5346fad12d2a70a6bc046afb33154cf75ed640b93d3ebd5f520 \
     --hash=sha256:970b968c2a8975fb7eff56a3bab5d0d90d396740852d1e0c50c5cfe2b824199a
