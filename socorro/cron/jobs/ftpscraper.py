@@ -12,8 +12,6 @@ import fnmatch
 import functools
 
 import lxml.html
-import requests
-from requests.adapters import HTTPAdapter
 
 from configman import Namespace
 from configman.converters import str_to_list
@@ -24,6 +22,7 @@ from crontabber.mixins import (
 )
 
 from socorro.cron import buildutil
+from socorro.lib.requestslib import session_with_retries
 
 
 def memoize_download(fun):
@@ -45,7 +44,6 @@ class ScrapersMixin(object):
     """
 
     def get_links(self, url, starts_with=None, ends_with=None):
-
         results = []
         content = self.download(url)
         if not content:
@@ -265,11 +263,6 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         doc='Print instead of storing builds')
 
     required_config.add_option(
-        'retries',
-        default=5,
-        doc='Number of times the requests sessions should retry')
-
-    required_config.add_option(
         'read_timeout',
         default=10,  # seconds
         doc='Number of seconds wait for a full read')
@@ -287,15 +280,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
 
     def __init__(self, *args, **kwargs):
         super(FTPScraperCronApp, self).__init__(*args, **kwargs)
-        self.session = requests.Session()
-        if urlparse.urlparse(self.config.base_url).scheme == 'https':
-            mount = 'https://'
-        else:
-            mount = 'http://'
-        self.session.mount(
-            mount,
-            HTTPAdapter(max_retries=self.config.retries)
-        )
+        self.session = session_with_retries(self.config.base_url)
 
     def url_to_filename(self, url):
         fn = re.sub('\W', '_', url)

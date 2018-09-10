@@ -1,6 +1,7 @@
 import contextlib
 import json
 
+from django.core.cache import cache
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -15,14 +16,15 @@ from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.crashstats.models import (
-    ProductVersions,
-    CrontabberState,
-    Reprocessing,
-    ProcessedCrash,
-    RawCrash,
-    UnredactedCrash,
     Bugs,
+    CrontabberState,
+    ProcessedCrash,
+    ProductVersions,
+    Reprocessing,
+    RawCrash,
     SignaturesByBugs,
+    SocorroCommon,
+    UnredactedCrash,
 )
 from crashstats.tokens.models import Token
 from socorro.lib import BadArgumentError, MissingArgumentError
@@ -1034,3 +1036,43 @@ class TestCrashVerify(object):
                 u'elasticsearch_crash': False,
             }
         )
+
+
+class TestVersionString(object):
+    @contextlib.contextmanager
+    def mock_VersionString(self, results):
+        with mock.patch('crashstats.crashstats.models.VersionString.implementation') as mock_i:
+            mock_i.return_value.get.return_value = {
+                'hits': results
+            }
+            yield
+        SocorroCommon.clear_implementations_cache()
+        cache.clear()
+
+    def test_version_string_no_args(self, client):
+        url = reverse('api:model_wrapper', args=('VersionString',))
+        response = client.get(url)
+        # Sending in no args is an HTTP 400
+        assert response.status_code == 400
+
+    def test_version_string_args(self, client):
+        with self.mock_VersionString(['62.0b4']):
+            url = reverse('api:model_wrapper', args=('VersionString',))
+            response = client.get(url, {
+                'product': 'Test',
+                'version': '62.0',
+                'build_id': '20180816151750'
+            })
+            assert response.status_code == 200
+            assert json.loads(response.content) == {'hits': ['62.0b4']}
+
+    def test_version_string_args_no_valid_version(self, client):
+        with self.mock_VersionString([]):
+            url = reverse('api:model_wrapper', args=('VersionString',))
+            response = client.get(url, {
+                'product': 'Test',
+                'version': '62.0',
+                'build_id': '20180816151750'
+            })
+            assert response.status_code == 200
+            assert json.loads(response.content) == {'hits': []}

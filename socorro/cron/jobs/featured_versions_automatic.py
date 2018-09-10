@@ -11,7 +11,8 @@ from crontabber.mixins import (
     with_postgres_transactions,
     with_single_postgres_transaction,
 )
-import requests
+
+from socorro.lib.requestslib import session_with_retries
 
 
 def alias_list_to_dict(input_string):
@@ -75,9 +76,11 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
         # sure this cursor is committed or rolled back and cleaned up.
         cursor = connection.cursor()
 
+        session = session_with_retries(self.config.api_endpoint_url)
+
         for product in self.config.products:
             url = self.config.api_endpoint_url.format(product=product)
-            response = requests.get(url)
+            response = session.get(url)
             if response.status_code != 200:
                 raise DownloadError(
                     '{} ({})'.format(
