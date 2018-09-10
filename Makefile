@@ -38,12 +38,12 @@ help:
 	@echo "See https://socorro.readthedocs.io/ for more documentation."
 
 clean:
-	-rm .docker-build
+	-rm .docker-build*
 	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz
 	-rm -rf .cache
 	cd minidump-stackwalk && make clean
 
-docs: my.env
+docs: my.env .docker-build-docs
 	${DC} run docs ./docker/run_build_docs.sh
 
 lint: my.env
@@ -66,8 +66,15 @@ my.env:
 build: my.env
 	${DC} build --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} base
 	${DC} build webapp  # crontabber is based off of the webapp image
-	${DC} build processor crontabber docs oidcprovider
+	${DC} build processor crontabber oidcprovider
 	touch .docker-build
+
+.docker-build-docs:
+	make build-docs
+
+build-docs: my.env
+	${DC} build docs
+	touch .docker-build-docs
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
 # postgres going forward and has the needed environment variables.
