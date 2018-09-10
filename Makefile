@@ -25,7 +25,7 @@ help:
 	@echo "  build            - build docker containers"
 	@echo "  run              - docker-compose up the entire system for dev"
 	@echo ""
-	@echo "  shell            - open a shell in the base container"
+	@echo "  shell            - open a shell in the processor container"
 	@echo "  clean            - remove all build, test, coverage and Python artifacts"
 	@echo "  lint             - check style with flake8"
 	@echo "  test             - run unit tests"
@@ -80,6 +80,9 @@ build-docs: my.env
 # postgres going forward and has the needed environment variables.
 setup: my.env .docker-build
 	${DC} run webapp /app/docker/run_setup.sh
+
+shell: my.env .docker-build
+	${DC} run processor bash
 
 test: my.env .docker-build
 	./docker/run_tests_in_docker.sh ${ARGS}
