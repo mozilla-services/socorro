@@ -30,8 +30,7 @@ webapp-django/webpack_bundles/
 .pytest_cache
 
 # docker things
-.docker-build
-.docker-build3
+.docker-build*
 .cache/
 docker-compose.override.yml
 my.env
