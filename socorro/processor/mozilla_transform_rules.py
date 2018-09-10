@@ -4,10 +4,11 @@
 
 import datetime
 import gzip
+import random
 import re
 from sys import maxint
-import time
 from past.builtins import basestring
+import time
 from urllib import unquote_plus
 
 from requests import RequestException
@@ -608,17 +609,21 @@ class TopMostFilesRule(Rule):
 
 
 class BetaVersionRule(Rule):
-    #: Hold at most 1000 items in cache
-    CACHE_MAX_SIZE = 1000
+    #: Hold at most this many items in cache; items are a key and a value
+    #: both of which are short strings, so this doesn't take much memory
+    CACHE_MAX_SIZE = 5000
 
-    #: Items in cache expire after 30 minutes
-    CACHE_TTL = 60 * 30
+    #: Items in cache expire after 30 minutes by default
+    SHORT_CACHE_TTL = 60 * 30
+
+    #: If we know it's good, cache it for 6 hours
+    LONG_CACHE_TTL = 60 * 60 * 6
 
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
         # NOTE(willkg): These config values come from Processor2015 instance.
         self.version_string_api = config.version_string_api
-        self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.CACHE_TTL)
+        self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
 
     def version(self):
         return '1.0'
@@ -658,9 +663,25 @@ class BetaVersionRule(Rule):
 
         if resp.status_code == 200:
             hits = resp.json()['hits']
+
+            # Shimmy to add to ttl so as to distribute cache misses over time and reduce
+            # HTTP requests from bunching up.
+            shimmy = random.randint(1, 120)
+
             if hits:
-                self.cache[key] = hits[0]
-                return hits[0]
+                # If we got an answer we should keep it around for a while because it's
+                # a real answer and it's not going to change so use the long ttl plus
+                # a fudge factor.
+                real_version = hits[0]
+                self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL + shimmy)
+                return real_version
+            else:
+                # We didn't get an answer which could mean that this is a weird build and there
+                # is no answer or it could mean that ftpscraper hasn't picked up the relevant
+                # build information or it could mean we're getting cached answers from the webapp.
+                # Regardless, maybe in the future we get a better answer so we use the short
+                # ttl plus a fudge factor.
+                self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL + shimmy)
 
         return None
 

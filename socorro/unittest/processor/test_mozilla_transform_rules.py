@@ -1305,8 +1305,6 @@ class TestBetaVersionRule:
         processed_crash.date_processed = '2014-12-31'
         processed_crash.product = 'WaterWolf'
 
-        rule = BetaVersionRule(config)
-
         # A release crash, version won't get changed.
         with requests_mock.Mocker() as req_mock:
             processed_crash.version = '2.0'
@@ -1314,6 +1312,7 @@ class TestBetaVersionRule:
             processed_crash.build = '20000801101010'
             processor_meta = get_basic_processor_meta()
 
+            rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '2.0'
             assert len(processor_meta.processor_notes) == 0
@@ -1332,6 +1331,7 @@ class TestBetaVersionRule:
             processed_crash.build = '20001001101010'
             processor_meta = get_basic_processor_meta()
 
+            rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0b1'
             assert processor_meta.processor_notes == []
@@ -1343,6 +1343,7 @@ class TestBetaVersionRule:
             processed_crash.build = '20000105101010'
             processor_meta = get_basic_processor_meta()
 
+            rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '5.0a1'
             assert processor_meta.processor_notes == []
@@ -1354,6 +1355,7 @@ class TestBetaVersionRule:
             processed_crash.build = '",381,,"'
             processor_meta = get_basic_processor_meta()
 
+            rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '5.0b0'
             assert processor_meta.processor_notes == [
@@ -1375,6 +1377,7 @@ class TestBetaVersionRule:
             processed_crash.build = '20000101101011'
             processor_meta = get_basic_processor_meta()
 
+            rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0b0'
             assert processor_meta.processor_notes == [
@@ -1395,8 +1398,6 @@ class TestBetaVersionRule:
         processed_crash.date_processed = '2014-12-31'
         processed_crash.product = 'WaterWolf'
 
-        rule = BetaVersionRule(config)
-
         # A normal aurora crash, with a known version.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
@@ -1411,6 +1412,7 @@ class TestBetaVersionRule:
             processed_crash.build = '20001001101010'
             processor_meta = get_basic_processor_meta()
 
+            rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0b1'
             assert processor_meta.processor_notes == []
