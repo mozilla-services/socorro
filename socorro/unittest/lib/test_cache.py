@@ -13,7 +13,7 @@ from socorro.lib.datetimeutil import utc_now
 
 class TestExpiringCache:
     def test_get_set(self):
-        cache = ExpiringCache(ttl=600)
+        cache = ExpiringCache(default_ttl=600)
         with pytest.raises(KeyError):
             cache['foo']
 
@@ -27,22 +27,26 @@ class TestExpiringCache:
         now = utc_now()
         mock_utc_now.return_value = now
 
-        cache = ExpiringCache(ttl=100)
+        cache = ExpiringCache(default_ttl=100)
         cache['foo'] = 'bar'
         assert len(cache._data) == 1
+        cache.set('long_foo', value='bar2', ttl=1000)
+        assert len(cache._data) == 2
 
-        # ttl is 100, so 99 seconds into the future, we should get back the
-        # cached value
+        # default ttl is 100, so 99 seconds into the future, we should get back
+        # both cached values
         mock_utc_now.return_value = now + datetime.timedelta(seconds=99)
         assert cache['foo'] == 'bar'
-        assert len(cache._data) == 1
+        assert cache['long_foo'] == 'bar2'
+        assert len(cache._data) == 2
 
         # ttl is 100, so 101 seconds into the future, we should get a KeyError
-        # and the key should be removed from the dict
+        # for one cached key and the other should be fine
         mock_utc_now.return_value = now + datetime.timedelta(seconds=101)
         with pytest.raises(KeyError):
             cache['foo']
-        assert len(cache._data) == 0
+        assert cache['long_foo'] == 'bar2'
+        assert len(cache._data) == 1
 
     def test_max_size(self):
         cache = ExpiringCache(max_size=5)
@@ -65,7 +69,7 @@ class TestExpiringCache:
         now_plus_20 = now + datetime.timedelta(seconds=20)
 
         mock_utc_now.return_value = now
-        cache = ExpiringCache(ttl=100)
+        cache = ExpiringCache(default_ttl=100)
 
         # At time now
         cache['foo'] = 'bar'
@@ -80,9 +84,9 @@ class TestExpiringCache:
 
         assert (
             cache._data == {
-                'foo': [now + cache._ttl, 'bar'],
-                'foo10': [now_plus_10 + cache._ttl, 'bar'],
-                'foo20': [now_plus_20 + cache._ttl, 'bar'],
+                'foo': [now + cache._default_ttl, 'bar'],
+                'foo10': [now_plus_10 + cache._default_ttl, 'bar'],
+                'foo20': [now_plus_20 + cache._default_ttl, 'bar'],
             }
         )
 
@@ -92,7 +96,7 @@ class TestExpiringCache:
 
         assert (
             cache._data == {
-                'foo10': [now_plus_10 + cache._ttl, 'bar'],
-                'foo20': [now_plus_20 + cache._ttl, 'bar'],
+                'foo10': [now_plus_10 + cache._default_ttl, 'bar'],
+                'foo20': [now_plus_20 + cache._default_ttl, 'bar'],
             }
         )

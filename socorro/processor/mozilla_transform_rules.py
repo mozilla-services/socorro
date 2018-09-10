@@ -618,7 +618,7 @@ class BetaVersionRule(Rule):
         super(BetaVersionRule, self).__init__(config)
         # NOTE(willkg): These config values come from Processor2015 instance.
         self.version_string_api = config.version_string_api
-        self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, ttl=self.CACHE_TTL)
+        self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.CACHE_TTL)
 
     def version(self):
         return '1.0'
@@ -648,8 +648,6 @@ class BetaVersionRule(Rule):
         if key in self.cache:
             return self.cache[key]
 
-        # FIXME(willkg): take the request/retry code in socorro/scripts/ and
-        # put that in lib. Then reuse it here.
         session = session_with_retries(self.version_string_api)
 
         resp = session.get(self.version_string_api, params={
