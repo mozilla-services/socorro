@@ -264,7 +264,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
 
     required_config.add_option(
         'json_files_to_ignore',
-        default='*.mozinfo.json, *test_packages.json',
+        default='*.mozinfo.json, *test_packages.json, *buildhub.json',
         from_string_converter=str_to_list
     )
 
