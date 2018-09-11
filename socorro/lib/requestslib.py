@@ -8,6 +8,18 @@ from requests.packages.urllib3.util.retry import Retry
 
 
 class HTTPAdapterWithTimeout(HTTPAdapter):
+    """HTTPAdapter with a default timeout
+
+    This allows you to set a default timeout when creating the adapter.
+    It can be overridden here as well as when doing individual
+    requests.
+
+    :arg varies default_timeout: number of seconds before timing out
+
+        This can be a float or a (connect timeout, read timeout) tuple
+        of floats.
+
+    """
     def __init__(self, *args, **kwargs):
         self.default_timeout = kwargs.get('default_timeout', None)
         if 'default_timeout' in kwargs:
