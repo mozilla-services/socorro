@@ -25,18 +25,18 @@ To change the database config, use --help to see what the parameters are called.
 
 import datetime
 
-import requests
 from dateutil import tz
 from configman import Namespace
 from crontabber.base import BaseCronApp
 from crontabber.mixins import with_postgres_transactions
 
-from socorro.lib.datetimeutil import utc_now
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     execute_no_results,
     SQLDidNotReturnSingleRow
 )
+from socorro.lib.datetimeutil import utc_now
+from socorro.lib.requestslib import session_with_retries
 
 
 # Query all bugs that changed since a given date, and that either were created
@@ -183,7 +183,8 @@ class BugzillaCronApp(BaseCronApp):
     def _iterator(self, from_date):
         payload = BUGZILLA_PARAMS.copy()
         payload['chfieldfrom'] = from_date
-        r = requests.get(BUGZILLA_BASE_URL, params=payload)
+        session = session_with_retries()
+        r = session.get(BUGZILLA_BASE_URL, params=payload)
         if r.status_code < 200 or r.status_code >= 300:
             r.raise_for_status()
         results = r.json()

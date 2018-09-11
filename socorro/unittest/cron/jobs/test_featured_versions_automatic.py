@@ -1,8 +1,6 @@
 import datetime
-import json
-from past.builtins import basestring
 
-import mock
+import requests_mock
 
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.lib.datetimeutil import utc_now
@@ -13,23 +11,11 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 
 
-class Response(object):
-
-    def __init__(self, content, status_code=200):
-        if not isinstance(content, basestring):
-            content = json.dumps(content)
-        self.content = content.strip()
-        self.status_code = status_code
-
-    def json(self):
-        return json.loads(self.content)
-
-
+@requests_mock.Mocker()
 class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
-
     def setUp(self):
         super(IntegrationTestFeaturedVersionsAutomatic, self).setUp()
-        self.__truncate()
+        self._truncate_product_info()
 
         now = utc_now()
         build_date = now - datetime.timedelta(days=30)
@@ -159,13 +145,10 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
         )
 
     def tearDown(self):
-        self.__truncate()
+        self._truncate_product_info()
         super(IntegrationTestFeaturedVersionsAutomatic, self).tearDown()
 
-    def __truncate(self):
-        """Named like this because the parent class has a _truncate()
-        which won't be executed by super(IntegrationTestFeaturedVersionsSync)
-        in its setUp()."""
+    def _truncate_product_info(self):
         self.conn.cursor().execute("""
         TRUNCATE
             products,
@@ -183,52 +166,51 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             ),
             extra_value_source={
                 'crontabber.class-FeaturedVersionsAutomaticCronApp.api_endpoint_url': (
-                    'https://example.com/{product}_versions.json'
+                    'http://example.com/{product}_versions.json'
                 ),
             }
         )
 
-    @mock.patch('requests.get')
-    def test_basic_run_job(self, rget):
+    def test_basic_run_job(self, req_mock):
         config_manager = self._setup_config_manager()
 
-        def mocked_get(url):
-            if 'firefox_versions.json' in url:
-                return Response({
-                    'FIREFOX_NIGHTLY': '52.0a1',
-                    # Kept for legacy and smooth transition.
-                    # We USED to consider the latest AURORA version a
-                    # featured version but we no longer build aurora
-                    # so Socorro shouldn't pick this up any more
-                    # even if product-details.mozilla.org supplies it.
-                    'FIREFOX_AURORA': '51.0a2',
-                    'FIREFOX_ESR': '45.4.0esr',
-                    'FIREFOX_ESR_NEXT': '',
-                    'LATEST_FIREFOX_DEVEL_VERSION': '50.0b7',
-                    'LATEST_FIREFOX_OLDER_VERSION': '3.6.28',
-                    'LATEST_FIREFOX_RELEASED_DEVEL_VERSION': '50.0b7',
-                    'LATEST_FIREFOX_VERSION': '49.0.1'
-                })
-            elif 'mobile_versions.json' in url:
-                return Response({
-                    'nightly_version': '52.0a1',
-                    'alpha_version': '51.0a2',
-                    'beta_version': '50.0b6',
-                    'version': '49.0',
-                    'ios_beta_version': '6.0',
-                    'ios_version': '5.0'
-                })
-            elif 'thunderbird_versions.json' in url:
-                return Response({
-                    'LATEST_THUNDERBIRD_VERSION': '45.4.0',
-                    'LATEST_THUNDERBIRD_DEVEL_VERSION': '50.0b1',
-                    'LATEST_THUNDERBIRD_ALPHA_VERSION': '51.0a2',
-                    'LATEST_THUNDERBIRD_NIGHTLY_VERSION': '52.0a1',
-                })
-            else:
-                raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        req_mock.get(
+            'http://example.com/firefox_versions.json',
+            json={
+                'FIREFOX_NIGHTLY': '52.0a1',
+                # Kept for legacy and smooth transition. We USED to consider
+                # the latest AURORA version a featured version but we no
+                # longer build aurora so Socorro shouldn't pick this up any
+                # more even if product-details.mozilla.org supplies it.
+                'FIREFOX_AURORA': '51.0a2',
+                'FIREFOX_ESR': '45.4.0esr',
+                'FIREFOX_ESR_NEXT': '',
+                'LATEST_FIREFOX_DEVEL_VERSION': '50.0b7',
+                'LATEST_FIREFOX_OLDER_VERSION': '3.6.28',
+                'LATEST_FIREFOX_RELEASED_DEVEL_VERSION': '50.0b7',
+                'LATEST_FIREFOX_VERSION': '49.0.1',
+            }
+        )
+        req_mock.get(
+            'http://example.com/mobile_versions.json',
+            json={
+                'nightly_version': '52.0a1',
+                'alpha_version': '51.0a2',
+                'beta_version': '50.0b6',
+                'version': '49.0',
+                'ios_beta_version': '6.0',
+                'ios_version': '5.0',
+            }
+        )
+        req_mock.get(
+            'http://example.com/thunderbird_versions.json',
+            json={
+                'LATEST_THUNDERBIRD_VERSION': '45.4.0',
+                'LATEST_THUNDERBIRD_DEVEL_VERSION': '50.0b1',
+                'LATEST_THUNDERBIRD_ALPHA_VERSION': '51.0a2',
+                'LATEST_THUNDERBIRD_NIGHTLY_VERSION': '52.0a1',
+            }
+        )
 
         # Check what's set up in the fixture
         rows = execute_query_fetchall(
@@ -245,8 +227,8 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             ('Firefox', '52.0a1', False),
         ]
 
-        # This is necessary so we get a new cursor when we do other
-        # selects after the crontabber app has run.
+        # This is necessary so we get a new cursor when we do other selects
+        # after the crontabber app has run.
         self.conn.commit()
 
         with config_manager.context() as config:
@@ -273,21 +255,17 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             ('Firefox', '24.5.0', False),
             ('Firefox', '49.0.1', True),
             ('Firefox', '50.0b', True),
-            # Note that the 'Aurora' branch is still mentioned but
-            # note that it's NOT featured (hence 'False').
+            # Note that the 'Aurora' branch is still mentioned but note that it's NOT featured
+            # (hence 'False').
             ('Firefox', '51.0a2', False),
             ('Firefox', '52.0a1', True),
         ]
         assert sorted(rows) == expected
 
-    @mock.patch('requests.get')
-    def test_download_error(self, rget):
+    def test_download_error(self, req_mock):
         config_manager = self._setup_config_manager()
 
-        def mocked_get(url):
-            return Response('not here', status_code=404)
-
-        rget.side_effect = mocked_get
+        req_mock.get('http://example.com/firefox_versions.json', status_code=404)
 
         with config_manager.context() as config:
             tab = CronTabberApp(config)

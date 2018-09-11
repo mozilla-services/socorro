@@ -10,9 +10,8 @@ import os
 import os.path
 import sys
 
-import requests
-
 from socorro.lib.datetimeutil import JsonDTEncoder
+from socorro.lib.requestslib import session_with_retries
 from socorro.scripts import FlagAction, WrappedTextHelpFormatter
 
 
@@ -65,7 +64,8 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
         headers = {}
 
     # Fetch raw crash metadata
-    resp = requests.get(
+    session = session_with_retries()
+    resp = session.get(
         HOST + '/api/RawCrash/',
         params={
             'crash_id': crash_id,
@@ -103,7 +103,7 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
             if file_name == 'upload_file_minidump':
                 file_name = 'dump'
 
-            resp = requests.get(
+            resp = session.get(
                 HOST + '/api/RawCrash/',
                 params={
                     'crash_id': crash_id,

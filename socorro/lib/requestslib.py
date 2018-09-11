@@ -1,0 +1,76 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+
+class HTTPAdapterWithTimeout(HTTPAdapter):
+    """HTTPAdapter with a default timeout
+
+    This allows you to set a default timeout when creating the adapter.
+    It can be overridden here as well as when doing individual
+    requests.
+
+    :arg varies default_timeout: number of seconds before timing out
+
+        This can be a float or a (connect timeout, read timeout) tuple
+        of floats.
+
+    """
+    def __init__(self, *args, **kwargs):
+        self.default_timeout = kwargs.get('default_timeout', None)
+        if 'default_timeout' in kwargs:
+            del kwargs['default_timeout']
+        super(HTTPAdapterWithTimeout, self).__init__()
+
+    def send(self, *args, **kwargs):
+        kwargs['timeout'] = kwargs.get('timeout', self.default_timeout)
+        return super(HTTPAdapterWithTimeout, self).send(*args, **kwargs)
+
+
+def session_with_retries(total_retries=5, backoff_factor=0.2,
+                         status_forcelist=(429, 500), default_timeout=5):
+    """Returns session that retries on HTTP 429 and 500 with default timeout
+
+    :arg int total_retries: total number of times to retry
+
+    :arg float backoff_factor: number of seconds to increment by between
+        attempts
+
+        For example, 0.1 will back off 0.1s, then 0.2s, then 0.3s, ...
+
+    :arg tuple of HTTP codes status_forcelist: tuple of HTTP codes to
+        retry on
+
+    :arg varies default_timeout: number of seconds before timing out
+
+        This can be a float or a (connect timeout, read timeout) tuple
+        of floats.
+
+    :returns: a requests Session instance
+
+    """
+    retries = Retry(
+        total=total_retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=list(status_forcelist)
+    )
+
+    s = requests.Session()
+
+    # Set the User-Agent header so we can distinguish our stuff from other stuff
+    s.headers.update({
+        'User-Agent': 'socorro-requests/1.0'
+    })
+
+    s.mount(
+        'http://', HTTPAdapterWithTimeout(max_retries=retries, default_timeout=default_timeout)
+    )
+    s.mount(
+        'https://', HTTPAdapterWithTimeout(max_retries=retries, default_timeout=default_timeout)
+    )
+
+    return s
