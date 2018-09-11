@@ -4,15 +4,17 @@
 
 import datetime
 import gzip
+import random
 import re
 from sys import maxint
-import time
 from past.builtins import basestring
+import time
 from urllib import unquote_plus
 
+from requests import RequestException
 import ujson
 
-from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
+from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import (
     UTC,
@@ -20,6 +22,7 @@ from socorro.lib.datetimeutil import (
 )
 from socorro.lib.ooid import dateFromOoid
 from socorro.lib import raven_client
+from socorro.lib.requestslib import session_with_retries
 from socorro.lib.transform_rules import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
@@ -606,70 +609,85 @@ class TopMostFilesRule(Rule):
 
 
 class BetaVersionRule(Rule):
+    #: Hold at most this many items in cache; items are a key and a value
+    #: both of which are short strings, so this doesn't take much memory
+    CACHE_MAX_SIZE = 5000
+
+    #: Items in cache expire after 30 minutes by default
+    SHORT_CACHE_TTL = 60 * 30
+
+    #: If we know it's good, cache it for 6 hours
+    LONG_CACHE_TTL = 60 * 60 * 6
+
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
         # NOTE(willkg): These config values come from Processor2015 instance.
-        database = config.database_class(config)
-        self.transaction = config.transaction_executor_class(
-            config,
-            database,
-        )
-        self._versions_data_cache = {}
+        self.version_string_api = config.version_string_api
+        self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
 
     def version(self):
         return '1.0'
 
     def _get_version_data(self, product, version, build_id):
-        """Return the real version number of a specific product, version and
-        build.
+        """Return the real version number of a specific product, version and build
 
-        For example, beta builds of Firefox declare their version
-        number as the major version (i.e. version 54.0b3 would say its version
-        is 54.0). This database call returns the actual version number of said
-        build (i.e. 54.0b3 for the previous example).
+        For example, beta builds of Firefox declare their version number as the
+        major version (i.e. version 54.0b3 would say its version is 54.0). This
+        database call returns the actual version number of said build (i.e.
+        54.0b3 for the previous example).
+
+        :arg product: the product
+        :arg version: the version as a string. e.g. "56.0"
+        :arg build_id: the build_id as a string.
+
+        :returns: ``None`` or the version string that should be used
+
+        :raises requests.RequestException: raised if it has connection issues with
+            the host specified in ``version_string_api``
+
         """
+        if not (product and version and build_id):
+            return None
+
         key = '%s:%s:%s' % (product, version, build_id)
+        if key in self.cache:
+            return self.cache[key]
 
-        if key in self._versions_data_cache:
-            return self._versions_data_cache[key]
+        session = session_with_retries(self.version_string_api)
 
-        sql = """
-            SELECT
-                pv.version_string
-            FROM product_versions pv
-                LEFT JOIN product_version_builds pvb ON
-                    (pv.product_version_id = pvb.product_version_id)
-            WHERE pv.product_name = %(product)s
-            AND pv.release_version = %(version)s
-            AND pvb.build_id = %(build_id)s
-        """
-        params = {
+        resp = session.get(self.version_string_api, params={
             'product': product,
             'version': version,
-            'build_id': build_id,
-        }
-        results = self.transaction(
-            execute_query_fetchall,
-            sql,
-            params
-        )
-        for real_version, in results:
-            self._versions_data_cache[key] = real_version
+            'build_id': build_id
+        })
 
-        return self._versions_data_cache.get(key)
+        if resp.status_code == 200:
+            hits = resp.json()['hits']
+
+            # Shimmy to add to ttl so as to distribute cache misses over time and reduce
+            # HTTP requests from bunching up.
+            shimmy = random.randint(1, 120)
+
+            if hits:
+                # If we got an answer we should keep it around for a while because it's
+                # a real answer and it's not going to change so use the long ttl plus
+                # a fudge factor.
+                real_version = hits[0]
+                self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL + shimmy)
+                return real_version
+            else:
+                # We didn't get an answer which could mean that this is a weird build and there
+                # is no answer or it could mean that ftpscraper hasn't picked up the relevant
+                # build information or it could mean we're getting cached answers from the webapp.
+                # Regardless, maybe in the future we get a better answer so we use the short
+                # ttl plus a fudge factor.
+                self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL + shimmy)
+
+        return None
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        # We apply this Rule only if the release channel is beta, because
-        # beta versions are the only ones sending an "incorrect" version
-        # number in their data.
-        # 2017-06-14: Ohai! This is not true anymore! With the removal of
-        # the aurora channel, there is now a new type of build called
-        # "DevEdition", that is released on the aurora channel, but has
-        # the same version naming logic as builds on the beta channel.
-        # We thus want to apply the same logic to aurora builds
-        # as well now. Note that older crash reports won't be affected,
-        # because they have a "correct" version number, usually containing
-        # the letter 'a' (like '50.0a2').
+        # Beta and aurora versions send the wrong version in the crash report,
+        # so we need to fix them.
         return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
@@ -689,10 +707,8 @@ class BetaVersionRule(Rule):
             if real_version:
                 processed_crash['version'] = real_version
             else:
-                # This is a beta version but we do not have data about it. It
-                # could be because we don't have it yet (if the cron jobs are
-                # running late for example), so we mark this crash. This way,
-                # we can reprocess it later to give it the correct version.
+                # We don't have a real version to use, so we tack on "b0" to
+                # make it better and match the channel.
                 processed_crash['version'] += 'b0'
                 processor_meta.processor_notes.append(
                     'release channel is %s but no version data was found '
@@ -702,6 +718,12 @@ class BetaVersionRule(Rule):
                 )
         except KeyError:
             return False
+        except RequestException as exc:
+            processed_crash['version'] += 'b0'
+            processor_meta.processor_notes.append(
+                'could not connect to VersionString API - added "b0" suffix to version number'
+            )
+            self.config.logger.exception('%s when connecting to %s', exc, self.version_string_api)
         return True
 
 

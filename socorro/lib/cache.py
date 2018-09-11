@@ -10,18 +10,11 @@ from collections import MutableMapping, OrderedDict
 import datetime
 import threading
 
-import isodate
-
-
-UTC = isodate.UTC
+from socorro.lib.datetimeutil import utc_now
 
 
 #: Default time-to-live for keys in seconds
 DEFAULT_TTL = 600
-
-
-def _utc_now():
-    return datetime.datetime.now(UTC)
 
 
 class ExpiringCache(MutableMapping):
@@ -32,7 +25,7 @@ class ExpiringCache(MutableMapping):
 
     Example of usage:
 
-    >>> cache = ExpiringCache(max_size=1000, ttl=5 * 60)
+    >>> cache = ExpiringCache(max_size=1000, default_ttl=5 * 60)
     >>> cache['key1'] = 'something'
     >>> cache['key1']
     'something'
@@ -42,14 +35,32 @@ class ExpiringCache(MutableMapping):
       File "<stdin>", line 1, in <module>
     KeyError: 'key1'
 
+    ExpiringCache also supports different ttls for different keys:
+
+    >>> cache = ExpiringCache(max_size=1000, default_ttl=5 * 60)
+    >>> cache['short_key'] = 'something'
+    >>> cache.set('long_key', value='something', ttl=60 * 60)
+    >>> # wait 5 minutes
+    >>> cache['short_key']
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    KeyError: 'short_key'
+    >>> cache['long_key']
+    'something'
+
     """
-    def __init__(self, max_size=128, ttl=600):
+    def __init__(self, max_size=128, default_ttl=DEFAULT_TTL):
+        """
+        :arg max_size: maximum number of items in the cache
+        :arg ttl: ttl for items in the cache in seconds
+
+        """
         if max_size <= 0:
             raise ValueError('max_size must be greater than 0')
-        if ttl <= 0:
+        if default_ttl <= 0:
             raise ValueError('ttl must be greater than 0')
         self._max_size = max_size
-        self._ttl = datetime.timedelta(seconds=ttl)
+        self._default_ttl = datetime.timedelta(seconds=default_ttl)
         # Map of key -> (expire time, value)
         self._data = OrderedDict()
         self._lock = threading.RLock()
@@ -57,7 +68,7 @@ class ExpiringCache(MutableMapping):
     def flush(self):
         """Removes all expired keys"""
         with self._lock:
-            NOW = _utc_now()
+            NOW = utc_now()
 
             for key, value_record in self._data.items():
                 if value_record[0] < NOW:
@@ -67,14 +78,21 @@ class ExpiringCache(MutableMapping):
         with self._lock:
             value_record = self._data[key]
 
-            if value_record[0] < _utc_now():
+            if value_record[0] < utc_now():
                 del self._data[key]
                 raise KeyError()
 
             return value_record[1]
 
     def __setitem__(self, key, value):
-        self._data[key] = [_utc_now() + self._ttl, value]
+        self.set(key, value, ttl=self._default_ttl)
+
+    def set(self, key, value, ttl=None):
+        ttl = ttl if ttl is not None else self._default_ttl
+        if isinstance(ttl, int):
+            ttl = datetime.timedelta(seconds=ttl)
+
+        self._data[key] = [utc_now() + ttl, value]
 
         # If we've exceeded the max size, remove the oldest one
         if len(self._data) > self._max_size:
