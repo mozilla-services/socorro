@@ -2744,6 +2744,31 @@ FIELDS = {
         'query_type': 'number',
         'storage_mapping': None
     },
+    'memory_error_correction': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': (
+            'Windows only, type of error correction used by system memory.  See '
+            'documentation for MemoryErrorCorrection property of '
+            'Win32_PhysicalMemoryArray WMI class.'
+        ),
+        # FIXME(willkg): Once we know the set of fields, we can add them here. There's
+        # a finite set.
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'MemoryErrorCorrection',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'memory_error_correction',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'string',
+        'storage_mapping': {
+            'analyzer': 'keyword',
+            'type': 'string'
+        }
+    },
     'memory_explicit': {
         'data_validation_type': 'int',
         'default_value': None,
