@@ -2239,6 +2239,28 @@ FIELDS = {
             'type': 'long'
         }
     },
+    'gmp_library_path': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': 'Holds the path to the GMP plugin library.',
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'GMPLibraryPath',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'gmp_library_path',
+        'namespace': 'raw_crash',
+        'permissions_needed': [
+            # This contains file paths on the user's computer.
+            'crashstats.view_pii'
+        ],
+        'query_type': 'string',
+        'storage_mapping': {
+            'analyzer': 'keyword',
+            'type': 'string'
+        }
+    },
     'gmp_plugin': {
         'data_validation_type': 'str',
         'default_value': None,
