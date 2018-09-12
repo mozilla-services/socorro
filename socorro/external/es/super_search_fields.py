@@ -2369,6 +2369,27 @@ FIELDS = {
             'type': 'string'
         }
     },
+    'has_device_touch_screen': {
+        'data_validation_type': 'bool',
+        'default_value': None,
+        'description': (
+            'Set to 1 if the device had a touch-screen, this only applies to Firefox '
+            'desktop as on mobile devices we assume a touch-screen is always present.'
+        ),
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'HasDeviceTouchScreen',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'has_device_touch_screen',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'bool',
+        'storage_mapping': {
+            'type': 'boolean'
+        }
+    },
     'id': {
         'data_validation_type': 'enum',
         'default_value': None,
