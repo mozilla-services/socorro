@@ -2795,9 +2795,17 @@ FIELDS = {
             'documentation for MemoryErrorCorrection property of '
             'Win32_PhysicalMemoryArray WMI class.'
         ),
-        # FIXME(willkg): Once we know the set of fields, we can add them here. There's
-        # a finite set.
-        'form_field_choices': [],
+        'form_field_choices': [
+            'Reserved',
+            'Other',
+            'Unknown',
+            'None',
+            'Parity',
+            'Single-bit ECC',
+            'Multi-bit ECC',
+            'CRC',
+            'Unexpected value',
+        ],
         'has_full_version': False,
         'in_database_name': 'MemoryErrorCorrection',
         'is_exposed': True,
