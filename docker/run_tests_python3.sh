@@ -16,7 +16,7 @@ WORKING_TESTS=(
     socorro/unittest/external/boto/*.py
     socorro/unittest/external/es/*.py
     socorro/unittest/external/postgresql/*.py
-    socorro/unittest/external/rabbitmq/*.py
+    #socorro/unittest/external/rabbitmq/*.py
 
    socorro/unittest/database/*.py
 )
