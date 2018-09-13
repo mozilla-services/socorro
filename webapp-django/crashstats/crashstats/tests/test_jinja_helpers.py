@@ -377,6 +377,25 @@ class TestBugzillaSubmitURL(TestCase):
         url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
         assert quote_plus('0 &test_module foo<char>::bar "foo".cpp:7') in url
 
+    def test_comment_java_stack_trace(self):
+        """If there's a java stack trace, use that instead"""
+        report = self._create_report()
+        report['java_stack_trace'] = 'java.lang.NullPointerException: list == null'
+        parsed_dump = self._create_dump(threads=[
+            self._create_thread(),  # Empty thread 0
+            self._create_thread(frames=[
+                self._create_frame(frame=0),
+                self._create_frame(frame=1),
+                self._create_frame(frame=2),
+            ]),
+        ])
+        url = bugzilla_submit_url(report, parsed_dump, 0, 'Core')
+        assert quote_plus('Java stack trace:') in url
+        assert quote_plus('java.lang.NullPointerException: list == null') in url
+
+        # Make sure it didn't also add the crashing frames
+        assert quote_plus('frames of crashing thread:') not in url
+
 
 class TestReplaceBugzillaLinks(TestCase):
     def test_simple(self):
