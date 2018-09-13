@@ -206,6 +206,7 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
 
     comment = render_to_string('crashstats/bugzilla_comment.txt', {
         'uuid': report['uuid'],
+        'java_stack_trace': report.get('java_stack_trace', None),
         'crashing_thread_frames': crashing_thread_frames,
     })
 
