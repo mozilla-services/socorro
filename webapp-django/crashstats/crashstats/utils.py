@@ -13,6 +13,7 @@ from six import text_type
 
 from django import http
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 
 from . import models
@@ -212,11 +213,47 @@ def parse_version(version):
         return (-1)
 
 
-def get_recent_versions_for_product(product):
+def sorted_versions(list_of_versions):
+    """Returns versions sorted from most recent to least recent
+
+    Accounts for betas, alphas, X.Y.Z versioning, ESR, etc. This also removes
+    strings that aren't proper versions.
+
+    :arg list of str list_of_versions: list of version strings
+
+    :returns: sorted list of version strings
+
+    Example:
+
+    >>> sorted_versions(['63.0', '63.0.2', '62.0b1', '62.0esr', '47.0'])
+    ['63.0.2', '63.0', '62.0esr', '62.0b1', '47.0'])
+
+    """
+    # Build a list of (version, parsed) tuples
+    version_parsed = [(parse_version(version), version) for version in list_of_versions]
+
+    # Remove bad versions which are denoted by the parsed version being (-1)
+    version_parsed = [
+        vp for vp in version_parsed if vp[0] != (-1)
+    ]
+
+    # Sort, reverse, and return the actual version string
+    return [
+        vp[1] for vp in sorted(version_parsed, reverse=True)
+    ]
+
+
+#: Number of days to look at for versions in crash reports. This is set
+#: for two months. If we haven't gotten a crash report for some version in
+#: two months, then seems like that version isn't active.
+VERSIONS_WINDOW_DAYS = 60
+
+
+def get_versions_for_product(product):
     """Returns recent versions for specified product
 
-    This looks at the crash reports submitted for this product in the last week
-    and returns the versions of those crash reports.
+    This looks at the crash reports submitted for this product over
+    VERSIONS_WINDOW_DAYS days and returns the versinos of those crash reports.
 
     If SuperSearch returns an error, this returns an empty list.
 
@@ -228,18 +265,23 @@ def get_recent_versions_for_product(product):
     :returns: list of versions sorted in reverse order or ``[]``
 
     """
+    key = 'get_versions_for_product:%s' % product.lower().replace(' ', '')
+    ret = cache.get(key)
+    if ret is not None:
+        return ret
+
     api = supersearch_models.SuperSearchUnredacted()
     now = timezone.now()
 
-    # Find versions for specified product in crash reports reported in
-    # the last week
+    # Find versions for specified product in crash reports reported in the last
+    # 6 months
     params = {
         'product': product,
         '_results_number': 0,
         '_facets': 'version',
         '_facets_size': 100,
         'date': [
-            '>=' + (now - datetime.timedelta(days=7)).isoformat(),
+            '>=' + (now - datetime.timedelta(days=VERSIONS_WINDOW_DAYS)).isoformat(),
             '<' + now.isoformat()
         ]
     }
@@ -248,34 +290,52 @@ def get_recent_versions_for_product(product):
     if 'facets' not in ret or 'version' not in ret['facets']:
         return []
 
-    versions = [
-        item['term'] for item in ret['facets']['version']
-    ]
-    versions.sort(
-        key=lambda version: parse_version(version),
-        reverse=1
-    )
+    versions = sorted_versions([item['term'] for item in ret['facets']['version']])
 
-    # Map of major version (int) -> list of versions (str)
+    # Set of X.Yb to add
+    betas = set()
+
+    # Map of major version (int) -> list of versions (str) so we can
+    # get the most recent version of the last three majors which
+    # we'll assume are "featured versions"
     major_to_versions = {}
     for version in versions:
         try:
             major = int(version.split('.', 1)[0])
             major_to_versions.setdefault(major, []).append(version)
+
+            if 'b' in version:
+                # Add X.Yb to the betas set
+                betas.add(version[:version.find('b') + 1])
         except ValueError:
             # If the first thing in the major version isn't an int, then skip
             # it
             continue
 
-    return [
+    # The featured versions is the most recent 3 of the list of recent versions
+    # for each major version. Since versions were sorted when we went through
+    # them, the most recent one is in index 0.
+    featured_versions = sorted_versions([values[0] for values in major_to_versions.values()])
+    featured_versions = featured_versions[:3]
+
+    # Add the beta versions and then resort the versions
+    versions.extend(betas)
+    versions = sorted_versions(versions)
+
+    # Generate the version data the context needs
+    ret = [
         {
             'product': product,
-            'version': major_to_versions[major_key][0],
-            'is_featured': True,
+            'version': version,
+            'is_featured': version in featured_versions,
             'has_builds': False
         }
-        for major_key in sorted(major_to_versions.keys(), reverse=True)
+        for version in versions
     ]
+
+    # Cache value for an hour
+    cache.set(key, ret, 60 * 60)
+    return ret
 
 
 def build_default_context(product=None, versions=None):
@@ -316,7 +376,7 @@ def build_default_context(product=None, versions=None):
         if product not in active_versions:
             # This is a product that doesn't have version information in
             # product_versions, so we pull it from supersearch
-            active_versions[product] = get_recent_versions_for_product(product)
+            active_versions[product] = get_versions_for_product(product)
 
         context['product'] = product
     else:
