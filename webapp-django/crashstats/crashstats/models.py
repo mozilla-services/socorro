@@ -25,6 +25,7 @@ import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.signature_first_date
+import socorro.external.postgresql.version_string
 import socorro.external.boto.crash_data
 
 from socorro.app import socorro_app
@@ -498,6 +499,20 @@ class Products(SocorroMiddleware):
     API_WHITELIST = (
         'hits',
         'total',
+    )
+
+
+class VersionString(SocorroMiddleware):
+    implementation = socorro.external.postgresql.version_string.VersionString
+
+    required_params = (
+        'product',
+        'version',
+        ('build_id', int)
+    )
+
+    API_WHITELIST = (
+        'hits',
     )
 
 

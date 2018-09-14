@@ -124,6 +124,11 @@ class Processor2015(RequiredConfig):
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
+        'version_string_api',
+        doc='url for the version string api endpoint',
+        default='https://crash-stats.mozilla.com/api/VersionString'
+    )
+    required_config.add_option(
         'dump_field',
         doc='the default name of a dump',
         default='upload_file_minidump',
