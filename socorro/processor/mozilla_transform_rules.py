@@ -382,6 +382,11 @@ class ProductRewrite(Rule):
         if product_name == 'FennecAndroid' and raw_crash.get('ProcessType', '') == 'content':
             product_name = 'Focus'
 
+        # Rewrite FirefoxReality crashes (bug #1474037).
+        if ((product_name == 'FennecAndroid' and
+             raw_crash.get('Android_Manufacturer', '') == 'Oculus')):
+            product_name = 'FirefoxReality'
+
         # If we made any product name changes, persist them and keep the
         # original one so we can look at things later
         if product_name != original_product_name:
