@@ -4,6 +4,7 @@ import datetime
 import isodate
 import functools
 import json
+import random
 import re
 from past.builtins import basestring
 from collections import OrderedDict
@@ -229,7 +230,8 @@ def sorted_versions(list_of_versions):
     ['63.0.2', '63.0', '62.0esr', '62.0b1', '47.0'])
 
     """
-    # Build a list of (version, parsed) tuples
+    # Build a list of (parsed, version) tuples--parsed is first because that's
+    # what we want to sort on
     version_parsed = [(parse_version(version), version) for version in list_of_versions]
 
     # Remove bad versions which are denoted by the parsed version being (-1)
@@ -333,8 +335,8 @@ def get_versions_for_product(product):
         for version in versions
     ]
 
-    # Cache value for an hour
-    cache.set(key, ret, 60 * 60)
+    # Cache value for an hour plus a fudge factor in seconds
+    cache.set(key, ret, (60 * 60) + random.randint(60, 120))
     return ret
 
 
