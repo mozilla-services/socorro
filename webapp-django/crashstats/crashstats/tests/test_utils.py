@@ -411,15 +411,13 @@ def test_parse_version(version_string, expected):
     assert utils.parse_version(version_string) == expected
 
 
-def test_parse_version_sorted():
+def test_sorted_versions():
     """Test that using parse_version produces version keys that sort correctly"""
     versions = ['59.0', '59.0b2', '59.0.2', '59.0a1', '60p', '59.0.2esr']
-    assert sorted(versions, key=utils.parse_version, reverse=1) == [
+    assert utils.sorted_versions(versions) == [
         '59.0.2esr',
         '59.0.2',
         '59.0',
         '59.0b2',
         '59.0a1',
-        # junk data, so it goes to the bottom of the pile
-        '60p',
     ]
