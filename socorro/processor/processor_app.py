@@ -5,18 +5,16 @@
 
 """the processor_app converts raw_crashes into processed_crashes"""
 
+import collections
 import os
 import sys
-import collections
 
-from six import reraise
 from configman import Namespace
 from configman.converters import class_converter
+from six import reraise
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
-
 from socorro.external.crashstorage_base import CrashIDNotFound
-
 from socorro.lib.util import DotDict
 from socorro.lib import raven_client
 
@@ -127,20 +125,21 @@ CONFIG_DEFAULTS = {
 
 
 class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
-    """the Socorro processor converts raw_crashes into processed_crashes"""
+    """Configman app that generates processed_crashes from raw_crashes"""
     app_name = 'processor'
     app_version = '3.0'
     app_description = __doc__
     config_defaults = CONFIG_DEFAULTS
 
     required_config = Namespace()
-    # configuration is broken into three namespaces: processor,
+
+    # Configuration is broken into three namespaces: processor,
     # new_crash_source, and companion_process
 
     # processor namespace
-    #     this namespace is for config parameter having to do with the
+    #     This namespace is for config parameter having to do with the
     #     implementation of the algorithm of converting raw crashes into
-    #     processed crashes.  This algorithm can be swapped out for alternate
+    #     processed crashes. This algorithm can be swapped out for alternate
     #     algorithms.
     required_config.namespace('processor')
     required_config.processor.add_option(
@@ -151,8 +150,8 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     )
 
     # companion_process namespace
-    #     this namespace is for config parameters having to do with registering
-    #     a companion process that runs alongside processor
+    #     This namespace is for config parameters having to do with registering
+    #     a companion process that runs alongside processor.
     required_config.namespace('companion_process')
     required_config.companion_process.add_option(
         'companion_class',
@@ -161,13 +160,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
         from_string_converter=class_converter
     )
-
-    ###########################################################################
-    # TODO: implement an __init__ and a waiting func.  The waiting func
-    # will take registrations of periodic things to do over some time
-    # interval.  the first periodic thing is the rereading of the
-    # signature generation stuff from the database.
-    ###########################################################################
 
     required_config.namespace('sentry')
     required_config.sentry.add_option(
@@ -197,11 +189,14 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     def _transform(self, crash_id):
-        """this implementation is the framework on how a raw crash is
-        converted into a processed crash.  The 'crash_id' passed in is used as
-        a key to fetch the raw crash from the 'source', the conversion funtion
-        implemented by the 'processor_class' is applied, the
-        processed crash is saved to the 'destination'"""
+        """Transforms raw crash into a process crash
+
+        This implementation is the framework on how a raw crash is converted into
+        a processed crash.  The 'crash_id' passed in is used as a key to fetch the
+        raw crash from the 'source', the conversion funtion implemented by the
+        'processor_class' is applied, the processed crash is saved to the 'destination'.
+
+        """
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
             dumps = self.source.get_raw_dumps_as_files(crash_id)
@@ -222,33 +217,24 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 crash_id,
                 exc_info=True
             )
-            self.processor.reject_raw_crash(
-                crash_id,
-                'error in loading: %s' % x
-            )
+            self.processor.reject_raw_crash(crash_id, 'error in loading: %s' % x)
             return
 
         try:
-            processed_crash = self.source.get_unredacted_processed(
-                crash_id
-            )
+            processed_crash = self.source.get_unredacted_processed(crash_id)
         except CrashIDNotFound:
             processed_crash = DotDict()
 
         try:
-            processed_crash = (
-                self.processor.process_crash(
-                    raw_crash,
-                    dumps,
-                    processed_crash,
-                )
+            processed_crash = self.processor.process_crash(
+                raw_crash,
+                dumps,
+                processed_crash,
             )
-            """ bug 866973 - save_raw_and_processed() instead of just
-                save_processed().  The raw crash may have been modified
-                by the processor rules.  The individual crash storage
-                implementations may choose to honor re-saving the raw_crash
-                or not.
-            """
+            # bug 866973 - save_raw_and_processed() instead of just save_processed().
+            # The raw crash may have been modified by the processor rules. The
+            # individual crash storage implementations may choose to honor re-saving
+            # the raw_crash or not.
             self.destination.save_raw_and_processed(
                 raw_crash,
                 None,
@@ -280,31 +266,26 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             # we need to clean up after ourselves.
             for a_dump_pathname in dumps.itervalues():
                 try:
-                    if "TEMPORARY" in a_dump_pathname:
+                    if 'TEMPORARY' in a_dump_pathname:
                         os.unlink(a_dump_pathname)
                 except OSError as x:
                     # the file does not actually exist
-                    self.config.logger.info(
-                        'deletion of dump failed: %s',
-                        x,
-                    )
+                    self.config.logger.info('deletion of dump failed: %s', x)
 
     def _setup_source_and_destination(self):
-        """this method simply instatiates the source, destination,
-        new_crash_source, and the processor algorithm implementation."""
+        """Instantiates classes necessary for processing"""
         super(ProcessorApp, self)._setup_source_and_destination()
         if self.config.companion_process.companion_class:
-            self.companion_process = \
-                self.config.companion_process.companion_class(
-                    self.config.companion_process,
-                    self.quit_check
-                )
+            self.companion_process = self.config.companion_process.companion_class(
+                self.config.companion_process,
+                self.quit_check
+            )
         else:
             self.companion_process = None
 
         self.config.processor_name = self.app_instance_name
 
-        # this function will be called by the MainThread periodically
+        # This function will be called by the MainThread periodically
         # while the threaded_task_manager processes crashes.
         self.waiting_func = None
 
@@ -314,17 +295,18 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     def close(self):
-        """when the processor shutsdown, this function cleans up"""
+        """Cleans up the processor on shutdown"""
+        super(ProcessorApp, self).close()
         try:
             self.companion_process.close()
         except AttributeError:
-            # there is either no companion or it doesn't have a close method
+            # There is either no companion or it doesn't have a close method
             # we can skip on
             pass
         try:
             self.processor.close()
         except AttributeError:
-            # the processor implementation does not have a close method
+            # The processor implementation does not have a close method
             # we can blithely skip on
             pass
 
