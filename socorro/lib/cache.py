@@ -70,7 +70,7 @@ class ExpiringCache(MutableMapping):
         with self._lock:
             NOW = utc_now()
 
-            for key, value_record in self._data.items():
+            for key, value_record in list(self._data.items()):
                 if value_record[0] < NOW:
                     del self._data[key]
 
@@ -96,7 +96,7 @@ class ExpiringCache(MutableMapping):
 
         # If we've exceeded the max size, remove the oldest one
         if len(self._data) > self._max_size:
-            del self._data[self._data.keys()[0]]
+            self._data.popitem(last=False)
 
     def __delitem__(self, key):
         del self._data[key]

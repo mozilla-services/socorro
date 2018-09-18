@@ -7,7 +7,6 @@ import json
 
 import requests_mock
 import pytest
-from six import iterkeys
 
 from socorro.lib import BadArgumentError, datetimeutil, search_common
 from socorro.unittest.external.es.base import (
@@ -96,7 +95,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert len(res['hits']) == 1
         assert res['hits'][0]['signature'] == 'js::break_your_browser'
 
-        assert list(iterkeys(res['facets'])) == ['signature']
+        assert list(res['facets'].keys()) == ['signature']
         assert res['facets']['signature'][0] == {'term': 'js::break_your_browser', 'count': 1}
 
         # Test fields are being renamed.

@@ -11,14 +11,14 @@
 # This is the list of known working tests by directory/filename. When you
 # have tests in a directory/file working, add it to this list as a new line.
 WORKING_TESTS=(
-    socorro/unittest/lib/*.py
+    socorro/signature/tests/test_*.py
+    socorro/unittest/database/test_*.py
+    socorro/unittest/external/boto/test_*.py
+    socorro/unittest/external/es/test_*.py
+    socorro/unittest/external/postgresql/test_*.py
+    socorro/unittest/lib/test_*.py
 
-    socorro/unittest/external/boto/*.py
-    socorro/unittest/external/es/*.py
-    socorro/unittest/external/postgresql/*.py
-    #socorro/unittest/external/rabbitmq/*.py
-
-   socorro/unittest/database/*.py
+    # socorro/unittest/external/rabbitmq/test_*.py
 )
 
 pytest ${WORKING_TESTS[@]}
