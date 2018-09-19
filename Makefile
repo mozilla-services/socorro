@@ -102,48 +102,23 @@ stop: my.env
 dependencycheck: my.env
 	${DC} run crontabber ./docker/run_dependency_checks.sh
 
-# Python 3 transition related things
 
-.PHONY: dockerbuild3 test3 testshell3
+# Python 3 migration related things--remove after we've finished migrating
+
+.PHONY: build3 test3 testshell3
 
 .docker-build3:
-	make dockerbuild3
+	make build3
 
-dockerbuild3: my.env
+build3: my.env
 	${DC} build testpython3
 	touch .docker-build3
+
+lint3: my.env .docker-build3
+	${DC} run testpython3 ./docker/run_lint.sh
 
 test3: my.env .docker-build3
 	USEPYTHON=3 ./docker/run_tests_in_docker.sh ${ARGS}
 
 testshell3: my.env .docker-build3
 	USEPYTHON=3 ./docker/run_tests_in_docker.sh --shell
-
-
-# FIXME(willkg): We deprecated these make rules in favor of ones without
-# the "docker" prefix. Remove these after August 2018.
-.PHONY: dockerbuild dockertest dockertestshell dockerrun dockersetup dockerupdatedata dockertest3 dockertestshell3
-
-dockerbuild:
-	$(error DEPRECATED: use "make build" instead)
-
-dockertest:
-	$(error DEPRECATED: use "make test" instead)
-
-dockertestshell:
-	$(error DEPRECATED: use "make testshell" instead)
-
-dockerrun:
-	$(error DEPRECATED: use "make run" instead)
-
-dockersetup:
-	$(error DEPRECATED: use "make setup" instead)
-
-dockerupdatedata:
-	$(error DEPRECATED: use "make updatedata" instead)
-
-dockertest3:
-	$(error DEPRECATED: use "make test3" instead)
-
-dockertestshell3:
-	$(error DEPRECATED: use "make testshell3" instead)

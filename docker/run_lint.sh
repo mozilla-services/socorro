@@ -10,8 +10,7 @@
 
 set -e
 
-# Run flake8 to lint Python tests
-echo ">>> flake8 (python)"
+echo ">>> flake8 ($(python --version))"
 cd /app
 flake8
 
