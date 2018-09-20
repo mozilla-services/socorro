@@ -9,6 +9,8 @@
 
 set -eo pipefail
 
+DC="$(which docker-compose)"
+
 # Fetch and update release information for these products (comma-delimited).
 PRODUCTS="firefox,mobile"
 CRONTABBERCMD="./socorro-cmd crontabber"
@@ -24,7 +26,7 @@ if [[ -e "${CACHEFILE}" ]]; then
     # And it's less than a week old... replay.
     if [[ ${FILEAGE} -lt 7 ]]; then
         echo "Found recent (${FILEAGE}d) ftpscraper log--replaying...."
-        docker-compose run crontabber ./socorro-cmd replay_ftpscraper "${CACHEFILE}"
+        ${DC} run app shell ./socorro-cmd replay_ftpscraper "${CACHEFILE}"
         exit
     fi
 fi
@@ -34,5 +36,5 @@ if [[ ! -e "${CACHEDIR}" ]]; then
     mkdir "${CACHEDIR}"
 fi
 
-docker-compose run crontabber ${CRONTABBERCMD} --reset-job=ftpscraper
-docker-compose run crontabber bash -c "${CRONTABBERCMD} --job=ftpscraper --crontabber.class-FTPScraperCronApp.products=${PRODUCTS} |& tee ${CACHEFILE}"
+${DC} run app shell ${CRONTABBERCMD} --reset-job=ftpscraper
+${DC} run app shell bash -c "${CRONTABBERCMD} --job=ftpscraper --crontabber.class-FTPScraperCronApp.products=${PRODUCTS} |& tee ${CACHEFILE}"

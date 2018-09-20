@@ -50,7 +50,7 @@ jobs:
       - run:
           name: Lint
           working_directory: /socorro
-          command: docker run local/socorro_webapp ./docker/run_lint.sh
+          command: docker run local/socorro_app shell ./docker/run_lint.sh
 
       - run:
           name: Run tests
@@ -91,10 +91,8 @@ jobs:
             # push on master or git tag
             if [ "${CIRCLE_BRANCH}" == "master" ] || [ -n "${CIRCLE_TAG}" ]; then
               echo "${DOCKER_PASSWORD}" | docker login -u="${DOCKER_USERNAME}" --password-stdin
-              for image in "socorro_processor" "socorro_webapp" "socorro_crontabber"; do
-                retry docker tag "local/${image}:latest" "mozilla/${image}:${DOCKER_TAG}"
-                retry docker push "mozilla/${image}:${DOCKER_TAG}"
-              done
+              retry docker tag "local/socorro_app:latest" "mozilla/socorro_app:${DOCKER_TAG}"
+              retry docker push "mozilla/socorro_app:${DOCKER_TAG}"
             fi
 
 workflows:

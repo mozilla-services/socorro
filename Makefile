@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-.PHONY: clean default docs help lint
-
 # Include my.env and export it so variables set in there are available
 # in the Makefile.
 include my.env
@@ -15,17 +13,23 @@ export
 SOCORRO_UID ?= 10001
 SOCORRO_GID ?= 10001
 
-default:
-	@echo "You need to specify a subcommand. See \"make help\" for options."
-	@exit 1
+DC := $(shell which docker-compose)
 
-help:
+
+.PHONY: help
+help: default
+
+.PHONY: default
+default:
+	@echo "Usage: make RULE"
+	@echo ""
 	@echo "Socorro make rules:"
 	@echo ""
 	@echo "  build            - build docker containers"
 	@echo "  run              - docker-compose up the entire system for dev"
+	@echo "  stop             - stop all service containers"
 	@echo ""
-	@echo "  shell            - open a shell in the processor container"
+	@echo "  shell            - open a shell in the app container"
 	@echo "  clean            - remove all build, test, coverage and Python artifacts"
 	@echo "  lint             - check style with flake8"
 	@echo "  test             - run unit tests"
@@ -34,24 +38,24 @@ help:
 	@echo ""
 	@echo "  setup            - set up Postgres, Elasticsearch, and local S3"
 	@echo "  updatedata       - add/update necessary database data"
+	@echo "  help             - see this text"
 	@echo ""
 	@echo "See https://socorro.readthedocs.io/ for more documentation."
 
+.PHONY: clean
 clean:
 	-rm .docker-build*
 	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz
 	-rm -rf .cache
 	cd minidump-stackwalk && make clean
 
+.PHONY: docs
 docs: my.env .docker-build-docs
 	${DC} run docs ./docker/run_build_docs.sh
 
+.PHONY: lint
 lint: my.env
-	${DC} run webapp ./docker/run_lint.sh
-
-.PHONY: build setup test testshell run dependencycheck stop
-
-DC := $(shell which docker-compose)
+	${DC} run app shell ./docker/run_lint.sh
 
 my.env:
 	@if [ ! -f my.env ]; \
@@ -63,62 +67,71 @@ my.env:
 .docker-build:
 	make build
 
+.PHONY: build
 build: my.env
-	${DC} build --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} base
-	${DC} build webapp  # crontabber is based off of the webapp image
-	${DC} build processor crontabber oidcprovider
+	${DC} build --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} app
+	${DC} build oidcprovider
 	touch .docker-build
 
 .docker-build-docs:
 	make build-docs
 
+.PHONY: build-docs
 build-docs: my.env
 	${DC} build docs
 	touch .docker-build-docs
 
-# NOTE(willkg): We run setup in the webapp container because the webapp will own
-# postgres going forward and has the needed environment variables.
+.PHONY: setup
 setup: my.env .docker-build
-	${DC} run webapp /app/docker/run_setup.sh
+	${DC} run app shell bash -c /app/docker/run_setup.sh
 
-shell: my.env .docker-build
-	${DC} run processor bash
-
-test: my.env .docker-build
-	./docker/run_tests_in_docker.sh ${ARGS}
-
-testshell: my.env .docker-build
-	./docker/run_tests_in_docker.sh --shell
-
+.PHONY: updatedata
 updatedata: my.env
 	./docker/run_update_data.sh
 
-run: my.env
-	${DC} up webapp processor webpack
+.PHONY: shell
+shell: my.env .docker-build
+	${DC} run app shell
 
+.PHONY: test
+test: my.env .docker-build
+	./docker/run_tests_in_docker.sh ${ARGS}
+
+.PHONY: testshell
+testshell: my.env .docker-build
+	./docker/run_tests_in_docker.sh --shell
+
+.PHONY: run
+run: my.env
+	${DC} up processor webapp webpack oidcprovider
+
+.PHONY: stop
 stop: my.env
 	${DC} stop
 
+.PHONY: dependencycheck
 dependencycheck: my.env
-	${DC} run crontabber ./docker/run_dependency_checks.sh
+	${DC} run crontabber shell ./docker/run_dependency_checks.sh
 
 
 # Python 3 migration related things--remove after we've finished migrating
 
-.PHONY: build3 test3 testshell3
-
 .docker-build3:
 	make build3
 
+.PHONY: build3
 build3: my.env
-	${DC} build testpython3
+	${DC} build --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} testpython3
 	touch .docker-build3
 
+.PHONY: lint3
 lint3: my.env .docker-build3
-	${DC} run testpython3 ./docker/run_lint.sh
+	${DC} run --no-deps testpython3 ./docker/run_lint.sh
 
+.PHONY: test3
 test3: my.env .docker-build3
 	USEPYTHON=3 ./docker/run_tests_in_docker.sh ${ARGS}
 
+.PHONY: testshell3
 testshell3: my.env .docker-build3
 	USEPYTHON=3 ./docker/run_tests_in_docker.sh --shell
