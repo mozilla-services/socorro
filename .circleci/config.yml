@@ -50,7 +50,7 @@ jobs:
       - run:
           name: Lint
           working_directory: /socorro
-          command: make lint
+          command: docker run local/socorro_app ./docker/run_lint.sh
 
       - run:
           name: Run tests
