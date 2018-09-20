@@ -60,16 +60,6 @@ USER app
 RUN mkdir -p /tmp/symbols/cache
 RUN mkdir -p /tmp/symbols/tmp
 
-
-# FIXME(willkg): Set entrypoint to script that takes a service arg.
-# https://docs.docker.com/engine/reference/builder/#exec-form-entrypoint-example
-# To unset ENTRYPOINT, do:
-# ENTRYPOINT []
-
-# Processor:
-# CMD ["/app/docker/run_processor.sh"]
-# Webapp:
-# CMD ["/app/docker/run_webapp.sh"]
-# Crontabber:
-# CMD ["/app/docker/run_crontabber.sh"]
+# Set entrypoint for this image. The entrypoint script takes a service
+# to run as the first argument. See the script for available arguments.
 ENTRYPOINT ["/app/docker/socorro_entrypoint.sh"]
