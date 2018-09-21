@@ -7,11 +7,15 @@
 from collections import Sequence
 
 
-class SQLDidNotReturnSingleValue(Exception):
+class DBApiUtilNonFatalBaseException(Exception):
     pass
 
 
-class SQLDidNotReturnSingleRow(Exception):
+class SQLDidNotReturnSingleValue(DBApiUtilNonFatalBaseException):
+    pass
+
+
+class SQLDidNotReturnSingleRow(DBApiUtilNonFatalBaseException):
     pass
 
 

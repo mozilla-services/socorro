@@ -15,13 +15,13 @@ import lxml.html
 
 from configman import Namespace
 from configman.converters import str_to_list
-from crontabber.base import BaseCronApp
-from crontabber.mixins import (
-    as_backfill_cron_app,
-    with_postgres_transactions
-)
 
 from socorro.cron import buildutil
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    using_postgres
+)
 from socorro.lib.requestslib import session_with_retries
 
 
@@ -235,7 +235,7 @@ class ScrapersMixin(object):
             yield (platform, version, kvpairs, bad_lines)
 
 
-@with_postgres_transactions()
+@using_postgres()
 @as_backfill_cron_app
 class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     """Scrapes archive.mozilla.org for build and version data"""

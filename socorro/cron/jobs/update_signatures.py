@@ -5,12 +5,12 @@
 import datetime
 
 from configman import Namespace
-from crontabber.base import BaseCronApp
-from crontabber.mixins import (
-    as_backfill_cron_app,
-    with_postgres_transactions
-)
 
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    using_postgres,
+)
 from socorro.external.postgresql.signature_first_date import SignatureFirstDate
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
@@ -21,7 +21,7 @@ from socorro.external.es.super_search_fields import SuperSearchFields
 MAX_PAGE = 1000
 
 
-@with_postgres_transactions()
+@using_postgres()
 @as_backfill_cron_app
 class UpdateSignaturesCronApp(BaseCronApp):
     """Updates the signatures table using crash data from Elasticsearch"""

@@ -7,6 +7,8 @@ import time
 from configman.config_manager import RequiredConfig
 from configman import Namespace
 
+from socorro.external.postgresql.dbapi2_util import DBApiUtilNonFatalBaseException
+
 
 def string_to_list_of_ints(a_string):
     a_string = a_string.replace('"', '')
@@ -41,6 +43,9 @@ class TransactionExecutor(RequiredConfig):
                 result = function(connection, *args, **kwargs)
                 connection.commit()
                 return result
+            except DBApiUtilNonFatalBaseException:
+                connection.rollback()
+                raise
             except BaseException as x:
                 connection.rollback()
                 if hasattr(x, 'abandon_transaction'):

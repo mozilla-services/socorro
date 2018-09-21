@@ -4,7 +4,8 @@
 
 from configman import Namespace
 from configman.converters import class_converter
-from crontabber.base import BaseCronApp
+
+from socorro.cron.base import BaseCronApp
 
 
 class ElasticsearchCleanupCronApp(BaseCronApp):

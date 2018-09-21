@@ -10,8 +10,8 @@ from subprocess import PIPE, Popen
 
 from configman import Namespace
 from configman.config_exceptions import OptionError
-from crontabber.base import BaseCronApp
 
+from socorro.cron.base import BaseCronApp
 from socorro.lib import raven_client
 
 

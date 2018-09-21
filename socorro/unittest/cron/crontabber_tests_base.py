@@ -17,11 +17,14 @@ from collections import Sequence, Mapping, defaultdict
 import mock
 
 import configman
+from configman.dotdict import DotDictWithAcquisition
 
-from crontabber import app
-from crontabber.generic_app import environment
-
+from socorro.cron import app
 from socorro.cron.crontabber_app import CronTabberApp
+
+
+environment = DotDictWithAcquisition(os.environ)
+environment.always_ignore_mismatches = True
 
 
 class TestCaseBase(unittest.TestCase):

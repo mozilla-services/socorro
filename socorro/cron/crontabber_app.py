@@ -6,7 +6,7 @@
 import sys
 
 from configman import Namespace, class_converter
-from crontabber.app import (
+from socorro.cron.app import (
     classes_in_namespaces_converter_with_compression,
     CronTabberBase,
     get_extra_as_options,

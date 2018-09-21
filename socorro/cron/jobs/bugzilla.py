@@ -27,9 +27,9 @@ import datetime
 
 from dateutil import tz
 from configman import Namespace
-from crontabber.base import BaseCronApp
-from crontabber.mixins import with_postgres_transactions
 
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import using_postgres
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     execute_no_results,
@@ -86,7 +86,7 @@ class NothingUsefulHappened(Exception):
     abandon_transaction = True
 
 
-@with_postgres_transactions()
+@using_postgres()
 class BugzillaCronApp(BaseCronApp):
     """Updates Socorro's knowledge of which bugs cover which crash signatures
 
