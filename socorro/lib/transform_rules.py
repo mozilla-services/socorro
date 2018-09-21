@@ -184,8 +184,8 @@ class Rule(RequiredConfig):
             * (True, False) - the predicate succeeded, but the action function failed
 
         """
-        metrics_key = 'act.timing.%s' % self.__class__.__name__
-        with metrics.timer(metrics_key):
+        rule_name = self.__class__.__name__
+        with metrics.timer('act.timing', tags=['rule:%s' % rule_name]):
             if self.predicate(*args, **kwargs):
                 bool_result = self.action(*args, **kwargs)
                 return (True, bool_result)
