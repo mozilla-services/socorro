@@ -10,6 +10,7 @@ import configman
 from configman import RequiredConfig, Namespace
 from configman.dotdict import DotDict
 from configman.converters import to_str
+import markus
 
 from socorro.lib import raven_client
 
@@ -30,6 +31,9 @@ def kw_str_parse(a_string):
         if isinstance(a_string, collections.Mapping):
             return a_string
         return {}
+
+
+metrics = markus.get_metrics('rule')
 
 
 class Rule(RequiredConfig):
@@ -170,21 +174,23 @@ class Rule(RequiredConfig):
         return '0.0'
 
     def act(self, *args, **kwargs):
-        """gather a rules parameters together and run the predicate. If that
-        returns True, then go on and run the action function
+        """Runs predicate and action for a rule
 
-        returns:
+        :returns:
             a tuple indicating the results of applying the predicate and the
             action function:
-               (False, None) - the predicate failed, action function not run
-               (True, True) - the predicate and action functions succeeded
-               (True, False) - the predicate succeeded, but the action function
-                               failed"""
-        if self.predicate(*args, **kwargs):
-            bool_result = self.action(*args, **kwargs)
-            return (True, bool_result)
-        else:
-            return (False, None)
+            * (False, None) - the predicate failed, action function not run
+            * (True, True) - the predicate and action functions succeeded
+            * (True, False) - the predicate succeeded, but the action function failed
+
+        """
+        metrics_key = 'act.timing.%s' % self.__class__.__name__
+        with metrics.timer(metrics_key):
+            if self.predicate(*args, **kwargs):
+                bool_result = self.action(*args, **kwargs)
+                return (True, bool_result)
+            else:
+                return (False, None)
 
     def close(self):
         self.config.logger.debug('null close on rule %s', self.__class__)
