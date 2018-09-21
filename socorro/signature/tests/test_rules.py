@@ -183,11 +183,15 @@ class TestCSignatureTool:
             'DoCallback<T>'
         ),
 
-        # Drop "const" at end
+        # Drop cv/ref qualifiers at end
         (
             'JSObject::allocKindForTenure const', '23',
             'JSObject::allocKindForTenure'
-        )
+        ),
+        (
+            'mozilla::jni::GlobalRef<mozilla::jni::Object>::operator=(mozilla::jni::Ref<mozilla::jni::Object, _jobject*> const&)&', '23',  # noqa
+            'mozilla::jni::GlobalRef<T>::operator='
+        ),
     ])
     def test_normalize_cpp_function(self, function, line, expected):
         """Test normalization for cpp functions"""
