@@ -213,42 +213,42 @@ class TestCPUInfoRule(TestCase):
 class TestOSInfoRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
-
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {}
-        processed_crash = copy.copy(canonical_processed_crash)
+        raw_crash = {}
+        processed_crash = DotDict({
+            'json_dump': {
+                'system_info': {
+                    'os': 'Windows NT',
+                    'os_ver': '6.1.7601 Service Pack 1'
+                }
+            }
+        })
         processor_meta = get_basic_processor_meta()
 
         rule = OSInfoRule(config)
 
         # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, {}, processed_crash, processor_meta)
 
-        assert processed_crash.os_name == "Windows NT"
-        assert processed_crash.os_version == "6.1.7601 Service Pack 1"
+        assert processed_crash['os_name'] == "Windows NT"
+        assert processed_crash['os_version'] == "6.1.7601 Service Pack 1"
 
         # raw crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
+        assert raw_crash == {}
 
     def test_stuff_missing(self):
         config = get_basic_config()
-
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-
-        raw_dumps = {}
+        raw_crash = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
         rule = OSInfoRule(config)
 
         # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, {}, processed_crash, processor_meta)
 
         # processed crash should have empties
-        expected = DotDict()
-        expected.os_version = ''
-        expected.os_name = ''
-        assert processed_crash == expected
+        assert processed_crash['os_name'] == 'Unknown'
+        assert processed_crash['os_version'] == ''
 
         # raw crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
+        assert raw_crash == {}
