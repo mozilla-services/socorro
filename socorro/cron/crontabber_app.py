@@ -16,6 +16,7 @@ import traceback
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, CannotConvertError
+import markus
 from psycopg2 import OperationalError, IntegrityError
 import six
 
@@ -36,6 +37,9 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 from socorro.lib import raven_client
 from socorro.lib.datetimeutil import utc_now, timesince
+
+
+metrics = markus.get_metrics('crontabber')
 
 
 # a method decorator that indicates that the method defines a single transacton
@@ -1020,6 +1024,7 @@ class CronTabberApp(App, RequiredConfig):
             )""",
             (app_name, success_date, '%.5f' % duration),
         )
+        metrics.gauge('job_success_runtime', value=duration, tags=['job:%s' % app_name])
 
     @database_transaction()
     def _remember_failure(
@@ -1056,6 +1061,7 @@ class CronTabberApp(App, RequiredConfig):
                 exc_traceback
             ),
         )
+        metrics.gauge('job_failure_runtime', value=duration, tags=['job:%s' % app_name])
 
     def check_dependencies(self, class_):
         try:
