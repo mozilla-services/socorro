@@ -180,6 +180,7 @@ class CSignatureTool(SignatureTool):
                 replacement='',
                 exceptions=('anonymous namespace', 'operator')
             )
+
         # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
         if 'clone .cold' in function:
             function = collapse(
@@ -188,6 +189,7 @@ class CSignatureTool(SignatureTool):
                 close_string=']',
                 replacement=''
             )
+
         if self.signatures_with_line_numbers_re.match(function):
             function = "%s:%s" % (function, line)
 
@@ -301,8 +303,8 @@ class CSignatureTool(SignatureTool):
 
             new_signature_list.append(a_signature)
 
-            # If the signature does not match the prefix signatures regex, then it is the last
-            # one we add to the list.
+            # If we have some signature already and the signature does not match the prefix
+            # signatures regex, then it is the last one we add to the list.
             if not self.prefix_signature_re.match(a_signature):
                 break
 
@@ -513,7 +515,8 @@ class SignatureGenerationRule(Rule):
 
         if signature_list:
             result['proto_signature'] = ' | '.join(signature_list)
-        result['signature'] = signature
+        if signature:
+            result['signature'] = signature
         result['notes'].extend(signature_notes)
 
         return True
