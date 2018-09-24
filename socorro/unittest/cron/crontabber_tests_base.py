@@ -19,8 +19,7 @@ import mock
 import configman
 from configman.dotdict import DotDictWithAcquisition
 
-from socorro.cron import app
-from socorro.cron.crontabber_app import CronTabberApp
+from socorro.cron.crontabber_app import CronTabberApp, JobStateDatabase
 
 
 environment = DotDictWithAcquisition(os.environ)
@@ -114,9 +113,7 @@ class IntegrationTestCaseBase(TestCaseBase):
     @classmethod
     def get_standard_config(cls):
         config_manager = configman.ConfigurationManager(
-            # [cls.required_config],
-            [CronTabberApp.get_required_config(),
-             app.JobStateDatabase.get_required_config()],
+            [CronTabberApp.get_required_config(), JobStateDatabase.get_required_config()],
             values_source_list=[
                 CronTabberApp.config_defaults,
                 configman.ConfigFileFutureProxy,
@@ -153,7 +150,7 @@ class IntegrationTestCaseBase(TestCaseBase):
             failed and cls.conn.rollback() or cls.conn.commit()
 
         # instanciate one of these to make sure the tables are created
-        app.JobStateDatabase(cls.config.crontabber)
+        JobStateDatabase(cls.config.crontabber)
 
     def _truncate(self):
         self.conn.cursor().execute("""
