@@ -57,7 +57,6 @@ class ConnectionFactory(RequiredConfig):
     # can then just refer to it as ConnectionFactory.IntegrityError
     IntegrityError = psycopg2.IntegrityError
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):
         """Initialize the parts needed to start making database connections
 
@@ -89,7 +88,6 @@ class ConnectionFactory(RequiredConfig):
         )
         self.pool = {}
 
-    #--------------------------------------------------------------------------
     def connection(self, name=None):
         """return a named connection.
 
@@ -108,7 +106,6 @@ class ConnectionFactory(RequiredConfig):
         self.pool[name] = psycopg2.connect(self.dsn)
         return self.pool[name]
 
-    #--------------------------------------------------------------------------
     @contextlib.contextmanager
     def __call__(self, name=None):
         """returns a database connection wrapped in a contextmanager.
@@ -124,7 +121,6 @@ class ConnectionFactory(RequiredConfig):
         finally:
             self.close_connection(conn)
 
-    #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
         """overriding the baseclass function, this routine will decline to
         close a connection at the end of a transaction context.  This allows
@@ -141,19 +137,16 @@ class ConnectionFactory(RequiredConfig):
         else:
             pass
 
-    #--------------------------------------------------------------------------
     def close(self):
         """close all pooled connections"""
         for conn in self.pool.itervalues():
             conn.close()
 
-    #--------------------------------------------------------------------------
     def force_reconnect(self):
         name = self._get_default_connection_name()
         if name in self.pool:
             del self.pool[name]
 
-    #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         """return True if a conditional exception is actually an operational
         error. Return False if it's a genuine error that should probably be
@@ -174,7 +167,6 @@ class ConnectionFactory(RequiredConfig):
 
         return False
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _get_default_connection_name():
         return threading.current_thread().getName()
