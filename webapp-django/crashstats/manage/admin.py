@@ -15,7 +15,7 @@ from crashstats.manage.decorators import superuser_required
 from crashstats.manage import forms
 from crashstats.manage import utils
 from crashstats.supersearch.models import SuperSearchMissingFields
-from crashstats.crashstats.models import GraphicsDevices, Products
+from crashstats.crashstats.models import GraphicsDevice, Products
 from crashstats.crashstats.utils import json_view
 
 
@@ -171,31 +171,30 @@ def graphics_devices(request):
             else:
                 function = utils.pci_ids__parse_graphics_devices_iterable
 
-            payload = list(function(upload_form.cleaned_data['file']))
-            api = GraphicsDevices()
-            result = api.post(data=payload)
-            messages.success(
-                request,
-                'Graphics device CSV upload successfully saved.'
-            )
+            for item in function(upload_form.cleaned_data['file']):
+                obj, _ = GraphicsDevice.objects.get_or_create(
+                    vendor_hex=item['vendor_hex'],
+                    adapter_hex=item['adapter_hex']
+                )
+                obj.vendor_name = item['vendor_name']
+                obj.adapter_name = item['adapter_name']
+                obj.save()
+
+            messages.success(request, 'Graphics device CSV upload successfully saved.')
             return redirect('siteadmin:graphics_devices')
 
     elif request.method == 'POST':
         form = forms.GraphicsDeviceForm(request.POST)
         if form.is_valid():
-            payload = [{
-                'vendor_hex': form.cleaned_data['vendor_hex'],
-                'adapter_hex': form.cleaned_data['adapter_hex'],
-                'vendor_name': form.cleaned_data['vendor_name'],
-                'adapter_name': form.cleaned_data['adapter_name'],
-            }]
-            api = GraphicsDevices()
-            result = api.post(data=payload)
-            if result:
-                messages.success(
-                    request,
-                    'Graphics device saved.'
-                )
+            obj, _ = GraphicsDevice.objects.get_or_create(
+                vendor_hex=form.cleaned_data['vendor_hex'],
+                adapter_hex=form.cleaned_data['adapter_hex']
+            )
+            obj.vendor_name = form.cleaned_data['vendor_name']
+            obj.adapter_name = form.cleaned_data['adapter_name']
+            obj.save()
+
+            messages.success(request, 'Graphics device saved.')
             return redirect('siteadmin:graphics_devices')
 
     context['title'] = "Graphics devices"
@@ -211,9 +210,16 @@ def graphics_devices_lookup(request):
     if form.is_valid():
         vendor_hex = form.cleaned_data['vendor_hex']
         adapter_hex = form.cleaned_data['adapter_hex']
-        api = GraphicsDevices()
-        result = api.get(vendor_hex=vendor_hex, adapter_hex=adapter_hex)
-        return result
+        result = (
+            GraphicsDevice.objects
+            .filter(vendor_hex=vendor_hex, adapter_hex=adapter_hex)
+            .values('vendor_hex', 'adapter_hex', 'vendor_name', 'adapter_name')
+        )
+        result = list(result)
+        return {
+            'hits': result,
+            'total': len(result)
+        }
     else:
         return http.HttpResponseBadRequest(str(form.errors))
 

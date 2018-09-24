@@ -7,7 +7,7 @@ import requests_mock
 
 from django.core.urlresolvers import reverse
 
-from crashstats.crashstats.models import GraphicsDevices
+from crashstats.crashstats.models import GraphicsDevice
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import (
     SuperSearchFields,
@@ -130,27 +130,12 @@ class TestGraphicsDevices(SiteAdminTestViews):
         self._login()
         url = reverse('siteadmin:graphics_devices_lookup')
 
-        def mocked_get(**params):
-            if (
-                'adapter_hex' in params and
-                params['adapter_hex'] == 'xyz123' and
-                'vendor_hex' in params and
-                params['vendor_hex'] == 'abc123'
-            ):
-                return {
-                    "hits": [
-                        {
-                            "vendor_hex": "abc123",
-                            "adapter_hex": "xyz123",
-                            "vendor_name": "Logictech",
-                            "adapter_name": "Webcamera"
-                        }
-                    ],
-                    "total": 1
-                }
-            raise NotImplementedError(url)
-
-        GraphicsDevices.implementation().get.side_effect = mocked_get
+        GraphicsDevice.objects.create(
+            vendor_hex='abc123',
+            adapter_hex='xyz123',
+            vendor_name='Logictech',
+            adapter_name='Webcamera'
+        )
 
         response = self.client.get(url)
         assert response.status_code == 400
@@ -170,22 +155,23 @@ class TestGraphicsDevices(SiteAdminTestViews):
         }
         assert content['hits'][0] == expected
 
+    def devices_to_list(self, devices):
+        """Convert devices to sorted list"""
+        devices_list = [
+            {
+                'vendor_hex': device.vendor_hex,
+                'adapter_hex': device.adapter_hex,
+                'vendor_name': device.vendor_name,
+                'adapter_name': device.adapter_name
+            }
+            for device in devices
+        ]
+        devices_list.sort(key=lambda d: (d['vendor_hex'], d['adapter_hex']))
+        return devices_list
+
     def test_graphics_devices_edit(self):
         self._login()
         url = reverse('siteadmin:graphics_devices')
-
-        def mocked_post(**payload):
-            data = payload['data']
-            expected = {
-                'vendor_hex': 'abc123',
-                'adapter_hex': 'xyz123',
-                'vendor_name': 'Logictech',
-                'adapter_name': 'Webcamera'
-            }
-            assert data[0] == expected
-            return True
-
-        GraphicsDevices.implementation().post.side_effect = mocked_post
 
         data = {
             'vendor_hex': 'abc123',
@@ -197,28 +183,21 @@ class TestGraphicsDevices(SiteAdminTestViews):
         assert response.status_code == 302
         assert url in response['location']
 
+        devices = self.devices_to_list(GraphicsDevice.objects.all())
+        assert devices == [
+            {
+                'vendor_hex': 'abc123',
+                'adapter_hex': 'xyz123',
+                'vendor_name': 'Logictech',
+                'adapter_name': 'Webcamera'
+            }
+        ]
+
     def test_graphics_devices_csv_upload_pcidatabase_com(self):
         self._login()
         url = reverse('siteadmin:graphics_devices')
 
-        def mocked_post(**payload):
-            data = payload['data']
-            expected = {
-                'vendor_hex': '0x0033',
-                'adapter_hex': '0x002f',
-                'vendor_name': 'Paradyne Corp.',
-                'adapter_name': '.43 ieee 1394 controller'
-            }
-            assert data[0] == expected
-            assert len(data) == 7
-            return True
-
-        GraphicsDevices.implementation().post.side_effect = mocked_post
-
-        sample_file = os.path.join(
-            os.path.dirname(__file__),
-            'sample-graphics.csv'
-        )
+        sample_file = os.path.join(os.path.dirname(__file__), 'sample-graphics.csv')
         with open(sample_file) as fp:
             response = self.client.post(url, {
                 'file': fp,
@@ -227,28 +206,60 @@ class TestGraphicsDevices(SiteAdminTestViews):
             assert response.status_code == 302
             assert url in response['location']
 
+        devices = self.devices_to_list(GraphicsDevice.objects.all())
+        assert devices == [
+            {
+                'adapter_hex': '0x002f',
+                'adapter_name': '.43 ieee 1394 controller',
+                'vendor_hex': '0x0033',
+                'vendor_name': 'Paradyne Corp.'
+            },
+            {
+                'adapter_hex': '0x0333',
+                'adapter_name': (
+                    '1ACPI\\GenuineIntel_-_x86_Family_6_Model_23\\_0 '
+                    '1ACPI\\GenuineIntel_-_x86_Family_6_Model_23\\_0'
+                ),
+                'vendor_hex': '0x0033',
+                'vendor_name': 'Paradyne Corp.'
+            },
+            {
+                'adapter_hex': '0x08b2',
+                'adapter_name': u'123abc logitech QuickCam\ufffd Pro 4000',
+                'vendor_hex': '0x0033',
+                'vendor_name': 'Paradyne Corp.'
+            },
+            {
+                'adapter_hex': '0x0221',
+                'adapter_name': 'LavaPort Quad-650 PCI C/D',
+                'vendor_hex': '0x0407',
+                'vendor_name': 'Lava Computer MFG Inc.'
+            },
+            {
+                'adapter_hex': '0x0200',
+                'adapter_name': 'DS38xx Oregon Scientific',
+                'vendor_hex': '0x0553',
+                'vendor_name': 'Aiptek USA'
+            },
+            {
+                'adapter_hex': '0x0201',
+                'adapter_name': 'DS38xx Oregon Scientific',
+                'vendor_hex': '0x0553',
+                'vendor_name': 'Aiptek USA'
+            },
+            {
+                'adapter_hex': '0x6128',
+                'adapter_name': 'USB\\VID_0C45&PID_6148&REV_0101 USB PC Camera Plus',
+                'vendor_hex': '0x0553',
+                'vendor_name': 'Aiptek USA'
+            }
+        ]
+
     def test_graphics_devices_csv_upload_pci_ids(self):
         self._login()
         url = reverse('siteadmin:graphics_devices')
 
-        def mocked_post(**payload):
-            data = payload['data']
-            expected = {
-                'vendor_hex': '0x0010',
-                'adapter_hex': '0x8139',
-                'vendor_name': 'Allied Telesis, Inc',
-                'adapter_name': 'AT-2500TX V3 Ethernet'
-            }
-            assert data[0] == expected
-            assert len(data) == 6
-            return True
-
-        GraphicsDevices.implementation().post.side_effect = mocked_post
-
-        sample_file = os.path.join(
-            os.path.dirname(__file__),
-            'sample-pci.ids'
-        )
+        sample_file = os.path.join(os.path.dirname(__file__), 'sample-pci.ids')
         with open(sample_file) as fp:
             response = self.client.post(url, {
                 'file': fp,
@@ -256,6 +267,40 @@ class TestGraphicsDevices(SiteAdminTestViews):
             })
             assert response.status_code == 302
             assert url in response['location']
+
+        devices = self.devices_to_list(GraphicsDevice.objects.all())
+        assert devices == [
+            {
+                'adapter_hex': '0x8139',
+                'adapter_name': 'AT-2500TX V3 Ethernet',
+                'vendor_hex': '0x0010',
+                'vendor_name': 'Allied Telesis, Inc'
+            },
+            {
+                'adapter_hex': '0x0001',
+                'adapter_name': 'PCAN-PCI CAN-Bus controller',
+                'vendor_hex': '0x001c',
+                'vendor_name': 'PEAK-System Technik GmbH'
+            },
+            {
+                'adapter_hex': '0x001c',
+                'adapter_name': '0005  2 Channel CAN Bus SJC1000 (Optically Isolated)',
+                'vendor_hex': '0x001c',
+                'vendor_name': 'PEAK-System Technik GmbH'
+            },
+            {
+                'adapter_hex': '0x7801',
+                'adapter_name': 'WinTV HVR-1800 MCE',
+                'vendor_hex': '0x0070',
+                'vendor_name': 'Hauppauge computer works Inc.'
+            },
+            {
+                'adapter_hex': '0x0680',
+                'adapter_name': 'Ultra ATA/133 IDE RAID CONTROLLER CARD',
+                'vendor_hex': '0x0095',
+                'vendor_name': 'Silicon Image, Inc. (Wrong ID)'
+            }
+        ]
 
 
 class TestDebugView(SiteAdminTestViews):

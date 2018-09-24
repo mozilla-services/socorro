@@ -551,28 +551,17 @@ class TestViews(BaseTestViews):
         assert '139' in response.content
 
     def test_signature_summary(self):
-
-        def mocked_get_graphics_devices(**params):
-            return {
-                'hits': [
-                    {
-                        'vendor_hex': '0x0086',
-                        'adapter_hex': '0x1234',
-                        'vendor_name': 'Intel',
-                        'adapter_name': 'Device',
-                    },
-                    {
-                        'vendor_hex': '0x0086',
-                        'adapter_hex': '0x1239',
-                        'vendor_name': 'Intel',
-                        'adapter_name': 'Other',
-                    }
-                ],
-                'total': 2
-            }
-
-        models.GraphicsDevices.implementation().get.side_effect = (
-            mocked_get_graphics_devices
+        models.GraphicsDevice.objects.create(
+            vendor_hex='0x0086',
+            adapter_hex='0x1234',
+            vendor_name='Intel',
+            adapter_name='Device'
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='0x0086',
+            adapter_hex='0x1239',
+            vendor_name='Intel',
+            adapter_name='Other'
         )
 
         def mocked_supersearch_get(**params):
@@ -784,24 +773,6 @@ class TestViews(BaseTestViews):
         assert 'Exploitability' in response.content
 
     def test_signature_summary_with_many_hexes(self):
-
-        get_calls = []
-
-        def mocked_get(**params):
-            get_calls.append(1)
-
-            assert len(params['vendor_hex']) <= 50
-            assert len(params['adapter_hex']) <= 50
-
-            return {
-                'hits': [],
-                'total': 0
-            }
-
-        models.GraphicsDevices.implementation().get.side_effect = (
-            mocked_get
-        )
-
         def mocked_supersearch_get(**params):
             assert 'signature' in params
             assert params['signature'] == ['=' + DUMB_SIGNATURE]
@@ -847,9 +818,6 @@ class TestViews(BaseTestViews):
             'version': '1.0',
         })
         assert response.status_code == 200
-
-        # There are 150 different hexes, there should be 3 calls to the API.
-        assert len(get_calls) == 3
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_signature_bugzilla(self, rget):
