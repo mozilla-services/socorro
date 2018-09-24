@@ -6,12 +6,12 @@ import re
 
 from configman import Namespace
 from configman.converters import list_converter
-from crontabber.base import BaseCronApp
-from crontabber.mixins import (
-    with_postgres_transactions,
-    with_single_postgres_transaction,
-)
 
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_single_postgres_transaction,
+    using_postgres,
+)
 from socorro.lib.requestslib import session_with_retries
 
 
@@ -38,8 +38,8 @@ class DownloadError(Exception):
     """Error when downloading a network resource fails"""
 
 
-@with_postgres_transactions()
-@with_single_postgres_transaction()
+@using_postgres()
+@as_single_postgres_transaction()
 class FeaturedVersionsAutomaticCronApp(BaseCronApp):
     """Determine featured product versions from product-details service"""
 
