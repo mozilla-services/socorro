@@ -303,8 +303,8 @@ class CSignatureTool(SignatureTool):
 
             new_signature_list.append(a_signature)
 
-            # If we have some signature already and the signature does not match the prefix
-            # signatures regex, then it is the last one we add to the list.
+            # If the signature does not match the prefix signatures regex, then it is the last
+            # one we add to the list.
             if not self.prefix_signature_re.match(a_signature):
                 break
 
