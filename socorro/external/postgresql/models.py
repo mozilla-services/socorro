@@ -492,47 +492,6 @@ class Signature(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(),
                           primary_key=True, nullable=False)
 
-    # relationship definitions
-    products = relationship(
-        'Product',
-        primaryjoin='Signature.signature_id==SignatureProductsRollup.signature_id',
-        secondary='SignatureProductsRollup',
-        secondaryjoin='SignatureProductsRollup.product_name==Product.product_name')
-
-
-class SignatureProduct(DeclarativeBase):
-    __tablename__ = 'signature_products'
-
-    # column definitions
-    first_report = Column(u'first_report', TIMESTAMP(timezone=True))
-    product_version_id = Column(u'product_version_id', INTEGER(),
-                                primary_key=True, nullable=False, autoincrement=False, index=True)
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey(
-        'signatures.signature_id'), primary_key=True, nullable=False)
-
-    # relationship definitions
-    signatures = relationship(
-        'Signature', primaryjoin='SignatureProduct.signature_id==Signature.signature_id')
-
-
-class SignatureProductsRollup(DeclarativeBase):
-    __tablename__ = 'signature_products_rollup'
-
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey(
-        'signatures.signature_id'), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', CITEXT(), ForeignKey(
-        'products.product_name'), primary_key=True, nullable=False)
-    ver_count = Column(u'ver_count', INTEGER(),
-                       nullable=False, server_default=text('0'))
-    version_list = Column(u'version_list', ARRAY(
-        TEXT()), nullable=False, server_default=text("'{}'::text[]"))
-
-    # relationship definitions
-    products = relationship(
-        'Product', primaryjoin='SignatureProductsRollup.product_name==Product.product_name')
-    signatures = relationship(
-        'Signature', primaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
-
 
 class GraphicsDevice(DeclarativeBase):
     __tablename__ = 'graphics_device'
