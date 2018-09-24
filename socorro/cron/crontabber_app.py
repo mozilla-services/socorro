@@ -115,7 +115,7 @@ def jobs_converter(path_or_jobs):
 
     """
     if '|' not in path_or_jobs:
-        # NOTE(willkg): crontabber's class_converter returns the value pointed
+        # NOTE(willkg): configman's class_converter returns the value pointed
         # to by a Python dotted path
         input_str = class_converter(path_or_jobs)
     else:
@@ -188,13 +188,6 @@ class JobStateDatabase(RequiredConfig):
         except SQLDidNotReturnSingleValue:
             return False
 
-    def keys(self):
-        """return a list of all app_names"""
-        keys = []
-        for app_name, __ in self.items():
-            keys.append(app_name)
-        return keys
-
     def items(self):
         """return all the app_names and their values as tuples"""
         sql = """
@@ -219,12 +212,13 @@ class JobStateDatabase(RequiredConfig):
             items.append((row.pop('app_name'), row))
         return items
 
+    def keys(self):
+        """return a list of all app_names"""
+        return [key for key, _ in self.items()]
+
     def values(self):
         """return a list of all state values"""
-        values = []
-        for __, data in self.items():
-            values.append(data)
-        return values
+        return [val for _, val in self.items()]
 
     def __getitem__(self, key):
         """return the job info or raise a KeyError"""
@@ -455,7 +449,7 @@ def classes_in_namespaces_converter_with_compression(
         extra_extractor - a function that will return a Namespace of options
                           created from any extra information associated with
                           the classes returned by the list_converter function
-                              """
+    """
 
     def class_list_converter(class_list_str):
         """This function becomes the actual converter used by configman to
@@ -490,13 +484,9 @@ def classes_in_namespaces_converter_with_compression(
 
             # for each class in the class list
             class_list = []
-            for namespace_index, class_list_element in enumerate(
-                class_str_list
-            ):
+            for namespace_index, class_list_element in enumerate(class_str_list):
                 try:
-                    a_class = class_converter(
-                        class_extractor(class_list_element)
-                    )
+                    a_class = class_converter(class_extractor(class_list_element))
                 except CannotConvertError:
                     raise JobNotFoundError(class_list_element)
 
@@ -532,8 +522,10 @@ def classes_in_namespaces_converter_with_compression(
                 primarily as for the output of the 'help' option"""
                 return cls.original_input
 
-        return InnerClassList  # result of class_list_converter
-    return class_list_converter  # result of classes_in_namespaces_converter
+        # result of class_list_converter
+        return InnerClassList
+    # result of classes_in_namespaces_converter
+    return class_list_converter
 
 
 def get_extra_as_options(input_str):
@@ -621,20 +613,17 @@ class CronTabberApp(App, RequiredConfig):
         default=JobStateDatabase,
         doc='Class to load and save the state and runs',
     )
-
     required_config.crontabber.add_option(
         'jobs',
         default='socorro.cron.crontabber_app.DEFAULT_JOBS',
         from_string_converter=jobs_converter,
         doc='Crontabber jobs spec or Python dotted path to jobs spec',
     )
-
     required_config.crontabber.add_option(
         'error_retry_time',
         default=300,
         doc='number of seconds to re-attempt a job that failed'
     )
-
     required_config.crontabber.add_option(
         'max_ongoing_age_hours',
         default=12.0,
@@ -659,6 +648,16 @@ class CronTabberApp(App, RequiredConfig):
         reference_value_from='resource.postgresql'
     )
 
+    # sentry
+    required_config.namespace('sentry')
+    required_config.sentry.add_option(
+        'dsn',
+        doc='DSN for Sentry via raven',
+        default='',
+        reference_value_from='secrets.sentry',
+    )
+
+    # subcommands
     required_config.add_option(
         name='job',
         default='',
@@ -667,7 +666,6 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
-
     required_config.add_option(
         name='list-jobs',
         default=False,
@@ -676,7 +674,6 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
-
     required_config.add_option(
         name='mark-success',
         default='',
@@ -684,7 +681,6 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True
     )
-
     required_config.add_option(
         name='force',
         default=False,
@@ -693,7 +689,6 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
-
     required_config.add_option(
         name='configtest',
         default=False,
@@ -701,7 +696,6 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
-
     required_config.add_option(
         name='sentrytest',
         default=False,
@@ -709,7 +703,6 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
-
     required_config.add_option(
         name='audit-ghosts',
         default=False,
@@ -717,7 +710,6 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
-
     required_config.add_option(
         name='reset-job',
         default='',
@@ -725,14 +717,6 @@ class CronTabberApp(App, RequiredConfig):
         short_form='r',
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
-    )
-
-    required_config.namespace('sentry')
-    required_config.sentry.add_option(
-        'dsn',
-        doc='DSN for Sentry via raven',
-        default='',
-        reference_value_from='secrets.sentry',
     )
 
     def __init__(self, config):
@@ -992,9 +976,7 @@ class CronTabberApp(App, RequiredConfig):
             if self.config.sentry and self.config.sentry.dsn:
                 client = raven_client.get_client(self.config.sentry.dsn)
                 identifier = client.get_ident(client.captureException())
-                self.config.logger.info(
-                    'Error captured in Sentry. Reference: %s' % identifier
-                )
+                self.config.logger.info('Error captured in Sentry. Reference: %s' % identifier)
 
             _debug('error when running %r on %s', job_class, last_success, exc_info=True)
             self._remember_failure(
