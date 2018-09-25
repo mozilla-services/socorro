@@ -16,13 +16,6 @@ STATSD_CLIENT = 'django_statsd.clients.null'
 
 SECRET_KEY = 'fakekey'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    }
-}
-
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -72,4 +65,4 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
 }
 
 # Remove SessionRefresh middleware so that tests don't need to have a non-expired OIDC token
-MIDDLEWARE.remove('mozilla_django_oidc.middleware.SessionRefresh') # noqa
+MIDDLEWARE.remove('mozilla_django_oidc.middleware.SessionRefresh')  # noqa
