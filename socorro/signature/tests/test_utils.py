@@ -243,15 +243,18 @@ def test_collapse(function, expected):
         'void geckoservo::glue::Servo_MaybeGCRuleTree(struct style::gecko_bindings::bindings::RawServoStyleSet *)',  # noqa
         'geckoservo::glue::Servo_MaybeGCRuleTree(struct style::gecko_bindings::bindings::RawServoStyleSet *)'  # noqa
     ),
-    # Handle whitespace between function and parenthesized arguments correctly
+    # Handle whitespace between function and parenthesized arguments and [clone .cold.xxx] correctly
     (
         '[thunk]:CShellItem::QueryInterface`adjustor{12}\' (_GUID const&, void**)',
         '[thunk]:CShellItem::QueryInterface`adjustor{12}\' (_GUID const&, void**)'
     ),
-    # Handle whitespace between function and [clone .cold.xxx] correctly
     (
         'nsXPConnect::InitStatics() [clone .cold.638]',
         'nsXPConnect::InitStatics() [clone .cold.638]'
+    ),
+    (
+        'js::AssertObjectIsSavedFrameOrWrapper(JSContext*, JS::Handle<JSObject*>) [clone .isra.234] [clone .cold.687]',  # noqa
+        'js::AssertObjectIsSavedFrameOrWrapper(JSContext*, JS::Handle<JSObject*>) [clone .isra.234] [clone .cold.687]'  # noqa
     )
 ])
 def test_drop_prefix_and_return_type(function, expected):

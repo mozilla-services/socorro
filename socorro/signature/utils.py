@@ -313,26 +313,20 @@ def drop_prefix_and_return_type(function):
     if current:
         tokens.append(''.join(current))
 
-    if tokens[-1][0] == '(':
+    while tokens and tokens[-1].startswith(('(', '[clone')):
         # It's possible for the function signature to have a space between
-        # the function name and the parenthesized arguments. If that's
-        # the case, we join the last two tokens and return that.
+        # the function name and the parenthesized arguments or [clone ...]
+        # thing. If that's the case, we join the last two tokens. We keep doing
+        # that until the last token is nice.
         #
         # Example:
         #
         #     somefunc (int arg1, int arg2)
         #             ^
-        return ' '.join(tokens[-2:])
-
-    if tokens[-1].startswith('[clone'):
-        # It's possible for the function signature to have a [clone .cold.xxx]
-        # at the end with a space between the args and that ... thing. If
-        # that's the case, we join the last two tokens and return that.
-        #
-        # Example:
-        #
         #     somefunc(int arg1, int arg2) [clone .cold.111]
         #                                 ^
-        return ' '.join(tokens[-2:])
+        #     somefunc(int arg1, int arg2) [clone .cold.111] [clone .cold.222]
+        #                                 ^                 ^
+        tokens = tokens[:-2] + [' '.join(tokens[-2:])]
 
     return tokens[-1]
