@@ -33,7 +33,7 @@ def kw_str_parse(a_string):
         return {}
 
 
-metrics = markus.get_metrics('rule')
+metrics = markus.get_metrics('processor.rule')
 
 
 class Rule(RequiredConfig):
