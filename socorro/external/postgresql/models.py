@@ -493,17 +493,6 @@ class Signature(DeclarativeBase):
                           primary_key=True, nullable=False)
 
 
-class GraphicsDevice(DeclarativeBase):
-    __tablename__ = 'graphics_device'
-
-    graphics_device_id = Column(
-        u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
-    vendor_hex = Column(u'vendor_hex', TEXT())
-    adapter_hex = Column(u'adapter_hex', TEXT())
-    vendor_name = Column(u'vendor_name', TEXT())
-    adapter_name = Column(u'adapter_name', TEXT())
-
-
 class SpecialProductPlatform(DeclarativeBase):
     """ Currently used for android platform. Uses platform, product name, repo, build_type
         to rename a product_name """

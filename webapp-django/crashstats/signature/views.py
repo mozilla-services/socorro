@@ -468,9 +468,7 @@ def _transform_graphics_summary(facets):
                 vendor_hexes.append(vendor['term'])
                 adapter_hexes.append(adapter['term'])
 
-        devices_api = models.GraphicsDevices()
-
-        all_names = devices_api.get_pairs(adapter_hexes, vendor_hexes)
+        all_names = models.GraphicsDevice.objects.get_pairs(adapter_hexes, vendor_hexes)
         graphics = []
         for vendor in facets['adapter_vendor_id']:
             for adapter in vendor['facets']['adapter_device_id']:

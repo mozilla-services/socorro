@@ -22,7 +22,6 @@ from socorro.external.postgresql.base import PostgreSQLStorage
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
-import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.version_string
@@ -32,14 +31,63 @@ from socorro.app import socorro_app
 
 from django.conf import settings
 from django.core.cache import cache
-from django.utils.encoding import iri_to_uri
+from django.db import models
 from django.template.defaultfilters import slugify
+from django.utils.encoding import iri_to_uri
 
 from crashstats.base.utils import requests_retry_session
 
 
 logger = logging.getLogger('crashstats.models')
 
+
+# Django models first
+
+
+class GraphicsDeviceManager(models.Manager):
+    def get_pairs(self, adapter_hexes, vendor_hexes):
+        """Return dict where each tuple of (adapter_hex, vendor_hex)
+        corresponds to a (adapter_name, vendor_name) pair
+
+        """
+        assert len(adapter_hexes) == len(vendor_hexes)
+        names = {}
+        for i, adapter_hex in enumerate(adapter_hexes):
+            cache_key = (
+                'graphics_adapters:' + adapter_hex + ':' + vendor_hexes[i]
+            )
+            key = (adapter_hex, vendor_hexes[i])
+
+            name_pair = cache.get(cache_key)
+
+            if name_pair is None:
+                try:
+                    obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hexes[i])
+                except self.model.DoesNotExist:
+                    continue
+
+                name_pair = (obj.adapter_name, obj.vendor_name)
+                cache.set(cache_key, name_pair, 60 * 60 * 24)
+
+            names[key] = name_pair
+
+        return names
+
+
+class GraphicsDevice(models.Model):
+    """Specifies a device hex/name"""
+    vendor_hex = models.CharField(max_length=100)
+    adapter_hex = models.CharField(max_length=100, blank=True, null=True)
+    vendor_name = models.TextField(blank=True, null=True)
+    adapter_name = models.TextField(blank=True, null=True)
+
+    objects = GraphicsDeviceManager()
+
+    class Meta:
+        unique_together = ('vendor_hex', 'adapter_hex')
+
+
+# Socorro x-middleware models
 
 class DeprecatedModelError(DeprecationWarning):
     """Used when a deprecated model is being used in debug mode"""
@@ -1011,84 +1059,6 @@ class BugzillaBugInfo(SocorroCommon):
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
         return {'bugs': results}
-
-
-class GraphicsDevices(SocorroMiddleware):
-
-    cache_seconds = 0
-
-    implementation = (
-        socorro.external.postgresql.graphics_devices.GraphicsDevices
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-    required_params = (
-        'vendor_hex',
-        'adapter_hex',
-    )
-
-    def post(self, **payload):
-        return self.get_implementation().post(**payload)
-
-    def get_pairs(self, adapter_hexes, vendor_hexes):
-        """return a dict where each tuple of (adapter_hex, vendor_hex)
-        corresponds to a (adapter_name, vendor_name) pair."""
-        assert len(adapter_hexes) == len(vendor_hexes)
-        names = {}
-        missing = {}
-        for i, adapter_hex in enumerate(adapter_hexes):
-            cache_key = (
-                'graphics_adapters' + adapter_hex + ':' + vendor_hexes[i]
-            )
-            name_pair = cache.get(cache_key)
-            key = (adapter_hex, vendor_hexes[i])
-            if name_pair is not None:
-                names[key] = name_pair
-            else:
-                missing[key] = cache_key
-
-        missing_vendor_hexes = []
-        missing_adapter_hexes = []
-        for adapter_hex, vendor_hex in missing:
-            missing_adapter_hexes.append(adapter_hex)
-            missing_vendor_hexes.append(vendor_hex)
-
-        hits = []
-        # In order to avoid hitting the maximum URL size limit, we split the
-        # query in smaller chunks, and then we reconstruct the results.
-        max_number_of_hexes = 50
-        for i in range(0, len(missing_vendor_hexes), max_number_of_hexes):
-            vendors = set(missing_vendor_hexes[i:i + max_number_of_hexes])
-            adapters = set(missing_adapter_hexes[i:i + max_number_of_hexes])
-            res = self.get(
-                vendor_hex=vendors,
-                adapter_hex=adapters,
-            )
-            hits.extend(res['hits'])
-
-        for group in hits:
-            name_pair = (group['adapter_name'], group['vendor_name'])
-            key = (group['adapter_hex'], group['vendor_hex'])
-            # This if statement is important.
-            # For example there repeated adapter hexes that have different
-            # vendor hexes. E.g.:
-            # breakpad=> select count(distinct vendor_hex) from
-            # breakpad-> graphics_device where adapter_hex='0x0102';
-            #  count
-            # -------
-            #     21
-            # Therefore it's important to only bother with specific
-            # ones that we asked for.
-            if key in missing:
-                cache_key = missing[key]
-                cache.set(cache_key, name_pair, 60 * 60 * 24)
-                names[key] = name_pair
-
-        return names
 
 
 class Reprocessing(SocorroMiddleware):

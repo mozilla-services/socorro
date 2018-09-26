@@ -396,96 +396,33 @@ class TestModels(DjangoTestCase):
         assert 'Unknown' not in settings.DISPLAY_OS_NAMES
         assert r[1] == {'code': 'unk', 'name': 'Unknown', 'display': False}
 
-    def test_graphics_devices(self):
-        api = models.GraphicsDevices()
-
-        def mocked_get(**options):
-            return {
-                'hits': [
-                    {
-                        'vendor_hex': 'vhex2',
-                        'vendor_name': 'V 2',
-                        'adapter_hex': 'ahex2',
-                        'adapter_name': 'A 2',
-                    },
-                    {
-                        'vendor_hex': 'vhex1',
-                        'vendor_name': 'V 1',
-                        'adapter_hex': 'ahex1',
-                        'adapter_name': 'A 1',
-                    },
-                ],
-                'total': 2
-            }
-
-        models.GraphicsDevices.implementation().get.side_effect = (
-            mocked_get
-        )
-
-        r = api.get(
-            vendor_hex=['vhex1', 'vhex2'],
-            adapter_hex=['ahex1', 'ahex2'],
-        )
-        assert r['total'] == 2
-        expected = {
-            'vendor_hex': 'vhex2',
-            'vendor_name': 'V 2',
-            'adapter_hex': 'ahex2',
-            'adapter_name': 'A 2',
-        }
-        assert r['hits'][0] == expected
-
     def test_graphics_devices_get_pairs(self):
-        """The GraphicsDevices.get_pairs() is an abstraction of
-        GraphicsDevices.get() on steroids. The input is similar as
-        GraphicsDevices.get() but instead it returns a dict where
-        each key is a (adapter hex, vendor hex) tuple and each key is
-        (adapter name, vendor name) tuple.
-        Internally it does some smart caching.
+        """Test get_pairs() works correctly
+
+        The GraphicsDevice.get_pairs() lets you make a bunch of requests at
+        the same time. It's more performant since it caches results.
+
         """
-        api = models.GraphicsDevices()
-
-        params_called = []
-
-        def mocked_get(**params):
-            params_called.append(params)
-
-            if 'vhex3' in params['vendor_hex']:
-                return {
-                    'hits': [
-                        {
-                            'vendor_hex': 'vhex3',
-                            'vendor_name': 'V 3',
-                            'adapter_hex': 'ahex3',
-                            'adapter_name': 'A 3',
-                        },
-                    ],
-                    'total': 1
-                }
-            else:
-                return {
-                    'hits': [
-                        {
-                            'vendor_hex': 'vhex2',
-                            'vendor_name': 'V 2',
-                            'adapter_hex': 'ahex2',
-                            'adapter_name': 'A 2',
-                        },
-                        {
-                            'vendor_hex': 'vhex1',
-                            'vendor_name': 'V 1',
-                            'adapter_hex': 'ahex1',
-                            'adapter_name': 'A 1',
-                        },
-                    ],
-                    'total': 2
-                }
-
-        models.GraphicsDevices.implementation().get.side_effect = (
-            mocked_get
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex3',
+            vendor_name='V 3',
+            adapter_hex='ahex3',
+            adapter_name='A 3'
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex2',
+            vendor_name='V 2',
+            adapter_hex='ahex2',
+            adapter_name='A 2',
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex1',
+            vendor_name='V 1',
+            adapter_hex='ahex1',
+            adapter_name='A 1',
         )
 
-        r = api.get_pairs(
+        r = models.GraphicsDevice.objects.get_pairs(
             ['ahex1', 'ahex2'],
             ['vhex1', 'vhex2'],
         )
@@ -495,7 +432,7 @@ class TestModels(DjangoTestCase):
         }
         assert r == expected
 
-        r = api.get_pairs(
+        r = models.GraphicsDevice.objects.get_pairs(
             ['ahex2', 'ahex3'],
             ['vhex2', 'vhex3'],
         )
@@ -506,20 +443,7 @@ class TestModels(DjangoTestCase):
         }
         assert r == expected
 
-        # In the second call to `api.get_pairs()` we repeated the
-        # (ahex2, vhex2) combo, so that second time, we could benefit from
-        # caching and only need to query for the (ahex3, vhex3) combo.
-        assert len(params_called) == 2
-        expected = {
-            'adapter_hex': set(['ahex1', 'ahex2']),
-            'vendor_hex': set(['vhex2', 'vhex1']),
-        }
-        assert params_called[0] == expected
-        expected = {
-            'adapter_hex': set(['ahex3']),
-            'vendor_hex': set(['vhex3']),
-        }
-        assert params_called[1] == expected
+        # FIXME(willkg): verify caching is working
 
     @mock.patch('requests.Session')
     def test_massive_querystring_caching(self, rsession):

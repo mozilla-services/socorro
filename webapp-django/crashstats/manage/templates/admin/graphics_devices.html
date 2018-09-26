@@ -23,21 +23,7 @@
 
 {% block content %}
     <div class="content-main">
-        <h2>Edit or Add a Graphic Device</h2>
-            <form class="edit" action="" method="post" data-lookup-url="{% url 'siteadmin:graphics_devices_lookup'  %}">
-            {% csrf_token %}
-            <table>
-                {{ form }}
-                <tr>
-                    <th>&nbsp;</th>
-                    <td>
-                        <input type="submit" value="Save">
-                    </td>
-                </tr>
-            </table>
-        </form>
-
-        <h2>CSV Upload</h2>
+        <h2>Graphics device file upload</h2>
         <form class="upload" action="" method="post" enctype="multipart/form-data">{% csrf_token %}
             <table>
                 {{ upload_form }}
@@ -55,6 +41,4 @@
             </table>
         </form>
     </div>
-
-    {% javascript 'siteadmin:graphics_devices' %}
 {% endblock %}
