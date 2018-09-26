@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 
+from crashstats.crashstats.models import GraphicsDevice
+
 
 # Fix the Django Admin User list display so it shows the columns we care about
 UserAdmin.list_display = [
@@ -59,3 +61,14 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     def has_module_permission(self, request):
         return True
+
+
+@admin.register(GraphicsDevice)
+class GraphicsDeviceAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'vendor_hex',
+        'adapter_hex',
+        'vendor_name',
+        'adapter_name'
+    ]

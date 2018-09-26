@@ -1,4 +1,3 @@
-import json
 import os
 
 import mock
@@ -126,35 +125,6 @@ class TestGraphicsDevices(SiteAdminTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-    def test_graphics_devices_lookup(self):
-        self._login()
-        url = reverse('siteadmin:graphics_devices_lookup')
-
-        GraphicsDevice.objects.create(
-            vendor_hex='abc123',
-            adapter_hex='xyz123',
-            vendor_name='Logictech',
-            adapter_name='Webcamera'
-        )
-
-        response = self.client.get(url)
-        assert response.status_code == 400
-
-        response = self.client.get(url, {
-            'vendor_hex': 'abc123',
-            'adapter_hex': 'xyz123',
-        })
-        assert response.status_code == 200
-        content = json.loads(response.content)
-        assert content['total'] == 1
-        expected = {
-            'vendor_hex': 'abc123',
-            'adapter_hex': 'xyz123',
-            'vendor_name': 'Logictech',
-            'adapter_name': 'Webcamera'
-        }
-        assert content['hits'][0] == expected
-
     def devices_to_list(self, devices):
         """Convert devices to sorted list"""
         devices_list = [
@@ -168,30 +138,6 @@ class TestGraphicsDevices(SiteAdminTestViews):
         ]
         devices_list.sort(key=lambda d: (d['vendor_hex'], d['adapter_hex']))
         return devices_list
-
-    def test_graphics_devices_edit(self):
-        self._login()
-        url = reverse('siteadmin:graphics_devices')
-
-        data = {
-            'vendor_hex': 'abc123',
-            'adapter_hex': 'xyz123',
-            'vendor_name': 'Logictech',
-            'adapter_name': 'Webcamera'
-        }
-        response = self.client.post(url, data)
-        assert response.status_code == 302
-        assert url in response['location']
-
-        devices = self.devices_to_list(GraphicsDevice.objects.all())
-        assert devices == [
-            {
-                'vendor_hex': 'abc123',
-                'adapter_hex': 'xyz123',
-                'vendor_name': 'Logictech',
-                'adapter_name': 'Webcamera'
-            }
-        ]
 
     def test_graphics_devices_csv_upload_pcidatabase_com(self):
         self._login()

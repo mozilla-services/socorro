@@ -358,12 +358,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/report-pending.min.js',
     },
-    'siteadmin:graphics_devices': {
-        'source_filenames': (
-            'manage/js/graphics_devices.js',
-        ),
-        'output_filename': 'js/siteadmin-graphics-devices.min.js',
-    },
     'signature_report': {
         'source_filenames': (
             'signature/js/signature_report.js',
