@@ -23,10 +23,10 @@ class Migration(migrations.Migration):
                     serialize=False,
                     verbose_name='ID'
                 )),
-                ('vendor_hex', models.CharField(blank=True, max_length=10)),
-                ('adapter_hex', models.CharField(blank=True, max_length=10)),
-                ('vendor_name', models.CharField(blank=True, max_length=100)),
-                ('adapter_name', models.CharField(blank=True, max_length=100)),
+                ('vendor_hex', models.CharField(max_length=100)),
+                ('adapter_hex', models.CharField(null=True, blank=True, max_length=100)),
+                ('vendor_name', models.TextField(null=True, blank=True)),
+                ('adapter_name', models.TextField(null=True, blank=True)),
             ],
         ),
         migrations.AlterUniqueTogether(

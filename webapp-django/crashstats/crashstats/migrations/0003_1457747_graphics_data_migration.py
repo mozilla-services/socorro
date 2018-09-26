@@ -34,19 +34,29 @@ def copy_graphics_devices_data(apps, schema_editor):
     )
 
     print('')
-    count = 0
-    # Third, create new GraphicsDevice instances and save them to the db
+    insert_count = 0
+    skip_count = 0
+
+    # Third, create new GraphicsDevice instances and save them to the db.
+    # Looks like stage and prod have a *lot* of junk data. This is a lookup
+    # table so we're going to junk anything that doesn't have names.
     for row in cursor.fetchall():
         item = dict(zip(columns, row))
-        print('inserting', item)
-        GraphicsDevice.objects.create(
-            vendor_hex=item['vendor_hex'],
-            adapter_hex=item['adapter_hex'],
-            vendor_name=item['vendor_name'],
-            adapter_name=item['adapter_name']
-        )
-        count += 1
-    print('%s inserted' % count)
+        if item['vendor_name'] is None and item['adapter_name'] is None:
+            print('skipping', item)
+            skip_count += 1
+        else:
+            print('inserting', item)
+            GraphicsDevice.objects.create(
+                vendor_hex=item['vendor_hex'],
+                adapter_hex=item['adapter_hex'],
+                vendor_name=item['vendor_name'],
+                adapter_name=item['adapter_name']
+            )
+            insert_count += 1
+
+    print('inserted: %s' % insert_count)
+    print('skipped: %s' % skip_count)
 
 
 def noop(apps, schema_editor):

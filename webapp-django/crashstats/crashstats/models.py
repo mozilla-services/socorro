@@ -76,10 +76,10 @@ class GraphicsDeviceManager(models.Manager):
 
 class GraphicsDevice(models.Model):
     """Specifies a device hex/name"""
-    vendor_hex = models.CharField(max_length=10, blank=True)
-    adapter_hex = models.CharField(max_length=10, blank=True)
-    vendor_name = models.CharField(max_length=100, blank=True)
-    adapter_name = models.CharField(max_length=100, blank=True)
+    vendor_hex = models.CharField(max_length=100)
+    adapter_hex = models.CharField(max_length=100, blank=True, null=True)
+    vendor_name = models.TextField(blank=True, null=True)
+    adapter_name = models.TextField(blank=True, null=True)
 
     objects = GraphicsDeviceManager()
 
