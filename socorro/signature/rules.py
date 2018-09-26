@@ -159,8 +159,11 @@ class CSignatureTool(SignatureTool):
             if function.endswith(ref):
                 function = function[:-len(ref)].strip()
 
-        # Drop the prefix and return type if there is any
-        function = drop_prefix_and_return_type(function)
+        # Drop the prefix and return type if there is any if it's not operator
+        # overloading--operator overloading syntax doesn't have the things
+        # we're dropping here and can look curious, so don't try
+        if '::operator' not in function:
+            function = drop_prefix_and_return_type(function)
 
         # Collapse types
         function = collapse(

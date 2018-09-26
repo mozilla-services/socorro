@@ -182,6 +182,12 @@ class TestCSignatureTool:
             'class JSObject* DoCallback<JSObject*>(class JS::CallbackTracer*, class JSObject**, const char*)', '23',  # noqa
             'DoCallback<T>'
         ),
+        # But don't run drop_prefix_and_return_types for operator overloading
+        # functions
+        (
+            'JS::Heap<JSObject*>::operator JSObject* const &()', '23',
+            'JS::Heap<T>::operator JSObject* const&'
+        ),
 
         # Drop cv/ref qualifiers at end
         (
