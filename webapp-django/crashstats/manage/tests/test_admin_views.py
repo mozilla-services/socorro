@@ -3,6 +3,7 @@ import os
 
 import mock
 import pytest
+import requests_mock
 
 from django.core.urlresolvers import reverse
 
@@ -38,8 +39,14 @@ class TestCrashMeNow(SiteAdminTestViews):
 
 
 class TestSiteStatus(SiteAdminTestViews):
-    def test_page_load(self):
+    @requests_mock.Mocker()
+    def test_page_load(self, req_mock):
         """Basic test to make sure the page loads at all"""
+        req_mock.get(
+            'http://localhost:8000/__version__',
+            json={'foo': 'bar'}
+        )
+
         url = reverse('siteadmin:site_status')
         response = self.client.get(url)
         assert response.status_code == 302
