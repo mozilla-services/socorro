@@ -87,6 +87,20 @@ class GraphicsDevice(models.Model):
         unique_together = ('vendor_hex', 'adapter_hex')
 
 
+class Signature(models.Model):
+    """Bookkeeping table to keep track of when we first saw a signature"""
+    signature = models.TextField(
+        unique=True,
+        help_text='the crash report signature'
+    )
+    first_build = models.BigIntegerField(
+        help_text='the first build id this signature was seen in'
+    )
+    first_date = models.DateTimeField(
+        help_text='the first crash report date this signature was seen in'
+    )
+
+
 # Socorro x-middleware models
 
 class DeprecatedModelError(DeprecationWarning):

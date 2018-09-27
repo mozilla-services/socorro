@@ -2,7 +2,10 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 
-from crashstats.crashstats.models import GraphicsDevice
+from crashstats.crashstats.models import (
+    GraphicsDevice,
+    Signature
+)
 
 
 # Fix the Django Admin User list display so it shows the columns we care about
@@ -71,4 +74,13 @@ class GraphicsDeviceAdmin(admin.ModelAdmin):
         'adapter_hex',
         'vendor_name',
         'adapter_name'
+    ]
+
+
+@admin.register(Signature)
+class Signature(admin.ModelAdmin):
+    list_display = [
+        'signature',
+        'first_build',
+        'first_date'
     ]
