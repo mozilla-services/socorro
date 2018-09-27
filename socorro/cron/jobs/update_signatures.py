@@ -20,6 +20,7 @@ from socorro.external.postgresql.signature_first_date import SignatureFirstDate
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.lib.datetimeutil import string_to_datetime
 
 
 # Maximum number of results returned for a super search query
@@ -72,10 +73,11 @@ class UpdateSignaturesCronApp(BaseCronApp):
             WHERE signature=%s
             """
             params = (
-                min(sig[1], report_build),
-                min(str(sig[2]), str(report_date)),
+                min(sig[1], int(report_build)),
+                str(min(sig[2], string_to_datetime(report_date))),
                 sig[0]
             )
+
         except SQLDidNotReturnSingleRow:
             sql = """
             INSERT INTO crashstats_signature (signature, first_build, first_date)

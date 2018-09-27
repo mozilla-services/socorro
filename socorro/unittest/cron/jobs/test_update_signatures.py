@@ -70,7 +70,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         self.conn.cursor().execute('TRUNCATE signatures CASCADE')
         self.conn.commit()
 
-    def fetch_signature_data(self):
+    def fetch_signatures_data(self):
         cursor = self.conn.cursor()
         cursor.execute("SELECT signature, first_build, first_report FROM signatures")
         results = cursor.fetchall()
@@ -125,8 +125,8 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         self.run_job_and_assert_success()
 
         # Assert that nothing got inserted
-        data = self.fetch_signature_data()
-        assert len(data) == 0
+        assert self.fetch_signatures_data() == []
+        assert self.fetch_crashstats_signature_data() == []
 
     @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
     def test_signature_insert_and_update(self, mock_supersearch):
@@ -134,7 +134,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         mock_supersearch.return_value = supersearch
 
         # Verify there's nothing in the signatures table
-        data = self.fetch_signature_data()
+        data = self.fetch_signatures_data()
         assert len(data) == 0
 
         # Mock SuperSearch to return 1 crash
@@ -155,13 +155,24 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         self.run_job_and_assert_success()
 
         # Signature was inserted
-        data = self.fetch_signature_data()
+        data = self.fetch_signatures_data()
         assert (
-            sorted(data) ==
+            data ==
             [
                 {
                     'first_build': '20180420000000',
                     'first_report': '2018-05-03 16:00:00+00:00',
+                    'signature': 'OOM | large',
+                },
+            ]
+        )
+        data = self.fetch_crashstats_signature_data()
+        assert (
+            data ==
+            [
+                {
+                    'first_build': '20180420000000',
+                    'first_date': '2018-05-03 16:00:00+00:00',
                     'signature': 'OOM | large',
                 },
             ]
@@ -188,13 +199,24 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         self.run_job_and_assert_success()
 
         # Signature was updated with correct data
-        data = self.fetch_signature_data()
+        data = self.fetch_signatures_data()
         assert (
-            sorted(data) ==
+            data ==
             [
                 {
                     'first_build': '20180320000000',
                     'first_report': '2018-05-03 12:00:00+00:00',
+                    'signature': 'OOM | large',
+                },
+            ]
+        )
+        data = self.fetch_crashstats_signature_data()
+        assert (
+            data ==
+            [
+                {
+                    'first_build': '20180320000000',
+                    'first_date': '2018-05-03 12:00:00+00:00',
                     'signature': 'OOM | large',
                 },
             ]
@@ -241,7 +263,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         self.run_job_and_assert_success()
 
         # Two signatures got inserted
-        data = self.fetch_signature_data()
+        data = self.fetch_signatures_data()
         assert (
             sorted(data, key=lambda item: item['first_build']) ==
             [
@@ -253,6 +275,22 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
                 {
                     'first_build': '20180322140748',
                     'first_report': '2018-05-03 18:22:34.969718+00:00',
+                    'signature': 'shutdownhang | js::DispatchTyped<T>',
+                }
+            ]
+        )
+        data = self.fetch_crashstats_signature_data()
+        assert (
+            sorted(data, key=lambda item: item['first_build']) ==
+            [
+                {
+                    'first_build': '20180322000000',
+                    'first_date': '2018-05-03 16:00:00+00:00',
+                    'signature': 'OOM | large',
+                },
+                {
+                    'first_build': '20180322140748',
+                    'first_date': '2018-05-03 18:22:34.969718+00:00',
                     'signature': 'shutdownhang | js::DispatchTyped<T>',
                 }
             ]
@@ -283,5 +321,5 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
 
         # The crash has no build id, so it gets ignored and nothing gets
         # inserted
-        data = self.fetch_signature_data()
-        assert data == []
+        assert self.fetch_signatures_data() == []
+        assert self.fetch_crashstats_signature_data() == []
