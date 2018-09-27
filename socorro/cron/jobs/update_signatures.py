@@ -87,7 +87,7 @@ class UpdateSignaturesCronApp(BaseCronApp):
 
     def run(self, end_datetime):
         # Truncate to the hour
-        # FIXME end_datetime = end_datetime.replace(minute=0, second=0, microsecond=0)
+        end_datetime = end_datetime.replace(minute=0, second=0, microsecond=0)
 
         # Do a super search and get the signature, buildid, and date processed for
         # every crash in the range
