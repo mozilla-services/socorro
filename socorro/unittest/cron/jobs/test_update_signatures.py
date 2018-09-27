@@ -26,6 +26,40 @@ class FakeModel(object):
 
 
 class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
+    def setUp(self):
+        super(UpdateSignaturesCronAppTestCase, self).setUp()
+
+        cursor = self.conn.cursor()
+        # NOTE(willkg): The socorro tests don't run with the Django-managed
+        # database models created in the db, so we have to do it by hand until
+        # we've moved everything out of sqlalchemy/alembic land to Django land.
+        #
+        # FIXME(willkg): Please stop this madness soon.
+        #
+        # From "./manage.py sqlmigrate crashstats 0004":
+        cursor.execute("""
+        CREATE TABLE "crashstats_signature" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "signature" text NOT NULL UNIQUE,
+        "first_build" bigint NOT NULL,
+        "first_date" timestamp with time zone NOT NULL);
+        """)
+        cursor.execute("""
+        CREATE INDEX "crashstats_signature_signature_15c3e97d_like"
+        ON "crashstats_signature" ("signature" text_pattern_ops);
+        """)
+        self._truncate_signatures()
+
+    def tearDown(self):
+        super(UpdateSignaturesCronAppTestCase, self).tearDown()
+
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        DROP TABLE crashstats_signature
+        """)
+
+        self._truncate_signatures()
+
     def _setup_config_manager(self):
         return super(UpdateSignaturesCronAppTestCase, self)._setup_config_manager(
             jobs_string='socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h'
@@ -49,13 +83,18 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
             for result in results
         ]
 
-    def setUp(self):
-        super(UpdateSignaturesCronAppTestCase, self).setUp()
-        self._truncate_signatures()
-
-    def tearDown(self):
-        super(UpdateSignaturesCronAppTestCase, self).tearDown()
-        self._truncate_signatures()
+    def fetch_crashstats_signature_data(self):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT signature, first_build, first_date from crashstats_signature")
+        results = cursor.fetchall()
+        return [
+            {
+                'signature': str(result[0]),
+                'first_build': str(result[1]),
+                'first_date': str(result[2]),
+            }
+            for result in results
+        ]
 
     def run_job_and_assert_success(self):
         # Run crontabber
@@ -86,8 +125,8 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         self.run_job_and_assert_success()
 
         # Assert that nothing got inserted
-        data = self.fetch_signatures_data()
-        assert len(data) == 0
+        assert self.fetch_signatures_data() == []
+        assert self.fetch_crashstats_signature_data() == []
 
     @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
     def test_signature_insert_and_update(self, mock_supersearch):
@@ -118,11 +157,22 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         # Signature was inserted
         data = self.fetch_signatures_data()
         assert (
-            sorted(data) ==
+            data ==
             [
                 {
                     'first_build': '20180420000000',
                     'first_report': '2018-05-03 16:00:00+00:00',
+                    'signature': 'OOM | large',
+                },
+            ]
+        )
+        data = self.fetch_crashstats_signature_data()
+        assert (
+            data ==
+            [
+                {
+                    'first_build': '20180420000000',
+                    'first_date': '2018-05-03 16:00:00+00:00',
                     'signature': 'OOM | large',
                 },
             ]
@@ -151,11 +201,22 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         # Signature was updated with correct data
         data = self.fetch_signatures_data()
         assert (
-            sorted(data) ==
+            data ==
             [
                 {
                     'first_build': '20180320000000',
                     'first_report': '2018-05-03 12:00:00+00:00',
+                    'signature': 'OOM | large',
+                },
+            ]
+        )
+        data = self.fetch_crashstats_signature_data()
+        assert (
+            data ==
+            [
+                {
+                    'first_build': '20180320000000',
+                    'first_date': '2018-05-03 12:00:00+00:00',
                     'signature': 'OOM | large',
                 },
             ]
@@ -218,6 +279,22 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
                 }
             ]
         )
+        data = self.fetch_crashstats_signature_data()
+        assert (
+            sorted(data, key=lambda item: item['first_build']) ==
+            [
+                {
+                    'first_build': '20180322000000',
+                    'first_date': '2018-05-03 16:00:00+00:00',
+                    'signature': 'OOM | large',
+                },
+                {
+                    'first_build': '20180322140748',
+                    'first_date': '2018-05-03 18:22:34.969718+00:00',
+                    'signature': 'shutdownhang | js::DispatchTyped<T>',
+                }
+            ]
+        )
 
     @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
     def test_crash_with_no_buildid(self, mock_supersearch):
@@ -244,5 +321,5 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
 
         # The crash has no build id, so it gets ignored and nothing gets
         # inserted
-        data = self.fetch_signatures_data()
-        assert data == []
+        assert self.fetch_signatures_data() == []
+        assert self.fetch_crashstats_signature_data() == []

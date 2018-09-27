@@ -12,7 +12,7 @@ def copy_graphics_devices_data(apps, schema_editor):
 
     cursor = connection.cursor()
 
-    # First, we verify the table is there, if not, we don't need to do anything
+    # First, we verify the table is there. If not, we don't need to do anything.
     cursor.execute("""
     SELECT relname from pg_catalog.pg_class
     WHERE relname = 'graphics_device'

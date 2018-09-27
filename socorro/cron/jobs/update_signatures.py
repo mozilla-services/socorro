@@ -11,10 +11,16 @@ from socorro.cron.mixins import (
     as_backfill_cron_app,
     using_postgres,
 )
+from socorro.external.postgresql.dbapi2_util import (
+    execute_no_results,
+    single_row_sql,
+    SQLDidNotReturnSingleRow,
+)
 from socorro.external.postgresql.signature_first_date import SignatureFirstDate
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.lib.datetimeutil import string_to_datetime
 
 
 # Maximum number of results returned for a super search query
@@ -47,6 +53,39 @@ class UpdateSignaturesCronApp(BaseCronApp):
         default=False,
         doc='Print to stdout instead of updating/inserting data'
     )
+
+    def update_crashstats_signature(self, connection, signature, report_date, report_build):
+        # Pull the data in the db. If it's there, then do an update. If it's
+        # not there, then do an insert.
+        try:
+            sig = single_row_sql(
+                connection,
+                """
+                SELECT signature, first_build, first_date
+                FROM crashstats_signature
+                WHERE signature=%s
+                """,
+                (signature,)
+            )
+            sql = """
+            UPDATE crashstats_signature
+            SET first_build=%s, first_date=%s
+            WHERE signature=%s
+            """
+            params = (
+                min(sig[1], int(report_build)),
+                min(sig[2], string_to_datetime(report_date)),
+                sig[0]
+            )
+
+        except SQLDidNotReturnSingleRow:
+            sql = """
+            INSERT INTO crashstats_signature (signature, first_build, first_date)
+            VALUES (%s, %s, %s)
+            """
+            params = (signature, report_build, report_date)
+
+        execute_no_results(connection, sql, params)
 
     def run(self, end_datetime):
         # Truncate to the hour
@@ -126,10 +165,19 @@ class UpdateSignaturesCronApp(BaseCronApp):
                     item['build_id']
                 )
             else:
+                # Insert into the old table
                 signature_first_date_api.post(
                     signature=item['signature'],
                     first_report=item['date'],
                     first_build=item['build_id']
+                )
+
+                # Insert into the new table
+                self.database_transaction_executor(
+                    self.update_crashstats_signature,
+                    signature=item['signature'],
+                    report_date=item['date'],
+                    report_build=item['build_id'],
                 )
 
         self.config.logger.info('Inserted/updated %d signatures.', len(signature_data))
