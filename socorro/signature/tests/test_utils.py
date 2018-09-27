@@ -258,8 +258,8 @@ def test_collapse(function, expected):
     ),
     # Handle an aberrant case
     (
-        '(foo)',
-        '(foo)'
+        '(anonymous namespace)::EnqueueTask(already_AddRefed<nsIRunnable>, int)',
+        '(anonymous namespace)::EnqueueTask(already_AddRefed<nsIRunnable>, int)'
     )
 ])
 def test_drop_prefix_and_return_type(function, expected):
