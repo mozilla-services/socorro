@@ -74,7 +74,7 @@ class UpdateSignaturesCronApp(BaseCronApp):
             """
             params = (
                 min(sig[1], int(report_build)),
-                str(min(sig[2], string_to_datetime(report_date))),
+                min(sig[2], string_to_datetime(report_date)),
                 sig[0]
             )
 
