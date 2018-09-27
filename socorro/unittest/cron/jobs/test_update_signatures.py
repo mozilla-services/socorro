@@ -66,7 +66,7 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         )
 
     def _truncate_signatures(self):
-        """Wipe both signatures tables"""
+        """Wipe the signatures table"""
         self.conn.cursor().execute('TRUNCATE signatures CASCADE')
         self.conn.commit()
 

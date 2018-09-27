@@ -4,7 +4,7 @@ from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 
 from crashstats.crashstats.models import (
     GraphicsDevice,
-    Signature
+    Signature,
 )
 
 
