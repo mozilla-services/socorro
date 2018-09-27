@@ -255,6 +255,11 @@ def test_collapse(function, expected):
     (
         'js::AssertObjectIsSavedFrameOrWrapper(JSContext*, JS::Handle<JSObject*>) [clone .isra.234] [clone .cold.687]',  # noqa
         'js::AssertObjectIsSavedFrameOrWrapper(JSContext*, JS::Handle<JSObject*>) [clone .isra.234] [clone .cold.687]'  # noqa
+    ),
+    # Handle an aberrant case
+    (
+        '(foo)',
+        '(foo)'
     )
 ])
 def test_drop_prefix_and_return_type(function, expected):
