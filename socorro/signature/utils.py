@@ -313,7 +313,7 @@ def drop_prefix_and_return_type(function):
     if current:
         tokens.append(''.join(current))
 
-    while tokens and tokens[-1].startswith(('(', '[clone')):
+    while len(tokens) > 1 and tokens[-1].startswith(('(', '[clone')):
         # It's possible for the function signature to have a space between
         # the function name and the parenthesized arguments or [clone ...]
         # thing. If that's the case, we join the last two tokens. We keep doing
