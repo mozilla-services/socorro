@@ -613,6 +613,27 @@ FIELDS = {
         'query_type': 'enum',
         'storage_mapping': None
     },
+    'record_replay': {
+        'data_validation_type': 'bool',
+        'default_value': None,
+        'description': (
+            'Set to 1 if this crash happened in a Web Replay middleman, recording, '
+            'or replaying process.'
+        ),
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'RecordReplay',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'record_replay',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'bool',
+        'storage_mapping': {
+            'type': 'boolean'
+        }
+    },
     'ReleaseChannel': {
         'data_validation_type': 'enum',
         'default_value': None,
