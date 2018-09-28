@@ -826,6 +826,7 @@ class RawCrash(SocorroMiddleware):
         'ProcessType',
         'ProductID',
         'ProductName',
+        'RecordReplay',
         'ReleaseChannel',
         'SecondsSinceLastCrash',
         'ShutdownProgress',
