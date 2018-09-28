@@ -75,6 +75,12 @@ class GraphicsDeviceAdmin(admin.ModelAdmin):
         'vendor_name',
         'adapter_name'
     ]
+    search_fields = [
+        'vendor_hex',
+        'adapter_hex',
+        'vendor_name',
+        'adapter_name'
+    ]
 
 
 @admin.register(Signature)
@@ -83,4 +89,7 @@ class Signature(admin.ModelAdmin):
         'signature',
         'first_build',
         'first_date'
+    ]
+    search_fields = [
+        'signature'
     ]
