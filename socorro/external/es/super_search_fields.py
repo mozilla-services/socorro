@@ -634,6 +634,35 @@ FIELDS = {
             'type': 'boolean'
         }
     },
+    'record_replay_error': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': (
+            'Any fatal error that occurred while recording/replaying a tab.'
+        ),
+        'form_field_choices': [],
+        'has_full_version': True,
+        'in_database_name': 'RecordReplayError',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'record_replay_error',
+        'namespace': 'raw_crash',
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
+        'query_type': 'string',
+        'storage_mapping': {
+            'fields': {
+                'full': {
+                    'index': 'not_analyzed',
+                    'type': 'string'
+                }
+            },
+            'index': 'analyzed',
+            'type': 'string'
+        }
+    },
     'ReleaseChannel': {
         'data_validation_type': 'enum',
         'default_value': None,
