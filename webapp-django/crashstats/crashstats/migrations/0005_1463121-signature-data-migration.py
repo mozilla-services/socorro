@@ -3,6 +3,9 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
+import time
+
 from django.db import connection, migrations
 
 
@@ -24,26 +27,32 @@ def copy_signature(apps, schema_editor):
     # Second, pull all the data from it
     # NOTE(willkg): The old table has "first_report", but the new table has
     # "first_date".
-    columns = ['signature', 'first_build', 'first_report']
-    cursor.execute(
-        """
-        SELECT %(columns)s
-        FROM signatures
-        """ % {
-            'columns': ', '.join(columns)
-        }
-    )
+    cursor.execute("""
+    SELECT signature, first_build, first_report
+    FROM signatures
+    """)
 
+    # Third, bulk load the new table in batches of BATCH_SIZE.
+    BATCH_SIZE = 500
+    print('')
     insert_count = 0
-    # Third, create new Signature instances and save them to the db.
-    for row in cursor.fetchall():
-        item = dict(zip(columns, row))
-        Signature.objects.create(
-            signature=item['signature'],
-            first_build=item['first_build'],
-            first_date=item['first_report']
-        )
-        insert_count += 1
+    results = cursor.fetchmany(size=BATCH_SIZE)
+    while results:
+        if insert_count % 50000 == 0:
+            print('%s: %s...' % (time.ctime(), insert_count))
+
+        obs = [
+            Signature(
+                signature=item[0],
+                first_build=item[1],
+                first_date=item[2]
+            )
+            for item in results
+            if item[0] and item[1] and item[2]
+        ]
+        Signature.objects.bulk_create(obs)
+        insert_count += len(obs)
+        results = cursor.fetchmany(size=BATCH_SIZE)
 
     print('(inserted: %s)' % insert_count, end='')
 
