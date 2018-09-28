@@ -139,68 +139,6 @@ class TestGraphicsDevices(SiteAdminTestViews):
         devices_list.sort(key=lambda d: (d['vendor_hex'], d['adapter_hex']))
         return devices_list
 
-    def test_graphics_devices_csv_upload_pcidatabase_com(self):
-        self._login()
-        url = reverse('siteadmin:graphics_devices')
-
-        sample_file = os.path.join(os.path.dirname(__file__), 'sample-graphics.csv')
-        with open(sample_file) as fp:
-            response = self.client.post(url, {
-                'file': fp,
-                'database': 'pcidatabase.com',
-            })
-            assert response.status_code == 302
-            assert url in response['location']
-
-        devices = self.devices_to_list(GraphicsDevice.objects.all())
-        assert devices == [
-            {
-                'adapter_hex': '0x002f',
-                'adapter_name': '.43 ieee 1394 controller',
-                'vendor_hex': '0x0033',
-                'vendor_name': 'Paradyne Corp.'
-            },
-            {
-                'adapter_hex': '0x0333',
-                'adapter_name': (
-                    '1ACPI\\GenuineIntel_-_x86_Family_6_Model_23\\_0 '
-                    '1ACPI\\GenuineIntel_-_x86_Family_6_Model_23\\_0'
-                ),
-                'vendor_hex': '0x0033',
-                'vendor_name': 'Paradyne Corp.'
-            },
-            {
-                'adapter_hex': '0x08b2',
-                'adapter_name': u'123abc logitech QuickCam\ufffd Pro 4000',
-                'vendor_hex': '0x0033',
-                'vendor_name': 'Paradyne Corp.'
-            },
-            {
-                'adapter_hex': '0x0221',
-                'adapter_name': 'LavaPort Quad-650 PCI C/D',
-                'vendor_hex': '0x0407',
-                'vendor_name': 'Lava Computer MFG Inc.'
-            },
-            {
-                'adapter_hex': '0x0200',
-                'adapter_name': 'DS38xx Oregon Scientific',
-                'vendor_hex': '0x0553',
-                'vendor_name': 'Aiptek USA'
-            },
-            {
-                'adapter_hex': '0x0201',
-                'adapter_name': 'DS38xx Oregon Scientific',
-                'vendor_hex': '0x0553',
-                'vendor_name': 'Aiptek USA'
-            },
-            {
-                'adapter_hex': '0x6128',
-                'adapter_name': 'USB\\VID_0C45&PID_6148&REV_0101 USB PC Camera Plus',
-                'vendor_hex': '0x0553',
-                'vendor_name': 'Aiptek USA'
-            }
-        ]
-
     def test_graphics_devices_csv_upload_pci_ids(self):
         self._login()
         url = reverse('siteadmin:graphics_devices')
@@ -209,7 +147,6 @@ class TestGraphicsDevices(SiteAdminTestViews):
         with open(sample_file) as fp:
             response = self.client.post(url, {
                 'file': fp,
-                'database': 'pci.ids',
             })
             assert response.status_code == 302
             assert url in response['location']
