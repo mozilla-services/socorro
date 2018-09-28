@@ -160,12 +160,11 @@ def graphics_devices(request):
     if request.method == 'POST' and 'file' in request.FILES:
         upload_form = forms.GraphicsDeviceUploadForm(request.POST, request.FILES)
         if upload_form.is_valid():
-            if upload_form.cleaned_data['database'] == 'pcidatabase.com':
-                function = utils.pcidatabase__parse_graphics_devices_iterable
-            else:
-                function = utils.pci_ids__parse_graphics_devices_iterable
+            devices = utils.pci_ids__parse_graphics_devices_iterable(
+                upload_form.cleaned_data['file']
+            )
 
-            for item in function(upload_form.cleaned_data['file']):
+            for item in devices:
                 obj, _ = GraphicsDevice.objects.get_or_create(
                     vendor_hex=item['vendor_hex'],
                     adapter_hex=item['adapter_hex']
