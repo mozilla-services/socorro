@@ -2,7 +2,7 @@
 
 $(document).ready(function() {
   /* Idempotent function to display the TelemetryEnvironment with
-     * jQuery JSONView */
+   * jQuery JSONView */
   var displayTelemetryEnvironment = (function() {
     var once = false;
     return function inner() {
@@ -14,11 +14,18 @@ $(document).ready(function() {
       var container = $('#telemetryenvironment-json');
       if (container.length) {
         var jsonData = container.data('telemetryenvironment');
-        try {
-          $('#telemetryenvironment-json').JSONView(jsonData);
-        } catch (ex) {
-          console.warn('The data in the #telemetryenvironment-json dataset is not valid JSON');
-          container.append($('<p>Invalid JSON in TelemetryEnvironment</p>'));
+        if (jsonData.length) {
+          // Nix \r and \n which shouldn't be in the JSON string and prevent
+          // it from being parsed. bug #1491778
+          jsonData = jsonData.replace(/\r/g, '').replace(/\n/g, '');
+          try {
+            $('#telemetryenvironment-json').JSONView(jsonData);
+          } catch (ex) {
+            console.warn('The data in the #telemetryenvironment-json dataset is not valid JSON');
+            container.append($('<p>Invalid JSON in TelemetryEnvironment</p>'));
+          }
+        } else {
+          container.append($('<p>No TelemetryEnvironment value</p>'));
         }
       }
     };
