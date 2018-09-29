@@ -166,6 +166,19 @@ def enhance_json_dump(dump, vcs_mappings):
     return dump
 
 
+def enhance_raw(raw_crash):
+    """Enhances raw crash with additional data"""
+    if raw_crash.get('AdapterDeviceID') and raw_crash.get('AdapterVendorID'):
+        # Look up the two and get friendly names and then add them
+        result = models.GraphicsDevice.objects.get_pair(
+            raw_crash['AdapterDeviceID'],
+            raw_crash['AdapterVendorID']
+        )
+        if result is not None:
+            raw_crash['AdapterDeviceName'] = result[0]
+            raw_crash['AdapterVendorName'] = result[1]
+
+
 def parse_version(version):
     """Parses a version string into a comparable tuple
 

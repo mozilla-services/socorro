@@ -52,10 +52,7 @@ def digitgroupseparator(number):
 
 
 @library.filter
-def timestamp_to_date(
-    timestamp,
-    format='%Y-%m-%d %H:%M:%S'
-):
+def timestamp_to_date(timestamp, format='%Y-%m-%d %H:%M:%S'):
     """ Python datetime to a time tag with JS Date.parse-parseable format. """
     try:
         timestamp = float(timestamp)

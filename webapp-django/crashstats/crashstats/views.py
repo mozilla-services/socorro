@@ -79,10 +79,7 @@ def report_index(request, crash_id, default_context=None):
     # If you try to use this to reach the perma link for a crash, it should
     # redirect to the report index with the correct crash ID.
     if valid_crash_id != crash_id:
-        return redirect(reverse(
-            'crashstats:report_index',
-            args=(valid_crash_id,)
-        ))
+        return redirect(reverse('crashstats:report_index', args=(valid_crash_id,)))
 
     context = default_context or {}
     context['crash_id'] = crash_id
@@ -91,14 +88,11 @@ def report_index(request, crash_id, default_context=None):
 
     raw_api = models.RawCrash()
     try:
-        context['raw'] = raw_api.get(
-            crash_id=crash_id,
-            refresh_cache=refresh_cache,
-        )
+        context['raw'] = raw_api.get(crash_id=crash_id, refresh_cache=refresh_cache)
     except CrashIDNotFound:
         # If the raw crash can't be found, we can't do much.
-        tmpl = 'crashstats/report_index_not_found.html'
-        return render(request, tmpl, context, status=404)
+        return render(request, 'crashstats/report_index_not_found.html', context, status=404)
+    utils.enhance_raw(context['raw'])
 
     context['your_crash'] = (
         request.user.is_active and
@@ -107,10 +101,7 @@ def report_index(request, crash_id, default_context=None):
 
     api = models.UnredactedCrash()
     try:
-        context['report'] = api.get(
-            crash_id=crash_id,
-            refresh_cache=refresh_cache,
-        )
+        context['report'] = api.get(crash_id=crash_id, refresh_cache=refresh_cache)
     except CrashIDNotFound:
         # ...if we haven't already done so.
         cache_key = 'priority_job:{}'.format(crash_id)
@@ -118,13 +109,11 @@ def report_index(request, crash_id, default_context=None):
             priority_api = models.Priorityjob()
             priority_api.post(crash_ids=[crash_id])
             cache.set(cache_key, True, 60)
-        tmpl = 'crashstats/report_index_pending.html'
-        return render(request, tmpl, context)
+        return render(request, 'crashstats/report_index_pending.html', context)
 
     if 'json_dump' in context['report']:
         json_dump = context['report']['json_dump']
-        if 'sensitive' in json_dump and \
-           not request.user.has_perm('crashstats.view_pii'):
+        if 'sensitive' in json_dump and not request.user.has_perm('crashstats.view_pii'):
             del json_dump['sensitive']
         context['raw_stackwalker_output'] = json.dumps(
             json_dump,
@@ -156,10 +145,7 @@ def report_index(request, crash_id, default_context=None):
         x for x in hits
         if x['signature'] == context['report']['signature']
     ]
-    context['bug_associations'].sort(
-        key=lambda x: x['id'],
-        reverse=True
-    )
+    context['bug_associations'].sort(key=lambda x: x['id'], reverse=True)
 
     context['raw_keys'] = []
     if request.user.has_perm('crashstats.view_pii'):
@@ -187,10 +173,7 @@ def report_index(request, crash_id, default_context=None):
             for suffix in suffixes:
                 name = 'upload_file_minidump_%s' % (suffix,)
                 context['raw_dump_urls'].append(
-                    reverse(
-                        'crashstats:raw_data_named',
-                        args=(crash_id, name, 'dmp')
-                    )
+                    reverse('crashstats:raw_data_named', args=(crash_id, name, 'dmp'))
                 )
         if (
             context['raw'].get('ContainsMemoryReport') and
@@ -198,10 +181,7 @@ def report_index(request, crash_id, default_context=None):
             not context['report'].get('memory_report_error')
         ):
             context['raw_dump_urls'].append(
-                reverse(
-                    'crashstats:raw_data_named',
-                    args=(crash_id, 'memory_report', 'json.gz')
-                )
+                reverse('crashstats:raw_data_named', args=(crash_id, 'memory_report', 'json.gz'))
             )
 
     # Add descriptions to all fields.
@@ -210,8 +190,7 @@ def report_index(request, crash_id, default_context=None):
     for field in all_fields.values():
         key = '{}.{}'.format(field['namespace'], field['in_database_name'])
         descriptions[key] = '{} Search: {}'.format(
-            field.get('description', '').strip() or
-            'No description for this field.',
+            field.get('description', '').strip() or 'No description for this field.',
             field['is_exposed'] and field['name'] or 'N/A',
         )
 
