@@ -260,13 +260,13 @@
                             <tr title="{{ fields_desc['raw_crash.AdapterVendorID'] }}">
                                 <th scope="row">Adapter Vendor ID</th>
                                 <td>
-                                    <pre>{{ raw.AdapterVendorID }}</pre>
+                                    <pre>{{ raw.AdapterVendorID }}{% if raw.AdapterVendorName %} ({{ raw.AdapterVendorName }}){% endif %}</pre>
                                 </td>
                             </tr>
                             <tr title="{{ fields_desc['raw_crash.AdapterDeviceID'] }}">
                                 <th scope="row">Adapter Device ID</th>
                                 <td>
-                                    <pre>{{ raw.AdapterDeviceID }}</pre>
+                                    <pre>{{ raw.AdapterDeviceID }}{% if raw.AdapterDeviceName %} ({{ raw.AdapterDeviceName }}){% endif %}</pre>
                                 </td>
                             </tr>
 

@@ -45,6 +45,14 @@ logger = logging.getLogger('crashstats.models')
 
 
 class GraphicsDeviceManager(models.Manager):
+    def get_pair(self, adapter_hex, vendor_hex):
+        """Returns (adapter_name, vendor_name) or None"""
+        try:
+            obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hex)
+            return (obj.adapter_name, obj.vendor_name)
+        except self.model.DoesNotExist:
+            return None
+
     def get_pairs(self, adapter_hexes, vendor_hexes):
         """Return dict where each tuple of (adapter_hex, vendor_hex)
         corresponds to a (adapter_name, vendor_name) pair
