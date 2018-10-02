@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from glom import glom
+
 from socorro.lib.transform_rules import Rule
 
 
@@ -50,12 +52,10 @@ class OSInfoRule(Rule):
         return '1.0'
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.os_name = ''
-        processed_crash.os_version = ''
+        os_name = glom(processed_crash, 'json_dump.system_info.os', default='Unknown').strip()
+        processed_crash['os_name'] = os_name
 
-        system_info = processed_crash.get('json_dump', {}).get('system_info')
-        if system_info:
-            processed_crash.os_name = system_info.get('os', '').strip()
-            processed_crash.os_version = system_info.get('os_ver', '').strip()
+        os_ver = glom(processed_crash, 'json_dump.system_info.os_ver', default='').strip()
+        processed_crash['os_version'] = os_ver
 
         return True

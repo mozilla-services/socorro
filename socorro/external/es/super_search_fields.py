@@ -3,13 +3,109 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import json
-import os
 
 import elasticsearch
 
 from socorro.external.es.base import ElasticsearchBase
 from socorro.lib import datetimeutil, BadArgumentError
+
+
+def add_field_to_properties(properties, namespaces, field):
+    """Add a field to a mapping properties
+
+    An Elasticsearch mapping is a specification for how to index all
+    the fields for a document type. This builds that mapping one field
+    at a time taking into account that some fields are nested and
+    the nesting needs to be built before that field can be added at
+    the proper place.
+
+    Note: This inserts things in-place and recurses on namespaces.
+
+    :arg properties: the mapping we're adding the field to
+    :namespaces: a list of strings denoting the branch the field
+        needs to be inserted at
+    :arg field: the field value from super search fields containing
+        the ``storage_mapping`` to be added to the properties
+
+    """
+    if not namespaces or not namespaces[0]:
+        properties[field['in_database_name']] = (
+            field['storage_mapping']
+        )
+        return
+
+    namespace = namespaces.pop(0)
+
+    if namespace not in properties:
+        properties[namespace] = {
+            'type': 'object',
+            'dynamic': 'true',
+            'properties': {}
+        }
+
+    add_field_to_properties(
+        properties[namespace]['properties'],
+        namespaces,
+        field,
+    )
+
+
+def is_doc_values_friendly(field_value):
+    """Predicate denoting whether this field should have doc_values added
+
+    ``doc_values=True`` is a thing we can add to certain fields to reduce the
+    memory they use in Elasticsearch.
+
+    This predicate determines whether we should add it or not for a given
+    field.
+
+    :arg field_value: a field value from super search fields
+
+    :returns: True if ``doc_values=True` should be added; False otherwise
+
+    """
+    field_type = field_value.get('type')
+
+    # No clue what type this is--probably false
+    if not field_type:
+        return False
+
+    # object, and multi_fields fields don't work with doc_values=True
+    if field_type in ('object', 'multi_field'):
+        return False
+
+    # analyzed string fields don't work with doc_values=True
+    if field_type == 'string' and field_value.get('index') != 'not_analyzed':
+        return False
+
+    # Everything is fine! Yay!
+    return True
+
+
+def add_doc_values(value):
+    """Add "doc_values": True to storage mapping of field value
+
+    NOTE(willkg): Elasticsearch 2.0+ does this automatically, so we
+    can nix this when we upgrade.
+
+    Note: This makes changes in-place and recurses on the structure
+    of value.
+
+    :arg value: the storage mapping of a field value
+
+    """
+    if is_doc_values_friendly(value):
+        value['doc_values'] = True
+
+    # Handle subfields
+    if value.get('fields'):
+        for field in value.get('fields', {}).values():
+            add_doc_values(field)
+
+    # Handle objects with nested properties
+    if value.get('properties'):
+        for field in value['properties'].values():
+            add_doc_values(field)
 
 
 class SuperSearchFields(ElasticsearchBase):
@@ -24,21 +120,20 @@ class SuperSearchFields(ElasticsearchBase):
         """Return all the fields from our super_search_fields.json file."""
         return FIELDS
 
-    # The reason for this alias is because this class gets used from
-    # the webapp and it expects to be able to execute
-    # SuperSearchFields.get() but there's a subclass of this class
-    # called SuperSearchMissingFields which depends on calling
-    # self.get_fields(). That class has its own `get` method.
-    # If you don't refer to `get_fields` with `get_fields` you'd get
-    # an infinite recursion loop.
-
+    # Alias ``get`` as ``get_fields`` so this can be used in the API well and
+    # can be conveniently subclassed by ``SuperSearchMissingFields``.
     get = get_fields
 
     def get_missing_fields(self):
-        """Return a list of all missing fields in our JSON file.
+        """Return fields missing from our FIELDS list
 
-        Take the list of all fields that were indexed in the last 3 weeks
-        and do a diff with the list of known fields.
+        Go through the last three weeks of indexes, fetch the mappings, and
+        figure out which fields are in the mapping that aren't in our list of
+        known fields.
+
+        :returns: dict of missing fields (``hits``) and total number of missing
+            fields (``total``)
+
         """
         now = datetimeutil.utc_now()
         two_weeks_ago = now - datetime.timedelta(weeks=2)
@@ -75,9 +170,7 @@ class SuperSearchFields(ElasticsearchBase):
         all_existing_fields = set()
         for index in indices:
             try:
-                mapping = index_client.get_mapping(
-                    index=index,
-                )
+                mapping = index_client.get_mapping(index=index)
                 properties = mapping[index]['mappings'][doctype]['properties']
                 all_existing_fields.update(parse_mapping(properties, None))
             except elasticsearch.exceptions.NotFoundError as e:
@@ -101,8 +194,13 @@ class SuperSearchFields(ElasticsearchBase):
         }
 
     def get_mapping(self, overwrite_mapping=None):
-        """Return the mapping to be used in elasticsearch, generated from the
-        current list of fields in the database.
+        """Generates Elasticsearch mapping from the super search fields schema
+
+        :arg overwrite_mapping: mapping with values that override the super
+            search fields schema values
+
+        :returns: dict of doctype name -> Elasticsearch mapping
+
         """
         properties = {}
         all_fields = self.get_fields()
@@ -114,31 +212,11 @@ class SuperSearchFields(ElasticsearchBase):
             else:
                 all_fields[field] = overwrite_mapping
 
-        def add_field_to_properties(properties, namespaces, field):
-            if not namespaces or not namespaces[0]:
-                properties[field['in_database_name']] = (
-                    field['storage_mapping']
-                )
-                return
-
-            namespace = namespaces.pop(0)
-
-            if namespace not in properties:
-                properties[namespace] = {
-                    'type': 'object',
-                    'dynamic': 'true',
-                    'properties': {}
-                }
-
-            add_field_to_properties(
-                properties[namespace]['properties'],
-                namespaces,
-                field,
-            )
-
         for field in all_fields.values():
             if not field.get('storage_mapping'):
                 continue
+
+            add_doc_values(field['storage_mapping'])
 
             namespaces = field['namespace'].split('.')
 
@@ -157,21 +235,22 @@ class SuperSearchFields(ElasticsearchBase):
         }
 
     def test_mapping(self, mapping):
-        """Verify that a mapping is correct.
+        """Verify that a mapping is correct
 
-        This function does so by first creating a new, temporary index in
+        This method verifies a mapping by creating a new, temporary index in
         elasticsearch using the mapping. It then takes some recent crash
         reports that are in elasticsearch and tries to insert them in the
         temporary index. Any failure in any of those steps will raise an
         exception. If any is raised, that means the mapping is incorrect in
-        some way (either it doesn't validate against elasticsearch's rules,
-        or is not compatible with the data we currently store).
+        some way (either it doesn't validate against elasticsearch's rules, or
+        is not compatible with the data we currently store).
 
-        If no exception is raised, the mapping is likely correct.
+        Raises an exception if the mapping is bad.
 
-        This function is to be used in any place that can change the
-        `storage_mapping` field in any Super Search Field.
-        Methods `create_field` and `update_field` use it, see above.
+        Use this to test any mapping changes.
+
+        :arg mapping: the Elasticsearch mapping to test
+
         """
         temp_index = 'socorro_mapping_test'
 
@@ -219,12 +298,9 @@ class SuperSearchFields(ElasticsearchBase):
 
 
 class SuperSearchMissingFields(SuperSearchFields):
+    """Model that returns fields missing from super search fields"""
 
     def get(self):
-        # This is the whole reason for making this subclass.
-        # This way we can get a dedicated class with a single get method
-        # so that it becomes easier to use the big class for multiple
-        # API purposes.
         return super(SuperSearchMissingFields, self).get_missing_fields()
 
 
@@ -271,6 +347,7 @@ FIELDS = {
     'AdapterRendererIDs': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'AdapterRendererIDs',
@@ -286,6 +363,7 @@ FIELDS = {
     'Add-ons': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Add-ons',
@@ -301,8 +379,8 @@ FIELDS = {
     'BuildID': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'BuildID',
         'is_exposed': False,
@@ -319,6 +397,7 @@ FIELDS = {
     'Comments': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Comments',
@@ -327,13 +406,16 @@ FIELDS = {
         'is_returned': True,
         'name': 'Comments',
         'namespace': 'raw_crash',
-        'permissions_needed': [],
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
         'query_type': 'enum',
         'storage_mapping': None
     },
     'CrashTime': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'CrashTime',
@@ -349,6 +431,7 @@ FIELDS = {
     'FlashVersion': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'FlashVersion',
@@ -364,8 +447,8 @@ FIELDS = {
     'Hang': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'Hang',
         'is_exposed': False,
@@ -382,6 +465,7 @@ FIELDS = {
     'InstallTime': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'InstallTime',
@@ -399,8 +483,8 @@ FIELDS = {
     'Notes': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'Notes',
         'is_exposed': False,
@@ -417,6 +501,7 @@ FIELDS = {
     'PluginFilename': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginFilename',
@@ -432,6 +517,7 @@ FIELDS = {
     'PluginName': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginName',
@@ -447,6 +533,7 @@ FIELDS = {
     'PluginUserComment': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginUserComment',
@@ -462,6 +549,7 @@ FIELDS = {
     'PluginVersion': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginVersion',
@@ -477,8 +565,8 @@ FIELDS = {
     'ProcessType': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'ProcessType',
         'is_exposed': False,
@@ -496,6 +584,7 @@ FIELDS = {
     'ProductID': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'ProductID',
@@ -511,6 +600,7 @@ FIELDS = {
     'ProductName': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'ProductName',
@@ -523,9 +613,60 @@ FIELDS = {
         'query_type': 'enum',
         'storage_mapping': None
     },
+    'record_replay': {
+        'data_validation_type': 'bool',
+        'default_value': None,
+        'description': (
+            'Set to 1 if this crash happened in a Web Replay middleman, recording, '
+            'or replaying process.'
+        ),
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'RecordReplay',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'record_replay',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'bool',
+        'storage_mapping': {
+            'type': 'boolean'
+        }
+    },
+    'record_replay_error': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': (
+            'Any fatal error that occurred while recording/replaying a tab.'
+        ),
+        'form_field_choices': [],
+        'has_full_version': True,
+        'in_database_name': 'RecordReplayError',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'record_replay_error',
+        'namespace': 'raw_crash',
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
+        'query_type': 'string',
+        'storage_mapping': {
+            'fields': {
+                'full': {
+                    'index': 'not_analyzed',
+                    'type': 'string'
+                }
+            },
+            'index': 'analyzed',
+            'type': 'string'
+        }
+    },
     'ReleaseChannel': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'ReleaseChannel',
@@ -541,8 +682,8 @@ FIELDS = {
     'SecondsSinceLastCrash': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'SecondsSinceLastCrash',
         'is_exposed': False,
@@ -591,6 +732,7 @@ FIELDS = {
     'Winsock_LSP': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Winsock_LSP',
@@ -635,7 +777,6 @@ FIELDS = {
             'The presence of this field indicates that accessibility services were accessed.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'BooleanField',
         'has_full_version': False,
         'in_database_name': 'Accessibility',
         'is_exposed': True,
@@ -695,7 +836,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The graphics adapter device identifier.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'AdapterDeviceID',
         'is_exposed': True,
@@ -714,7 +854,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The graphics adapter driver version.',
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': False,
         'in_database_name': 'AdapterDriverVersion',
         'is_exposed': True,
@@ -731,7 +870,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The graphics adapter subsystem identifier.',
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': False,
         'in_database_name': 'AdapterSubsysID',
         'is_exposed': True,
@@ -752,7 +890,6 @@ FIELDS = {
             '0x10de (NVIDIA).'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'AdapterVendorID',
         'is_exposed': True,
@@ -769,6 +906,7 @@ FIELDS = {
     'additional_minidumps': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'additional_minidumps',
@@ -791,7 +929,6 @@ FIELDS = {
             'which do not support addons.'
         ),
         'form_field_choices': [],
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'addons',
         'is_exposed': True,
@@ -811,7 +948,6 @@ FIELDS = {
         'default_value': None,
         'description': '',
         'form_field_choices': [],
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'addons_checked',
         'is_exposed': True,
@@ -851,7 +987,6 @@ FIELDS = {
             'accesses.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': False,
         'in_database_name': 'address',
         'is_exposed': True,
@@ -871,7 +1006,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The board used by the Android device.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Board',
         'is_exposed': True,
@@ -890,7 +1024,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The Android device brand.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Brand',
         'is_exposed': True,
@@ -909,7 +1042,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The Android primary CPU ABI being used.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_CPU_ABI',
         'is_exposed': True,
@@ -929,7 +1061,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The Android secondary CPU ABI being used.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_CPU_ABI2',
         'is_exposed': True,
@@ -949,7 +1080,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The android device name.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Device',
         'is_exposed': True,
@@ -967,8 +1097,8 @@ FIELDS = {
     'android_display': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Display',
         'is_exposed': True,
@@ -985,8 +1115,8 @@ FIELDS = {
     'android_fingerprint': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Fingerprint',
         'is_exposed': True,
@@ -1005,7 +1135,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The android device hardware.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Hardware',
         'is_exposed': True,
@@ -1024,7 +1153,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The Android device manufacturer.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Manufacturer',
         'is_exposed': True,
@@ -1043,7 +1171,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The Android device model name.',
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': True,
         'in_database_name': 'Android_Model',
         'is_exposed': True,
@@ -1071,7 +1198,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The Android version.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Android_Version',
         'is_exposed': True,
@@ -1113,7 +1239,6 @@ FIELDS = {
             'annotations.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'app_notes',
         'is_exposed': True,
@@ -1208,7 +1333,6 @@ FIELDS = {
         'default_value': None,
         'description': '',
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': True,
         'in_database_name': 'AsyncShutdownTimeout',
         'is_exposed': True,
@@ -1241,7 +1365,6 @@ FIELDS = {
             'to or smaller than the system-wide available commit value.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'AvailablePageFile',
         'is_exposed': True,
@@ -1264,7 +1387,6 @@ FIELDS = {
             'first.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'AvailablePhysicalMemory',
         'is_exposed': True,
@@ -1288,7 +1410,6 @@ FIELDS = {
             'zero.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'AvailableVirtualMemory',
         'is_exposed': True,
@@ -1307,7 +1428,6 @@ FIELDS = {
         'default_value': None,
         'description': '',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'B2G_OS_Version',
         'is_exposed': True,
@@ -1327,7 +1447,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The BIOS manufacturer.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'BIOS_Manufacturer',
         'is_exposed': True,
@@ -1345,6 +1464,7 @@ FIELDS = {
     'bug836263-size': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'bug836263-size',
@@ -1360,8 +1480,8 @@ FIELDS = {
     'build_date': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'build_date',
         'is_exposed': False,
@@ -1384,7 +1504,6 @@ FIELDS = {
             'YYYYMMDDHHMMSS.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'build',
         'is_exposed': True,
@@ -1401,8 +1520,8 @@ FIELDS = {
     'buildid': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'buildid',
         'is_exposed': False,
@@ -1419,8 +1538,8 @@ FIELDS = {
     'classifications': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'classifications',
         'is_exposed': False,
@@ -1470,8 +1589,8 @@ FIELDS = {
     'client_crash_date': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'client_crash_date',
         'is_exposed': False,
@@ -1533,8 +1652,8 @@ FIELDS = {
     'completeddatetime': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'completeddatetime',
         'is_exposed': False,
@@ -1688,7 +1807,6 @@ FIELDS = {
             'and stepping number.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': True,
         'in_database_name': 'cpu_info',
         'is_exposed': True,
@@ -1734,7 +1852,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Architecture of the processor. Deprecated, use cpu_arch instead.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'cpu_name',
         'is_exposed': True,
@@ -1752,8 +1869,8 @@ FIELDS = {
     'cpu_usage_flash_process1': {
         'data_validation_type': 'int',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'CpuUsageFlashProcess1',
         'is_exposed': True,
@@ -1770,8 +1887,8 @@ FIELDS = {
     'cpu_usage_flash_process2': {
         'data_validation_type': 'int',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'CpuUsageFlashProcess2',
         'is_exposed': True,
@@ -1804,8 +1921,8 @@ FIELDS = {
     'crash_time': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'crash_time',
         'is_exposed': False,
@@ -1838,8 +1955,8 @@ FIELDS = {
     'crashedThread': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'crashedThread',
         'is_exposed': False,
@@ -1890,7 +2007,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Date at which the crash report was received by Socorro.',
         'form_field_choices': [],
-        'form_field_type': 'DateTimeField',
         'has_full_version': False,
         'in_database_name': 'date_processed',
         'is_exposed': True,
@@ -1910,7 +2026,6 @@ FIELDS = {
         'default_value': None,
         'description': '',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'distributor',
         'is_exposed': False,
@@ -1929,7 +2044,6 @@ FIELDS = {
         'default_value': None,
         'description': '',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'distributor_version',
         'is_exposed': False,
@@ -1952,7 +2066,6 @@ FIELDS = {
             'enabled).'
         ),
         'form_field_choices': [],
-        'form_field_type': 'BooleanField',
         'has_full_version': False,
         'in_database_name': 'DOMIPCEnabled',
         'is_exposed': True,
@@ -1972,7 +2085,6 @@ FIELDS = {
         'default_value': None,
         'description': '',
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': False,
         'in_database_name': 'dump',
         'is_exposed': False,
@@ -2043,8 +2155,8 @@ FIELDS = {
     'em_check_compatibility': {
         'data_validation_type': 'bool',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'BooleanField',
         'has_full_version': False,
         'in_database_name': 'EMCheckCompatibility',
         'is_exposed': True,
@@ -2066,7 +2178,6 @@ FIELDS = {
             'about their crash report.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': False,
         'in_database_name': 'email',
         'is_exposed': True,
@@ -2095,7 +2206,6 @@ FIELDS = {
             'unknown',
             'error'
         ],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'exploitability',
         'is_exposed': True,
@@ -2127,7 +2237,6 @@ FIELDS = {
             'broker',
             '__null__'
         ],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'FlashProcessDump',
         'is_exposed': True,
@@ -2146,7 +2255,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Version of the Flash Player plugin.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'flash_version',
         'is_exposed': True,
@@ -2164,8 +2272,8 @@ FIELDS = {
     'frame_poison_base': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'FramePoisonBase',
         'is_exposed': True,
@@ -2182,8 +2290,8 @@ FIELDS = {
     'frame_poison_size': {
         'data_validation_type': 'int',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'FramePoisonSize',
         'is_exposed': True,
@@ -2195,6 +2303,28 @@ FIELDS = {
         'query_type': 'number',
         'storage_mapping': {
             'type': 'long'
+        }
+    },
+    'gmp_library_path': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': 'Holds the path to the GMP plugin library.',
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'GMPLibraryPath',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'gmp_library_path',
+        'namespace': 'raw_crash',
+        'permissions_needed': [
+            # This contains file paths on the user's computer.
+            'crashstats.view_pii'
+        ],
+        'query_type': 'string',
+        'storage_mapping': {
+            'analyzer': 'keyword',
+            'type': 'string'
         }
     },
     'gmp_plugin': {
@@ -2274,7 +2404,6 @@ FIELDS = {
             'hang',
             'all'
         ],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'hang_type',
         'is_exposed': True,
@@ -2291,8 +2420,8 @@ FIELDS = {
     'hangid': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'hangid',
         'is_exposed': False,
@@ -2306,9 +2435,31 @@ FIELDS = {
             'type': 'string'
         }
     },
+    'has_device_touch_screen': {
+        'data_validation_type': 'bool',
+        'default_value': None,
+        'description': (
+            'Set to 1 if the device had a touch-screen, this only applies to Firefox '
+            'desktop as on mobile devices we assume a touch-screen is always present.'
+        ),
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'HasDeviceTouchScreen',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'has_device_touch_screen',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'bool',
+        'storage_mapping': {
+            'type': 'boolean'
+        }
+    },
     'id': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'id',
@@ -2326,7 +2477,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Length of time since this version was installed.',
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'install_age',
         'is_exposed': True,
@@ -2349,7 +2499,6 @@ FIELDS = {
             'are installed at the very same second).'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'InstallTime',
         'is_exposed': True,
@@ -2538,8 +2687,8 @@ FIELDS = {
     'is_garbage_collecting': {
         'data_validation_type': 'bool',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'BooleanField',
         'has_full_version': False,
         'in_database_name': 'IsGarbageCollecting',
         'is_exposed': True,
@@ -2561,7 +2710,6 @@ FIELDS = {
             'It is usually more useful than the system stack trace given for the crashing thread.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'java_stack_trace',
         'is_exposed': True,
@@ -2656,7 +2804,6 @@ FIELDS = {
             'indicate repeated crashes.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'last_crash',
         'is_exposed': True,
@@ -2673,8 +2820,10 @@ FIELDS = {
     'legacy_processing': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': (
+            'Whether the crash was accepted (0) or deferred (1) by the Socorro collector.'
+        ),
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'legacy_processing',
         'is_exposed': False,
@@ -2703,6 +2852,39 @@ FIELDS = {
         'permissions_needed': [],
         'query_type': 'number',
         'storage_mapping': None
+    },
+    'memory_error_correction': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': (
+            'Windows only, type of error correction used by system memory.  See '
+            'documentation for MemoryErrorCorrection property of '
+            'Win32_PhysicalMemoryArray WMI class.'
+        ),
+        'form_field_choices': [
+            'Reserved',
+            'Other',
+            'Unknown',
+            'None',
+            'Parity',
+            'Single-bit ECC',
+            'Multi-bit ECC',
+            'CRC',
+            'Unexpected value',
+        ],
+        'has_full_version': False,
+        'in_database_name': 'MemoryErrorCorrection',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'memory_error_correction',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'string',
+        'storage_mapping': {
+            'analyzer': 'keyword',
+            'type': 'string'
+        }
     },
     'memory_explicit': {
         'data_validation_type': 'int',
@@ -3059,8 +3241,8 @@ FIELDS = {
     'min_arm_version': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Min_ARM_Version',
         'is_exposed': True,
@@ -3070,6 +3252,24 @@ FIELDS = {
         'namespace': 'raw_crash',
         'permissions_needed': [],
         'query_type': 'enum',
+        'storage_mapping': {
+            'type': 'string'
+        }
+    },
+    'minidump_sha256_hash': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': 'SHA256 hash of the minidump if there was one.',
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'minidump_sha256_hash',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'minidump_sha256_hash',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'query_type': 'string',
         'storage_mapping': {
             'type': 'string'
         }
@@ -3107,7 +3307,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Alias to `cpu_count`. Deprecated.',
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'cpu_count',
         'is_exposed': True,
@@ -3129,7 +3328,6 @@ FIELDS = {
             'actually caused the OOM crash.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'OOMAllocationSize',
         'is_exposed': True,
@@ -3184,7 +3382,6 @@ FIELDS = {
             'version.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'os_name',
         'is_exposed': True,
@@ -3237,7 +3434,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Version of the operating system.',
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': True,
         'in_database_name': 'os_version',
         'is_exposed': True,
@@ -3261,8 +3457,8 @@ FIELDS = {
     'plugin_cpu_usage': {
         'data_validation_type': 'int',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'PluginCpuUsage',
         'is_exposed': True,
@@ -3284,7 +3480,6 @@ FIELDS = {
             'into that process.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'PluginFilename',
         'is_exposed': True,
@@ -3311,8 +3506,8 @@ FIELDS = {
     'plugin_hang': {
         'data_validation_type': 'bool',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'BooleanField',
         'has_full_version': False,
         'in_database_name': 'PluginHang',
         'is_exposed': True,
@@ -3329,8 +3524,8 @@ FIELDS = {
     'plugin_hang_ui_duration': {
         'data_validation_type': 'int',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'PluginHangUIDuration',
         'is_exposed': True,
@@ -3352,7 +3547,6 @@ FIELDS = {
             'process.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'PluginName',
         'is_exposed': True,
@@ -3384,7 +3578,6 @@ FIELDS = {
             'process.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'PluginVersion',
         'is_exposed': True,
@@ -3424,7 +3617,6 @@ FIELDS = {
             'gpu',
             'all'
         ],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'process_type',
         'is_exposed': True,
@@ -3446,7 +3638,6 @@ FIELDS = {
             'the report during processing.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'processor_notes',
         'is_exposed': True,
@@ -3472,7 +3663,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Name of the software.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'product',
         'is_exposed': True,
@@ -3501,7 +3691,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Identifier of the software.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'productid',
         'is_exposed': True,
@@ -3551,7 +3740,6 @@ FIELDS = {
             'values: "EXCEPTION_ACCESS_VIOLATION_READ", "EXCEPTION_BREAKPOINT", "SIGSEGV".'
         ),
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': True,
         'in_database_name': 'reason',
         'is_exposed': True,
@@ -3583,7 +3771,6 @@ FIELDS = {
             'or \'release\', but this may also be other values like \'release-cck-partner\'.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'release_channel',
         'is_exposed': True,
@@ -3666,7 +3853,6 @@ FIELDS = {
             'as "OOM | small" or "shutdownhang" that further identify the crash kind.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': True,
         'in_database_name': 'signature',
         'is_exposed': True,
@@ -3696,7 +3882,6 @@ FIELDS = {
             'The skunk classification of this crash report, assigned by the processors.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'classification',
         'is_exposed': True,
@@ -3711,8 +3896,8 @@ FIELDS = {
     'startedDateTime': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'startedDateTime',
         'is_exposed': False,
@@ -3752,8 +3937,8 @@ FIELDS = {
     'startup_time': {
         'data_validation_type': 'int',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'StartupTime',
         'is_exposed': True,
@@ -3810,6 +3995,7 @@ FIELDS = {
     'submitted_timestamp': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': 'The datetime when the crash was submitted to the Socorro collector.',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'submitted_timestamp',
@@ -3825,8 +4011,8 @@ FIELDS = {
     'success': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'success',
         'is_exposed': False,
@@ -3847,7 +4033,6 @@ FIELDS = {
             'The support classification of this crash report, assigned by the processors.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'classification',
         'is_exposed': True,
@@ -3882,7 +4067,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The approximate percentage of physical memory that is in use.',
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'SystemMemoryUsePercentage',
         'is_exposed': True,
@@ -3923,7 +4107,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The current theme.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Theme',
         'is_exposed': True,
@@ -3973,8 +4156,8 @@ FIELDS = {
     'throttle_rate': {
         'data_validation_type': 'int',
         'default_value': None,
+        'description': 'The throttle rate for the triggered rule in the Socorro collector.',
         'form_field_choices': None,
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'throttle_rate',
         'is_exposed': True,
@@ -3991,8 +4174,8 @@ FIELDS = {
     'throttleable': {
         'data_validation_type': 'bool',
         'default_value': None,
+        'description': 'Whether the crash report was throttleable when submitted.',
         'form_field_choices': None,
-        'form_field_type': 'BooleanField',
         'has_full_version': False,
         'in_database_name': 'Throttleable',
         'is_exposed': True,
@@ -4009,8 +4192,10 @@ FIELDS = {
     'timestamp': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': (
+            'Seconds since unix epoch when the crash was submitted to the Socorro collector.'
+        ),
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'timestamp',
         'is_exposed': False,
@@ -4047,7 +4232,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Paths of the files at the top of the stack.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'topmost_filenames',
         'is_exposed': True,
@@ -4083,7 +4267,6 @@ FIELDS = {
         'default_value': None,
         'description': '',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'TotalPageFile',
         'is_exposed': True,
@@ -4102,7 +4285,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The total amount of physical memory.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'TotalPhysicalMemory',
         'is_exposed': True,
@@ -4126,7 +4308,6 @@ FIELDS = {
             'in the range 2--4 GiB. 64-bit processes usually have *much* larger values.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'TotalVirtualMemory',
         'is_exposed': True,
@@ -4143,8 +4324,8 @@ FIELDS = {
     'truncated': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'truncated',
         'is_exposed': False,
@@ -4161,6 +4342,7 @@ FIELDS = {
     'upload_file_minidump_browser': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'upload_file_minidump_browser',
@@ -4176,6 +4358,7 @@ FIELDS = {
     'upload_file_minidump_flash1': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'upload_file_minidump_flash1',
@@ -4191,6 +4374,7 @@ FIELDS = {
     'upload_file_minidump_flash2': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'upload_file_minidump_flash2',
@@ -4211,7 +4395,6 @@ FIELDS = {
             '5 or so) usually indicate start-up crashes.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'IntegerField',
         'has_full_version': False,
         'in_database_name': 'uptime',
         'is_exposed': True,
@@ -4253,7 +4436,6 @@ FIELDS = {
             'may be responsible for a particular crash.'
         ),
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': False,
         'in_database_name': 'url',
         'is_exposed': True,
@@ -4275,7 +4457,6 @@ FIELDS = {
         'default_value': None,
         'description': 'Comments entered by the user when they crashed.',
         'form_field_choices': [],
-        'form_field_type': 'StringField',
         'has_full_version': True,
         'in_database_name': 'user_comments',
         'is_exposed': True,
@@ -4283,7 +4464,9 @@ FIELDS = {
         'is_returned': True,
         'name': 'user_comments',
         'namespace': 'processed_crash',
-        'permissions_needed': [],
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
         'query_type': 'string',
         'storage_mapping': {
             'fields': {
@@ -4303,7 +4486,6 @@ FIELDS = {
         'default_value': None,
         'description': 'The locale of the software installation.',
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'useragent_locale',
         'is_exposed': True,
@@ -4323,10 +4505,9 @@ FIELDS = {
         'default_value': None,
         'description': 'Unique identifier of the report.',
         'form_field_choices': [],
-        'form_field_type': None,
         'has_full_version': False,
         'in_database_name': 'uuid',
-        'is_exposed': False,
+        'is_exposed': True,
         'is_mandatory': False,
         'is_returned': True,
         'name': 'uuid',
@@ -4341,8 +4522,8 @@ FIELDS = {
     'vendor': {
         'data_validation_type': 'enum',
         'default_value': None,
+        'description': '',
         'form_field_choices': None,
-        'form_field_type': 'MultipleValueField',
         'has_full_version': False,
         'in_database_name': 'Vendor',
         'is_exposed': True,
@@ -4388,7 +4569,6 @@ FIELDS = {
             '(Layered Service Provider).'
         ),
         'form_field_choices': [],
-        'form_field_type': 'MultipleValueField',
         'has_full_version': True,
         'in_database_name': 'Winsock_LSP',
         'is_exposed': True,

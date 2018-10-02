@@ -38,12 +38,34 @@ Quickstart
 
        Install `git <https://git-scm.com/>`_.
 
-2. Clone the repository so you have a copy on your host machine. Instructions
-   are `on GitHub <https://github.com/mozilla-services/socorro>`_.
+2. Clone the repository so you have a copy on your host machine.
 
-3. From the root of this repository, run::
+   Instructions for cloning are `on the Socorro page in GitHub
+   <https://github.com/mozilla-services/socorro>`_.
 
-     $ make dockerbuild
+
+3. (*Optional/Advanced*) Set UID and GID for Docker container user.
+
+   If you're on Linux or you want to set the UID/GID of the app user that
+   runs in the Docker containers, run::
+
+     $ make my.env
+
+
+   Then edit the file and set the ``SOCORRO_UID`` and ``SOCORRO_GID``
+   variables. These will get used when creating the app user in the base
+   image.
+
+   If you ever want different values, change them in ``my.env`` and re-run
+   ``make build``.
+
+
+4. Build Docker images for Socorro services.
+
+   From the root of this repository, run::
+
+     $ make build
+
 
    That will build the Docker images required for development: processor,
    webapp, and crontabber.
@@ -51,10 +73,13 @@ Quickstart
    Each of these images covers a single Socorro component: processor, webapp,
    and crontabber.
 
-4. Then you need to set up the Postgres database and Elasticssearch. To do that,
+
+5. Initialize Postgres and Elasticsearch data stores.
+
+   Then you need to set up the Postgres database and Elasticssearch. To do that,
    run::
 
-     $ make dockersetup
+     $ make setup
 
    This creates the Postgres database and sets up tables, stored procedures,
    integrity rules, types, and a bunch of other things. It also adds a bunch of
@@ -63,16 +88,18 @@ Quickstart
    For Elasticsearch, it sets up Supersearch fields and the index for raw and
    processed crash data.
 
-   You can run ``make dockersetup`` any time you want to wipe the Postgres
+   You can run ``make setup`` any time you want to wipe the Postgres
    database and Elasticsearch to pick up changes to those storage systems or
    reset your environment.
 
-5. Then you need to pull in product release and some other data that makes
+6. Populate data stores with required data.
+
+   Then you need to pull in product release and some other data that makes
    Socorro go.
 
    To do that, run::
 
-     $ make dockerupdatedata
+     $ make updatedata
 
    This adds data that changes day-to-day. Things like product builds and
    normalization data.
@@ -80,21 +107,37 @@ Quickstart
    Depending on what you're working on, you might want to run this weekly or
    maybe even daily.
 
+   .. Note::
+
+      This runs ftpscraper which takes 10 minutes to run. To save your time
+      and ours, the script will replay the last run for 7 days. That takes
+      10 seconds. If you need fresh data, run ``make clean`` which will
+      wipe out the logs.
+
 
 At this point, you should have a basic functional Socorro development
-environment.
+environment that has no crash data in it.
 
-See :ref:`gettingstarted-chapter-updating` for how to maintain and update your
-environment.
+.. Seealso::
 
-See :ref:`gettingstarted-chapter-configuration` for how configuration works and
-about ``my.env``.
+   **Run the processor and get some crash data!**
+       If you need crash data, see :ref:`processor-chapter` for additional
+       setup, fetching crash data, and running the processor.
 
-See :ref:`webapp-chapter` for additional setup and running the webapp.
+   **Update your local development environment!**
+       See :ref:`gettingstarted-chapter-updating` for how to maintain and
+       update your local development environment.
 
-See :ref:`processor-chapter` for additional setup and running the processor.
+   **Learn about configuration!**
+       See :ref:`gettingstarted-chapter-configuration` for how configuration
+       works and about ``my.env``.
 
-See :ref:`crontabber-chapter` for additional setup and running crontabber.
+   **Run the webapp!**
+       See :ref:`webapp-chapter` for additional setup and running the webapp.
+
+   **Run crontabber!**
+       See :ref:`crontabber-chapter` for additional setup and running
+       crontabber.
 
 
 .. _gettingstarted-chapter-updating:
@@ -118,27 +161,28 @@ After you do that, you'll need to update other things.
 If there were changes to the requirements files or setup scripts, you'll need to
 build new images::
 
-  $ make dockerbuild
+  $ make build
 
 
 If there were changes to the database tables, stored procedures, types,
 migrations, or anything like that, you'll need to wipe the Postgres database and
 Elasticsearch::
 
-  $ make dockersetup
+  $ make setup
 
 
 After doing that, you'll definitely want to update data::
 
-  $ make dockerupdatedata
+  $ make updatedata
 
 
-Wiping the database
--------------------
+Wiping crash storage and state
+------------------------------
 
-Any time you want to wipe the database and start over, run::
+Any time you want to wipe all the crash storage destinations, remove all the
+data, and reset the state of the system, run::
 
-  $ make dockersetup
+  $ make setup
 
 
 Updating release data
@@ -153,7 +197,7 @@ Updating that data is done with a single make rule.
 
 Run::
 
-  $ make dockerupdatedata
+  $ make updatedata
 
 
 .. Note::
@@ -166,12 +210,29 @@ Run::
    better to wipe the database and start over.
 
 
+.. Note::
+
+   This will replay the most recent run. If you need fresh data, delete the
+   ``.cache/`` directory before running ``make updatedata``.
+
+
 .. _gettingstarted-chapter-configuration:
 
 Configuration
 =============
 
-All configuration is done with ENV files located in ``/app/docker/config/``.
+Configuration is pulled from three sources:
+
+1. Envronment variables
+2. ENV files located in ``/app/docker/config/``. See ``docker-compose.yml`` for
+   which ENV files are used in which containers, and their precedence.
+3. The ``config_defaults`` attribute for each ``SocorroApp`` subclass.
+
+The sources above are ordered by precedence, i.e. configuration values defined
+by environment variables will override values from ENV files or
+``config_defaults``.
+
+The following ENV files can be found in ``/app/docker/config/``:
 
 ``local_dev.env``
     This holds *secrets* and *environment-specific configuration* required
@@ -186,13 +247,6 @@ All configuration is done with ENV files located in ``/app/docker/config/``.
 
     **These should never show up in a server environment.**
 
-``processor.env``, ``crontabber.env``, and ``webapp.env``
-    These configuration files hold *behavioral configuration* for these three
-    components for all environments--local development and servers.
-
-    For example, if you want to add a new destination crash store to the system,
-    you'd add it to ``processor.env``.
-
 ``test.env``
     This holds configuration specific to running the tests. It has some
     configuration value overrides because the tests are "interesting".
@@ -205,7 +259,6 @@ All configuration is done with ENV files located in ``/app/docker/config/``.
     doesn't get checked into version control.
 
     The template for this is in ``docker/config/my.env.dist``.
-
 
 In this way:
 
@@ -221,10 +274,6 @@ In this way:
    version control
 
 
-See the ``docker-compose.yml`` file for order of precedence and which EMV files
-are used for which component container.
-
-
 Setting configuration specific to your local dev environment
 ------------------------------------------------------------
 
@@ -237,127 +286,3 @@ Overriding configuration
 
 If you want to override configuration temporarily for your local development
 environment, put it in ``my.env``.
-
-
-General architecture
-====================
-
-.. graphviz::
-
-   digraph G {
-      rankdir=LR;
-
-      client [shape=box3d, label="firefox"];
-
-      subgraph antpig {
-         rank=same;
-
-         antenna [shape=rect, label="antenna"];
-         pigeon [shape=cds, label="pigeon"];
-      }
-
-      subgraph stores {
-         rank=same;
-
-         postgres [shape=tab, label="Postgres", style=filled, fillcolor=gray];
-         elasticsearch [shape=tab, label="Elasticsearch", style=filled, fillcolor=gray];
-         telemetry [shape=tab, label="Telemetry (S3)", style=filled, fillcolor=gray];
-      }
-
-      subgraph stores2 {
-         rabbitmq [shape=tab, label="RMQ", style=filled, fillcolor=gray];
-         aws [shape=tab, label="S3", style=filled, fillcolor=gray];
-      }
-
-      subgraph processing {
-         rank=same;
-
-         processor [shape=rect, label="processor"];
-         crontabber [shape=rect, label="crontabber"];
-      }
-
-      webapp [shape=rect, label="webapp"];
-
-      client -> antenna [label="HTTP"];
-      antenna -> aws [label="save raw"];
-
-      aws -> pigeon [label="S3:PutObject"];
-      pigeon -> rabbitmq [label="crash id for processing"];
-
-      rabbitmq -> processor [label="crash id"];
-      aws -> processor [label="load raw"];
-      processor -> { aws, postgres, elasticsearch, telemetry } [label="save processed"];
-
-      postgres -> webapp;
-      aws -> webapp [label="load raw,processed"];
-      elasticsearch -> webapp [label="search"];
-
-      postgres -> crontabber;
-      elasticsearch -> crontabber;
-
-      { rank=min; client; }
-   }
-
-
-Arrows direction represents the flow of interesting information (crashes,
-authentication assertions, cached values), not trivia like acks.
-
-.. Warning::
-
-   August 17th, 2017. Everything below this point needs to be updated.
-
-
-
-Top-level folders
------------------
-
-If you clone our `git repository <https://github.com/mozilla/socorro>`_, you
-will find the following folders. Here is what each of them contains:
-
-+-----------------+-------------------------------------------------------------+
-| Folder          | Description                                                 |
-+=================+=============================================================+
-| docker/         | Docker environment related scripts, configuration, and      |
-|                 | other bits.                                                 |
-+-----------------+-------------------------------------------------------------+
-| docs/           | Documentation of the Socorro project (the one you are       |
-|                 | reading right now).                                         |
-+-----------------+-------------------------------------------------------------+
-| scripts/        | Scripts for launching the different parts of the Socorro    |
-|                 | application.                                                |
-+-----------------+-------------------------------------------------------------+
-| socorro/        | Core code of the Socorro project.                           |
-+-----------------+-------------------------------------------------------------+
-| sql/            | SQL scripts related to our PostgreSQL database. Contains    |
-|                 | schemas and update queries.                                 |
-+-----------------+-------------------------------------------------------------+
-| tools/          | External tools used by Socorro.                             |
-+-----------------+-------------------------------------------------------------+
-| webapp-django/  | Front-end Django application (also called webapp). See      |
-|                 | :ref:`webapp-chapter`.                                      |
-+-----------------+-------------------------------------------------------------+
-
-
-Socorro submodules
-------------------
-
-The core code module of Socorro, called ``socorro``, contains a lot of code.
-Here are descriptions of every submodule in there:
-
-+-------------------+---------------------------------------------------------------+
-| Module            | Description                                                   |
-+===================+===============================================================+
-| cron              | All cron jobs running around Socorro.                         |
-+-------------------+---------------------------------------------------------------+
-| database          | PostgreSQL related code.                                      |
-+-------------------+---------------------------------------------------------------+
-| external          | Here are APIs related to external resources like databases.   |
-+-------------------+---------------------------------------------------------------+
-| processor         | Code for the processor component.                             |
-+-------------------+---------------------------------------------------------------+
-| submitter         | Code for the stage submitter component.                       |
-+-------------------+---------------------------------------------------------------+
-| unittest          | All our unit tests are here.                                  |
-+-------------------+---------------------------------------------------------------+
-| webapp            | Code for the webapp component.                                |
-+-------------------+---------------------------------------------------------------+

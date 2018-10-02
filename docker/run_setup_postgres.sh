@@ -24,7 +24,7 @@ urlwait "${DATABASE_URL}" 10
 # before it does anything giving the user a chance to do a "oh no--don't do
 # that!" kind of thing
 echo "Dropping existing db and creating new db named (${DATABASE})..."
-./scripts/socorro setupdb \
+./socorro/external/postgresql/setupdb_app.py \
                   --database_name="${DATABASE}" \
                   --dropdb \
                   --createdb

@@ -1,0 +1,204 @@
+#!/usr/bin/env python
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""Script that helps discover and run the various runnable services and
+scripts in Socorro.
+
+This command should be run in the Docker-based local development environment in
+one of the Docker containers.
+
+Run "socorro-cmd --help" for help.
+
+"""
+
+from __future__ import print_function
+
+import argparse
+import inspect
+import sys
+import textwrap
+import types
+
+from socorro.app.socorro_app import App
+
+
+def wrapped(text, width=80):
+    """Wraps a block of text"""
+    return '\n'.join(textwrap.wrap(text, width=width))
+
+
+def showcommands_cmd(argv):
+    """Sub command to show location of all command runners"""
+    parser = argparse.ArgumentParser(
+        description='Shows socorro-cmd subcommands and runner paths.'
+    )
+    parser.parse_args(argv)
+
+    print('Available commands and runners for socorro-cmd:')
+    print('')
+
+    for group in COMMANDS:
+        print('%s:' % group.name)
+        for cmd, runner in group:
+            if not isinstance(runner, basestring):
+                runner = '%s in %s' % (runner.__name__, inspect.getfile(runner))
+            print('  %-24s %s' % (cmd, runner))
+        print('')
+
+
+class Group:
+    """Defines a grouping of commands"""
+    def __init__(self, name, cmd_to_run_map):
+        self.name = name
+        self.cmd_to_run_map = cmd_to_run_map
+
+    def __iter__(self):
+        return iter(sorted(self.cmd_to_run_map.items()))
+
+    def lookup(self, cmd):
+        return self.cmd_to_run_map.get(cmd)
+
+
+COMMANDS = [
+    Group(
+        'Crash processing utilities', {
+            'add_crashid_to_queue': 'socorro.scripts.add_crashid_to_queue.main',
+            'fetch_crashids': 'socorro.scripts.fetch_crashids.main',
+            'fetch_crash_data': 'socorro.scripts.fetch_crash_data.main',
+            'reprocess': 'socorro.scripts.reprocess.main',
+        }
+    ),
+    Group(
+        'Local development environment maintenance', {
+            'create_recent_indices': (
+                'socorro.external.es.create_recent_indices_app.CreateRecentESIndicesApp'
+            ),
+            'clear_indices': 'socorro.external.es.clear_indices_app.ClearESIndicesApp',
+            'upload_telemetry_schema': (
+                'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
+            ),
+            'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
+            'replay_ftpscraper': 'socorro.scripts.replay_ftpscraper.main',
+        }
+    ),
+    Group(
+        'Services (run these in their respective containers)', {
+            'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
+            'processor': 'socorro.processor.processor_app.ProcessorApp',
+        }
+    ),
+    Group(
+        'Miscellaneous', {
+            'showcommands': showcommands_cmd,
+            'signature': 'socorro.signature.cmd_signature.main',
+            'signature-doc': 'socorro.signature.cmd_doc.main',
+        }
+    )
+]
+
+
+def import_and_run(runner):
+    """Takes a runner, converts it to a callable, and runs it
+
+    A runner can either be a Python-dotted string which will get imported and
+    run, or a callable which will get run directly.
+
+    """
+    if isinstance(runner, basestring):
+        # Import the class from the module
+        module_path, cls_name = runner.rsplit('.', 1)
+        __import__(module_path)
+        module = sys.modules[module_path]
+        app = getattr(module, cls_name)
+
+    else:
+        app = runner
+
+    # If the app is a main function, we run it as is
+    if isinstance(app, types.FunctionType):
+        sys.exit(app(sys.argv[1:]))
+
+    # If the app is a Socorro App, we run it using the Socorro App main
+    if issubclass(app, App):
+        sys.exit(app.run())
+
+    print('ProgrammerError: Unknown runner type')
+    sys.exit(1)
+
+
+def build_epilog():
+    """Builds the epilog containing the groups and commands"""
+    output = []
+    output.append('Available commands:')
+    output.append('\n')
+    for group in COMMANDS:
+        output.append('%s:' % group.name)
+        for cmd, runner in group:
+            output.append('  %s' % cmd)
+        output.append('\n')
+
+    output.append('')
+    output.append('Type "socorro-cmd CMD --help" for help on any command.')
+    output.append('')
+    output.append(
+        wrapped(
+            'All commands need to be run in a Docker container. Service commands are run in '
+            'the related container. For example, the "processor" command should run in the '
+            '"processor" container. All other commands should be run in the processor '
+            'container.'
+        )
+    )
+    output.append('')
+    output.append(
+        wrapped(
+            'For more documentation, see <https://socorro.readthedocs.io/>.'
+        )
+    )
+    return '\n'.join(output)
+
+
+def get_runner(cmd):
+    """Given a cmd, returns the runner"""
+    for group in COMMANDS:
+        runner = group.lookup(cmd)
+        if runner is not None:
+            return runner
+
+
+def cmd_main():
+    # Build a basic parser so we can take advantage of --help
+    parser = argparse.ArgumentParser(
+        prog='socorro-cmd',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=build_epilog()
+    )
+    parser.add_argument(
+        'cmd',
+        nargs='?',
+        help='command to run'
+    )
+    parser.add_argument(
+        'arg',
+        nargs='*',
+        help='command arguments'
+    )
+
+    if not sys.argv[1:] or sys.argv[1] in ('-h', '--help'):
+        parser.print_help()
+        return 0
+
+    cmd = sys.argv[1]
+    runner = get_runner(cmd)
+    if runner is None:
+        parser.error('"%s" is not a valid command; see --help for command list' % cmd)
+
+    # Rewrite sys.argv so anything that parses sys.argv has the right one
+    sys.argv = [sys.argv[0] + ' ' + cmd] + sys.argv[2:]
+    import_and_run(runner)
+
+
+if __name__ == '__main__':
+    cmd_main()

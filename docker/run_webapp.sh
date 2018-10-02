@@ -15,18 +15,6 @@ BUFFER_SIZE=${BUFFER_SIZE:-"16384"}
 PORT=${PORT:-"8000"}
 NUM_WORKERS=${NUM_WORKERS:-"6"}
 
-# If this was kicked off via docker-compose, then it has a behavior
-# configuration already. If it wasn't, then we need to add behavior
-# configuration to the environment.
-if [[ -z "${WEBAPP_BEHAVIOR}" ]];
-then
-    echo "Pulling in webapp behavior configuration..."
-    CMDPREFIX="/app/bin/build_env.py /app/docker/config/webapp.env"
-else
-    echo "Already have webapp behavior configuration..."
-    CMDPREFIX=
-fi
-
 if [ "$1" == "--dev" ]; then
     # Run with manage.py
     echo "******************************************************************"

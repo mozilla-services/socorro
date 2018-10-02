@@ -12,7 +12,6 @@ from socorro.lib import BadArgumentError, datetimeutil, search_common
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     SuperSearchWithFields,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -71,7 +70,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ]
         assert res == expected
 
-    @minimum_es_version('1.0')
     def test_get(self):
         """Run a very basic test, just to see if things work. """
         self.index_crash({
@@ -97,7 +95,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert len(res['hits']) == 1
         assert res['hits'][0]['signature'] == 'js::break_your_browser'
 
-        assert res['facets'].keys() == ['signature']
+        assert list(res['facets'].keys()) == ['signature']
         assert res['facets']['signature'][0] == {'term': 'js::break_your_browser', 'count': 1}
 
         # Test fields are being renamed.
@@ -109,35 +107,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # processed_crash.json_dump.write_combine_size > write_combine_size
         assert 'write_combine_size' in res['hits'][0]
 
-    @minimum_es_version('1.0')
-    def test_get_with_root_field(self):
-        """Verify that querying fields at the root of the crash document works.
-        """
-        self.index_crash({
-            'signature': 'js::break_your_browser',
-            'date_processed': self.now,
-        }, root_doc={
-            'removed_fields': 'foo bar',
-        })
-        self.refresh_index()
-
-        res = self.api.get(_columns=[
-            'date', 'signature', 'removed_fields'
-        ], _facets=['removed_fields'])
-
-        assert 'removed_fields' in res['hits'][0]
-        assert res['hits'][0]['removed_fields'] == 'foo bar'
-
-        assert 'removed_fields' in res['facets']
-        assert len(res['facets']['removed_fields']) == 2
-
-    @minimum_es_version('1.0')
     def test_get_with_bad_results_number(self):
         """Run a very basic test, just to see if things work. """
         with pytest.raises(BadArgumentError):
             self.api.get(_columns=['date'], _results_number=-1)
 
-    @minimum_es_version('1.0')
     def test_get_with_enum_operators(self):
         self.index_crash({
             'product': 'WaterWolf',
@@ -192,7 +166,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             assert 'that I used' in hit['app_notes']
 
-    @minimum_es_version('1.0')
     def test_get_with_string_operators(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -345,7 +318,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             assert hit['signature'] != 'mozilla::js::function'
 
-    @minimum_es_version('1.0')
     def test_get_with_range_operators(self):
         self.index_crash({
             'build': 2000,
@@ -423,7 +395,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             assert hit['build_id'] <= 2000
 
-    @minimum_es_version('1.0')
     def test_get_with_bool_operators(self):
         self.index_crash(
             processed_crash={
@@ -479,7 +450,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert len(res['hits']) == 2
         assert not res['hits'][0]['accessibility']
 
-    @minimum_es_version('1.0')
     def test_get_with_combined_operators(self):
         sigs = (
             'js::break_your_browser',
@@ -541,7 +511,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert res['total'] == 2
         assert sorted([x['signature'] for x in res['hits']]) == sorted([sigs[0], sigs[1]])
 
-    @minimum_es_version('1.0')
     def test_get_with_pagination(self):
         number_of_crashes = 21
         processed_crash = {
@@ -581,7 +550,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert res['total'] == number_of_crashes
         assert len(res['hits']) == 0
 
-    @minimum_es_version('1.0')
     def test_get_with_sorting(self):
         """Test a search with sort returns expected results. """
         self.index_crash({
@@ -641,7 +609,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(_sort='something')
 
-    @minimum_es_version('1.0')
     def test_get_with_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -764,7 +731,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(_facets=['unknownfield'])
 
-    @minimum_es_version('1.0')
     def test_get_with_too_many_facets(self):
         # Some crazy big number
         with pytest.raises(BadArgumentError):
@@ -777,7 +743,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _facets_size=10000,
         )
 
-    @minimum_es_version('1.0')
     def test_get_with_no_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -830,7 +795,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert res['hits']
         assert len(res['hits']) == res['total']
 
-    @minimum_es_version('1.0')
     def test_get_with_cardinality(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -905,7 +869,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(_facets=['_cardinality.unknownfield'])
 
-    @minimum_es_version('1.0')
     def test_get_with_sub_aggregations(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -1192,7 +1155,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(**args)
 
-    @minimum_es_version('1.0')
     def test_get_with_date_histogram(self):
         yesterday = self.now - datetime.timedelta(days=1)
         the_day_before = self.now - datetime.timedelta(days=2)
@@ -1447,7 +1409,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(**args)
 
-    @minimum_es_version('1.0')
     def test_get_with_date_histogram_with_bad_interval(self):
         kwargs = {
             '_histogram.date': ['product', 'platform'],
@@ -1463,7 +1424,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         except BadArgumentError as exception:
             assert exception.param == '_histogram_interval.date'
 
-    @minimum_es_version('1.0')
     def test_get_with_number_histogram(self):
         yesterday = self.now - datetime.timedelta(days=1)
         the_day_before = self.now - datetime.timedelta(days=2)
@@ -1721,11 +1681,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(**args)
 
-    @minimum_es_version('1.0')
     def test_get_with_columns(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
             'product': 'WaterWolf',
+            'cpu_name': 'intel',
             'os_name': 'Windows NT',
             'date_processed': self.now,
         })
@@ -1743,21 +1703,21 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test a synonyme field returns the correct name.
         kwargs = {
-            '_columns': ['product_2']
+            '_columns': ['cpu_arch']
         }
         res = self.api.get(**kwargs)
 
-        assert 'product_2' in res['hits'][0]
-        assert 'product' not in res['hits'][0]
+        assert 'cpu_arch' in res['hits'][0]
+        assert 'cpu_name' not in res['hits'][0]
 
         # Test with 2 synonyme fields.
         kwargs = {
-            '_columns': ['product', 'product_2']
+            '_columns': ['cpu_name', 'cpu_arch']
         }
         res = self.api.get(**kwargs)
 
-        assert 'product_2' in res['hits'][0]
-        assert 'product' in res['hits'][0]
+        assert 'cpu_name' in res['hits'][0]
+        assert 'cpu_arch' in res['hits'][0]
 
         # Test errors
         with pytest.raises(BadArgumentError):
@@ -1766,7 +1726,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(_columns=['fake_field'])
 
-    @minimum_es_version('1.0')
     def test_get_with_beta_version(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -1832,19 +1791,16 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert 'aggs' in query
         assert 'size' in query
 
-    @minimum_es_version('1.0')
     def test_get_with_zero(self):
         res = self.api.get(
             _results_number=0,
         )
         assert len(res['hits']) == 0
 
-    @minimum_es_version('1.0')
     def test_get_with_too_many(self):
         with pytest.raises(BadArgumentError):
             self.api.get(_results_number=1001)
 
-    @minimum_es_version('1.0')
     @requests_mock.Mocker(real_http=True)
     def test_get_with_failing_shards(self, mock_requests):
         # Test with one failing shard.

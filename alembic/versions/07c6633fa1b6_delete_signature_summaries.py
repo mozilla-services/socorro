@@ -10,7 +10,10 @@ from socorro.lib.migrations import load_stored_proc
 
 # revision identifiers, used by Alembic.
 revision = '07c6633fa1b6'
-down_revision = 'afc2f95a298b'
+# NOTE(willkg): We pruned old migrations on 2017-11-02. This was the original
+# sha.
+# down_revision = 'afc2f95a298b'
+down_revision = None
 
 
 def upgrade():

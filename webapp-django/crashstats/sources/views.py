@@ -2,14 +2,17 @@ import requests
 from pygments import highlight
 from pygments.lexers import get_lexer_for_filename, CppLexer
 from pygments.formatters import HtmlFormatter
-from six.moves.urllib.parse import urlparse
 
 from django import http
+from django.utils.six.moves.urllib.parse import urlparse
 
 
 # List of hosts that we will fetch source files from that we syntax highlight and return to the
 # user in highlight_file view.
 ALLOWED_SOURCE_HOSTS = ['gecko-generated-sources.s3.amazonaws.com']
+
+# List of allowed schemes
+ALLOWED_SCHEMES = ['http', 'https']
 
 
 def highlight_url(request):
@@ -38,6 +41,9 @@ def highlight_url(request):
     # We will only pull urls from allowed hosts
     if parsed.netloc not in ALLOWED_SOURCE_HOSTS:
         return http.HttpResponseForbidden('Document at disallowed host.')
+
+    if parsed.scheme not in ALLOWED_SCHEMES:
+        return http.HttpResponseForbidden('Document at disallowed scheme.')
 
     resp = requests.get(url)
     if resp.status_code != 200:

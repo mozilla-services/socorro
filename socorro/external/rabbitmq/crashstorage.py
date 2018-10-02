@@ -5,16 +5,14 @@
 import pika
 from random import randint
 
-from Queue import (
-    Queue,
-    Empty
-)
 
 from configman import (
     Namespace,
     class_converter
 )
 from configman.dotdict import DotDict
+from six.moves.queue import Queue, Empty
+
 from socorro.lib.converters import change_default
 from socorro.external.rabbitmq.connection_context import (
     ConnectionContext,
@@ -75,9 +73,10 @@ class RabbitMQCrashStorage(CrashStorageBase):
         reference_value_from='resource.rabbitmq',
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(RabbitMQCrashStorage, self).__init__(
             config,
+            namespace=namespace,
             quit_check_callback=quit_check_callback
         )
 

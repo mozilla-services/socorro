@@ -1,6 +1,6 @@
 {% from "macros/pagination.html" import pagination %}
 <!DOCTYPE html>
-<html lang="en-US" class="production">
+<html lang="en-US" class="production" data-google-analytics-id="{{ GOOGLE_ANALYTICS_ID }}">
     <head>
         <meta charset="UTF-8" />
         <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
@@ -9,7 +9,7 @@
             {% stylesheet 'crashstats_base' %}
         {% endblock %}
 
-        {% if not DEBUG %}
+        {% if GOOGLE_ANALYTICS_ID %}
             {#
                 Use the preload technique which gives a performance boost for
                 modern browsers.
@@ -18,11 +18,6 @@
             {% javascript 'google_analytics' %}
             <script async src="https://www.google-analytics.com/analytics.js"></script>
         {% endif %}
-
-    <meta name="google-signin-client_id" content="{{ OAUTH2_CLIENT_ID }}">
-    {% if OAUTH2_SIGNOUT %}
-    <meta name="signin" content="signout">
-    {% endif %}
 
     </head>
 
@@ -44,12 +39,13 @@
         <input type="hidden" id="url_site" name="url_site" value="/" />
 
     {% block product_nav_filter %}
+        <span class="quick-nav-title">Quick Navigation</span>
         <ul class="filter">
             <li>
-                <label for="products_select">Product:</label>
+                <label for="products_select" class="visually-hidden">Select Product</label>
                 <select id="products_select">
-                {% for p in active_versions %}
-                    <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
+                {% for product_name, product_info in products.items() %}
+                    <option value="{{ product_name }}" {% if product_name == product %}selected{% endif %}>{{ product_name }}</option>
                 {% endfor %}
                 </select>
             </li>
@@ -86,23 +82,17 @@
                 </select>
             </li>
             <li>
-                <label for="report_select">Report:</label>
+                <label for="report_select" class="visually-hidden">Report:</label>
                 <select id="report_select">
                     <optgroup label=" ">
                         <option
                             value="products"
-                            data-url-product="{{ url('home:home', '__PRODUCT__') }}"
-                            data-url-version="{{ url('home:home', '__PRODUCT__') }}?version=__VERSION__"
+                            data-url-product="{{ url('crashstats:product_home', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:product_home', '__PRODUCT__') }}?version=__VERSION__"
                             {% if report == 'products' %}selected{% endif %}
                         >Overview</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option
-                            value="daily"
-                            data-url-product="{{ url('crashstats:crashes_per_day') }}?p=__PRODUCT__"
-                            data-url-version="{{ url('crashstats:crashes_per_day') }}?p=__PRODUCT__&amp;v=__VERSION__"
-                            {% if report == 'daily' %}selected{% endif %}
-                        >Crashes per Day</option>
                         <option
                             value="topcrasher"
                             data-url-product="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__"
@@ -112,8 +102,8 @@
                         {% if request.user.has_perm('crashstats.view_exploitability') %}
                         <option
                             value="exploitable"
-                            data-url-product="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__"
-                            data-url-version="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__&amp;version=__VERSION__"
+                            data-url-product="{{ url('exploitability:report') }}?product=__PRODUCT__"
+                            data-url-version="{{ url('exploitability:report') }}?product=__PRODUCT__&amp;version=__VERSION__"
                             {% if report == 'exploitable' %}selected{% endif %}
                         >Exploitable Crashes</option>
                         {% endif %}
@@ -124,7 +114,7 @@
     {% endblock %}
 
         <div class="search">
-            <a href="{{ url('supersearch.search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
+            <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
                 Super Search
             </a>
         </div>
@@ -154,6 +144,8 @@
             <ul>
                 <li>
                 {% if request.user and request.user.is_active %}
+                    <span>{{ request.user.email }}</span>
+                    |
                     <a href="{{ url('profile:profile') }}"
                       title="You are signed in as {{ request.user.email }}"
                     >
@@ -161,26 +153,17 @@
                     </a>
                     |
                     <a href="{{ url('tokens:home') }}">API Tokens</a>
+                    {% if request.user.is_staff %}
                     |
-                    <a href="{{ url('symbols:home') }}">Symbols</a>
-                    {% if request.user.is_superuser %}
-                    |
-                    <a href="{{ url('manage:home') }}">Admin</a>
+                    <a href="{{ url('admin:index') }}">Admin</a>
                     {% endif %}
                     |
-                    {% if request.session.get('signin_method') == 'google' %}
+                    <form class="logout-form" action="{{ url('oidc_logout') }}" method="POST">
                         {% csrf_token %}
-                        <a href="{{ url('auth:oauth2_signout') }}" class="google-signout">
-                            <span>Sign out</span>
-                        </a>
-                    {% endif %}
+                        <button class="sign-out-button" type="submit">Sign out</button>
+                    </form>
                 {% else %}
-                    {% csrf_token %}
-                    <div
-                        id="signin2"
-                        class="google-signin"
-                        style="float:right"
-                        data-signin-url="{{ url('auth:oauth2_signin') }}"></div>
+                    <a href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Sign in</a>
                 {% endif %}
                 </li>
             </ul>
@@ -191,7 +174,6 @@
 
     {% javascript 'crashstats_base' %}
 
-    <script src="https://apis.google.com/js/auth2:signin2.js?onload=googleAPILoaded"></script>
     {% endblock %}
 
   </body>

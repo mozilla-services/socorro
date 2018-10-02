@@ -62,11 +62,11 @@ def dateAndDepthFromOoid(ooid):
     year = month = day = None
     try:
         day = int(ooid[-2:])
-    except:
+    except (ValueError, TypeError):
         return None, None
     try:
         month = int(ooid[-4:-2])
-    except:
+    except (ValueError, TypeError):
         return None, None
     try:
         year = 2000 + int(ooid[-6:-4])
@@ -74,7 +74,7 @@ def dateAndDepthFromOoid(ooid):
         if not depth:
             depth = oldHardDepth
         return (dt.datetime(year, month, day, tzinfo=UTC), depth)
-    except:
+    except (ValueError, TypeError, IndexError):
         return None, None
     return None, None
 
@@ -117,7 +117,6 @@ def is_crash_id_valid(crash_id):
     """Returns whether this is a valid crash id
 
     :arg str crash_id: the crash id in question
-    :arg boolean strict: whether or not to be strict about the throttle character
 
     :returns: True if it's valid, False if not
 

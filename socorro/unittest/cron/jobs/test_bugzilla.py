@@ -4,13 +4,10 @@
 
 import pytest
 import requests_mock
-from crontabber.app import CronTabber
 
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs.bugzilla import find_signatures
 from socorro.cron.jobs.bugzilla import BUGZILLA_BASE_URL
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
@@ -66,9 +63,9 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
-        return get_config_manager_for_crontabber(
-            jobs='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
-            overrides={
+        return super(IntegrationTestBugzilla, self)._setup_config_manager(
+            jobs_string='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
+            extra_value_source={
                 'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
             }
         )
@@ -78,7 +75,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         config_manager = self._setup_config_manager(3)
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -121,7 +118,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -149,7 +146,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -184,7 +181,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         # second time
         config_manager = self._setup_config_manager(0)
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             state = tab.job_state_database.copy()
@@ -198,7 +195,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
         config_manager = self._setup_config_manager(0)
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -215,7 +212,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         config_manager = self._setup_config_manager(3)
 
         with config_manager.context() as config:
-            tab = CronTabber(config)
+            tab = CronTabberApp(config)
             tab.run_all()
 
             information = self._load_structure()

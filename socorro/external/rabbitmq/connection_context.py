@@ -23,7 +23,7 @@ class Connection(object):
     that means not thread safe.
     """
 
-    def __init__(self, config,  connection,
+    def __init__(self, config, connection,
                  standard_queue_name='socorro.normal',
                  priority_queue_name='socorro.priority',
                  reprocessing_queue_name='socorro.reprocessing'):
@@ -37,9 +37,15 @@ class Connection(object):
         self.config = config
         self.connection = connection
         self.channel = connection.channel()
-        self.queue_status_standard = self.channel.queue_declare(queue=standard_queue_name, durable=True)
-        self.queue_status_priority = self.channel.queue_declare(queue=priority_queue_name, durable=True)
-        self.queue_status_reprocessing = self.channel.queue_declare(queue=reprocessing_queue_name, durable=True)
+        self.queue_status_standard = self.channel.queue_declare(
+            queue=standard_queue_name, durable=True
+        )
+        self.queue_status_priority = self.channel.queue_declare(
+            queue=priority_queue_name, durable=True
+        )
+        self.queue_status_reprocessing = self.channel.queue_declare(
+            queue=reprocessing_queue_name, durable=True
+        )
 
         # I'm not very happy about things having to reach inside me and prod
         # self.channel directly to get anything done, but I think there's a
@@ -152,11 +158,12 @@ class ConnectionContext(RequiredConfig):
         # of this class to define its own retry or transaction behavior.
         # The information is used by the TransactionExector classes
         self.operational_exceptions = (
-          pika.exceptions.AMQPConnectionError,
-          pika.exceptions.ChannelClosed,
-          pika.exceptions.ConnectionClosed,
-          pika.exceptions.NoFreeChannels,
-          socket.timeout)
+            pika.exceptions.AMQPConnectionError,
+            pika.exceptions.ChannelClosed,
+            pika.exceptions.ConnectionClosed,
+            pika.exceptions.NoFreeChannels,
+            socket.timeout
+        )
         # conditional exceptions are amibiguous in their eligibilty to
         # trigger a retry behavior.  They're listed here so that custom code
         # written in the 'is_operational_exception' method can examine them
@@ -183,14 +190,13 @@ class ConnectionContext(RequiredConfig):
                 )
             )
         )
-        wrapped_connection = \
-            self.local_config.rabbitmq_connection_wrapper_class(
-                self.config,
-                bare_rabbitmq_connection,
-                self.local_config.standard_queue_name,
-                self.local_config.priority_queue_name,
-                self.local_config.reprocessing_queue_name,
-            )
+        wrapped_connection = self.local_config.rabbitmq_connection_wrapper_class(
+            self.config,
+            bare_rabbitmq_connection,
+            self.local_config.standard_queue_name,
+            self.local_config.priority_queue_name,
+            self.local_config.reprocessing_queue_name,
+        )
         return wrapped_connection
 
     @contextlib.contextmanager
@@ -269,11 +275,9 @@ class ConnectionContextPooled(ConnectionContext):
         if not name:
             name = self.config.executor_identity()
         if name in self.pool:
-            #self.config.logger.debug('fetching RMQ connection: %s', name)
             return self.pool[name]
         self.config.logger.debug('creating new RMQ connection: %s', name)
-        self.pool[name] = \
-            super(ConnectionContextPooled, self).connection(name)
+        self.pool[name] = super(ConnectionContextPooled, self).connection(name)
         return self.pool[name]
 
     def close_connection(self, connection, force=False):
@@ -282,26 +286,20 @@ class ConnectionContextPooled(ConnectionContext):
         for reuse of connections."""
         if force:
             try:
-                (super(ConnectionContextPooled, self)
-                  .close_connection(connection, force))
+                super(ConnectionContextPooled, self).close_connection(connection, force)
             except self.operational_exceptions:
                 self.config.logger.error('RabbitMQPooled - failed closing')
-            for name, conn in self.pool.iteritems():
+            for name, conn in list(self.pool.items()):
                 if conn is connection:
                     break
             del self.pool[name]
 
     def close(self):
         """close all pooled connections"""
-        self.config.logger.debug(
-            "RabbitMQPooled - shutting down connection pool"
-        )
-        for name, connection in list(self.pool.iteritems()):
+        self.config.logger.debug('RabbitMQPooled - shutting down connection pool')
+        for name, connection in list(self.pool.items()):
             self.close_connection(connection, force=True)
-            self.config.logger.debug(
-                "RabbitMQPooled - channel %s closed",
-                name
-            )
+            self.config.logger.debug('RabbitMQPooled - channel %s closed', name)
 
     def force_reconnect(self, name=None):
         """tell this functor that the next time it gives out a connection

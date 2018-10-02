@@ -2,7 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
 import time
+from past.builtins import xrange
 
 from mock import Mock
 
@@ -11,7 +13,7 @@ from socorro.lib.threaded_task_manager import (
     ThreadedTaskManagerWithConfigSetup,
     default_task_func,
 )
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 
@@ -19,7 +21,7 @@ class TestThreadedTaskManager(TestCase):
 
     def setUp(self):
         super(TestThreadedTaskManager, self).setUp()
-        self.logger = SilentFakeLogger()
+        self.logger = logging.getLogger(__name__)
 
     def test_constuctor1(self):
         config = DotDict()
@@ -71,7 +73,7 @@ class TestThreadedTaskManager(TestCase):
             ttm.start()
             time.sleep(0.2)
             assert len(my_list) == 10
-            assert my_list == range(10)
+            assert my_list == list(range(10))
             ttm.stop()
         except Exception:
             # we got threads to join
@@ -98,7 +100,7 @@ class TestThreadedTaskManager(TestCase):
             time.sleep(0.2)
             assert len(ttm.thread_list) == 2
             assert len(my_list) == 10
-            assert sorted(my_list) == range(10)
+            assert sorted(my_list) == list(range(10))
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()
@@ -126,7 +128,7 @@ class TestThreadedTaskManager(TestCase):
             time.sleep(0.2)
             assert len(ttm.thread_list) == 2
             assert len(my_list) == 5
-            assert sorted(my_list) == range(5)
+            assert sorted(my_list) == list(range(5))
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()

@@ -1,0 +1,32 @@
+/* Status Messages */
+div#message {
+    margin: 1em;
+}
+.message,
+.info {
+    margin: 1.5% 2% 0;
+    padding: 1em;
+    width: 96%;
+    .rounded-corners(.25em);
+}
+.info {
+    background-color: @primary-light;
+    border: 1px solid @primary-dark;
+}
+.message.error {
+    background-color: @pink;
+    border: 1px solid @red;
+}
+.message.success {
+    background-color: @green;
+    border: 1px solid @white;
+    color: @white;
+}
+.message.warning {
+    background-color: @pink;
+    border: 1px solid @jsonview-bool;
+}
+.message h2 {
+    margin: .5em 0;
+    font-size: 1.2em;
+}

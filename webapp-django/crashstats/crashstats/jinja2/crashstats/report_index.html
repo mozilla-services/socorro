@@ -14,6 +14,7 @@
 {% stylesheet 'tablesorter' %}
 {% stylesheet 'jsonview' %}
 {% stylesheet 'report_index' %}
+{% stylesheet 'bugzilla' %}
 {% endblock %}
 
 {% block site_js %}
@@ -116,7 +117,7 @@
                                 <td>
                                     {{ report.signature }}
                                     <a href="{{ url('signature:signature_report') }}?{{ make_query_string(product=report.product, signature=report.signature) }}" class="sig-overview" title="View more reports of this type">More Reports</a>
-                                    <a href="{{ url('supersearch.search') }}?{{ make_query_string(product=report.product, signature='=' + report.signature) }}" class="sig-search" title="Search for more reports of this type">Search</a>
+                                    <a href="{{ url('supersearch:search') }}?{{ make_query_string(product=report.product, signature='=' + report.signature) }}" class="sig-search" title="Search for more reports of this type">Search</a>
                                 </td>
                             </tr>
                             <tr title="{{ fields_desc['processed_crash.uuid'] }}">
@@ -181,7 +182,11 @@
                             </tr>
                             <tr title="{{ fields_desc['processed_crash.build'] }}">
                                 <th scope="row">Build ID</th>
-                                <td>{{ report.build }}</td>
+                                <td>
+                                    <a href="https://mozilla-services.github.io/buildhub/?{{ make_query_string(q=report.build) }}">
+                                        {{ report.build }}
+                                    </a>
+                                </td>
                             </tr>
 
                             {# OS #}
@@ -221,7 +226,7 @@
                                 <th scope="row">Build Architecture Info</th>
                                 <td>
                                     {% if report.cpu_info %}
-                                        {% if is_dangerous_cpu(report.cpu_info) %}
+                                        {% if is_dangerous_cpu(report.cpu_name, report.cpu_info) %}
                                             <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="warning" title="Possible AMD CPU bug related crash report" />
                                         {% endif %}
                                         {{ report.cpu_info }}
@@ -255,13 +260,13 @@
                             <tr title="{{ fields_desc['raw_crash.AdapterVendorID'] }}">
                                 <th scope="row">Adapter Vendor ID</th>
                                 <td>
-                                    <pre>{{ raw.AdapterVendorID }}</pre>
+                                    <pre>{{ raw.AdapterVendorID }}{% if raw.AdapterVendorName %} ({{ raw.AdapterVendorName }}){% endif %}</pre>
                                 </td>
                             </tr>
                             <tr title="{{ fields_desc['raw_crash.AdapterDeviceID'] }}">
                                 <th scope="row">Adapter Device ID</th>
                                 <td>
-                                    <pre>{{ raw.AdapterDeviceID }}</pre>
+                                    <pre>{{ raw.AdapterDeviceID }}{% if raw.AdapterDeviceName %} ({{ raw.AdapterDeviceName }}){% endif %}</pre>
                                 </td>
                             </tr>
 
@@ -281,7 +286,7 @@
                                 <td>{{ report.process_type }}
                                     ({{ raw.RemoteType and raw.RemoteType or 'web' }})
                                     {% if report.PluginName %}
-                                    <strong class="name">{{ report.PluginName }}</strong>
+                                    <b class="name">{{ report.PluginName }}</b>
                                     {% endif %}
                                     {% if report.PluginVersion %}
                                     <span>Version:</span>
@@ -338,35 +343,31 @@
                             {# Personal user info #}
 
                             {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
-                            <tr title="{{ fields_desc['processed_crash.url'] }}">
-                                <th scope="row">URL</th>
-                                <td>
-                                    {% if raw.URL %}
-                                    <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ sensitive_warning(your_crash) }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            <tr title="{{ fields_desc['processed_crash.email'] }}">
-                                <th scope="row">Email Address</th>
-                                <td>
-                                    {% if raw.Email %}
-                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ sensitive_warning(your_crash) }}
-                                    {% endif %}
-                                </td>
-                            </tr>
+                                <tr title="{{ fields_desc['processed_crash.url'] }}">
+                                    <th scope="row">URL</th>
+                                    <td>
+                                        {% if raw.URL %}
+                                        <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ sensitive_warning(your_crash) }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr title="{{ fields_desc['processed_crash.email'] }}">
+                                    <th scope="row">Email Address</th>
+                                    <td>
+                                        {% if raw.Email %}
+                                        <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ sensitive_warning(your_crash) }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
+                                    <th scope="row">User Comments</th>
+                                    <td>
+                                        {% if report.user_comments %}
+                                        {{ report.user_comments | linebreaks }} - {{ sensitive_warning(your_crash) }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
                             {% endif %}
-                            <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
-                                <th scope="row">User Comments</th>
-                                <td>
-                                    {% if report.user_comments %}
-                                    {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
-                                    {{ report.user_comments | linebreaks }}
-                                    {% else %}
-                                    {{ report.user_comments | scrub_pii | linebreaks }}
-                                    {% endif %}
-                                    {% endif %}
-                                </td>
-                            </tr>
 
                             {# Memory usage #}
 
@@ -590,6 +591,7 @@
 
                     {% if parsed_dump.threads %}
                     <div id="frames">
+                        {% if crashing_thread is not none %}
                         <h2>Crashing Thread ({{ crashing_thread }}){% if parsed_dump.threads[crashing_thread].thread_name %}, Name: {{ parsed_dump.threads[crashing_thread].thread_name }}{% endif %}</h2>
                         <table class="data-table">
                             <thead>
@@ -624,12 +626,12 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-
                         <p>
                             <a href="#allthreads" data-show="Show other threads" data-hide="Hide other threads">Show other threads</a>
                         </p>
+                        {% endif %}
 
-                        <div id="allthreads">
+                        <div id="allthreads" class="{{ 'hidden' if crashing_thread is not none }}">
                             {% for thread in parsed_dump.threads %}
                             {% if thread.thread != crashing_thread %}
                             <h2>Thread {{ thread.thread }}{% if thread.thread_name %}, Name: {{ thread.thread_name }}{% endif %}</h2>
@@ -685,11 +687,7 @@
                                         <i>empty key</i>
                                     {% endif %}
                                 </th>
-                                {% if key == 'Comments' %}
-                                <td><pre>{{ raw[key] | scrub_pii }}</pre></td>
-                                {% else %}
                                 <td><pre>{{ raw[key] }}</pre></td>
-                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -701,13 +699,13 @@
                 <div id="bugzilla" class="ui-tabs-hide">
                     <div class="bugreporter">
                         <p>
-                            <strong>Bugzilla</strong> - Report this bug in
+                            <b>Bugzilla</b> - Report this bug in
                             {% for bug_product in [report.product, 'Core', 'External Software Affecting Firefox', 'Toolkit'] %}
                                 {% if bug_product in bug_product_map %}
                                     {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
                                 {% endif %}
                                 <a
-                                    href="{{ bugzilla_submit_url(report, bug_product) }}"
+                                    href="{{ bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product) }}"
                                     target="_blank">{{ bug_product }}</a>
                             {% endfor %}
                         </p>
@@ -733,6 +731,7 @@
                                 <th scope="col">Version</th>
                                 <th scope="col">Debug Identifier</th>
                                 <th scope="col">Debug Filename</th>
+                                {% if parsed_dump.modules_contains_cert_info %}<th scope="col">Signed By</th>{% endif %}
                             </tr>
                         </thead>
                         <tbody>
@@ -751,6 +750,7 @@
                                 <td>{{ module.version }}</td>
                                 <td>{{ module.debug_id }}</td>
                                 <td>{{ module.debug_file }}</td>
+                                {% if parsed_dump.modules_contains_cert_info %}<td>{% if module.cert_subject %}{{ module.cert_subject }}{% endif %}</td>{% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -802,7 +802,7 @@
                                 <td>{{ split[0] }}</td>
                                 <td>{{ split[1] }}</td>
                                 <td>
-                                    <strong>{{ split[2] }}</strong>
+                                    <b>{{ split[2] }}</b>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -842,21 +842,21 @@
                     <form method="post">
                         <button type="submit">Reprocess this crash</button>
                     </form>
-                    <div class="waiting" style="display:none">
+                    <div class="waiting hidden">
                         <p>
                             <img
                                 src="{{ static('img/ajax-loader16x16.gif') }}"
                                 alt="Waiting...">
-                            <strong>
+                            <b>
                                 Sending crash ID in for reprocessing...
-                            </strong>
+                            </b>
                         </p>
                     </div>
-                    <div class="reprocessing-success" style="display:none">
+                    <div class="reprocessing-success hidden">
                         <p>
-                            <strong>
+                            <b>
                                 Success!
-                            </strong>
+                            </b>
                         </p>
                         <p>
 
@@ -868,12 +868,12 @@
                             <a href="?refresh=cache">Reload this page without cache</a>
                         </p>
                     </div>
-                    <div class="reprocessing-error" style="display:none">
+                    <div class="reprocessing-error hidden">
                         <p>
-                            <strong>
+                            <b>
                                 Sadly, it seems we were unable to send this crash
                                 in for reprocessing.
-                            </strong>
+                            </b>
                         </p>
                         <p>
                             HTTP Status code: <code class="status"></code>

@@ -577,6 +577,10 @@
                 }
             }
         },
+        "minidump_sha256_hash": {
+            "type": ["string", "null"],
+            "description": "SHA256 hash of the minidump if there was one."
+        },
         "moz_crash_reason": {
             "type": ["string", "null"],
             "description": "For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the accompanying description."

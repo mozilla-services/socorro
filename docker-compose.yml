@@ -3,12 +3,86 @@
 # Note: Requires docker-comopse 1.10+.
 version: "2"
 services:
-  # Socorro base image
-  base:
+  # Socorro app image
+  app:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-    image: local/socorro_base
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
+    volumes:
+      - .:/app
+
+  # For development
+
+  processor:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
+    depends_on:
+      - statsd
+      - localstack-s3
+      - elasticsearch
+      - rabbitmq
+    command: ["processor"]
+    volumes:
+      - .:/app
+
+  crontabber:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
+    depends_on:
+      - statsd
+      - postgresql
+      - elasticsearch
+    command: ["crontabber"]
+    volumes:
+      - .:/app
+
+  webapp:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - my.env
+    depends_on:
+      - statsd
+      - localstack-s3
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+      - memcached
+      - oidcprovider
+    command: ["webapp", "--dev"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+
+  # Webpack watcher
+  webpack:
+    image: local/socorro_app
+    working_dir: /app/webapp-django/
+    command: ["webpack"]
+    volumes:
+      - .:/app
+
+  # OpenID Connect provider
+  oidcprovider:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.oidcprovider
+    image: local/socorro_oidcprovider
+    ports:
+      - "8080:8080"
 
   # Docs building container
   docs:
@@ -19,66 +93,23 @@ services:
     volumes:
       - .:/app
 
-  # Processor app
-  processor:
+  # For running tests in as we transition to Python 3
+  testpython3:
     build:
       context: .
-      dockerfile: ./docker/Dockerfile.processor
-    image: local/socorro_processor
+      dockerfile: ./docker/Dockerfile.python3
+    image: local/socorro_python3
     env_file:
       - docker/config/local_dev.env
       - docker/config/never_on_a_server.env
-      - docker/config/processor.env
       - my.env
     depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
-      - localstack-s3
-      - postgresql
-      - elasticsearch
-      - rabbitmq
-    volumes:
-      - .:/app
-
-  # Webapp app
-  webapp:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.webapp
-    image: local/socorro_webapp
-    env_file:
-      - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
-      - docker/config/webapp.env
-      - my.env
-    depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
+      - statsd
       - localstack-s3
       - postgresql
       - elasticsearch
       - rabbitmq
       - memcached
-    command: ["/app/docker/run_webapp.sh", "--dev"]
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-
-  # Crontabber app
-  crontabber:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.crontabber
-    image: local/socorro_crontabber
-    env_file:
-      - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
-      - docker/config/crontabber.env
-      - my.env
-    depends_on:
-      - localstack-s3
-      - postgresql
-      - elasticsearch
-      - rabbitmq
     volumes:
       - .:/app
 
@@ -87,8 +118,12 @@ services:
   # -----------------------------
 
   # https://hub.docker.com/r/mozilla/antenna/
+  #
   # This seems weird, but for the purposes of Socorro, we should treat
   # it as an external service.
+  #
+  # This uses the development ./bin/run_web.sh script from the Antenna
+  # container since that creates a bucket before running Antenna.
   antenna:
     image: mozilla/antenna:latest
     environment:
@@ -99,20 +134,28 @@ services:
       - CRASHSTORAGE_ACCESS_KEY=foo
       - CRASHSTORAGE_SECRET_ACCESS_KEY=foo
       - CRASHSTORAGE_BUCKET_NAME=dev_bucket
+    depends_on:
+      - localstack-s3
+    expose:
+      - 8000
     ports:
       - "8888:8000"
+    command: ./bin/run_web.sh
 
-  # https://hub.docker.com/r/kamon/grafana_graphite/
-  # username: admin, password: admin
+  # https://hub.docker.com/r/hopsoft/graphite-statsd/
   statsd:
-    image: kamon/grafana_graphite
+    image: hopsoft/graphite-statsd
     ports:
-      - "8080:3000"  # grafana port
+      - "8081:80"
+      - "2003-2004:2003-2004"
+      - "2023-2024:2023-2024"
+      - "8125:8125/udp"
+      - "8126:8126"
 
   # https://hub.docker.com/_/elasticsearch/
   # Note: This image is deprecated, but the new one requires fiddling.
   elasticsearch:
-    image: elasticsearch:1.4.5
+    image: mozilla/socorro_elasticsearch:1.4.5
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -128,6 +171,8 @@ services:
   # https://hub.docker.com/_/postgres/
   postgresql:
     image: postgres:9.4
+    ports:
+      - "8574:5432"
     environment:
       # Create the superuser account
       - POSTGRES_USER=postgres

@@ -6,17 +6,21 @@ from copy import deepcopy
 
 from configman.dotdict import DotDict
 import elasticsearch
+from markus.testing import MetricsMock
 import mock
 import pytest
 
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
-    is_valid_key,
+    convert_booleans,
     ESCrashStorage,
     ESCrashStorageRedactedSave,
     ESCrashStorageRedactedJsonDump,
     ESBulkCrashStorage,
+    get_fields_by_analyzer,
+    is_valid_key,
     RawCrashRedactor,
+    truncate_keyword_field_values,
 )
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.unittest.external.es.base import (
@@ -85,7 +89,7 @@ a_processed_crash = {
     'topmost_filenames': [],
     'truncated': False,
     'uptime': 170,
-    'url': 'http://embarasing.porn.com',
+    'url': 'http://embarasing.example.com',
     'user_comments': None,
     'user_id': None,
     'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408',
@@ -925,19 +929,254 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
     def test_crash_size_capture(self):
         """Verify we capture raw/processed crash sizes in ES crashstorage"""
-        es_storage = ESCrashStorage(config=self.config)
+        with MetricsMock() as mm:
+            es_storage = ESCrashStorage(config=self.config, namespace='processor.es')
 
-        es_storage._submit_crash_to_elasticsearch = mock.Mock()
+            es_storage._submit_crash_to_elasticsearch = mock.Mock()
 
-        es_storage.save_raw_and_processed(
-            raw_crash=a_raw_crash,
-            dumps=None,
-            processed_crash=a_processed_crash,
-            crash_id=a_processed_crash['uuid']
-        )
+            es_storage.save_raw_and_processed(
+                raw_crash=a_raw_crash,
+                dumps=None,
+                processed_crash=a_processed_crash,
+                crash_id=a_processed_crash['uuid']
+            )
 
-        mock_calls = [str(call) for call in self.config.metrics.mock_calls]
-        # NOTE(willkg): The sizes of these json documents depend on what's in them. If we changed
-        # a_processed_crash and a_raw_crash, then these numbers will change.
-        assert 'call.histogram(\'processor.es.raw_crash_size\', 27)' in mock_calls
-        assert 'call.histogram(\'processor.es.processed_crash_size\', 1785)' in mock_calls
+            # NOTE(willkg): The sizes of these json documents depend on what's
+            # in them. If we changed a_processed_crash and a_raw_crash, then
+            # these numbers will change.
+            assert mm.has_record('histogram', stat='processor.es.raw_crash_size', value=27)
+            assert mm.has_record('histogram', stat='processor.es.processed_crash_size', value=1788)
+
+    def test_index_data_capture(self):
+        """Verify we capture index data in ES crashstorage"""
+        with MetricsMock() as mm:
+            es_storage = ESCrashStorage(config=self.config, namespace='processor.es')
+
+            mock_connection = mock.Mock()
+            # Do a successful indexing
+            es_storage._index_crash(
+                connection=mock_connection,
+                es_index=None,
+                es_doctype=None,
+                crash_document=None,
+                crash_id=None
+            )
+            # Do a failed indexing
+            mock_connection.index.side_effect = Exception
+            with pytest.raises(Exception):
+                es_storage._index_crash(
+                    connection=mock_connection,
+                    es_index=None,
+                    es_doctype=None,
+                    crash_document=None,
+                    crash_id=None
+                )
+
+            assert len(mm.filter_records(stat='processor.es.index',
+                                         tags=['outcome:successful'])) == 1
+            assert len(mm.filter_records(stat='processor.es.index',
+                                         tags=['outcome:failed'])) == 1
+
+
+class Test_get_fields_by_analyzer:
+    @pytest.mark.parametrize('fields', [
+        # No fields
+        {},
+
+        # No storage_mapping
+        {
+            'key': {
+                'in_database_name': 'key',
+            }
+        },
+
+        # Wrong or missing analyzer
+        {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'type': 'string'
+                }
+            }
+        },
+        {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'semicolon_keywords',
+                    'type': 'string'
+                }
+            }
+        },
+    ])
+    def test_no_match(self, fields):
+        assert get_fields_by_analyzer(fields, 'keyword') == []
+
+    def test_match(self):
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+        assert get_fields_by_analyzer(fields, 'keyword') == [fields['key']]
+
+    def test_caching(self):
+        # Verify caching works
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+        result = get_fields_by_analyzer(fields, 'keyword')
+        second_result = get_fields_by_analyzer(fields, 'keyword')
+        assert id(result) == id(second_result)
+
+        # This is the same data as fields, but a different dict, so it has a
+        # different id and we won't get the cached version
+        second_fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+        third_result = get_fields_by_analyzer(second_fields, 'keyword')
+        assert id(result) != id(third_result)
+
+
+class Test_truncate_keyword_field_values:
+    @pytest.mark.parametrize('data, expected', [
+        # Top-level, non-basestring values are left alone
+        ({'key': None}, {'key': None}),
+        ({'key': 1}, {'key': 1}),
+
+        # Second-level values are left alone
+        ({'key': {'key': 'a' * 10001}}, {'key': {'key': 'a' * 10001}}),
+
+        # Top-level, basestring values are truncated if > 10,000 characters
+        ({'key': 'a' * 9999}, {'key': 'a' * 9999}),
+        ({'key': 'a' * 10000}, {'key': 'a' * 10000}),
+        ({'key': 'a' * 10001}, {'key': 'a' * 10000}),
+    ])
+    def test_truncate_keyword_field_values(self, data, expected):
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        }
+
+        # Note: data is modified in place
+        truncate_keyword_field_values(fields, data)
+        assert data == expected
+
+    @pytest.mark.parametrize('fields', [
+        # No in_database_name leaves data unchanged
+        {
+            'key': {
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+
+        # Wrong in_database_name leaves data unchanged
+        {
+            'key': {
+                'in_database_name': 'different_key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+    ])
+    def test_fields_handling(self, fields):
+        """Verify truncation only occurs if all requirements are true
+
+        This also verifies that access of FIELDS handles edge cases like
+        missing data.
+
+        """
+        original_data = {
+            'key': 'a' * 10001
+        }
+        data = deepcopy(original_data)
+
+        truncate_keyword_field_values(fields, data)
+        assert original_data == data
+
+
+class Test_convert_booleans:
+    @pytest.mark.parametrize('data, expected', [
+        # True-ish values are True
+        ({'key': True}, {'key': True}),
+        ({'key': 'true'}, {'key': True}),
+        ({'key': 1}, {'key': True}),
+        ({'key': '1'}, {'key': True}),
+
+        # Everything else is False
+        ({'key': None}, {'key': False}),
+        ({'key': 0}, {'key': False}),
+        ({'key': '0'}, {'key': False}),
+        ({'key': 'false'}, {'key': False}),
+        ({'key': 'somethingrandom'}, {'key': False}),
+        ({'key': False}, {'key': False}),
+    ])
+    def test_convert_booleans_values(self, data, expected):
+        fields = {
+            'key': {
+                'in_database_name': 'key',
+                'storage_mapping': {
+                    'analyzer': 'boolean',
+                }
+            }
+        }
+        # Note: data is modified in place
+        convert_booleans(fields, data)
+        assert data == expected
+
+    @pytest.mark.parametrize('fields', [
+        # No in_database_name leaves data unchanged
+        {
+            'key': {
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+
+        # Wrong in_database_name leaves data unchanged
+        {
+            'key': {
+                'in_database_name': 'different_key',
+                'storage_mapping': {
+                    'analyzer': 'keyword',
+                    'type': 'string'
+                }
+            }
+        },
+    ])
+    def test_fields_handling(self, fields):
+        original_data = {
+            'key': 'a' * 10001
+        }
+        data = deepcopy(original_data)
+
+        convert_booleans(fields, data)
+        assert original_data == data

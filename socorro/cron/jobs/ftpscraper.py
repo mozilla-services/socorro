@@ -1,7 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from __future__ import print_function
 
-import datetime
-import sys
 import re
 import os
 import json
@@ -9,23 +11,18 @@ import urlparse
 import fnmatch
 import functools
 
-import mock
 import lxml.html
-import requests
-from requests.adapters import HTTPAdapter
 
 from configman import Namespace
-from configman.converters import class_converter, str_to_list
-from crontabber.base import BaseCronApp
-from crontabber.mixins import (
-    as_backfill_cron_app,
-    with_postgres_transactions
-)
+from configman.converters import str_to_list
 
 from socorro.cron import buildutil
-
-from socorro.app.socorro_app import App, main
-from socorro.lib.datetimeutil import string_to_datetime
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import (
+    as_backfill_cron_app,
+    using_postgres
+)
+from socorro.lib.requestslib import session_with_retries
 
 
 def memoize_download(fun):
@@ -47,7 +44,6 @@ class ScrapersMixin(object):
     """
 
     def get_links(self, url, starts_with=None, ends_with=None):
-
         results = []
         content = self.download(url)
         if not content:
@@ -239,9 +235,10 @@ class ScrapersMixin(object):
             yield (platform, version, kvpairs, bad_lines)
 
 
-@with_postgres_transactions()
+@using_postgres()
 @as_backfill_cron_app
 class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
+    """Scrapes archive.mozilla.org for build and version data"""
     app_name = 'ftpscraper'
     app_description = 'FTP Scraper'
     app_version = '0.1'
@@ -266,49 +263,14 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         doc='Print instead of storing builds')
 
     required_config.add_option(
-        'retries',
-        default=5,
-        doc='Number of times the requests sessions should retry')
-
-    required_config.add_option(
-        'read_timeout',
-        default=10,  # seconds
-        doc='Number of seconds wait for a full read')
-
-    required_config.add_option(
-        'connect_timeout',
-        default=3.5,  # seconds, ideally something slightly larger than 3
-        doc='Number of seconds wait for a connection')
-
-    required_config.add_option(
         'json_files_to_ignore',
-        default='*.mozinfo.json, *test_packages.json',
+        default='*.mozinfo.json, *test_packages.json, *buildhub.json',
         from_string_converter=str_to_list
-    )
-
-    required_config.add_option(
-        'cachedir',
-        default='',
-        doc=(
-            'Directory to cache .json files in. Empty string if you want to '
-            'disable caching'
-        )
     )
 
     def __init__(self, *args, **kwargs):
         super(FTPScraperCronApp, self).__init__(*args, **kwargs)
-        self.session = requests.Session()
-        if urlparse.urlparse(self.config.base_url).scheme == 'https':
-            mount = 'https://'
-        else:
-            mount = 'http://'
-        self.session.mount(
-            mount,
-            HTTPAdapter(max_retries=self.config.retries)
-        )
-
-        self.cache_hits = 0
-        self.cache_misses = 0
+        self.session = session_with_retries()
 
     def url_to_filename(self, url):
         fn = re.sub('\W', '_', url)
@@ -320,25 +282,9 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         is_caching = False
         fn = None
 
-        if url.endswith('.json') and self.config.cachedir:
-            is_caching = True
-            fn = os.path.join(self.config.cachedir, self.url_to_filename(url))
-            if not os.path.isdir(os.path.dirname(fn)):
-                os.makedirs(os.path.dirname(fn))
-            if os.path.exists(fn):
-                self.cache_hits += 1
-                with open(fn, 'r') as fp:
-                    return fp.read()
-            self.cache_misses += 1
-
-        response = self.session.get(
-            url,
-            timeout=(self.config.connect_timeout, self.config.read_timeout)
-        )
+        response = self.session.get(url)
         if response.status_code == 404:
-            self.config.logger.warning(
-                '404 when downloading %s', url
-            )
+            self.config.logger.warning('404 when downloading %s', url)
             # Legacy. Return None on any 404 error.
             return
         assert response.status_code == 200, response.status_code
@@ -370,15 +316,6 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 product_name,
                 date
             )
-
-        if self.config.cachedir:
-            total = float(self.cache_hits + self.cache_misses)
-            self.config.logger.debug('Cache: hits: %d (%2.2f%%) misses: %d (%2.2f%%)' % (
-                self.cache_hits,
-                self.cache_hits / total * 100,
-                self.cache_misses,
-                self.cache_misses / total * 100,
-            ))
 
     def _scrape_json_releases_and_nightlies(
         self,
@@ -513,60 +450,3 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         repository,
                         ignore_duplicates=True
                     )
-
-
-class FTPScraperCronAppDryRunner(App):  # pragma: no cover
-    """This is a utility class that makes it easy to run the scraping
-    and ALWAYS do so in a "dry run" fashion such that stuff is never
-    stored in the database but instead found releases are just printed
-    out stdout.
-
-    To run it, simply execute this file:
-
-        $ python socorro/cron/jobs/ftpscraper.py
-
-    If you want to override what date to run it for (by default it's
-    "now") you simply use this format:
-
-        $ python socorro/cron/jobs/ftpscraper.py --date=2015-10-23
-
-    By default it runs for every, default configured, product
-    (see the configuration set up in the FTPScraperCronApp above). You
-    can override that like this:
-
-        $ python socorro/cron/jobs/ftpscraper.py --product=mobile,thunderbird
-
-    """
-
-    required_config = Namespace()
-    required_config.add_option(
-        'date',
-        default=datetime.datetime.utcnow().date(),
-        doc='Date to run for',
-        from_string_converter=string_to_datetime
-    )
-    required_config.add_option(
-        'crontabber_job_class',
-        default='socorro.cron.jobs.ftpscraper.FTPScraperCronApp',
-        doc='bla',
-        from_string_converter=class_converter,
-    )
-
-    @staticmethod
-    def get_application_defaults():
-        return {
-            'database.database_class': mock.MagicMock()
-        }
-
-    def __init__(self, config):
-        self.config = config
-        self.config.dry_run = True
-        self.ftpscraper = config.crontabber_job_class(config, {})
-
-    def main(self):
-        assert self.config.dry_run
-        self.ftpscraper.run(self.config.date)
-
-
-if __name__ == '__main__':  # pragma: no cover
-    sys.exit(main(FTPScraperCronAppDryRunner))

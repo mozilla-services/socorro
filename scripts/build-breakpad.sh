@@ -5,16 +5,17 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Build script for building Breakpad
-# Generally run in Taskcluster, but split out to a separate script
-# so it can be run for local builds if necessary without assuming
-# the Taskcluster environment.
+#
+# Generally run in Taskcluster, but split out to a separate script so it can be
+# run for local builds if necessary without assuming the Taskcluster
+# environment.
 
-# any failures in this script should cause the build to fail
+# Failures in this script should cause the build to fail
 set -v -e -x
 
 # Build the revision used in the snapshot unless otherwise specified.
 # Update this if you update the snapshot!
-: BREAKPAD_REV         "${BREAKPAD_REV:=e0f2c17988dadcc7fb760b118b1741883435bbfd}"
+: BREAKPAD_REV         "${BREAKPAD_REV:=a61afe7a3e865f1da7ff7185184fe23977c2adca}"
 
 export MAKEFLAGS
 MAKEFLAGS=-j$(getconf _NPROCESSORS_ONLN)
@@ -25,11 +26,11 @@ fi
 
 cd depot_tools || exit
 git pull origin master
-echo "using depot_tools version: $(git rev parse HEAD)"
+echo ">>> using depot_tools version: $(git rev-parse HEAD)"
 cd ..
 
 # Breakpad will rely on a bunch of stuff from depot_tools, like fetch
-# So we just put it on the path
+# so we just put it on the path
 # see  https://chromium.googlesource.com/breakpad/breakpad/+/master/#Getting-started-from-master
 export PATH
 PATH=$(pwd)/depot_tools:$PATH
@@ -41,14 +42,16 @@ if [ ! -d "breakpad" ]; then
   cd breakpad
   fetch breakpad
 else
-  cd breakpad
+  cd breakpad/src
+  git fetch origin
+  cd ..
 fi
 
 cd src
 git checkout "$BREAKPAD_REV"
 gclient sync
 
-echo "using breakpad version: $(git rev-parse HEAD)"
+echo ">>> using breakpad version: $(git rev-parse HEAD)"
 
 mkdir -p "${PREFIX}"
 rsync -a --exclude="*.git" ./src "${PREFIX}"/
@@ -66,5 +69,5 @@ cp breakpad/src/src/third_party/libdisasm/libdisasm.a "${PREFIX}"/lib/
 
 # Optionally package everything up
 if test -z "${SKIP_TAR}"; then
-  tar -C "${PREFIX}"/.. --mode 755 --owner 0 --group 0 -zcf breakpad.tar.gz "$(basename "${PREFIX}")"
+  tar -C "${PREFIX}"/.. -zcf breakpad.tar.gz "$(basename "${PREFIX}")"
 fi

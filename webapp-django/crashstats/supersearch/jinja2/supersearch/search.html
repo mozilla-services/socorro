@@ -9,6 +9,7 @@
     {% stylesheet 'jquery_ui' %}
     {% stylesheet 'tablesorter' %}
     {% stylesheet 'search' %}
+    {% stylesheet 'bugzilla' %}
 {% endblock %}
 
 {% block content %}
@@ -22,8 +23,8 @@
         <nav>
             {% if not waffle.switch('supersearch-custom-query-disabled') and request.user.has_perm('crashstats.run_custom_queries') %}
             <ul class="options">
-                <li><a href="{{ url('supersearch.search') }}" class="selected">Search by fields</a></li>
-                <li><a href="{{ url('supersearch.search_custom') }}">Custom query</a></li>
+                <li><a href="{{ url('supersearch:search') }}" class="selected">Search by fields</a></li>
+                <li><a href="{{ url('supersearch:search_custom') }}">Custom query</a></li>
             </ul>
             {% endif %}
             <div id="sumo-link">
@@ -38,10 +39,10 @@
     <section id="search-form">
         <div class="loader"></div>
 
-        <form method="get" action="{{ url('supersearch.search') }}"
-            data-fields-url="{{ url('supersearch.search_fields') }}?{{ make_query_string(exclude='date') }}"
-            data-results-url="{{ url('supersearch.search_results') }}"
-            data-custom-url="{{ url('supersearch.search_custom') }}"
+        <form method="get" action="{{ url('supersearch:search') }}"
+            data-fields-url="{{ url('supersearch:search_fields') }}?{{ make_query_string(exclude='date') }}"
+            data-results-url="{{ url('supersearch:search_results') }}"
+            data-custom-url="{{ url('supersearch:search_custom') }}"
             data-public-api-url="{{ url('api:model_wrapper', 'SuperSearch') }}"
         >
             <div class="form-controls">

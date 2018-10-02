@@ -12,15 +12,15 @@
 
         <nav>
             <ul class="options">
-                <li><a href="{{ url('supersearch.search') }}">Search by fields</a></li>
-                <li><a href="{{ url('supersearch.search_custom') }}" class="selected">Custom query</a></li>
+                <li><a href="{{ url('supersearch:search') }}">Search by fields</a></li>
+                <li><a href="{{ url('supersearch:search_custom') }}" class="selected">Custom query</a></li>
             </ul>
         </nav>
     </div>
 
     <section id="search-form">
         <form method="post" action=""
-            data-results-url="{{ url('supersearch.search_query') }}"
+            data-results-url="{{ url('supersearch:search_query') }}"
         >
             {% csrf_token %}
             <div class="form-controls">

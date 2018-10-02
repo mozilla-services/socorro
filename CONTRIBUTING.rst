@@ -26,6 +26,25 @@ If you're not familiar with `Docker <https://docs.docker.com/>`_ and
 reading up on.
 
 
+Preparing to contribute changes to Socorro
+==========================================
+
+If you're interested in helping out and taking a bug to work on, you
+need to do the following first:
+
+1. `Set up a working local development environment
+   <https://socorro.readthedocs.io/en/latest/gettingstarted.html>`_.
+
+2. Read through the `overview of Socorro
+   <https://socorro.readthedocs.io/en/latest/overview.html>`_.
+
+We can't assign bugs to you until you've done at least those two
+steps.
+
+If you need help, let us know by `asking on IRC or sending an email to the
+mailing list <https://socorro.readthedocs.io/en/latest/#project-info>`_.
+
+
 Python code conventions
 =======================
 
@@ -63,14 +82,14 @@ Git conventions
 
 First line is a summary of the commit. It should start with one of the following::
 
-  Fixes bug nnnnnnn
+  bug nnnnnnn: summary
 
-or::
+which will trigger the auto-closer to add a comment to the bug when this is merged
+into the master branch, or::
 
-  Bug nnnnnnn
+  fix bug nnnnnnn: summary
 
-
-The first, when it lands, will cause the bug to be closed. The second one does not.
+which will do that and also close the bug.
 
 After that, the commit should explain *why* the changes are being made and any
 notes that future readers should know for context or be aware of.
@@ -79,7 +98,11 @@ notes that future readers should know for context or be aware of.
 Pull requests
 =============
 
-Pull request summary should indicate the bug the pull request addresses.
+Pull request summary should indicate the bug the pull request addresses. For
+example::
+
+  fix bug nnnnnnn: removed frob from tree class
+
 
 Pull request descriptions should cover at least some of the following:
 
@@ -100,19 +123,53 @@ Style nits should be covered by linting as much as possible.
 Code reviews should review the changes in the context of the rest of the system.
 
 
-Dependencies
-============
+Python Dependencies
+===================
 
-Dependencies for all parts Socorro are in ``requirements.txt``. They need to be
-pinned and hashed. Use `hashin <https://pypi.python.org/pypi/hashin>`_.
+Python dependencies for all parts of Socorro are split between two files:
+
+1. ``requirements/default.txt``, containing dependencies that Socorro uses
+   directly.
+2. ``requirements/constraints.txt``, containing dependencies required by the
+   dependencies in ``default.txt`` that Socorro does not use directly.
+
+Dependencies in both files must be pinned and hashed. Use
+`hashin <https://pypi.python.org/pypi/hashin>`_.
 
 For example, to add ``foobar`` version 5::
 
-  hashin -r requirements.txt foobar==5
+  hashin -r requirements/default.txt foobar==5
+
+If ``foobar`` has any dependencies that would also be installed, you must add
+them to the constraints file::
+
+  hashin -r requirements/constraints.txt bazzbiff==4.0
 
 Then rebuild your docker environment::
 
-  make dockerbuild
+  make build
+
+If there are problems, it'll tell you.
+
+.. note:: If you're unsure what dependencies to add to the constraints file,
+   the error from running ``make build`` should include a list of
+   dependencies that were missing, including their version numbers and hashes.
+
+
+JavaScript Dependencies
+=======================
+
+Frontend dependencies for the webapp are in ``webapp-django/package.json``. They
+must be pinned and included in
+`package-lock.json <https://docs.npmjs.com/files/package-locks>`_.
+
+You can add new dependencies using ``npm`` (you must use version 5 or higher):
+
+  npm install --save-exact foobar@1.0.0
+
+Then rebuild your docker environment::
+
+  make build
 
 If there are problems, it'll tell you.
 
@@ -131,16 +188,61 @@ To build the docs, run this:
     $ make docs
 
 
+Database migrations
+===================
+
+alembic migrations
+------------------
+
+To create an alembic migration, use your local development environment::
+
+    $ docker-compose run processor bash
+    app@processor:/app$ alembic -c docker/config/alembic.ini revision -m "bug xxx summary here"
+
+Alembic migrations are stored in ``alembic/versions/``. There's a lot of
+material you can crib from there.
+
+To apply alembic migrations, do::
+
+    $ docker-compose run processor bash
+    app@processor:/app$ alembic -c docker/config/alembic.ini upgrade heads
+
+Helper functions in ``socorro.lib.migrations``:
+
+* ``load_stored_proc``
+
+   Loads the latest version of the stored procedures specified. Use this any
+   time you create a new stored procedure or change an existing one.
+
+   Example::
+
+     load_stored_proc(op, ['update_matviews.sql', 'backfill_matviews.sql'])
+
+
+Django migrations
+-----------------
+
+To create a Django migration, user your local development environment::
+
+    $ docker-compose run webapp bash
+    app@webapp:/app$ cd webapp-django
+    app@webapp:/app/webapp-django$ ./manage.py makemigrations
+
+Django migrations are stored in ``webapp-django/crashstats/<appname>/migrations/``.
+
+
 Running tests
 =============
 
 The tests in ``socorro/unittests/`` use `pytest <https://pytest.org/>`_.
 
-The tests in ``webapp-django/`` use `Nose <https://nose.readthedocs.io/>`_.
+The tests in ``webapp-django/`` use `pytest <https://pytest.org/>`_.
+
+The tests in ``webapp-django/staticfiles`` use `Jest <https://jestjs.io/>`_.
 
 To run the tests, do::
 
-  $ make dockertest
+  $ make test
 
 
 That runs the ``/app/docker/run_test.sh`` script in the webapp container using
@@ -149,7 +251,7 @@ test configuration.
 To run specific tests or specify arguments, you'll want to start a shell in the
 test container::
 
-  $ make dockertestshell
+  $ make testshell
 
 
 Then you can run pytest or the webapp tests as you like.
@@ -183,12 +285,19 @@ Running a file of tests::
 
   app@...:/app/webapp-django$ ./manage.py test crashstats/home/tests/test_views.py
 
+Running the staticfiles Jest tests and watching for changes::
+
+  app@...:/app/webapp-django$ /webapp-frontend-deps/node_modules/.bin/jest staticfiles/ --watch
+
 
 Writing tests
 =============
 
 For webapp tests, put them in the ``tests/`` directory of the appropriate app in
 ``webapp-django/``.
+
+For webapp/staticfiles tests, put unit tests in the same folder as the component
+that they are testing
 
 For other tests, put them in ``socorro/unittest/``.
 
@@ -203,3 +312,38 @@ different depending on the context.
 
 Tip! Try to mock in limited context so that individual tests don't affect other
 tests. Use context managers and instead of monkey patching imported modules.
+
+
+Repository structure
+====================
+
+If you clone our `git repository
+<https://github.com/mozilla-services/socorro>`_, you will find the following
+folders.
+
+Here is what each of them contains:
+
+**alembic/**
+    Alembic-managed database migrations.
+
+**docker/**
+    Docker environment related scripts, configuration, and other bits.
+
+**docs/**
+    Documentation of the Socorro project (you're reading it right now).
+
+**minidump-stackwalk/**
+    The minidump stackwalker program that the processor runs for pulling
+    out information from crash report dumps.
+
+**requirements/**
+    Files that hold Python library requirements information.
+
+**scripts/**
+    Arbitrary scripts.
+
+**socorro/**
+    The bulk of the Socorro source code.
+
+**webapp-django/**
+    The webapp source code.

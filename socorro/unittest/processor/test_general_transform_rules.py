@@ -4,15 +4,13 @@
 
 import copy
 
-from configman.dotdict import DotDict as CDotDict
-from mock import Mock
-
 from socorro.lib.util import DotDict
 from socorro.processor.general_transform_rules import (
     IdentifierRule,
     CPUInfoRule,
     OSInfoRule,
 )
+from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
 from socorro.unittest.testbase import TestCase
 
 
@@ -102,26 +100,13 @@ canonical_processed_crash = DotDict({
 
 
 class TestIdentifierRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = IdentifierRule(config)
 
@@ -135,7 +120,7 @@ class TestIdentifierRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
     def test_stuff_missing(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         del raw_crash.uuid
@@ -143,7 +128,7 @@ class TestIdentifierRule(TestCase):
 
         raw_dumps = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = IdentifierRule(config)
 
@@ -162,26 +147,13 @@ class TestIdentifierRule(TestCase):
 
 
 class TestCPUInfoRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = copy.copy(canonical_processed_crash)
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = CPUInfoRule(config)
 
@@ -195,7 +167,7 @@ class TestCPUInfoRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
     def test_missing_cpu_count(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -205,7 +177,7 @@ class TestCPUInfoRule(TestCase):
         processed_crash.json_dump = {
             'system_info': system_info
         }
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = CPUInfoRule(config)
 
@@ -219,12 +191,12 @@ class TestCPUInfoRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
     def test_missing_json_dump(self):
-        config = self.get_basic_config()
+        config = get_basic_config()
 
         raw_crash = {}
         raw_dumps = {}
         processed_crash = {}
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = CPUInfoRule(config)
 
@@ -239,57 +211,44 @@ class TestCPUInfoRule(TestCase):
 
 
 class TestOSInfoRule(TestCase):
-
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-
-        return config
-
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
     def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
-
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {}
-        processed_crash = copy.copy(canonical_processed_crash)
-        processor_meta = self.get_basic_processor_meta()
+        config = get_basic_config()
+        raw_crash = {}
+        processed_crash = DotDict({
+            'json_dump': {
+                'system_info': {
+                    'os': 'Windows NT',
+                    'os_ver': '6.1.7601 Service Pack 1'
+                }
+            }
+        })
+        processor_meta = get_basic_processor_meta()
 
         rule = OSInfoRule(config)
 
         # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, {}, processed_crash, processor_meta)
 
-        assert processed_crash.os_name == "Windows NT"
-        assert processed_crash.os_version == "6.1.7601 Service Pack 1"
+        assert processed_crash['os_name'] == "Windows NT"
+        assert processed_crash['os_version'] == "6.1.7601 Service Pack 1"
 
         # raw crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
+        assert raw_crash == {}
 
     def test_stuff_missing(self):
-        config = self.get_basic_config()
-
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-
-        raw_dumps = {}
+        config = get_basic_config()
+        raw_crash = {}
         processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta()
 
         rule = OSInfoRule(config)
 
         # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, {}, processed_crash, processor_meta)
 
         # processed crash should have empties
-        expected = DotDict()
-        expected.os_version = ''
-        expected.os_name = ''
-        assert processed_crash == expected
+        assert processed_crash['os_name'] == 'Unknown'
+        assert processed_crash['os_version'] == ''
 
         # raw crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
+        assert raw_crash == {}

@@ -65,12 +65,14 @@ def get_allowed_fields(user):
 
 def get_supersearch_form(request):
     platforms = models.Platforms().get()
+    products = models.Products().get()['hits']
     product_versions = models.ProductVersions().get(active=True)['hits']
 
     all_fields = SuperSearchFields().get()
 
     form = forms.SearchForm(
         all_fields,
+        products,
         product_versions,
         platforms,
         request.user,
@@ -222,7 +224,7 @@ def search_results(request):
     params['_results_offset'] = context['results_offset']
 
     context['current_url'] = '%s?%s' % (
-        reverse('supersearch.search'),
+        reverse('supersearch:search'),
         urlencode_obj(current_query)
     )
 

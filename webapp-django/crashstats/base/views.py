@@ -2,7 +2,7 @@ from django import http
 from django.shortcuts import render
 
 
-def handler500(request):
+def handler500(request, template_name='500.html'):
     if getattr(request, '_json_view', False):
         # Every view with the `utils.json_view` decorator sets,
         # on the request object, that it wants to eventually return
@@ -16,7 +16,7 @@ def handler500(request):
     return render(request, '500.html', context, status=500)
 
 
-def handler404(request):
+def handler404(request, exception, template_name='404.html'):
     if getattr(request, '_json_view', False):
         # Every view with the `utils.json_view` decorator sets,
         # on the request object, that it wants to eventually return

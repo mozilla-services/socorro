@@ -4,15 +4,16 @@
 
 from configman import Namespace
 from configman.converters import class_converter
-from crontabber.base import BaseCronApp
+
+from socorro.cron.base import BaseCronApp
 
 
 class ElasticsearchCleanupCronApp(BaseCronApp):
-    """Delete old Elasticsearch indices from our databases. """
+    """Delete old Elasticsearch indices"""
 
     app_name = 'elasticsearch-cleanup'
     app_version = '1.0'
-    app_description = 'Remove old indices from our Elasticsearch database. '
+    app_description = 'Delete old Elasticsearch indices'
 
     required_config = Namespace()
     required_config.add_option(

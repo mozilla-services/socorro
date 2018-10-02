@@ -2,9 +2,9 @@
     "name": "Socorro",
     "description": "Socorro is a server to accept and process Breakpad crash reports from Firefox, Thunderbird, etc.",
     "repository": {
-        "url": "https://github.com/mozilla/socorro",
+        "url": "https://github.com/mozilla-services/socorro",
         "license": "MPL2",
-        "tests": "https://travis-ci.org/mozilla/socorro"
+        "tests": "https://circleci.com/gh/mozilla-services/socorro"
     },
     "participate": {
         "home": "https://wiki.mozilla.org/Socorro",

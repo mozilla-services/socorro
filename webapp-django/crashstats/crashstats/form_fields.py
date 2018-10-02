@@ -18,7 +18,7 @@ class CarefulFieldBase(object):
     def strptime(self, value, format):
         try:
             return datetime.datetime.strptime(value, format)
-        except TypeError, e:
+        except TypeError as e:
             raise ValueError(e)
 
 

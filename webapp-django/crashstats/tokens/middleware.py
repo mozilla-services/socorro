@@ -22,6 +22,14 @@ def has_perm(all, codename, obj=None):
 
 
 class APIAuthenticationMiddleware(object):
+    def __init__(self, get_response=None):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.process_request(request)
+        if not response:
+            response = self.get_response(request)
+        return response
 
     def process_request(self, request):
         # AuthenticationMiddleware is required so that request.user exists.
@@ -36,6 +44,7 @@ class APIAuthenticationMiddleware(object):
         key = request.META.get('HTTP_AUTH_TOKEN')
         if not key:
             return
+
         try:
             token = models.Token.objects.select_related('user').get(key=key)
             if token.is_expired:

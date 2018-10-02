@@ -10,11 +10,12 @@ from configman.converters import list_converter
 
 
 class Connection(object):
-    """A facade in front of the ES class that standardises certain gross
-    elements of its API with those of other database connection types.
-    The Elasticsearch interface is a simple HTTP API, and as such, does not
-    maintain open connections (i.e. no persistence). Accordingly, the commit,
-    rollback, and close mechanisms cannot have any useful meaning.
+    """A facade in front of the ES class that standardises certain gross elements
+    of its API with those of other database connection types. The Elasticsearch
+    interface is a simple HTTP API, and as such, does not maintain open
+    connections (i.e. no persistence). Accordingly, the commit, rollback, and
+    close mechanisms cannot have any useful meaning.
+
     """
 
     def __init__(self, config, connection):
@@ -40,7 +41,7 @@ class ConnectionContext(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         'elasticsearch_urls',
-        default=['localhost:9200'],
+        default=['http://localhost:9200'],
         doc='the urls to the elasticsearch instances',
         from_string_converter=list_converter,
         reference_value_from='resource.elasticsearch',
@@ -93,7 +94,9 @@ class ConnectionContext(RequiredConfig):
     def connection(self, name=None, timeout=None):
         """Returns an instance of elasticsearch-py's Elasticsearch class as
         encapsulated by the Connection class above.
+
         Documentation: http://elasticsearch-py.readthedocs.org
+
         """
         if timeout is None:
             timeout = self.config.elasticsearch_timeout
@@ -103,15 +106,17 @@ class ConnectionContext(RequiredConfig):
             elasticsearch.Elasticsearch(
                 hosts=self.config.elasticsearch_urls,
                 timeout=timeout,
-                connection_class=\
-                    elasticsearch.connection.RequestsHttpConnection
+                connection_class=elasticsearch.connection.RequestsHttpConnection,
+                verify_certs=True
             )
         )
 
     def indices_client(self, name=None):
         """Returns an instance of elasticsearch-py's Index client class as
         encapsulated by the Connection class above.
+
         http://elasticsearch-py.readthedocs.org/en/master/api.html#indices
+
         """
 
         return Connection(

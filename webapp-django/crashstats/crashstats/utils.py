@@ -1,17 +1,24 @@
 import csv
 import codecs
-import cStringIO
 import datetime
 import isodate
 import functools
 import json
+import random
 import re
+from past.builtins import basestring
 from collections import OrderedDict
+
+from six.moves import cStringIO
+from six import text_type
 
 from django import http
 from django.conf import settings
+from django.core.cache import cache
+from django.utils import timezone
 
 from . import models
+import crashstats.supersearch.models as supersearch_models
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -26,7 +33,7 @@ def parse_isodate(ds):
     """
     return a datetime object from a date string
     """
-    if isinstance(ds, unicode):
+    if isinstance(ds, text_type):
         # isodate struggles to convert unicode strings with
         # its parse_datetime() if the input string is unicode.
         ds = ds.encode('ascii')
@@ -146,92 +153,6 @@ def enhance_frame(frame, vcs_mappings):
                 frame['file'] = path_parts.pop()
 
 
-def parse_dump(dump, vcs_mappings):
-
-    parsed_dump = {
-        'status': 'OK',
-        'modules': [],
-        'threads': [],
-        'crash_info': {
-            'crashing_thread': None,
-        },
-        'system_info': {}
-    }
-
-    for line in dump.split('\n'):
-        entry = line.split('|')
-        if entry[0] == 'OS':
-            parsed_dump['system_info']['os'] = entry[1]
-            parsed_dump['system_info']['os_ver'] = entry[2]
-        elif entry[0] == 'CPU':
-            parsed_dump['system_info']['cpu_arch'] = entry[1]
-            parsed_dump['system_info']['cpu_info'] = entry[2]
-            parsed_dump['system_info']['cpu_count'] = int(entry[3])
-        elif entry[0] == 'Crash':
-            parsed_dump['crash_info']['type'] = entry[1]
-            parsed_dump['crash_info']['crash_address'] = entry[2]
-            parsed_dump['crash_info']['crashing_thread'] = int(entry[3])
-        elif entry[0] == 'Module':
-            if entry[7] == '1':
-                parsed_dump['main_module'] = len(parsed_dump['modules'])
-            parsed_dump['modules'].append({
-                'filename': entry[1],
-                'version': entry[2],
-                'debug_file': entry[3],
-                'debug_id': entry[4],
-                'base_addr': entry[5],
-                'end_addr': entry[6]
-            })
-        elif entry[0].isdigit():
-            thread_num, frame_num, module_name, function, \
-                source_file, source_line, instruction = entry
-
-            thread_num = int(thread_num)
-            frame_num = int(frame_num)
-
-            frame = {
-                'frame': frame_num,
-            }
-            if module_name:
-                frame['module'] = module_name
-                if not function:
-                    frame['module_offset'] = instruction
-            else:
-                frame['offset'] = instruction
-            if function:
-                frame['function'] = function
-                if not source_line:
-                    frame['function_offset'] = instruction
-            if source_file:
-                frame['file'] = source_file
-            if source_line:
-                frame['line'] = int(source_line)
-
-            enhance_frame(frame, vcs_mappings)
-
-            if parsed_dump['crash_info']['crashing_thread'] is None:
-                parsed_dump['crash_info']['crashing_thread'] = thread_num
-
-            if thread_num >= len(parsed_dump['threads']):
-                # `parsed_dump['threads']` is a list and we haven't stuff
-                # this many items in it yet so, up til and including
-                # `thread_num` we stuff in an initial empty one
-                for x in range(len(parsed_dump['threads']), thread_num + 1):
-                    # This puts in the possible padding too if thread_num
-                    # is higher than the next index
-                    if x >= len(parsed_dump['threads']):
-                        parsed_dump['threads'].append({
-                            'thread': x,
-                            'frames': []
-                        })
-            parsed_dump['threads'][thread_num]['frames'].append(frame)
-
-    parsed_dump['thread_count'] = len(parsed_dump['threads'])
-    for thread in parsed_dump['threads']:
-        thread['frame_count'] = len(thread['frames'])
-    return parsed_dump
-
-
 def enhance_json_dump(dump, vcs_mappings):
     """
     Add some information to the stackwalker's json_dump output
@@ -245,14 +166,217 @@ def enhance_json_dump(dump, vcs_mappings):
     return dump
 
 
+def enhance_raw(raw_crash):
+    """Enhances raw crash with additional data"""
+    if raw_crash.get('AdapterDeviceID') and raw_crash.get('AdapterVendorID'):
+        # Look up the two and get friendly names and then add them
+        result = models.GraphicsDevice.objects.get_pair(
+            raw_crash['AdapterDeviceID'],
+            raw_crash['AdapterVendorID']
+        )
+        if result is not None:
+            raw_crash['AdapterDeviceName'] = result[0]
+            raw_crash['AdapterVendorName'] = result[1]
+
+
+def parse_version(version):
+    """Parses a version string into a comparable tuple
+
+    >>> parse_version('59.0')
+    (59, 0, 0, 'zz')
+    >>> parse_version('59.0.2')
+    (59, 0, 2, 'zz')
+    >>> parse_version('59.0b1')
+    (59, 0, 0, 'b1')
+    >>> parse_version('59.0a1')
+    (59, 0, 0, 'a1')
+
+    This is a good key for sorting:
+
+    >>> versions = ['59.0', '59.0b2', '59.0.2', '59.0a1']
+    >>> sorted(versions, key=parse_version, reverse=1)
+    ['59.0.2', '59.0', '59.0b2', '59.0a1']
+
+    :arg version: version string like "59.0b1" or "59.0.2"
+
+    :returns: tuple for comparing
+
+    """
+    try:
+        if 'a' in version:
+            version, ending = version.split('a')
+            ending = ['a' + ending]
+        elif 'b' in version:
+            version, ending = version.split('b')
+            ending = ['b' + ending]
+        elif 'esr' in version:
+            version = version.replace('esr', '')
+            # Add zz, then esr so that esr is bigger than release versions.
+            ending = ['zz', 'esr']
+        else:
+            ending = ['zz']
+
+        version = [int(part) for part in version.split('.')]
+        while len(version) < 3:
+            version.append(0)
+        version.extend(ending)
+        return tuple(version)
+    except (ValueError, IndexError):
+        # If we hit an error, it's probably junk data so return an tuple with a
+        # -1 in it which put it at the bottom of the pack
+        return (-1)
+
+
+def sorted_versions(list_of_versions):
+    """Returns versions sorted from most recent to least recent
+
+    Accounts for betas, alphas, X.Y.Z versioning, ESR, etc. This also removes
+    strings that aren't proper versions.
+
+    :arg list of str list_of_versions: list of version strings
+
+    :returns: sorted list of version strings
+
+    Example:
+
+    >>> sorted_versions(['63.0', '63.0.2', '62.0b1', '62.0esr', '47.0'])
+    ['63.0.2', '63.0', '62.0esr', '62.0b1', '47.0'])
+
+    """
+    # Build a list of (parsed, version) tuples--parsed is first because that's
+    # what we want to sort on
+    version_parsed = [(parse_version(version), version) for version in list_of_versions]
+
+    # Remove bad versions which are denoted by the parsed version being (-1)
+    version_parsed = [
+        vp for vp in version_parsed if vp[0] != (-1)
+    ]
+
+    # Sort, reverse, and return the actual version string
+    return [
+        vp[1] for vp in sorted(version_parsed, reverse=True)
+    ]
+
+
+#: Number of days to look at for versions in crash reports. This is set
+#: for two months. If we haven't gotten a crash report for some version in
+#: two months, then seems like that version isn't active.
+VERSIONS_WINDOW_DAYS = 60
+
+
+def get_versions_for_product(product):
+    """Returns recent versions for specified product
+
+    This looks at the crash reports submitted for this product over
+    VERSIONS_WINDOW_DAYS days and returns the versinos of those crash reports.
+
+    If SuperSearch returns an error, this returns an empty list.
+
+    NOTE(willkg): This data can be noisy in cases where crash reports return
+    junk versions. We might want to add a "minimum to matter" number.
+
+    :arg product: the product to query for
+
+    :returns: list of versions sorted in reverse order or ``[]``
+
+    """
+    key = 'get_versions_for_product:%s' % product.lower().replace(' ', '')
+    ret = cache.get(key)
+    if ret is not None:
+        return ret
+
+    api = supersearch_models.SuperSearchUnredacted()
+    now = timezone.now()
+
+    # Find versions for specified product in crash reports reported in the last
+    # 6 months
+    params = {
+        'product': product,
+        '_results_number': 0,
+        '_facets': 'version',
+        '_facets_size': 100,
+        'date': [
+            '>=' + (now - datetime.timedelta(days=VERSIONS_WINDOW_DAYS)).isoformat(),
+            '<' + now.isoformat()
+        ]
+    }
+
+    ret = api.get(**params)
+    if 'facets' not in ret or 'version' not in ret['facets']:
+        return []
+
+    versions = sorted_versions([item['term'] for item in ret['facets']['version']])
+
+    # Set of X.Yb to add
+    betas = set()
+
+    # Map of major version (int) -> list of versions (str) so we can
+    # get the most recent version of the last three majors which
+    # we'll assume are "featured versions"
+    major_to_versions = {}
+    for version in versions:
+        try:
+            major = int(version.split('.', 1)[0])
+            major_to_versions.setdefault(major, []).append(version)
+
+            if 'b' in version:
+                # Add X.Yb to the betas set
+                betas.add(version[:version.find('b') + 1])
+        except ValueError:
+            # If the first thing in the major version isn't an int, then skip
+            # it
+            continue
+
+    # The featured versions is the most recent 3 of the list of recent versions
+    # for each major version. Since versions were sorted when we went through
+    # them, the most recent one is in index 0.
+    featured_versions = sorted_versions([values[0] for values in major_to_versions.values()])
+    featured_versions = featured_versions[:3]
+
+    # Add the beta versions and then resort the versions
+    versions.extend(betas)
+    versions = sorted_versions(versions)
+
+    # Generate the version data the context needs
+    ret = [
+        {
+            'product': product,
+            'version': version,
+            'is_featured': version in featured_versions,
+            'has_builds': False
+        }
+        for version in versions
+    ]
+
+    # Cache value for an hour plus a fudge factor in seconds
+    cache.set(key, ret, (60 * 60) + random.randint(60, 120))
+    return ret
+
+
 def build_default_context(product=None, versions=None):
     """
     from ``product`` and ``versions`` transfer to
     a dict. If there's any left-over, raise a 404 error
     """
     context = {}
+
+    # Build product information
+    api = models.Products()
+    # NOTE(willkg): using an OrderedDict here since Products returns products
+    # sorted by sort order and we don't want to lose that ordering
+    all_products = OrderedDict()
+    for item in api.get()['hits']:
+        if item['sort'] == -1:
+            # A sort of -1 means this item is inactive and we shouldn't show it
+            # in product lists
+            continue
+        all_products[item['product_name']] = item
+    context['products'] = all_products
+
+    # Build product version information
     api = models.ProductVersions()
-    active_versions = OrderedDict()  # so that products are in order
+    active_versions = OrderedDict()
+
     # Turn the list of all product versions into a dict, one per product.
     for pv in api.get(active=True)['hits']:
         if pv['product'] not in active_versions:
@@ -260,17 +384,23 @@ def build_default_context(product=None, versions=None):
         active_versions[pv['product']].append(pv)
     context['active_versions'] = active_versions
 
+    if product:
+        if product not in context['products']:
+            raise http.Http404('Not a recognized product')
+
+        if product not in active_versions:
+            # This is a product that doesn't have version information in
+            # product_versions, so we pull it from supersearch
+            active_versions[product] = get_versions_for_product(product)
+
+        context['product'] = product
+    else:
+        context['product'] = settings.DEFAULT_PRODUCT
+
     if versions is None:
         versions = []
     elif isinstance(versions, basestring):
         versions = versions.split(';')
-
-    if product:
-        if product not in context['active_versions']:
-            raise http.Http404('Not a recognized product')
-        context['product'] = product
-    else:
-        context['product'] = settings.DEFAULT_PRODUCT
 
     if versions:
         assert isinstance(versions, list)
@@ -311,13 +441,13 @@ class UnicodeWriter:
 
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
         # Redirect output to a queue
-        self.queue = cStringIO.StringIO()
+        self.queue = cStringIO()
         self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
         self.stream = f
         self.encoder = codecs.getincrementalencoder(encoding)()
 
     def writerow(self, row):
-        self.writer.writerow([unicode(s).encode("utf-8") for s in row])
+        self.writer.writerow([text_type(s).encode("utf-8") for s in row])
         # Fetch UTF-8 output from the queue ...
         data = self.queue.getvalue()
         data = data.decode("utf-8")
@@ -347,7 +477,7 @@ def ratelimit_rate(group, request):
     Otherwise return a number according to
     https://django-ratelimit.readthedocs.org/en/latest/rates.html#rates-chapter
     """
-    if group == 'crashstats.api.views.model_wrapper':
+    if group in ('crashstats.api.views.model_wrapper', 'crashstats.api.views.crash_verify'):
         if request.user.is_active:
             return settings.API_RATE_LIMIT_AUTHENTICATED
         else:

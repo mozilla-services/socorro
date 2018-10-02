@@ -1,3 +1,6 @@
+@import "@{root-path}/base/variables.less";
+@import "@{root-path}/base/mixins.less";
+
 #topcrashers {
     h1 {
         font-size: 2em;
@@ -6,11 +9,11 @@
     }
     table {
         margin: .3em 0 .5em;
-        border: 1px solid #ccc;
+        border: 1px solid @light-grey;
         width: 95%;
     }
     th {
-        background: url(../../../img/slate/white-grad.png) repeat-x scroll bottom left #fff;
+        background: url("@{image-path}/slate/white-grad.png") repeat-x scroll bottom left @white;
         padding: .1em .5em;
     }
     td {
@@ -43,8 +46,8 @@
     a:link,
     a:visited {
         display: inline-block;
-        background-color: #e0e0e0;
-        color: #333;
+        background-color: @light-grey;
+        color: @dark-grey;
         margin-right: .2em;
         padding: .3em;
         min-width: 65px;
@@ -53,11 +56,12 @@
         border-radius: 6px;
     }
     a:hover {
-        background-color: #B6D3E2;
+        background-color: @primary;
+        color: @white;
     }
     a.selected {
-        background-color: #2e5d74;
-        color: #fff;
+        background-color: @primary;
+        color: @white;
     }
     li {
         display: inline;
@@ -71,4 +75,82 @@
             min-width: 30px;
         }
     }
+}
+
+
+#buildid-graph {
+    width: 600px;
+    height: 200px;
+}
+
+/* top crashers no results */
+.no-results {
+    clear: both;
+    padding: 1em;
+    display: block;
+    margin: 0 auto 1em;
+    text-align: center;
+    width: 50%;
+    .shadow(0px, 1px, 4px, 0, @grey-90-a10);
+
+    time {
+        font-weight: 900;
+    }
+}
+
+.hide {
+    display: none;
+}
+.startup {
+    margin-right: 1px;
+}
+
+#signature-list {
+    clear: both;
+    button {
+        float: right;
+    }
+    td {
+        width: 4%;
+    }
+    td.signature-column {
+        width: 32%;
+    }
+}
+.signature-popup {
+    background-color: @white;
+    border: solid 1px #AAA;
+    width: auto;
+}
+.signature-preview {
+    float: left;
+    display: block;
+    width: 420px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.moving-up,
+.moving-down {
+    position: absolute;
+    left: 6px;
+    display: inline-block;
+    color: @white;
+    margin-top: -8px;
+    padding: 1.4em 0.5em 0.5em;
+    width: 26px;
+    text-align: center;
+    .rounded-corners(6px, 0, 0, 6px);
+}
+.moving-up {
+    background: @red url("../../img/up_arrow.png") 9px 4px no-repeat;
+}
+.moving-down {
+    background: @green url("../../img/down_arrow.png") 9px 4px no-repeat;
+}
+
+.label {
+    background-color: @pink;
+    border-radius: 4px;
+    padding: 2px 4px;
 }

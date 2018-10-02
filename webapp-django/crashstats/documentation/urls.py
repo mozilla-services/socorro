@@ -1,9 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+app_name = 'documentation'
+urlpatterns = [
     url(
         r'^supersearch/$',
         views.supersearch_home,
@@ -20,8 +20,18 @@ urlpatterns = patterns(
         name='supersearch_api',
     ),
     url(
+        r'^memory_dump_access/$',
+        views.memory_dump_access,
+        name='memory_dump_access',
+    ),
+    url(
+        r'^products/$',
+        views.products,
+        name='products',
+    ),
+    url(
         r'^$',
         views.home,
         name='home',
     ),
-)
+]

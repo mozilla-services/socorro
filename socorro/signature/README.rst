@@ -15,39 +15,40 @@ signature and the newly generated one.
 This can be used for testing signature generation changes, regression testing,
 and astounding your friends at parties.
 
-To use::
+You need to run this inside a Socorro environment. For example, you could
+run this in the processor Docker container. You can start a container
+like that like this::
 
-    $ python -m socorro.signature CRASHID [CRASHID ...]
-
-
-Pulling crash ids from the file ``crashids.txt``::
-
-    $ cat crashids.txt | python -m socorro.signature
+    $ docker-compose run processor bash
 
 
-Pulling crash ids from another script::
+Once you're in your Socorro environment, you can run signature generation.
+You can pass it crash ids via the command line as arguments::
 
-    $ ./scripts/fetch_crashids.py --num=10 | python -m socorro.signature
+    socorro-cmd signature CRASHID [CRASHID...]
 
 
-Spitting output in CSV format to more easily analyze results for generating
-signatures for multiple crashes::
+It can also take crash ids from stdin.
 
-    $ cat crashids.txt | python -m socorro.signature --format=csv
+Some examples:
+
+* pulling crash ids from the file ``crashids.txt``::
+
+    $ cat crashids.txt | socorro-cmd signature
+
+* pulling crash ids from another script::
+
+    $ socorro-cmd fetch_crashids --num=10 | socorro-cmd signature
+
+* spitting output in CSV format to more easily analyze results for generating
+  signatures for multiple crashes::
+
+    $ cat crashids.txt | socorro-cmd signature --format=csv
 
 
 For more argument help, see::
 
-    $ python -m socorro.signature --help
-
-
-.. Note::
-
-   You need to run this inside a Socorro environment. For example, you could
-   do this::
-
-     $ docker-compose run processor bash
-     app@.../app$ python -m socorro.signature --help
+    $ socorro-cmd signature --help
 
 
 library
@@ -57,8 +58,6 @@ This code can sort of be used as a library. It's been decoupled from many of
 Socorro's bits, but still has some requirements. Roughtly, it requires:
 
 * requests
-* socorro.siglists
-* socorro.lib.treelib
 * ujson
 
 

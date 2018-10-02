@@ -1,3 +1,5 @@
+# flake8: noqa
+
 """
 Static data for Socorro - basic information that Socorro expects to be
 present in the database in order to function correctly.
@@ -27,14 +29,6 @@ class OSNameMatches(BaseTable):
             ['Linux', 'Linux%']]
 
 
-class ProcessTypes(BaseTable):
-    table = 'process_types'
-    columns = ['process_type']
-    rows = [['browser'],
-            ['plugin'],
-            ['content']]
-
-
 class ReleaseChannels(BaseTable):
     table = 'release_channels'
     columns = ['release_channel', 'sort']
@@ -43,58 +37,6 @@ class ReleaseChannels(BaseTable):
             ['Beta', '3'],
             ['Release', '4'],
             ['ESR', '5']]
-
-
-class ReleaseChannelMatches(BaseTable):
-    table = 'release_channel_matches'
-    columns = ['release_channel', 'match_string']
-    rows = [['Release', 'release'],
-            ['Release', 'default'],
-            ['Beta', 'beta'],
-            ['Aurora', 'aurora'],
-            ['Nightly', 'nightly%']]
-
-
-class UptimeLevels(BaseTable):
-    table = 'uptime_levels'
-    columns = ['uptime_level', 'uptime_string', 'min_uptime', 'max_uptime']
-    rows = [['1', '< 1 min', '00:00:00', '00:01:00'],
-            ['2', '1-5 min', '00:01:00', '00:05:00'],
-            ['3', '5-15 min', '00:05:00', '00:15:00'],
-            ['4', '15-60 min', '00:15:00', '01:00:00'],
-            ['5', '> 1 hour', '01:00:00', '1 year']]
-
-
-class WindowsVersions(BaseTable):
-    table = 'windows_versions'
-    columns = ['windows_version_name', 'major_version', 'minor_version']
-    rows = [['Windows NT', '3', '5'],
-            ['Windows NT', '4', '0'],
-            ['Windows 98', '4', '1'],
-            ['Windows Me', '4', '9'],
-            ['Windows 2000', '5', '0'],
-            ['Windows XP', '5', '1'],
-            ['Windows Vista', '6', '0'],
-            ['Windows 7', '6', '1'],
-            ['Windows 8', '6', '2'],
-            ['Windows 8.1', '6', '3'],
-            ['Windows 10', '10', '0']]
-
-
-class OSVersions(BaseTable):
-    table = 'os_versions'
-    columns = ['os_version_id', 'os_name', 'major_version',
-               'minor_version', 'os_version_string']
-    rows = [['66', 'Windows', '6', '135', 'Windows Unknown'],
-            ['67', 'Windows', '5', '3', 'Windows Unknown'],
-            ['68', 'Mac OS X', '10', '8', 'OS X 10.8'],
-            ['69', 'Linux', '2', '6', 'Linux'],
-            ['70', 'Windows', '5', '11', 'Windows Unknown'],
-            ['71', 'Windows', '6', '0', 'Windows Vista'],
-            ['72', 'Windows', '6', '50', 'Windows Unknown'],
-            ['73', 'Mac OS X', '10', '4', 'OS X 10.4'],
-            ['74', 'Mac OS X', '300', '5', 'OS X Unknown'],
-            ['75', 'Windows', '5', '0', 'Windows 2000']]
 
 
 class ReleaseRepositories(BaseTable):
@@ -131,72 +73,8 @@ class ReleaseRepositories(BaseTable):
         ['comm-beta'],
         ['mozilla-esr52'],
         ['comm-esr52'],
-    ]
-
-
-class CrashTypes(BaseTable):
-    table = 'crash_types'
-    columns = [
-        'crash_type_id', 'crash_type', 'crash_type_short', 'process_type',
-        'has_hang_id', 'old_code', 'include_agg']
-    rows = [['1', 'Browser', 'crash', 'browser', False, 'C', True],
-            ['2', 'OOP Plugin', 'oop', 'plugin', False, 'P', True],
-            ['3', 'Hang Browser', 'hang-b', 'plugin', True, 'c', False],
-            ['4', 'Hang Plugin', 'hang-p', 'browser', True, 'p', True],
-            ['5', 'Content', 'content', 'content', False, 'T', True]]
-
-
-class ReportPartitionInfo(BaseTable):
-    table = 'report_partition_info'
-    columns = [
-        'table_name', 'build_order', 'keys', 'indexes', 'fkeys', 'partition_column', 'timetype'
-    ]
-    rows = [
-        (
-            'reports',
-            '1',
-            '{id,uuid}',
-            '{date_processed,hangid,"product,version",reason,signature,url}',
-            '{}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-        (
-            'extensions',
-            '3',
-            '{"report_id,extension_key"}',
-            '{"report_id,date_processed"}',
-            '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-        (
-            'raw_crashes',
-            '4',
-            '{uuid}',
-            '{date_processed}',
-            '{}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-        (
-            'processed_crashes',
-            '12',
-            '{uuid}',
-            '{date_processed}',
-            '{}',
-            'date_processed',
-            'TIMESTAMPTZ'
-        ),
-        (
-            'missing_symbols',
-            '13',
-            '{}',
-            '{}',
-            '{}',
-            'date_processed',
-            'DATE'
-        ),
+        ['mozilla-esr60'],
+        ['comm-esr60'],
     ]
 
 
@@ -206,11 +84,12 @@ class Products(BaseTable):
         'product_name', 'sort', 'rapid_release_version', 'release_name', 'rapid_beta_version'
     ]
     rows = [
-        ['Fennec', '3', '5.0', 'mobile', '999.0'],
-        ['Thunderbird', '2', '6.0', 'thunderbird', '999.0'],
         ['Firefox', '1', '5.0', 'firefox', '23.0'],
-        ['SeaMonkey', '6', '2.3', 'seamonkey', '999.0'],
-        ['FennecAndroid', '4', '5.0', '**SPECIAL**', '999.0'],
+        ['FennecAndroid', '2', '5.0', '**SPECIAL**', '999.0'],
+        ['Thunderbird', '80', '6.0', 'thunderbird', '999.0'],
+        ['SeaMonkey', '90', '2.3', 'seamonkey', '999.0'],
+        ['Fennec', '100', '5.0', 'mobile', '999.0'],
+        ['InactiveProduct', '-1', '5.0', 'inactive', '999.0'],
     ]
 
 
@@ -220,11 +99,25 @@ class ProductBuildTypes(BaseTable):
         'product_name', 'build_type', 'throttle'
     ]
     rows = [
-        ['Firefox', 'esr', '1.0',],
+        ['Firefox', 'esr', '1.0'],
         ['Firefox', 'aurora', '1.0'],
         ['Firefox', 'beta', '1.0'],
         ['Firefox', 'release', '0.1'],
         ['Firefox', 'nightly', '1.0'],
+    ]
+
+
+class ProductProductIDMap(BaseTable):
+    table = 'product_productid_map'
+    columns = [
+        'product_name', 'productid', 'rewrite', 'version_began'
+    ]
+    rows = [
+        ['Fennec', '{a23983c0-fd0e-11dc-95ff-0800200c9a66}', 'f', '0.1'],
+        ['FennecAndroid', '{aa3c5121-dab2-40e2-81ca-7ea25febc110}', 't', '0.1'],
+        ['Firefox', '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}', 'f', '0.7'],
+        ['Thunderbird', '{3550f703-e582-4d05-9a08-453d09bdfdc6}', 'f', '0.3'],
+        ['SeaMonkey', '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}', 'f', '1.0a'],
     ]
 
 
@@ -275,9 +168,8 @@ class SpecialProductPlatforms(BaseTable):
     ]
 
 
-# the order that tables are loaded is important.
-tables = [OSNames, OSNameMatches, ProcessTypes, ReleaseChannels,
-          ReleaseChannelMatches, UptimeLevels, WindowsVersions,
-          OSVersions, ReleaseRepositories,
-          CrashTypes, ReportPartitionInfo,
-          Products, ProductBuildTypes, ProductReleaseChannels, SpecialProductPlatforms]
+# NOTE(willkg): the order that tables are loaded is important
+tables = [OSNames, OSNameMatches, ReleaseChannels,
+          ReleaseRepositories,
+          Products, ProductBuildTypes, ProductReleaseChannels,
+          ProductProductIDMap, SpecialProductPlatforms]

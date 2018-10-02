@@ -3,21 +3,19 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import json
-import time
 
 import json_schema_reducer
 from socorro.lib.converters import change_default
+from future.utils import iteritems
 
 from configman import Namespace
-from configman.converters import class_converter, py_obj_to_str
+from configman.converters import class_converter
+
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
-)
-from socorro.external.boto.connection_context import (
-    SimpleDatePrefixKeyBuilder
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
@@ -85,10 +83,11 @@ class BotoCrashStorage(CrashStorageBase):
         #elif   # for further cases...
         return False
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(BotoCrashStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
 
         self.connection_source = config.resource_class(config)
@@ -97,13 +96,6 @@ class BotoCrashStorage(CrashStorageBase):
             self.connection_source,
             quit_check_callback
         )
-        if config.transaction_executor_class_for_get.is_infinite:
-            self.config.logger.error(
-                'the class %s identifies itself as an infinite iterator. '
-                'As a TransactionExecutor for reads from Boto, this may '
-                'result in infinite loops that will consume threads forever.'
-                % py_obj_to_str(config.transaction_executor_class_for_get)
-            )
 
         self.transaction_for_get = config.transaction_executor_class_for_get(
             config,
@@ -136,7 +128,7 @@ class BotoCrashStorage(CrashStorageBase):
         # however, that by calling the memory_dump_mapping method, we will
         # get a MemoryDumpMapping which is exactly what we need.
         dumps = dumps.as_memory_dumps_mapping()
-        for dump_name, dump in dumps.iteritems():
+        for dump_name, dump in iteritems(dumps):
             if dump_name in (None, '', 'upload_file_minidump'):
                 dump_name = 'dump'
             boto_connection.submit(crash_id, dump_name, dump)
@@ -292,9 +284,12 @@ class BotoS3CrashStorage(BotoCrashStorage):
 
 
 class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
-    """S3 crash storage class for sending a subset of the processed crash
-    but reduced to only include the files in the processed crash
-    JSON Schema."""
+    """Sends a subset of the processed crash to an S3 bucket
+
+    The subset of the processed crash is based on the JSON Schema which is
+    derived from "socorro/external/es/super_search_fields.py".
+
+    """
 
     required_config = Namespace()
     required_config.resource_class = change_default(
@@ -302,7 +297,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         'resource_class',
         'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
     )
-
     required_config.elasticsearch = Namespace()
     required_config.elasticsearch.add_option(
         'elasticsearch_class',
@@ -312,28 +306,10 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     )
 
     def __init__(self, config, *args, **kwargs):
-        # This class requires that we use
-        # SimpleDatePrefixKeyBuilder, so we stomp on the configuration
-        # to make absolutely sure it gets set that way.
-        config.keybuilder_class = SimpleDatePrefixKeyBuilder
         super(TelemetryBotoS3CrashStorage, self).__init__(
             config, *args, **kwargs
         )
-
-    def _get_all_fields(self):
-        if (
-            hasattr(self, '_all_fields') and
-            hasattr(self, '_all_fields_timestamp')
-        ):
-            # we might have it cached
-            age = time.time() - self._all_fields_timestamp
-            if age < 60 * 60:
-                # fresh enough
-                return self._all_fields
-
         self._all_fields = SuperSearchFields(config=self.config).get()
-        self._all_fields_timestamp = time.time()
-        return self._all_fields
 
     def save_raw_and_processed(
         self,
@@ -342,7 +318,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         processed_crash,
         crash_id
     ):
-        all_fields = self._get_all_fields()
         crash_report = {}
 
         # TODO Opportunity of optimization;
@@ -355,7 +330,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         # Rename fields in raw_crash.
         raw_fields_map = dict(
             (x['in_database_name'], x['name'])
-            for x in all_fields.values()
+            for x in self._all_fields.values()
             if x['namespace'] == 'raw_crash'
         )
         for key, val in raw_crash.items():
@@ -364,7 +339,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         # Rename fields in processed_crash.
         processed_fields_map = dict(
             (x['in_database_name'], x['name'])
-            for x in all_fields.values()
+            for x in self._all_fields.values()
             if x['namespace'] == 'processed_crash'
         )
         for key, val in processed_crash.items():
@@ -378,8 +353,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
-        """Overriding this method so we can control the "name of thing"
-        prefix used to upload to S3."""
+        """Overriding this to change "name of thing" to crash_report"""
         crash_id = processed_crash['uuid']
         processed_crash_as_string = boto_connection._convert_mapping_to_string(
             processed_crash
@@ -390,45 +364,16 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
             processed_crash_as_string
         )
 
-
-class SupportReasonAPIStorage(BotoS3CrashStorage):
-    """Used to send a small subset of processed crash data the Support Reason
-       API back-end. This is effectively a highly lossy S3 storage mechanism.
-       bug 1066058
-    """
-
-    # intially we wanted the support reason class to use a different bucket
-    # I suspect that we'll end up using a prefix instead of differing bucket
-    # name in the future.  Leaving this code in place for the moment
-
     @staticmethod
-    def _do_save_processed(boto_connection, processed_crash):
-        """Replaces the function of the same name in the parent class.
-        """
-        crash_id = processed_crash['uuid']
-
+    def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):
+        """Overriding this to change "name of thing" to crash_report"""
         try:
-            # Set up the data chunk to be passed to S3.
-            reason = \
-                processed_crash['classifications']['support']['classification']
-            content = {
-                'crash_id': crash_id,
-                'reasons': [reason]
-            }
-        except KeyError:
-            # No classifier was found for this crash.
-            return
-
-        # Submit the data chunk to S3.
-        boto_connection.submit(
-            crash_id,
-            'support_reason',
-            json.dumps(content)
-        )
-
-    def save_raw_crash(self, raw_crash, dumps, crash_id):
-        """There are no scenarios in which the raw crash could possibly be of
-        interest to the Support Reason API, therefore this function does
-        nothing; however it is necessary for compatibility purposes.
-        """
-        pass
+            processed_crash_as_string = boto_connection.fetch(crash_id, 'crash_report')
+            return json.loads(
+                processed_crash_as_string,
+                object_hook=json_object_hook,
+            )
+        except boto_connection.ResponseError as x:
+            raise CrashIDNotFound(
+                '%s not found: %s' % (crash_id, x)
+            )

@@ -1,76 +1,78 @@
-import contextlib
 from StringIO import StringIO
 
-from nose.tools import ok_, assert_raises
 import mock
+import pytest
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.authentication.management.commands import makesuperuser
 
 
-@contextlib.contextmanager
-def redirect_stdout(stream):
-    import sys
-    sys.stdout = stream
-    yield
-    sys.stdout = sys.__stdout__
-
-
-@contextlib.contextmanager
-def redirect_stderr(stream):
-    import sys
-    sys.stderr = stream
-    yield
-    sys.stderr = sys.__stderr__
-
-
 class TestMakeSuperuserCommand(DjangoTestCase):
-
     def test_make_existing_user(self):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
-        cmd = makesuperuser.Command()
         buffer = StringIO()
-        with redirect_stdout(buffer):
-            cmd.handle(emailaddress=['BOB@mozilla.com'])
-        ok_('bob@mozilla.com is now a superuser' in buffer.getvalue())
-        # reload
-        ok_(User.objects.get(pk=bob.pk, is_superuser=True))
+        call_command('makesuperuser', 'BOB@mozilla.com', stdout=buffer)
+        assert 'bob@mozilla.com is now a superuser/staff' in buffer.getvalue()
+
+        # Reload user and verify
+        user = User.objects.get(pk=bob.pk)
+        assert user.is_superuser
+        assert user.is_staff
+        assert [g.name for g in user.groups.all()] == ['Hackers']
 
     def test_make_already_user(self):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
         bob.is_superuser = True
+        bob.is_staff = True
         bob.save()
-        cmd = makesuperuser.Command()
         buffer = StringIO()
-        with redirect_stdout(buffer):
-            cmd.handle(emailaddress=['BOB@mozilla.com'])
-        ok_('bob@mozilla.com was already a superuser' in buffer.getvalue())
-        # reload
-        ok_(User.objects.get(pk=bob.pk, is_superuser=True))
+        call_command('makesuperuser', 'BOB@mozilla.com', stdout=buffer)
+
+        # Assert what got printed
+        assert 'bob@mozilla.com was already a superuser/staff' in buffer.getvalue()
+
+        # Reload user object and verify changes
+        user = User.objects.get(pk=bob.pk)
+        assert user.is_superuser
+        assert user.is_staff
+        assert [g.name for g in user.groups.all()] == ['Hackers']
 
     def test_make_two_user_superuser(self):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
         bob.is_superuser = True  # already
         bob.save()
         otto = User.objects.create(username='otto', email='otto@mozilla.com')
-        cmd = makesuperuser.Command()
+
         buffer = StringIO()
-        with redirect_stdout(buffer):
-            cmd.handle(emailaddress=['BOB@mozilla.com', 'oTTo@mozilla.com'])
-        ok_(User.objects.get(pk=bob.pk, is_superuser=True))
-        ok_(User.objects.get(pk=otto.pk, is_superuser=True))
+        call_command('makesuperuser', 'BOB@mozilla.com', 'oTTo@mozilla.com', stdout=buffer)
+        assert 'bob@mozilla.com is now a superuser/staff' in buffer.getvalue()
+        assert 'otto@mozilla.com is now a superuser/staff' in buffer.getvalue()
+
+        # Reload user objects and verify changes
+        bob = User.objects.get(pk=bob.pk)
+        assert bob.is_superuser
+        assert bob.is_staff
+        assert [g.name for g in bob.groups.all()] == ['Hackers']
+
+        otto = User.objects.get(pk=otto.pk)
+        assert otto.is_superuser
+        assert otto.is_staff
+        assert [g.name for g in otto.groups.all()] == ['Hackers']
 
     def test_nonexisting_user(self):
-        cmd = makesuperuser.Command()
         buffer = StringIO()
         email = 'neverheardof@mozilla.com'
-        with redirect_stdout(buffer):
-            cmd.handle(emailaddress=[email])
-        ok_(User.objects.get(email=email, is_superuser=True))
-        ok_('{} is now a superuser'.format(email) in buffer.getvalue())
+        call_command('makesuperuser', email, stdout=buffer)
+        assert '{} is now a superuser/staff'.format(email) in buffer.getvalue()
+
+        neverheardof = User.objects.get(email=email)
+        assert neverheardof.is_superuser
+        assert neverheardof.is_staff
+        assert [g.name for g in neverheardof.groups.all()] == ['Hackers']
 
     @mock.patch(
         'crashstats.authentication.management.commands.makesuperuser.'
@@ -78,13 +80,17 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         return_value='BOB@mozilla.com '
     )
     def test_with_raw_input(self, mocked_raw_input):
-        User.objects.create(username='bob', email='bob@mozilla.com')
-        cmd = makesuperuser.Command()
+        bob = User.objects.create(username='bob', email='bob@mozilla.com')
         buffer = StringIO()
-        with redirect_stdout(buffer):
-            cmd.handle(emailaddress=[])
+        cmd = makesuperuser.Command()
+        cmd.stdout = buffer
+        cmd.handle(emailaddress=[])
+
         # reload
-        ok_(User.objects.get(email='bob@mozilla.com', is_superuser=True))
+        bob = User.objects.get(pk=bob.pk)
+        assert bob.is_superuser
+        assert bob.is_staff
+        assert [g.name for g in bob.groups.all()] == ['Hackers']
 
     @mock.patch(
         'crashstats.authentication.management.commands.makesuperuser.'
@@ -92,9 +98,8 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         return_value='\n'
     )
     def test_with_raw_input_but_empty(self, mocked_raw_input):
-        cmd = makesuperuser.Command()
-        assert_raises(
-            CommandError,
-            cmd.handle,
-            emailaddress=[]
-        )
+        with pytest.raises(CommandError):
+            buffer = StringIO()
+            cmd = makesuperuser.Command()
+            cmd.stdout = buffer
+            cmd.handle(emailaddress=[])

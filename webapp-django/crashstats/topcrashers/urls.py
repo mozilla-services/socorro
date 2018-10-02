@@ -1,9 +1,10 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from . import views
 
-urlpatterns = patterns(
-    '',
+
+app_name = 'topcrashers'
+urlpatterns = [
     url(r'^$',
         views.topcrashers,
         name='topcrashers'),
-)
+]

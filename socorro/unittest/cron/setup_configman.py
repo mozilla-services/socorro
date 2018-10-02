@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from collections import Sequence
+import logging
+
 from mock import Mock
 
-from collections import Sequence
-
-from socorro.cron.crontabber_app import CronTabber
-from socorro.lib.util import SilentFakeLogger
+from socorro.cron.crontabber_app import CronTabberApp
 
 from configman import (
     Namespace,
@@ -24,7 +24,7 @@ def get_standard_config_manager(
     required_config = Namespace()
     required_config.add_option(
         'logger',
-        default=SilentFakeLogger(),
+        default=logging.getLogger(__name__),
         doc='a logger',
     )
     required_config.add_option(
@@ -59,14 +59,6 @@ def get_standard_config_manager(
         argv_source=[]
     )
 
-    # very useful debug
-    #import contextlib
-    #import sys
-    #@contextlib.contextmanager
-    #def stdout_opener():
-        #yield sys.stdout
-    #config_manager.write_conf('conf', stdout_opener)
-
     return config_manager
 
 
@@ -77,19 +69,17 @@ def get_config_manager_for_crontabber(
 ):
     if isinstance(more_definitions, Sequence):
         more_definitions = more_definitions.append(
-            CronTabber.get_required_config()
+            CronTabberApp.get_required_config()
         )
     elif more_definitions is not None:
         more_definitions = [
             more_definitions,
-            CronTabber.get_required_config()
+            CronTabberApp.get_required_config()
         ]
     else:
-        more_definitions = [CronTabber.get_required_config()]
+        more_definitions = [CronTabberApp.get_required_config()]
 
-    local_overrides = {
-        'logger': Mock(),
-    }
+    local_overrides = {}
     if jobs:
         local_overrides['crontabber.jobs'] = jobs
 
@@ -99,6 +89,9 @@ def get_config_manager_for_crontabber(
         overrides = [overrides, local_overrides]
     else:
         overrides = [local_overrides]
+
+    # Be sure to include defaults
+    overrides.insert(0, CronTabberApp.config_defaults)
 
     return get_standard_config_manager(
         more_definitions=more_definitions,

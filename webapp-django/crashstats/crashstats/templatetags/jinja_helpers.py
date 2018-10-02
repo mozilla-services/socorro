@@ -2,26 +2,23 @@ import datetime
 import json
 import re
 import urllib
+from past.builtins import basestring
+from past.builtins import long
 
 import isodate
 import jinja2
 import humanfriendly
-
 from django_jinja import library
+from six import text_type
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.template import engines
+from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_str
 
-from crashstats import scrubber
 from crashstats.crashstats.utils import parse_isodate
-
-
-@library.filter
-def split(value, separator):
-    return value.split(separator)
 
 
 @library.global_function
@@ -41,7 +38,7 @@ def urlencode(txt):
     if not isinstance(txt, basestring):
         # Do nothing on non-strings.
         return txt
-    if isinstance(txt, unicode):
+    if isinstance(txt, text_type):
         txt = txt.encode('utf-8')
     return urllib.quote_plus(txt).replace('+', '%20')
 
@@ -54,25 +51,8 @@ def digitgroupseparator(number):
     return format(number, ',')
 
 
-@library.global_function
-def recursive_state_filter(state, root):
-    apps = []
-    for app_name in state:
-        if not root:
-            if not state[app_name].get('depends_on', []):
-                apps.append((app_name, state[app_name]))
-        elif root in state[app_name].get('depends_on', []):
-            apps.append((app_name, state[app_name]))
-
-    apps.sort()
-    return apps
-
-
 @library.filter
-def timestamp_to_date(
-    timestamp,
-    format='%Y-%m-%d %H:%M:%S'
-):
+def timestamp_to_date(timestamp, format='%Y-%m-%d %H:%M:%S'):
     """ Python datetime to a time tag with JS Date.parse-parseable format. """
     try:
         timestamp = float(timestamp)
@@ -167,20 +147,6 @@ def human_readable_iso_date(dt):
 
 
 @library.filter
-def scrub_pii(content):
-    content = scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
-    content = scrubber.scrub_string(content, scrubber.URL, '(URL removed)')
-    return content
-
-
-@library.filter
-def json_dumps(data):
-    return jinja2.Markup(
-        json.dumps(data).replace('</', '<\\/')
-    )
-
-
-@library.filter
 def to_json(data):
     return json.dumps(data).replace('</', '<\\/')
 
@@ -215,15 +181,7 @@ def show_bug_link(bug_id):
 
 
 @library.global_function
-def read_crash_column(crash, column_key):
-    if 'raw_crash' in crash:
-        raw_crash = crash['raw_crash'] or {}
-        return raw_crash.get(column_key, crash.get(column_key, ''))
-    return crash.get(column_key, '')
-
-
-@library.global_function
-def bugzilla_submit_url(report, bug_product):
+def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
@@ -239,6 +197,16 @@ def bugzilla_submit_url(report, bug_product):
     elif op_sys in ('Windows Unknown', 'Windows 2000'):
         op_sys = 'Windows'
 
+    crashing_thread_frames = None
+    if parsed_dump.get('threads') and crashing_thread is not None:
+        crashing_thread_frames = bugzilla_thread_frames(parsed_dump['threads'][crashing_thread])
+
+    comment = render_to_string('crashstats/bugzilla_comment.txt', {
+        'uuid': report['uuid'],
+        'java_stack_trace': report.get('java_stack_trace', None),
+        'crashing_thread_frames': crashing_thread_frames,
+    })
+
     kwargs = {
         'bug_severity': 'critical',
         'keywords': 'crash',
@@ -247,15 +215,7 @@ def bugzilla_submit_url(report, bug_product):
         'rep_platform': report['cpu_name'],
         'cf_crash_signature': '[@ {}]'.format(smart_str(report['signature'])),
         'short_desc': 'Crash in {}'.format(smart_str(report['signature'])),
-        'comment': (
-            'This bug was filed from the Socorro interface and is \n'
-            'report bp-{}.\n'
-            '{}'
-            '\n'
-        ).format(
-            report['uuid'],
-            '=' * 61
-        ),
+        'comment': comment,
     }
 
     # some special keys have to be truncated to make Bugzilla happy
@@ -271,6 +231,30 @@ def bugzilla_submit_url(report, bug_product):
 
     url += '?' + urllib.urlencode(kwargs, True)
     return url
+
+
+def bugzilla_thread_frames(thread):
+    """Extract frame info for the top frames of a crashing thread to be
+    included in the Bugzilla summary when reporting the crash.
+
+    """
+    frames = []
+    for frame in thread['frames'][:10]:  # Max 10 frames
+        # Source is an empty string if data isn't available
+        source = frame.get('file') or ''
+        if frame.get('line'):
+            source += ':{}'.format(frame['line'])
+
+        # Remove function arguments
+        signature = re.sub(r'\(.*\)', '', frame.get('signature', ''))
+
+        frames.append({
+            'frame': frame.get('frame', '?'),
+            'module': frame.get('module', ''),
+            'signature': signature,
+            'source': source,
+        })
+    return frames
 
 
 @library.filter

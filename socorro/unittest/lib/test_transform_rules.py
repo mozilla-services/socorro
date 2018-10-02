@@ -288,17 +288,6 @@ class TestTransformRules(TestCase):
                                                     False, (), {}))]
         assert rules.rules == expected
 
-    def test_TransformRuleSystem_append_rules(self):
-        rules = transform_rules.TransformRuleSystem()
-        some_rules = [(True, '', '', True, '', ''),
-                      (False, '', '', False, '', '')]
-        rules.append_rules(some_rules)
-        expected = [transform_rules.TransformRule(*(True, (), {},
-                                                    True, (), {})),
-                    transform_rules.TransformRule(*(False, (), {},
-                                                    False, (), {}))]
-        assert rules.rules == expected
-
     def test_TransformRuleSystem_apply_all_rules(self):
 
         quit_check_mock = Mock()
@@ -327,170 +316,9 @@ class TestTransformRules(TestCase):
         assert d == {'one': 2}
         assert quit_check_mock.call_count == 4
 
-    def test_TransformRuleSystem_apply_all_until_action_succeeds(self):
-
-        quit_check_mock = Mock()
-
-        def assign_1(s, d):
-            d['one'] = 1
-            return True
-
-        def increment_1(s, d):
-            try:
-                d['one'] += 1
-                return True
-            except KeyError:
-                return False
-
-        some_rules = [(True, '', '', increment_1, '', ''),
-                      (True, '', '', assign_1, '', ''),
-                      (False, '', '', increment_1, '', ''),
-                      (True, '', '', increment_1, '', ''),
-                      ]
-        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
-        rules.load_rules(some_rules)
-        s = {}
-        d = {}
-        rules.apply_until_action_succeeds(s, d)
-        assert d == {'one': 1}
-        assert quit_check_mock.call_count == 2
-
-    def test_TransformRuleSystem_apply_all_until_action_fails(self):
-
-        quit_check_mock = Mock()
-
-        def assign_1(s, d):
-            d['one'] = 1
-            return True
-
-        def increment_1(s, d):
-            try:
-                d['one'] += 1
-                return True
-            except KeyError:
-                return False
-
-        some_rules = [(True, '', '', increment_1, '', ''),
-                      (True, '', '', assign_1, '', ''),
-                      (False, '', '', increment_1, '', ''),
-                      (True, '', '', increment_1, '', ''),
-                      ]
-        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
-        rules.load_rules(some_rules)
-        s = {}
-        d = {}
-        rules.apply_until_action_fails(s, d)
-        assert d == {}
-        assert quit_check_mock.call_count == 1
-
-    def test_TransformRuleSystem_apply_all_until_predicate_succeeds(self):
-
-        quit_check_mock = Mock()
-
-        def assign_1(s, d):
-            d['one'] = 1
-            return True
-
-        def increment_1(s, d):
-            try:
-                d['one'] += 1
-                return True
-            except KeyError:
-                return False
-
-        some_rules = [(True, '', '', increment_1, '', ''),
-                      (True, '', '', assign_1, '', ''),
-                      (False, '', '', increment_1, '', ''),
-                      (True, '', '', increment_1, '', ''),
-                      ]
-        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
-        rules.load_rules(some_rules)
-        s = {}
-        d = {}
-        rules.apply_until_predicate_succeeds(s, d)
-        assert d == {}
-        assert quit_check_mock.call_count == 1
-
-    def test_TransformRuleSystem_apply_all_until_predicate_fails(self):
-
-        quit_check_mock = Mock()
-
-        def assign_1(s, d):
-            d['one'] = 1
-            return True
-
-        def increment_1(s, d):
-            try:
-                d['one'] += 1
-                return True
-            except KeyError:
-                return False
-
-        some_rules = [(True, '', '', increment_1, '', ''),
-                      (True, '', '', assign_1, '', ''),
-                      (False, '', '', increment_1, '', ''),
-                      (True, '', '', increment_1, '', ''),
-                      ]
-        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
-        rules.load_rules(some_rules)
-        s = {}
-        d = {}
-        rules.apply_until_predicate_fails(s, d)
-        assert d == {'one': 1}
-
-        some_rules = [
-            (True, '', '', True, '', ''),
-            (True, '', '', False, '', ''),
-        ]
-        rules.load_rules(some_rules)
-        res = rules.apply_until_predicate_fails()
-        assert res is None
-
-        some_rules = [
-            (True, '', '', True, '', ''),
-            (False, '', '', False, '', ''),
-        ]
-        rules.load_rules(some_rules)
-        res = rules.apply_until_predicate_fails()
-        assert res is False
-
-        some_rules = [
-            (True, '', '', True, '', ''),
-            (False, '', '', True, '', ''),
-        ]
-        rules.load_rules(some_rules)
-        res = rules.apply_until_predicate_fails()
-        assert res is False
-
-        assert quit_check_mock.call_count == 9
-
-    def test_is_not_null_predicate(self):
-        assert (
-            transform_rules.is_not_null_predicate(
-                {'alpha': 'hello'}, None, None, None, 'alpha'
-            )
-        )
-        assert not (
-            transform_rules.is_not_null_predicate(
-                {'alpha': 'hello'}, None, None, None, 'beta'
-            )
-        )
-        assert not (
-            transform_rules.is_not_null_predicate(
-                {'alpha': ''}, None, None, None, 'alpha'
-            )
-        )
-        assert not (
-            transform_rules.is_not_null_predicate(
-                {'alpha': None}, None, None, None, 'alpha'
-            )
-        )
-
     def test_rule_simple(self):
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
 
         r1 = transform_rules.Rule(fake_config)
         assert r1.predicate(None, None, None, None) is True
@@ -520,8 +348,6 @@ class TestTransformRules(TestCase):
     def test_rule_exceptions(self):
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
 
         class BadPredicate(transform_rules.Rule):
 
@@ -588,8 +414,6 @@ class TestTransformRules(TestCase):
 
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
         fake_config.sentry = DotDict()
 
         class SomeError(Exception):
@@ -657,8 +481,6 @@ class TestTransformRules(TestCase):
 
         fake_config = DotDict()
         fake_config.logger = Mock()
-        fake_config.chatty_rules = False
-        fake_config.chatty = False
         fake_config.sentry = DotDict()
         fake_config.sentry.dsn = (
             'https://6e48583:e484@sentry.example.com/01'
@@ -684,8 +506,6 @@ class TestTransformRules(TestCase):
 
     def test_rules_in_config(self):
         config = DotDict()
-        config.chatty_rules = False
-        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config['RuleTestLaughable.laughable'] = 'wilma'
@@ -713,8 +533,6 @@ class TestTransformRules(TestCase):
     def test_rules_close(self):
         config = DotDict()
         config.logger = Mock().s
-        config.chatty_rules = False
-        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config['RuleTestLaughable.laughable'] = 'wilma'
@@ -742,8 +560,6 @@ class TestTransformRules(TestCase):
     def test_rules_close_if_close_method_available(self):
         config = DotDict()
         config.logger = Mock()
-        config.chatty_rules = False
-        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config.rules_list = DotDict()
@@ -772,11 +588,6 @@ class TestTransformRules(TestCase):
             'trying to close %s',
             'socorro.unittest.lib.test_transform_rules.'
             'RuleTestDangerous'
-        )
-        config.logger.debug.assert_any_call(
-            '%s has no close',
-            'socorro.unittest.lib.test_transform_rules.'
-            'RuleTestNoCloseMethod'
         )
 
     def test_rules_close_bubble_close_errors(self):

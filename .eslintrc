@@ -1,22 +1,21 @@
 rules:
-  indent:
-    - 2
-    - 4
-  quotes:
-    - 1
-    - single
   linebreak-style:
     - 2
     - unix
-  semi:
-    - 2
-    - always
-  comma-dangle:
+  no-console:
     - 1
-    - always-multiline
-  no-extra-semi:
-    - 1
+  max-len: "off" # Use prettier default line length
 env:
   browser: true
   jquery: true
-extends: 'eslint:recommended'
+parserOptions:
+  ecmaVersion: 7
+globals:
+  $: false
+  Analytics: false
+  browser: false
+  moment: false
+  Qs: false
+extends:
+  - eslint:recommended
+  - plugin:prettier/recommended

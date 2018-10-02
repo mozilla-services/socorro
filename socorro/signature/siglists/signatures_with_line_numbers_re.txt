@@ -1,0 +1,8 @@
+# Signatures with line number.
+#
+# Regular expressions matching frame signatures that should be combined with
+# their associated source code line numbers.
+#
+# Read the README.rst for instructions and tips on editing this file.
+
+js_Interpret

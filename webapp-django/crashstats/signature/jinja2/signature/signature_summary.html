@@ -1,3 +1,58 @@
+{% from "macros/signature_startup_icons.html" import startup_crash_icon,
+                                                     potential_startup_crash_icon,
+                                                     potential_startup_window_crash_icon,
+                                                     hang_crash_icon, plugin_crash_icon,
+                                                     browser_crash_icon %}
+
+{% if signature_stats %}
+<div class="panel tab-inner-panel crash-type-indicators-panel
+            {% if signature_stats.is_startup_related_crash %} startup-crash-warning {% endif %}">
+    {% if signature_stats.is_startup_crash %}
+    <div class="crash-type-indicator-container">
+        {{ startup_crash_icon() }}
+        Startup Crash, all crashes happened during startup
+    </div>
+    {% endif %}
+
+    {% if signature_stats.is_potential_startup_crash %}
+    <div class="crash-type-indicator-container">
+        {{ potential_startup_crash_icon(
+            num_startup_crashes=signature_stats.num_startup_crashes,
+            num_crashes=signature_stats.num_crashes,
+        ) }}
+        Potential Startup Crash, {{ signature_stats.num_startup_crashes }}
+        out of {{ signature_stats.num_crashes }} crashes happened during startup
+    </div>
+    {% endif %}
+
+    {% if signature_stats.is_startup_window_crash %}
+    <div class="crash-type-indicator-container">
+        {{ potential_startup_window_crash_icon() }}
+        Potential Startup Crash, more than half of the crashes happened during the first minute after launch
+    </div>
+    {% endif %}
+
+    {% if signature_stats.is_hang_crash %}
+    <div class="crash-type-indicator-container">
+        {{ hang_crash_icon() }}
+        Hanged Crash
+    </div>
+    {% endif %}
+
+    {% if signature_stats.is_plugin_crash %}
+    <div class="crash-type-indicator-container">
+        {{ plugin_crash_icon() }}
+        Plugin Crash
+    </div>
+    {% else %}
+    <div class="crash-type-indicator-container">
+        {{ browser_crash_icon() }}
+        Browser Crash
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="panel tab-inner-panel" id="panel-platform">
     <header class="title" title="Toggle visibility">
         <h2>Operating System</h2>
@@ -55,10 +110,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        <p class="footnote">
-            <sup>*</sup> This summary does not use any of the filters defined above except the signature.
-            The date range is from 7 days ago to now.
-        </p>
     </div>
 </div>
 

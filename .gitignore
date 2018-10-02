@@ -1,30 +1,16 @@
 # exclude config overrides to prevent accidental check-ins
-socorro/unittest/config/*.py
 *.py[co]
 *.sw[po]
 *.log
-distribute*.tar.gz
 breakpad/
 breakpad.tar.gz
 depot_tools/
-nosetests.xml
-scripts/config/*.py
-socorro/unittest/config/*.py
-socorro-virtualenv
-socorro-vagrant-virtualenv
-socorro/unittest/database/logs/
-socorro/unittest/testlib/logs/
 stackwalk/
 exploitable/
-docs/_build/
 *~
 coverage.xml
 .coverage
 cover/
-.vagrant
-socorro/cron/crontabber.json
-vagrantconfig_local.yaml
-/config/*.ini
 node_modules
 pip-cache
 pip-log.txt
@@ -38,17 +24,16 @@ minidump-stackwalk/get-minidump-instructions
 minidump-stackwalk/jit-crash-categorize
 socorro.egg-info/
 dist/
-socorro-*.rpm
 webapp-django/.env
-
-# exclude filesystem storage directories
-primaryCrashStore/
-processedCrashStore/
-/tags
-e2e-tests/.cache/
+webapp-django/webpack-stats.json
+webapp-django/webpack_bundles/
+.pytest_cache
 
 # docker things
-.docker-build
+.docker-build*
 .cache/
 docker-compose.override.yml
 my.env
+
+# docs things
+docs/_build/

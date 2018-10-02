@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 # Updates product release and other data in the docker environment.
 #
 # Usage: docker/run_update_data.sh
@@ -8,30 +12,21 @@ set -eo pipefail
 
 HOSTUSER=$(id -u):$(id -g)
 
-# The assumption is that you're running this from /app inside the container
-CACHEDIR=/app/.cache/ftpscraper
+DC="$(which docker-compose)"
 
 # Fetch and update release information for these products (comma-delimited)
 PRODUCTS="firefox,mobile"
-CRONTABBER="docker-compose run crontabber python socorro/cron/crontabber_app.py"
+CRONTABBERCMD="./socorro/cron/crontabber_app.py"
 
 
-# Fetch release data -- do it as the user so it can cache things
-docker-compose run -u "${HOSTUSER}" crontabber python socorro/cron/crontabber_app.py \
-               --job=ftpscraper \
-               --crontabber.class-FTPScraperCronApp.cachedir=${CACHEDIR} \
-               --crontabber.class-FTPScraperCronApp.products=${PRODUCTS}
+# Fetch release data -- use the ftpscraper wrapper which will use cached
+# data if it's available and run ftpscraper as a 20-minute last resort
+./docker/run_ftpscraper_wrapper.sh
 
 # Update featured versions data based on release data
-${CRONTABBER} --job=featured-versions-automatic \
-              --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
+${DC} run app shell bash -c ${CRONTABBERCMD} --reset-job=featured-versions-automatic
+${DC} run app shell bash -c ${CRONTABBERCMD} --job=featured-versions-automatic \
+    --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
 
-# Fetch normalization data for versions we know about
-docker-compose run processor python docker/fetch_normalization_data.py --products=${PRODUCTS}
-
-# NOTE(willkg): Running this next script creates the xyz_yyyymmdd tables
-# including raw_crashes_yyyymmdd and processed_crashes_yyyymmdd for the last 8
-# weeks plus the next 2 weeks. Otherwise postgres crashstorage fails epically.
-
-# Create weekly reports
-docker-compose run processor python docker/create_weekly_tables.py
+# Create ES indexes for the next few weeks
+${DC} run app shell bash -c socorro/external/es/create_recent_indices_app.py

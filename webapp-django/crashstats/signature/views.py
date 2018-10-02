@@ -9,7 +9,7 @@ from django.shortcuts import render
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
-from crashstats.base.utils import render_exception, urlencode_obj
+from crashstats.base.utils import SignatureStats, render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
@@ -404,6 +404,12 @@ def signature_summary(request, params):
     context = {}
 
     params['signature'] = '=' + params['signature'][0]
+    params['_aggs.signature'] = [
+        'hang_type',
+        'process_type',
+        'startup_crash',
+        '_histogram.uptime',
+    ]
     params['_results_number'] = 0
     params['_facets'] = [
         'platform_pretty_version',
@@ -417,6 +423,7 @@ def signature_summary(request, params):
     params['_aggs.android_cpu_abi.android_manufacturer.android_model'] = [
         'android_version'
     ]
+    params['_aggs.product.version'] = ['_cardinality.install_time']
 
     # If the user has permissions, show exploitability.
     all_fields = SuperSearchFields().get()
@@ -437,33 +444,16 @@ def signature_summary(request, params):
 
     facets = search_results['facets']
 
-    # We need to make a separate query so that we can show all versions and
-    # not just the one asked for.
-    params_copy = {
-        'signature': params['signature'],
-        '_aggs.product.version': ['_cardinality.install_time'],
-    }
-
-    try:
-        product_results = api.get(**params_copy)
-    except BadArgumentError as e:
-        # We need to return the error message in some HTML form for jQuery
-        # to pick it up.
-        return http.HttpResponseBadRequest(render_exception(e))
-
-    if 'product' in product_results['facets']:
-        facets['product'] = product_results['facets']['product']
-    else:
-        facets['product'] = []
-
-    context['product_version_total'] = product_results['total']
-
     _transform_uptime_summary(facets)
     _transform_graphics_summary(facets)
     _transform_mobile_summary(facets)
     _transform_exploitability_summary(facets)
 
     context['query'] = search_results
+    context['product_version_total'] = search_results['total']
+    if 'signature' in facets and len(facets['signature']) > 0:
+        context['signature_stats'] = SignatureStats(search_results['facets']['signature'][0],
+                                                    search_results['total'])
 
     return render(request, 'signature/signature_summary.html', context)
 
@@ -478,9 +468,7 @@ def _transform_graphics_summary(facets):
                 vendor_hexes.append(vendor['term'])
                 adapter_hexes.append(adapter['term'])
 
-        devices_api = models.GraphicsDevices()
-
-        all_names = devices_api.get_pairs(adapter_hexes, vendor_hexes)
+        all_names = models.GraphicsDevice.objects.get_pairs(adapter_hexes, vendor_hexes)
         graphics = []
         for vendor in facets['adapter_vendor_id']:
             for adapter in vendor['facets']['adapter_device_id']:

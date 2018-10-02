@@ -3,13 +3,12 @@
 # variables.
 
 import os
-import logging
-from pkg_resources import resource_string
 
 import dj_database_url
 from decouple import config, Csv
 
-from bundles import PIPELINE_CSS, PIPELINE_JS
+from .bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
+from socorro.lib.revision_data import get_version
 
 
 ROOT = os.path.abspath(
@@ -18,6 +17,9 @@ ROOT = os.path.abspath(
         '..',
         '..'
     ))
+
+# The socorro root is one directory above the webapp root
+SOCORRO_ROOT = os.path.dirname(ROOT)
 
 
 def path(*dirs):
@@ -35,6 +37,8 @@ DEBUG_PROPAGATE_EXCEPTIONS = config(
     cast=bool
 )
 
+# Whether or not we're running in the local development environment
+LOCAL_DEV_ENV = config('LOCAL_DEV_ENV', False, cast=bool)
 
 SITE_ID = 1
 
@@ -53,6 +57,9 @@ STATIC_ROOT = config('STATIC_ROOT', path('static'))
 # URL prefix for static files
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    os.path.join(ROOT, 'webpack_bundles'),
+]
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '', cast=Csv())
 
@@ -66,8 +73,9 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'django_nose',
     'session_csrf',
+    'django.contrib.admin.apps.SimpleAdminConfig',
+    'mozilla_django_oidc',
 
     # Application base, containing global templates.
     'crashstats.base',
@@ -77,14 +85,14 @@ INSTALLED_APPS = (
     'crashstats.api',
     'crashstats.authentication',
     'crashstats.documentation',
-    'crashstats.home',
+    'crashstats.exploitability',
+    'crashstats.graphics',
     'crashstats.manage',
     'crashstats.monitoring',
     'crashstats.profile',
     'crashstats.signature',
     'crashstats.status',
     'crashstats.supersearch',
-    'crashstats.symbols',
     'crashstats.tokens',
     'crashstats.tools',
     'crashstats.topcrashers',
@@ -93,50 +101,58 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
     'waffle',
-    'eventlog',
+    'pinax.eventlog',
     'django_jinja',
 )
 
 
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-
-
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'session_csrf.CsrfMiddleware',
+    'mozilla_django_oidc.middleware.SessionRefresh',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     # If you run crashstats behind a load balancer, your `REMOTE_ADDR` header
-    # will be that of the load balancer instead of the actual user.
-    # The solution is to instead rely on the `X-Forwarded-For` header.
-    # You ONLY want this if you know you can trust `X-Forwarded-For`.
-    # Make sure this is *before* the `RatelimitMiddleware` middleware.
-    'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
+    # will be that of the load balancer instead of the actual user. The
+    # solution is to instead rely on the `X-Real-IP' header set by nginx
+    # module or something else.
+    #
+    # You ONLY want this if you know you can trust `X-Real-IP`. Make sure this
+    # is *before* the `RatelimitMiddleware` middleware. Otherwise that
+    # middleware is operating on the wrong value.
+    'crashstats.crashstats.middleware.SetRemoteAddrFromRealIP',
 
     'csp.middleware.CSPMiddleware',
     'waffle.middleware.WaffleMiddleware',
     'ratelimit.middleware.RatelimitMiddleware',
     'crashstats.tokens.middleware.APIAuthenticationMiddleware',
     'crashstats.crashstats.middleware.Pretty400Errors',
+]
+
+
+# Allow inactive users to authenticate
+# FIXME(Osmose): Remove this and the auto-logout code in favor of
+# the default backend, which does not authenticate inactive users.
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.AllowAllUsersModelBackend',
+    'mozilla_django_oidc.auth.OIDCAuthenticationBackend',
 )
 
 
 _CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.media',
-    'django.core.context_processors.request',
+    'django.template.context_processors.debug',
+    'django.template.context_processors.media',
+    'django.template.context_processors.request',
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.request',
-    'crashstats.authentication.context_processors.oauth2',
-    'crashstats.base.context_processors.debug',
+    'django.template.context_processors.request',
+    'crashstats.base.context_processors.settings',
     'crashstats.status.context_processors.status_message',
-    'crashstats.crashstats.context_processors.help_urls',
 )
 
 TEMPLATES = [
@@ -163,6 +179,7 @@ TEMPLATES = [
                 'django_jinja.builtins.extensions.DjangoFiltersExtension',
                 'pipeline.jinja2.PipelineExtension',
                 'waffle.jinja.WaffleExtension',
+                'webpack_loader.contrib.jinja2ext.WebpackExtension',
             ],
             'globals': {}
         }
@@ -181,18 +198,35 @@ TEMPLATES = [
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
-LOG_LEVEL = logging.INFO
+LOGGING_LEVEL = config('LOGGING_LEVEL', 'INFO')
 
-HAS_SYSLOG = True  # XXX needed??
-
-LOGGING_CONFIG = None
-
-# This disables all mail_admins on all django.request errors.
-# We can do this because we use Sentry now instead
 LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': LOGGING_LEVEL,
+            'class': 'logging.StreamHandler',
+        },
+    },
     'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': LOGGING_LEVEL,
+        },
         'django.request': {
-            'handlers': []
+            'handlers': ['console'],
+        },
+        'py.warnings': {
+            'handlers': ['console'],
+        },
+        'markus': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'crashstats': {
+            'handlers': ['console'],
+            'level': LOGGING_LEVEL,
         }
     }
 }
@@ -272,7 +306,6 @@ TCBS_RESULT_COUNTS = (
 )
 
 # channels allowed in middleware calls,
-# such as adu by signature
 CHANNELS = (
     'release',
     'beta',
@@ -280,7 +313,7 @@ CHANNELS = (
     'esr'
 )
 
-# default channel for adu by signature graph
+# default channel
 CHANNEL = 'nightly'
 
 # this is the max length of signatures in forms
@@ -324,15 +357,7 @@ USE_TZ = True
 USERS_ADMIN_BATCH_SIZE = 10
 EVENTS_ADMIN_BATCH_SIZE = 10
 API_TOKENS_ADMIN_BATCH_SIZE = 10
-SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE = 10
 STATUS_MESSAGE_ADMIN_BATCH_SIZE = 10
-
-# Individual strings that can't be allowed in any of the lines in the
-# content of a symbols archive file.
-DISALLOWED_SYMBOLS_SNIPPETS = (
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=1012672
-    'qcom/proprietary',
-)
 
 # Rate limit for when using the Web API for anonymous hits
 API_RATE_LIMIT = '100/m'
@@ -363,29 +388,6 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-# import logging
-# LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
-
-# When you don't have permission to upload Symbols you might be confused
-# what to do next. On the page that explains that you don't have permission
-# there's a chance to put a link
-# SYMBOLS_PERMISSION_HINT_LINK = {
-#     'url': 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&'
-#            'component=General&groups=client-services-security',
-#     'label': 'File a bug in bugzilla'
-# }
-
-
-# to override the content-type of specific file extensinos:
-SYMBOLS_MIME_OVERRIDES = {
-    'sym': 'text/plain'
-}
-SYMBOLS_COMPRESS_EXTENSIONS = config(
-    'SYMBOLS_COMPRESS_EXTENSIONS',
-    'sym',
-    cast=Csv()
-)
-
 # ------------------------------------------------
 # Below are settings that can be overridden using
 # environment variables.
@@ -394,7 +396,7 @@ CACHE_IMPLEMENTATION_FETCHES = config(
     'CACHE_IMPLEMENTATION_FETCHES', True, cast=bool
 )
 
-DEFAULT_PRODUCT = config('DEFAULT_PRODUCT', 'WaterWolf')
+DEFAULT_PRODUCT = config('DEFAULT_PRODUCT', 'Firefox')
 
 # can be changed from null to log to test something locally
 # or if using the debug toolbar, you might give toolbar a try
@@ -413,7 +415,7 @@ CACHES = {
         ),
         'LOCATION': config('CACHE_LOCATION', '127.0.0.1:11211'),
         'TIMEOUT': config('CACHE_TIMEOUT', 500),
-        'KEY_PREFIX': config('CACHE_KEY_PREFIX', 'crashstats'),
+        'KEY_PREFIX': config('CACHE_KEY_PREFIX', 'socorro'),
     }
 }
 
@@ -437,13 +439,13 @@ SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'npm.finders.NpmFinder',
     'pipeline.finders.PipelineFinder',
     # Make sure this comes last!
     'crashstats.base.finders.LeftoverPipelineFinder',
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
-
 
 PIPELINE = {
     'STYLESHEETS': PIPELINE_CSS,
@@ -452,6 +454,7 @@ PIPELINE = {
         'LESS_BINARY',
         path('node_modules/.bin/lessc')
     ),
+    'LESS_ARGUMENTS': '--global-var="root-path=\'' + STATIC_ROOT + '/crashstats/css/\'"',
     'JS_COMPRESSOR': 'pipeline.compressors.uglifyjs.UglifyJSCompressor',
     'UGLIFYJS_BINARY': config(
         'UGLIFYJS_BINARY',
@@ -469,7 +472,6 @@ PIPELINE = {
     'DISABLE_WRAPPER': True,
     'COMPILERS': (
         'pipeline.compilers.less.LessCompiler',
-        'crashstats.crashstats.pipelinecompilers.GoogleAnalyticsCompiler',
     ),
     # The pipeline.jinja2.PipelineExtension extension doesn't support
     # automatically rendering any potentional compilation errors into
@@ -477,18 +479,22 @@ PIPELINE = {
     'SHOW_ERRORS_INLINE': False,
 }
 
+NPM_ROOT_PATH = config('NPM_ROOT_PATH', ROOT)
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'CACHE': not DEBUG,
+        'BUNDLE_DIR_NAME': '/',  # must end with slash
+        'STATS_FILE': os.path.join(ROOT, 'webpack-stats.json'),
+        'POLL_INTERVAL': 0.1,
+        'TIMEOUT': None,
+        'IGNORE': ['.+\.map'],
+    },
+}
+
 # Make this unique, and don't share it with anybody.  It cannot be blank.
 # FIXME remove this default when we are out of PHX
 SECRET_KEY = config('SECRET_KEY', 'this must be changed!!')
-
-# Log settings
-
-# Make this unique to your project.
-SYSLOG_TAG = config('SYSLOG_TAG', 'http_app_playdoh')
-
-# Common Event Format logging parameters
-CEF_PRODUCT = config('CEF_PRODUCT', 'Playdoh')
-CEF_VENDOR = config('CEF_VENDOR', 'Mozilla')
 
 # If you intend to run WITHOUT HTTPS, such as local development,
 # then set this to False
@@ -503,13 +509,10 @@ SESSION_COOKIE_HTTPONLY = config('SESSION_COOKIE_HTTPONLY', True, cast=bool)
 # decorator on specific views that can be in a frame.
 X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', 'DENY')
 
-# When socorro is installed (python setup.py install), it will create
-# a file in site-packages for socorro called "socorro/socorro_revision.txt".
-# If this socorro was installed like that, let's pick it up and use it.
-try:
-    SOCORRO_REVISION = resource_string('socorro', 'socorro_revision.txt')
-except IOError:
-    SOCORRO_REVISION = None
+SOCORRO_REVISION = get_version()
+
+# Comma-separated list of urls that serve version information in JSON format
+OVERVIEW_VERSION_URLS = config('OVERVIEW_VERSION_URLS', '')
 
 # Raven sends errors to Sentry.
 # The release is optional.
@@ -518,21 +521,23 @@ if raven_dsn:
     RAVEN_CONFIG = {
         'dsn': raven_dsn,
         'release': SOCORRO_REVISION,
+        # Defines keys to be sanitized by SanitizeKeysProcessor
+        'sanitize_keys': [
+            'sessionid',
+            'csrftoken',
+            'anoncsrf',
+            'sc',
+        ],
         'processors': (
-            # Note! This processor extends the default
-            # SanitizePasswordsProcessor to also scrub 'Auth-Token'.
-            'crashstats.tokens.utils.RavenSanitizeAuthTokenProcessor',
+            'raven.processors.SanitizeKeysProcessor',
+            'raven.processors.SanitizePasswordsProcessor',
         )
     }
 
-# The Mozilla Google Analytics ID is used here as a default.
-# The reason is that our deployment (when it runs `./manage.py collectstatic`)
-# runs before the environment variables have been all set.
-# See https://bugzilla.mozilla.org/show_bug.cgi?id=1314258
-GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', 'UA-35433268-50')
+GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
 
 # Set to True enable analysis of all model fetches
-ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
+ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', True, cast=bool)
 
 
 # Credentials for being able to make an S3 connection
@@ -541,41 +546,6 @@ AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', None)
 AWS_HOST = config('AWS_HOST', None)
 AWS_PORT = config('AWS_PORT', 0, cast=int)
 AWS_SECURE = config('AWS_SECURE', True, cast=bool)
-
-# Information for uploading symbols to S3
-SYMBOLS_BUCKET_DEFAULT_NAME = config('SYMBOLS_BUCKET_DEFAULT_NAME', '')
-
-# The format for this is `email:bucketname, email2:bucketname, etc`
-SYMBOLS_BUCKET_EXCEPTIONS = config('SYMBOLS_BUCKET_EXCEPTIONS', '', cast=Csv())
-SYMBOLS_BUCKET_EXCEPTIONS = dict(
-    x.strip().split(':', 1) for x in SYMBOLS_BUCKET_EXCEPTIONS
-)
-# We *used* to allow just one single key/value override exceptions
-# we need to continue to support for a little bit.
-if (
-    config('SYMBOLS_BUCKET_EXCEPTIONS_USER', '') and
-    config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
-):
-    import warnings
-    warnings.warn(
-        'Note! To specify exceptions for users for different buckets, '
-        'instead use the CSV based key SYMBOLS_BUCKET_EXCEPTIONS where '
-        'each combination is written as \'emailregex:bucketname\' and '
-        'multiples are written as comma separated.',
-        DeprecationWarning
-    )
-    SYMBOLS_BUCKET_EXCEPTIONS[
-        config('SYMBOLS_BUCKET_EXCEPTIONS_USER', '')
-    ] = config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
-
-
-SYMBOLS_FILE_PREFIX = config('SYMBOLS_FILE_PREFIX', 'v1')
-
-# Set to the default Mozilla Socorro uses
-SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
-    'SYMBOLS_BUCKET_DEFAULT_LOCATION',
-    'us-west-2'
-)
 
 # This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the
 # implementation classes will use the config coming from `DATABASE_URL`.
@@ -638,13 +608,9 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         },
         'boto': {
             'access_key': config('resource.boto.access_key', None),
-            'bucket_name': config(
-                'resource.boto.bucket_name', 'crashstats'),
+            'bucket_name': config('resource.boto.bucket_name', 'crashstats'),
+            'region': config('resource.boto.region', 'us-west-2'),
             'prefix': config('resource.boto.prefix', ''),
-            'keybuilder_class': config(
-                'resource.boto.keybuilder_class',
-                'socorro.external.boto.connection_context.DatePrefixKeyBuilder'
-            ),
 
             # NOTE(willkg): In the local dev environment, we need to use a
             # HostPortS3ConnectionContext which requires these additional configuration bits. The
@@ -660,11 +626,12 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
                 'resource.boto.calling_format', 'boto.s3.connection.OrdinaryCallingFormat'
             ),
         }
+    },
+    'telemetrydata': {
+        'bucket_name': config('TELEMETRY_BUCKET_NAME', None),
     }
 }
 
-
-CRASH_ANALYSIS_URL = 'https://crash-analysis.mozilla.com/crash_analysis/'
 
 # At what point do we consider crontabber to be stale.
 # Ie. if it hasn't run for a certain number of minutes we'd consider
@@ -677,39 +644,26 @@ CRONTABBER_STALE_MINUTES = config(
     default=60 * 2
 )
 
-# URL to send the Google Analytics pageviews and event tracking.
-# The value of this is extremely unlikely to change any time soon,
-GOOGLE_ANALYTICS_API_URL = config(
-    'GOOGLE_ANALYTICS_API_URL',
-    'https://ssl.google-analytics.com/collect'
-)
 
-# If calls to the Google Analytics API are done asynchronously, this
-# value can be quite high (5-10 seconds).
-GOOGLE_ANALYTICS_API_TIMEOUT = config(
-    'GOOGLE_ANALYTICS_API_TIMEOUT',
-    5,  # seconds
-    cast=int
-)
+# OIDC credentials are needed to be able to connect with OpenID Connect.
+# Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
+OIDC_RP_CLIENT_ID = config('OIDC_RP_CLIENT_ID', '')
+OIDC_RP_CLIENT_SECRET = config('OIDC_RP_CLIENT_SECRET', '')
+OIDC_OP_AUTHORIZATION_ENDPOINT = config('OIDC_OP_AUTHORIZATION_ENDPOINT', '')
+OIDC_OP_TOKEN_ENDPOINT = config('OIDC_OP_TOKEN_ENDPOINT', '')
+OIDC_OP_USER_ENDPOINT = config('OIDC_OP_USER_ENDPOINT', '')
+# List of urls that are exempt from session refresh because they're used in XHR
+# contexts and that doesn't handle redirecting.
+OIDC_EXEMPT_URLS = [
+    # Used by supersearch page as an XHR
+    '/search/fields/',
+    '/search/results/',
+    '/buginfo/bug',
 
-# OAuth2 credentials are needed to be able to connect with Google OpenID
-# Connect. Credentials can be retrieved from the
-# Google Developers Console at
-# https://console.developers.google.com/apis/credentials
-OAUTH2_CLIENT_ID = config(
-    'OAUTH2_CLIENT_ID',
-    ''
-)
-OAUTH2_CLIENT_SECRET = config(
-    'OAUTH2_CLIENT_SECRET',
-    ''
-)
-
-OAUTH2_VALID_ISSUERS = config(
-    'OAUTH2_VALID_ISSUERS',
-    default='accounts.google.com',
-    cast=Csv()
-)
+    # Used by signature report as an XHR
+    '/signature/summary/',
+]
+LOGOUT_REDIRECT_URL = '/'
 
 # Max number of seconds you are allowed to be signed in with OAuth2.
 # When the user has been signed in >= this number, the user is automatically
@@ -720,8 +674,6 @@ LAST_LOGIN_MAX = config(
     cast=int
 )
 
-
-GOOGLE_AUTH_HELP_URL = 'https://wiki.mozilla.org/Socorro/GoogleAuth'
 
 CSP_DEFAULT_SRC = (
     "'self'",
@@ -743,14 +695,13 @@ CSP_IMG_SRC = (
     'https://www.google-analytics.com',
     'data:',  # what jquery.tablesorter.js's CSS uses
 )
-CSP_CHILD_SRC = (
-    "'self'",
-    'https://accounts.google.com',  # Google Sign-In uses an iframe
-)
 CSP_CONNECT_SRC = (
     "'self'",
 )
 
+CSP_REPORT_URI = (
+    '/__cspreport__',
+)
 
 # This is the number of versions to display if a particular product
 # has no 'featured versions'. Then we use the active versions, but capped

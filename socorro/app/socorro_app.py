@@ -12,31 +12,16 @@ Derived from the base "SocorroApp" is the "App" class.  This class adds logging
 configuration requirements to the application.  App is the class from which
 all the Socorro Apps derive.
 
-Also derived from the base class "SocorroApp" is "SocorroWelcomeApp", an app
-that serves as a dispatcher for all other Socorro apps.  Rather than forcing
-the user to know what and where all the other Socorro apps are, this app adds
-an "application" config requirement as a commandline arguement.  The user may
-specify the app name that they want to run.  Running --help on this app, will
-also list all the Socorro Apps.
-
-If a configuration file exists that includes a not-commented-out 'application'
-parameter, it can be give directly to the "SocorroWelomeApp".  In that case,
-the "SocorroWelcomeApp" becomes the app requested in the config file.
 """
 
 import logging
+import logging.config
 import logging.handlers
 import functools
 import signal
 import os
 import sys
-import re
 import threading
-
-import socorro.app.for_application_defaults
-from socorro.app.for_application_defaults import (
-    ApplicationDefaultsProxy,
-)
 
 from configman import (
     ConfigurationManager,
@@ -46,41 +31,10 @@ from configman import (
     environment,
     command_line,
 )
-from configman.converters import py_obj_to_str
+from configman.converters import py_obj_to_str, str_to_python_object, str_to_list
+import markus
+from socorro.lib.revision_data import get_revision_data
 
-
-# every socorro app has a class method called 'get_application_defaults' from
-# which configman extracts the preferred configuration default values.
-#
-# The Socorro App class hierachy will create a 'values_source_list' with the
-# App's preferred config at the base.  These become the defaults over which
-# the configuration values from config file, environment, and command line are
-# overlaid.
-#
-# In the case where the actual app is not specified until configman is already
-# invoked, application defaults cannot be determined until configman
-# has already started the overlay process.  To resolve this
-# chicken/egg problem, we create a ApplicationDefaultsProxy class that stands
-# in values_source list (the list of places that overlay config values come
-# from).  Since the ApplicationDefaultsProxy also serves as the 'from_string'
-# converter for the Application config option, it can know when the target
-# application has been determined, fetch the defaults.  Since the
-# ApplicationDefaultsProxy object is already in the values source list, it can
-# then start providing overlay values immediately.
-
-# Configman knows nothing about how the ApplicationDefaultsProxy object works,
-# so we must regisiter it as a new values overlay source class.  We do that
-# by manually inserting inserting the new class into Configman's
-# handler/dispatcher.  That object associates config sources with modules that
-# are able to implement Configman's overlay handlers.
-from configman.value_sources import type_handler_dispatch
-# register our new type handler with configman
-type_handler_dispatch[ApplicationDefaultsProxy].append(
-    socorro.app.for_application_defaults
-)
-
-# create the app default proxy object
-application_defaults_proxy = ApplicationDefaultsProxy()
 
 # for use with SIGHUP for apps that run as daemons
 restart = True
@@ -104,12 +58,7 @@ def klass_to_pypath(klass):
     module actually had its own real name.  This ends up being very confusing
     to Configman as it tries to refer to a class by its proper module name.
     This function will convert a class into its properly qualified actual
-    pathname.  This method is used when a Socorro app is actually invoked
-    directly through the file in which the App class is defined.  This allows
-    configman to reimport the class under its proper name and treat it as if
-    it had been run through the SocorroWelcomeApp.  In turn, this allows
-    the application defaults to be fetched from the properly imported class
-    in time for configman use that information as value source."""
+    pathname."""
     if klass.__module__ == '__main__':
         module_path = (
             sys.modules['__main__']
@@ -136,21 +85,17 @@ class SocorroApp(RequiredConfig):
     app_version = "1.0"
     app_description = 'base class for app system'
 
+    #: String containing a module import path. The module is used as a
+    #: source for default configuration values. If None, this makes no
+    #: changes to the configuration defaults.
+    config_defaults = None
+
     required_config = Namespace()
 
     def __init__(self, config):
         self.config = config
         # give a name to this running instance of the program.
         self.app_instance_name = self._app_instance_name()
-
-    @staticmethod
-    def get_application_defaults():
-        """this method allows an app to inject defaults into the configuration
-        that can override defaults not under the direct control of the app.
-        For example, if an app were to use a class that had a config default
-        of X and that was not appropriate as a default for this app, then
-        this method could be used to override that default"""
-        return {}
 
     def main(self):  # pragma: no cover
         """derived classes must override this function with business logic"""
@@ -199,9 +144,6 @@ class SocorroApp(RequiredConfig):
 
         if values_source_list is None:
             values_source_list = [
-                # pull in the application defaults from the 'application'
-                # configman option, once it has been defined
-                application_defaults_proxy,
                 # pull in any configuration file
                 ConfigFileFutureProxy,
                 # get values from the environment
@@ -209,17 +151,17 @@ class SocorroApp(RequiredConfig):
                 # use the command line to get the final overriding values
                 command_line
             ]
-        elif application_defaults_proxy not in values_source_list:
-            values_source_list = (
-                [application_defaults_proxy] + values_source_list
-            )
+
+        # Pull base set of defaults from the config module if it is specified
+        if klass.config_defaults is not None:
+            values_source_list.insert(0, klass.config_defaults)
 
         config_definition = klass.get_required_config()
         if 'application' not in config_definition:
-            # the application option has not been defined.  This means that
-            # the we're likely trying to run one of the applications directly
-            # rather than through the SocorroWelocomApp.  Add the 'application'
-            # option initialized with the target application as the default.
+            # FIXME(mkelly): We used to have a SocorroWelcomeApp that defined an
+            # "application" option. We no longer have that. This section should
+            # get reworked possibly as part of getting rid of application
+            # defaults.
             application_config = Namespace()
             application_config.add_option(
                 'application',
@@ -230,9 +172,7 @@ class SocorroApp(RequiredConfig):
                 # the following setting means this option will NOT be
                 # commented out when configman generates a config file
                 likely_to_be_changed=True,
-                from_string_converter=(
-                    application_defaults_proxy.str_to_application_class
-                ),
+                from_string_converter=str_to_python_object,
             )
             config_definition = application_config
 
@@ -257,6 +197,17 @@ class SocorroApp(RequiredConfig):
             config.executor_identity = (
                 lambda: threading.currentThread().getName()
             )
+
+            # Log revision information
+            revision_data = get_revision_data()
+            revision_items = sorted(revision_data.items())
+            config.logger.info(
+                'version.json: {%s}',
+                ', '.join(
+                    ['%r: %r' % (key, val) for key, val in revision_items]
+                )
+            )
+
             try:
                 config_manager.log_config(config.logger)
                 respond_to_SIGHUP_with_logging = functools.partial(
@@ -279,146 +230,110 @@ class SocorroApp(RequiredConfig):
             return return_code
 
 
-class LoggerWrapper(object):
-    """This class wraps the standard logger object.  It changes the logged
-    messages to display the 'executor_identity': the thread/greenlet/process
-    that is currently running."""
-
-    def __init__(self, logger, config):
-        self.config = config
-        self.logger = logger
-
-    def executor_identity(self):
-        try:
-            return " - %s - " % self.config.executor_identity()
-        except KeyError:
-            return " - %s - " % threading.currentThread().getName()
-
-    def debug(self, message, *args, **kwargs):
-        self.logger.debug(self.executor_identity() + message, *args, **kwargs)
-
-    def info(self, message, *args, **kwargs):
-        self.logger.info(self.executor_identity() + message, *args, **kwargs)
-
-    def error(self, message, *args, **kwargs):
-        self.logger.error(self.executor_identity() + message, *args, **kwargs)
-
-    def warning(self, message, *args, **kwargs):
-        self.logger.warning(
-            self.executor_identity() + message,
-            *args,
-            **kwargs
-        )
-
-    def critical(self, message, *args, **kwargs):
-        self.logger.critical(
-            self.executor_identity() + message,
-            *args,
-            **kwargs
-        )
-
-    def exception(self, message, *args, **kwargs):
-        kwargs['exc_info'] = True
-        self.error(message, *args, **kwargs)
-
-
 def setup_logger(config, local_unused, args_unused):
-    """This method is sets up and initializes the logger objects.  It is a
-    function in the form appropriate for a configiman aggregation.  When given
-    to Configman, that library will setup and initialize the logging system
+    """Initialize logging infrastructure and returns app logger
+
+    This method is sets up and initializes the logger objects. It is a function
+    in the form appropriate for a configiman aggregation. When given to
+    Configman, that library will setup and initialize the logging system
     automatically and then offer the logger as an object within the
-    configuration object."""
+    configuration object.
+
+    """
     try:
         app_name = config.application.app_name
     except KeyError:
         app_name = 'a_socorro_app'
+
+    logging_level = config.logging.level
+    logging_root_level = config.logging.root_level
+    logging_format = config.logging.format_string
+
+    logging_config = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'socorroapp': {
+                'format': logging_format
+            }
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'socorroapp',
+            },
+        },
+        'loggers': {
+            'py.warnings': {
+                'handlers': ['console'],
+            },
+            'socorro': {
+                'handlers': ['console'],
+                'level': logging_level,
+            },
+            'markus': {
+                'handlers': ['console'],
+                'level': logging.INFO,
+            },
+            app_name: {
+                'handlers': ['console'],
+                'level': logging_level,
+            },
+        },
+    }
+
+    # If the user is setting the root level to something below or equal to
+    # logging level, then we want to stop propagating some loggers. This only
+    # happens in local development environments.
+    if logging_root_level <= logging_level:
+        logging_config['root'] = {
+            'handlers': ['console'],
+            'level': logging_root_level,
+        }
+        logging_config['loggers']['socorro']['propagate'] = 0
+        logging_config['loggers'][app_name]['propagate'] = 0
+
+    logging.config.dictConfig(logging_config)
+
     logger = logging.getLogger(app_name)
-    # if this is a restart, loggers must be removed before being recreated
-    tear_down_logger(app_name)
-    logger.setLevel(logging.DEBUG)
-    stderr_log = logging.StreamHandler()
-    stderr_log.setLevel(config.logging.stderr_error_logging_level)
-    stderr_format = config.logging.stderr_line_format_string.replace(
-        '{app_name}',
-        app_name
-    )
-    stderr_log_formatter = logging.Formatter(
-        _convert_format_string(stderr_format)
-    )
-    stderr_log.setFormatter(stderr_log_formatter)
-    logger.addHandler(stderr_log)
-
-    syslog = logging.handlers.SysLogHandler(
-        facility=config.logging.syslog_facility_string
-    )
-    syslog.setLevel(config.logging.syslog_error_logging_level)
-    syslog_format = config.logging.syslog_line_format_string.replace(
-        '{app_name}',
-        app_name
-    )
-    syslog_formatter = logging.Formatter(
-        _convert_format_string(syslog_format)
-    )
-    syslog.setFormatter(syslog_formatter)
-    logger.addHandler(syslog)
-
-    wrapped_logger = LoggerWrapper(logger, config)
-    return wrapped_logger
+    return logger
 
 
 def setup_metrics(config, local_unused, args_unused):
-    """Sets up metrics client which is either a DogStatsd client or a LoggingClient
+    """Sets up markus and adds a metrics client to config
 
-    NOTE(willkg): This is a little gross, but that's mostly to keep all the code in one place and
-    minimal which makes it easier to deal with for now. If this ever grows, then we'll probably want
-    to split this out into its own module.
-
-    This gets tossed in config (along with everything else), so you can use it like this::
-
-        class SomeComponent(RequiredConfig):
-            def something(self):
-                self.config.metrics.increment('somekey')
+    :returns: Markus MetricsInterface
 
     """
-    # We do the import here in case there are parts of Socorro that are running in environments that
-    # don't have this library installed.
-    #
-    # FIXME(willkg): We're using a *super* old version of dogstatsd-python which doesn't have the
-    # DogStatsd class. We should upgrade.
-    try:
-        from datadog.dogstatsd import statsd
-    except ImportError:
-        statsd = None
+    backends = []
 
-    host = config.metricscfg.statsd_host
-    port = config.metricscfg.statsd_port
+    for backend in config.metricscfg.markus_backends:
+        if backend == 'markus.backends.statsd.StatsdMetrics':
+            backends.append({
+                'class': 'markus.backends.statsd.StatsdMetrics',
+                'options': {
+                    'statsd_host': config.metricscfg.statsd_host,
+                    'statsd_port': config.metricscfg.statsd_port,
+                }
+            })
+        elif backend == 'markus.backends.datadog.DatadogMetrics':
+            backends.append({
+                'class': 'markus.backends.datadog.DatadogMetrics',
+                'options': {
+                    'statsd_host': config.metricscfg.statsd_host,
+                    'statsd_port': config.metricscfg.statsd_port,
+                }
+            })
+        elif backend == 'markus.backends.logging.LoggingMetrics':
+            backends.append({
+                'class': 'markus.backends.logging.LoggingMetrics',
+            })
+        else:
+            raise ValueError('Invalid markus backend "%s"' % backend)
 
-    if host and statsd:
-        statsd.host = host
-        statsd.port = port
-        return statsd
+    markus.configure(backends=backends)
 
-    class LoggingMetrics(object):
-        """Logging-based metrics class that mimics DogStatsd class"""
-        def __init__(self):
-            self.logger = logging.getLogger('socorro.metrics')
-
-        def _log(self, operation, metric, value, tags):
-            self.logger.info('%s: %s=%s tags=%s', operation, metric, value, tags or [])
-
-        def increment(self, metric, value=1, tags=None):
-            self._log('increment', metric, value, tags)
-
-        def gauge(self, metric, value, tags=None):
-            self._log('gauge', metric, value, tags)
-
-        def timing(self, metric, value, tags=None):
-            self._log('timing', metric, value, tags)
-
-        def histogram(self, metric, value, tags=None):
-            self._log('histogram', metric, value, tags)
-
-    return LoggingMetrics()
+    return markus.get_metrics('')
 
 
 class App(SocorroApp):
@@ -426,51 +341,27 @@ class App(SocorroApp):
     required_config = Namespace()
     required_config.namespace('logging')
     required_config.logging.add_option(
-        'syslog_host',
-        doc='syslog hostname',
-        default='localhost',
+        'format_string',
+        doc='format string for logging',
+        default='%(asctime)s %(levelname)s - %(name)s - %(threadName)s - %(message)s',
         reference_value_from='resource.logging',
     )
     required_config.logging.add_option(
-        'syslog_port',
-        doc='syslog port',
-        default=514,
+        'level',
+        doc=(
+            'logging level '
+            '(10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+        ),
+        default=20,
         reference_value_from='resource.logging',
     )
     required_config.logging.add_option(
-        'syslog_facility_string',
-        doc='syslog facility string ("user", "local0", etc)',
-        default='user',
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'syslog_line_format_string',
-        doc='python logging system format for syslog entries',
-        default='{app_name} (pid {process}): '
-                '{asctime} {levelname} - {threadName} - '
-                '{message}',
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'syslog_error_logging_level',
-        doc='logging level for the log file (10 - DEBUG, 20 '
-            '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
-        default=40,
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'stderr_line_format_string',
-        doc='python logging system format for logging to stderr',
-        default='{asctime} {levelname} - {app_name} - '
-                '{message}',
-        reference_value_from='resource.logging',
-    )
-    required_config.logging.add_option(
-        'stderr_error_logging_level',
-        doc='logging level for the logging to stderr (10 - '
-            'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
-            '50 - CRITICAL)',
-        default=10,
+        'root_level',
+        doc=(
+            'logging level for everything not Socorro '
+            '(10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+        ),
+        default=30,
         reference_value_from='resource.logging',
     )
     required_config.add_aggregation(
@@ -482,80 +373,23 @@ class App(SocorroApp):
     required_config.metricscfg.add_option(
         'statsd_host',
         doc='host for statsd server',
-        default='',
-        reference_value_from='resource.statsd'
+        default='localhost',
+        reference_value_from='resource.metrics'
     )
     required_config.metricscfg.add_option(
         'statsd_port',
         doc='port for statsd server',
         default=8125,
-        reference_value_from='resource.statsd'
+        reference_value_from='resource.metrics'
+    )
+    required_config.metricscfg.add_option(
+        'markus_backends',
+        doc='comma separated list of Markus backends to use',
+        default='markus.backends.datadog.DatadogMetrics',
+        reference_value_from='resource.metrics',
+        from_string_converter=str_to_list,
     )
     required_config.add_aggregation(
         'metrics',
         setup_metrics
     )
-
-
-class SocorroWelcomeApp(SocorroApp):
-    required_config = Namespace()
-    required_config.add_option(
-        'application',
-        is_argument=True,
-        doc=(
-            'the name of the app to run (select from: %s)' %
-            ', '.join(sorted(application_defaults_proxy.apps.keys()))
-        ),
-        default=None,
-        # the following setting means this option will NOT be
-        # commented out when configman generates a config file
-        likely_to_be_changed=True,
-        from_string_converter=(
-            application_defaults_proxy.str_to_application_class
-        ),
-    )
-    app_name = "SocorroWelcomeApp"
-    app_version = "1.0"
-    app_description = 'Welcome to Socorro'
-
-    def main(self):
-        if (
-            self.config.application and
-            self.config.application.__name__ is not self.__class__.__name__
-        ):
-            requested_app = self.config.application(self.config)
-            # this is where an app that was requested through the use of the
-            # config parameter 'application' is actually run
-            #requested_app.config_manager = self.config_manager
-            return requested_app.main()
-        else:
-            print(
-                "Welcome to Socorro.  To configure Socorro, please see "
-                "https://socorro.readthedocs.io/\n"
-                "use --help with this app to see what you can do here"
-            )
-
-
-def tear_down_logger(app_name):
-    logger = logging.getLogger(app_name)
-    # must have a copy of the handlers list since we cannot modify the original
-    # list while we're deleting items from that list
-    handlers = [x for x in logger.handlers]
-    for x in handlers:
-        logger.removeHandler(x)
-
-
-def _convert_format_string(s):
-    """return '%(foo)s %(bar)s' if the input is '{foo} {bar}'"""
-    return re.sub('{(\w+)}', r'%(\1)s', s)
-
-
-def main(app_class, config_path=None, values_source_list=None):
-    return app_class.run(
-        config_path=config_path,
-        values_source_list=values_source_list
-    )
-
-
-if __name__ == '__main__':
-    main(SocorroWelcomeApp)

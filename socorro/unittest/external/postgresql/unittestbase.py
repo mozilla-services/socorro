@@ -19,12 +19,11 @@ class PostgreSQLTestCase(TestCase):
 
     required_config = Namespace()
 
-    # we use this class here because it is a convenient way to pull in
-    # both a database connection context and a transaction executor
+    # This is a convenient way to pull in a database connection context
+    # and a transaction executor
     required_config.add_option(
         'crashstorage_class',
-        default='socorro.external.postgresql.crashstorage.'
-                'PostgreSQLCrashStorage',
+        default='socorro.external.postgresql.base.PostgreSQLStorage',
         from_string_converter=class_converter
     )
 
@@ -50,16 +49,20 @@ class PostgreSQLTestCase(TestCase):
 
     required_config.add_option(
         'platforms',
-        default=[{
-            "id": "windows",
-            "name": "Windows NT"
-        }, {
-            "id": "mac",
-            "name": "Mac OS X"
-        }, {
-            "id": "linux",
-            "name": "Linux"
-        }],
+        default=[
+            {
+                "id": "windows",
+                "name": "Windows NT"
+            },
+            {
+                "id": "mac",
+                "name": "Mac OS X"
+            },
+            {
+                "id": "linux",
+                "name": "Linux"
+            }
+        ],
         doc='Array associating OS ids to full names.',
     )
 
@@ -79,10 +82,8 @@ class PostgreSQLTestCase(TestCase):
 
     @classmethod
     def get_standard_config(cls):
-
         config_manager = ConfigurationManager(
-            [cls.required_config,
-             ],
+            [cls.required_config],
             app_name='PostgreSQLTestCase',
             app_description=__doc__,
             argv_source=[]

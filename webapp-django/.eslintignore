@@ -1,0 +1,5 @@
+**/*.min.js
+**/*-min.js
+static/*
+webpack_bundles/*
+node_modules/*

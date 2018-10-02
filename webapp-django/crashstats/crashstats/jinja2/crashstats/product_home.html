@@ -1,0 +1,80 @@
+{% extends "crashstats_base.html" %}
+
+{% block site_css %}
+{{ super() }}
+{% stylesheet 'product_home' %}
+{% endblock %}
+
+{% block page_title %}
+Crash Data for {{ product }}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2 id="homepage-heading">{{ product }} Crash Data</h2>
+    </div>
+
+    <div class="panel">
+        <div class="title">
+            <h2>Crash Reports</h2>
+        </div>
+
+        <div class="body">
+            <div id="release_channels">
+                {% if versions %}
+                    {% for version in versions %}
+                    <div class="release_channel">
+                        <h4>{{product}} {{version}}</h4>
+                        <ul>
+                            <li>
+                                <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                    product=product,
+                                    version=version,
+                                ) }}">
+                                    Top Crashers
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                    product=product,
+                                    version=version,
+                                    process_type='plugin',
+                                ) }}">
+                                    Top Plugin Crashers
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                    product=product,
+                                    version=version,
+                                    process_type='content',
+                                ) }}">
+                                    Top Content Crashers
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                    product=product,
+                                    version=version,
+                                    process_type='gpu',
+                                ) }}">
+                                    Top GPU Crashers
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="release_channel">
+                        No version information available.
+                    </div>
+                {% endif %}
+            </div>
+            <br class="clear" />
+        </div>
+    </div>
+    <br class="clear" />
+</div>
+
+{% endblock %}

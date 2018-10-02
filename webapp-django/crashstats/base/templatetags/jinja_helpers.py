@@ -1,5 +1,6 @@
 import urlparse
 import urllib
+from past.builtins import basestring
 
 import jinja2
 from django_jinja import library
@@ -102,12 +103,17 @@ def make_query_string(**kwargs):
 
 
 @library.global_function
-def is_dangerous_cpu(cpu_info):
+def is_dangerous_cpu(cpu_name, cpu_info):
+    if not cpu_info:
+        return False
+
     # These models are known to cause lots of crashes, we want to mark them
     # for ease of find by users.
     return (
         cpu_info.startswith('AuthenticAMD family 20 model 1') or
-        cpu_info.startswith('AuthenticAMD family 20 model 2')
+        cpu_info.startswith('AuthenticAMD family 20 model 2') or
+        (cpu_name == 'amd64' and cpu_info.startswith('family 20 model 1')) or
+        (cpu_name == 'amd64' and cpu_info.startswith('family 20 model 2'))
     )
 
 

@@ -1,6 +1,8 @@
 import functools
 import urlparse
 
+import markus
+
 from django.http import HttpResponseBadRequest, Http404
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
@@ -10,7 +12,6 @@ from django.contrib.auth.decorators import (
 )
 
 from . import utils
-from crashstats.base import ga
 
 
 def login_required(
@@ -78,8 +79,8 @@ def pass_default_context(view):
     """
     @functools.wraps(view)
     def inner(request, *args, **kwargs):
-        product = kwargs.get('product', None)
-        versions = kwargs.get('versions', None)
+        product = kwargs.get('product', request.GET.get('product', None))
+        versions = kwargs.get('versions', request.GET.get('versions', None))
         try:
             kwargs['default_context'] = utils.build_default_context(
                 product,
@@ -93,13 +94,13 @@ def pass_default_context(view):
             # should be sent to the admin panel to add that product, while
             # regular users will see a 404.
             if 'version' in str(e):
-                return redirect(reverse('home:home', args=(product,)))
-            elif request.user.is_superuser:
-                url = '%s?product=%s' % (reverse('manage:products'), product)
-                return redirect(url)
+                return redirect(reverse('crashstats:product_home', args=(product,)))
             raise
         return view(request, *args, **kwargs)
     return inner
+
+
+API_METRICS = markus.get_metrics('webapp.api')
 
 
 def track_api_pageview(view):
@@ -115,6 +116,9 @@ def track_api_pageview(view):
                 referer_host = urlparse.urlparse(referer).netloc
                 if referer_host == request.META.get('HTTP_HOST'):
                     return response
-            ga.track_api_pageview(request)
+
+            # Drop all the non-alphanumeric bits from the url and then incr that
+            request_path = ''.join([c for c in request.path if c.isalpha()])
+            API_METRICS.incr('pageview', tags=['endpoint:%s' % request_path])
         return response
     return inner

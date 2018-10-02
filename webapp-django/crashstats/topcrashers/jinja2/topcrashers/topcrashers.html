@@ -1,9 +1,16 @@
+{% from "macros/signature_startup_icons.html" import startup_crash_icon,
+                                                     potential_startup_crash_icon,
+                                                     potential_startup_window_crash_icon,
+                                                     hang_crash_icon, plugin_crash_icon,
+                                                     browser_crash_icon %}
+
 {% extends "crashstats_base.html" %}
 {% block site_css %}
     {{ super() }}
 
     {% stylesheet 'tablesorter' %}
     {% stylesheet 'topcrashers' %}
+    {% stylesheet 'bugzilla' %}
 {% endblock %}
 
 {% block site_js %}
@@ -127,104 +134,96 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                     </tr>
                 </thead>
                 <tbody>
-                {% for crash in tcbs %}
+                {% for topcrashers_stats_item in topcrashers_stats %}
                     <tr>
                         <td class="rank">
-                            {{ crash.rank }}
-                            {% if crash.rank_diff != 'new'
-                               and crash.rank_diff >= 5
-                               or crash.rank_diff <= -5 %}
-                            <span {% if crash.rank_diff > 1 %} class="moving-up" {% elif crash.rank_diff < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ query.start_date }} report">{{ crash.rank_diff }}</span>
+                            {{ topcrashers_stats_item.rank }}
+                            {% if topcrashers_stats_item.rank_diff != 'new'
+                               and topcrashers_stats_item.rank_diff >= 5
+                               or topcrashers_stats_item.rank_diff <= -5 %}
+                            <span {% if topcrashers_stats_item.rank_diff > 1 %} class="moving-up" {% elif topcrashers_stats_item.rank_diff < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ query.start_date }} report">{{ topcrashers_stats_item.rank_diff }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ crash.percent | round(2) }}%</td>
-                        {% if crash.diff == 'new' %}
+                        <td>{{ topcrashers_stats_item.percent_of_total_crashes | round(2) }}%</td>
+                        {% if topcrashers_stats_item.percent_of_total_crashes_diff == 'new' %}
                         <td title="This is a new signature">new</td>
                         {% else %}
-                        <td title="A change of {{ crash.diff | round(2) }}% from {{ crash.previous_percent | round(2) }}%">{{ crash.diff | round(2) }}%</td>
+                        <td title="A change of {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}% from {{ topcrashers_stats_item.previous_percent_of_total_crashes | round(2) }}%">
+                            {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}%
+                        </td>
                         {% endif %}
                         <td class="signature-column">
                             <a class="signature"
                                 href="{{ url('signature:signature_report') }}?{{ make_query_string(
                                     product=product,
-                                    signature=crash.signature,
+                                    signature=topcrashers_stats_item.signature_term,
                                     version=version,
                                     date=['<' + query.end_date.isoformat(), '>=' + query.start_date.isoformat()],
-                                ) }}" title="{{ crash.signature }}"
+                                ) }}" title="{{ topcrashers_stats_item.signature_term }}"
                             >
-                                {{ crash.signature }}
+                                {{ topcrashers_stats_item.signature_term }}
                             </a>
                             <div class="sig-history-container hide">
-                                <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
+                                <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ topcrashers_stats_item.signature_term }}" />
                             </div>
                             <div class="signature-icons">
-                                {% if crash.startup_count > 0 %}
-                                {% if crash.startup_count == crash.count %}
-                                <img src="{{ static('img/3rdparty/silk/flag_red.png') }}"
-                                    alt="red flag"
-                                    title="Startup Crash, all crashes happened during startup"
-                                    class="startup" height="16" width="16"
-                                />
+                                {% if topcrashers_stats_item.is_startup_crash %}
+                                {{ startup_crash_icon() }}
+                                {% endif %}
+
+                                {% if topcrashers_stats_item.is_potential_startup_crash %}
+                                {{ potential_startup_crash_icon(
+                                    num_startup_crashes=topcrashers_stats_item.num_startup_crashes,
+                                    num_crashes=topcrashers_stats_item.num_crashes,
+                                ) }}
+                                {% endif %}
+
+                                {% if topcrashers_stats_item.is_startup_window_crash %}
+                                {{ potential_startup_window_crash_icon() }}
+                                {% endif %}
+
+                                {% if topcrashers_stats_item.is_hang_crash %}
+                                {{ hang_crash_icon() }}
+                                {% endif %}
+
+                                {% if topcrashers_stats_item.is_plugin_crash %}
+                                {{ plugin_crash_icon() }}
                                 {% else %}
-                                <img src="{{ static('img/3rdparty/silk/flag_yellow.png') }}"
-                                    alt="yellow flag"
-                                    title="Potential Startup Crash, {{ crash.startup_count }} out of {{ crash.count }} crashes happened during startup"
-                                    class="startup" height="16" width="16"
-                                />
-                                {% endif %}
-                                {% endif %}
-
-                                {% if crash.startup_crash %}
-                                <img
-                                    src="{{ static('img/icons/rocket_fly.png') }}"
-                                    alt="rocket"
-                                    title="Potential Startup Crash, more than half of the crashes happened during the first minute after launch"
-                                    class="startup" height="16" width="16"
-                                />
-                                {% endif %}
-
-                                {% if crash.hang_count > 0 %}
-                                <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="stop sign" title="Hanged Crash" class="hang" height="16" width="16">
-                                {% endif %}
-
-                                {% if crash.plugin_count > 0 %}
-                                <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" alt="brick" title="Plugin Crash" class="plugin" height="16" width="16">
-                                {% else %}
-                                <img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}" width="16" height="16" alt="application" title="Browser Crash" class="browser" />
+                                {{ browser_crash_icon() }}
                                 {% endif %}
                             </div>
                         </td>
                         {% if not os_name %}
-                        <td>{{ crash.count }}</td>
-                        <td>{{ crash.win_count }}</td>
-                        <td>{{ crash.mac_count }}</td>
-                        <td>{{ crash.lin_count }}</td>
+                        <td>{{ topcrashers_stats_item.num_crashes }}</td>
+                        <td>{{ topcrashers_stats_item.num_crashes_per_platform.win_count }}</td>
+                        <td>{{ topcrashers_stats_item.num_crashes_per_platform.mac_count }}</td>
+                        <td>{{ topcrashers_stats_item.num_crashes_per_platform.lin_count }}</td>
                         {% elif os_name == 'Windows' %}
-                        <td>{{ crash.win_count }}</td>
+                        <td>{{ topcrashers_stats_item.win_count }}</td>
                         {% elif os_name == 'Linux' %}
-                        <td>{{ crash.lin_count }}</td>
+                        <td>{{ topcrashers_stats_item.lin_count }}</td>
                         {% elif os_name == 'Mac OS X' %}
-                        <td>{{ crash.mac_count }}</td>
+                        <td>{{ topcrashers_stats_item.mac_count }}</td>
                         {% endif %}
-                        <td>{{ crash.installs_count }}</td>
-                        <td>{{ crash.is_gc_count }}</td>
-                        {% if crash.first_report %}
-                        <td title="This crash signature first appeared at {{ crash.first_report }}" >
-                            <time datetime="{{ crash.first_report }}">
-                                {{ crash.first_report.date() }}
+                        <td>{{ topcrashers_stats_item.num_installs }}</td>
+                        <td>{{ topcrashers_stats_item.num_crashes_in_garbage_collection }}</td>
+                        {% if topcrashers_stats_item.first_report %}
+                        <td title="This crash signature first appeared at {{ topcrashers_stats_item.first_report }}" >
+                            <time datetime="{{ topcrashers_stats_item.first_report }}">
+                                {{ topcrashers_stats_item.first_report.date() }}
                             </time>
                         </td>
                         {% else %}
                         <td title="No known first appearance date">-</td>
                         {% endif %}
                         <td class="bug_ids_more">
-                            {% for bug in crash.bugs %}
+                            {% for bug in topcrashers_stats_item.bugs %}
                             {{ show_bug_link(bug) }}
                             {% endfor %}
                                 <div class="bug_ids_expanded_list">
-                                <h3>Bugs for <code>{{ crash.signature }}</code></h3>
+                                <h3>Bugs for <code>{{ topcrashers_stats_item.signature_term }}</code></h3>
                                 <ul class="bug_ids_expanded full_bug_ids popup">
-                                    {% for bug in crash.bugs %}
+                                    {% for bug in topcrashers_stats_item.bugs %}
                                     <li>{{ show_bug_link(bug) }}</li>
                                     {% endfor %}
                                 </ul>

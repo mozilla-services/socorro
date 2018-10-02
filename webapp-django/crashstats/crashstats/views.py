@@ -1,36 +1,22 @@
-import copy
-import json
 import datetime
-import urllib
-import gzip
-from collections import defaultdict
-from operator import itemgetter
-from io import BytesIO
-
-import isoweek
+import json
+import os
 
 from django import http
 from django.conf import settings
-from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.utils.http import urlquote
-from django.utils import timezone
 
 from csp.decorators import csp_update
 
-from socorro.lib import BadArgumentError
 from socorro.external.crashstorage_base import CrashIDNotFound
 from . import forms, models, utils
 from .decorators import pass_default_context
 
-from crashstats.supersearch.models import (
-    SuperSearchFields,
-    SuperSearchUnredacted,
-    SuperSearch,
-)
+from crashstats.supersearch.models import SuperSearchFields
 
 
 # To prevent running in to a known Python bug
@@ -38,40 +24,6 @@ from crashstats.supersearch.models import (
 # we, here at "import time" (as opposed to run time) make use of time.strptime
 # at least once
 datetime.datetime.strptime('2013-07-15 10:00:00', '%Y-%m-%d %H:%M:%S')
-
-
-GRAPHICS_REPORT_HEADER = (
-    'signature',
-    'url',
-    'crash_id',
-    'client_crash_date',
-    'date_processed',
-    'last_crash',
-    'product',
-    'version',
-    'build',
-    'branch',
-    'os_name',
-    'os_version',
-    'cpu_info',
-    'address',
-    'bug_list',
-    'user_comments',
-    'uptime_seconds',
-    'email',
-    'adu_count',
-    'topmost_filenames',
-    'addons_checked',
-    'flash_version',
-    'hangid',
-    'reason',
-    'process_type',
-    'app_notes',
-    'install_age',
-    'duplicate_of',
-    'release_channel',
-    'productid',
-)
 
 
 def ratelimit_blocked(request, exception):
@@ -115,685 +67,6 @@ def build_id_to_date(build_id):
     )
 
 
-def build_data_object_for_crashes_per_day_graph(
-    start_date, end_date, facets, adi_by_term, date_range_type
-):
-    if date_range_type == 'build':
-        histogram = facets['histogram_build_id']
-    else:
-        histogram = facets['histogram_date']
-    groups = facets['version']
-    count = len(groups)
-    graph_data = {
-        'startDate': start_date,
-        'endDate': end_date,
-        'count': count,
-        'labels': [],
-        'ratios': [],
-    }
-
-    groups = sorted(groups, key=itemgetter('term'), reverse=True)
-    for index, group in enumerate(groups, start=1):
-        ratios = []
-        term = group['term']
-
-        graph_data['labels'].append(term)
-
-        for block in histogram:
-            if date_range_type == 'build':
-                # the build_id will be something like 20150810122907
-                # which we need to convert to '2015-08-10'
-                date = build_id_to_date(block['term'])
-            else:
-                date = block['term'].split('T')[0]
-            count = 0
-            for cluster in block['facets']['version']:
-                if term == cluster['term']:
-                    count += cluster['count']
-
-            total = 0
-            throttle = 1.0
-            if term in adi_by_term:
-                if date in adi_by_term[term]:
-                    total, throttle = adi_by_term[term][date]
-
-            if total:
-                ratio = round(100.0 * count / total / throttle, 3)
-            else:
-                ratio = 0.0
-
-            ratios.append([date, ratio])
-        graph_data['ratios'].append(ratios)
-
-    return graph_data
-
-
-def _get_crashes_per_day_with_adu(
-    params, start_date, end_date, platforms, _date_range_type
-):
-    api = SuperSearchUnredacted()
-    results = api.get(**params)
-
-    platforms_api = models.Platforms()
-    platforms = platforms_api.get()
-
-    # now get the ADI for these product versions
-    api = models.ADI()
-    adi_counts = api.get(
-        product=params['product'],
-        versions=params['version'],
-        start_date=start_date,
-        end_date=end_date,
-        platforms=[x['name'] for x in platforms if x.get('display')],
-    )
-
-    api = models.ProductBuildTypes()
-    product_build_types = api.get(product=params['product'])['hits']
-
-    # This `adi_counts` is a list of dicts that looks like this:
-    #    {
-    #       'adi_count': 123,
-    #       'date': '2015-08-15',
-    #       'version': '40.0.2'
-    #       'build_type': 'beta',
-    #    }
-    # We need to turn this around so that it's like this:
-    #   {
-    #       '40.0.2': {
-    #           '2015-08-15': [123, 1.0],
-    #            ...
-    #       },
-    #       ...
-    #   }
-    # So it can easily be looked up how many counts there are per
-    # version per date.
-    #
-    # Note!! that the 1.0 in the example above is the throttle value
-    # for this build_type. We got that from the ProductBuildTypes API.
-    adi_by_version = {}
-
-    # If any of the versions end with a 'b' we want to collect
-    # and group them together under one.
-    # I.e. if we have adi count of '42.0b1':123 and '42.0b2':345
-    # then we want to combine that to just '42.0b':123+345
-
-    beta_versions = [x for x in params['version'] if x.endswith('b')]
-
-    def get_parent_version(ver):
-        try:
-            return [x for x in beta_versions if ver.startswith(x)][0]
-        except IndexError:
-            return None
-
-    def add_version_to_adi(version, count, date, throttle):
-        if version not in adi_by_version:
-            adi_by_version[version] = {}
-
-        try:
-            before = adi_by_version[version][date][0]
-        except KeyError:
-            before = 0
-        adi_by_version[version][date] = [count + before, throttle]
-
-    for group in adi_counts['hits']:
-        version = group['version']
-        # Make this a string so it can be paired with the facets 'term'
-        # key which is also a date in ISO format.
-        date = group['date'].isoformat()
-        build_type = group['build_type']
-        count = group['adi_count']
-        throttle = product_build_types[build_type]
-
-        # If this version was requested, add it to the data structure.
-        if version in params['version']:
-            add_version_to_adi(version, count, date, throttle)
-
-        # If this version is part of a beta, add it to the data structure.
-        parent_version = get_parent_version(version)
-        if parent_version is not None:
-            version = parent_version
-            add_version_to_adi(version, count, date, throttle)
-
-    # We might have queried for aggregates for version ['19.0a1', '18.0b']
-    # but SuperSearch will give us facets for versions:
-    # ['19.0a1', '18.0b1', '18.0b2', '18.0b3']
-    # The facets look something like this:
-    #        {
-    #            'histogram_date': [
-    #                {
-    #                    'count': 1234,
-    #                    'facets': [
-    #                        {'count': 201, 'term': '19.0a1'},
-    #                        {'count': 196, 'term': '18.0b1'},
-    #                        {'count': 309, 'term': '18.0b2'},
-    #                        {'count': 991, 'term': '18.0b3'},
-    #                    ],
-    #                    'term': '2015-01-10T00:00:00'
-    #                },
-    #                ...
-    #
-    #            'version': [
-    #                {'count': 45234, 'term': '19.0a1'},
-    #                {'count': 39001, 'term': '18.0b1'},
-    #                {'count': 56123, 'term': '18.0b2'},
-    #                {'count': 90133, 'term': '18.0b3'},
-    #
-    # Our job is to rewrite that so it looks like this:
-    #        {
-    #            'histogram_date': [
-    #                {
-    #                    'count': 1234,
-    #                    'facets': [
-    #                        {'count': 201, 'term': '19.0a1'},
-    #                        {'count': 196+309+991, 'term': '18.0b'},
-    #                    ],
-    #                    'term': '2015-01-10T00:00:00'
-    #                },
-    #                ...
-    #
-    #            'version': [
-    #                {'count': 45234, 'term': '19.0a1'},
-    #                {'count': 39001+56123+90133, 'term': '18.0b'},
-    #
-
-    histogram = results['facets']['histogram_date']
-    for date_cluster in histogram:
-        parent_totals = defaultdict(int)
-
-        for facet_cluster in list(date_cluster['facets']['version']):
-            version = facet_cluster['term']
-            parent_version = get_parent_version(version)
-            if parent_version is not None:
-                parent_totals[parent_version] += facet_cluster['count']
-            if version not in params['version']:
-                date_cluster['facets']['version'].remove(facet_cluster)
-        for version in parent_totals:
-            date_cluster['facets']['version'].append({
-                'count': parent_totals[version],
-                'term': version
-            })
-
-    parent_totals = defaultdict(int)
-    for facet_cluster in list(results['facets']['version']):
-        version = facet_cluster['term']
-        parent_version = get_parent_version(version)
-        if parent_version is not None:
-            parent_totals[parent_version] += facet_cluster['count']
-        if version not in params['version']:
-            results['facets']['version'].remove(facet_cluster)
-    for version in parent_totals:
-        results['facets']['version'].append({
-            'count': parent_totals[version],
-            'term': version,
-        })
-
-    graph_data = {}
-    graph_data = build_data_object_for_crashes_per_day_graph(
-        start_date.strftime('%Y-%m-%d'),
-        end_date.strftime('%Y-%m-%d'),
-        results['facets'],
-        adi_by_version,
-        _date_range_type
-    )
-    graph_data['product_versions'] = get_product_versions_for_crashes_per_day(
-        results['facets'],
-        params['product'],
-    )
-
-    return graph_data, results, adi_by_version
-
-
-def get_product_versions_for_crashes_per_day(facets, product):
-    versions = facets['version']
-    versions = sorted(versions, key=itemgetter('term'), reverse=True)
-    return [
-        {'product': product, 'version': group['term']}
-        for group in versions
-    ]
-
-
-def _render_daily_csv(request, data, product, versions, platforms, os_names):
-    response = http.HttpResponse('text/csv', content_type='text/csv')
-    title = 'ADI_' + product + '_' + '_'.join(versions)
-    response['Content-Disposition'] = (
-        'attachment; filename="%s.csv"' % title
-    )
-    writer = utils.UnicodeWriter(response)
-    head_row = ['Date']
-    labels = (
-        ('report_count', 'Crashes'),
-        ('adu', 'ADI'),
-        ('throttle', 'Throttle'),
-        ('crash_hadu', 'Ratio'),
-    )
-    for version in versions:
-        for __, label in labels:
-            head_row.append('%s %s %s' % (product, version, label))
-    writer.writerow(head_row)
-
-    def append_row_blob(blob, labels):
-        for key, __ in labels:
-            value = blob[key]
-            if key == 'throttle':
-                value = '%.1f%%' % (100.0 * value)
-            elif key in ('crash_hadu', 'ratio'):
-                value = '%.3f%%' % value
-            else:
-                value = str(value)
-            row.append(value)
-
-    # reverse so that recent dates appear first
-    for date in sorted(data['dates'].keys(), reverse=True):
-        crash_info = data['dates'][date]
-        """
-         `crash_info` is a list that looks something like this:
-           [{'adu': 4500,
-             'crash_hadu': 43.0,
-             'date': u'2012-10-13',
-             'product': u'WaterWolf',
-             'report_count': 1935,
-             'throttle': 1.0,
-             'version': u'4.0a2'}]
-        """
-        row = [date]
-        info_by_version = dict((x['version'], x) for x in crash_info)
-
-        # Turn each of them into a dict where the keys is the version
-        for version in versions:
-            if version in info_by_version:
-                blob = info_by_version[version]
-                append_row_blob(blob, labels)
-            else:
-                for __ in labels:
-                    row.append('-')
-
-        assert len(row) == len(head_row), (len(row), len(head_row))
-        writer.writerow(row)
-
-    return response
-
-
-@pass_default_context
-def crashes_per_day(request, default_context=None):
-    context = default_context or {}
-    context['products'] = context['active_versions'].keys()
-
-    # This report does not currently support doing a graph by **build date**.
-    # So we hardcode the choice to always be regular report.
-    # The reason for not entirely deleting the functionality is because
-    # we might support it later in the future.
-    # The only reason people might get to this page with a
-    # date_range_type=build set is if they used the old daily report
-    # and clicked on the link to the new Crashes per User report.
-    if request.GET.get('date_range_type') == 'build':
-        params = dict(request.GET)
-        params.pop('date_range_type')
-        url = reverse('crashstats:crashes_per_day')
-        url += '?' + urllib.urlencode(params, True)
-        messages.warning(
-            request,
-            'The Crashes per User report does not support filtering '
-            'by *build* date. '
-        )
-        return redirect(url)
-
-    platforms_api = models.Platforms()
-    platforms = platforms_api.get()
-
-    date_range_types = ['report', 'build']
-    hang_types = ['any', 'crash', 'hang-p']
-    form = forms.DailyFormByVersion(
-        context['active_versions'],
-        platforms,
-        data=request.GET,
-        date_range_types=date_range_types,
-        hang_types=hang_types,
-    )
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    params = form.cleaned_data
-    params['product'] = params.pop('p')
-    params['versions'] = sorted(list(set(params.pop('v'))), reverse=True)
-    try:
-        params['platforms'] = params.pop('os')
-    except KeyError:
-        params['platforms'] = None
-
-    if len(params['versions']) > 0:
-        context['version'] = params['versions'][0]
-
-    context['product'] = params['product']
-
-    if not params['versions']:
-        # need to pick the default featured ones
-        params['versions'] = []
-        active_versions = context['active_versions'][context['product']]
-        for pv in active_versions:
-            if pv['is_featured']:
-                params['versions'].append(pv['version'])
-        if not params['versions'] and active_versions:
-            # There were no featured versions, but there were active
-            # versions. Use the top X active versions instead.
-            for pv in active_versions[:settings.NUMBER_OF_FEATURED_VERSIONS]:
-                params['versions'].append(pv['version'])
-
-    context['available_versions'] = []
-    for version in context['active_versions'][params['product']]:
-        context['available_versions'].append(version['version'])
-
-    if not params.get('platforms'):
-        params['platforms'] = [
-            x['name'] for x in platforms if x.get('display')
-        ]
-
-    context['platforms'] = params.get('platforms')
-
-    end_date = params.get('date_end') or datetime.datetime.utcnow()
-    if isinstance(end_date, datetime.datetime):
-        end_date = end_date.date()
-    start_date = (params.get('date_start') or
-                  end_date - datetime.timedelta(weeks=2))
-    if isinstance(start_date, datetime.datetime):
-        start_date = start_date.date()
-
-    context['start_date'] = start_date.strftime('%Y-%m-%d')
-    context['end_date'] = end_date.strftime('%Y-%m-%d')
-
-    context['duration'] = abs((start_date - end_date).days)
-    context['dates'] = utils.daterange(start_date, end_date)
-
-    context['hang_type'] = params.get('hang_type') or 'any'
-
-    context['date_range_type'] = params.get('date_range_type') or 'report'
-
-    _date_range_type = params.pop('date_range_type')
-    if _date_range_type == 'build':
-        params['_histogram.build_id'] = ['version']
-        params['_histogram_interval.build_id'] = 1000000
-    else:
-        params['_histogram.date'] = ['version']
-    params['_facets'] = ['version']
-
-    params.pop('date_end')
-
-    params.pop('date_start')
-    if _date_range_type == 'build':
-        params['build_id'] = [
-            '>=' + start_date.strftime('%Y%m%d000000'),
-            '<' + end_date.strftime('%Y%m%d000000'),
-        ]
-    else:
-        params['date'] = [
-            '>=' + start_date.strftime('%Y-%m-%d'),
-            '<' + end_date.strftime('%Y-%m-%d'),
-        ]
-
-    params['_results_number'] = 0  # because we don't care about hits
-    params['_columns'] = ('date', 'version', 'platform', 'product')
-    if params['hang_type'] == 'crash':
-        params['hang_type'] = '0'
-    elif params['hang_type'] == 'hang-p':
-        params['hang_type'] = '-1'
-    else:
-        params.pop('hang_type')
-
-    # supersearch expects the parameter `versions` (a list or tuple)
-    # to be called `version`
-    supersearch_params = copy.deepcopy(params)
-    supersearch_params['version'] = supersearch_params.pop('versions')
-    supersearch_params['platform'] = supersearch_params.pop('platforms')
-    # in SuperSearch it's called 'Mac' not 'Mac OS X'
-    if 'Mac OS X' in supersearch_params['platform']:
-        supersearch_params['platform'].append('Mac')
-        supersearch_params['platform'].remove('Mac OS X')
-
-    if params['product'] == 'FennecAndroid':
-        # FennecAndroid only has one platform and it's "Android"
-        # so none of the options presented in the crashes_per_day.html
-        # template are applicable.
-        del supersearch_params['platform']
-
-    try:
-        graph_data, results, adi_by_version = _get_crashes_per_day_with_adu(
-            supersearch_params,
-            start_date,
-            end_date,
-            platforms,
-            _date_range_type
-        )
-    except BadArgumentError as exception:
-        return http.HttpResponseBadRequest(unicode(exception))
-
-    render_csv = request.GET.get('format') == 'csv'
-    data_table = {
-        'totals': {},
-        'dates': {}
-    }
-    facets = results['facets']
-    has_data_versions = set()
-    if _date_range_type == 'build':
-        histogram = facets['histogram_build_id']
-    else:
-        histogram = facets['histogram_date']
-
-    for group in histogram:
-        if _date_range_type == 'build':
-            date = build_id_to_date(group['term'])
-        else:
-            date = group['term'].split('T')[0]
-        if date not in data_table['dates']:
-            data_table['dates'][date] = []
-        sorted_by_version = sorted(
-            group['facets']['version'],
-            key=itemgetter('term'),
-            reverse=True
-        )
-
-        for facet_group in sorted_by_version:
-            term = facet_group['term']
-            has_data_versions.add(term)
-
-            count = facet_group['count']
-            adi_groups = adi_by_version[term]
-            if date in adi_groups:
-                total, throttle = adi_groups[date]
-                if total:
-                    ratio = round(100.0 * count / total / throttle, 3)
-                else:
-                    ratio = 0.0
-
-                # Why do we divide the count by the throttle?!
-                # Consider the case of Release. That one we throttle to 10%
-                # meaning that if we received 123 crashes, it happened to
-                # about 1230 people actually. We just "discarded" 90% of the
-                # records.
-                # But, why divide? Because throttle is a floating point
-                # number between 0 and 1.0. If it's 1.0 it means we're taking
-                # 100% and 234/1.0 == 234. If it's 0.1 it means that
-                # 123/0.1 == 1230.
-                report_count = int(count / throttle)
-                item = {
-                    'adi': total,
-                    'date': date,
-                    'ratio': ratio,
-                    'report_count': report_count,
-                    'product': params['product'],
-                    'throttle': throttle,
-                    'version': term,
-                }
-                # Because this code is using the `_render_daily_csv()` function
-                # which is used by the old daily() view function, we have to
-                # use the common (and old) names for certain keys
-                if render_csv:
-                    item['adu'] = item.pop('adi')
-                    item['crash_hadu'] = item.pop('ratio')
-
-                data_table['dates'][date].append(item)
-
-    if _date_range_type == 'build':
-        # for the Date Range = "Build Date" report, we only want to
-        # include versions that had data.
-        context['versions'] = list(has_data_versions)
-    else:
-        context['versions'] = params['versions']
-
-    for date in data_table['dates']:
-        data_table['dates'][date] = sorted(
-            data_table['dates'][date],
-            key=itemgetter('version'),
-            reverse=True
-        )
-
-    if render_csv:
-        return _render_daily_csv(
-            request,
-            data_table,
-            params['product'],
-            params['versions'],
-            platforms,
-            params['platforms'],
-        )
-    context['data_table'] = data_table
-    context['graph_data'] = graph_data
-    context['report'] = 'daily'
-
-    errors = []
-    for error in results.get('errors', []):
-        if not error['type'] == 'shards':
-            continue
-
-        week = int(error['index'][-2:])
-        year = int(error['index'][-6:-2])
-        day = isoweek.Week(year, week).monday()
-        percent = error['shards_count'] * 100 / settings.ES_SHARDS_PER_INDEX
-        errors.append(
-            'The data for the week of {} is ~{}% lower than expected.'.format(
-                day, percent
-            )
-        )
-    context['errors'] = errors
-
-    return render(request, 'crashstats/crashes_per_day.html', context)
-
-
-@pass_default_context
-@permission_required('crashstats.view_exploitability')
-def exploitability_report(request, default_context=None):
-    context = default_context or {}
-
-    if not request.GET.get('product'):
-        url = reverse('crashstats:exploitability_report')
-        url += '?' + urllib.urlencode({
-            'product': settings.DEFAULT_PRODUCT
-        })
-        return redirect(url)
-
-    form = forms.ExploitabilityReportForm(
-        request.GET,
-        active_versions=context['active_versions'],
-    )
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    product = form.cleaned_data['product']
-    version = form.cleaned_data['version']
-
-    api = SuperSearchUnredacted()
-    params = {
-        'product': product,
-        'version': version,
-        '_results_number': 0,
-        # This aggregates on crashes that do NOT contain these
-        # key words. For example, if a crash has
-        # {'exploitability': 'error: unable to analyze dump'}
-        # then it won't get included.
-        'exploitability': ['!error', '!interesting'],
-        '_aggs.signature': 'exploitability',
-        '_facets_size': settings.EXPLOITABILITY_BATCH_SIZE,
-    }
-    results = api.get(**params)
-
-    base_signature_report_dict = {
-        'product': product,
-    }
-    if version:
-        base_signature_report_dict['version'] = version
-
-    crashes = []
-    categories = ('high', 'none', 'low', 'medium', 'null')
-    for signature_facet in results['facets']['signature']:
-        # this 'signature_facet' will look something like this:
-        #
-        #  {
-        #      'count': 1234,
-        #      'term': 'My | Signature',
-        #      'facets': {
-        #          'exploitability': [
-        #              {'count': 1, 'term': 'high'},
-        #              {'count': 23, 'term': 'medium'},
-        #              {'count': 11, 'term': 'other'},
-        #
-        # And we only want to include those where:
-        #
-        #   low or medium or high are greater than 0
-        #
-
-        exploitability = signature_facet['facets']['exploitability']
-        if not any(
-            x['count']
-            for x in exploitability
-            if x['term'] in ('high', 'medium', 'low')
-        ):
-            continue
-        crash = {
-            'bugs': [],
-            'signature': signature_facet['term'],
-            'high_count': 0,
-            'medium_count': 0,
-            'low_count': 0,
-            'none_count': 0,
-            'url': (
-                reverse('signature:signature_report') + '?' +
-                urllib.urlencode(dict(
-                    base_signature_report_dict,
-                    signature=signature_facet['term']
-                ))
-            ),
-        }
-        for cluster in exploitability:
-            if cluster['term'] in categories:
-                crash['{}_count'.format(cluster['term'])] = (
-                    cluster['count']
-                )
-        crash['med_or_high'] = (
-            crash.get('high_count', 0) +
-            crash.get('medium_count', 0)
-        )
-        crashes.append(crash)
-
-    # Sort by the 'med_or_high' key first (descending),
-    # and by the signature second (ascending).
-    crashes.sort(key=lambda x: (-x['med_or_high'], x['signature']))
-
-    # now, let's go back and fill in the bugs
-    signatures = [x['signature'] for x in crashes]
-    if signatures:
-        api = models.Bugs()
-        bugs = defaultdict(list)
-        for b in api.get(signatures=signatures)['hits']:
-            bugs[b['signature']].append(b['id'])
-
-        for crash in crashes:
-            crash['bugs'] = bugs.get(crash['signature'], [])
-
-    context['crashes'] = crashes
-    context['product'] = product
-    context['version'] = version
-    context['report'] = 'exploitable'
-    return render(request, 'crashstats/exploitability_report.html', context)
-
-
 @csp_update(CONNECT_SRC='analysis-output.telemetry.mozilla.org')
 @pass_default_context
 def report_index(request, crash_id, default_context=None):
@@ -806,10 +79,7 @@ def report_index(request, crash_id, default_context=None):
     # If you try to use this to reach the perma link for a crash, it should
     # redirect to the report index with the correct crash ID.
     if valid_crash_id != crash_id:
-        return redirect(reverse(
-            'crashstats:report_index',
-            args=(valid_crash_id,)
-        ))
+        return redirect(reverse('crashstats:report_index', args=(valid_crash_id,)))
 
     context = default_context or {}
     context['crash_id'] = crash_id
@@ -818,14 +88,11 @@ def report_index(request, crash_id, default_context=None):
 
     raw_api = models.RawCrash()
     try:
-        context['raw'] = raw_api.get(
-            crash_id=crash_id,
-            refresh_cache=refresh_cache,
-        )
+        context['raw'] = raw_api.get(crash_id=crash_id, refresh_cache=refresh_cache)
     except CrashIDNotFound:
         # If the raw crash can't be found, we can't do much.
-        tmpl = 'crashstats/report_index_not_found.html'
-        return render(request, tmpl, context, status=404)
+        return render(request, 'crashstats/report_index_not_found.html', context, status=404)
+    utils.enhance_raw(context['raw'])
 
     context['your_crash'] = (
         request.user.is_active and
@@ -834,10 +101,7 @@ def report_index(request, crash_id, default_context=None):
 
     api = models.UnredactedCrash()
     try:
-        context['report'] = api.get(
-            crash_id=crash_id,
-            refresh_cache=refresh_cache,
-        )
+        context['report'] = api.get(crash_id=crash_id, refresh_cache=refresh_cache)
     except CrashIDNotFound:
         # ...if we haven't already done so.
         cache_key = 'priority_job:{}'.format(crash_id)
@@ -845,13 +109,11 @@ def report_index(request, crash_id, default_context=None):
             priority_api = models.Priorityjob()
             priority_api.post(crash_ids=[crash_id])
             cache.set(cache_key, True, 60)
-        tmpl = 'crashstats/report_index_pending.html'
-        return render(request, tmpl, context)
+        return render(request, 'crashstats/report_index_pending.html', context)
 
     if 'json_dump' in context['report']:
         json_dump = context['report']['json_dump']
-        if 'sensitive' in json_dump and \
-           not request.user.has_perm('crashstats.view_pii'):
+        if 'sensitive' in json_dump and not request.user.has_perm('crashstats.view_pii'):
             del json_dump['sensitive']
         context['raw_stackwalker_output'] = json.dumps(
             json_dump,
@@ -861,42 +123,19 @@ def report_index(request, crash_id, default_context=None):
         )
         utils.enhance_json_dump(json_dump, settings.VCS_MAPPINGS)
         parsed_dump = json_dump
-    elif 'dump' in context['report']:
-        context['raw_stackwalker_output'] = context['report']['dump']
-        parsed_dump = utils.parse_dump(
-            context['report']['dump'],
-            settings.VCS_MAPPINGS
-        )
     else:
         context['raw_stackwalker_output'] = 'No dump available'
         parsed_dump = {}
 
-    # If the parsed_dump lacks a `parsed_dump.crash_info.crashing_thread`
-    # we can't loop over the frames :(
-    crashing_thread = parsed_dump.get('crash_info', {}).get('crashing_thread')
-    if crashing_thread is None:
-        # the template does a big `{% if parsed_dump.threads %}`
-        parsed_dump['threads'] = None
-    else:
-        context['crashing_thread'] = crashing_thread
-
+    context['crashing_thread'] = parsed_dump.get('crash_info', {}).get('crashing_thread')
     if context['report']['signature'].startswith('shutdownhang'):
         # For shutdownhang signatures, we want to use thread 0 as the
         # crashing thread, because that's the thread that actually contains
-        # the usefull data about the what happened.
+        # the useful data about what happened.
         context['crashing_thread'] = 0
 
     context['parsed_dump'] = parsed_dump
     context['bug_product_map'] = settings.BUG_PRODUCT_MAP
-
-    process_type = 'unknown'
-    if context['report']['process_type'] is None:
-        process_type = 'browser'
-    elif context['report']['process_type'] == 'plugin':
-        process_type = 'plugin'
-    elif context['report']['process_type'] == 'content':
-        process_type = 'content'
-    context['process_type'] = process_type
 
     bugs_api = models.Bugs()
     hits = bugs_api.get(signatures=[context['report']['signature']])['hits']
@@ -906,10 +145,7 @@ def report_index(request, crash_id, default_context=None):
         x for x in hits
         if x['signature'] == context['report']['signature']
     ]
-    context['bug_associations'].sort(
-        key=lambda x: x['id'],
-        reverse=True
-    )
+    context['bug_associations'].sort(key=lambda x: x['id'], reverse=True)
 
     context['raw_keys'] = []
     if request.user.has_perm('crashstats.view_pii'):
@@ -937,10 +173,7 @@ def report_index(request, crash_id, default_context=None):
             for suffix in suffixes:
                 name = 'upload_file_minidump_%s' % (suffix,)
                 context['raw_dump_urls'].append(
-                    reverse(
-                        'crashstats:raw_data_named',
-                        args=(crash_id, name, 'dmp')
-                    )
+                    reverse('crashstats:raw_data_named', args=(crash_id, name, 'dmp'))
                 )
         if (
             context['raw'].get('ContainsMemoryReport') and
@@ -948,10 +181,7 @@ def report_index(request, crash_id, default_context=None):
             not context['report'].get('memory_report_error')
         ):
             context['raw_dump_urls'].append(
-                reverse(
-                    'crashstats:raw_data_named',
-                    args=(crash_id, 'memory_report', 'json.gz')
-                )
+                reverse('crashstats:raw_data_named', args=(crash_id, 'memory_report', 'json.gz'))
             )
 
     # Add descriptions to all fields.
@@ -960,8 +190,7 @@ def report_index(request, crash_id, default_context=None):
     for field in all_fields.values():
         key = '{}.{}'.format(field['namespace'], field['in_database_name'])
         descriptions[key] = '{} Search: {}'.format(
-            field.get('description', '').strip() or
-            'No description for this field.',
+            field.get('description', '').strip() or 'No description for this field.',
             field['is_exposed'] and field['name'] or 'N/A',
         )
 
@@ -1016,11 +245,14 @@ def status_json(request):
     return redirect(reverse('api:model_wrapper', args=('Status',)))
 
 
-def status_revision(request):
-    return http.HttpResponse(
-        models.Status().get()['socorro_revision'],
-        content_type='text/plain'
-    )
+def dockerflow_version(requst):
+    path = os.path.join(settings.SOCORRO_ROOT, 'version.json')
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            data = fp.read()
+    else:
+        data = '{}'
+    return http.HttpResponse(data, content_type='application/json')
 
 
 @pass_default_context
@@ -1046,11 +278,11 @@ def quick_search(request):
         )
     elif query:
         url = '%s?signature=%s' % (
-            reverse('supersearch.search'),
+            reverse('supersearch:search'),
             urlquote('~%s' % query)
         )
     else:
-        url = reverse('supersearch.search')
+        url = reverse('supersearch:search')
 
     return redirect(url)
 
@@ -1097,145 +329,49 @@ def raw_data(request, crash_id, extension, name=None):
     return response
 
 
-def graphics_report(request):
-    """Return a CSV output of all crashes for a specific date for a
-    particular day and a particular product."""
-    if (
-        not request.user.is_active or
-        not request.user.has_perm('crashstats.run_long_queries')
-    ):
-        return http.HttpResponseForbidden(
-            "You must have the 'Run long queries' permission"
-        )
-    form = forms.GraphicsReportForm(
-        request.GET,
-    )
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    batch_size = 1000
-    product = form.cleaned_data['product'] or settings.DEFAULT_PRODUCT
-    date = form.cleaned_data['date']
-    params = {
-        'product': product,
-        'date': [
-            '>={}'.format(date.strftime('%Y-%m-%d')),
-            '<{}'.format(
-                (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            )
-        ],
-        '_columns': (
-            'signature',
-            'uuid',
-            'date',
-            'product',
-            'version',
-            'build_id',
-            'platform',
-            'platform_version',
-            'cpu_name',
-            'cpu_info',
-            'address',
-            'uptime',
-            'topmost_filenames',
-            'reason',
-            'app_notes',
-            'release_channel',
-        ),
-        '_results_number': batch_size,
-        '_results_offset': 0,
-    }
-    api = SuperSearch()
-    # Do the first query. That'll give us the total and the first page's
-    # worth of crashes.
-    data = api.get(**params)
-    assert 'hits' in data
-
-    accept_gzip = 'gzip' in request.META.get('HTTP_ACCEPT_ENCODING', '')
-    response = http.HttpResponse(content_type='text/csv')
-    out = BytesIO()
-    writer = utils.UnicodeWriter(out, delimiter='\t')
-    writer.writerow(GRAPHICS_REPORT_HEADER)
-    pages = data['total'] // batch_size
-    # if there is a remainder, add one more page
-    if data['total'] % batch_size:
-        pages += 1
-    alias = {
-        'crash_id': 'uuid',
-        'os_name': 'platform',
-        'os_version': 'platform_version',
-        'date_processed': 'date',
-        'build': 'build_id',
-        'uptime_seconds': 'uptime',
-    }
-    # Make sure that we don't have an alias for a header we don't need
-    alias_excess = set(alias.keys()) - set(GRAPHICS_REPORT_HEADER)
-    if alias_excess:
-        raise ValueError(
-            'Not all keys in the map of aliases are in '
-            'the header ({!r})'.format(alias_excess)
-        )
-
-    def get_value(row, key):
-        """Return the appropriate output from the row of data, one key
-        at a time. The output is what's used in writing the CSV file.
-
-        The reason for doing these "hacks" is to match what used to be
-        done with the SELECT statement in SQL in the ancient, but now
-        replaced, report.
-        """
-        value = row.get(alias.get(key, key))
-        if key == 'cpu_info':
-            value = '{cpu_name} | {cpu_info}'.format(
-                cpu_name=row.get('cpu_name', ''),
-                cpu_info=row.get('cpu_info', ''),
-            )
-        if value is None:
-            return ''
-        if key == 'date_processed':
-            value = timezone.make_aware(datetime.datetime.strptime(
-                value.split('.')[0],
-                '%Y-%m-%dT%H:%M:%S'
-            ))
-            value = value.strftime('%Y%m%d%H%M')
-        if key == 'uptime_seconds' and value == 0:
-            value = ''
-        return value
-
-    for page in range(pages):
-        if page > 0:
-            params['_results_offset'] = batch_size * page
-            data = api.get(**params)
-
-        for row in data['hits']:
-            # Each row is a dict, we want to turn it into a list of
-            # exact order as the `header` tuple above.
-            # However, because the csv writer module doesn't "understand"
-            # python's None, we'll replace those with '' to make the
-            # CSV not have the word 'None' where the data is None.
-            writer.writerow([
-                get_value(row, x)
-                for x in GRAPHICS_REPORT_HEADER
-            ])
-
-    payload = out.getvalue()
-    if accept_gzip:
-        zbuffer = BytesIO()
-        zfile = gzip.GzipFile(mode='wb', compresslevel=6, fileobj=zbuffer)
-        zfile.write(payload)
-        zfile.close()
-        compressed_payload = zbuffer.getvalue()
-        response.write(compressed_payload)
-        response['Content-Length'] = len(compressed_payload)
-        response['Content-Encoding'] = 'gzip'
-    else:
-        response.write(payload)
-        response['Content-Length'] = len(payload)
-    return response
-
-
 @pass_default_context
 def about_throttling(request, default_context=None):
     """Return a simple page that explains about how throttling works."""
     context = default_context or {}
     return render(request, 'crashstats/about_throttling.html', context)
+
+
+@pass_default_context
+def new_report_index(request, crash_id, default_context=None):
+    context = default_context or {}
+    return render(request, 'crashstats/new_report_index.html', context)
+
+
+@pass_default_context
+def home(request, default_context=None):
+    context = default_context or {}
+    return render(request, 'crashstats/home.html', context)
+
+
+@pass_default_context
+def product_home(request, product, default_context=None):
+    context = default_context or {}
+
+    # Figure out versions
+    if product not in context['products']:
+        raise http.Http404('Not a recognized product')
+
+    if product in context['active_versions']:
+        context['versions'] = [
+            x['version']
+            for x in context['active_versions'][product]
+            if x['is_featured']
+        ]
+        # If there are no featured versions but there are active
+        # versions, then fall back to use that instead.
+        if not context['versions'] and context['active_versions'][product]:
+            # But when we do that, we have to make a manual cut-off of
+            # the number of versions to return. So make it max 4.
+            context['versions'] = [
+                x['version']
+                for x in context['active_versions'][product]
+            ][:settings.NUMBER_OF_FEATURED_VERSIONS]
+    else:
+        context['versions'] = []
+
+    return render(request, 'crashstats/product_home.html', context)

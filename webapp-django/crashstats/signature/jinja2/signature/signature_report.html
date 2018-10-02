@@ -11,6 +11,7 @@
     {% stylesheet 'accordion' %}
     {% stylesheet 'tablesorter' %}
     {% stylesheet 'signature_report' %}
+    {% stylesheet 'bugzilla' %}
 {% endblock %}
 
 {% block content %}
@@ -45,7 +46,7 @@
         <div class="loader"></div>
 
         <form method="get" action="{{ url('signature:signature_report') }}"
-            data-fields-url="{{ url('supersearch.search_fields') }}?{{ make_query_string(exclude=['signature', 'date']) }}"
+            data-fields-url="{{ url('supersearch:search_fields') }}?{{ make_query_string(exclude=['signature', 'date']) }}"
             data-signature="{{ signature }}"
         >
             <div class="form-controls">

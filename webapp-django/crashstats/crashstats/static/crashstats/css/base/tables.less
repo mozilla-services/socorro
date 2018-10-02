@@ -1,0 +1,131 @@
+
+table {
+    thead,
+    tbody {
+        tr {
+            z-index: 50;
+            th,
+            td {
+                border: solid 1px @grey;
+            }
+        }
+    }
+    th {
+        font-weight: bold;
+        padding: 0 .25em;
+        a.expand {
+            display: inline;
+            font-size: smaller;
+        }
+    }
+
+    /* standard table styles for data tables */
+    &.data-table,
+    &.zebra {
+        width: 100%;
+        tr {
+            &:nth-child(even) {
+                background-color: @grey-90-a10;
+            }
+            &:nth-child(odd) {
+                background-color: @grey-90-a025;
+            }
+            &:hover {
+                background-color: @light-grey;
+            }
+        }
+    }
+    th {
+        background-color: @dark-tan;
+    }
+    th,
+    td {
+        padding: .5em;
+    }
+    tbody {
+        background-color: @white;
+        tr {
+
+
+            &.truncated-frame {
+                background-color: @jsonview-prop;
+                a {
+                    color: @dark-grey;
+                }
+            }
+            &.missingsymbols {
+                &,
+                &:hover,
+                & td {
+                    background-color: @red;
+                    color: @white;
+                    border-top: 2px solid @white;
+                }
+            }
+        }
+    }
+
+
+    &.captioned-data-table {
+        margin: 1rem;
+        width: 98%;
+        caption {
+            position: relative;
+            background-color: @tan;
+            padding: 1em 1rem .5rem;
+            .rounded-corners(6px, 6px);
+            h3 {
+                display: block;
+                margin: 0 0 .3em;
+                font-weight: bold;
+                font-style: normal;
+                font-size: 1.4rem;
+            }
+            a {
+                &:link,
+                &:visited {
+                    color: @dark-grey;
+                }
+                &:focus {
+                    text-decoration: none;
+                }
+            }
+        }
+        th {
+            background-color: @grey;
+            color: @white;
+        }
+        th,
+        td {
+            padding: .5em;
+        }
+
+        &.initially-hidden {
+            caption {
+                background-image: none;
+                .rounded-corners(6px);
+            }
+            thead {
+                .accessibly-hidden();
+            }
+            tbody {
+                .accessibly-hidden();
+            }
+        }
+    }
+
+    &.vertical {
+        th {
+            border: 1px solid @black;
+            font-weight: bold;
+        }
+    }
+
+}
+
+.tablesorter {
+    margin: 0 !important;
+    thead {
+        font-size: .9rem;
+    }
+}

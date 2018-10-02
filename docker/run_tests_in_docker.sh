@@ -17,18 +17,27 @@ set -v -e -x
 PS4="+ (run_tests_in_docker.sh): "
 
 DC="$(which docker-compose)"
-APP_UID="10001"
-APP_GID="10001"
+SOCORRO_UID=${SOCORRO_UID:-"10001"}
+SOCORRO_GID=${SOCORRO_GID:-"10001"}
 
-# Use the same image we use for building docker images because it'll be cached
-# already
-BASEIMAGENAME="python:2.7.13-slim"
+# Use the same image we use for building docker images because it's cached.
+# Otherwise this doesn't make any difference.
+BASEIMAGENAME="python:2.7.14-slim"
+
+# Figure out which image to run tests in
+USEPYTHON="${USEPYTHON:-2}"
+echo "${USEPYTHON}"
+if [ "${USEPYTHON}" == "2" ]; then
+    echo "Using Python 2.7.14."
+    TESTIMAGE="local/socorro_app"
+else
+    echo "Using Python 3.6.5."
+    TESTIMAGE="local/socorro_python3"
+fi
 
 # Start services in background (this is idempotent)
-echo "Starting services in the background..."
-${DC} up -d elasticsearch
-${DC} up -d postgresql
-${DC} up -d rabbitmq
+echo "Starting services needed by tests in the background..."
+${DC} up -d elasticsearch postgresql rabbitmq statsd
 
 # If we're running a shell, then we start up a test container with . mounted
 # to /app.
@@ -37,71 +46,75 @@ if [ "$1" == "--shell" ]; then
 
     docker run \
            --rm \
-           --user "${APP_UID}" \
+           --user "${SOCORRO_UID}" \
            --volume "$(pwd)":/app \
            --workdir /app \
            --network socorro_default \
            --link socorro_elasticsearch_1 \
            --link socorro_postgresql_1 \
            --link socorro_rabbitmq_1 \
+           --link socorro_statsd_1 \
            --env-file ./docker/config/local_dev.env \
            --env-file ./docker/config/never_on_a_server.env \
            --env-file ./docker/config/test.env \
            --tty \
            --interactive \
-           local/socorro_webapp /bin/bash
-
-else
-    # Create a data container to hold the repo directory contents and copy the
-    # contents into it
-    if [ "$(docker container ls --all | grep socorro-repo)" == "" ]; then
-        echo "Creating socorro-repo container..."
-        docker create \
-               -v /app \
-               --user "${APP_UID}" \
-               --name socorro-repo \
-               ${BASEIMAGENAME} /bin/true
-    fi
-    echo "Copying contents..."
-    # Wipe whatever might be in there from past runs
-    docker run \
-           --user root \
-           --volumes-from socorro-repo \
-           --workdir /app \
-           local/socorro_webapp sh -c "rm -rf /app/*"
-
-    # Verify files are gone
-    docker run \
-           --user root \
-           --volumes-from socorro-repo \
-           --workdir /app \
-           local/socorro_webapp ls -l /app/
-
-    # Copy the repo root into /app
-    docker cp . socorro-repo:/app
-
-    # Fix permissions in data container
-    docker run \
-           --user root \
-           --volumes-from socorro-repo \
-           --workdir /app \
-           local/socorro_webapp chown -R "${APP_UID}:${APP_GID}" /app
-
-    # Run cmd in that environment and then remove the container
-    echo "Running tests..."
-    docker run \
-           --rm \
-           --user "${APP_UID}" \
-           --volumes-from socorro-repo \
-           --workdir /app \
-           --network socorro_default \
-           --link socorro_elasticsearch_1 \
-           --link socorro_postgresql_1 \
-           --link socorro_rabbitmq_1 \
-           --env-file ./docker/config/local_dev.env \
-           --env-file ./docker/config/never_on_a_server.env \
-           --env-file ./docker/config/test.env \
-           local/socorro_webapp /app/docker/run_tests.sh
-
-    echo "Done!"
+           --entrypoint="" \
+           "${TESTIMAGE}" /bin/bash
+    exit $?
 fi
+
+# Create a data container to hold the repo directory contents and copy the
+# contents into it--reuse if possible
+if [ "$(docker container ls --all | grep socorro-repo)" == "" ]; then
+    echo "Creating socorro-repo container..."
+    docker create \
+           -v /app \
+           --user "${SOCORRO_UID}" \
+           --name socorro-repo \
+           "${BASEIMAGENAME}" /bin/true
+fi
+
+echo "Copying contents..."
+
+# Wipe whatever might be in there from past runs and verify files are gone
+docker run \
+       --user root \
+       --volumes-from socorro-repo \
+       --workdir /app \
+       --entrypoint="" \
+       "${TESTIMAGE}" sh -c "rm -rf /app/* && ls -l /app/"
+
+# Copy the repo root into /app
+docker cp . socorro-repo:/app
+
+# Fix file permissions in data container
+docker run \
+       --user root \
+       --volumes-from socorro-repo \
+       --workdir /app \
+       --entrypoint="" \
+       "${TESTIMAGE}" chown -R "${SOCORRO_UID}:${SOCORRO_GID}" /app
+
+# Run cmd in that environment and then remove the container
+echo "Running tests..."
+docker run \
+       --rm \
+       --user "${SOCORRO_UID}" \
+       --volumes-from socorro-repo \
+       --workdir /app \
+       --network socorro_default \
+       --link socorro_elasticsearch_1 \
+       --link socorro_postgresql_1 \
+       --link socorro_rabbitmq_1 \
+       --link socorro_statsd_1 \
+       --env-file ./docker/config/local_dev.env \
+       --env-file ./docker/config/never_on_a_server.env \
+       --env-file ./docker/config/test.env \
+       -e USEPYTHON="${USEPYTHON}" \
+       --tty \
+       --interactive \
+       --entrypoint= \
+       "${TESTIMAGE}" sh -c /app/docker/run_tests.sh
+
+echo "Done!"

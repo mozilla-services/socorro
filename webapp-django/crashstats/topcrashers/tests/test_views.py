@@ -2,7 +2,6 @@ import datetime
 
 import freezegun
 import pyquery
-from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
@@ -31,26 +30,32 @@ class TestViews(BaseTestViews):
         Bugs.implementation().get.side_effect = mocked_bugs
 
         def mocked_signature_first_date_get(**options):
+            hits = [
+                {
+                    "signature": u"FakeSignature1 \u7684 Japanese",
+                    "first_date": datetime.datetime(
+                        2000, 1, 1, 12, 23, 34,
+                        tzinfo=utc,
+                    ),
+                    "first_build": "20000101122334",
+                },
+                {
+                    "signature": u"mozCool()",
+                    "first_date": datetime.datetime(
+                        2016, 5, 2, 0, 0, 0,
+                        tzinfo=utc,
+                    ),
+                    "first_build": "20160502000000",
+                },
+            ]
+
+            # Simulate filtering by signatures
+            if 'signatures' in options:
+                hits = [hit for hit in hits if hit['signature'] in options['signatures']]
+
             return {
-                "hits": [
-                    {
-                        "signature": u"FakeSignature1 \u7684 Japanese",
-                        "first_date": datetime.datetime(
-                            2000, 1, 1, 12, 23, 34,
-                            tzinfo=utc,
-                        ),
-                        "first_build": "20000101122334",
-                    },
-                    {
-                        "signature": u"mozCool()",
-                        "first_date": datetime.datetime(
-                            2016, 5, 2, 0, 0, 0,
-                            tzinfo=utc,
-                        ),
-                        "first_build": "20160502000000",
-                    },
-                ],
-                "total": 2
+                "hits": hits,
+                "total": len(hits)
             }
 
         SignatureFirstDate.implementation().get.side_effect = (
@@ -63,7 +68,7 @@ class TestViews(BaseTestViews):
 
             # By default we range by date, so there should be no filter on
             # the build id.
-            ok_('build_id' not in params)
+            assert 'build_id' not in params
 
             if 'hang_type' not in params['_aggs.signature']:
                 # Return results for the previous week.
@@ -169,48 +174,48 @@ class TestViews(BaseTestViews):
         url = self.base_url + '?product=WaterWolf&version=19.0'
 
         response = self.client.get(self.base_url, {'product': 'WaterWolf'})
-        ok_(url in response['Location'])
+        assert url in response['Location']
 
         # Test that several versions do not raise an error.
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
             'version': ['19.0', '20.0'],
         })
-        eq_(response.status_code, 200)
+        assert response.status_code, 200
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
             'version': '19.0',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         doc = pyquery.PyQuery(response.content)
         selected_count = doc('.tc-result-count a[class="selected"]')
-        eq_(selected_count.text(), '50')
+        assert selected_count.text() == '50'
 
         # there's actually only one such TD
         bug_ids = [x.text for x in doc('td.bug_ids_more > a')]
         # higher bug number first
-        eq_(bug_ids, ['33333', '22222'])
+        assert bug_ids == ['33333', '22222']
 
         # Check the first appearance date is there.
-        ok_('2000-01-01 12:23:34' in response.content)
+        assert '2000-01-01 12:23:34' in response.content
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
             'version': '19.0',
             '_facets_size': '100',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         doc = pyquery.PyQuery(response.content)
         selected_count = doc('.tc-result-count a[class="selected"]')
-        eq_(selected_count.text(), '100')
+        assert selected_count.text() == '100'
 
         # Check the startup crash icon is there.
-        ok_(
+        assert (
             'Potential Startup Crash, 50 out of 80 crashes happened during '
             'startup' in response.content
         )
-        ok_(
+        assert (
             'Startup Crash, all crashes happened during startup'
             in response.content
         )
@@ -223,7 +228,7 @@ class TestViews(BaseTestViews):
 
             # By default we range by date, so there should be no filter on
             # the build id.
-            ok_('build_id' not in params)
+            assert 'build_id' not in params
 
             if 'hang_type' not in params['_aggs.signature']:
                 # Return results for the previous week.
@@ -254,52 +259,52 @@ class TestViews(BaseTestViews):
         )
 
         response = self.client.get(self.base_url, {'product': 'SeaMonkey'})
-        eq_(response.status_code, 302)
+        assert response.status_code == 302
         actual_url = self.base_url + '?product=SeaMonkey&version=9.5'
-        ok_(actual_url in response['Location'])
+        assert actual_url in response['Location']
 
         response = self.client.get(self.base_url, {
             'product': 'SeaMonkey',
             'version': '9.5',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
         # Not testing the response content.
         # See test_topcrashers() above instead. Here we just want to make
         # sure it renders at all when the product has no featured versions.
 
     def test_topcrashers_400_by_bad_days(self):
         response = self.client.get(self.base_url, {
-            'product': 'SnowLion',
+            'product': 'WaterWolf',
             'version': '0.1',
             'days': 'xxxxxx',
         })
-        eq_(response.status_code, 400)
-        ok_('not a number' in response.content)
-        eq_(response['Content-Type'], 'text/html; charset=utf-8')
+        assert response.status_code == 400
+        assert 'not a number' in response.content
+        assert response['Content-Type'] == 'text/html; charset=utf-8'
 
     def test_topcrashers_400_by_bad_facets_size(self):
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
             '_facets_size': 'notanumber',
         })
-        eq_(response.status_code, 400)
-        ok_('Enter a whole number' in response.content)
-        eq_(response['Content-Type'], 'text/html; charset=utf-8')
+        assert response.status_code == 400
+        assert 'Enter a whole number' in response.content
+        assert response['Content-Type'] == 'text/html; charset=utf-8'
 
-    def test_topcrasher_with_product_sans_release(self):
-        # SnowLion is not a product at all
+    def test_topcrasher_with_unsupported_product(self):
+        # SnowLion is not in the mocked Products list
         response = self.client.get(self.base_url, {
             'product': 'SnowLion',
             'version': '0.1',
         })
-        eq_(response.status_code, 400)
+        assert response.status_code == 404
 
     def test_topcrasher_without_any_signatures(self):
         url = self.base_url + '?product=WaterWolf&version=19.0'
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
         })
-        ok_(url in response['Location'])
+        assert url in response['Location']
 
         def mocked_supersearch_get(**params):
             return {
@@ -317,7 +322,7 @@ class TestViews(BaseTestViews):
             'product': 'WaterWolf',
             'version': '19.0',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_topcrasher_modes(self):
 
@@ -345,9 +350,9 @@ class TestViews(BaseTestViews):
                 'product': 'WaterWolf',
                 'version': '19.0',
             })
-            eq_(response.status_code, 200)
-            ok_(now in response.content, now)
-            ok_(today not in response.content)
+            assert response.status_code == 200
+            assert now in response.content
+            assert today not in response.content
 
             # Now test the "day time" data.
             response = self.client.get(self.base_url, {
@@ -355,14 +360,14 @@ class TestViews(BaseTestViews):
                 'version': '19.0',
                 '_tcbs_mode': 'byday',
             })
-            eq_(response.status_code, 200)
-            ok_(today in response.content)
-            ok_(now not in response.content)
+            assert response.status_code == 200
+            assert today in response.content
+            assert now not in response.content
 
     def test_topcrasher_by_build(self):
 
         def mocked_supersearch_get(**params):
-            ok_('build_id' in params)
+            assert 'build_id' in params
             return {
                 'hits': [],
                 'facets': {
@@ -379,7 +384,7 @@ class TestViews(BaseTestViews):
             'version': '19.0',
             '_range_type': 'build',
         })
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
 
         # Test with a version that does not support builds.
         response = self.client.get(self.base_url, {
@@ -387,6 +392,6 @@ class TestViews(BaseTestViews):
             'version': '18.0',
             '_range_type': 'build',
         })
-        eq_(response.status_code, 200)
-        ok_('versions do not support the by build date' in response.content)
-        ok_('Range Type:' not in response.content)
+        assert response.status_code == 200
+        assert 'versions do not support the by build date' in response.content
+        assert 'Range Type:' not in response.content

@@ -1,5 +1,84 @@
 from __future__ import print_function
 
+import six
+
+
+# This determines what files are copied from npm libraries into the
+# static root when collectstatic runs.
+# The keys are library names (from webapp-django/package.json) and the
+# values are a list of fnmatch patterns to match files to copy.
+NPM_FILE_PATTERNS = {
+    'jquery-ui': [
+        'ui/version.js',
+        'ui/widget.js',
+        'ui/safe-active-element.js',
+        'ui/unique-id.js',
+        'ui/keycode.js',
+        'ui/widgets/mouse.js',
+        'ui/widgets/sortable.js',
+        'ui/widgets/datepicker.js',
+        'ui/widgets/tabs.js',
+        'themes/base/core.css',
+        'themes/base/sortable.css',
+        'themes/base/datepicker.css',
+        'themes/base/tabs.css',
+    ],
+    'flatpickr': [
+        'dist/themes/dark.css',
+        'dist/flatpickr.min.js',
+    ],
+    'Select2': [
+        'select2.css',
+        'select2.js',
+        'select2.png',
+        'select2-spinner.gif',
+        'select2x2.png',
+    ],
+    'metrics-graphics': [
+        'dist/*',
+    ],
+    'font-awesome': [
+        'css/*',
+        'fonts/*',
+    ],
+    'tablesorter': [
+        'dist/css/theme.default.min.css',
+        'dist/js/jquery.tablesorter.js',
+    ],
+    'd3': [
+        'dist/*',
+    ],
+    'jssha': [
+        'src/*.js',
+    ],
+    'qs': [
+        'dist/*',
+    ],
+    'moment': [
+        'moment.js',
+    ],
+    'filesize': [
+        'lib/*',
+    ],
+    'underscore': [
+        '*.js',
+    ],
+    'd3-sankey': [
+        'build/*',
+    ],
+    'jquery-jsonview': [
+        'dist/*',
+    ],
+    'ace-builds': [
+        'src/ace.js',
+        'src/theme-monokai.js',
+        'src/mode-json.js',
+    ],
+    'jquery': [
+        'dist/*',
+    ],
+}
+
 #
 # CSS
 #
@@ -7,20 +86,25 @@ from __future__ import print_function
 PIPELINE_CSS = {
     'search': {
         'source_filenames': (
-            'crashstats/css/lib/flatpickr.dark.min.css',
+            'flatpickr/dist/themes/dark.css',
             'supersearch/css/search.less',
         ),
         'output_filename': 'css/search.min.css',
     },
     'select2': {
         'source_filenames': (
-            'crashstats/js/lib/select2/select2.css',
+            'Select2/select2.css',
         ),
         'output_filename': 'css/select2.min.css',
     },
     'jquery_ui': {
         'source_filenames': (
-            'crashstats/css/lib/jquery-ui.css',
+            'jquery-ui/themes/base/core.css',
+            'jquery-ui/themes/base/sortable.css',
+            'jquery-ui/themes/base/datepicker.css',
+            'jquery-ui/themes/base/tabs.css',
+
+            # Custom theme
             'crashstats/css/lib/jquery-ui.structure.css',
             'crashstats/css/lib/jquery-ui.theme.css',
         ),
@@ -28,39 +112,39 @@ PIPELINE_CSS = {
     },
     'accordion': {
         'source_filenames': (
-            'crashstats/css/accordion.less',
+            'crashstats/css/components/accordion.less',
         ),
         'output_filename': 'css/accordion.min.css',
     },
+    'bugzilla': {
+        'source_filenames': (
+            'crashstats/css/components/bugzilla.less',
+        ),
+        'output_filename': 'css/bugzilla.min.css',
+    },
     'metricsgraphics': {
         'source_filenames': (
-            'crashstats/css/lib/metricsgraphics.css',
-            'crashstats/css/metricsgraphics_custom.css',
+            'metrics-graphics/dist/metricsgraphics.css',
+            'crashstats/css/lib/metricsgraphics_custom.css',
         ),
         'output_filename': 'css/metricsgraphics.min.css',
     },
     'crashstats_base': {
         'source_filenames': (
-            'crashstats/css/screen.less',
+            'crashstats/css/base.less',
             'status/css/status.less',
         ),
         'output_filename': 'css/crashstats-base.min.css',
     },
     'api_documentation': {
         'source_filenames': (
-            'api/css/documentation.css',
+            'api/css/documentation.less',
         ),
         'output_filename': 'css/api-documentation.min.css',
     },
-    'crashes_per_day': {
-        'source_filenames': (
-            'crashstats/css/crashes_per_day.less',
-        ),
-        'output_filename': 'css/crashes-per-day.min.css',
-    },
     'crontabber_state': {
         'source_filenames': (
-            'crashstats/css/crontabber_state.css',
+            'crashstats/css/pages/crontabber_state.less',
         ),
         'output_filename': 'css/crontabber-state.min.css',
     },
@@ -78,46 +162,26 @@ PIPELINE_CSS = {
     },
     'report_index': {
         'source_filenames': (
-            'crashstats/css/report_index.css',
-            'crashstats/css/tree.css',
+            'crashstats/css/pages/report_index.less',
+            'crashstats/css/components/tree.less',
         ),
         'output_filename': 'css/report-index.min.css',
     },
     'report_pending': {
         'source_filenames': (
-            'crashstats/css/report_pending.less',
+            'crashstats/css/pages/report_pending.less',
         ),
         'output_filename': 'css/report-pending.min.css',
     },
-    'api_tokens': {
+    'product_home': {
         'source_filenames': (
-            'manage/css/api_tokens.css',
+            'crashstats/css/pages/product_home.less',
         ),
-        'output_filename': 'css/api-tokens.min.css',
-    },
-    'manage:home': {
-        'source_filenames': (
-            'crashstats/css/lib/font-awesome/css/font-awesome.css',
-            'crashstats/css/fonts.less',
-            'manage/css/home.less',
-        ),
-        'output_filename': 'css/manage-home.min.css',
-    },
-    'manage:supersearch_fields': {
-        'source_filenames': (
-            'manage/css/supersearch_fields.less',
-        ),
-        'output_filename': 'css/manage-supersearch-fields.min.css',
-    },
-    'manage:status_message': {
-        'source_filenames': (
-            'manage/css/status_message.css',
-        ),
-        'output_filename': 'css/manage-status-message.min.css',
+        'output_filename': 'css/product-home.min.css',
     },
     'profile': {
         'source_filenames': (
-            'profile/css/profile.css',
+            'profile/css/profile.less',
         ),
         'output_filename': 'css/profile.min.css',
     },
@@ -127,15 +191,9 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/signature-report.min.css',
     },
-    'symbols': {
-        'source_filenames': (
-            'symbols/css/home.css',
-        ),
-        'output_filename': 'css/symbols.min.css',
-    },
     'tokens': {
         'source_filenames': (
-            'tokens/css/home.css',
+            'tokens/css/home.less',
         ),
         'output_filename': 'css/tokens.min.css',
     },
@@ -147,11 +205,10 @@ PIPELINE_CSS = {
     },
     'tablesorter': {
         'source_filenames': (
-            'tablesorter/css/theme.default.min.css',
+            'tablesorter/dist/css/theme.default.min.css',
         ),
         'output_filename': 'js/tablesorter.min.css',
     },
-
 }
 
 #
@@ -160,15 +217,9 @@ PIPELINE_CSS = {
 
 
 PIPELINE_JS = {
-    'pagination': {
-        'source_filenames': (
-            'manage/js/pagination_utils.js',
-        ),
-        'output_filename': 'js/pagination.min.js',
-    },
     'date_filters': {
         'source_filenames': (
-            'crashstats/js/lib/flatpickr.min.js',
+            'flatpickr/dist/flatpickr.min.js',
             'supersearch/js/socorro/date_filters.js',
         ),
         'output_filename': 'js/date-filters.min.js',
@@ -187,13 +238,21 @@ PIPELINE_JS = {
     },
     'd3': {
         'source_filenames': (
-            'crashstats/js/lib/d3.min.js',
+            'd3/dist/d3.js',
         ),
         'output_filename': 'js/d3.min.js',
     },
     'jquery_ui': {
         'source_filenames': (
-            'crashstats/js/jquery/plugins/jquery-ui.js',
+            'jquery-ui/ui/version.js',
+            'jquery-ui/ui/widget.js',
+            'jquery-ui/ui/safe-active-element.js',
+            'jquery-ui/ui/unique-id.js',
+            'jquery-ui/ui/keycode.js',
+            'jquery-ui/ui/widgets/mouse.js',
+            'jquery-ui/ui/widgets/sortable.js',
+            'jquery-ui/ui/widgets/datepicker.js',
+            'jquery-ui/ui/widgets/tabs.js',
         ),
         'output_filename': 'js/jquery-ui.min.js',
     },
@@ -206,27 +265,26 @@ PIPELINE_JS = {
     'correlation': {
         'source_filenames': (
             'crashstats/js/polyfill/fetch.js',
-            'crashstats/js/polyfill/es6-promise.auto.min.js',
-            'crashstats/js/lib/sha1.js',
+            'jssha/src/sha1.js',
             'crashstats/js/socorro/correlation.js',
         ),
         'output_filename': 'js/correlation.min.js',
     },
     'metricsgraphics': {
         'source_filenames': (
-            'crashstats/js/lib/metricsgraphics.min.js',
+            'metrics-graphics/dist/metricsgraphics.js',
         ),
         'output_filename': 'js/metricsgraphics.min.js',
     },
     'select2': {
         'source_filenames': (
-            'crashstats/js/lib/select2/select2.js',
+            'Select2/select2.js',
         ),
         'output_filename': 'js/select2.min.js',
     },
     'tablesorter': {
         'source_filenames': (
-            'tablesorter/js/jquery.tablesorter.js',
+            'tablesorter/dist/js/jquery.tablesorter.js',
         ),
         'output_filename': 'js/jquery-tablesorter.min.js',
     },
@@ -244,12 +302,11 @@ PIPELINE_JS = {
     },
     'crashstats_base': {
         'source_filenames': (
-            'crashstats/js/jquery/jquery-2.0.3.min.js',
+            'jquery/dist/jquery.js',
             'crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js',
-            'crashstats/js/lib/qs.js',
-            'crashstats/js/lib/moment.min.js',
+            'qs/dist/qs.js',
+            'moment/moment.js',
             'crashstats/js/socorro/timeutils.js',
-            'crashstats/js/socorro/oauth2.js',
             'crashstats/js/socorro/nav.js',
             'crashstats/js/socorro/analytics.js',
         ),
@@ -257,21 +314,15 @@ PIPELINE_JS = {
     },
     'api_documentation': {
         'source_filenames': (
-            'api/js/lib/filesize.min.js',
+            'filesize/lib/filesize.js',
             'api/js/testdrive.js'
         ),
         'output_filename': 'js/api-documentation.min.js',
     },
-    'crashes_per_day': {
-        'source_filenames': (
-            'crashstats/js/socorro/crashes_per_day.js',
-        ),
-        'output_filename': 'js/crashes-per-day.min.js',
-    },
     'crontabber_state': {
         'source_filenames': (
-            'crashstats/js/underscore-min.js',
-            'crashstats/js/lib/sankey.js',
+            'underscore/underscore-min.js',
+            'd3-sankey/build/d3-sankey.js',
             'crashstats/js/socorro/crontabber_state.js',
         ),
         'output_filename': 'js/crontabber-state.min.js',
@@ -284,21 +335,15 @@ PIPELINE_JS = {
     },
     'jsonview': {
         'source_filenames': (
-            'jsonview/jquery.jsonview.js',
+            'jquery-jsonview/dist/jquery.jsonview.js',
         ),
         'output_filename': 'js/jsonview.min.js',
     },
     'exploitability_report': {
         'source_filenames': (
-            'crashstats/js/socorro/exploitability_report.js',
+            'exploitability/js/report.js',
         ),
         'output_filename': 'js/exploitability-report.min.js',
-    },
-    'home': {
-        'source_filenames': (
-            'home/js/home.js',
-        ),
-        'output_filename': 'js/home.min.js',
     },
     'report_index': {
         'source_filenames': (
@@ -312,54 +357,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/pending.js',
         ),
         'output_filename': 'js/report-pending.min.js',
-    },
-    'api_tokens': {
-        'source_filenames': (
-            'manage/js/api_tokens.js',
-        ),
-        'output_filename': 'js/api-tokens.min.js',
-    },
-    'manage:events': {
-        'source_filenames': (
-            'manage/js/events.js',
-        ),
-        'output_filename': 'js/manage-events.min.js',
-    },
-    'manage:graphics_devices': {
-        'source_filenames': (
-            'manage/js/graphics_devices.js',
-        ),
-        'output_filename': 'js/manage-graphics-devices.min.js',
-    },
-    'manage:groups': {
-        'source_filenames': (
-            'manage/js/groups.js',
-        ),
-        'output_filename': 'js/manage-groups.min.js',
-    },
-    'manage:supersearch_field': {
-        'source_filenames': (
-            'manage/js/supersearch_field.js',
-        ),
-        'output_filename': 'js/manage-supersearch-field.min.js',
-    },
-    'manage:supersearch_fields': {
-        'source_filenames': (
-            'manage/js/supersearch_fields.js',
-        ),
-        'output_filename': 'js/manage-supersearch-fields.min.js',
-    },
-    'manage:symbols_uploads': {
-        'source_filenames': (
-            'manage/js/symbols-uploads.js',
-        ),
-        'output_filename': 'js/manage-symbols-uploads.min.js',
-    },
-    'manage:users': {
-        'source_filenames': (
-            'manage/js/users.js',
-        ),
-        'output_filename': 'js/manage-users.min.js',
     },
     'signature_report': {
         'source_filenames': (
@@ -378,9 +375,9 @@ PIPELINE_JS = {
     },
     'search_custom': {
         'source_filenames': (
-            'supersearch/js/lib/ace/ace.js',
-            'supersearch/js/lib/ace/theme-monokai.js',
-            'supersearch/js/lib/ace/mode-json.js',
+            'ace-builds/src/ace.js',
+            'ace-builds/src/theme-monokai.js',
+            'ace-builds/src/mode-json.js',
             'supersearch/js/socorro/search_custom.js',
         ),
         'output_filename': 'js/search-custom.min.js',
@@ -423,10 +420,10 @@ _used = {}
 for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
     _trouble = set()
     for k, v in config.items():
-        assert isinstance(k, basestring), k
+        assert isinstance(k, six.string_types), k
         out = v['output_filename']
         assert isinstance(v['source_filenames'], tuple), v
-        assert isinstance(out, basestring), v
+        assert isinstance(out, six.string_types), v
         assert not out.split('/')[-1].startswith('.'), k
         assert '_' not in out
         assert out.endswith('.min.css') or out.endswith('.min.js')

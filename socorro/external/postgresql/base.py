@@ -5,24 +5,43 @@
 import contextlib
 import logging
 
+from configman import Namespace, RequiredConfig
+from configman.converters import class_converter
 import psycopg2
-
-from socorro.lib import DatabaseError
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     single_value_sql
 )
+from socorro.lib import DatabaseError
+
+
 logger = logging.getLogger("webapi")
 
 
-def add_param_to_dict(dictionary, key, value):
+class PostgreSQLStorage(RequiredConfig):
+    """Storage class for Postgres-using models
+
+    This gives us a transaction_executor_class and a database_class which we
+    need for tests.
+
     """
-    Dispatch a list of parameters into a dictionary.
-    """
-    for i, elem in enumerate(value):
-        dictionary[key + str(i)] = elem
-    return dictionary
+    required_config = Namespace()
+
+    required_config.add_option(
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff',
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.add_option(
+        'database_class',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
+        doc='the class responsible for connecting to Postgres',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql',
+    )
 
 
 class PostgreSQLBase(object):
@@ -137,21 +156,3 @@ class PostgreSQLBase(object):
             if connection and fresh_connection:
                 connection.close()
         return result
-
-    @staticmethod
-    def parse_versions(versions_list, products):
-        """
-        Parses the versions, separating by ":" and returning versions
-        and products.
-        """
-        versions = []
-
-        for v in versions_list:
-            if v.find(":") > -1:
-                pv = v.split(":")
-                versions.append(pv[0])
-                versions.append(pv[1])
-            else:
-                products.append(v)
-
-        return (versions, products)

@@ -1,7 +1,8 @@
-from django.conf import settings
+from django.conf import settings as django_settings
 
 
-def debug(request):
+def settings(request):
     return {
-        'DEBUG': settings.DEBUG,
+        'DEBUG': django_settings.DEBUG,
+        'GOOGLE_ANALYTICS_ID': django_settings.GOOGLE_ANALYTICS_ID,
     }

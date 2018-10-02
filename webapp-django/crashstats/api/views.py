@@ -2,6 +2,7 @@ import json
 import re
 import datetime
 import inspect
+from past.builtins import basestring
 
 from django import http
 from django.shortcuts import render
@@ -11,18 +12,21 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
+from six import text_type
 # explicit import because django.forms has an __all__
 from django.forms.forms import DeclarativeFieldsMetaclass
 
 from ratelimit.decorators import ratelimit
 
-from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.lib import BadArgumentError, MissingArgumentError
+from socorro.lib.ooid import is_crash_id_valid
 
 import crashstats
-from crashstats.crashstats.decorators import track_api_pageview
+from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
+from crashstats.supersearch import models as supersearch_models
 from crashstats.tokens.models import Token
 from .cleaner import Cleaner
 
@@ -32,7 +36,6 @@ MODELS_MODULES = (
     models,
     crashstats.tools.models,
     crashstats.supersearch.models,
-    crashstats.symbols.models,
 )
 
 
@@ -119,8 +122,6 @@ class FormWrapper(forms.Form):
 
 # Names of models we don't want to serve at all
 BLACKLIST = (
-    # only used for doing posts
-    'Releases',
     # because it's only used for the admin
     'Field',
     'SuperSearchMissingFields',
@@ -129,6 +130,8 @@ BLACKLIST = (
     # because it's an internal thing only
     'GraphicsReport',
     'Priorityjob',
+    'Products',
+    'TelemetryCrash',
 )
 
 
@@ -243,12 +246,12 @@ def model_wrapper(request, model_name):
             raise
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
-                json.dumps({'error': unicode(exception)}),
+                json.dumps({'error': text_type(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
         except BAD_REQUEST_EXCEPTIONS as exception:
             return http.HttpResponseBadRequest(
-                json.dumps({'error': unicode(exception)}),
+                json.dumps({'error': text_type(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
 
@@ -292,8 +295,6 @@ def model_wrapper(request, model_name):
                 )
 
         elif not request.user.has_perm('crashstats.view_pii'):
-            clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
-
             if callable(model.API_WHITELIST):
                 whitelist = model.API_WHITELIST()
             else:
@@ -302,7 +303,6 @@ def model_wrapper(request, model_name):
             if result and whitelist:
                 cleaner = Cleaner(
                     whitelist,
-                    clean_scrub=clean_scrub,
                     # if True, uses warnings.warn() to show fields
                     # not whitelisted
                     debug=settings.DEBUG,
@@ -349,7 +349,10 @@ def model_wrapper(request, model_name):
     return result, headers
 
 
-def documentation(request):
+@pass_default_context
+def documentation(request, default_context=None):
+    context = default_context or {}
+
     endpoints = []
 
     all_models = []
@@ -392,11 +395,11 @@ def documentation(request):
         your_tokens = Token.objects.active().filter(user=request.user)
     else:
         your_tokens = Token.objects.none()
-    context = {
+    context.update({
         'endpoints': endpoints,
         'base_url': base_url,
         'count_tokens': your_tokens.count()
-    }
+    })
     return render(request, 'api/documentation.html', context)
 
 
@@ -457,3 +460,67 @@ def dedent_left(text, spaces):
         line = regex.sub('', line)
         lines.append(line)
     return '\n'.join(lines)
+
+
+@csrf_exempt
+@ratelimit(
+    key='ip',
+    method=['GET'],
+    rate=utils.ratelimit_rate,
+    block=True
+)
+@utils.add_CORS_header
+@utils.json_view
+def crash_verify(request):
+    """Verifies crash data in crash data destinations"""
+    crash_id = request.GET.get('crash_id', None)
+
+    if not crash_id or not is_crash_id_valid(crash_id):
+        return http.JsonResponse({'error': 'unknown crash id'}, status=400)
+
+    data = {
+        'uuid': crash_id
+    }
+
+    # Check S3 crash bucket for raw and processed crash data
+    raw_api = models.RawCrash()
+    try:
+        raw_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_raw_crash = True
+    except CrashIDNotFound:
+        has_raw_crash = False
+    data['s3_raw_crash'] = has_raw_crash
+
+    processed_api = models.ProcessedCrash()
+    try:
+        processed_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_processed_crash = True
+    except CrashIDNotFound:
+        has_processed_crash = False
+    data['s3_processed_crash'] = has_processed_crash
+
+    # Check Elasticsearch for crash data
+    supersearch_api = supersearch_models.SuperSearch()
+    params = {
+        '_columns': ['uuid'],
+        '_results_number': 1,
+        'uuid': crash_id,
+        'dont_cache': True,
+        'refresh_cache': True
+    }
+    results = supersearch_api.get(**params)
+    data['elasticsearch_crash'] = (
+        results['total'] == 1 and
+        results['hits'][0]['uuid'] == crash_id
+    )
+
+    # Check S3 telemetry bucket for crash data
+    telemetry_api = models.TelemetryCrash()
+    try:
+        telemetry_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+        has_telemetry_crash = True
+    except CrashIDNotFound:
+        has_telemetry_crash = False
+    data['s3_telemetry_crash'] = has_telemetry_crash
+
+    return http.HttpResponse(json.dumps(data), content_type='application/json')

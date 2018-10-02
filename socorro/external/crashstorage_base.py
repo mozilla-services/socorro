@@ -11,13 +11,15 @@ import sys
 import os
 import collections
 import datetime
+from past.builtins import basestring
 
 from socorro.lib.util import DotDict as SocorroDotDict
+from future.utils import iteritems
 
 from configman import Namespace, RequiredConfig
-from configman.converters import classes_in_namespaces_converter, \
-                                 class_converter
+from configman.converters import class_converter, str_to_list
 from configman.dotdict import DotDict as ConfigmanDotDict
+import markus
 
 
 def socorrodotdict_to_dict(sdotdict):
@@ -62,7 +64,7 @@ class MemoryDumpsMapping(dict):
         """convert this MemoryDumpMapping into a FileDumpsMappng by writing
         each of the dump to a filesystem."""
         name_to_pathname_mapping = FileDumpsMapping()
-        for a_dump_name, a_dump in self.iteritems():
+        for a_dump_name, a_dump in iteritems(self):
             if a_dump_name in (None, '', 'dump'):
                 a_dump_name = 'upload_file_minidump'
             dump_pathname = os.path.join(
@@ -183,11 +185,13 @@ class CrashStorageBase(RequiredConfig):
         reference_value_from='resource.redactor',
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """base class constructor
 
         parameters:
             config - a configman dot dict holding configuration information
+            namespace - namespace for this crashstorage instance. Used for
+                        metrics prefixes and logging.
             quit_check_callback - a function to be called periodically during
                                   long running operations.  It should check
                                   whatever the client app uses to detect a
@@ -204,8 +208,10 @@ class CrashStorageBase(RequiredConfig):
                     exceptions that can be raised by a given storage
                     implementation.  This may be fetched by a client of the
                     crashstorge so that it can determine if it can try a failed
-                    storage operation again."""
+                    storage operation again.
+        """
         self.config = config
+        self.namespace = namespace
         if quit_check_callback:
             self.quit_check = quit_check_callback
         else:
@@ -421,8 +427,8 @@ class PolyStorageError(Exception, collections.MutableSequence):
     parameters:
         message - an optional over all error message
     """
-    def __init__(self, message=''):
-        super(PolyStorageError, self).__init__(message)
+    def __init__(self, *args):
+        super(PolyStorageError, self).__init__(*args)
         self.exceptions = []  # the collection
 
     def gather_current_exception(self):
@@ -460,9 +466,56 @@ class PolyStorageError(Exception, collections.MutableSequence):
         self.exceptions.__setitem__(index, value)
 
     def __str__(self):
-        return '%s %s' % (self.message,
-                          ','.join(repr(e[1]).encode('ascii', 'ignore')
-                                   for e in self.exceptions))
+        output = []
+        if self.args:
+            output.append(self.args[0])
+        for e in self.exceptions:
+            output.append(repr(e[1]).encode('ascii', 'ignore'))
+        return ','.join(output)
+
+
+class StorageNamespaceList(collections.Sequence):
+    """A sequence of configuration namespaces for crash stores.
+
+    Functionally, this is a list of strings that correspond to a configuration
+    namespace under the key ``destination.{namespace}``. Each entry creates a
+    new crashstorage instance that crashes are saved to.
+
+    We use a custom subclass so that we can add ``self.required_config``, which
+    contains options for each crashstorage class. Doing this lets configman find
+    and include any config options that those classes define via their own
+    ``required_config`` attributes.
+    """
+    def __init__(self, storage_namespaces):
+        self.storage_namespaces = storage_namespaces
+        self.required_config = Namespace()
+
+        for storage_name in storage_namespaces:
+            self.required_config[storage_name] = Namespace()
+            self.required_config[storage_name].add_option(
+                'crashstorage_class',
+                from_string_converter=class_converter,
+            )
+
+    def __len__(self):
+        return len(self.storage_namespaces)
+
+    def __getitem__(self, key):
+        return self.storage_namespaces[key]
+
+    def __repr__(self):
+        return 'StorageNamespaceList(%s)' % repr(self.storage_namespaces)
+
+    @classmethod
+    def converter(cls, storage_namespace_list_str):
+        """from_string_converter-compatible factory method.
+
+        parameters:
+            storage_namespace_list_str - comma-separated list of config
+                namespaces containing info about crash storages.
+        """
+        namespaces = [name.strip() for name in storage_namespace_list_str.split(',')]
+        return cls(namespaces)
 
 
 class PolyCrashStorage(CrashStorageBase):
@@ -474,51 +527,59 @@ class PolyCrashStorage(CrashStorageBase):
     the 'get' operations.
 
     The contained crashstorage instances are specified in the configuration.
-    Each class specified in the 'storage_classes' config option will be given
-    its own numbered namespace in the form 'storage%d'.  With in the namespace,
-    the class itself will be referred to as just 'store'.  Any configuration
-    requirements within the class 'store' will be isolated within the local
-    namespace.  That allows multiple instances of the same storageclass to
-    avoid name collisions.
+    Each key in the `storage_namespaces`` config option will be used to create
+    a crashstorage instance that this saves to. The keys are namespaces in the
+    config, and any options defined under those namespaces will be isolated
+    within the config passed to the crashstorage instance. For example:
+
+    .. code-block:: ini
+        destination.crashstorage_namespaces=postgres,s3
+
+        destination.postgres.crashstorage_class=module.path.PostgresStorage
+        destination.postgres.my.config=Postgres
+
+        destination.s3.crashstorage_class=module.path.S3Storage
+        destination.s3.my.config=S3
+
+    With this config, there are two crashstorage instances this class will
+    create: one for Postgres, and one for S3. The PostgresStorage instance will
+    see the ``my.config`` option as being set to "Postgres", while the S3Storage
+    instance will see ``my.config`` set to "S3".
     """
     required_config = Namespace()
     required_config.add_option(
-      'storage_classes',
-      doc='a comma delimited list of storage classes',
-      default='',
-      from_string_converter=classes_in_namespaces_converter(
-          template_for_namespace='storage%d',
-          name_of_class_option='crashstorage_class',
-          instantiate_classes=False,  # we instantiate manually for thread
-                                      # safety
-      ),
-      likely_to_be_changed=True,
+        'storage_namespaces',
+        doc='a comma delimited list of storage namespaces',
+        default='',
+        from_string_converter=StorageNamespaceList.converter,
+        likely_to_be_changed=True,
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """instantiate all the subordinate crashstorage instances
 
         parameters:
             config - a configman dot dict holding configuration information
+            namespace - namespace for this crashstorage
             quit_check_callback - a function to be called periodically during
                                   long running operations.
 
         instance variables:
-            self.storage_namespaces - the list of the namespaces inwhich the
+            self.storage_namespaces - the list of the namespaces in which the
                                       subordinate instances are stored.
             self.stores - instances of the subordinate crash stores
 
         """
-        super(PolyCrashStorage, self).__init__(config, quit_check_callback)
-        self.storage_namespaces = \
-          config.storage_classes.subordinate_namespace_names
+        super(PolyCrashStorage, self).__init__(config, namespace, quit_check_callback)
+        self.storage_namespaces = config.storage_namespaces
         self.stores = ConfigmanDotDict()
-        for a_namespace in self.storage_namespaces:
-            self.stores[a_namespace] = \
-              config[a_namespace].crashstorage_class(
-                                      config[a_namespace],
-                                      quit_check_callback
-                                 )
+        for storage_namespace in self.storage_namespaces:
+            absolute_namespace = '.'.join(x for x in [namespace, storage_namespace] if x)
+            self.stores[storage_namespace] = config[storage_namespace].crashstorage_class(
+                config[storage_namespace],
+                namespace=absolute_namespace,
+                quit_check_callback=quit_check_callback
+            )
 
     def close(self):
         """iterate through the subordinate crash stores and close them.
@@ -643,29 +704,31 @@ class FallbackCrashStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.primary = Namespace()
     required_config.primary.add_option(
-      'storage_class',
-      doc='storage class for primary storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for primary storage',
+        default='',
+        from_string_converter=class_converter
     )
     required_config.fallback = Namespace()
     required_config.fallback.add_option(
-      'storage_class',
-      doc='storage class for fallback storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for fallback storage',
+        default='',
+        from_string_converter=class_converter
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """instantiate the primary and secondary storage systems"""
-        super(FallbackCrashStorage, self).__init__(config, quit_check_callback)
+        super(FallbackCrashStorage, self).__init__(config, namespace, quit_check_callback)
         self.primary_store = config.primary.storage_class(
             config.primary,
-            quit_check_callback
+            namespace='.'.join(x for x in [namespace, 'primary'] if x),
+            quit_check_callback=quit_check_callback
         )
         self.fallback_store = config.fallback.storage_class(
             config.fallback,
-            quit_check_callback
+            namespace='.'.join(x for x in [namespace, 'fallback'] if x),
+            quit_check_callback=quit_check_callback
         )
         self.logger = self.config.logger
 
@@ -911,38 +974,41 @@ class PrimaryDeferredStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.primary = Namespace()
     required_config.primary.add_option(
-      'storage_class',
-      doc='storage class for primary storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for primary storage',
+        default='',
+        from_string_converter=class_converter
     )
     required_config.deferred = Namespace()
     required_config.deferred.add_option(
-      'storage_class',
-      doc='storage class for deferred storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for deferred storage',
+        default='',
+        from_string_converter=class_converter
     )
     required_config.add_option(
-      'deferral_criteria',
-      doc='criteria for deferring a crash',
-      default='lambda crash: crash.get("legacy_processing")',
-      from_string_converter=eval
+        'deferral_criteria',
+        doc='criteria for deferring a crash',
+        default='lambda crash: crash.get("legacy_processing")',
+        from_string_converter=eval
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         """instantiate the primary and deferred storage systems"""
         super(PrimaryDeferredStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
         self.primary_store = config.primary.storage_class(
             config.primary,
-            quit_check_callback
+            namespace='.'.join(x for x in [namespace, 'primary'] if x),
+            quit_check_callback=quit_check_callback
         )
         self.deferred_store = config.deferred.storage_class(
             config.deferred,
-            quit_check_callback
+            namespace='.'.join([namespace, 'deferred']),
+            quit_check_callback=quit_check_callback
         )
         self.logger = self.config.logger
 
@@ -1058,16 +1124,17 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
     required_config = Namespace()
     required_config.processed = Namespace()
     required_config.processed.add_option(
-      'storage_class',
-      doc='storage class for processed storage',
-      default='',
-      from_string_converter=class_converter
+        'storage_class',
+        doc='storage class for processed storage',
+        default='',
+        from_string_converter=class_converter
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(PrimaryDeferredProcessedStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
         self.processed_store = config.processed.storage_class(
             config.processed,
@@ -1099,14 +1166,16 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         from_string_converter=class_converter
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(BenchmarkingCrashStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
         self.wrapped_crashstore = config.wrapped_crashstore(
             config,
-            quit_check_callback)
+            namespace=namespace,
+            quit_check_callback=quit_check_callback)
         self.tag = config.benchmark_tag
         self.start_timer = datetime.datetime.now
         self.end_timer = datetime.datetime.now
@@ -1215,3 +1284,75 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             self.tag,
             end_time - start_time
         )
+
+
+class MetricsEnabledBase(RequiredConfig):
+    """Base class for capturing metrics for crashstorage classes"""
+    required_config = Namespace()
+    required_config.add_option(
+        'metrics_prefix',
+        doc='a string to be used as the prefix for metrics keys',
+        default=''
+    )
+    required_config.add_option(
+        'active_list',
+        default='save_raw_and_processed,act',
+        doc='a comma delimeted list of counters that are enabled',
+        from_string_converter=str_to_list
+    )
+
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        self.config = config
+        self.metrics = markus.get_metrics(self.config.metrics_prefix)
+
+    def _make_key(self, *args):
+        return '.'.join(x for x in args if x)
+
+
+class MetricsCounter(MetricsEnabledBase):
+    """Counts the number of times it's called"""
+    required_config = Namespace()
+
+    def __getattr__(self, attr):
+        if attr in self.config.active_list:
+            self.metrics.incr(attr)
+        return self._noop
+
+    def _noop(self, *args, **kwargs):
+        pass
+
+
+class MetricsBenchmarkingWrapper(MetricsEnabledBase):
+    """Sends timings for specified method calls in wrapped crash store"""
+    required_config = Namespace()
+    required_config.add_option(
+        name="wrapped_object_class",
+        doc='fully qualified Python class path for an object to an be benchmarked',
+        default='',
+        from_string_converter=class_converter
+    )
+
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        super(MetricsBenchmarkingWrapper, self).__init__(
+            config,
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
+        )
+        self.wrapped_object = config.wrapped_object_class(
+            config,
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
+        )
+
+    def close(self):
+        self.wrapped_object.close()
+
+    def __getattr__(self, attr):
+        wrapped_attr = getattr(self.wrapped_object, attr)
+        if attr in self.config.active_list:
+            def benchmarker(*args, **kwargs):
+                metrics_key = self._make_key(self.config.wrapped_object_class.__name__, attr)
+                with self.metrics.timer(metrics_key):
+                    return wrapped_attr(*args, **kwargs)
+            return benchmarker
+        return wrapped_attr

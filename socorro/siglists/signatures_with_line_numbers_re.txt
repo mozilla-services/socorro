@@ -1,6 +1,0 @@
-# Signatures with line number.
-#
-# Regular expressions matching frame signatures that should be combined with
-# their associated source code line numbers.
-
-js_Interpret

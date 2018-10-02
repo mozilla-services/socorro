@@ -1,0 +1,73 @@
+/* Admin */
+div.admin {
+    h3,
+    h4 {
+        margin-top: 20px;
+    }
+    p,
+    ul,
+    li {
+        margin: 5px 0;
+    }
+    ul {
+        list-style-type: disc;
+        list-style-position: inside;
+        li:before {
+            content: "\00BB \0020";
+        }
+    }
+    div.add_item {
+        background-color: @light-grey;
+        margin-top: 10px;
+        padding: 5px;
+        border: 2px solid @dark-grey;
+        .rounded-corners(5px);
+    }
+    form.span {
+        margin-right: 10px;
+    }
+    th {
+        background-color: @light-grey;
+        padding: 3px;
+        font-size: 105%;
+    }
+    td {
+        padding: 3px;
+    }
+    td.text,
+    input.text {
+        width: 125px;
+    }
+    td.action {
+        width: 50px;
+    }
+    td.featured {
+        width: 50px;
+        text-align: center;
+    }
+    td.date {
+        width: 75px;
+    }
+}
+
+#add_version,
+#update_product_version,
+#delete_product_version {
+    display: none;
+    min-width: 550px;
+    table {
+        width: 100%;
+    }
+}
+#delete_product_display,
+#delete_version_display,
+#update_product_display,
+#update_version_display {
+    font-style: italic;
+}
+
+#loading-bds {
+    position: absolute;
+    top: 9%;
+    left: 50%;
+}

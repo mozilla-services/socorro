@@ -22,7 +22,9 @@ from socorro.external.crashstorage_base import (
     BenchmarkingCrashStorage,
     MemoryDumpsMapping,
     FileDumpsMapping,
-    socorrodotdict_to_dict
+    socorrodotdict_to_dict,
+    MetricsCounter,
+    MetricsBenchmarkingWrapper,
 )
 from socorro.lib.util import DotDict as SocorroDotDict
 from socorro.unittest.testbase import TestCase
@@ -34,8 +36,8 @@ class A(CrashStorageBase):
     required_config.add_option('x', default=1)
     required_config.add_option('y', default=2)
 
-    def __init__(self, config, quit_check=None):
-        super(A, self).__init__(config, quit_check)
+    def __init__(self, config, namespace='', quit_check_callback=None):
+        super(A, self).__init__(config, namespace, quit_check_callback)
         self.raw_crash_count = 0
 
     def save_raw_crash(self, raw_crash, dump):
@@ -252,12 +254,31 @@ class TestBase(TestCase):
             assert [exc[0] for exc in x] == expected
             assert 1 not in x
             assert str(x[0][1]) == 'dwight'
+            assert all(
+                sample in str(x)
+                for sample in ['hell', 'NameError', 'KeyError', 'AttributeError']
+            )
             assert (
-                all(sample in str(x) for sample in ['hell', 'NameError', 'KeyError', 'AttributeError'])
+                str(x) == "hell,NameError('dwight',),KeyError('wilma',),AttributeError('sarita',)"
             )
 
             x[0] = x[1]
             assert x[0] == x[1]
+
+    def test_polyerror_str_missing_args(self):
+        p = PolyStorageError()
+        try:
+            try:
+                raise NameError('dwight')
+            except NameError:
+                p.gather_current_exception()
+            try:
+                raise KeyError('wilma')
+            except KeyError:
+                p.gather_current_exception()
+            raise p
+        except PolyStorageError as x:
+            assert str(x) == "NameError('dwight',),KeyError('wilma',)"
 
     def test_poly_crash_storage(self):
         n = Namespace()
@@ -270,30 +291,29 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
-                'socorro.unittest.external.test_crashstorage_base.A,'
-                'socorro.unittest.external.test_crashstorage_base.A,'
-                'socorro.unittest.external.test_crashstorage_base.B'
-            ),
-            'storage1.y': 37,
+            'storage_namespaces': 'A,A2,B',
+            'A.crashstorage_class': 'socorro.unittest.external.test_crashstorage_base.A',
+            'A2.crashstorage_class': 'socorro.unittest.external.test_crashstorage_base.A',
+            'B.crashstorage_class': 'socorro.unittest.external.test_crashstorage_base.B',
+            'A2.y': 37
         }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
-            assert config.storage0.crashstorage_class.foo == 'a'
-            assert config.storage1.crashstorage_class.foo == 'a'
-            assert config.storage1.y == 37
-            assert config.storage2.crashstorage_class.foo == 'b'
+            assert config.A.crashstorage_class.foo == 'a'
+            assert config.A2.crashstorage_class.foo == 'a'
+            assert config.A2.y == 37
+            assert config.B.crashstorage_class.foo == 'b'
 
             poly_store = config.storage(config)
             assert len(poly_store.storage_namespaces) == 3
-            assert poly_store.storage_namespaces[0] == 'storage0'
-            assert poly_store.storage_namespaces[1] == 'storage1'
-            assert poly_store.storage_namespaces[2] == 'storage2'
+            assert poly_store.storage_namespaces[0] == 'A'
+            assert poly_store.storage_namespaces[1] == 'A2'
+            assert poly_store.storage_namespaces[2] == 'B'
 
             assert len(poly_store.stores) == 3
-            assert poly_store.stores.storage0.foo == 'a'
-            assert poly_store.stores.storage1.foo == 'a'
-            assert poly_store.stores.storage2.foo == 'b'
+            assert poly_store.stores.A.foo == 'a'
+            assert poly_store.stores.A2.foo == 'a'
+            assert poly_store.stores.B.foo == 'b'
 
             raw_crash = {'ooid': ''}
             dump = '12345'
@@ -325,10 +345,11 @@ class TestBase(TestCase):
             dump = '5432'
             processed_crash = {'ooid': 'aoeu', 'product': 33}
 
-            poly_store.stores['storage1'].save_raw_crash = Mock()
-            poly_store.stores['storage1'].save_raw_crash.side_effect = Exception('this is messed up')
-            poly_store.stores['storage2'].save_processed = Mock()
-            poly_store.stores['storage2'].save_processed.side_effect = Exception('this is messed up')
+            expected = Exception('this is messed up')
+            poly_store.stores['A2'].save_raw_crash = Mock()
+            poly_store.stores['A2'].save_raw_crash.side_effect = expected
+            poly_store.stores['B'].save_processed = Mock()
+            poly_store.stores['B'].save_processed.side_effect = expected
 
             with pytest.raises(PolyStorageError):
                 poly_store.save_raw_crash(raw_crash, dump, '')
@@ -349,7 +370,7 @@ class TestBase(TestCase):
                 v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
                 v.save_processed.assert_called_with(processed_crash)
 
-            poly_store.stores['storage2'].close.side_effect = Exception
+            poly_store.stores['B'].close.side_effect = Exception
             with pytest.raises(PolyStorageError):
                 poly_store.close()
 
@@ -367,7 +388,8 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
+            'storage_namespaces': 'store1',
+            'store1.crashstorage_class': (
                 'socorro.unittest.external.test_crashstorage_base'
                 '.MutatingProcessedCrashCrashStorage'
             ),
@@ -409,7 +431,8 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
+            'storage_namespaces': 'store1',
+            'store1.crashstorage_class': (
                 'socorro.unittest.external.test_crashstorage_base'
                 '.NonMutatingProcessedCrashCrashStorage'
             ),
@@ -444,7 +467,8 @@ class TestBase(TestCase):
             default=mock.Mock(),
         )
         value = {
-            'storage_classes': (
+            'storage_namespaces': 'store1',
+            'store1.crashstorage_class': (
                 'socorro.unittest.external.test_crashstorage_base'
                 '.MutatingProcessedCrashCrashStorage'
             ),
@@ -970,11 +994,14 @@ class TestBench(TestCase):
         with config_manager.context() as config:
             crashstorage = BenchmarkingCrashStorage(
                 config,
+                namespace='',
                 quit_check_callback=fake_quit_check
             )
             crashstorage.start_timer = lambda: 0
             crashstorage.end_timer = lambda: 1
-            fake_crash_store.assert_called_with(config, fake_quit_check)
+            fake_crash_store.assert_called_with(
+                config, namespace='', quit_check_callback=fake_quit_check
+            )
 
             crashstorage.save_raw_crash({}, 'payload', 'ooid')
             crashstorage.wrapped_crashstore.save_raw_crash.assert_called_with(
@@ -1088,3 +1115,55 @@ class TestDumpsMappings(TestCase):
         )
         assert fdm.as_file_dumps_mapping() is fdm
         assert fdm.as_memory_dumps_mapping() == mdm
+
+
+class TestMetricsCounter(object):
+    def test_count(self, metricsmock):
+        config_manager = ConfigurationManager(
+            [MetricsCounter.get_required_config()],
+            values_source_list=[{
+                'metrics_prefix': 'phil',
+                'active_list': 'run',
+            }],
+            argv_source=[]
+        )
+        with config_manager.context() as config:
+            counter = MetricsCounter(config)
+
+        with metricsmock as mm:
+            counter.run()
+            counter.walk()
+
+        assert len(mm.get_records()) == 1
+        assert mm.has_record('incr', stat='phil.run', value=1)
+
+
+class TestMetricsBenchmarkingWrapper(object):
+    def test_wrapper(self, metricsmock):
+        fake_crash_store_class = mock.MagicMock()
+        fake_crash_store_class.__name__ = 'Phil'
+
+        config_manager = ConfigurationManager(
+            [MetricsBenchmarkingWrapper.get_required_config()],
+            values_source_list=[{
+                'wrapped_object_class': fake_crash_store_class,
+                'metrics_prefix': 'phil',
+                'active_list': 'run',
+            }],
+            argv_source=[]
+        )
+        with config_manager.context() as config:
+            mbw = MetricsBenchmarkingWrapper(config)
+
+        with metricsmock as mm:
+            mbw.run()
+            mbw.walk()
+
+        # Assert that the timing call occurred
+        assert len(mm.get_records()) == 1
+        assert mm.has_record('timing', stat='phil.Phil.run')
+
+        # Assert that the wrapped crash storage class .run() and .walk() were
+        # called on the instance
+        fake_crash_store_class.return_value.run.assert_called_with()
+        fake_crash_store_class.return_value.walk.assert_called_with()

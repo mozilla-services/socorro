@@ -7,123 +7,98 @@ crash.  In this latest version, all transformations have been reimplemented
 as sets of loadable rules.  The rules are applied one at a time, each doing
 some small part of the transformation process."""
 
-import ujson
+import os
+import tempfile
 
-from configman import Namespace, RequiredConfig
-from configman.dotdict import DotDict as OrderedDotDict
-from configman.converters import (
-    str_to_python_object,
+from configman import (
+    Namespace,
+    RequiredConfig,
 )
-from socorro.lib.converters import str_to_classes_in_namespaces_converter
+from configman.converters import str_to_list, str_to_python_object
+
+from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
 
 
-# Rule sets are defined as lists of lists (or tuples).  As they will be loaded
-# from json, they will always come in a lists rather than tuples. Arguably,
-# tuples may be more appropriate, but really, they can be anything iterable.
+from socorro.processor.breakpad_transform_rules import (
+    BreakpadStackwalkerRule2015,
+    CrashingThreadRule,
+    ExternalProcessRule,  # imported to override config, not instantiated
+    JitCrashCategorizeRule,
+    MinidumpSha256Rule,
+)
 
-# The outermost sequence is a list of rule sets.  There can be any number of
-# them and can be organized at will.  The example below shows an organization
-# by processing stage: pre-processing the raw_crash, converter raw to
-# processed, and post-processing the processed_crash.
+from socorro.processor.general_transform_rules import (
+    CPUInfoRule,
+    IdentifierRule,
+    OSInfoRule,
+)
 
-# Each rule set is defined by five elements:
-#    rule name: any useful string
-#    tag: a categorization system, programmer defined system (for future)
-#    rule set class: the fully qualified name of the class that implements
-#                    the rule application process.  On the introduction of
-#                    Processor2015, the only option is the one in the example.
-#    rule list: a comma delimited list of fully qualified class names that
-#               implement the individual transformation rules.  The API that
-#               these classes must conform to is defined by the rule base class
-#               socorro.lib.transform_rules.Rule
-default_rule_set = [
-    [   # rules to change the internals of the raw crash
-        "raw_transform",  # name of the rule
-        "processor.json_rewrite",  # a tag in a dotted-form
-        "socorro.lib.transform_rules.TransformRuleSystem",  # rule set class
-        "apply_all_rules",  # rule set class method to apply rules
-        ""  # comma delimited list of fully qualified rule class names
-    ],
-    [   # rules to transform a raw crash into a processed crash
-        "raw_to_processed_transform",
-        "processer.raw_to_processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
-        ""
-    ],
-    [   # post processing of the processed crash
-        "processed_transform",
-        "processer.processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
-        ""
-    ],
+from socorro.processor.rules.memory_report_extraction import (
+    MemoryReportExtraction,
+)
+
+from socorro.processor.mozilla_transform_rules import (
+    AddonsRule,
+    AuroraVersionFixitRule,
+    BetaVersionRule,
+    DatesAndTimesRule,
+    EnvironmentRule,
+    ESRVersionRewrite,
+    ExploitablityRule,
+    FlashVersionRule,
+    JavaProcessRule,
+    OSPrettyVersionRule,
+    OutOfMemoryBinaryRule,
+    PluginContentURL,
+    PluginRule,
+    PluginUserComment,
+    ProductRewrite,
+    ProductRule,
+    SignatureGeneratorRule,
+    ThemePrettyNameRule,
+    TopMostFilesRule,
+    UserDataRule,
+    Winsock_LSPRule,
+)
+
+DEFAULT_RULES = [
+    # rules to change the internals of the raw crash
+    ProductRewrite,
+    ESRVersionRewrite,
+    PluginContentURL,
+    PluginUserComment,
+    # rules to transform a raw crash into a processed crash
+    IdentifierRule,
+    MinidumpSha256Rule,
+    BreakpadStackwalkerRule2015,
+    ProductRule,
+    UserDataRule,
+    EnvironmentRule,
+    PluginRule,
+    AddonsRule,
+    DatesAndTimesRule,
+    OutOfMemoryBinaryRule,
+    JavaProcessRule,
+    Winsock_LSPRule,
+    # post processing of the processed crash
+    CrashingThreadRule,
+    CPUInfoRule,
+    OSInfoRule,
+    BetaVersionRule,
+    ExploitablityRule,
+    AuroraVersionFixitRule,
+    FlashVersionRule,
+    OSPrettyVersionRule,
+    TopMostFilesRule,
+    ThemePrettyNameRule,
+    MemoryReportExtraction,
+    # a set of classifiers to help with jit crashes
+    JitCrashCategorizeRule,
+    # generate signature now that we've done all the processing it depends on
+    SignatureGeneratorRule,
 ]
-
-# rules come into Socorro via Configman.  Configman defines them as strings
-# conveniently, a json module can be used to serialize and deserialize them.
-default_rules_set_str = ujson.dumps(default_rule_set)
-
-
-def rule_sets_from_string(rule_sets_as_string):
-    """this configman converter takes a json file in the form of a string,
-    and converts it into rules sets for use in the processor.  See the
-    default rule set above for the form."""
-    rule_sets = ujson.loads(rule_sets_as_string)
-
-    class ProcessorRuleSets(RequiredConfig):
-        # why do rules come in sets?  Why not just have a big list of rules?
-        # rule sets are containers for rules with a similar purpose and
-        # execution mode.  For example, there are rule sets for adjusting the
-        # raw_crash, transforming raw to processed, post processing the
-        # processed_crash and then all the different forms of classifiers.
-        # Some rule sets have different execution modes: run all the rules,
-        # run the rules until one fails, run the rules until one succeeds,
-        # etc.
-        required_config = Namespace()
-
-        names = []
-        for (name, tag, rule_set_class_str, action_str, default_rules_str) in rule_sets:
-            names.append(name)
-            required_config.namespace(name)
-            required_config[name].add_option(
-                name='tag',
-                doc='the lookup tag associated with this rule set',
-                default=tag
-            )
-            required_config[name].add_option(
-                name='rule_system_class',
-                default=rule_set_class_str,
-                doc='the fully qualified name of the rule system class',
-                from_string_converter=str_to_python_object,
-                likely_to_be_changed=True,
-            )
-            required_config[name].add_option(
-                name='action',
-                default=action_str,
-                doc=(
-                    'the name of the rule set method to run to processes '
-                    'these rules'
-                ),
-                likely_to_be_changed=True,
-            )
-            required_config[name].add_option(
-                name='rules_list',
-                doc='a list of fully qualified class names for the rules',
-                default=default_rules_str,
-                from_string_converter=str_to_classes_in_namespaces_converter(
-                    name_of_class_option='rule_class'
-                ),
-                likely_to_be_changed=True,
-            )
-
-        @classmethod
-        def to_str(klass):
-            return "'%s'" % rule_sets_as_string
-
-    return ProcessorRuleSets
 
 
 class Processor2015(RequiredConfig):
@@ -131,16 +106,95 @@ class Processor2015(RequiredConfig):
     framework. This class is suitable for use in the 'processor_app'
     introducted in 2012."""
 
-    required_config = Namespace()
+    required_config = Namespace('transform_rules')
     required_config.add_option(
-        name='rule_sets',
-        doc="a hierarchy of rules in json form",
-        default=default_rules_set_str,
-        from_string_converter=rule_sets_from_string,
-        likely_to_be_changed=True,
+        'transaction_executor_class',
+        default='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff',
+        doc='a class that will manage transactions',
+        from_string_converter=str_to_python_object,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.add_option(
+        'version_string_api',
+        doc='url for the version string api endpoint',
+        default='https://crash-stats.mozilla.com/api/VersionString'
+    )
+    required_config.add_option(
+        'dump_field',
+        doc='the default name of a dump',
+        default='upload_file_minidump',
+    )
+    required_config.command_pathname = change_default(
+        ExternalProcessRule,
+        'command_pathname',
+        # NOTE(willkg): This is the path for the RPM-based Socorro deploy. When
+        # we switch to Docker, we should change this.
+        '/data/socorro/stackwalk/bin/stackwalker',
+    )
+    required_config.add_option(
+        'result_key',
+        doc=(
+            'the key where the external process result should be stored '
+            'in the processed crash'
+        ),
+        default='stackwalker_result',
+    )
+    required_config.add_option(
+        'return_code_key',
+        doc=(
+            'the key where the external process return code should be stored '
+            'in the processed crash'
+        ),
+        default='stackwalker_return_code',
+    )
+    required_config.add_option(
+        name='symbols_urls',
+        doc='comma-delimited ordered list of urls for symbol lookup',
+        default='https://localhost',
+        from_string_converter=str_to_list,
+        likely_to_be_changed=True
+    )
+    required_config.command_line = change_default(
+        ExternalProcessRule,
+        'command_line',
+        (
+            'timeout -s KILL {kill_timeout} {command_pathname} '
+            '--raw-json {raw_crash_pathname} '
+            '{symbols_urls} '
+            '--symbols-cache {symbol_cache_path} '
+            '--symbols-tmp {symbol_tmp_path} '
+            '{dump_file_pathname} '
+            '2> /dev/null'
+        )
+    )
+    required_config.add_option(
+        'kill_timeout',
+        doc='amount of time to let mdsw run before declaring it hung',
+        default=600
+    )
+    required_config.add_option(
+        'symbol_tmp_path',
+        doc=(
+            'directory to use as temp space for downloading symbols--must be '
+            'on the same filesystem as symbols-cache'
+        ),
+        default=os.path.join(tempfile.gettempdir(), 'symbols-tmp'),
+    ),
+    required_config.add_option(
+        'symbol_cache_path',
+        doc=(
+            'the path where the symbol cache is found, this location must be '
+            'readable and writeable (quote path with embedded spaces)'
+        ),
+        default=os.path.join(tempfile.gettempdir(), 'symbols'),
+    )
+    required_config.add_option(
+        'temporary_file_system_storage_path',
+        doc='a path where temporary files may be written',
+        default=tempfile.gettempdir(),
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, rules=None, quit_check_callback=None):
         super(Processor2015, self).__init__()
         self.config = config
         # the quit checks are components of a system of callbacks used
@@ -158,19 +212,11 @@ class Processor2015(RequiredConfig):
         else:
             self.quit_check = lambda: False
 
-        # here we instantiate the rule sets and their rules.
-        self.rule_system = OrderedDotDict()
-        for a_rule_set_name in config.rule_sets.names:
-            self.config.logger.debug(
-                'setting up rule set: %s',
-                a_rule_set_name
-            )
-            self.rule_system[a_rule_set_name] = (
-                config[a_rule_set_name].rule_system_class(
-                    config[a_rule_set_name],
-                    self.quit_check
-                )
-            )
+        rule_set = rules or list(DEFAULT_RULES)
+
+        self.rules = []
+        for a_rule_class in rule_set:
+            self.rules.append(a_rule_class(config))
 
     def process_crash(self, raw_crash, raw_dumps, processed_crash):
         """Take a raw_crash and its associated raw_dumps and return a
@@ -207,27 +253,25 @@ class Processor2015(RequiredConfig):
         processed_crash.startedDateTime = processed_crash.started_datetime
         processed_crash.signature = 'EMPTY: crash failed to process'
 
-        crash_id = raw_crash.get('uuid', 'unknown')
+        crash_id = raw_crash['uuid']
         try:
             # quit_check calls ought to be scattered around the code to allow
             # the processor to be responsive to requests to shut down.
             self.quit_check()
 
-            processor_meta_data.started_timestamp = self._log_job_start(
+            start_time = self.config.logger.info(
+                "starting transform for crash: %s",
                 crash_id
             )
+            processor_meta_data.started_timestamp = start_time
 
-            # apply transformations
-            #    step through each of the rule sets to apply the rules.
-            for a_rule_set_name, a_rule_set in self.rule_system.iteritems():
-                # for each rule set, invoke the 'act' method - this method
-                # will be the method specified in fourth element of the
-                # rule set configuration list.
-                a_rule_set.act(
+            # apply_all_rules
+            for rule in self.rules:
+                rule.act(
                     raw_crash,
                     raw_dumps,
                     processed_crash,
-                    processor_meta_data,
+                    processor_meta_data
                 )
                 self.quit_check()
 
@@ -257,33 +301,17 @@ class Processor2015(RequiredConfig):
         # for backwards compatibility:
         processed_crash.completeddatetime = completed_datetime
 
-        self._log_job_end(
-            processed_crash.success,
+        self.config.logger.info(
+            "finishing %s transform for crash: %s",
+            'successful' if processed_crash.success else 'failed',
             crash_id
         )
         return processed_crash
 
     def reject_raw_crash(self, crash_id, reason):
-        self._log_job_start(crash_id)
         self.config.logger.warning('%s rejected: %s', crash_id, reason)
-        self._log_job_end(False, crash_id)
-
-    def _log_job_start(self, crash_id):
-        self.config.logger.info("starting job: %s", crash_id)
-
-    def _log_job_end(self, success, crash_id):
-        self.config.logger.info(
-            "finishing %s job: %s",
-            'successful' if success else 'failed',
-            crash_id
-        )
 
     def close(self):
-        for a_rule_set_name, a_rule_set in self.rule_system.iteritems():
-            self.config.logger.debug('closing %s', a_rule_set_name)
-            try:
-                a_rule_set.close()
-            except AttributeError:
-                # guess we don't need to close that rule
-                pass
-        self.config.logger.debug('done closing rules')
+        self.config.logger.debug('closing rules')
+        for rule in self.rules:
+            rule.close()

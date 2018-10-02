@@ -1,12 +1,12 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+app_name = 'profile'
+urlpatterns = [
     url(
         r'^$',
         views.profile,
         name='profile',
     ),
-)
+]

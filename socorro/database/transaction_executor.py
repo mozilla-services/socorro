@@ -2,10 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
 import time
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace
+from six import reraise
+
+from socorro.external.postgresql.dbapi2_util import DBApiUtilNonFatalBaseException
 
 
 def string_to_list_of_ints(a_string):
@@ -18,14 +22,11 @@ def string_to_list_of_ints(a_string):
 class TransactionExecutor(RequiredConfig):
     required_config = Namespace()
 
-    is_infinite = False
-
     def __init__(self, config, db_conn_context_source,
                  quit_check_callback=None):
         self.config = config
         self.db_conn_context_source = db_conn_context_source
         self.quit_check = quit_check_callback or (lambda: False)
-        self.do_quit_check = True
 
     @property
     def connection_source_type(self):
@@ -33,14 +34,16 @@ class TransactionExecutor(RequiredConfig):
 
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
-        if self.do_quit_check:
-            self.quit_check()
+        self.quit_check()
         with self.db_conn_context_source() as connection:
             try:
                 #self.config.logger.debug('starting transaction')
                 result = function(connection, *args, **kwargs)
                 connection.commit()
                 return result
+            except DBApiUtilNonFatalBaseException:
+                connection.rollback()
+                raise
             except BaseException as x:
                 connection.rollback()
                 if hasattr(x, 'abandon_transaction'):
@@ -54,7 +57,7 @@ class TransactionExecutor(RequiredConfig):
                         self.connection_source_type,
                         exc_info=True)
                     self.db_conn_context_source.force_reconnect()
-                raise
+                reraise(*sys.exc_info())
 
 
 class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
@@ -69,8 +72,6 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                                default=10,
                                doc='seconds between log during retries')
 
-    is_infinite = True
-
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
         between retries.  It produces after exhausting the list, it repeats
@@ -84,9 +85,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     def responsive_sleep(self, seconds, wait_reason=''):
         """Sleep for the specified number of seconds, logging every
         'wait_log_interval' seconds with progress info."""
-        for x in xrange(int(seconds)):
-            if (self.config.wait_log_interval and
-                not x % self.config.wait_log_interval):
+        for x in range(int(seconds)):
+            if self.config.wait_log_interval and not x % self.config.wait_log_interval:
                 self.config.logger.debug(
                     '%s: %dsec of %dsec' % (wait_reason, x, seconds)
                 )
@@ -95,10 +95,10 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
 
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
+        last_failure = None
         for wait_in_seconds in self.backoff_generator():
             try:
-                if self.do_quit_check:
-                    self.quit_check()
+                self.quit_check()
                 # self.db_conn_context_source is an instance of a
                 # wrapper class on the actual connection driver
                 with self.db_conn_context_source() as connection:
@@ -106,9 +106,10 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         result = function(connection, *args, **kwargs)
                         connection.commit()
                         return result
-                    except:
+                    except Exception:
                         connection.rollback()
-                        raise
+                        last_failure = sys.exc_info()
+                        reraise(*last_failure)
 
             except self.db_conn_context_source.conditional_exceptions as x:
                 # these exceptions may or may not be retriable
@@ -125,7 +126,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         )
                     else:
                         print('Unrecoverable %s transaction error' % self.connection_source_type)
-                    raise
+                    reraise(*last_failure)
                 self.config.logger.critical(
                     '%s transaction error eligible for retry',
                     self.connection_source_type,
@@ -143,7 +144,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         '%s transaction intentionally abandoned by exception',
                         self.connection_source_type)
                     return
-                raise
+                reraise(*last_failure)
 
             self.db_conn_context_source.force_reconnect()
             self.config.logger.debug(
@@ -152,16 +153,13 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
             self.responsive_sleep(
                 wait_in_seconds,
                 'waiting for retry after failure in %s transaction' %
-                    self.connection_source_type,
+                self.connection_source_type,
             )
-        raise
+        if last_failure is not None:
+            reraise(*last_failure)
 
 
-class TransactionExecutorWithLimitedBackoff(
-                                       TransactionExecutorWithInfiniteBackoff):
-    # the `is_infinite` flag is informative for uses of this class
-    is_infinite = False
-
+class TransactionExecutorWithLimitedBackoff(TransactionExecutorWithInfiniteBackoff):
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
         between retries."""

@@ -4,18 +4,25 @@
 
 import json
 import re
+import time
+from past.builtins import basestring
 from threading import Thread
-from Queue import Queue
 from contextlib import contextmanager
 
 import elasticsearch
 from configman import Namespace
 from configman.converters import class_converter, list_converter
+import markus
+from six.moves.queue import Queue
 
-from socorro.external.crashstorage_base import CrashStorageBase
+from socorro.external.crashstorage_base import CrashStorageBase, Redactor
+from socorro.external.es.super_search_fields import FIELDS
 from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
-from socorro.external.crashstorage_base import Redactor
+
+
+# Maximum size in characters for a keyword field value
+MAX_KEYWORD_FIELD_VALUE_SIZE = 10000
 
 
 class RawCrashRedactor(Redactor):
@@ -42,6 +49,39 @@ class RawCrashRedactor(Redactor):
 VALID_KEY = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
+# Cache of (fields id, analyzer) -> list of fields properties
+_ANALYZER_TO_FIELDS_MAP = {}
+
+
+def get_fields_by_analyzer(fields, analyzer):
+    """Returns the fields in fields that have the specified analyzer
+
+    Note: This "hashes" the fields argument by using `id`. I think this is fine
+    because fields doesn't change between runs and it's not mutated in-place.
+    We're hashing it sufficiently often that it's faster to use `id` than
+    a more computationally intensive hash of a large data structure.
+
+    :arg dict fields: dict of field information mapped as field name to
+        properties
+    :arg str analyzer: the Elasticsearch analyzer to match
+
+    :returns: list of field properties for fields that match the analyzer
+
+    """
+    map_key = (id(fields), analyzer)
+    try:
+        return _ANALYZER_TO_FIELDS_MAP[map_key]
+    except KeyError:
+        pass
+
+    fields = [
+        field for field in fields.values()
+        if (field.get('storage_mapping') or {}).get('analyzer', '') == analyzer
+    ]
+    _ANALYZER_TO_FIELDS_MAP[map_key] = fields
+    return fields
+
+
 def is_valid_key(key):
     """Validates an Elasticsearch document key
 
@@ -51,6 +91,79 @@ def is_valid_key(key):
 
     """
     return bool(VALID_KEY.match(key))
+
+
+def remove_bad_keys(data):
+    """Removes keys from the top-level of the dict that are bad
+
+    Good keys satisfy the following properties:
+
+    * have one or more characters
+    * are composed of a-zA-Z0-9_-
+
+    Anything else is a bad key and needs to be removed.
+
+    Note: This modifies the data dict in-place and only looks at the top level.
+
+    :arg dict data: the data to remove bad keys from
+
+    """
+    if not data:
+        return
+
+    # Copy the list of things we're iterating over because we're mutating
+    # the dict in place.
+    for key in list(data.keys()):
+        if not is_valid_key(key):
+            del data[key]
+
+
+def truncate_keyword_field_values(fields, data):
+    """Truncates values of keyword fields greater than MAX_KEYWORD_FIELD_VALUE_SIZE
+    characters
+
+    Note: This modifies the data dict in-place and only looks at the top level.
+
+    :arg dict fields: the super search fields schema
+    :arg dict data: the data to look through
+
+    """
+    keyword_fields = get_fields_by_analyzer(fields, 'keyword')
+
+    for field in keyword_fields:
+        field_name = field.get('in_database_name')
+        if not field_name:
+            continue
+
+        value = data.get(field_name)
+        if isinstance(value, basestring) and len(value) > MAX_KEYWORD_FIELD_VALUE_SIZE:
+            data[field_name] = value[:MAX_KEYWORD_FIELD_VALUE_SIZE]
+
+            # FIXME(willkg): When we get metrics throughout the processor, we should
+            # keep track of this with an .incr().
+
+
+POSSIBLE_TRUE_VALUES = [1, '1', 'true', True]
+
+
+def convert_booleans(fields, data):
+    """Converts pseudo-boolean values to boolean values for boolean fields
+
+    Valid boolean values are True, 'true', False, and 'false'.
+
+    Note: This modifies the data dict in-place and only looks at the top level.
+
+    :arg dict fields: the super search fields schema
+    :arg dict data: the data to look through
+
+    """
+    boolean_fields = get_fields_by_analyzer(fields, 'boolean')
+
+    for field in boolean_fields:
+        field_name = field['in_database_name']
+
+        value = data.get(field_name)
+        data[field_name] = True if value in POSSIBLE_TRUE_VALUES else False
 
 
 class ESCrashStorage(CrashStorageBase):
@@ -90,10 +203,11 @@ class ESCrashStorage(CrashStorageBase):
         r'\[failed to parse \[([\w\-.]+)]]'
     )
 
-    def __init__(self, config, quit_check_callback=None):
+    def __init__(self, config, namespace='', quit_check_callback=None):
         super(ESCrashStorage, self).__init__(
             config,
-            quit_check_callback
+            namespace=namespace,
+            quit_check_callback=quit_check_callback
         )
 
         # Ok, it's sane, so let's continue.
@@ -106,6 +220,8 @@ class ESCrashStorage(CrashStorageBase):
             self.es_context,
             quit_check_callback
         )
+
+        self.metrics = markus.get_metrics(namespace)
 
     def get_index_for_crash(self, crash_date):
         """Return the submission URL for a crash; based on the submission URL
@@ -124,40 +240,39 @@ class ESCrashStorage(CrashStorageBase):
 
         return index
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
-                               crash_id):
-        """This is the only write mechanism that is actually employed in normal
-        usage.
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """Save raw and processed crash data to Elasticsearch
+
+        Note: This is the only write mechanism that is actually employed in
+        normal usage.
+
         """
+
+        # Massage the crash such that the date_processed field is formatted
+        # in the fashion of our established mapping.
+        self.reconstitute_datetimes(processed_crash)
+
+        # Remove bad keys from the raw crash--these keys are essentially
+        # user-provided and can contain junk data
+        remove_bad_keys(raw_crash)
+
+        # Truncate values that are too long
+        truncate_keyword_field_values(FIELDS, raw_crash)
+        truncate_keyword_field_values(FIELDS, processed_crash)
+
+        # Convert pseudo-boolean values to boolean values
+        convert_booleans(FIELDS, raw_crash)
+        convert_booleans(FIELDS, processed_crash)
+
+        # Capture crash data size metrics--do this only after we've cleaned up
+        # the crash data
+        self.capture_crash_metrics(raw_crash, processed_crash)
 
         crash_document = {
             'crash_id': crash_id,
             'processed_crash': processed_crash,
             'raw_crash': raw_crash
         }
-
-        # NOTE(willkg): this is a hard-coded keyname to match what the statsdbenchmarkingwrapper
-        # produces for processor crashstorage classes. This is only used in that context, so we're
-        # hard-coding this now rather than figuring out a better way to carry that name through.
-        try:
-            self.config.metrics.histogram(
-                'processor.es.raw_crash_size',
-                len(json.dumps(raw_crash, cls=JsonDTEncoder))
-            )
-        except Exception:
-            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
-            # later.
-            self.config.logger.exception('something went wrong when capturing raw_crash_size')
-
-        try:
-            self.config.metrics.histogram(
-                'processor.es.processed_crash_size',
-                len(json.dumps(processed_crash, cls=JsonDTEncoder))
-            )
-        except Exception:
-            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
-            # later.
-            self.config.logger.exception('something went wrong when capturing raw_crash_size')
 
         self.transaction(
             self._submit_crash_to_elasticsearch,
@@ -166,6 +281,8 @@ class ESCrashStorage(CrashStorageBase):
 
     @staticmethod
     def reconstitute_datetimes(processed_crash):
+        # FIXME(willkg): These should be specified in super_search_fields.py
+        # and not hard-coded
         datetime_fields = [
             'submitted_timestamp',
             'date_processed',
@@ -176,50 +293,56 @@ class ESCrashStorage(CrashStorageBase):
             'completeddatetime',
         ]
         for a_key in datetime_fields:
-            try:
-                processed_crash[a_key] = string_to_datetime(
-                    processed_crash[a_key]
-                )
-            except KeyError:
-                # not there? we don't care
-                pass
+            if a_key not in processed_crash:
+                continue
 
-    @staticmethod
-    def remove_bad_keys(data):
-        """Removes keys from the top-level of the dict that are bad
+            processed_crash[a_key] = string_to_datetime(processed_crash[a_key])
 
-        Good keys satisfy the following properties:
+    def capture_crash_metrics(self, raw_crash, processed_crash):
+        """Capture metrics about crash data being saved to Elasticsearch"""
+        try:
+            self.metrics.histogram(
+                'raw_crash_size',
+                value=len(json.dumps(raw_crash, cls=JsonDTEncoder))
+            )
+        except Exception:
+            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
+            # later.
+            self.config.logger.exception('something went wrong when capturing raw_crash_size')
 
-        * have one or more characters
-        * are composed of a-zA-Z0-9_-
+        try:
+            self.metrics.histogram(
+                'processed_crash_size',
+                value=len(json.dumps(processed_crash, cls=JsonDTEncoder))
+            )
+        except Exception:
+            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
+            # later.
+            self.config.logger.exception('something went wrong when capturing processed_crash_size')
 
-        Anything else is a bad key and needs to be removed.
-
-        This modifies the data dict in-place and only looks at the top level.
-
-        :arg dict data: the data to remove bad keys from
-
-        """
-        if not data:
-            return
-
-        # Copy the list of things we're iterating over because we're mutating
-        # the dict in place.
-        for key in list(data.keys()):
-            if not is_valid_key(key):
-                del data[key]
+    def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
+        try:
+            start_time = time.time()
+            connection.index(
+                index=es_index,
+                doc_type=es_doctype,
+                body=crash_document,
+                id=crash_id
+            )
+            index_outcome = 'successful'
+        except Exception:
+            index_outcome = 'failed'
+            raise
+        finally:
+            elapsed_time = time.time() - start_time
+            self.metrics.histogram(
+                'index',
+                value=elapsed_time * 1000.0,
+                tags=['outcome:' + index_outcome]
+            )
 
     def _submit_crash_to_elasticsearch(self, connection, crash_document):
-        """Submit a crash report to elasticsearch.
-        """
-        # Massage the crash such that the date_processed field is formatted
-        # in the fashion of our established mapping.
-        self.reconstitute_datetimes(crash_document['processed_crash'])
-
-        # Remove bad keys from the raw crash.
-        self.remove_bad_keys(crash_document['raw_crash'])
-
-        # Obtain the index name.
+        """Submit a crash report to elasticsearch"""
         es_index = self.get_index_for_crash(
             crash_document['processed_crash']['date_processed']
         )
@@ -236,12 +359,7 @@ class ESCrashStorage(CrashStorageBase):
         # case of an unhandled exception.
         for attempt in range(5):
             try:
-                connection.index(
-                    index=es_index,
-                    doc_type=es_doctype,
-                    body=crash_document,
-                    id=crash_id
-                )
+                self._index_crash(connection, es_index, es_doctype, crash_document, crash_id)
                 break
             except elasticsearch.exceptions.TransportError as e:
                 field_name = None
@@ -330,11 +448,8 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         from_string_converter=class_converter,
     )
 
-    def __init__(self, config, quit_check_callback=None):
-        super(ESCrashStorageRedactedSave, self).__init__(
-            config,
-            quit_check_callback
-        )
+    def __init__(self, config, *args, **kwargs):
+        super(ESCrashStorageRedactedSave, self).__init__(config, *args, **kwargs)
         self.redactor = config.es_redactor.redactor_class(config.es_redactor)
         self.raw_crash_redactor = config.raw_crash_es_redactor.redactor_class(
             config.raw_crash_es_redactor
@@ -470,10 +585,11 @@ def _create_bulk_load_crashstore(base_class):
             doc='the maximum size of the internal queue'
         )
 
-        def __init__(self, config, quit_check_callback=None):
+        def __init__(self, config, namespace='', quit_check_callback=None):
             super(ESBulkClassTemplate, self).__init__(
                 config,
-                quit_check_callback
+                namespace=namespace,
+                quit_check_callback=quit_check_callback
             )
 
             self.task_queue = QueueWrapper(config.maximum_queue_size)

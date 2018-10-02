@@ -2,15 +2,23 @@ version: 2
 jobs:
   build:
     docker:
-      # base image
-      - image: ubuntu:16.04
+      - image: docker:stable
     working_directory: /
     steps:
       - run:
           name: Install essential packages
           command: |
-            apt-get update
-            apt-get install -y ca-certificates curl build-essential make git
+            apk update
+            apk add --update --no-cache \
+                    ca-certificates \
+                    build-base \
+                    bash \
+                    make \
+                    git \
+                    openssh \
+                    docker \
+                    py-pip
+            pip install docker-compose
 
       - checkout:
           path: /socorro
@@ -30,23 +38,6 @@ jobs:
       - store_artifacts:
           path: /socorro/version.json
 
-      # FIXME: should use an image w/ docker installed by default
-      - run:
-          name: Install Docker
-          command: |
-            set -x
-            VER="17.03.0-ce"
-            curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
-            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
-            mv /tmp/docker/* /usr/bin
-
-      - run:
-          name: Install Docker Compose
-          command: |
-            set -x
-            curl -L https://github.com/docker/compose/releases/download/1.13.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-            chmod +x /usr/local/bin/docker-compose
-
       - setup_remote_docker
 
       - run:
@@ -54,23 +45,70 @@ jobs:
           working_directory: /socorro
           command: |
             docker info
-            make dockerbuild
+            make build
+
+      - run:
+          name: Lint
+          working_directory: /socorro
+          command: docker run local/socorro_app shell ./docker/run_lint.sh
 
       - run:
           name: Run tests
           working_directory: /socorro
-          command: make dockertest
+          command: make test
+
+#      - run:
+#          name: Run tests in Python 3
+#          working_directory: /socorro
+#          command: make dockertest3
 
       - run:
           name: Push to Dockerhub
           working_directory: /socorro
           command: |
-            # set DOCKER_DEPLOY=true in Circle UI to push to Dockerhub
-            DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              bin/ci/deploy-dockerhub.sh latest
-              bin/ci/deploy-dockerhub.sh "circle_build_$CIRCLE_BUILD_NUM"
-            fi
+            function retry {
+              set +e
+              local n=0
+              local max=3
+              while true; do
+              "$@" && break || {
+                if [[ $n -lt $max ]]; then
+                  ((n++))
+                  echo "Command failed. Attempt $n/$max:"
+                else
+                  echo "Failed after $n attempts."
+                  exit 1
+                fi
+              }
+              done
+              set -e
+            }
+
+            export DOCKER_TAG="${CIRCLE_SHA1}"
             if [ -n "${CIRCLE_TAG}" ]; then
-              bin/ci/deploy-dockerhub.sh "$CIRCLE_TAG"
+              export DOCKER_TAG="${CIRCLE_TAG}"
             fi
+            # push on master or git tag
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ -n "${CIRCLE_TAG}" ]; then
+              echo "${DOCKER_PASSWORD}" | docker login -u="${DOCKER_USERNAME}" --password-stdin
+              retry docker tag "local/socorro_app:latest" "mozilla/socorro_app:${DOCKER_TAG}"
+              retry docker push "mozilla/socorro_app:${DOCKER_TAG}"
+            fi
+
+workflows:
+  version: 2
+
+  # workflow jobs are _not_ run in tag builds by default
+  # we use filters to whitelist jobs that should be run for tags
+
+  # workflow jobs are run in _all_ branch builds by default
+  # we use filters to blacklist jobs that shouldn't be run for a branch
+
+  # see: https://circleci.com/docs/2.0/workflows/#git-tag-job-execution
+
+  build-test-push:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/

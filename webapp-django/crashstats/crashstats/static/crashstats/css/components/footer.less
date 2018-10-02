@@ -1,0 +1,46 @@
+.page-footer {
+    background: @light-grey;
+    color: @dark-grey;
+    border-top: 1px solid @grey;
+    margin: 40px 0 0 0;
+    padding: 10px 20px;
+    a {
+        &:link,
+        &:hover,
+        &:active,
+        &:visited {
+            color: @base-link-color;
+            text-decoration: none;
+        }
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .nav {
+        background: url("@{image-path}/3.0/mozilla.gif") no-repeat scroll 0% -1px transparent;
+        background-size: 102px auto;
+        float: left;
+        padding-left: 109px;
+    }
+    ul,
+    .login {
+        display: inline;
+    }
+    li {
+        display: inline;
+        padding: 0 .5em;
+        border-left: 1px solid @grey;
+        list-style: none;
+    }
+    li:first-child {
+        border-left: 0;
+        padding-left: 0;
+    }
+    .login {
+        float: right;
+        line-height: 18px;
+        padding-top: 2px;
+    }
+}

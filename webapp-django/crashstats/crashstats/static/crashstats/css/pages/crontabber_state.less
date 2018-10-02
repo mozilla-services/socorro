@@ -1,0 +1,70 @@
+@import "@{root-path}/base/variables.less";
+
+#chart {
+    height: 500px;
+}
+
+.node rect {
+    cursor: move;
+    fill-opacity: 0.9;
+    shape-rendering: crispEdges;
+}
+
+.link {
+    fill: none;
+    stroke: @black;
+    stroke-opacity:0.2;
+}
+
+.link:hover {
+    stroke-opacity: 0.35;
+}
+
+thead td {
+    font-weight: bold;
+}
+
+.tablesorter .header {
+  	padding: 0.5em;
+}
+
+div.panel.ongoing,
+div.panel.obsolete {
+    width: 50%;
+    margin: 0 auto;
+    display: none;
+}
+div.panel.failing {
+    display: none;
+}
+
+@-webkit-keyframes color_change {
+  from { color: @purple; }
+  to { color: @grey; }
+}
+@-moz-keyframes color_change {
+  from { color: @purple; }
+  to { color: @grey; }
+}
+@-ms-keyframes color_change {
+  from { color: @purple; }
+  to { color: @grey; }
+}
+@-o-keyframes color_change {
+  from { color: @purple; }
+  to { color: @grey; }
+}
+@keyframes color_change {
+  from { color: @purple; }
+  to { color: @grey; }
+}
+
+.ongoing.panel .title {
+    color: @purple;
+    font-weight: bold;
+   -webkit-animation: color_change 1s infinite alternate;
+   -moz-animation: color_change 1s infinite alternate;
+   -ms-animation: color_change 1s infinite alternate;
+   -o-animation: color_change 1s infinite alternate;
+   animation: color_change 1s infinite alternate;
+}

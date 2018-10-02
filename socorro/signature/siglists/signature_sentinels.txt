@@ -1,0 +1,16 @@
+# Signature Sentinels
+#
+# Signatures that should always be considered top of the stack if present
+# in the stack.
+#
+# Note: no regular expressions here.
+
+_purecall
+_sigtramp
+Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash
+google_breakpad::ExceptionHandler::HandleInvalidParameter
+
+# These mark the top-most interesting frame in a Rust panic. Anything before
+# these is a lot of, "yes, I'm panicking!"
+std::panicking::begin_panic
+std::panicking::begin_panic_fmt

@@ -2,9 +2,11 @@ import json
 import datetime
 import random
 import urlparse
+from past.builtins import basestring
 
 import mock
-from nose.tools import eq_, ok_, assert_raises
+import pytest
+from six import text_type
 
 from django.core.cache import cache
 from django.conf import settings
@@ -12,6 +14,7 @@ from django.utils import timezone
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
+from socorro.lib import BadArgumentError
 
 
 class Response(object):
@@ -25,7 +28,7 @@ class Response(object):
     @property
     def text(self):
         # similar to content but with the right encoding
-        return unicode(self.content, 'utf-8')
+        return text_type(self.content, 'utf-8')
 
     def json(self):
         return self.raw
@@ -73,12 +76,13 @@ class TestModels(DjangoTestCase):
 
         rsession().get.side_effect = mocked_get
         info = api.get('123456789')
-        eq_(info['bugs'], [{
+        expected = [{
             'status': 'NEW',
             'resolution': '',
             'id': 123456789,
             'summary': 'Some summary'
-        }])
+        }]
+        assert info['bugs'] == expected
 
         # prove that it's cached
         def new_mocked_get(**options):
@@ -95,12 +99,13 @@ class TestModels(DjangoTestCase):
 
         rsession().get.side_effect = new_mocked_get
         info = api.get('123456789')
-        eq_(info['bugs'], [{
+        expected = [{
             'status': 'NEW',
             'resolution': '',
             'id': 123456789,
             'summary': 'Some summary'
-        }])
+        }]
+        assert info['bugs'] == expected
 
     @mock.patch('requests.Session')
     def test_bugzilla_api_bad_status_code(self, rsession):
@@ -112,19 +117,16 @@ class TestModels(DjangoTestCase):
             return Response("I'm a teapot", status_code=418)
 
         rsession().get.side_effect = mocked_get
-        assert_raises(
-            models.BugzillaRestHTTPUnexpectedError,
-            api.get,
-            '123456789'
-        )
+        with pytest.raises(models.BugzillaRestHTTPUnexpectedError):
+            api.get('123456789')
 
     def test_processed_crash(self):
         model = models.ProcessedCrash
         api = model()
 
         def mocked_get(**params):
-            ok_('datatype' in params)
-            eq_(params['datatype'], 'processed')
+            assert 'datatype' in params
+            assert params['datatype'] == 'processed'
 
             return {
                 'product': 'WaterWolf',
@@ -150,15 +152,15 @@ class TestModels(DjangoTestCase):
 
         model.implementation().get.side_effect = mocked_get
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
-        ok_(r['product'])
+        assert r['product']
 
     def test_unredacted_crash(self):
         model = models.UnredactedCrash
         api = model()
 
         def mocked_get(**params):
-            ok_('datatype' in params)
-            eq_(params['datatype'], 'unredacted')
+            assert 'datatype' in params
+            assert params['datatype'] == 'unredacted'
 
             return {
                 'product': 'WaterWolf',
@@ -186,8 +188,8 @@ class TestModels(DjangoTestCase):
         model.implementation().get.side_effect = mocked_get
 
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
-        ok_(r['product'])
-        ok_(r['exploitability'])
+        assert r['product']
+        assert r['exploitability']
 
     def test_bugs(self):
         model = models.Bugs
@@ -200,12 +202,14 @@ class TestModels(DjangoTestCase):
         models.Bugs.implementation().get.side_effect = mocked_get
 
         r = api.get(signatures='Pickle::ReadBytes')
-        ok_(r['hits'])
+        assert r['hits']
 
     def test_bugs_called_without_signatures(self):
         model = models.Bugs
         api = model()
-        assert_raises(models.RequiredParameterError, api.get)
+
+        with pytest.raises(models.RequiredParameterError):
+            api.get()
 
     def test_signatures_by_bugs(self):
         model = models.SignaturesByBugs
@@ -218,13 +222,14 @@ class TestModels(DjangoTestCase):
         models.SignaturesByBugs.implementation().get.side_effect = mocked_get
 
         r = api.get(bug_ids='123456789')
-        ok_(r['hits'])
+        assert r['hits']
 
     def test_sigs_by_bugs_called_without_bug_ids(self):
         model = models.SignaturesByBugs
         api = model()
 
-        assert_raises(models.RequiredParameterError, api.get)
+        with pytest.raises(models.RequiredParameterError):
+            api.get()
 
     def test_signature_first_date(self):
         api = models.SignatureFirstDate()
@@ -239,7 +244,7 @@ class TestModels(DjangoTestCase):
         r = api.get(
             signatures=['Pickle::ReadBytes', 'FakeSignature'],
         )
-        eq_(r['total'], 0)
+        assert r['total'] == 0
 
     def test_signature_first_date_get_dates(self):
         api = models.SignatureFirstDate()
@@ -287,49 +292,30 @@ class TestModels(DjangoTestCase):
 
         models.SignatureFirstDate.implementation().get.side_effect = mocked_get
         r = api.get_dates(['Sig 1', 'Sig 2'])
-        eq_(
-            r,
-            {
-                'Sig 1': {
-                    'first_build': '201601010101',
-                    'first_date': now,
-                },
-                'Sig 2': {
-                    'first_build': '201602020202',
-                    'first_date': tomorrow,
-                },
-            }
-        )
+        expected = {
+            'Sig 1': {
+                'first_build': '201601010101',
+                'first_date': now,
+            },
+            'Sig 2': {
+                'first_build': '201602020202',
+                'first_date': tomorrow,
+            },
+        }
+        assert r == expected
+
         r = api.get_dates(['Sig 2', 'Sig 3'])
-        eq_(
-            r,
-            {
-                'Sig 2': {
-                    'first_build': '201602020202',
-                    'first_date': tomorrow,
-                },
-                'Sig 3': {
-                    'first_build': '201603030303',
-                    'first_date': tomorrow_tomorrow,
-                },
-
-            }
-        )
-
-    def test_status(self):
-        def mocked_get(**options):
-            return {
-                'breakpad_revision': '1035',
-                'socorro_revision': (
-                    '017d7b3f7042ce76bc80949ae55b41d1e915ab62'
-                ),
-            }
-
-        models.Status.implementation().get.side_effect = mocked_get
-
-        response = models.Status().get('3')
-        ok_(response['breakpad_revision'])
-        ok_(response['socorro_revision'])
+        expected = {
+            'Sig 2': {
+                'first_build': '201602020202',
+                'first_date': tomorrow,
+            },
+            'Sig 3': {
+                'first_build': '201603030303',
+                'first_date': tomorrow_tomorrow,
+            },
+        }
+        assert r == expected
 
     def test_raw_crash(self):
         model = models.RawCrash
@@ -347,8 +333,18 @@ class TestModels(DjangoTestCase):
 
         model.implementation().get.side_effect = mocked_get
         r = api.get(crash_id='some-crash-id')
-        eq_(r['Vendor'], 'Mozilla')
-        ok_('Email' in r)  # no filtering at this level
+        assert r['Vendor'] == 'Mozilla'
+        assert 'Email' in r  # no filtering at this level
+
+    def test_raw_crash_invalid_id(self):
+        # NOTE(alexisdeschamps): this undoes the mocking of the implementation so we can test
+        # the implementation code.
+        models.RawCrash.implementation = self._mockeries[models.RawCrash]
+        model = models.RawCrash
+        api = model()
+
+        with pytest.raises(BadArgumentError):
+            api.get(crash_id='821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh')
 
     def test_raw_crash_raw_data(self):
 
@@ -368,32 +364,10 @@ class TestModels(DjangoTestCase):
         model.implementation().get.side_effect = mocked_get
 
         r = api.get(crash_id='some-crash-id', format='raw')
-        eq_(r, '\xe0')
+        assert r == '\xe0'
 
         r = api.get(crash_id='some-crash-id', format='raw', name='other')
-        eq_(r, '\xe0\xe0')
-
-    def test_create_release(self):
-        model = models.Releases
-        api = model()
-
-        def mocked_post(**params):
-            return True
-
-        model.implementation().post.side_effect = mocked_post
-
-        now = datetime.datetime.utcnow()
-        r = api.post(**{
-            'product': 'Firefox',
-            'version': '1.0',
-            'update_channel': 'beta',
-            'build_id': now.strftime('%Y%m%d%H%M'),
-            'platform': 'Windows',
-            'beta_number': '0',
-            'release_channel': 'Beta',
-            'throttle': '1'
-        })
-        eq_(r, True)
+        assert r == '\xe0\xe0'
 
     def test_platforms(self):
         api = models.Platforms()
@@ -416,193 +390,60 @@ class TestModels(DjangoTestCase):
         models.Platforms.implementation().get.side_effect = mocked_get
 
         r = api.get()
-        eq_(len(r), 2)
+        assert len(r) == 2
         assert 'Windows' in settings.DISPLAY_OS_NAMES
-        eq_(r[0], {'code': 'win', 'name': 'Windows', 'display': True})
+        assert r[0] == {'code': 'win', 'name': 'Windows', 'display': True}
         assert 'Unknown' not in settings.DISPLAY_OS_NAMES
-        eq_(r[1], {'code': 'unk', 'name': 'Unknown', 'display': False})
-
-    def test_adi(self):
-        model = models.ADI
-        api = model()
-
-        def mocked_get(**options):
-
-            ok_('product' in options)
-            eq_(options['product'], 'WaterWolf')
-
-            ok_('versions' in options)
-            eq_(options['versions'], ['2.0'])
-
-            ok_('start_date' in options)
-            ok_('end_date' in options)
-
-            return {
-                'hits': [
-                    {
-
-                        'build_type': 'aurora',
-                        'adi_count': 12327L,
-                        'version': '2.0',
-                        'date': datetime.date(2015, 8, 12),
-
-                    },
-                    {
-                        'build_type': 'release',
-                        'adi_count': 4L,
-                        'version': '2.0',
-                        'date': datetime.date(2016, 8, 12),
-
-                    }
-                ],
-                'total': 2
-            }
-
-        models.ADI.implementation().get.side_effect = mocked_get
-
-        r = api.get(
-            product='WaterWolf',
-            versions=['2.0'],
-            platforms=['Windows', 'Linux'],
-            start_date=datetime.date(2015, 8, 12),
-            end_date=datetime.date(2015, 8, 13),
-        )
-        eq_(r['total'], 2)
-
-    def test_graphics_devices(self):
-        api = models.GraphicsDevices()
-
-        def mocked_get(**options):
-            return {
-                'hits': [
-                    {
-                        'vendor_hex': 'vhex2',
-                        'vendor_name': 'V 2',
-                        'adapter_hex': 'ahex2',
-                        'adapter_name': 'A 2',
-                    },
-                    {
-                        'vendor_hex': 'vhex1',
-                        'vendor_name': 'V 1',
-                        'adapter_hex': 'ahex1',
-                        'adapter_name': 'A 1',
-                    },
-                ],
-                'total': 2
-            }
-
-        models.GraphicsDevices.implementation().get.side_effect = (
-            mocked_get
-        )
-
-        r = api.get(
-            vendor_hex=['vhex1', 'vhex2'],
-            adapter_hex=['ahex1', 'ahex2'],
-        )
-        eq_(r['total'], 2)
-        eq_(
-            r['hits'][0],
-            {
-                'vendor_hex': 'vhex2',
-                'vendor_name': 'V 2',
-                'adapter_hex': 'ahex2',
-                'adapter_name': 'A 2',
-            }
-        )
+        assert r[1] == {'code': 'unk', 'name': 'Unknown', 'display': False}
 
     def test_graphics_devices_get_pairs(self):
-        """The GraphicsDevices.get_pairs() is an abstraction of
-        GraphicsDevices.get() on steroids. The input is similar as
-        GraphicsDevices.get() but instead it returns a dict where
-        each key is a (adapter hex, vendor hex) tuple and each key is
-        (adapter name, vendor name) tuple.
-        Internally it does some smart caching.
+        """Test get_pairs() works correctly
+
+        The GraphicsDevice.get_pairs() lets you make a bunch of requests at
+        the same time. It's more performant since it caches results.
+
         """
-        api = models.GraphicsDevices()
-
-        params_called = []
-
-        def mocked_get(**params):
-            params_called.append(params)
-
-            if 'vhex3' in params['vendor_hex']:
-                return {
-                    'hits': [
-                        {
-                            'vendor_hex': 'vhex3',
-                            'vendor_name': 'V 3',
-                            'adapter_hex': 'ahex3',
-                            'adapter_name': 'A 3',
-                        },
-                    ],
-                    'total': 1
-                }
-            else:
-                return {
-                    'hits': [
-                        {
-                            'vendor_hex': 'vhex2',
-                            'vendor_name': 'V 2',
-                            'adapter_hex': 'ahex2',
-                            'adapter_name': 'A 2',
-                        },
-                        {
-                            'vendor_hex': 'vhex1',
-                            'vendor_name': 'V 1',
-                            'adapter_hex': 'ahex1',
-                            'adapter_name': 'A 1',
-                        },
-                    ],
-                    'total': 2
-                }
-
-        models.GraphicsDevices.implementation().get.side_effect = (
-            mocked_get
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex3',
+            vendor_name='V 3',
+            adapter_hex='ahex3',
+            adapter_name='A 3'
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex2',
+            vendor_name='V 2',
+            adapter_hex='ahex2',
+            adapter_name='A 2',
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex1',
+            vendor_name='V 1',
+            adapter_hex='ahex1',
+            adapter_name='A 1',
         )
 
-        r = api.get_pairs(
+        r = models.GraphicsDevice.objects.get_pairs(
             ['ahex1', 'ahex2'],
             ['vhex1', 'vhex2'],
         )
-        eq_(
-            r,
-            {
-                ('ahex1', 'vhex1'): ('A 1', 'V 1'),
-                ('ahex2', 'vhex2'): ('A 2', 'V 2'),
-            }
-        )
+        expected = {
+            ('ahex1', 'vhex1'): ('A 1', 'V 1'),
+            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
+        }
+        assert r == expected
 
-        r = api.get_pairs(
+        r = models.GraphicsDevice.objects.get_pairs(
             ['ahex2', 'ahex3'],
             ['vhex2', 'vhex3'],
         )
         assert len(r) == 2
-        eq_(
-            r,
-            {
-                ('ahex2', 'vhex2'): ('A 2', 'V 2'),
-                ('ahex3', 'vhex3'): ('A 3', 'V 3'),
-            }
-        )
+        expected = {
+            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
+            ('ahex3', 'vhex3'): ('A 3', 'V 3'),
+        }
+        assert r == expected
 
-        # In the second call to `api.get_pairs()` we repeated the
-        # (ahex2, vhex2) combo, so that second time, we could benefit from
-        # caching and only need to query for the (ahex3, vhex3) combo.
-        assert len(params_called) == 2
-        eq_(
-            params_called[0],
-            {
-                'adapter_hex': set(['ahex1', 'ahex2']),
-                'vendor_hex': set(['vhex2', 'vhex1']),
-            }
-        )
-        eq_(
-            params_called[1],
-            {
-                'adapter_hex': set(['ahex3']),
-                'vendor_hex': set(['vhex3']),
-            }
-        )
+        # FIXME(willkg): verify caching is working
 
     @mock.patch('requests.Session')
     def test_massive_querystring_caching(self, rsession):
@@ -625,7 +466,7 @@ class TestModels(DjangoTestCase):
         rsession().get.side_effect = mocked_get
         bugnumbers = [str(random.randint(10000, 100000)) for __ in range(100)]
         info = api.get(bugnumbers)
-        ok_(info)
+        assert info
 
     def test_Reprocessing(self):
         api = models.Reprocessing()
@@ -638,10 +479,10 @@ class TestModels(DjangoTestCase):
             raise NotImplementedError(crash_ids)
 
         models.Reprocessing.implementation().reprocess = mocked_reprocess
-        ok_(api.post(crash_ids='some-crash-id'))
+        assert api.post(crash_ids='some-crash-id')
         # Note that it doesn't raise an error if
         # the ReprocessingOneRabbitMQCrashStore choses NOT to queue it.
-        ok_(not api.post(crash_ids='bad-crash-id'))
+        assert not api.post(crash_ids='bad-crash-id')
 
     def test_Priorityjob(self):
         api = models.Priorityjob()
@@ -654,7 +495,57 @@ class TestModels(DjangoTestCase):
             raise NotImplementedError(crash_ids)
 
         models.Priorityjob.implementation().process = mocked_process
-        ok_(api.post(crash_ids='some-crash-id'))
+        assert api.post(crash_ids='some-crash-id')
         # Note that it doesn't raise an error if
         # the PriorityjobRabbitMQCrashStore choses NOT to queue it.
-        ok_(not api.post(crash_ids='bad-crash-id'))
+        assert not api.post(crash_ids='bad-crash-id')
+
+    def test_CrontabberState(self):
+        api = models.CrontabberState()
+
+        def mocked_get(*args, **kwargs):
+            return {
+                'state': {
+                    'missing-symbols': {
+                        'next_run': '2017-11-14T01:45:36.563151+00:00',
+                        'depends_on': [],
+                        'last_run': '2017-11-14T01:40:36.563151+00:00',
+                        'last_success': '2017-11-06T02:30:11.567874+00:00',
+                        'error_count': 506,
+                        'last_error': {
+                            'traceback': 'TRACEBACK HERE',
+                            'type': '<class \'boto.exception.S3ResponseError\'>',
+                            'value': 'EXCEPTION VALUE HERE'
+                        },
+                        'ongoing': None,
+                        'first_run': '2016-06-22T17:55:05.196209+00:00'
+                    },
+                }
+            }
+        models.CrontabberState.implementation().get.side_effect = (
+            mocked_get
+        )
+
+        resp = api.get()
+
+        # Verify that the response redacts the last_error.traceback and
+        # last_error.value and otherwise maintains the expected shape
+        expected_resp = {
+            'state': {
+                'missing-symbols': {
+                    'next_run': '2017-11-14T01:45:36.563151+00:00',
+                    'depends_on': [],
+                    'last_run': '2017-11-14T01:40:36.563151+00:00',
+                    'last_success': '2017-11-06T02:30:11.567874+00:00',
+                    'error_count': 506,
+                    'last_error': {
+                        'traceback': 'See error logging system.',
+                        'type': '<class \'boto.exception.S3ResponseError\'>',
+                        'value': 'See error logging system.'
+                    },
+                    'ongoing': None,
+                    'first_run': '2016-06-22T17:55:05.196209+00:00'
+                },
+            }
+        }
+        assert resp == expected_resp

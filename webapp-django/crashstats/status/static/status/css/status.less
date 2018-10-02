@@ -1,13 +1,13 @@
+@import "@{root-path}/base/variables.less";
 
 .status-message {
     position: relative;
-    background-color: #dae2e6;
-    border-bottom: 1px solid #c0c0c0;
-    color: white;
+    background-color: @light-grey;
+    border: none;
+    color: @white;
     font-size: 1.1em;
-    padding: 0 20px;
-    padding-left: 124px;
-    line-height: 32px;
+    padding: 1em 3.5rem;
+    line-height: 1.5em;
 
     span {
         font-style: italic;
@@ -16,30 +16,44 @@
     &:before {
         padding: 4px 4px 0 0;
         vertical-align: middle;
+        position: absolute;
+        left: 1rem;
     }
 
     &.severity-info {
-        background-color: #31b0d5;
-        border-color: #269abc;
+        background-color: @grey-20;
+        color: @grey-90;
+
+        a {
+            color: @primary-medium;
+        }
 
         &:before {
-            content: url(../../img/3rdparty/silk/information.png);
+            content: url("@{image-path}/3rdparty/silk/information.png");
         }
     }
     &.severity-warning {
-        background-color: #f0ad4e;
-        border-color: #eea236;
+        background-color: @yellow-50;
+        color: @yellow-90;
+
+        a {
+            color: @primary-medium;
+        }
 
         &:before {
-            content: url(../../img/3rdparty/silk/error.png);
+            content: url("@{image-path}/3rdparty/silk/error.png");
         }
     }
     &.severity-critical {
-        background-color: #d9534f;
-        border-color: #d43f3a;
+        background-color: @red-60;
+
+        &,
+        a {
+            color: @white;
+        }
 
         &:before {
-            content: url(../../img/3rdparty/silk/exclamation.png);
+            content: url("@{image-path}/3rdparty/silk/exclamation.png");
         }
     }
 }

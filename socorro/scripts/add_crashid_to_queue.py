@@ -5,39 +5,25 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
-import os
-import os.path
 import sys
 
 import pika
 
 from socorro.lib.ooid import is_crash_id_valid
-from socorro.scripts import WrappedTextHelpFormatter
+from socorro.scripts import get_envvar, WrappedTextHelpFormatter
 
 
 EPILOG = """
 To use in a docker-based local dev environment:
 
-  $ scripts/add_crashid_to_queue.py socorro.normal <CRASHID>
-
-To use in -prod:
-
-  $ /data/socorro/bin/socorro_env.sh
-  (socorro) $ scripts/add_crashid_to_queue.py socorro.submitter <CRASHID>
+  $ socorro-cmd add_crashid_to_queue socorro.normal <CRASHID>
 
 Queues:
 
 * socorro.normal - normal processing
 * socorro.priority - priority processing
-* socorro.submitter (-prod only) - sends crash to -stage environment
 
 """
-
-
-def get_envvar(key, default=None):
-    if default is None:
-        return os.environ[key]
-    return os.environ.get(key, default)
 
 
 def build_pika_connection(host, port, virtual_host, user, password):
@@ -58,17 +44,19 @@ def build_pika_connection(host, port, virtual_host, user, password):
     )
 
 
-def main(argv):
+def main(argv=None):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
-        prog=os.path.basename(__file__),
         description='Send crash id to rabbitmq queue for processing',
         epilog=EPILOG.strip(),
     )
     parser.add_argument('queue', help='the queue to add the crash id to')
     parser.add_argument('crashid', nargs='*', help='one or more crash ids to add')
 
-    args = parser.parse_args(argv)
+    if argv is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(argv)
 
     # This will pull crash ids from the command line if specified, or stdin
     crashids_iterable = args.crashid or sys.stdin
@@ -115,3 +103,7 @@ def main(argv):
 
     print('Done!')
     return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

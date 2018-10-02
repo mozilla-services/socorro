@@ -18,16 +18,8 @@
     <div class="panel">
         <div class="body">
             <ul class="links left">
-                {% if request.user.is_superuser %}
-                <li>
-                    <a href="{{ url('manage:home') }}">Admin</a>
-                </li>
-                {% endif %}
                 <li>
                     <a href="{{ url('tokens:home') }}">API Tokens</a>
-                </li>
-                <li>
-                    <a href="{{ url('symbols:home') }}">Symbols Upload</a>
                 </li>
             </ul>
             <ul class="links right">
@@ -35,9 +27,6 @@
                     {{ request.user.email }}
                 </li>
             </ul>
-
-            <!-- clear after two floats -->
-            <div style="clear: both;"></div>
         </div>
     </div>
 
@@ -77,8 +66,8 @@
             {% else %}
 
             <p>
-                It seems we have received or processed <strong>no crash report
-                from you in the last 4 weeks</strong>. It's either good news,
+                It seems we have received or processed <b>no crash report
+                from you in the last 4 weeks</b>. It's either good news,
                 or you do not provide your email address when you send us
                 crash reports.
             </p>
@@ -94,7 +83,7 @@
         <div class="body">
         {% if request.user.is_superuser %}
             <p>
-                You are a <b>superuser</b>. You have <b>unrestricted access to everything</b>. <a href="{{ url('manage:home') }}">Visit the admin page</a>
+                You are a <b>superuser</b> with access to everything.
             </p>
         {% else %}
         <table class="data-table">

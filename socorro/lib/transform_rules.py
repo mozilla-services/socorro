@@ -10,11 +10,9 @@ import configman
 from configman import RequiredConfig, Namespace
 from configman.dotdict import DotDict
 from configman.converters import to_str
+import markus
 
 from socorro.lib import raven_client
-from socorro.lib.converters import (
-    str_to_classes_in_namespaces_converter,
-)
 
 
 # support methods
@@ -35,16 +33,13 @@ def kw_str_parse(a_string):
         return {}
 
 
+metrics = markus.get_metrics('processor.rule')
+
+
 class Rule(RequiredConfig):
     """the base class for Support Rules.  It provides the framework for the
     rules 'predicate', 'action', and 'version' as well as utilites to help
     rules do their jobs."""
-    required_config = Namespace()
-    required_config.add_option(
-        'chatty',
-        doc='should this rule announce what it is doing?',
-        default=False,
-    )
 
     def __init__(self, config=None, quit_check_callback=None):
         self.config = config
@@ -179,21 +174,26 @@ class Rule(RequiredConfig):
         return '0.0'
 
     def act(self, *args, **kwargs):
-        """gather a rules parameters together and run the predicate. If that
-        returns True, then go on and run the action function
+        """Runs predicate and action for a rule
 
-        returns:
+        :returns:
             a tuple indicating the results of applying the predicate and the
             action function:
-               (False, None) - the predicate failed, action function not run
-               (True, True) - the predicate and action functions succeeded
-               (True, False) - the predicate succeeded, but the action function
-                               failed"""
-        if self.predicate(*args, **kwargs):
-            bool_result = self.action(*args, **kwargs)
-            return (True, bool_result)
-        else:
-            return (False, None)
+            * (False, None) - the predicate failed, action function not run
+            * (True, True) - the predicate and action functions succeeded
+            * (True, False) - the predicate succeeded, but the action function failed
+
+        """
+        rule_name = self.__class__.__name__
+        with metrics.timer('act.timing', tags=['rule:%s' % rule_name]):
+            if self.predicate(*args, **kwargs):
+                bool_result = self.action(*args, **kwargs)
+                return (True, bool_result)
+            else:
+                return (False, None)
+
+    def close(self):
+        self.config.logger.debug('null close on rule %s', self.__class__)
 
 
 class TransformRule(Rule):
@@ -330,23 +330,13 @@ class TransformRule(Rule):
         else:
             return False
 
-    def close(self):
-        self.config.logger.debug('null close on rule %s', self.__class__)
-        pass
-
 
 class TransformRuleSystem(RequiredConfig):
     """A collection of TransformRules that can be applied together"""
     required_config = Namespace()
     required_config.add_option(
         name='rules_list',
-        default=[],
-        from_string_converter=str_to_classes_in_namespaces_converter()
-    )
-    required_config.add_option(
-        'chatty_rules',
-        doc='should the rules announce what they are doing?',
-        default=False,
+        default=[]
     )
 
     def __init__(self, config=None, quit_check=None):
@@ -357,12 +347,9 @@ class TransformRuleSystem(RequiredConfig):
         self.rules = []
         if not config:
             config = DotDict()
-        if 'chatty_rules' not in config:
-            config.chatty_rules = False
+
         self.config = config
         if "rules_list" in config:
-            self.tag = config.tag
-            self.act = getattr(self, config.action)
             list_of_rules = config.rules_list.class_list
 
             for a_rule_class_name, a_rule_class, ns_name in list_of_rules:
@@ -370,7 +357,7 @@ class TransformRuleSystem(RequiredConfig):
                     self.rules.append(
                         a_rule_class(config[ns_name])
                     )
-                except KeyError as x:
+                except KeyError:
                     self.rules.append(
                         a_rule_class(config)
                     )
@@ -386,12 +373,6 @@ class TransformRuleSystem(RequiredConfig):
             TransformRule(*x, config=self.config) for x in an_iterable
         ]
 
-    def append_rules(self, an_iterable):
-        """add rules to the TransformRuleSystem"""
-        self.rules.extend(
-            TransformRule(*x, config=self.config) for x in an_iterable
-        )
-
     def apply_all_rules(self, *args, **kwargs):
         """cycle through all rules and apply them all without regard to
         success or failure
@@ -400,116 +381,9 @@ class TransformRuleSystem(RequiredConfig):
              True - since success or failure is ignored"""
         for x in self.rules:
             self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_all_rules: %s',
-                    to_str(x.__class__)
-                )
             predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '               : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
+
         return True
-
-    def apply_until_action_succeeds(self, *args, **kwargs):
-        """cycle through all rules until an action is run and succeeds
-
-        returns:
-           True - if an action is run and succeeds
-           False - if no action succeeds"""
-        for x in self.rules:
-            self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_until_action_succeeds: %s',
-                    to_str(x.__class__)
-                )
-            predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '                           : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
-            if action_result:
-                return True
-        return False
-
-    def apply_until_action_fails(self, *args, **kwargs):
-        """cycle through all rules until an action is run and fails
-
-        returns:
-            True - an action ran and it failed
-            False - no action ever failed"""
-        for x in self.rules:
-            self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_until_action_fails: %s',
-                    to_str(x.__class__)
-                )
-            predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '                        : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
-            if not action_result:
-                return True
-        return False
-
-    def apply_until_predicate_succeeds(self, *args, **kwargs):
-        """cycle through all rules until a predicate returns True
-
-        returns:
-            True - an action ran and it succeeded
-            False - an action ran and it failed
-            None - no predicate ever succeeded"""
-        for x in self.rules:
-            self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_until_predicate_succeeds: %s',
-                    to_str(x.__class__)
-                )
-            predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '                              : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
-            if predicate_result:
-                return action_result
-        return None
-
-    def apply_until_predicate_fails(self, *args, **kwargs):
-        """cycle through all rules until a predicate returns False
-
-        returns:
-            False - a predicate ran and it failed
-            None - no predicate ever failed"""
-        for x in self.rules:
-            self._quit_check()
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    'apply_until_predicate_fails: %s',
-                    to_str(x.__class__)
-                )
-            predicate_result, action_result = x.act(*args, **kwargs)
-            if self.config.chatty_rules:
-                self.config.logger.debug(
-                    '                           : pred - %s; act - %s',
-                    predicate_result,
-                    action_result
-                )
-            if not predicate_result:
-                return False
-        return None
 
     def close(self):
         for a_rule in self.rules:
@@ -521,78 +395,3 @@ class TransformRuleSystem(RequiredConfig):
                 # no close method mean no need to close
                 continue
             close_method()
-
-
-# Useful rule predicates and actions
-
-# (True, '', '', copy_key_value, '', 'source_key=sally, destination_key=fred')
-def copy_value_action(source, destination,
-                      source_key=None, destination_key=None):
-    """copy a key from a mapping source to a mapping destination"""
-    destination[destination_key] = source[source_key]
-
-
-# (True, '', '',
-#  format_new_value, '', 'destination_key='Version', format_str=%(Version)sesr'
-#  )
-def format_new_value_action(source, destination, destination_key='',
-                            format_str=''):
-    """replace a mapping destination with a string formatted from the
-    mapping source.
-
-    parameters:
-        source - a mapping to use as a source
-        destination - a mapping to use as the destination
-        destination_key - the key in the destination to insert/replace
-        format - a string in standard python format form"""
-    destination[destination_key] = format_str % source
-
-
-# (eq_constant_predicate, '', 'source_key="fred", value="wilma"', ...)
-def eq_constant_predicate(source, destination, source_key='', value=''):
-    """a predicate to test equality between a source key and a constant
-
-    parameters:
-        source - the source of the value to test
-        destination - not used
-        source_key - the key into the source to use for the test
-        value - the constant to check for equality"""
-    return source[source_key] == value
-
-
-# (eq_key_predicate, '', 'left_mapping_key="fred", right_mapping_key="wilma"',
-# ...)
-def eq_key_predicate(
-    left_mapping,
-    right_mapping,
-    left_mapping_key='',
-    right_mapping_key=''
-):
-    """a predicate to test equality between a left mapping key and a
-   right mapping key
-
-    parameters:
-        left_mapping - the mapping containing the first value to test
-        right_mapping - the mapping containing the second value
-        left_mapping_key - the key into the source for the first value
-        right_mapping_key - the key into the second data source"""
-    return left_mapping[left_mapping_key] == right_mapping[right_mapping_key]
-
-
-# (is_not_null_predicate, '', 'key="fred",
-# ...)
-def is_not_null_predicate(
-    raw_crash, dumps, processed_crash, processor, key=''
-):
-    """a predicate that converts the key'd source to boolean.
-
-    parameters:
-        raw_crash - dict
-        dumps - placeholder in a fat interface - unused
-        processed_crash - placeholder in a fat interface - unused
-        processor - placeholder in a fat interface - unused
-    """
-    try:
-        return bool(raw_crash[key])
-    except KeyError:
-        return False

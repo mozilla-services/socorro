@@ -1,0 +1,57 @@
+{% extends "crashstats_base.html" %}
+
+{% macro navlink(link_url, link_name) %}
+<li>
+    <a href="{{ link_url }}" {% if request.path == link_url %}class="selected"{% endif %}>{{ link_name }}</a>
+</li>
+{% endmacro %}
+
+
+{% block site_css %}
+{{ super() }}
+{% stylesheet 'documentation' %}
+{% stylesheet 'jsonview' %}
+{% endblock %}
+
+{% block site_js %}
+{{ super() }}
+{% javascript 'jsonview' %}
+{% javascript 'documentation' %}
+{% endblock %}
+
+{% block page_title%}Crash Stats Documentation: {% block doc_title %}Home{% endblock %}{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>{{ self.page_title() }}</h2>
+    </div>
+
+    <div class="panel">
+        <div class="body">
+            <nav>
+                <ul class="options">
+                    {{ navlink(url('documentation:home'), 'Home') }}
+                    {{ navlink(url('documentation:memory_dump_access'), 'Memory Dump Access') }}
+                    {{ navlink(url('documentation:products'), 'Products') }}
+                    {{ navlink(url('api:documentation'), 'API Reference') }}
+                    {{ navlink(url('documentation:supersearch_home'), 'Super Search') }}
+                    {{ navlink(url('documentation:supersearch_examples'), 'Super Search Examples') }}
+                    {{ navlink(url('documentation:supersearch_api'), 'Super Search API') }}
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    {% block main_content %}
+    <div class="panel">
+        <div id="table-of-content">
+            <h2>Table of content</h2>
+        </div>
+
+        {% block doc_content %}{% endblock %}
+    </div>
+    {% endblock %}
+</div>
+
+{% endblock %}

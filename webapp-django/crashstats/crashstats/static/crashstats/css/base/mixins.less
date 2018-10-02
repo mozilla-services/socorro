@@ -1,0 +1,68 @@
+// apply a natural box layout model to all elements
+.box-sizing (@model: border-box) {
+    -moz-box-sizing: @model;
+    -webkit-box-sizing: @model;
+    box-sizing: @model;
+}
+.rounded-corners (@radius: 5px) {
+    -webkit-border-radius: @radius;
+    -moz-border-radius: @radius;
+    border-radius: @radius;
+}
+.rounded-corners (@top-left, @top-right, @bottom-right: 0, @bottom-left: 0) {
+    -webkit-border-radius: @arguments;
+    -moz-border-radius: @arguments;
+    border-radius: @arguments;
+}
+
+.shadow (@x, @y, @blur, @spread, @color) {
+    -webkit-box-shadow: @arguments;
+    -moz-box-shadow: @arguments;
+    box-shadow: @arguments;
+}
+.shadow-none() {
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+}
+
+.rotate(@deg) {
+    -webkit-transform: rotate(@deg);
+    -moz-transform: rotate(@deg);
+    transform: rotate(@deg);
+}
+
+.button() {
+    background-color: @blue-60;
+    padding: 0.8em;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+
+    &,
+    a {
+        color: @white;
+        text-decoration: none;
+    }
+
+
+    &:hover,
+    &:focus {
+        background: @blue-70;
+    }
+    &:active {
+        background: @blue-80;
+    }
+}
+
+// http://developer.yahoo.com/blogs/ydn/posts/2012/10/clip-your-hidden-content-for-better-accessibility/
+.accessibly-hidden() {
+    position: absolute;
+    clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+    clip: rect(1px, 1px, 1px, 1px);
+    padding:0;
+    border:0;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+}

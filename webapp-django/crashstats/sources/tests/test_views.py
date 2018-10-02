@@ -1,5 +1,4 @@
 import mock
-from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 
@@ -28,24 +27,40 @@ class SourcesTestViews(DjangoTestCase):
         rget.side_effect = mocked_get
 
         url = reverse('sources:highlight_url')
+
+        # No url provided and empty url
         response = self.client.get(url)
-        eq_(response.status_code, 400)
+        assert response.status_code == 400
         response = self.client.get(url, {'url': ''})
-        eq_(response.status_code, 400)
+        assert response.status_code == 400
+
+        # Bad host
         response = self.client.get(url, {'url': 'https://example.com/404.h'})
-        eq_(response.status_code, 403)
+        assert response.status_code == 403
+
         ok_netloc = ALLOWED_SOURCE_HOSTS[0]
+
+        # Correct host, but bad scheme
+        response = self.client.get(url, {'url': 'ftp://{}/404.h'.format(ok_netloc)})
+        assert response.status_code == 403
+
+        # Correct host, but missing page
         response = self.client.get(url, {'url': 'https://{}/404.h'.format(ok_netloc)})
-        eq_(response.status_code, 404)
+        assert response.status_code == 404
+
+        # Correct host and correct page
         response = self.client.get(url, {'url': 'https://{}/200.h'.format(ok_netloc)})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200
+
         # Make sure it's really an HTML page.
-        ok_('</html>' in response.content)
-        eq_(response['content-type'], 'text/html')
+        assert '</html>' in response.content
+        assert response['content-type'] == 'text/html'
+
         # Our security headers should still be set.
         # Just making sure it gets set. Other tests assert their values.
-        ok_(response['x-frame-options'])
-        ok_(response['content-security-policy'])
+        assert response['x-frame-options']
+        assert response['content-security-policy']
+
         # Do it also for a file called *.cpp
         response = self.client.get(url, {'url': 'https://{}/200.cpp'.format(ok_netloc)})
-        eq_(response.status_code, 200)
+        assert response.status_code == 200

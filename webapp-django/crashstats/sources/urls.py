@@ -1,10 +1,10 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from . import views
 
 
-urlpatterns = patterns(
-    '',
+app_name = 'sources'
+urlpatterns = [
     url(r'^highlight/$',
         views.highlight_url,
         name='highlight_url'),
-)
+]

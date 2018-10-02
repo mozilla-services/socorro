@@ -2,80 +2,61 @@
 How to
 ======
 
-.. Warning::
+Run security checks for dependencies
+====================================
 
-   August 17th, 2017: Everything below this point is outdated.
-
-
-Populate PostgreSQL Database
-============================
-
-Load Socorro schema plus test products:
+You can run the crontabber job that checks for security vulnerabilities locally:
 
 ::
 
-   socorro setupdb --database_name=breakpad --fakedata --createdb
+   make dependencycheck
 
 
-Create partitioned tables
-=========================
+Connect to PostgreSQL Database in local dev environment
+=======================================================
 
-Normally this is handled automatically by the cronjob scheduler
-:ref:`crontabber-chapter` but can be run as a one-off:
+The local development environment's PostgreSQL database exposes itself on a
+non-standard port when run with docker-compose. You can connect to it with
+the client of your choice using the following connection settings:
 
-::
-
-   python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
-
-
-Populate Elasticsearch database
-===============================
-
-.. Note::
-
-   See the chapter about :ref:`elasticsearch-chapter` for more information.
-
-Once you have populated your PostgreSQL database with "fake data",
-you can migrate that data into Elasticsearch:
-
-::
-
-   python socorro/external/postgresql/crash_migration_app.py
+* Username: ``postgres``
+* Password: ``aPassword``
+* Port: ``8574``
 
 
-Sync Django database
-====================
+Reprocess crashes
+=================
 
-Django needs to write its ORM tables:
+Reprocessing individual crashes
+-------------------------------
 
-::
-
-   export SECRET_KEY="..."
-   cd webapp-django
-   ./manage.py migrate auth
-   ./manage.py migrate
+If you have appropriate permissions, you can reprocess an individual crash by
+viewing the crash report on the Crash Stats site, clicking on the "Reprocess"
+tab, and clicking on the "Reprocess this crash" button.
 
 
-Adding new products and releases
-================================
+Reprocessing lots of crashes if you're not an admin
+---------------------------------------------------
 
-Each product you wish to have reports on must be added via the Socorro
-admin UI:
-
-http://crash-stats/admin/products/
-
-All products must have one or more releases:
-
-http://crash-stats/admin/releases/
-
-Make sure to restart memcached so you see your changes right away:
-
-::
-
-    sudo systemctl restart memcached
+If you need to reprocess a lot of crashes, please `write up a bug
+<https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro>`_.
+In the bug description, include a Super Search url with the crashes you want
+reprocessed.
 
 
-Now go to the front page for your application. For example, if your application
-was named "KillerApp" then it will appear at:
+Reprocessing crashes if you're an admin
+---------------------------------------
 
-http://crash-stats/home/products/KillerApp
+If you're an admin, you can create an API token with the "Reprocess Crashes"
+permission. You can use this token in conjunction with the
+``scripts/reprocess.py`` script to set crashes up for reprocessing.
+
+For example, this reprocesses a single crash::
+
+    $ docker-compose run processor bash
+    app@processor:app$ socorro-cmd reprocess c2815fd1-e87b-45e9-9630-765060180110
+
+This reprocesses crashes all crashes with a specified signature::
+
+    $ docker-compose run processor bash
+    app@processor:app$ socorro-cmd fetch_crashids --signature="some | signature" | socorro-cmd reprocess

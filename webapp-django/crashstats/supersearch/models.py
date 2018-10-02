@@ -1,5 +1,6 @@
 import copy
 import functools
+from past.builtins import basestring
 
 from socorro.external.es import query
 from socorro.external.es import supersearch
@@ -7,7 +8,6 @@ from socorro.external.es import super_search_fields
 
 from django.core.cache import cache
 
-from crashstats import scrubber
 from crashstats.crashstats import models
 
 
@@ -86,11 +86,6 @@ class SuperSearch(ESSocorroMiddleware):
     implementation = supersearch.SuperSearch
 
     API_WHITELIST = get_api_whitelist()
-
-    API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL),
-        ('user_comments', scrubber.URL),
-    )
 
     def __init__(self):
         self.all_fields = SuperSearchFields().get()
@@ -196,8 +191,6 @@ class SuperSearch(ESSocorroMiddleware):
 class SuperSearchUnredacted(SuperSearch):
 
     API_WHITELIST = get_api_whitelist(include_all_fields=True)
-
-    API_CLEAN_SCRUB = None
 
     def __init__(self):
         self.all_fields = SuperSearchFields().get()

@@ -20,25 +20,26 @@ until it's time to run again. To override that use::
     $ python socorro/cron/crontabber_app.py --job=bugzilla-associations --force
 
 To change the database config, use --help to see what the parameters are called.
+
 """
 
 import datetime
 
-import requests
 from dateutil import tz
 from configman import Namespace
-from crontabber.base import BaseCronApp
-from crontabber.mixins import with_postgres_transactions
 
-from socorro.lib.datetimeutil import utc_now
+from socorro.cron.base import BaseCronApp
+from socorro.cron.mixins import using_postgres
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     execute_no_results,
     SQLDidNotReturnSingleRow
 )
+from socorro.lib.datetimeutil import utc_now
+from socorro.lib.requestslib import session_with_retries
 
 
-# Query all bugs that changed since a given date, and that either where created
+# Query all bugs that changed since a given date, and that either were created
 # or had their crash_signature field change. Only return the two fields that
 # interest us, the id and the crash_signature text.
 BUGZILLA_PARAMS = {
@@ -85,8 +86,17 @@ class NothingUsefulHappened(Exception):
     abandon_transaction = True
 
 
-@with_postgres_transactions()
+@using_postgres()
 class BugzillaCronApp(BaseCronApp):
+    """Updates Socorro's knowledge of which bugs cover which crash signatures
+
+    This queries Bugzilla for all the bugs that were created or had their crash
+    signature value changed during the specified period.
+
+    For all the bugs in this group, it updates the bug_associations table with
+    the signatures and bug ids.
+
+    """
     app_name = 'bugzilla-associations'
     app_description = 'Bugzilla Associations'
     app_version = '0.1'
@@ -95,8 +105,11 @@ class BugzillaCronApp(BaseCronApp):
     required_config.add_option(
         'days_into_past',
         default=0,
-        doc='number of days to look into the past for bugs (0 - use last '
-            'run time, >0 ignore when it last ran successfully)')
+        doc=(
+            'number of days to look into the past for bugs (0 - use last '
+            'run time, >0 ignore when it last ran successfully)'
+        )
+    )
 
     def run(self):
         # if this is non-zero, we use it.
@@ -117,10 +130,7 @@ class BugzillaCronApp(BaseCronApp):
         # bugzilla runs on PST, so we need to communicate in its time zone
         PST = tz.gettz('PST8PDT')
         last_run_formatted = last_run.astimezone(PST).strftime('%Y-%m-%d')
-        for (
-            bug_id,
-            signature_set
-        ) in self._iterator(last_run_formatted):
+        for bug_id, signature_set in self._iterator(last_run_formatted):
             # each run of this loop is a transaction
             self.database_transaction_executor(
                 self.inner_transaction,
@@ -128,16 +138,8 @@ class BugzillaCronApp(BaseCronApp):
                 signature_set
             )
 
-    def inner_transaction(
-        self,
-        connection,
-        bug_id,
-        signature_set
-    ):
-        self.config.logger.debug(
-            "bug %s: %s",
-            bug_id, signature_set
-        )
+    def inner_transaction(self, connection, bug_id, signature_set):
+        self.config.logger.debug("bug %s: %s", bug_id, signature_set)
         if not signature_set:
             execute_no_results(
                 connection,
@@ -163,9 +165,7 @@ class BugzillaCronApp(BaseCronApp):
                         WHERE signature = %s and bug_id = %s""",
                         (signature, bug_id)
                     )
-                    self.config.logger.info(
-                        'association removed: %s - "%s"',
-                        bug_id, signature)
+                    self.config.logger.info('association removed: %s - "%s"', bug_id, signature)
         except SQLDidNotReturnSingleRow:
             signatures_db = []
 
@@ -178,19 +178,17 @@ class BugzillaCronApp(BaseCronApp):
                     VALUES (%s, %s)""",
                     (signature, bug_id)
                 )
-                self.config.logger.info(
-                    'new association: %s - "%s"',
-                    bug_id,
-                    signature
-                )
+                self.config.logger.info('association added: %s - "%s"', bug_id, signature)
 
     def _iterator(self, from_date):
         payload = BUGZILLA_PARAMS.copy()
         payload['chfieldfrom'] = from_date
-        r = requests.get(BUGZILLA_BASE_URL, params=payload)
+        session = session_with_retries()
+        r = session.get(BUGZILLA_BASE_URL, params=payload)
         if r.status_code < 200 or r.status_code >= 300:
             r.raise_for_status()
         results = r.json()
+
         for report in results['bugs']:
             yield (
                 int(report['id']),

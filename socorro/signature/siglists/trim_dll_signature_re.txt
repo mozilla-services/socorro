@@ -1,0 +1,41 @@
+# Trim DLL Signatures
+#
+# Regular expressions matching frame signatures that should be trimmed down to
+# only include the module name.
+#
+# Read the README.rst for instructions and tips on editing this file.
+
+aticfx32\.dll
+aticfx64\.dll
+atidxx32\.dll
+atidxx64\.dll
+atiu9pag\.dll
+atiu9p64\.dll
+atiumd6a\.dll
+atiumdag\.dll
+atiumdva\.dll
+atiuxpag\.dll
+igd10iumd32\.dll
+igd10iumd64\.dll
+igd10umd32\.dll
+igd10umd64\.dll
+igdumd32\.dll
+igdumd64\.dll
+igdumdim32\.dll
+igdumdim64\.dll
+igd11dxva32\.dll
+igd11dxva64\.dll
+igdusc32\.dll
+igdusc64\.dll
+nvd3dum\.dll
+nvd3dumx\.dll
+nvoglnt\.dll
+nvumdshim\.dll
+nvumdshimx\.dll
+nvwgf2um\.dll
+nvwgf2umx\.dll
+nvapi\.dll
+nvapi64\.dll
+nvscpapi\.dll
+nvoglv32\.dll
+nvoglv64\.dll

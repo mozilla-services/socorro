@@ -7,41 +7,109 @@ import functools
 import hashlib
 import logging
 import time
+from past.builtins import basestring
 
 from configman import configuration, Namespace
+from six import text_type
 
 from socorro.lib import BadArgumentError
 from socorro.external.es.base import ElasticsearchConfig
-from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
     PriorityjobRabbitMQCrashStore,
 )
+from socorro.external.postgresql.base import PostgreSQLStorage
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
-import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.crontabber_state
-import socorro.external.postgresql.adi
-import socorro.external.postgresql.product_build_types
 import socorro.external.postgresql.signature_first_date
-import socorro.external.postgresql.server_status
-import socorro.external.postgresql.releases
+import socorro.external.postgresql.version_string
 import socorro.external.boto.crash_data
 
 from socorro.app import socorro_app
 
 from django.conf import settings
 from django.core.cache import cache
-from django.utils.encoding import iri_to_uri
+from django.db import models
 from django.template.defaultfilters import slugify
+from django.utils.encoding import iri_to_uri
 
-from crashstats import scrubber
 from crashstats.base.utils import requests_retry_session
 
 
-logger = logging.getLogger('crashstats_models')
+logger = logging.getLogger('crashstats.models')
 
+
+# Django models first
+
+
+class GraphicsDeviceManager(models.Manager):
+    def get_pair(self, adapter_hex, vendor_hex):
+        """Returns (adapter_name, vendor_name) or None"""
+        try:
+            obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hex)
+            return (obj.adapter_name, obj.vendor_name)
+        except self.model.DoesNotExist:
+            return None
+
+    def get_pairs(self, adapter_hexes, vendor_hexes):
+        """Return dict where each tuple of (adapter_hex, vendor_hex)
+        corresponds to a (adapter_name, vendor_name) pair
+
+        """
+        assert len(adapter_hexes) == len(vendor_hexes)
+        names = {}
+        for i, adapter_hex in enumerate(adapter_hexes):
+            cache_key = (
+                'graphics_adapters:' + adapter_hex + ':' + vendor_hexes[i]
+            )
+            key = (adapter_hex, vendor_hexes[i])
+
+            name_pair = cache.get(cache_key)
+
+            if name_pair is None:
+                try:
+                    obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hexes[i])
+                except self.model.DoesNotExist:
+                    continue
+
+                name_pair = (obj.adapter_name, obj.vendor_name)
+                cache.set(cache_key, name_pair, 60 * 60 * 24)
+
+            names[key] = name_pair
+
+        return names
+
+
+class GraphicsDevice(models.Model):
+    """Specifies a device hex/name"""
+    vendor_hex = models.CharField(max_length=100)
+    adapter_hex = models.CharField(max_length=100, blank=True, null=True)
+    vendor_name = models.TextField(blank=True, null=True)
+    adapter_name = models.TextField(blank=True, null=True)
+
+    objects = GraphicsDeviceManager()
+
+    class Meta:
+        unique_together = ('vendor_hex', 'adapter_hex')
+
+
+class Signature(models.Model):
+    """Bookkeeping table to keep track of when we first saw a signature"""
+    signature = models.TextField(
+        unique=True,
+        help_text='the crash report signature'
+    )
+    first_build = models.BigIntegerField(
+        help_text='the first build id this signature was seen in'
+    )
+    first_date = models.DateTimeField(
+        help_text='the first crash report date this signature was seen in'
+    )
+
+
+# Socorro x-middleware models
 
 class DeprecatedModelError(DeprecationWarning):
     """Used when a deprecated model is being used in debug mode"""
@@ -67,7 +135,7 @@ def config_from_configman():
     definition_source.namespace('database')
     definition_source.database.add_option(
         'database_storage_class',
-        default=PostgreSQLCrashStorage,
+        default=PostgreSQLStorage,
     )
     definition_source.namespace('queuing')
     definition_source.queuing.add_option(
@@ -79,11 +147,17 @@ def config_from_configman():
         'rabbitmq_priority_class',
         default=PriorityjobRabbitMQCrashStore,
     )
-    definition_source.namespace('data')
-    definition_source.data.add_option(
+    definition_source.namespace('crashdata')
+    definition_source.crashdata.add_option(
         'crash_data_class',
         default=socorro.external.boto.crash_data.SimplifiedCrashData,
     )
+    definition_source.namespace('telemetrydata')
+    definition_source.telemetrydata.add_option(
+        'telemetry_data_class',
+        default=socorro.external.boto.crash_data.TelemetryCrashData,
+    )
+
     config = configuration(
         definition_source=definition_source,
         values_source_list=[
@@ -96,7 +170,8 @@ def config_from_configman():
     # same logger as we have here in the webapp.
     config.queuing.logger = logger
     config.priority.logger = logger
-    config.data.logger = logger
+    config.crashdata.logger = logger
+    config.telemetrydata.logger = logger
     return config
 
 
@@ -249,7 +324,7 @@ class SocorroCommon(object):
         ):
             name = implementation.__class__.__name__
             cache_key = hashlib.md5(
-                name + unicode(params)
+                name + text_type(params)
             ).hexdigest()
 
             if not refresh_cache:
@@ -311,9 +386,8 @@ class SocorroMiddleware(SocorroCommon):
     # by default, assume the class to not have an implementation reference
     implementation = None
 
-    # The default, is 'database' which means it's to do with talking
-    # to a PostgreSQL based implementation.
-    implementation_config_namespace = 'database'
+    # config namespace to use for the implementation
+    implementation_config_namespace = ''
 
     default_date_format = '%Y-%m-%d'
     default_datetime_format = '%Y-%m-%dT%H:%M:%S'
@@ -487,6 +561,31 @@ class SocorroMiddleware(SocorroCommon):
                 }
 
 
+class Products(SocorroMiddleware):
+    implementation = socorro.external.postgresql.products.Products
+
+    possible_params = ()
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
+
+
+class VersionString(SocorroMiddleware):
+    implementation = socorro.external.postgresql.version_string.VersionString
+
+    required_params = (
+        'product',
+        'version',
+        ('build_id', int)
+    )
+
+    API_WHITELIST = (
+        'hits',
+    )
+
+
 class ProductVersions(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.products.ProductVersions
@@ -505,28 +604,6 @@ class ProductVersions(SocorroMiddleware):
     API_WHITELIST = (
         'hits',
         'total',
-    )
-
-    def post(self, **data):
-        return self.get_implementation().post(**data)
-
-
-class Releases(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.releases.Releases
-
-    possible_params = (
-        ('beta_number', int),
-    )
-
-    required_params = (
-        'product',
-        'version',
-        'update_channel',
-        'build_id',
-        'platform',
-        'release_channel',
-        ('throttle', int),
     )
 
     def post(self, **data):
@@ -562,10 +639,24 @@ class Platforms(SocorroMiddleware):
         return super(Platforms, self).get()
 
 
+class TelemetryCrash(SocorroMiddleware):
+    """Model for data we store in the S3 bucket to send to Telemetry"""
+
+    implementation = socorro.external.boto.crash_data.TelemetryCrashData
+    implementation_config_namespace = 'telemetrydata'
+
+    required_params = (
+        'crash_id',
+    )
+    aliases = {
+        'crash_id': 'uuid',
+    }
+
+
 class ProcessedCrash(SocorroMiddleware):
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
-    implementation_config_namespace = 'data'
+    implementation_config_namespace = 'crashdata'
 
     required_params = (
         'crash_id',
@@ -607,7 +698,6 @@ class ProcessedCrash(SocorroMiddleware):
         'success',
         'truncated',
         'uptime',
-        'user_comments',
         'uuid',
         'version',
         'install_age',
@@ -639,11 +729,6 @@ class ProcessedCrash(SocorroMiddleware):
     API_WHITELIST = get_api_whitelist(
         'processed_crash',
         baseline=API_WHITELIST
-    )
-
-    API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL),
-        ('user_comments', scrubber.URL),
     )
 
 
@@ -679,7 +764,7 @@ class RawCrash(SocorroMiddleware):
     """
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
-    implementation_config_namespace = 'data'
+    implementation_config_namespace = 'crashdata'
 
     required_params = (
         'crash_id',
@@ -699,89 +784,85 @@ class RawCrash(SocorroMiddleware):
     }
 
     API_WHITELIST = (
-        'InstallTime',
-        'AdapterVendorID',
-        'B2G_OS_Version',
-        'Theme',
-        'Version',
-        'id',
-        'Vendor',
-        'EMCheckCompatibility',
-        'Throttleable',
-        'version',
-        'AdapterDeviceID',
-        'ReleaseChannel',
-        'submitted_timestamp',
-        'buildid',
-        'timestamp',
-        'Notes',
-        'CrashTime',
-        'FramePoisonBase',
-        'FramePoisonSize',
-        'StartupTime',
-        'Add-ons',
-        'BuildID',
-        'SecondsSinceLastCrash',
-        'ProductName',
-        'legacy_processing',
-        'ProductID',
-        'Winsock_LSP',
-        'TotalVirtualMemory',
-        'SystemMemoryUsePercentage',
-        'AvailableVirtualMemory',
-        'AvailablePageFile',
-        'AvailablePhysicalMemory',
-        'PluginFilename',
-        'ProcessType',
-        'PluginCpuUsage',
-        'NumberOfProcessors',
-        'PluginHang',
-        'additional_minidumps',
-        'CpuUsageFlashProcess1',
-        'CpuUsageFlashProcess2',
-        'PluginName',
-        'PluginVersion',
-        'IsGarbageCollecting',
         'Accessibility',
-        'OOMAllocationSize',
-        'PluginHangUIDuration',
-        'Comments',
-        'bug836263-size',
-        'PluginUserComment',
+        'AdapterDeviceID',
+        'AdapterDriverVersion',
         'AdapterRendererIDs',
-        'Min_ARM_Version',
-        'FlashVersion',
-        'Android_Version',
-        'Android_Hardware',
-        'Android_Brand',
-        'Android_Device',
-        'Android_Display',
+        'AdapterSubsysID',
+        'AdapterVendorID',
+        'Add-ons',
         'Android_Board',
-        'Android_Model',
-        'Android_Manufacturer',
+        'Android_Brand',
         'Android_CPU_ABI',
         'Android_CPU_ABI2',
+        'Android_Device',
+        'Android_Display',
         'Android_Fingerprint',
-        'throttle_rate',
+        'Android_Hardware',
+        'Android_Manufacturer',
+        'Android_Model',
+        'Android_Version',
         'AsyncShutdownTimeout',
+        'AvailablePageFile',
+        'AvailablePhysicalMemory',
+        'AvailableVirtualMemory',
+        'B2G_OS_Version',
         'BIOS_Manufacturer',
+        'BuildID',
+        'CpuUsageFlashProcess1',
+        'CpuUsageFlashProcess2',
+        'CrashTime',
+        'DOMIPCEnabled',
+        'EMCheckCompatibility',
+        'FlashVersion',
+        'FramePoisonBase',
+        'FramePoisonSize',
+        'InstallTime',
+        'IsGarbageCollecting',
+        'Min_ARM_Version',
+        'MinidumpSha256Hash',
+        'Notes',
+        'NumberOfProcessors',
+        'OOMAllocationSize',
+        'PluginCpuUsage',
+        'PluginFilename',
+        'PluginHang',
+        'PluginHangUIDuration',
+        'PluginName',
+        'PluginUserComment',
+        'PluginVersion',
+        'ProcessType',
+        'ProductID',
+        'ProductName',
+        'RecordReplay',
+        'ReleaseChannel',
+        'SecondsSinceLastCrash',
+        'ShutdownProgress',
+        'StartupTime',
+        'SystemMemoryUsePercentage',
+        'Theme',
+        'Throttleable',
+        'TotalVirtualMemory',
+        'Vendor',
+        'Version',
+        'Winsock_LSP',
+        'additional_minidumps',
+        'bug836263-size',
+        'buildid',
+        'id',
+        'legacy_processing',
+        'submitted_timestamp',
+        'throttle_rate',
+        'timestamp',
         'upload_file_minidump_*',
         'useragent_locale',
-        'AdapterSubsysID',
-        'AdapterDriverVersion',
-        'ShutdownProgress',
-        'DOMIPCEnabled',
+        'version',
     )
 
     # The reason we use the old list and pass it into the more dynamic wrapper
     # for getting the complete list is because we're apparently way behind
     # on having all of these added to the Super Search Fields.
     API_WHITELIST = get_api_whitelist('raw_crash', baseline=API_WHITELIST)
-
-    API_CLEAN_SCRUB = (
-        ('Comments', scrubber.EMAIL),
-        ('Comments', scrubber.URL),
-    )
 
     # If this is matched in the query string parameters, then
     # we will return the response in binary format in the API
@@ -913,20 +994,6 @@ class SignatureFirstDate(SocorroMiddleware):
         return dates
 
 
-class Status(SocorroMiddleware):
-
-    # This model uses an implementation that only really reads
-    # files off disk so it doesn't have to be protected from
-    # a stampeding herd.
-    cache_seconds = 0
-
-    API_WHITELIST = None
-
-    implementation = (
-        socorro.external.postgresql.server_status.ServerStatus
-    )
-
-
 class CrontabberState(SocorroMiddleware):
 
     implementation = (
@@ -938,6 +1005,23 @@ class CrontabberState(SocorroMiddleware):
 
     # will never contain PII
     API_WHITELIST = None
+
+    def get(self, *args, **kwargs):
+        resp = super(CrontabberState, self).get(*args, **kwargs)
+        apps = resp['state']
+
+        # Redact last_error data so it doesn't bleed infrastructure info into
+        # the world
+        for name, state in apps.items():
+            if state.get('last_error'):
+                # NOTE(willkg): The structure of last_error is defined in
+                # crontabber in crontabber/app.py.
+                state['last_error'] = {
+                    'traceback': 'See error logging system.',
+                    'value': 'See error logging system.',
+                    'type': state['last_error'].get('type', 'Unknown')
+                }
+        return resp
 
 
 class BugzillaBugInfo(SocorroCommon):
@@ -998,119 +1082,6 @@ class BugzillaBugInfo(SocorroCommon):
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
         return {'bugs': results}
-
-
-class GraphicsDevices(SocorroMiddleware):
-
-    cache_seconds = 0
-
-    implementation = (
-        socorro.external.postgresql.graphics_devices.GraphicsDevices
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-    required_params = (
-        'vendor_hex',
-        'adapter_hex',
-    )
-
-    def post(self, **payload):
-        return self.get_implementation().post(**payload)
-
-    def get_pairs(self, adapter_hexes, vendor_hexes):
-        """return a dict where each tuple of (adapter_hex, vendor_hex)
-        corresponds to a (adapter_name, vendor_name) pair."""
-        assert len(adapter_hexes) == len(vendor_hexes)
-        names = {}
-        missing = {}
-        for i, adapter_hex in enumerate(adapter_hexes):
-            cache_key = (
-                'graphics_adapters' + adapter_hex + ':' + vendor_hexes[i]
-            )
-            name_pair = cache.get(cache_key)
-            key = (adapter_hex, vendor_hexes[i])
-            if name_pair is not None:
-                names[key] = name_pair
-            else:
-                missing[key] = cache_key
-
-        missing_vendor_hexes = []
-        missing_adapter_hexes = []
-        for adapter_hex, vendor_hex in missing:
-            missing_adapter_hexes.append(adapter_hex)
-            missing_vendor_hexes.append(vendor_hex)
-
-        hits = []
-        # In order to avoid hitting the maximum URL size limit, we split the
-        # query in smaller chunks, and then we reconstruct the results.
-        max_number_of_hexes = 50
-        for i in range(0, len(missing_vendor_hexes), max_number_of_hexes):
-            vendors = set(missing_vendor_hexes[i:i + max_number_of_hexes])
-            adapters = set(missing_adapter_hexes[i:i + max_number_of_hexes])
-            res = self.get(
-                vendor_hex=vendors,
-                adapter_hex=adapters,
-            )
-            hits.extend(res['hits'])
-
-        for group in hits:
-            name_pair = (group['adapter_name'], group['vendor_name'])
-            key = (group['adapter_hex'], group['vendor_hex'])
-            # This if statement is important.
-            # For example there repeated adapter hexes that have different
-            # vendor hexes. E.g.:
-            # breakpad=> select count(distinct vendor_hex) from
-            # breakpad-> graphics_device where adapter_hex='0x0102';
-            #  count
-            # -------
-            #     21
-            # Therefore it's important to only bother with specific
-            # ones that we asked for.
-            if key in missing:
-                cache_key = missing[key]
-                cache.set(cache_key, name_pair, 60 * 60 * 24)
-                names[key] = name_pair
-
-        return names
-
-
-class ADI(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.adi.ADI
-
-    required_params = (
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-        'product',
-        ('versions', list),
-        ('platforms', list),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-
-class ProductBuildTypes(SocorroMiddleware):
-
-    cache_seconds = 60 * 60 * 24
-
-    implementation = (
-        socorro.external.postgresql.product_build_types.ProductBuildTypes
-    )
-
-    required_params = (
-        'product',
-    )
-
-    API_WHITELIST = (
-        'hits',
-    )
 
 
 class Reprocessing(SocorroMiddleware):

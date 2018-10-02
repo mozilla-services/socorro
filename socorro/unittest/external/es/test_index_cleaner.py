@@ -9,7 +9,6 @@ from socorro.lib.datetimeutil import utc_now
 from socorro.external.es.index_cleaner import IndexCleaner
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -31,6 +30,11 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
     def setUp(self):
         self.indices = []
 
+    def create_index(self, index):
+        self.index_creator.create_index(index, {})
+        self.indices.append(index)
+        assert self.index_client.exists(index)
+
     def tearDown(self):
         """Remove any indices that may have been created during tests.
         """
@@ -44,18 +48,13 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
     def get_index_for_date(self, date):
         return date.strftime(self.config.elasticsearch.elasticsearch_index)
 
-    @minimum_es_version('1.0')
     def test_delete_old_indices(self):
         # Create old indices to be deleted.
-        self.index_client.create('test_socorro200142', {})
-        self.indices.append('test_socorro200142')
-
-        self.index_client.create('test_socorro200000', {})
-        self.indices.append('test_socorro200000')
+        self.create_index('test_socorro200142')
+        self.create_index('test_socorro200000')
 
         # Create an old aliased index.
-        self.index_client.create('test_socorro200201_20030101', {})
-        self.indices.append('test_socorro200201_20030101')
+        self.create_index('test_socorro200201_20030101')
         self.index_client.put_alias(
             index='test_socorro200201_20030101',
             name='test_socorro200201',
@@ -65,8 +64,7 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         last_week_index = self.get_index_for_date(
             utc_now() - datetime.timedelta(weeks=1)
         )
-        self.index_client.create('test_socorro_some_aliased_index', {})
-        self.indices.append('test_socorro_some_aliased_index')
+        self.create_index('test_socorro_some_aliased_index')
         self.index_client.put_alias(
             index='test_socorro_some_aliased_index',
             name=last_week_index,
@@ -74,13 +72,9 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
 
         # Create a recent index that should not be deleted.
         now_index = self.get_index_for_date(utc_now())
-        self.index_client.create(now_index, {})
-        self.indices.append(now_index)
+        self.create_index(now_index)
 
         # These will raise an error if an index was not correctly created.
-        assert self.index_client.exists('test_socorro200142')
-        assert self.index_client.exists('test_socorro200000')
-        assert self.index_client.exists('test_socorro200201')
         assert self.index_client.exists(now_index)
         assert self.index_client.exists(last_week_index)
 
@@ -96,18 +90,41 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         assert not self.index_client.exists('test_socorro200000')
         assert not self.index_client.exists('test_socorro200201')
 
-    @minimum_es_version('1.0')
-    def test_other_indices_are_not_deleted(self):
+    def test_delete_old_indices_other_indices_are_not_deleted(self):
         """Verify that non-week-based indices are not removed.
         """
         # Create a temporary index.
         self.index_creator.create_index('socorro_test_temp', {})
-        self.indices.append('socorro_test_temp')
-
-        assert self.index_client.exists('socorro_test_temp')
 
         api = IndexCleaner(self.config)
         api.delete_old_indices()
 
         # Verify the email index is still there.
         assert self.index_client.exists('socorro_test_temp')
+
+    def test_delete_indices_with_predicate(self):
+        self.create_index('test_socorro201801')
+        self.create_index('test_socorro201802')
+        self.create_index('test_socorro_non_week')
+
+        api = IndexCleaner(self.config)
+        api.delete_indices(lambda index: index.endswith('2'))
+
+        # Only week-based indices that match the predicate should be
+        # deleted.
+        assert self.index_client.exists('test_socorro201801')
+        assert not self.index_client.exists('test_socorro201802')
+        assert self.index_client.exists('test_socorro_non_week')
+
+    def test_delete_indices_without_predicate(self):
+        self.create_index('test_socorro201801')
+        self.create_index('test_socorro201802')
+        self.create_index('test_socorro_non_week')
+
+        api = IndexCleaner(self.config)
+        api.delete_indices()
+
+        # Without a predicate, all week-based indices should be deleted
+        assert not self.index_client.exists('test_socorro201801')
+        assert not self.index_client.exists('test_socorro201802')
+        assert self.index_client.exists('test_socorro_non_week')

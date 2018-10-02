@@ -2,16 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
-
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 import elasticsearch
 
 from socorro.external.es.super_search_fields import SuperSearchFields
-
-
-DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 
 # Elasticsearch indices configuration.
@@ -45,8 +40,10 @@ class IndexCreator(RequiredConfig):
     required_config.elasticsearch.add_option(
         'shards_per_index',
         default=10,
-        doc='number of shards to set in newly created indices. Elasticsearch '
-            'default is 5.',
+        doc=(
+            'number of shards to set in newly created indices. Elasticsearch '
+            'default is 5.'
+        )
     )
 
     def __init__(self, config):
@@ -67,9 +64,7 @@ class IndexCreator(RequiredConfig):
         return {
             'settings': {
                 'index': {
-                    'number_of_shards': (
-                        self.config.elasticsearch.shards_per_index
-                    ),
+                    'number_of_shards': self.config.elasticsearch.shards_per_index,
                     'query': ES_QUERY_SETTINGS,
                     'analysis': ES_CUSTOM_ANALYZERS,
                 },
@@ -97,9 +92,7 @@ class IndexCreator(RequiredConfig):
                 index=es_index,
                 body=es_settings,
             )
-            self.config.logger.info(
-                'Created new elasticsearch index: %s', es_index
-            )
+            self.config.logger.info('Created new elasticsearch index: %s', es_index)
         except elasticsearch.exceptions.RequestError as e:
             # If this index already exists, swallow the error.
             # NOTE! This is NOT how the error looks like in ES 2.x

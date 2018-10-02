@@ -8,12 +8,15 @@ import datetime
 import pytest
 
 from socorro.lib import BadArgumentError
-from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.external.es.super_search_fields import (
+    FIELDS,
+    is_doc_values_friendly,
+    add_doc_values,
+    SuperSearchFields,
+)
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
-    SUPERSEARCH_FIELDS,
     ElasticsearchTestCase,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -31,13 +34,12 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         super(IntegrationTestSuperSearchFields, self).setUp()
 
         self.api = SuperSearchFields(config=self.config)
-        self.api.get_fields = lambda: copy.deepcopy(SUPERSEARCH_FIELDS)
+        self.api.get_fields = lambda: copy.deepcopy(FIELDS)
 
     def test_get_fields(self):
         results = self.api.get_fields()
-        assert results == SUPERSEARCH_FIELDS
+        assert results == FIELDS
 
-    @minimum_es_version('1.0')
     def test_get_missing_fields(self):
         config = self.get_base_config(
             es_index='socorro_integration_test_%W'
@@ -166,17 +168,25 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         assert 'fake_field' not in properties['raw_crash']['properties']
 
         # Those fields have a `storage_mapping`.
-        assert processed_crash['release_channel'] == {'type': 'string'}
+        assert processed_crash['release_channel'] == {
+            'analyzer': 'keyword',
+            'type': 'string'
+        }
 
         # Test nested objects.
         assert 'json_dump' in processed_crash
         assert 'properties' in processed_crash['json_dump']
         assert 'write_combine_size' in processed_crash['json_dump']['properties']
-        assert processed_crash['json_dump']['properties']['write_combine_size'] == {'type': 'long'}
+        assert processed_crash['json_dump']['properties']['write_combine_size'] == {
+            'type': 'long',
+            'doc_values': True
+        }
 
         # Test overwriting a field.
         mapping = self.api.get_mapping(overwrite_mapping={
             'name': 'fake_field',
+            'namespace': 'raw_crash',
+            'in_database_name': 'fake_field',
             'storage_mapping': {
                 'type': 'long'
             }
@@ -195,6 +205,8 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         # Insert an invalid storage mapping.
         mapping = self.api.get_mapping({
             'name': 'fake_field',
+            'namespace': 'raw_crash',
+            'in_database_name': 'fake_field',
             'storage_mapping': {
                 'type': 'unkwown'
             }
@@ -216,3 +228,109 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         })
         with pytest.raises(BadArgumentError):
             self.api.test_mapping(mapping)
+
+
+def get_fields():
+    return FIELDS.items()
+
+
+@pytest.mark.parametrize('name, properties', get_fields())
+def test_validate_super_search_fields(name, properties):
+    """Validates the contents of socorro.external.es.super_search_fields.FIELDS"""
+
+    # FIXME(willkg): When we start doing schema stuff in Python, we should
+    # switch this to a schema validation.
+
+    property_keys = [
+        'data_validation_type',
+        'default_value',
+        'description',
+        'form_field_choices',
+        'has_full_version',
+        'in_database_name',
+        'is_exposed',
+        'is_mandatory',
+        'is_returned',
+        'name',
+        'namespace',
+        'permissions_needed',
+        'query_type',
+        'storage_mapping',
+    ]
+
+    # Assert it has all the keys
+    assert sorted(properties.keys()) == sorted(property_keys)
+
+    # Assert boolean fields have boolean values
+    for key in ['has_full_version', 'is_exposed', 'is_mandatory', 'is_returned']:
+        assert properties[key] in (True, False)
+
+    # Assert data_validation_type has a valid value
+    assert properties['data_validation_type'] in ('bool', 'datetime', 'enum', 'int', 'str')
+
+    # Assert query_type has a valid value
+    assert properties['query_type'] in ('bool', 'date', 'enum', 'flag', 'number', 'string')
+
+    # The name in the mapping should be the same as the name in properties
+    assert properties['name'] == name
+
+
+@pytest.mark.parametrize('value, expected', [
+    # No type -> False
+    ({}, False),
+
+    # object -> False
+    ({'type': 'object'}, False),
+
+    # Analyzed string -> False
+    ({'type': 'string'}, False),
+    ({'type': 'string', 'analyzer': 'keyword'}, False),
+
+    # Unanalyzed string -> True
+    ({'type': 'string', 'index': 'not_analyzed'}, True),
+
+    # Anything else -> True
+    ({'type': 'long'}, True),
+])
+def test_is_doc_values_friendly(value, expected):
+    assert is_doc_values_friendly(value) == expected
+
+
+def test_add_doc_values():
+    data = {'type': 'short'}
+    add_doc_values(data)
+    assert data == {
+        'type': 'short',
+        'doc_values': True
+    }
+
+    data = {
+        'fields': {
+            'AsyncShutdownTimeout': {
+                'analyzer': 'standard',
+                'index': 'analyzed',
+                'type': 'string',
+            },
+            'full': {
+                'index': 'not_analyzed',
+                'type': 'string',
+            }
+        },
+        'type': 'multi_field',
+    }
+    add_doc_values(data)
+    assert data == {
+        'fields': {
+            'AsyncShutdownTimeout': {
+                'analyzer': 'standard',
+                'index': 'analyzed',
+                'type': 'string',
+            },
+            'full': {
+                'index': 'not_analyzed',
+                'type': 'string',
+                'doc_values': True,
+            }
+        },
+        'type': 'multi_field',
+    }

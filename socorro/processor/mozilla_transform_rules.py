@@ -4,28 +4,28 @@
 
 import datetime
 import gzip
+import random
 import re
 from sys import maxint
+from past.builtins import basestring
 import time
 from urllib import unquote_plus
 
-from configman import Namespace
-from configman.converters import str_to_python_object
+from requests import RequestException
 import ujson
 
-from socorro.external.postgresql.dbapi2_util import (
-    execute_query_fetchall,
-    execute_no_results
-)
+from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import (
     UTC,
     datetime_from_isodate_string,
-    datestring_to_weekly_partition
 )
 from socorro.lib.ooid import dateFromOoid
+from socorro.lib import raven_client
+from socorro.lib.requestslib import session_with_retries
 from socorro.lib.transform_rules import Rule
-from socorro.signature import SignatureGenerator
+from socorro.signature.generator import SignatureGenerator
+from socorro.signature.utils import convert_to_crash_data
 
 
 class ProductRule(Rule):
@@ -135,13 +135,6 @@ class PluginRule(Rule):   # Hangs are here
 
 
 class AddonsRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'collect_addon',
-        doc='boolean indictating if information about add-ons should be '
-        'collected',
-        default=True,
-    )
 
     def version(self):
         return '1.0'
@@ -159,45 +152,22 @@ class AddonsRule(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.addons_checked = None
-        try:
+
+        # it's okay to not have EMCheckCompatibility
+        if 'EMCheckCompatibility' in raw_crash:
             addons_checked_txt = raw_crash.EMCheckCompatibility.lower()
             processed_crash.addons_checked = False
             if addons_checked_txt == 'true':
                 processed_crash.addons_checked = True
-        except KeyError as e:
-            if 'EMCheckCompatibility' not in str(e):
-                raise
-            # it's okay to not have EMCheckCompatibility, other missing things
-            # are bad
 
-        if self.config.chatty:
-            self.config.logger.debug(
-                'AddonsRule: collect_addon: %s',
-                self.config.collect_addon
-            )
-
-        if self.config.collect_addon:
-            original_addon_str = raw_crash.get('Add-ons', '')
-            if not original_addon_str:
-                if self.config.chatty:
-                    self.config.logger.debug(
-                        'AddonsRule: no addons'
-                    )
-                processed_crash.addons = []
-            else:
-                if self.config.chatty:
-                    self.config.logger.debug(
-                        'AddonsRule: trying to split addons'
-                    )
-                processed_crash.addons = [
-                    unquote_plus(self._get_formatted_addon(x))
-                    for x in original_addon_str.split(',')
-                ]
-            if self.config.chatty:
-                self.config.logger.debug(
-                    'AddonsRule: done: %s',
-                    processed_crash.addons
-                )
+        original_addon_str = raw_crash.get('Add-ons', '')
+        if not original_addon_str:
+            processed_crash.addons = []
+        else:
+            processed_crash.addons = [
+                unquote_plus(self._get_formatted_addon(x))
+                for x in original_addon_str.split(',')
+            ]
 
         return True
 
@@ -322,16 +292,8 @@ class JavaProcessRule(Rule):
 
 class OutOfMemoryBinaryRule(Rule):
 
-    required_config = Namespace()
-    required_config.add_option(
-        'max_size_uncompressed',
-        default=20 * 1024 * 1024,  # ~20 Mb
-        doc=(
-            "Number of bytes, max, that we accept memory info payloads "
-            "as JSON."
-        )
-
-    )
+    # Number of bytes, max, that we accept memory info payloads as JSON.
+    MAX_SIZE_UNCOMPRESSED = 20 * 1024 * 1024  # ~20Mb
 
     def version(self):
         return '1.0'
@@ -354,11 +316,11 @@ class OutOfMemoryBinaryRule(Rule):
 
         try:
             memory_info_as_string = fd.read()
-            if len(memory_info_as_string) > self.config.max_size_uncompressed:
+            if len(memory_info_as_string) > self.MAX_SIZE_UNCOMPRESSED:
                 error_message = (
                     "Uncompressed memory info too large %d (max: %d)" % (
                         len(memory_info_as_string),
-                        self.config.max_size_uncompressed,
+                        self.MAX_SIZE_UNCOMPRESSED
                     )
                 )
                 return error_out(error_message)
@@ -391,89 +353,44 @@ class OutOfMemoryBinaryRule(Rule):
         return True
 
 
-def setup_product_id_map(config, local_config, args_unused):
-    database_connection = local_config.database_class(local_config)
-    transaction = local_config.transaction_executor_class(
-        local_config,
-        database_connection
-    )
-    sql = (
-        "SELECT product_name, productid, rewrite FROM "
-        "product_productid_map WHERE rewrite IS TRUE"
-    )
-    product_mappings = transaction(
-        execute_query_fetchall,
-        sql
-    )
-    product_id_map = {}
-    for product_name, productid, rewrite in product_mappings:
-        product_id_map[productid] = {
-            'product_name': product_name,
-            'rewrite': rewrite
-        }
-    return product_id_map
-
-
 class ProductRewrite(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
+    """Fix ProductName in raw crash for certain situations
 
-    required_config.add_aggregation(
-        'product_id_map',
-        setup_product_id_map
-    )
+    NOTE(willkg): This changes the raw crash which is gross.
 
-    def __init__(self, config):
-        super(ProductRewrite, self).__init__(config)
-        self.product_id_map = setup_product_id_map(
-            config,
-            config,
-            None
-        )
+    """
+
+    PRODUCT_MAP = {
+        "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
+    }
 
     def version(self):
-        return '1.0'
+        return '2.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            return raw_crash['ProductID'] in self.product_id_map
-        except KeyError:
-            # no ProductID
-            return False
+        return True
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        try:
-            product_id = raw_crash['ProductID']
-        except KeyError:
-            self.config.logger.debug('ProductID not in json_doc')
-            return False
-        old_product_name = raw_crash['ProductName']
-        new_product_name = (
-            self.product_id_map[product_id]['product_name']
-        )
-        raw_crash['ProductName'] = new_product_name
-        self.config.logger.debug(
-            'product name changed from %s to %s based '
-            'on productID %s',
-            old_product_name,
-            new_product_name,
-            product_id
-        )
+        product_name = raw_crash.get('ProductName', '')
+        original_product_name = product_name
+
+        # Rewrite from PRODUCT_MAP fixes.
+        if raw_crash.get('ProductID', '') in self.PRODUCT_MAP:
+            product_name = self.PRODUCT_MAP[raw_crash['ProductID']]
+
+        # Rewrite Focus crashes (bug #1481696).
+        if product_name == 'FennecAndroid' and raw_crash.get('ProcessType', '') == 'content':
+            product_name = 'Focus'
+
+        # If we made any product name changes, persist them and keep the
+        # original one so we can look at things later
+        if product_name != original_product_name:
+            processor_meta.processor_notes.append(
+                'Rewriting ProductName from %r to %r' % (original_product_name, product_name)
+            )
+            raw_crash['ProductName'] = product_name
+            raw_crash['OriginalProductName'] = original_product_name
+
         return True
 
 
@@ -546,75 +463,70 @@ class ExploitablityRule(Rule):
 
 
 class FlashVersionRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'known_flash_identifiers',
-        doc='A subset of the known "debug identifiers" for flash versions, '
-        'associated to the version',
-        default={
-            '7224164B5918E29AF52365AF3EAF7A500': '10.1.51.66',
-            'C6CDEFCDB58EFE5C6ECEF0C463C979F80': '10.1.51.66',
-            '4EDBBD7016E8871A461CCABB7F1B16120': '10.1',
-            'D1AAAB5D417861E6A5B835B01D3039550': '10.0.45.2',
-            'EBD27FDBA9D9B3880550B2446902EC4A0': '10.0.45.2',
-            '266780DB53C4AAC830AFF69306C5C0300': '10.0.42.34',
-            'C4D637F2C8494896FBD4B3EF0319EBAC0': '10.0.42.34',
-            'B19EE2363941C9582E040B99BB5E237A0': '10.0.32.18',
-            '025105C956638D665850591768FB743D0': '10.0.32.18',
-            '986682965B43DFA62E0A0DFFD7B7417F0': '10.0.23',
-            '937DDCC422411E58EF6AD13710B0EF190': '10.0.23',
-            '860692A215F054B7B9474B410ABEB5300': '10.0.22.87',
-            '77CB5AC61C456B965D0B41361B3F6CEA0': '10.0.22.87',
-            '38AEB67F6A0B43C6A341D7936603E84A0': '10.0.12.36',
-            '776944FD51654CA2B59AB26A33D8F9B30': '10.0.12.36',
-            '974873A0A6AD482F8F17A7C55F0A33390': '9.0.262.0',
-            'B482D3DFD57C23B5754966F42D4CBCB60': '9.0.262.0',
-            '0B03252A5C303973E320CAA6127441F80': '9.0.260.0',
-            'AE71D92D2812430FA05238C52F7E20310': '9.0.246.0',
-            '6761F4FA49B5F55833D66CAC0BBF8CB80': '9.0.246.0',
-            '27CC04C9588E482A948FB5A87E22687B0': '9.0.159.0',
-            '1C8715E734B31A2EACE3B0CFC1CF21EB0': '9.0.159.0',
-            'F43004FFC4944F26AF228334F2CDA80B0': '9.0.151.0',
-            '890664D4EF567481ACFD2A21E9D2A2420': '9.0.151.0',
-            '8355DCF076564B6784C517FD0ECCB2F20': '9.0.124.0',
-            '51C00B72112812428EFA8F4A37F683A80': '9.0.124.0',
-            '9FA57B6DC7FF4CFE9A518442325E91CB0': '9.0.115.0',
-            '03D99C42D7475B46D77E64D4D5386D6D0': '9.0.115.0',
-            '0CFAF1611A3C4AA382D26424D609F00B0': '9.0.47.0',
-            '0F3262B5501A34B963E5DF3F0386C9910': '9.0.47.0',
-            'C5B5651B46B7612E118339D19A6E66360': '9.0.45.0',
-            'BF6B3B51ACB255B38FCD8AA5AEB9F1030': '9.0.28.0',
-            '83CF4DC03621B778E931FC713889E8F10': '9.0.16.0',
-        },
-        from_string_converter=ujson.loads
-    )
-    required_config.add_option(
-        'flash_re',
-        doc='a regular expression to match Flash file names',
-        default=(
-            r'NPSWF32_?(.*)\.dll|'
-            'FlashPlayerPlugin_?(.*)\.exe|'
-            'libflashplayer(.*)\.(.*)|'
-            'Flash ?Player-?(.*)'
-        ),
-        from_string_converter=re.compile
+    # A subset of the known "debug identifiers" for flash versions, associated
+    # to the version
+    KNOWN_FLASH_IDENTIFIERS = {
+        '7224164B5918E29AF52365AF3EAF7A500': '10.1.51.66',
+        'C6CDEFCDB58EFE5C6ECEF0C463C979F80': '10.1.51.66',
+        '4EDBBD7016E8871A461CCABB7F1B16120': '10.1',
+        'D1AAAB5D417861E6A5B835B01D3039550': '10.0.45.2',
+        'EBD27FDBA9D9B3880550B2446902EC4A0': '10.0.45.2',
+        '266780DB53C4AAC830AFF69306C5C0300': '10.0.42.34',
+        'C4D637F2C8494896FBD4B3EF0319EBAC0': '10.0.42.34',
+        'B19EE2363941C9582E040B99BB5E237A0': '10.0.32.18',
+        '025105C956638D665850591768FB743D0': '10.0.32.18',
+        '986682965B43DFA62E0A0DFFD7B7417F0': '10.0.23',
+        '937DDCC422411E58EF6AD13710B0EF190': '10.0.23',
+        '860692A215F054B7B9474B410ABEB5300': '10.0.22.87',
+        '77CB5AC61C456B965D0B41361B3F6CEA0': '10.0.22.87',
+        '38AEB67F6A0B43C6A341D7936603E84A0': '10.0.12.36',
+        '776944FD51654CA2B59AB26A33D8F9B30': '10.0.12.36',
+        '974873A0A6AD482F8F17A7C55F0A33390': '9.0.262.0',
+        'B482D3DFD57C23B5754966F42D4CBCB60': '9.0.262.0',
+        '0B03252A5C303973E320CAA6127441F80': '9.0.260.0',
+        'AE71D92D2812430FA05238C52F7E20310': '9.0.246.0',
+        '6761F4FA49B5F55833D66CAC0BBF8CB80': '9.0.246.0',
+        '27CC04C9588E482A948FB5A87E22687B0': '9.0.159.0',
+        '1C8715E734B31A2EACE3B0CFC1CF21EB0': '9.0.159.0',
+        'F43004FFC4944F26AF228334F2CDA80B0': '9.0.151.0',
+        '890664D4EF567481ACFD2A21E9D2A2420': '9.0.151.0',
+        '8355DCF076564B6784C517FD0ECCB2F20': '9.0.124.0',
+        '51C00B72112812428EFA8F4A37F683A80': '9.0.124.0',
+        '9FA57B6DC7FF4CFE9A518442325E91CB0': '9.0.115.0',
+        '03D99C42D7475B46D77E64D4D5386D6D0': '9.0.115.0',
+        '0CFAF1611A3C4AA382D26424D609F00B0': '9.0.47.0',
+        '0F3262B5501A34B963E5DF3F0386C9910': '9.0.47.0',
+        'C5B5651B46B7612E118339D19A6E66360': '9.0.45.0',
+        'BF6B3B51ACB255B38FCD8AA5AEB9F1030': '9.0.28.0',
+        '83CF4DC03621B778E931FC713889E8F10': '9.0.16.0',
+    }
+
+    # A regular expression to match Flash file names
+    FLASH_RE = re.compile(
+        r'NPSWF32_?(.*)\.dll|'
+        'FlashPlayerPlugin_?(.*)\.exe|'
+        'libflashplayer(.*)\.(.*)|'
+        'Flash ?Player-?(.*)'
     )
 
     def version(self):
         return '1.0'
 
     def _get_flash_version(self, **kwargs):
-        """If (we recognize this module as Flash and figure out a version):
-        Returns version; else (None or '')"""
+        """Extract flash version if recognized or None
+
+        :returns: version; else (None or '')
+
+        """
         filename = kwargs.get('filename', None)
         version = kwargs.get('version', None)
         debug_id = kwargs.get('debug_id', None)
-        m = self.config.flash_re.match(filename)
+        m = self.FLASH_RE.match(filename)
         if m:
             if version:
                 return version
-            # we didn't get a version passed into us
-            # try do deduce it
+
+            # We didn't get a version passed in, so try do deduce it
             groups = m.groups()
             if groups[0]:
                 return groups[0].replace('_', '.')
@@ -624,10 +536,7 @@ class FlashVersionRule(Rule):
                 return groups[2]
             if groups[4]:
                 return groups[4]
-            return self.config.known_flash_identifiers.get(
-                debug_id,
-                None
-            )
+            return self.KNOWN_FLASH_IDENTIFIERS.get(debug_id)
         return None
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
@@ -699,171 +608,87 @@ class TopMostFilesRule(Rule):
         return True
 
 
-class MissingSymbolsRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-
-    def __init__(self, config):
-        super(MissingSymbolsRule, self).__init__(config)
-        self.database = self.config.database_class(config)
-        self.transaction = self.config.transaction_executor_class(
-            config,
-            self.database,
-        )
-        self.sql = (
-            "INSERT INTO missing_symbols_%s"
-            " (date_processed, debug_file, debug_id, code_file, code_id)"
-            " VALUES (%%s, %%s, %%s, %%s, %%s)"
-        )
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        try:
-            date = processed_crash['date_processed']
-            # update partition information based on date processed
-            sql = self.sql % datestring_to_weekly_partition(date)
-            for module in processed_crash['json_dump']['modules']:
-                try:
-                    # First of all, only bother if there are
-                    # missing_symbols in this module.
-                    # And because it's not useful if either of debug_file
-                    # or debug_id are empty, we filter on that here too.
-                    if (
-                        module['missing_symbols'] and
-                        module['debug_file'] and
-                        module['debug_id']
-                    ):
-                        self.transaction(
-                            execute_no_results,
-                            sql,
-                            (
-                                date,
-                                module['debug_file'],
-                                module['debug_id'],
-                                # These two use .get() because the keys
-                                # were added later in history. If it's
-                                # non-existent (or existant and None), it
-                                # will proceed and insert as a nullable.
-                                module.get('filename'),
-                                module.get('code_id'),
-                            )
-                        )
-                except self.database.ProgrammingError:
-                    processor_meta.processor_notes.append(
-                        "WARNING: missing symbols rule failed for"
-                        " %s" % raw_crash.uuid
-                    )
-                except KeyError:
-                    pass
-        except KeyError:
-            return False
-        return True
-
-
 class BetaVersionRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
+    #: Hold at most this many items in cache; items are a key and a value
+    #: both of which are short strings, so this doesn't take much memory
+    CACHE_MAX_SIZE = 5000
+
+    #: Items in cache expire after 30 minutes by default
+    SHORT_CACHE_TTL = 60 * 30
+
+    #: If we know it's good, cache it for 6 hours
+    LONG_CACHE_TTL = 60 * 60 * 6
 
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
-        database = config.database_class(config)
-        self.transaction = config.transaction_executor_class(
-            config,
-            database,
-        )
-        self._versions_data_cache = {}
+        # NOTE(willkg): These config values come from Processor2015 instance.
+        self.version_string_api = config.version_string_api
+        self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
 
     def version(self):
         return '1.0'
 
     def _get_version_data(self, product, version, build_id):
-        """Return the real version number of a specific product, version and
-        build.
+        """Return the real version number of a specific product, version and build
 
-        For example, beta builds of Firefox declare their version
-        number as the major version (i.e. version 54.0b3 would say its version
-        is 54.0). This database call returns the actual version number of said
-        build (i.e. 54.0b3 for the previous example).
+        For example, beta builds of Firefox declare their version number as the
+        major version (i.e. version 54.0b3 would say its version is 54.0). This
+        database call returns the actual version number of said build (i.e.
+        54.0b3 for the previous example).
+
+        :arg product: the product
+        :arg version: the version as a string. e.g. "56.0"
+        :arg build_id: the build_id as a string.
+
+        :returns: ``None`` or the version string that should be used
+
+        :raises requests.RequestException: raised if it has connection issues with
+            the host specified in ``version_string_api``
+
         """
+        if not (product and version and build_id):
+            return None
+
         key = '%s:%s:%s' % (product, version, build_id)
+        if key in self.cache:
+            return self.cache[key]
 
-        if key in self._versions_data_cache:
-            return self._versions_data_cache[key]
+        session = session_with_retries(self.version_string_api)
 
-        sql = """
-            SELECT
-                pv.version_string
-            FROM product_versions pv
-                LEFT JOIN product_version_builds pvb ON
-                    (pv.product_version_id = pvb.product_version_id)
-            WHERE pv.product_name = %(product)s
-            AND pv.release_version = %(version)s
-            AND pvb.build_id = %(build_id)s
-        """
-        params = {
+        resp = session.get(self.version_string_api, params={
             'product': product,
             'version': version,
-            'build_id': build_id,
-        }
-        results = self.transaction(
-            execute_query_fetchall,
-            sql,
-            params
-        )
-        for real_version, in results:
-            self._versions_data_cache[key] = real_version
+            'build_id': build_id
+        })
 
-        return self._versions_data_cache.get(key)
+        if resp.status_code == 200:
+            hits = resp.json()['hits']
+
+            # Shimmy to add to ttl so as to distribute cache misses over time and reduce
+            # HTTP requests from bunching up.
+            shimmy = random.randint(1, 120)
+
+            if hits:
+                # If we got an answer we should keep it around for a while because it's
+                # a real answer and it's not going to change so use the long ttl plus
+                # a fudge factor.
+                real_version = hits[0]
+                self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL + shimmy)
+                return real_version
+            else:
+                # We didn't get an answer which could mean that this is a weird build and there
+                # is no answer or it could mean that ftpscraper hasn't picked up the relevant
+                # build information or it could mean we're getting cached answers from the webapp.
+                # Regardless, maybe in the future we get a better answer so we use the short
+                # ttl plus a fudge factor.
+                self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL + shimmy)
+
+        return None
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        try:
-            # We apply this Rule only if the release channel is beta, because
-            # beta versions are the only ones sending an "incorrect" version
-            # number in their data.
-            # 2017-06-14: Ohai! This is not true anymore! With the removal of
-            # the aurora channel, there is now a new type of build called
-            # "DevEdition", that is released on the aurora channel, but has
-            # the same version naming logic as builds on the beta channel.
-            # We thus want to apply the same logic to aurora builds
-            # as well now. Note that older crash reports won't be affected,
-            # because they have a "correct" version number, usually containing
-            # the letter 'a' (like '50.0a2').
-            return processed_crash['release_channel'].lower() in ('beta', 'aurora')
-        except KeyError:
-            # No release_channel.
-            return False
+        # Beta and aurora versions send the wrong version in the crash report,
+        # so we need to fix them.
+        return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
@@ -882,10 +707,8 @@ class BetaVersionRule(Rule):
             if real_version:
                 processed_crash['version'] = real_version
             else:
-                # This is a beta version but we do not have data about it. It
-                # could be because we don't have it yet (if the cron jobs are
-                # running late for example), so we mark this crash. This way,
-                # we can reprocess it later to give it the correct version.
+                # We don't have a real version to use, so we tack on "b0" to
+                # make it better and match the channel.
                 processed_crash['version'] += 'b0'
                 processor_meta.processor_notes.append(
                     'release channel is %s but no version data was found '
@@ -895,105 +718,127 @@ class BetaVersionRule(Rule):
                 )
         except KeyError:
             return False
+        except RequestException as exc:
+            processed_crash['version'] += 'b0'
+            processor_meta.processor_notes.append(
+                'could not connect to VersionString API - added "b0" suffix to version number'
+            )
+            self.config.logger.exception('%s when connecting to %s', exc, self.version_string_api)
         return True
 
 
-class OSPrettyVersionRule(Rule):
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
+class AuroraVersionFixitRule(Rule):
+    """Starting with Firefox 55, we ditched the aurora channel and converted
+    devedition to its own "product" that are respins of the beta channel
+    builds. These builds still use "aurora" as the release channel.
 
-    def __init__(self, config):
-        super(OSPrettyVersionRule, self).__init__(config)
-        database = config.database_class(config)
-        self.transaction = config.transaction_executor_class(
-            config,
-            database,
-        )
-        self._windows_versions = self._get_windows_versions()
+    However, the devedition .0b1 and .0b2 releases need to be treated as an
+    "aurora" for Firefox. Because this breaks the invariants of Socorro
+    (channel and version don't match) as well as the laws of physics, we fix
+    these crashes by hand using a processor rule until we have time to swap
+    ftpscraper and all the stored procedures out for buildhub scraper.
+
+    """
+
+    # NOTE(willkg): We'll have to add a build id -> version every time a new one comes
+    # out. Ugh.
+    buildid_to_version = {
+        '20170612224034': '55.0b1',
+        '20170615070049': '55.0b2',
+        '20170808170225': '56.0b1',
+        '20170810180547': '56.0b2',
+        '20170917031738': '57.0b1',
+        '20170921191414': '57.0b2',
+        '20171103003834': '58.0b1',
+        '20171109154410': '58.0b2',
+        '20180116202029': '59.0b1',
+        '20180117222144': '59.0b2',
+        '20180302190033': '60.0b1',
+        '20180428110614': '61.0b1',
+        '20180619022742': '62.0b1',
+        '20180824192747': '63.0b1',
+    }
 
     def version(self):
         return '1.0'
 
-    def _get_windows_versions(self):
-        sql = """
-            SELECT windows_version_name, major_version, minor_version
-            FROM windows_versions
-        """
-        results = self.transaction(
-            execute_query_fetchall,
-            sql,
-        )
-        versions = {}
-        for (version, major, minor) in results:
-            key = '%s.%s' % (major, minor)
-            versions[key] = version
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return raw_crash.get('BuildID', '') in self.buildid_to_version
 
-        return versions
+    def _action(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        real_version = self.buildid_to_version[raw_crash['BuildID']]
+        processed_crash['version'] = real_version
+        return True
 
-    def _get_pretty_os_version(self, processed_crash):
-        try:
-            pretty_name = processed_crash['os_name']
-        except KeyError:
-            # There is nothing we can do if the `os_name` is missing.
-            return None
 
-        if not isinstance(processed_crash.os_name, basestring):
-            # This data is bogus, there's nothing we can do.
-            return None
+class OSPrettyVersionRule(Rule):
+    '''This rule attempts to extract the most useful, singular, human
+    understandable field for operating system version. This should always be
+    attempted.
+    '''
+
+    WINDOWS_VERSIONS = {
+        '3.5': 'Windows NT',
+        '4.0': 'Windows NT',
+        '4.1': 'Windows 98',
+        '4.9': 'Windows Me',
+        '5.0': 'Windows 2000',
+        '5.1': 'Windows XP',
+        '5.2': 'Windows Server 2003',
+        '6.0': 'Windows Vista',
+        '6.1': 'Windows 7',
+        '6.2': 'Windows 8',
+        '6.3': 'Windows 8.1',
+        '10.0': 'Windows 10',
+    }
+
+    def version(self):
+        return '2.0'
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        # we will overwrite this field with the current best option
+        # in stages, as we divine a better name
+        processed_crash['os_pretty_version'] = None
+
+        pretty_name = processed_crash.get('os_name')
+        if not isinstance(pretty_name, basestring):
+            # This data is bogus or isn't there, there's nothing we can do.
+            return True
+
+        # at this point, os_name is the best info we have
+        processed_crash['os_pretty_version'] = pretty_name
 
         if not processed_crash.get('os_version'):
-            # The version number is missing, there's nothing to do.
-            return pretty_name
+            # The version number is missing, there's nothing more to do.
+            return True
 
         version_split = processed_crash.os_version.split('.')
 
         if len(version_split) < 2:
-            # The version number is invalid, there's nothing to do.
-            return pretty_name
+            # The version number is invalid, there's nothing more to do.
+            return True
 
         major_version = int(version_split[0])
         minor_version = int(version_split[1])
 
         if processed_crash.os_name.lower().startswith('windows'):
-            # Get corresponding Windows version.
-            key = '%s.%s' % (major_version, minor_version)
-            if key in self._windows_versions:
-                pretty_name = self._windows_versions[key]
-            else:
-                pretty_name = 'Windows Unknown'
+            processed_crash['os_pretty_version'] = self.WINDOWS_VERSIONS.get(
+                '%s.%s' % (major_version, minor_version),
+                'Windows Unknown'
+            )
+            return True
 
-        elif processed_crash.os_name == 'Mac OS X':
+        if processed_crash.os_name == 'Mac OS X':
             if (
                 major_version >= 10 and
                 major_version < 11 and
-                minor_version >= 0 and
-                minor_version < 20
+                minor_version >= 0
             ):
                 pretty_name = 'OS X %s.%s' % (major_version, minor_version)
             else:
                 pretty_name = 'OS X Unknown'
 
-        return pretty_name
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash['os_pretty_version'] = self._get_pretty_os_version(
-            processed_crash
-        )
+        processed_crash['os_pretty_version'] = pretty_name
         return True
 
 
@@ -1054,14 +899,24 @@ class SignatureGeneratorRule(Rule):
         try:
             sentry_dsn = self.config.sentry.dsn
         except KeyError:
-            # DotDict raises a KeyError when things are missing
+            # NOTE(willkg): DotDict raises a KeyError when things are missing
             sentry_dsn = None
+        self.sentry_dsn = sentry_dsn
+        self.generator = SignatureGenerator(error_handler=self._error_handler)
 
-        self.generator = SignatureGenerator(sentry_dsn=sentry_dsn)
+    def _error_handler(self, crash_data, exc_info, extra):
+        """Captures errors from signature generation"""
+        extra['uuid'] = crash_data.get('uuid', None)
+        raven_client.capture_error(
+            self.sentry_dsn, self.config.logger, exc_info=exc_info, extra=extra
+        )
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
-        ret = self.generator.generate(raw_crash, processed_crash)
+        crash_data = convert_to_crash_data(raw_crash, processed_crash)
+        ret = self.generator.generate(crash_data)
         processed_crash['signature'] = ret['signature']
+        if 'proto_signature' in ret:
+            processed_crash['proto_signature'] = ret['proto_signature']
         processor_meta['processor_notes'].extend(ret['notes'])
         return True

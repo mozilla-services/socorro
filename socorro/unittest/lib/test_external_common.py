@@ -36,7 +36,7 @@ class TestExternalCommon(TestCase):
         assert res == 12
 
         # Test 4: string
-        param = datetime.datetime(2012, 01, 01)
+        param = datetime.datetime(2012, 1, 1)
         datatype = "str"
         res = external_common.check_type(param, datatype)
 

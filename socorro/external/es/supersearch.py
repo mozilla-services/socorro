@@ -5,16 +5,18 @@
 import datetime
 import sys
 import re
+from past.builtins import basestring
 from collections import defaultdict
 
 from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
+import six
+
 from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
     datetimeutil,
 )
-
 from socorro.lib.search_common import SearchBase
 
 
@@ -500,11 +502,9 @@ class SuperSearch(SearchBase):
                 except IndexError:
                     # Not an ElasticsearchParseException exception
                     pass
-                # Why not just do `raise exception`?
-                # Because if we don't do it this way, the eventual traceback
-                # is going to point to *this* line (right after this comment)
-                # rather than the actual error where it originally happened.
-                raise exc_type, exc_value, exc_tb
+
+                # Re-raise the original exception with the correct traceback
+                six.reraise(exc_type, exc_value, exc_tb)
 
         if shards and shards.failed:
             # Some shards failed. We want to explain what happened in the
