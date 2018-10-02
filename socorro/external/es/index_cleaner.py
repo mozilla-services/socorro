@@ -65,7 +65,7 @@ class IndexCleaner(RequiredConfig):
             # aliased to the expected format of 'socorro%Y%W'. In such cases,
             # replace the index with the alias.
             if index in aliases and 'aliases' in aliases[index]:
-                index_aliases = aliases[index]['aliases'].keys()
+                index_aliases = list(aliases[index]['aliases'].keys())
                 if index_aliases:
                     index = index_aliases[0]
 

@@ -190,14 +190,13 @@ class ConnectionContext(RequiredConfig):
                 )
             )
         )
-        wrapped_connection = \
-            self.local_config.rabbitmq_connection_wrapper_class(
-                self.config,
-                bare_rabbitmq_connection,
-                self.local_config.standard_queue_name,
-                self.local_config.priority_queue_name,
-                self.local_config.reprocessing_queue_name,
-            )
+        wrapped_connection = self.local_config.rabbitmq_connection_wrapper_class(
+            self.config,
+            bare_rabbitmq_connection,
+            self.local_config.standard_queue_name,
+            self.local_config.priority_queue_name,
+            self.local_config.reprocessing_queue_name,
+        )
         return wrapped_connection
 
     @contextlib.contextmanager
@@ -276,11 +275,9 @@ class ConnectionContextPooled(ConnectionContext):
         if not name:
             name = self.config.executor_identity()
         if name in self.pool:
-            #self.config.logger.debug('fetching RMQ connection: %s', name)
             return self.pool[name]
         self.config.logger.debug('creating new RMQ connection: %s', name)
-        self.pool[name] = \
-            super(ConnectionContextPooled, self).connection(name)
+        self.pool[name] = super(ConnectionContextPooled, self).connection(name)
         return self.pool[name]
 
     def close_connection(self, connection, force=False):
@@ -292,22 +289,17 @@ class ConnectionContextPooled(ConnectionContext):
                 super(ConnectionContextPooled, self).close_connection(connection, force)
             except self.operational_exceptions:
                 self.config.logger.error('RabbitMQPooled - failed closing')
-            for name, conn in self.pool.iteritems():
+            for name, conn in list(self.pool.items()):
                 if conn is connection:
                     break
             del self.pool[name]
 
     def close(self):
         """close all pooled connections"""
-        self.config.logger.debug(
-            "RabbitMQPooled - shutting down connection pool"
-        )
-        for name, connection in list(self.pool.iteritems()):
+        self.config.logger.debug('RabbitMQPooled - shutting down connection pool')
+        for name, connection in list(self.pool.items()):
             self.close_connection(connection, force=True)
-            self.config.logger.debug(
-                "RabbitMQPooled - channel %s closed",
-                name
-            )
+            self.config.logger.debug('RabbitMQPooled - channel %s closed', name)
 
     def force_reconnect(self, name=None):
         """tell this functor that the next time it gives out a connection

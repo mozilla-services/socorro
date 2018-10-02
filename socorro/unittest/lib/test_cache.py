@@ -56,11 +56,11 @@ class TestExpiringCache:
         cache['foo4'] = 1
         cache['foo5'] = 1
 
-        assert cache.keys() == ['foo1', 'foo2', 'foo3', 'foo4', 'foo5']
+        assert list(cache.keys()) == ['foo1', 'foo2', 'foo3', 'foo4', 'foo5']
 
         cache['foo6'] = 1
 
-        assert cache.keys() == ['foo2', 'foo3', 'foo4', 'foo5', 'foo6']
+        assert list(cache.keys()) == ['foo2', 'foo3', 'foo4', 'foo5', 'foo6']
 
     @mock.patch('socorro.lib.cache.utc_now')
     def test_flush(self, mock_utc_now):

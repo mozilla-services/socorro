@@ -9,7 +9,8 @@ from socorro.lib.converters import change_default
 from future.utils import iteritems
 
 from configman import Namespace
-from configman.converters import class_converter, py_obj_to_str
+from configman.converters import class_converter
+
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -95,13 +96,6 @@ class BotoCrashStorage(CrashStorageBase):
             self.connection_source,
             quit_check_callback
         )
-        if config.transaction_executor_class_for_get.is_infinite:
-            self.config.logger.error(
-                'the class %s identifies itself as an infinite iterator. '
-                'As a TransactionExecutor for reads from Boto, this may '
-                'result in infinite loops that will consume threads forever.'
-                % py_obj_to_str(config.transaction_executor_class_for_get)
-            )
 
         self.transaction_for_get = config.transaction_executor_class_for_get(
             config,

@@ -95,7 +95,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert len(res['hits']) == 1
         assert res['hits'][0]['signature'] == 'js::break_your_browser'
 
-        assert res['facets'].keys() == ['signature']
+        assert list(res['facets'].keys()) == ['signature']
         assert res['facets']['signature'][0] == {'term': 'js::break_your_browser', 'count': 1}
 
         # Test fields are being renamed.
