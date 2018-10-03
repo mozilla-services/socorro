@@ -3,11 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from configman import Namespace, ConfigurationManager, class_converter
+import mock
 import psycopg2
 import pytest
 
-import socorro.database.transaction_executor
-from socorro.database.transaction_executor import (
+from socorro.lib.transaction import (
     TransactionExecutor,
     TransactionExecutorWithInfiniteBackoff
 )
@@ -101,8 +101,7 @@ class TestTransactionExecutor(TestCase):
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
+            executor = config.transaction_executor_class(config, mocked_context)
             _function_calls = []  # some mutable
 
             def mock_function(connection):
@@ -140,8 +139,7 @@ class TestTransactionExecutor(TestCase):
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
+            executor = config.transaction_executor_class(config, mocked_context)
 
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
@@ -178,8 +176,7 @@ class TestTransactionExecutor(TestCase):
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
+            executor = config.transaction_executor_class(config, mocked_context)
             _function_calls = []  # some mutable
 
             def mock_function(connection):
@@ -196,7 +193,6 @@ class TestTransactionExecutor(TestCase):
         required_config.add_option(
             'transaction_executor_class',
             default=TransactionExecutorWithInfiniteBackoff,
-            #default=TransactionExecutor,
             doc='a class that will execute transactions'
         )
         required_config.add_option(
@@ -233,14 +229,12 @@ class TestTransactionExecutor(TestCase):
                 if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
                     raise psycopg2.OperationalError('Arh!')
 
-            def mock_sleep(n):
+            def sleep_counter(n):
                 _sleep_count.append(n)
 
-            # monkey patch the sleep function from inside transaction_executor
-            _orig_sleep = socorro.database.transaction_executor.time.sleep
-            socorro.database.transaction_executor.time.sleep = mock_sleep
+            with mock.patch('socorro.lib.transaction.time.sleep') as mock_sleep:
+                mock_sleep.side_effect = sleep_counter
 
-            try:
                 executor(mock_function)
                 assert _function_calls
                 assert commit_count == 1
@@ -248,8 +242,6 @@ class TestTransactionExecutor(TestCase):
                 assert mock_logging.criticals
                 assert len(mock_logging.criticals) == 5
                 assert len(_sleep_count) > 10
-            finally:
-                socorro.database.transaction_executor.time.sleep = _orig_sleep
 
     def test_operation_error_with_postgres_with_backoff_with_rollback(self):
         required_config = Namespace()
@@ -277,8 +269,7 @@ class TestTransactionExecutor(TestCase):
         )
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
+            executor = config.transaction_executor_class(config, mocked_context)
             _function_calls = []  # some mutable
 
             _sleep_count = []
@@ -294,14 +285,12 @@ class TestTransactionExecutor(TestCase):
                 if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
                     raise psycopg2.OperationalError('Arh!')
 
-            def mock_sleep(n):
+            def sleep_counter(n):
                 _sleep_count.append(n)
 
-            # monkey patch the sleep function from inside transaction_executor
-            _orig_sleep = socorro.database.transaction_executor.time.sleep
-            socorro.database.transaction_executor.time.sleep = mock_sleep
+            with mock.patch('socorro.lib.transaction.time.sleep') as mock_sleep:
+                mock_sleep.side_effect = sleep_counter
 
-            try:
                 executor(mock_function)
                 assert _function_calls
                 assert commit_count == 1
@@ -309,8 +298,6 @@ class TestTransactionExecutor(TestCase):
                 assert mock_logging.criticals
                 assert len(mock_logging.criticals) == 5
                 assert len(_sleep_count) > 10
-            finally:
-                socorro.database.transaction_executor.time.sleep = _orig_sleep
 
     def test_programming_error_with_postgres_with_backoff_with_rollback(self):
         required_config = Namespace()
@@ -356,14 +343,12 @@ class TestTransactionExecutor(TestCase):
                         'SSL SYSCALL error: EOF detected'
                     )
 
-            def mock_sleep(n):
+            def sleep_counter(n):
                 _sleep_count.append(n)
 
-            # monkey patch the sleep function from inside transaction_executor
-            _orig_sleep = socorro.database.transaction_executor.time.sleep
-            socorro.database.transaction_executor.time.sleep = mock_sleep
+            with mock.patch('socorro.lib.transaction.time.sleep') as mock_sleep:
+                mock_sleep.side_effect = sleep_counter
 
-            try:
                 executor(mock_function_struggling)
                 assert _function_calls
                 assert commit_count == 1
@@ -371,15 +356,12 @@ class TestTransactionExecutor(TestCase):
                 assert mock_logging.criticals
                 assert len(mock_logging.criticals) == 5
                 assert len(_sleep_count) > 10
-            finally:
-                socorro.database.transaction_executor.time.sleep = _orig_sleep
 
         # this time, simulate an actual code bug where a callable function
         # raises a ProgrammingError() exception by, for example, a syntax error
         with config_manager.context() as config:
             mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config,
-                                                         mocked_context)
+            executor = config.transaction_executor_class(config, mocked_context)
 
             def mock_function_developer_mistake(connection):
                 assert isinstance(connection, MockConnection)
@@ -388,103 +370,3 @@ class TestTransactionExecutor(TestCase):
 
             with pytest.raises(psycopg2.ProgrammingError):
                 executor(mock_function_developer_mistake)
-
-    def test_abandon_transaction(self):
-        """this is when a transaction is intentionally aborted, not because
-        of an error, but because the client of the TransactionExcutor has
-        determined that the transaction is of no further use."""
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutor,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
-        )
-
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
-
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(
-                config,
-                mocked_context
-            )
-
-            class AbandonTransaction(Exception):
-                abandon_transaction = True
-
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
-                raise AbandonTransaction('crap!')
-
-            # the method to test
-            executor(mock_function)
-
-            assert commit_count == 0
-            assert rollback_count == 1
-            assert not mock_logging.errors
-
-    def test_abandon_backoff_transaction(self):
-        """this is when a transaction is intentionally aborted, not because
-        of an error, but because the client of the TransactionExcutor has
-        determined that the transaction is of no further use.  This test
-        uses the TransactionExecutorWithInfiniteBackoff class instead of
-        the base TransactionExcutor"""
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutorWithInfiniteBackoff,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
-        )
-
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
-
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(
-                config,
-                mocked_context
-            )
-
-            class AbandonTransaction(Exception):
-                abandon_transaction = True
-
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
-                raise AbandonTransaction('crap!')
-
-            # the method to test
-            executor(mock_function)
-
-            assert commit_count == 0
-            assert rollback_count == 1
-            assert not mock_logging.errors

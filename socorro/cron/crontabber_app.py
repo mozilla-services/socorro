@@ -147,7 +147,7 @@ class JobStateDatabase(RequiredConfig):
     )
     required_config.add_option(
         'transaction_executor_class',
-        default='socorro.database.transaction_executor.TransactionExecutor',
+        default='socorro.lib.transaction.TransactionExecutor',
         doc='a class that will execute transactions',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
@@ -646,7 +646,7 @@ class CronTabberApp(App, RequiredConfig):
     )
     required_config.crontabber.add_option(
         'transaction_executor_class',
-        default='socorro.database.transaction_executor.TransactionExecutor',
+        default='socorro.lib.transaction.TransactionExecutor',
         doc='a class that will execute transactions',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'

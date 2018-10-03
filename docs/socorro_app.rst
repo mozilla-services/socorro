@@ -12,10 +12,10 @@ The minimum app
 To illustrate the example, let's look at an example of an app that uses
 ``socorro_app`` to leverage ``configman`` to run. Let's look at
 `weeklyReportsPartitions.py
-<https://github.com/mozilla/socorro/blob/master/socorro/cron/weeklyReportsPartitions.py>`_
+<https://github.com/mozilla-services/socorro/blob/master/socorro/cron/weeklyReportsPartitions.py>`_
 
 As you can see, it's a subclass of the `socorro.app.socorro_app.App
-<https://github.com/mozilla/socorro/blob/master/socorro/app/socorro_app.py>`_
+<https://github.com/mozilla-services/socorro/blob/master/socorro/app/socorro_app.py>`_
 class which is a the-least-you-need wrapper for a minimal app. As you can see,
 it takes care of logging and executing your ``main`` function.
 
@@ -29,7 +29,7 @@ at what it does.
 It only really has one ``configman`` option and that's the
 ``transaction_executor_class``. The default value is
 `TransactionExecutorWithBackoff
-<https://github.com/mozilla/socorro/blob/master/socorro/database/transaction_executor.py#L59>`_
+<https://github.com/mozilla-services/socorro/blob/master/socorro/lib/transaction.py#L59>`_
 which is the class that's going to take care of two things:
 
 1. execute a callable that accepts an opened database connection as first and
@@ -48,12 +48,12 @@ command line, with ``TransactionExecutor`` no exceptions are swallowed and it
 doesn't retry.
 
 Now, connections are created and closed by the `ConnectionContext
-<https://github.com/mozilla/socorro/blob/master/socorro/external/postgresql/connection_context.py#L11>`_
+<https://github.com/mozilla-services/socorro/blob/master/socorro/external/postgresql/connection_context.py#L11>`_
 class. As you might have noticed, the default ``database_class`` defined in the
 ``TransactionExecutor`` is
 ``socorro.external.postgresql.connection_context.ConnectionContext`` as you can
 see `here
-<https://github.com/mozilla/socorro/blob/master/socorro/database/transaction_executor.py#L29>`_
+<https://github.com/mozilla-services/socorro/blob/master/socorro/lib/transaction.py#L29>`_
 
 The idea is that any external module (e.g. Boto, PostgreSQL, etc) can define a
 ``ConnectionContext`` class as per this model. What its job is is to create and

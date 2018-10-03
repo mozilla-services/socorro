@@ -18,7 +18,7 @@ def with_transactional_resource(
         config.{resource_name}.{resource_name}_class = \
             transactional_resource_class
         config.{resource_name}.{resource_name}_transaction_executor_class = \
-            'socorro.database.transaction_executor.TransactionExecutor'
+            'socorro.lib.transaction.TransactionExecutor'
 
     parameters:
         transactional_resource_class - a string representing the full path of
@@ -45,7 +45,7 @@ def with_transactional_resource(
         )
         new_req[resource_name].add_option(
             '%s_transaction_executor_class' % resource_name,
-            default='socorro.database.transaction_executor.TransactionExecutor',
+            default='socorro.lib.transaction.TransactionExecutor',
             doc='a class that will execute transactions',
             from_string_converter=class_converter,
             reference_value_from=reference_value_from
