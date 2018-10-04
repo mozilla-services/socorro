@@ -352,33 +352,11 @@ class SocorroCommon(object):
 
     def get_implementation(self):
         if self.implementation:
-            key = self.__class__.__name__
-            global _implementations
-            try:
-                return _implementations[key]
-            except KeyError:
-                config = config_from_configman()
-                if self.implementation_config_namespace:
-                    config = config[self.implementation_config_namespace]
-                _implementations[key] = self.implementation(
-                    config=config
-                )
-                return _implementations[key]
+            config = config_from_configman()
+            if self.implementation_config_namespace:
+                config = config[self.implementation_config_namespace]
+            return self.implementation(config=config)
         return None
-
-    @classmethod
-    def clear_implementations_cache(cls):
-        # Why not allow of specific keys to clear?
-        # Because it's sometimes complicated to know which implementation
-        # something depends on. "Is it SuperSearch or SuperSearchUnredacted?"
-        # Also, the price of losing them all is not that expensive.
-        global _implementations
-        _implementations = {}
-
-
-# Global cache dict to helps us only instantiate an implementation
-# class only once per process.
-_implementations = {}
 
 
 class SocorroMiddleware(SocorroCommon):
@@ -928,6 +906,7 @@ class SignatureFirstDate(SocorroMiddleware):
     # optimized method `.get_dates()` which internally uses caching
     # for each individual signature and does so with a very long
     # cache time.
+    #
     # Making it non-0 is to prevent the stampeding herd on this endpoint
     # alone when exposed in the API.
     cache_seconds = 5 * 60  # 5 minutes only
@@ -1063,13 +1042,14 @@ class BugzillaBugInfo(SocorroCommon):
             url = settings.BZAPI_BASE_URL + (
                 '/bug?id=%(bugs)s&include_fields=%(fields)s' % params
             )
-            response = requests_retry_session(
+            session = requests_retry_session(
                 # BZAPI isn't super reliable, so be extra patient
                 retries=5,
                 # 502 = Bad Gateway
                 # 504 = Gateway Time-out
-                status_forcelist=(500, 502, 504),
-            ).get(
+                status_forcelist=(500, 502, 504)
+            )
+            response = session.get(
                 url,
                 headers=headers,
                 timeout=self.BUGZILLA_REST_TIMEOUT,

@@ -23,7 +23,6 @@ from crashstats.crashstats.models import (
     Reprocessing,
     RawCrash,
     SignaturesByBugs,
-    SocorroCommon,
     UnredactedCrash,
 )
 from crashstats.tokens.models import Token
@@ -1046,7 +1045,6 @@ class TestVersionString(object):
                 'hits': results
             }
             yield
-        SocorroCommon.clear_implementations_cache()
         cache.clear()
 
     def test_version_string_no_args(self, client):
