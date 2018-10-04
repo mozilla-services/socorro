@@ -80,12 +80,6 @@ def find_signatures(content):
     return signatures
 
 
-class NothingUsefulHappened(Exception):
-    """an exception to be raised when a pass through the inner loop has
-    done nothing useful and we wish to induce a transaction rollback"""
-    abandon_transaction = True
-
-
 @using_postgres()
 class BugzillaCronApp(BaseCronApp):
     """Updates Socorro's knowledge of which bugs cover which crash signatures

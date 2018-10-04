@@ -12,7 +12,6 @@
 # have tests in a directory/file working, add it to this list as a new line.
 WORKING_TESTS=(
     socorro/signature/tests/test_*.py
-    socorro/unittest/database/test_*.py
     socorro/unittest/external/boto/test_*.py
     socorro/unittest/external/es/test_*.py
     socorro/unittest/external/postgresql/test_*.py

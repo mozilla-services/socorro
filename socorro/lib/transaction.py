@@ -2,6 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+This module contains convenience classes for managing "transactions"
+that involve doing something and then committing or rolling back
+depending on what happened.
+"""
+
 import sys
 import time
 
@@ -9,7 +15,9 @@ from configman.config_manager import RequiredConfig
 from configman import Namespace
 from six import reraise
 
-from socorro.external.postgresql.dbapi2_util import DBApiUtilNonFatalBaseException
+
+class NonFatalException(Exception):
+    """Exception for a non-fatal transaction that doesn't require reconnecting"""
 
 
 def string_to_list_of_ints(a_string):
@@ -22,8 +30,7 @@ def string_to_list_of_ints(a_string):
 class TransactionExecutor(RequiredConfig):
     required_config = Namespace()
 
-    def __init__(self, config, db_conn_context_source,
-                 quit_check_callback=None):
+    def __init__(self, config, db_conn_context_source, quit_check_callback=None):
         self.config = config
         self.db_conn_context_source = db_conn_context_source
         self.quit_check = quit_check_callback or (lambda: False)
@@ -37,40 +44,41 @@ class TransactionExecutor(RequiredConfig):
         self.quit_check()
         with self.db_conn_context_source() as connection:
             try:
-                #self.config.logger.debug('starting transaction')
                 result = function(connection, *args, **kwargs)
                 connection.commit()
                 return result
-            except DBApiUtilNonFatalBaseException:
+            except NonFatalException:
+                # This is a non-fatal exception so we don't need to reconnect
                 connection.rollback()
                 raise
-            except BaseException as x:
+            except BaseException:
+                # This is possibly a fatal exception requiring a reconnect
+                excinfo = sys.exc_info()
                 connection.rollback()
-                if hasattr(x, 'abandon_transaction'):
-                    self.config.logger.debug(
-                        '%s transaction intentionally abandoned by exception',
-                        self.connection_source_type)
-                    return
-                else:
-                    self.config.logger.error(
-                        'Exception raised during %s transaction',
-                        self.connection_source_type,
-                        exc_info=True)
-                    self.db_conn_context_source.force_reconnect()
-                reraise(*sys.exc_info())
+                self.config.logger.error(
+                    'Fatal exception raised during %s transaction; will reconnect',
+                    self.connection_source_type,
+                    exc_info=True
+                )
+                self.db_conn_context_source.force_reconnect()
+                reraise(*excinfo)
 
 
 class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     # back off times
     required_config = Namespace()
-    required_config.add_option('backoff_delays',
-                               default="10, 30, 60, 120, 300",
-                               doc='delays in seconds between retries',
-                               from_string_converter=string_to_list_of_ints)
+    required_config.add_option(
+        'backoff_delays',
+        default="10, 30, 60, 120, 300",
+        doc='delays in seconds between retries',
+        from_string_converter=string_to_list_of_ints
+    )
     # wait_log_interval
-    required_config.add_option('wait_log_interval',
-                               default=10,
-                               doc='seconds between log during retries')
+    required_config.add_option(
+        'wait_log_interval',
+        default=10,
+        doc='seconds between log during retries'
+    )
 
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
@@ -87,9 +95,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
         'wait_log_interval' seconds with progress info."""
         for x in range(int(seconds)):
             if self.config.wait_log_interval and not x % self.config.wait_log_interval:
-                self.config.logger.debug(
-                    '%s: %dsec of %dsec' % (wait_reason, x, seconds)
-                )
+                self.config.logger.debug('%s: %dsec of %dsec' % (wait_reason, x, seconds))
             self.quit_check()
             time.sleep(1.0)
 
@@ -107,14 +113,13 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         connection.commit()
                         return result
                     except Exception:
-                        connection.rollback()
                         last_failure = sys.exc_info()
+                        connection.rollback()
                         reraise(*last_failure)
 
             except self.db_conn_context_source.conditional_exceptions as x:
-                # these exceptions may or may not be retriable
-                # the test is for is a last ditch effort to see if
-                # we can retry
+                # these exceptions may or may not be retriable the test is
+                # for is a last ditch effort to see if we can retry
                 if not self.db_conn_context_source.is_operational_exception(x):
                     # If the logger exists, log the issue, otherwise print it
                     # to stdout.
@@ -127,33 +132,28 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                     else:
                         print('Unrecoverable %s transaction error' % self.connection_source_type)
                     reraise(*last_failure)
+
                 self.config.logger.critical(
                     '%s transaction error eligible for retry',
                     self.connection_source_type,
-                    exc_info=True)
+                    exc_info=True
+                )
 
             except self.db_conn_context_source.operational_exceptions:
                 self.config.logger.critical(
                     '%s transaction error eligible for retry',
                     self.connection_source_type,
-                    exc_info=True)
+                    exc_info=True
+                )
 
             except BaseException as x:
-                if hasattr(x, 'abandon_transaction'):
-                    self.config.logger.debug(
-                        '%s transaction intentionally abandoned by exception',
-                        self.connection_source_type)
-                    return
                 reraise(*last_failure)
 
             self.db_conn_context_source.force_reconnect()
-            self.config.logger.debug(
-                'retry in %s seconds' % wait_in_seconds
-            )
+            self.config.logger.debug('retry in %s seconds' % wait_in_seconds)
             self.responsive_sleep(
                 wait_in_seconds,
-                'waiting for retry after failure in %s transaction' %
-                self.connection_source_type,
+                'waiting for retry after failure in %s transaction' % self.connection_source_type,
             )
         if last_failure is not None:
             reraise(*last_failure)
