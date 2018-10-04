@@ -45,13 +45,6 @@ class TestModels(DjangoTestCase):
     def tearDown(self):
         super(TestModels, self).tearDown()
 
-        # We use a memoization technique on the SocorroCommon so that we
-        # can get the same implementation class instance repeatedly under
-        # the same request. This is great for low-level performance but
-        # it makes it impossible to test classes that are imported only
-        # once like they are in unit test running.
-        models.SocorroCommon.clear_implementations_cache()
-
     @mock.patch('requests.Session')
     def test_bugzilla_api(self, rsession):
         model = models.BugzillaBugInfo

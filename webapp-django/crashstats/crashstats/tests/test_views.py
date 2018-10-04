@@ -428,14 +428,6 @@ class BaseTestViews(DjangoTestCase):
         super(BaseTestViews, self).tearDown()
         cache.clear()
 
-        from crashstats.crashstats.models import SocorroCommon
-        # We use a memoization technique on the SocorroCommon so that we
-        # can get the same implementation class instance repeatedly under
-        # the same request. This is great for low-level performance but
-        # it makes it impossible to test classes that are imported only
-        # once like they are in unit test running.
-        SocorroCommon.clear_implementations_cache()
-
     def _add_permission(self, user, codename, group_name='Hackers'):
         group = self._create_group_with_permission(codename)
         user.groups.add(group)
