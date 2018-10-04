@@ -204,7 +204,7 @@ def debug_view(request):
         tables = cursor.fetchall()
     for tablename in sorted(tables):
         tablename = tablename[0]
-        if tablename.startswith(('pg_', 'sql_')):
+        if tablename.startswith(('pg_', 'sql_', 'lock')):
             continue
         with connection.cursor() as cursor:
             cursor.execute('SELECT count(*) FROM %s' % tablename)
