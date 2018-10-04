@@ -113,14 +113,13 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         connection.commit()
                         return result
                     except Exception:
-                        connection.rollback()
                         last_failure = sys.exc_info()
+                        connection.rollback()
                         reraise(*last_failure)
 
             except self.db_conn_context_source.conditional_exceptions as x:
-                # these exceptions may or may not be retriable
-                # the test is for is a last ditch effort to see if
-                # we can retry
+                # these exceptions may or may not be retriable the test is
+                # for is a last ditch effort to see if we can retry
                 if not self.db_conn_context_source.is_operational_exception(x):
                     # If the logger exists, log the issue, otherwise print it
                     # to stdout.
@@ -133,6 +132,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                     else:
                         print('Unrecoverable %s transaction error' % self.connection_source_type)
                     reraise(*last_failure)
+
                 self.config.logger.critical(
                     '%s transaction error eligible for retry',
                     self.connection_source_type,
