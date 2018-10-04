@@ -194,6 +194,22 @@ def debug_view(request):
     for meta_header in ['HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR', 'HTTP_X_REAL_IP']:
         debug_info['request.META["' + meta_header + '"]'] = request.META.get(meta_header, 'none')
 
+    # Add table counts for all non-pg tables
+    with connection.cursor() as cursor:
+        cursor.execute("""
+        SELECT c.relname
+        FROM pg_catalog.pg_class c
+        WHERE c.relkind = 'r'
+        """)
+        tables = cursor.fetchall()
+    for tablename in sorted(tables):
+        tablename = tablename[0]
+        if tablename.startswith(('pg_', 'sql_')):
+            continue
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT count(*) FROM %s' % tablename)
+            debug_info['%s count' % tablename] = cursor.fetchone()[0]
+
     context['debug_info'] = debug_info
     context['title'] = 'Debug information'
 
