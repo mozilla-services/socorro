@@ -2714,6 +2714,33 @@ FIELDS = {
             'type': 'string'
         }
     },
+    'java_stack_trace_full': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': 'Raw JavaStackTrace value.',
+        'form_field_choices': [],
+        'has_full_version': True,
+        'in_database_name': 'java_stack_trace_full',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'java_stack_trace_full',
+        'namespace': 'processed_crash',
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
+        'query_type': 'string',
+        'storage_mapping': {
+            'fields': {
+                'full': {
+                    'index': 'not_analyzed',
+                    'type': 'string'
+                }
+            },
+            'index': 'analyzed',
+            'type': 'string'
+        }
+    },
     'jit_category': {
         'data_validation_type': 'enum',
         'default_value': None,
