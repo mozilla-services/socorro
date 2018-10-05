@@ -667,27 +667,41 @@ class TestJavaProcessRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_crash = {
+            'JavaStackTrace': (
+                'Exception: some messge\n'
+                '\tat org.File.function(File.java:100)\n'
+                '\tCaused by: Exception: some other message\n'
+                '\t\tat org.File.function(File.java:100)'
+            )
+        }
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = JavaProcessRule(config)
 
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.java_stack_trace == raw_crash.JavaStackTrace
+        # The entire JavaStackTrace blob
+        assert processed_crash['java_stack_trace_full'] == raw_crash['JavaStackTrace']
 
-    def test_stuff_missing(self):
+        # Everything except the exception message and "Caused by" section
+        # which can contain PII
+        assert (
+            processed_crash['java_stack_trace'] ==
+            'Exception\n\tat org.File.function(File.java:100)'
+        )
+
+    def test_malformed(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        del raw_crash.Notes
+        raw_crash = {
+            'JavaStackTrace': 'junk'
+        }
 
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = JavaProcessRule(config)
@@ -695,7 +709,14 @@ class TestJavaProcessRule(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.java_stack_trace is None
+        # The entire JavaStackTrace blob
+        assert processed_crash['java_stack_trace_full'] == raw_crash['JavaStackTrace']
+
+        # The data is malformed, so this should just show "malformed"
+        assert processed_crash['java_stack_trace'] == 'malformed'
+
+        # Make sure there's a note in the notes about it
+        assert 'MalformedJavaStackTrace' in processor_meta.processor_notes[0]
 
 
 class TestOutOfMemoryBinaryRule(TestCase):

@@ -14,6 +14,8 @@ from urllib import unquote_plus
 from requests import RequestException
 import ujson
 
+from socorro.lib import javautil
+from socorro.lib import raven_client
 from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import (
@@ -21,7 +23,6 @@ from socorro.lib.datetimeutil import (
     datetime_from_isodate_string,
 )
 from socorro.lib.ooid import dateFromOoid
-from socorro.lib import raven_client
 from socorro.lib.requestslib import session_with_retries
 from socorro.lib.transform_rules import Rule
 from socorro.signature.generator import SignatureGenerator
@@ -280,12 +281,21 @@ class JavaProcessRule(Rule):
     def version(self):
         return '1.0'
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return bool(raw_crash.get('JavaStackTrace', None))
 
-        processed_crash.java_stack_trace = raw_crash.setdefault(
-            'JavaStackTrace',
-            None
-        )
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        # This can contain PII in the exception message
+        processed_crash['java_stack_trace_full'] = raw_crash['JavaStackTrace']
+
+        try:
+            java_exception = javautil.parse_java_stack_trace(raw_crash['JavaStackTrace'])
+            java_stack_trace = java_exception.to_public_string()
+        except javautil.MalformedJavaStackTrace as mjst:
+            processor_meta.processor_notes.append('JavaProcessRule: %r' % mjst)
+            java_stack_trace = 'malformed'
+
+        processed_crash['java_stack_trace'] = java_stack_trace
 
         return True
 
