@@ -28,7 +28,7 @@ The second is to just specify command line arguments and the query will be based
 
 """
 
-HOST = 'https://crash-stats.mozilla.com'
+DEFAULT_HOST = 'https://crash-stats.mozilla.com'
 
 MAX_PAGE = 1000
 
@@ -64,16 +64,17 @@ class Infinity(object):
 INFINITY = Infinity()
 
 
-def fetch_crashids(params, num_results):
+def fetch_crashids(host, params, num_results):
     """Generator that returns crash ids
 
+    :arg str host: the host to query
     :arg dict params: dict of super search parameters to base the query on
     :arg varies num: number of results to get or INFINITY
 
     :returns: generator of crash ids
 
     """
-    url = HOST + '/api/SuperSearch/'
+    url = host + '/api/SuperSearch/'
 
     session = session_with_retries()
 
@@ -136,6 +137,10 @@ def main(argv=None):
         description=DESCRIPTION.strip(),
     )
     parser.add_argument(
+        '--host', default=DEFAULT_HOST,
+        help='host for system to fetch crashids from'
+    )
+    parser.add_argument(
         '--date', default='',
         help=(
             'date to pull crash ids from as YYYY-MM-DD, "yesterday", "today", or "now"; '
@@ -163,6 +168,8 @@ def main(argv=None):
         args = parser.parse_args()
     else:
         args = parser.parse_args(argv)
+
+    host = args.host.rstrip('/')
 
     # Start with params from --url value or product=Firefox
     if args.url:
@@ -231,7 +238,7 @@ def main(argv=None):
     if args.verbose:
         print('Params: %s' % params)
 
-    for crashid in fetch_crashids(params, num_results):
+    for crashid in fetch_crashids(host, params, num_results):
         print(crashid)
 
     return 0
