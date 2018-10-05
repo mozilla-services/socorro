@@ -291,8 +291,8 @@ class JavaProcessRule(Rule):
         try:
             java_exception = javautil.parse_java_stack_trace(raw_crash['JavaStackTrace'])
             java_stack_trace = java_exception.to_public_string()
-        except javautil.MalformedJavaStackTrace as mjst:
-            processor_meta.processor_notes.append('JavaProcessRule: %r' % mjst)
+        except javautil.MalformedJavaStackTrace:
+            processor_meta.processor_notes.append('JavaProcessRule: malformed java stack trace')
             java_stack_trace = 'malformed'
 
         processed_crash['java_stack_trace'] = java_stack_trace

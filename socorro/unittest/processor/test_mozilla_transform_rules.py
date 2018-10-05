@@ -716,7 +716,7 @@ class TestJavaProcessRule(TestCase):
         assert processed_crash['java_stack_trace'] == 'malformed'
 
         # Make sure there's a note in the notes about it
-        assert 'MalformedJavaStackTrace' in processor_meta.processor_notes[0]
+        assert 'malformed java stack trace' in processor_meta.processor_notes[0]
 
 
 class TestOutOfMemoryBinaryRule(TestCase):

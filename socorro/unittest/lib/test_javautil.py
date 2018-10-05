@@ -10,7 +10,7 @@ from socorro.lib import javautil
 EXC = """\
 Exception: msg
 \tat org.File.function(File.java:100)
-\tat org.File.function2(File.java:200)\
+\tat org.File.function2(File.java:200)
 """
 
 
