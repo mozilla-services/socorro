@@ -286,10 +286,6 @@ backports.ssl_match_hostname==3.5.0.1 \
 backports.weakref==1.0.post1 \
     --hash=sha256:81bc9b51c0abc58edc76aefbbc68c62a787918ffe943a37947e162c3f8e19e82 \
     --hash=sha256:bc4170a29915f8b22c9e7c4939701859650f2eb84184aee80da329ac0b9825c2
-more-itertools==4.3.0 \
-    --hash=sha256:c187a73da93e7a8acc0001572aebc7e3c69daf7bf6881a2cea10650bd4420092 \
-    --hash=sha256:c476b5d3a34e12d40130bc2f935028b5f636df8f372dc2c1c01dc19681b2039e \
-    --hash=sha256:fcbfeaea0be121980e15bc97b3817b5202ca73d0eae185b4550cbfce2a3ebb3d
 responses==0.9.0 \
     --hash=sha256:f23a29dca18b815d9d64a516b4a0abb1fbdccff6141d988ad8100facb81cf7b3 \
     --hash=sha256:c6082710f4abfb60793899ca5f21e7ceb25aabf321560cc0726f8b59006811c9
