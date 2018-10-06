@@ -9,6 +9,7 @@ from six import text_type
 
 from django.core.cache import cache
 from django.conf import settings
+from django.utils import dateparse
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
@@ -30,6 +31,134 @@ class Response(object):
 
     def json(self):
         return self.raw
+
+
+class TestGraphicsDevices(DjangoTestCase):
+    def setUp(self):
+        super(TestGraphicsDevices, self).setUp()
+        # thanks to crashstats.settings.test
+        assert settings.CACHE_IMPLEMENTATION_FETCHES
+        cache.clear()
+
+    def tearDown(self):
+        super(TestGraphicsDevices, self).tearDown()
+
+    def test_get_pairs(self):
+        """Test get_pairs() works correctly
+
+        The GraphicsDevice.get_pairs() lets you make a bunch of requests at
+        the same time. It's more performant since it caches results.
+
+        """
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex3',
+            vendor_name='V 3',
+            adapter_hex='ahex3',
+            adapter_name='A 3'
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex2',
+            vendor_name='V 2',
+            adapter_hex='ahex2',
+            adapter_name='A 2',
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex1',
+            vendor_name='V 1',
+            adapter_hex='ahex1',
+            adapter_name='A 1',
+        )
+
+        r = models.GraphicsDevice.objects.get_pairs(
+            ['ahex1', 'ahex2'],
+            ['vhex1', 'vhex2'],
+        )
+        expected = {
+            ('ahex1', 'vhex1'): ('A 1', 'V 1'),
+            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
+        }
+        assert r == expected
+
+        r = models.GraphicsDevice.objects.get_pairs(
+            ['ahex2', 'ahex3'],
+            ['vhex2', 'vhex3'],
+        )
+        assert len(r) == 2
+        expected = {
+            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
+            ('ahex3', 'vhex3'): ('A 3', 'V 3'),
+        }
+        assert r == expected
+
+        # FIXME(willkg): verify caching is working
+
+
+class TestSignatureFirstDate(DjangoTestCase):
+    def setUp(self):
+        super(TestSignatureFirstDate, self).setUp()
+        # thanks to crashstats.settings.test
+        assert settings.CACHE_IMPLEMENTATION_FETCHES
+        cache.clear()
+
+    def tearDown(self):
+        super(TestSignatureFirstDate, self).tearDown()
+
+    def test_get_one(self):
+        some_date = dateparse.parse_datetime('2018-10-06T00:22:58.074859+00:00')
+
+        models.Signature.objects.create(
+            signature='OOM | Small',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+        models.Signature.objects.create(
+            signature='OOM | Large',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+
+        api = models.SignatureFirstDate()
+
+        resp = api.get(signatures='OOM | Small')
+        assert resp['total'] == 1
+        assert resp['hits'] == [
+            {
+                'first_build': '20180920131237',
+                'first_date': '2018-10-06T00:22:58.074859+00:00',
+                'signature': 'OOM | Small'
+            }
+        ]
+
+    def test_get_two(self):
+        some_date = dateparse.parse_datetime('2018-10-06T00:22:58.074859+00:00')
+
+        models.Signature.objects.create(
+            signature='OOM | Small',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+        models.Signature.objects.create(
+            signature='OOM | Large',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+
+        api = models.SignatureFirstDate()
+
+        resp = api.get(signatures=['OOM | Small', 'OOM | Large'])
+        assert resp['total'] == 2
+        assert resp['hits'] == [
+            {
+                'first_build': '20180920131237',
+                'first_date': '2018-10-06T00:22:58.074859+00:00',
+                'signature': 'OOM | Small'
+            },
+            {
+                'first_build': '20180920131237',
+                'first_date': '2018-10-06T00:22:58.074859+00:00',
+                'signature': 'OOM | Large'
+            }
+        ]
 
 
 class TestModels(DjangoTestCase):
@@ -300,55 +429,6 @@ class TestModels(DjangoTestCase):
         assert r[0] == {'code': 'win', 'name': 'Windows', 'display': True}
         assert 'Unknown' not in settings.DISPLAY_OS_NAMES
         assert r[1] == {'code': 'unk', 'name': 'Unknown', 'display': False}
-
-    def test_graphics_devices_get_pairs(self):
-        """Test get_pairs() works correctly
-
-        The GraphicsDevice.get_pairs() lets you make a bunch of requests at
-        the same time. It's more performant since it caches results.
-
-        """
-        models.GraphicsDevice.objects.create(
-            vendor_hex='vhex3',
-            vendor_name='V 3',
-            adapter_hex='ahex3',
-            adapter_name='A 3'
-        )
-        models.GraphicsDevice.objects.create(
-            vendor_hex='vhex2',
-            vendor_name='V 2',
-            adapter_hex='ahex2',
-            adapter_name='A 2',
-        )
-        models.GraphicsDevice.objects.create(
-            vendor_hex='vhex1',
-            vendor_name='V 1',
-            adapter_hex='ahex1',
-            adapter_name='A 1',
-        )
-
-        r = models.GraphicsDevice.objects.get_pairs(
-            ['ahex1', 'ahex2'],
-            ['vhex1', 'vhex2'],
-        )
-        expected = {
-            ('ahex1', 'vhex1'): ('A 1', 'V 1'),
-            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
-        }
-        assert r == expected
-
-        r = models.GraphicsDevice.objects.get_pairs(
-            ['ahex2', 'ahex3'],
-            ['vhex2', 'vhex3'],
-        )
-        assert len(r) == 2
-        expected = {
-            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
-            ('ahex3', 'vhex3'): ('A 3', 'V 3'),
-        }
-        assert r == expected
-
-        # FIXME(willkg): verify caching is working
 
     @mock.patch('requests.Session')
     def test_massive_querystring_caching(self, rsession):

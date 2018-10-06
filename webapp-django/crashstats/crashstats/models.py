@@ -933,10 +933,13 @@ class SignatureFirstDate(SocorroMiddleware):
             .values('signature', 'first_build', 'first_date')
         )
 
-        # NOTE(willkg): The original implementation return first_build as a
-        # string, so we convert it here.
-        for hit in hits:
-            hit['first_build'] = str(hit['first_build'])
+        hits = [
+            {
+                'signature': hit['signature'],
+                'first_build': str(hit['first_build']),
+                'first_date': hit['first_date'].isoformat()
+            } for hit in hits
+        ]
 
         return {
             'hits': hits,
