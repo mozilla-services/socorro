@@ -71,12 +71,10 @@ def parse_java_stack_trace(text):
             continue
 
         if stage is CLASS_MESSAGE:
-            try:
+            if ':' in line:
                 cls, msg = line.split(':', 1)
-            except ValueError as ve:
-                # If there's no : in the line, then it raises a ValueError.
-                # That means this is malformed.
-                raise MalformedJavaStackTrace(repr(ve))
+            else:
+                cls, msg = line, ''
 
             # Append lines to the message until one of them starts with
             # a tab.
