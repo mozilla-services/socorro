@@ -77,6 +77,7 @@ libobjc.A.dylib@0x1568.
 (libxul\.so|xul\.dll|XUL)@0x
 LL_
 malloc
+mbrtoc32
 _MD_
 memcmp
 __memcmp16
@@ -111,6 +112,7 @@ mozilla::ipc::RPCChannel::EnteredCxxStack
 mozilla::ipc::RPCChannel::Send
 mozilla::layers::CompositorD3D11::Failed
 mozilla::layers::CompositorD3D11::HandleError
+mozilla::SpinEventLoopUntil<T>
 mozilla::WrapNotNull<
 mozilla.*FatalError
 moz_xmalloc
@@ -139,7 +141,6 @@ nsDependentString::nsDependentString
 nsEventQueue::GetEvent
 nsThread::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
-mozilla::SpinEventLoopUntil<T>
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::
 nsINode::Slots
