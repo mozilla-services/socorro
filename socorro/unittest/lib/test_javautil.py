@@ -26,6 +26,31 @@ def test_parse_basic():
     assert java_exc.additional == []
 
 
+EXC_NO_MESSAGE = """\
+Exception
+\tat org.File.function(File.java:100)
+\tat org.File.function2(File.java:200)
+"""
+
+
+def test_no_message():
+    """Parse a basic exception with a class, message, and some stack lines"""
+    java_exc = javautil.parse_java_stack_trace(EXC_NO_MESSAGE)
+    assert java_exc.exception_class == 'Exception'
+    assert java_exc.exception_message == ''
+    assert java_exc.stack == [
+        'at org.File.function(File.java:100)',
+        'at org.File.function2(File.java:200)'
+    ]
+    assert java_exc.additional == []
+
+    assert java_exc.to_public_string() == (
+        'Exception\n'
+        '\tat org.File.function(File.java:100)\n'
+        '\tat org.File.function2(File.java:200)'
+    )
+
+
 EXC_WITH_MULTILINE_MSG = """\
 android.database.sqlite.SQLiteDatabaseLockedException: database is locked (code 5)
 #################################################################
@@ -104,9 +129,6 @@ def test_parse_caused_by():
     # No text blob
     None,
     '',
-
-    # No msg
-    'Exception',
 
     # Line without a tab in STACK stage
     (

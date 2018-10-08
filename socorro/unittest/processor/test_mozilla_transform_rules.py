@@ -697,7 +697,7 @@ class TestJavaProcessRule(TestCase):
         config = get_basic_config()
 
         raw_crash = {
-            'JavaStackTrace': 'junk'
+            'JavaStackTrace': 'junk\n\tat org.File.function\njunk'
         }
 
         raw_dumps = {}
