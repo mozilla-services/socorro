@@ -238,13 +238,15 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     # Get augmented signature data.
     sig_date_data = {}
     if signatures:
-        sig_api = models.SignatureFirstDate()
-        # SignatureFirstDate().get_dates() is an optimized version
-        # of SignatureFirstDate().get() that returns a dict of
-        # signature --> dates.
-        first_dates = sig_api.get_dates(signatures)
-        for signature_term, dates in first_dates.items():
-            sig_date_data[signature_term] = dates['first_date']
+        qs = (
+            models.Signature.objects
+            .filter(signature__in=signatures)
+            .values('signature', 'first_date')
+        )
+        sig_date_data = {
+            item['signature']: item['first_date']
+            for item in qs
+        }
 
     for topcrashers_stats_item in topcrashers_stats:
         crash_counts = []

@@ -12,7 +12,7 @@ from past.builtins import basestring
 from configman import configuration, Namespace
 from six import text_type
 
-from socorro.lib import BadArgumentError
+from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
@@ -23,7 +23,6 @@ import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.crontabber_state
-import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.version_string
 import socorro.external.boto.crash_data
 
@@ -323,16 +322,12 @@ class SocorroCommon(object):
             self.cache_seconds
         ):
             name = implementation.__class__.__name__
-            cache_key = hashlib.md5(
-                name + text_type(params)
-            ).hexdigest()
+            cache_key = hashlib.md5(name + text_type(params)).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)
                 if result is not None:
-                    logger.debug(
-                        "CACHE HIT %s" % implementation.__class__.__name__
-                    )
+                    logger.debug('CACHE HIT %s' % implementation.__class__.__name__)
                     return result, True
 
         implementation_method = getattr(implementation, method)
@@ -407,21 +402,7 @@ class SocorroMiddleware(SocorroCommon):
             dont_cache=True,
         )
 
-    def _get(
-        self,
-        method='get',
-        dont_cache=False,
-        refresh_cache=False,
-        expect_json=True,
-        **kwargs
-    ):
-        """
-        This is the generic `get` method that will take
-        `self.required_params` and `self.possible_params` and construct
-        a call to the parent `fetch` method.
-        """
-        implementation = self.get_implementation()
-
+    def parse_parameters(self, kwargs):
         defaults = getattr(self, 'defaults', {})
         aliases = getattr(self, 'aliases', {})
 
@@ -433,6 +414,24 @@ class SocorroMiddleware(SocorroCommon):
             if aliases.get(param):
                 params[aliases.get(param)] = params[param]
                 del params[param]
+        return params
+
+    def _get(
+        self,
+        method='get',
+        dont_cache=False,
+        refresh_cache=False,
+        expect_json=True,
+        **kwargs
+    ):
+        """
+        Generic `get` method that will take `self.required_params` and
+        `self.possible_params` and construct a call to the parent `fetch`
+        method.
+        """
+        implementation = self.get_implementation()
+
+        params = self.parse_parameters(kwargs)
 
         return self.fetch(
             implementation,
@@ -900,7 +899,6 @@ class SignaturesByBugs(SocorroMiddleware):
 
 
 class SignatureFirstDate(SocorroMiddleware):
-
     # Set to a short cache time because, the only real user of this
     # model is the Top Crasher page and that one uses the highly
     # optimized method `.get_dates()` which internally uses caching
@@ -910,10 +908,6 @@ class SignatureFirstDate(SocorroMiddleware):
     # Making it non-0 is to prevent the stampeding herd on this endpoint
     # alone when exposed in the API.
     cache_seconds = 5 * 60  # 5 minutes only
-
-    implementation = (
-        socorro.external.postgresql.signature_first_date.SignatureFirstDate
-    )
 
     required_params = (
         ('signatures', list),
@@ -927,50 +921,30 @@ class SignatureFirstDate(SocorroMiddleware):
         )
     }
 
-    def get_dates(self, signatures):
-        """A highly optimized version, that returns a dictionary where
-        the keys are the signature and the values are dicts that look
-        like this for example::
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
 
+        if 'signatures' not in params:
+            raise MissingArgumentError('signatures')
+
+        hits = list(
+            Signature.objects
+            .filter(signature__in=params['signatures'])
+            .values('signature', 'first_build', 'first_date')
+        )
+
+        hits = [
             {
-                'first_build': u'20101214170338',
-                'first_date': datetime.datetime(
-                    2011, 1, 17, 21, 24, 18, 979850, tzinfo=...)
-                )
-            }
+                'signature': hit['signature'],
+                'first_build': str(hit['first_build']),
+                'first_date': hit['first_date'].isoformat()
+            } for hit in hits
+        ]
 
-        """
-        dates = {}
-        missing = {}
-        for signature in signatures:
-            # calculate a good cache key for each signature
-            cache_key = 'signature_first_date-{}'.format(
-                hashlib.md5(signature.encode('utf-8')).hexdigest()
-            )
-            cached = cache.get(cache_key)
-            if cached is not None:
-                dates[signature] = cached
-            else:
-                # remember the cache keys of those we need to look up
-                missing[signature] = cache_key
-
-        if missing:
-            hits = super(SignatureFirstDate, self).get(
-                signatures=missing.keys()
-            )['hits']
-
-            for hit in hits:
-                signature = hit.pop('signature')
-                cache.set(
-                    # get the cache key back
-                    missing[signature],
-                    # what's left when 'signature' is popped
-                    hit,
-                    # make it a really large number
-                    60 * 60 * 24
-                )
-                dates[signature] = hit
-        return dates
+        return {
+            'hits': hits,
+            'total': len(hits)
+        }
 
 
 class CrontabberState(SocorroMiddleware):
