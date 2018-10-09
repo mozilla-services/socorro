@@ -46,8 +46,8 @@ class TestGraphicsDevices(DjangoTestCase):
     def test_get_pairs(self):
         """Test get_pairs() works correctly
 
-        The GraphicsDevice.get_pairs() lets you make a bunch of requests at
-        the same time. It's more performant since it caches results.
+        The GraphicsDevice.get_pairs() lets you expand a bunch of (vendor, adapter)
+        pairs at the same time. It's more performant since it does a single query.
 
         """
         models.GraphicsDevice.objects.create(
@@ -70,27 +70,25 @@ class TestGraphicsDevices(DjangoTestCase):
         )
 
         r = models.GraphicsDevice.objects.get_pairs(
-            ['ahex1', 'ahex2'],
             ['vhex1', 'vhex2'],
+            ['ahex1', 'ahex2'],
         )
         expected = {
-            ('ahex1', 'vhex1'): ('A 1', 'V 1'),
-            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
+            ('vhex1', 'ahex1'): ('V 1', 'A 1'),
+            ('vhex2', 'ahex2'): ('V 2', 'A 2'),
         }
         assert r == expected
 
         r = models.GraphicsDevice.objects.get_pairs(
-            ['ahex2', 'ahex3'],
             ['vhex2', 'vhex3'],
+            ['ahex2', 'ahex3'],
         )
         assert len(r) == 2
         expected = {
-            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
-            ('ahex3', 'vhex3'): ('A 3', 'V 3'),
+            ('vhex2', 'ahex2'): ('V 2', 'A 2'),
+            ('vhex3', 'ahex3'): ('V 3', 'A 3'),
         }
         assert r == expected
-
-        # FIXME(willkg): verify caching is working
 
 
 class TestSignatureFirstDate(DjangoTestCase):

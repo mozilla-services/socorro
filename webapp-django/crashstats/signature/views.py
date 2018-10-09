@@ -468,7 +468,7 @@ def _transform_graphics_summary(facets):
                 vendor_hexes.append(vendor['term'])
                 adapter_hexes.append(adapter['term'])
 
-        all_names = models.GraphicsDevice.objects.get_pairs(adapter_hexes, vendor_hexes)
+        all_names = models.GraphicsDevice.objects.get_pairs(vendor_hexes, adapter_hexes)
         graphics = []
         for vendor in facets['adapter_vendor_id']:
             for adapter in vendor['facets']['adapter_device_id']:
@@ -477,18 +477,12 @@ def _transform_graphics_summary(facets):
                     'adapter': adapter['term'],
                     'count': adapter['count'],
                 }
-                key = (adapter['term'], vendor['term'])
+                key = (vendor['term'], adapter['term'])
                 names = all_names.get(key)
                 if names and names[0]:
-                    entry['adapter'] = '{} ({})'.format(
-                        names[0],
-                        adapter['term'],
-                    )
+                    entry['vendor'] = '%s (%s)' % (names[0], vendor['term'])
                 if names and names[1]:
-                    entry['vendor'] = '{} ({})'.format(
-                        names[1],
-                        vendor['term'],
-                    )
+                    entry['adapter'] = '%s (%s)' % (names[1], adapter['term'])
 
                 graphics.append(entry)
 

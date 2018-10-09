@@ -44,39 +44,23 @@ logger = logging.getLogger('crashstats.models')
 
 
 class GraphicsDeviceManager(models.Manager):
-    def get_pair(self, adapter_hex, vendor_hex):
-        """Returns (adapter_name, vendor_name) or None"""
+    def get_pair(self, vendor_hex, adapter_hex):
+        """Returns (vendor_name, adapter_name) or None"""
         try:
-            obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hex)
-            return (obj.adapter_name, obj.vendor_name)
+            obj = self.get(vendor_hex=vendor_hex, adapter_hex=adapter_hex).values()
+            return (obj['vendor_name'], obj['adapter_name'])
         except self.model.DoesNotExist:
             return None
 
-    def get_pairs(self, adapter_hexes, vendor_hexes):
-        """Return dict where each tuple of (adapter_hex, vendor_hex)
-        corresponds to a (adapter_name, vendor_name) pair
-
-        """
-        assert len(adapter_hexes) == len(vendor_hexes)
-        names = {}
-        for i, adapter_hex in enumerate(adapter_hexes):
-            cache_key = (
-                'graphics_adapters:' + adapter_hex + ':' + vendor_hexes[i]
-            )
-            key = (adapter_hex, vendor_hexes[i])
-
-            name_pair = cache.get(cache_key)
-
-            if name_pair is None:
-                try:
-                    obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hexes[i])
-                except self.model.DoesNotExist:
-                    continue
-
-                name_pair = (obj.adapter_name, obj.vendor_name)
-                cache.set(cache_key, name_pair, 60 * 60 * 24)
-
-            names[key] = name_pair
+    def get_pairs(self, vendor_hexes, adapter_hexes):
+        """Returns dict of (vendor_hex, adapter_hex) -> (vendor_name, adapter_name)"""
+        # NOTE(willkg): graphics devices are hierarchical, but it's easier to do
+        # one query and get some extra stuff than to do one query per vendor
+        qs = self.filter(vendor_hex__in=vendor_hexes, adapter_hex__in=adapter_hexes).values()
+        names = {
+            (item['vendor_hex'], item['adapter_hex']): (item['vendor_name'], item['adapter_name'])
+            for item in qs
+        }
 
         return names
 
