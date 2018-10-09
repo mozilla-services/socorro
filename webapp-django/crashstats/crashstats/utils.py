@@ -170,7 +170,7 @@ def enhance_raw(raw_crash):
     """Enhances raw crash with additional data"""
     if raw_crash.get('AdapterVendorID') and raw_crash.get('AdapterDeviceID'):
         # Look up the two and get friendly names and then add them
-        result = models.GraphicsDevice.objects.get_pairs(
+        result = models.GraphicsDevice.objects.get_pair(
             raw_crash['AdapterVendorID'],
             raw_crash['AdapterDeviceID']
         )
