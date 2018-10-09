@@ -47,8 +47,8 @@ class GraphicsDeviceManager(models.Manager):
     def get_pair(self, vendor_hex, adapter_hex):
         """Returns (vendor_name, adapter_name) or None"""
         try:
-            obj = self.get(vendor_hex=vendor_hex, adapter_hex=adapter_hex).values()
-            return (obj['vendor_name'], obj['adapter_name'])
+            obj = self.get(vendor_hex=vendor_hex, adapter_hex=adapter_hex)
+            return (obj.vendor_name, obj.adapter_name)
         except self.model.DoesNotExist:
             return None
 
