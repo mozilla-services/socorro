@@ -56,9 +56,45 @@ SAMPLE_BUGZILLA_RESULTS = {
 
 @requests_mock.Mocker()
 class IntegrationTestBugzilla(IntegrationTestBase):
+    def setUp(self):
+        super(IntegrationTestBugzilla, self).setUp()
+
+        cursor = self.conn.cursor()
+        # NOTE(willkg): Sometimes the test db gets into a "state", so
+        # drop the table if it exists.
+        cursor.execute("""
+        DROP TABLE IF EXISTS crashstats_bugassociation
+        """)
+
+        # NOTE(willkg): The socorro tests don't run with the Django-managed
+        # database models created in the db, so we have to do it by hand until
+        # we've moved everything out of sqlalchemy/alembic land to Django land.
+        #
+        # FIXME(willkg): Please stop this madness soon.
+        #
+        # From "./manage.py sqlmigrate crashstats 0006":
+        cursor.execute("""
+        CREATE TABLE "crashstats_bugassociation" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "bug_id" integer NOT NULL,
+        "signature" text NOT NULL);
+        """)
+        cursor.execute("""
+        ALTER TABLE "crashstats_bugassociation"
+        ADD CONSTRAINT "crashstats_bugassociation_bug_id_signature_0123b7ff_uniq"
+        UNIQUE ("bug_id", "signature");
+        """)
+        # Truncate crontabber tables before running tests
+        self._truncate()
 
     def tearDown(self):
-        self.conn.cursor().execute("TRUNCATE bug_associations CASCADE")
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        TRUNCATE bug_associations CASCADE
+        """)
+        cursor.execute("""
+        DROP TABLE crashstats_bugassociation
+        """)
         self.conn.commit()
         super(IntegrationTestBugzilla, self).tearDown()
 
@@ -69,6 +105,46 @@ class IntegrationTestBugzilla(IntegrationTestBase):
                 'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
             }
         )
+
+    def fetch_data_old_table(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        SELECT bug_id, signature
+        FROM bug_associations
+        ORDER BY bug_id, signature
+        """)
+        return [
+            {
+                'bug_id': str(result[0]),
+                'signature': str(result[1])
+            } for result in cursor.fetchall()
+        ]
+
+    def fetch_data_new_table(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        SELECT bug_id, signature
+        FROM crashstats_bugassociation
+        ORDER BY bug_id, signature
+        """)
+        return [
+            {
+                'bug_id': str(result[0]),
+                'signature': str(result[1])
+            } for result in cursor.fetchall()
+        ]
+
+    def insert_data(self, bug_id, signature):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        INSERT INTO bug_associations (bug_id, signature)
+        VALUES (%s, %s);
+        """, (bug_id, signature))
+        cursor.execute("""
+        INSERT INTO crashstats_bugassociation (bug_id, signature)
+        VALUES (%s, %s);
+        """, (bug_id, signature))
+        self.conn.commit()
 
     def test_basic_run_job(self, requests_mocker):
         requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
@@ -83,40 +159,51 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor = self.conn.cursor()
-        cursor.execute('select bug_id from bug_associations order by bug_id')
-        associations = cursor.fetchall()
+        associations = self.fetch_data_old_table()
 
-        # Verify we have the expected number of associations.
+        # Verify we have the expected number of associations
         assert len(associations) == 8
-        bug_ids = [x[0] for x in associations]
+        bug_ids = set([x['bug_id'] for x in associations])
 
-        # Verify bugs with no crash signatures are missing.
+        # Verify bugs with no crash signatures are missing
         assert 6 not in bug_ids
 
-        cursor.execute(
-            'select signature from bug_associations where bug_id = 8'
-        )
-        associations = cursor.fetchall()
-        # New signatures have correctly been inserted.
-        assert len(associations) == 2
-        assert ('another::legitimate(sig)',) in associations
-        assert ('legitimate(sig)',) in associations
+        bug_8_signatures = [
+            item['signature'] for item in associations if item['bug_id'] == '8'
+        ]
+
+        # New signatures have correctly been inserted
+        assert len(bug_8_signatures) == 2
+        assert 'another::legitimate(sig)' in bug_8_signatures
+        assert 'legitimate(sig)' in bug_8_signatures
+
+        # Verify the new table
+        associations = self.fetch_data_new_table()
+
+        # Verify we have the expected number of associations
+        assert len(associations) == 8
+        bug_ids = set([x['bug_id'] for x in associations])
+
+        # Verify bugs with no crash signatures are missing
+        assert 6 not in bug_ids
+
+        bug_8_signatures = [
+            item['signature'] for item in associations if item['bug_id'] == '8'
+        ]
+
+        # New signatures have correctly been inserted
+        assert len(bug_8_signatures) == 2
+        assert 'another::legitimate(sig)' in bug_8_signatures
+        assert 'legitimate(sig)' in bug_8_signatures
 
     def test_run_job_with_reports_with_existing_bugs_different(self, requests_mocker):
         """Verify that an association to a signature that no longer is part
         of the crash signatures list gets removed.
         """
         requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+        self.insert_data(bug_id='8', signature='@different')
+
         config_manager = self._setup_config_manager(3)
-        cursor = self.conn.cursor()
-
-        cursor.execute("""
-            insert into bug_associations (bug_id, signature)
-            values (8, '@different');
-        """)
-        self.conn.commit()
-
         with config_manager.context() as config:
             tab = CronTabberApp(config)
             tab.run_all()
@@ -126,25 +213,21 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute(
-            'select signature from bug_associations where bug_id = 8'
-        )
-        associations = cursor.fetchall()
         # The previous association, to signature '@different' that is not in
-        # crash signatures, is now missing.
-        assert ('@different',) not in associations
+        # crash signatures, is now missing
+        associations = self.fetch_data_old_table()
+        assert '@different' not in [item['signature'] for item in associations]
+
+        # The previous association, to signature '@different' that is not in
+        # crash signatures, is now missing
+        associations = self.fetch_data_new_table()
+        assert '@different' not in [item['signature'] for item in associations]
 
     def test_run_job_with_reports_with_existing_bugs_same(self, requests_mocker):
         requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+        self.insert_data(bug_id='8', signature='legitimate(sig)')
+
         config_manager = self._setup_config_manager(3)
-        cursor = self.conn.cursor()
-
-        cursor.execute("""
-            insert into bug_associations (bug_id, signature)
-            values (8, 'legitimate(sig)');
-        """)
-        self.conn.commit()
-
         with config_manager.context() as config:
             tab = CronTabberApp(config)
             tab.run_all()
@@ -154,54 +237,25 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        cursor.execute(
-            'select signature from bug_associations where bug_id = 8'
-        )
-        associations = cursor.fetchall()
-        # New signatures have correctly been inserted.
+        associations = self.fetch_data_old_table()
+        associations = [item['signature'] for item in associations if item['bug_id'] == '8']
+
+        # New signatures have correctly been inserted
         assert len(associations) == 2
-        assert ('another::legitimate(sig)',) in associations
-        assert ('legitimate(sig)',) in associations
+        assert associations == [
+            'another::legitimate(sig)',
+            'legitimate(sig)'
+        ]
 
-    def test_run_job_based_on_last_success(self, requests_mocker):
-        """specifically setting 0 days back and no prior run
-        will pick it up from now's date"""
-        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
-        config_manager = self._setup_config_manager(0)
+        associations = self.fetch_data_new_table()
+        associations = [item['signature'] for item in associations if item['bug_id'] == '8']
 
-        cursor = self.conn.cursor()
-        # these are matching the SAMPLE_CSV above
-        cursor.execute("""insert into bug_associations
-        (bug_id,signature)
-        values
-        (8, 'legitimate(sig)');
-        """)
-        self.conn.commit()
-
-        # second time
-        config_manager = self._setup_config_manager(0)
-        with config_manager.context() as config:
-            tab = CronTabberApp(config)
-            tab.run_all()
-
-            state = tab.job_state_database.copy()
-            self._wind_clock(state, days=1)
-            tab.job_state_database.update(state)
-
-        # Create a CSV file for one day back.
-        # This'll make sure there's a .csv file whose day
-        # is that of the last run.
-        self._setup_config_manager(1)
-
-        config_manager = self._setup_config_manager(0)
-        with config_manager.context() as config:
-            tab = CronTabberApp(config)
-            tab.run_all()
-
-            information = self._load_structure()
-            assert information['bugzilla-associations']
-            assert not information['bugzilla-associations']['last_error']
-            assert information['bugzilla-associations']['last_success']
+        # New signatures have correctly been inserted
+        assert len(associations) == 2
+        assert associations == [
+            'another::legitimate(sig)',
+            'legitimate(sig)'
+        ]
 
     def test_with_bugzilla_failure(self, requests_mocker):
         requests_mocker.get(
@@ -217,7 +271,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
             information = self._load_structure()
             assert information['bugzilla-associations']
-            # There has been an error.
+            # Verify there has been an error
             last_error = information['bugzilla-associations']['last_error']
             assert last_error
             assert 'HTTPError' in last_error['type']
