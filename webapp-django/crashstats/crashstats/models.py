@@ -43,6 +43,21 @@ logger = logging.getLogger('crashstats.models')
 # Django models first
 
 
+class BugAssociation(models.Model):
+    """Specifies assocations between bug ids in Bugzilla and signatures"""
+    bug_id = models.IntegerField(
+        null=False,
+        help_text='Bugzilla bug id'
+    )
+    signature = models.TextField(
+        null=False, blank=False,
+        help_text='Socorro-style crash report signature'
+    )
+
+    class Meta:
+        unique_together = ('bug_id', 'signature')
+
+
 class GraphicsDeviceManager(models.Manager):
     def get_pair(self, vendor_hex, adapter_hex):
         """Returns (vendor_name, adapter_name) or None"""
