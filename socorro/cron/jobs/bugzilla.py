@@ -157,7 +157,7 @@ class BugzillaCronApp(BaseCronApp):
             signature_rows = execute_query_fetchall(
                 connection,
                 """
-                SELECT signature FROM bug_associations WHERE bug_id = %s"
+                SELECT signature FROM bug_associations WHERE bug_id = %s
                 """,
                 (bug_id,)
             )

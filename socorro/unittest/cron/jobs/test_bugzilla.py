@@ -155,6 +155,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             tab.run_all()
 
             information = self._load_structure()
+            print(information)
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
