@@ -1,7 +1,6 @@
 import json
 import urllib
 
-import mock
 import pyquery
 
 from django.core.urlresolvers import reverse
@@ -512,8 +511,8 @@ class TestViews(BaseTestViews):
                 })
 
             return {
-                "hits": self.only_certain_columns(hits, params['_columns']),
-                "total": 140
+                'hits': self.only_certain_columns(hits, params['_columns']),
+                'total': 140
             }
 
         SuperSearchUnredacted.implementation().get.side_effect = (
@@ -805,9 +804,7 @@ class TestViews(BaseTestViews):
 
             return res
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         # Test with no results
         url = reverse('signature:signature_summary')
@@ -819,39 +816,33 @@ class TestViews(BaseTestViews):
         })
         assert response.status_code == 200
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_signature_bugzilla(self, rget):
-
-        def mocked_get(**options):
-            return {
-                "hits": [
-                    {"id": 111111,
-                     "signature": "Something"},
-                    {"id": 123456789,
-                     "signature": "Something"}
-                ]
-            }
-
-        rget.side_effect = mocked_get
-
-        # Test with no results
-        url = reverse('signature:signature_bugzilla')
-
-        response = self.client.get(url, {
-            'signature': DUMB_SIGNATURE,
-        })
-        assert response.status_code == 200
-
-        # not the right signature so it's part of "Related Crash Signatures"
-        assert (
-            response.content.find('Related Crash Signatures') < response.content.find('123456789')
+    def test_signature_bugzilla(self):
+        models.BugAssociation.objects.create(
+            bug_id=111111,
+            signature='Something'
+        )
+        models.BugAssociation.objects.create(
+            bug_id=111111,
+            signature='OOM | small'
+        )
+        models.BugAssociation.objects.create(
+            bug_id=123456789,
+            signature='Something'
         )
 
+        # Test with signature that has no bugs
+        url = reverse('signature:signature_bugzilla')
+        response = self.client.get(url, {
+            'signature': 'hang | mozilla::wow::such_signature(smth*)'
+        })
+        assert response.status_code == 200
+        assert 'There are no bugs' in response.content
+
+        # Test with signature that has bugs and related bugs
         response = self.client.get(url, {
             'signature': 'Something',
         })
         assert response.status_code == 200
-        # now the right signature
         assert '123456789' in response.content
         assert '111111' in response.content
 
@@ -860,5 +851,6 @@ class TestViews(BaseTestViews):
         assert (
             response.content.find('123456789') <
             response.content.find('111111') <
-            response.content.find('Related Crash Signatures')
+            response.content.find('Related Crash Signatures') <
+            response.content.find('Bugs for <code>OOM | small</code>')
         )

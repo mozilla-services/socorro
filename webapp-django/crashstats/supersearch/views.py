@@ -244,9 +244,13 @@ def search_results(request):
 
         if signatures:
             bugs = defaultdict(list)
-            bugs_api = models.Bugs()
-            for b in bugs_api.get(signatures=signatures)['hits']:
-                bugs[b['signature']].append(b['id'])
+            qs = (
+                models.BugAssociation.objects
+                .filter(signature__in=signatures)
+                .values('bug_id', 'signature')
+            )
+            for item in qs:
+                bugs[item['signature']].append(item['bug_id'])
 
             for hit in search_results['facets']['signature']:
                 sig = hit['term']

@@ -90,9 +90,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
     def tearDown(self):
         cursor = self.conn.cursor()
         cursor.execute("""
-        TRUNCATE bug_associations CASCADE
-        """)
-        cursor.execute("""
         DROP TABLE crashstats_bugassociation
         """)
         self.conn.commit()
@@ -106,21 +103,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             }
         )
 
-    def fetch_data_old_table(self):
-        cursor = self.conn.cursor()
-        cursor.execute("""
-        SELECT bug_id, signature
-        FROM bug_associations
-        ORDER BY bug_id, signature
-        """)
-        return [
-            {
-                'bug_id': str(result[0]),
-                'signature': str(result[1])
-            } for result in cursor.fetchall()
-        ]
-
-    def fetch_data_new_table(self):
+    def fetch_data(self):
         cursor = self.conn.cursor()
         cursor.execute("""
         SELECT bug_id, signature
@@ -136,10 +119,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
     def insert_data(self, bug_id, signature):
         cursor = self.conn.cursor()
-        cursor.execute("""
-        INSERT INTO bug_associations (bug_id, signature)
-        VALUES (%s, %s);
-        """, (bug_id, signature))
         cursor.execute("""
         INSERT INTO crashstats_bugassociation (bug_id, signature)
         VALUES (%s, %s);
@@ -160,26 +139,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        associations = self.fetch_data_old_table()
-
-        # Verify we have the expected number of associations
-        assert len(associations) == 8
-        bug_ids = set([x['bug_id'] for x in associations])
-
-        # Verify bugs with no crash signatures are missing
-        assert 6 not in bug_ids
-
-        bug_8_signatures = [
-            item['signature'] for item in associations if item['bug_id'] == '8'
-        ]
-
-        # New signatures have correctly been inserted
-        assert len(bug_8_signatures) == 2
-        assert 'another::legitimate(sig)' in bug_8_signatures
-        assert 'legitimate(sig)' in bug_8_signatures
-
-        # Verify the new table
-        associations = self.fetch_data_new_table()
+        associations = self.fetch_data()
 
         # Verify we have the expected number of associations
         assert len(associations) == 8
@@ -216,12 +176,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
         # The previous association, to signature '@different' that is not in
         # crash signatures, is now missing
-        associations = self.fetch_data_old_table()
-        assert '@different' not in [item['signature'] for item in associations]
-
-        # The previous association, to signature '@different' that is not in
-        # crash signatures, is now missing
-        associations = self.fetch_data_new_table()
+        associations = self.fetch_data()
         assert '@different' not in [item['signature'] for item in associations]
 
     def test_run_job_with_reports_with_existing_bugs_same(self, requests_mocker):
@@ -238,17 +193,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        associations = self.fetch_data_old_table()
-        associations = [item['signature'] for item in associations if item['bug_id'] == '8']
-
-        # New signatures have correctly been inserted
-        assert len(associations) == 2
-        assert associations == [
-            'another::legitimate(sig)',
-            'legitimate(sig)'
-        ]
-
-        associations = self.fetch_data_new_table()
+        associations = self.fetch_data()
         associations = [item['signature'] for item in associations if item['bug_id'] == '8']
 
         # New signatures have correctly been inserted

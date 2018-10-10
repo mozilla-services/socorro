@@ -231,9 +231,14 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     # Get augmented bugs data.
     bugs = defaultdict(list)
     if signatures:
-        bugs_api = models.Bugs()
-        for b in bugs_api.get(signatures=signatures)['hits']:
-            bugs[b['signature']].append(b['id'])
+        qs = (
+            models.BugAssociation.objects
+            .filter(signature__in=signatures)
+            .values('bug_id', 'signature')
+            .order_by('-bug_id')
+        )
+        for item in qs:
+            bugs[item['signature']].append(item['bug_id'])
 
     # Get augmented signature data.
     sig_date_data = {}

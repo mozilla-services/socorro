@@ -50,14 +50,11 @@ def pass_validated_params(view):
 
             if len(params['signature']) > 1:
                 raise ValidationError(
-                    'Invalid value for "signature" parameter, '
-                    'only one value is accepted'
+                    'Invalid value for "signature" parameter, only one value is accepted'
                 )
 
             if not params['signature'] or not params['signature'][0]:
-                raise ValidationError(
-                    '"signature" parameter is mandatory'
-                )
+                raise ValidationError('"signature" parameter is mandatory')
         except ValidationError as e:
             return http.HttpResponseBadRequest(str(e))
 
@@ -74,9 +71,7 @@ def signature_report(request, params, default_context=None):
 
     signature = request.GET.get('signature')
     if not signature:
-        return http.HttpResponseBadRequest(
-            '"signature" parameter is mandatory'
-        )
+        return http.HttpResponseBadRequest('"signature" parameter is mandatory')
 
     context['signature'] = signature
 
@@ -571,17 +566,16 @@ def _transform_exploitability_summary(facets):
 
 @pass_validated_params
 def signature_bugzilla(request, params):
-    '''Return a list of associated bugs. '''
+    """Return a list of associated bugs"""
     context = {}
 
     signature = params['signature'][0]
     context['signature'] = signature
-
-    bugs_api = models.Bugs()
-    context['bugs'] = bugs_api.get(
-        signatures=[signature]
-    )['hits']
-
-    context['bugs'].sort(key=lambda x: x['id'], reverse=True)
+    context['bugs'] = list(
+        models.BugAssociation.objects
+        .get_bugs_and_related_bugs(signatures=[signature])
+        .values('bug_id', 'signature')
+        .order_by('-bug_id')
+    )
 
     return render(request, 'signature/signature_bugzilla.html', context)
