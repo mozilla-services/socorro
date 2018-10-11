@@ -899,7 +899,7 @@ class Bugs(SocorroMiddleware):
             BugAssociation.objects
             .get_bugs_and_related_bugs(signatures=params['signatures'])
             .values('bug_id', 'signature')
-            .order_by('-bug_id', 'signature')
+            .order_by('bug_id', 'signature')
         )
 
         hits = [

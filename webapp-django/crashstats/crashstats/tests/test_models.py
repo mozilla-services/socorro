@@ -129,12 +129,12 @@ class TestBugs(DjangoTestCase):
         assert resp == {
             'hits': [
                 {
-                    'id': 1000000,
-                    'signature': 'OOM | large'
-                },
-                {
                     'id': 999999,
                     'signature': 'OOM | small'
+                },
+                {
+                    'id': 1000000,
+                    'signature': 'OOM | large'
                 }
             ],
             'total': 2
