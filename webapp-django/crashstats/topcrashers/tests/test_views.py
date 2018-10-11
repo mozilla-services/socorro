@@ -6,7 +6,7 @@ import pyquery
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
 
-from crashstats.crashstats.models import Signature, Bugs
+from crashstats.crashstats.models import Signature, BugAssociation
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearchUnredacted
 
@@ -15,6 +15,19 @@ class TestTopCrasherViews(BaseTestViews):
     base_url = reverse('topcrashers:topcrashers')
 
     def test_topcrashers(self):
+        BugAssociation.objects.create(
+            bug_id=123456789,
+            signature='Something'
+        )
+        BugAssociation.objects.create(
+            bug_id=22222,
+            signature=u'FakeSignature1 \u7684 Japanese',
+        )
+        BugAssociation.objects.create(
+            bug_id=33333,
+            signature=u"FakeSignature1 \u7684 Japanese"
+        )
+
         Signature.objects.create(
             signature=u'FakeSignature1 \u7684 Japanese',
             first_date=datetime.datetime(2000, 1, 1, 12, 23, 34, tzinfo=utc),
@@ -25,19 +38,6 @@ class TestTopCrasherViews(BaseTestViews):
             first_date=datetime.datetime(2016, 5, 2, 0, 0, 0, tzinfo=utc),
             first_build='20160502000000'
         )
-
-        def mocked_bugs(**options):
-            return {
-                "hits": [
-                    {"id": 123456789,
-                     "signature": "Something"},
-                    {"id": 22222,
-                     "signature": u"FakeSignature1 \u7684 Japanese"},
-                    {"id": 33333,
-                     "signature": u"FakeSignature1 \u7684 Japanese"}
-                ]
-            }
-        Bugs.implementation().get.side_effect = mocked_bugs
 
         def mocked_supersearch_get(**params):
             if '_columns' not in params:

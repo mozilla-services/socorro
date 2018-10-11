@@ -36,8 +36,6 @@ class Response(object):
 class TestGraphicsDevices(DjangoTestCase):
     def setUp(self):
         super(TestGraphicsDevices, self).setUp()
-        # thanks to crashstats.settings.test
-        assert settings.CACHE_IMPLEMENTATION_FETCHES
         cache.clear()
 
     def tearDown(self):
@@ -91,15 +89,145 @@ class TestGraphicsDevices(DjangoTestCase):
         assert r == expected
 
 
+class TestBugs(DjangoTestCase):
+    def setUp(self):
+        super(TestBugs, self).setUp()
+        cache.clear()
+
+    def test_get_one(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+
+        api = models.Bugs()
+
+        resp = api.get(signatures=['OOM | small'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                }
+            ],
+            'total': 1
+        }
+
+    def test_get_multiple(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='1000000',
+            signature='OOM | large'
+        )
+
+        api = models.Bugs()
+
+        resp = api.get(signatures=['OOM | small', 'OOM | large'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 1000000,
+                    'signature': 'OOM | large'
+                },
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                }
+            ],
+            'total': 2
+        }
+
+    def test_related(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | medium'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='1000000',
+            signature='OOM | large'
+        )
+
+        api = models.Bugs()
+
+        resp = api.get(signatures=['OOM | small'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | medium'
+                },
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                }
+            ],
+            'total': 2
+        }
+
+
+class TestSignaturesByBugs(DjangoTestCase):
+    def setUp(self):
+        super(TestSignaturesByBugs, self).setUp()
+        cache.clear()
+
+    def test_get_one(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+
+        api = models.SignaturesByBugs()
+
+        resp = api.get(bug_ids=['999999'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                }
+            ],
+            'total': 1
+        }
+
+    def test_get_multiple(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='1000000',
+            signature='OOM | large'
+        )
+
+        api = models.SignaturesByBugs()
+
+        resp = api.get(bug_ids=['999999', '1000000'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                },
+                {
+                    'id': 1000000,
+                    'signature': 'OOM | large'
+                }
+            ],
+            'total': 2
+        }
+
+
 class TestSignatureFirstDate(DjangoTestCase):
     def setUp(self):
         super(TestSignatureFirstDate, self).setUp()
-        # thanks to crashstats.settings.test
-        assert settings.CACHE_IMPLEMENTATION_FETCHES
         cache.clear()
-
-    def tearDown(self):
-        super(TestSignatureFirstDate, self).tearDown()
 
     def test_get_one(self):
         some_date = dateparse.parse_datetime('2018-10-06T00:22:58.074859+00:00')
@@ -163,8 +291,6 @@ class TestModels(DjangoTestCase):
 
     def setUp(self):
         super(TestModels, self).setUp()
-        # thanks to crashstats.settings.test
-        assert settings.CACHE_IMPLEMENTATION_FETCHES
         cache.clear()
 
     def tearDown(self):
@@ -308,46 +434,6 @@ class TestModels(DjangoTestCase):
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
         assert r['product']
         assert r['exploitability']
-
-    def test_bugs(self):
-        model = models.Bugs
-        api = model()
-
-        def mocked_get(**options):
-            assert options == {'signatures': ['Pickle::ReadBytes']}
-            return {'hits': ['123456789']}
-
-        models.Bugs.implementation().get.side_effect = mocked_get
-
-        r = api.get(signatures='Pickle::ReadBytes')
-        assert r['hits']
-
-    def test_bugs_called_without_signatures(self):
-        model = models.Bugs
-        api = model()
-
-        with pytest.raises(models.RequiredParameterError):
-            api.get()
-
-    def test_signatures_by_bugs(self):
-        model = models.SignaturesByBugs
-        api = model()
-
-        def mocked_get(**options):
-            assert options == {'bug_ids': ['123456789']}
-            return {'hits': {'signatures': 'Pickle::ReadBytes'}}
-
-        models.SignaturesByBugs.implementation().get.side_effect = mocked_get
-
-        r = api.get(bug_ids='123456789')
-        assert r['hits']
-
-    def test_sigs_by_bugs_called_without_bug_ids(self):
-        model = models.SignaturesByBugs
-        api = model()
-
-        with pytest.raises(models.RequiredParameterError):
-            api.get()
 
     def test_raw_crash(self):
         model = models.RawCrash

@@ -12,7 +12,7 @@ from past.builtins import basestring
 from configman import configuration, Namespace
 from six import text_type
 
-from socorro.lib import BadArgumentError, MissingArgumentError
+from socorro.lib import BadArgumentError
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
@@ -20,7 +20,6 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 from socorro.external.postgresql.base import PostgreSQLStorage
 import socorro.external.postgresql.platforms
-import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.version_string
@@ -43,6 +42,19 @@ logger = logging.getLogger('crashstats.models')
 # Django models first
 
 
+class BugAssociationManager(models.Manager):
+    def get_bugs_and_related_bugs(self, signatures):
+        # NOTE(willkg): We might be able to do this in a single SQL pass, but
+        # it seemed prudent to go for simpler for now
+        bug_ids = [
+            bug[0]
+            for bug in self.filter(signature__in=signatures).values_list('bug_id')
+        ]
+        return self.filter(bug_id__in=bug_ids)
+
+        # FIXME(willkg): rewrite anything that used the Bugs api
+
+
 class BugAssociation(models.Model):
     """Specifies assocations between bug ids in Bugzilla and signatures"""
     bug_id = models.IntegerField(
@@ -53,6 +65,8 @@ class BugAssociation(models.Model):
         null=False, blank=False,
         help_text='Socorro-style crash report signature'
     )
+
+    objects = BugAssociationManager()
 
     class Meta:
         unique_together = ('bug_id', 'signature')
@@ -866,9 +880,7 @@ class RawCrash(SocorroMiddleware):
 
 
 class Bugs(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.bugs.Bugs
-
+    # NOTE(willkg): This is implemented with a Django model.
     required_params = (
         ('signatures', list),
     )
@@ -880,10 +892,31 @@ class Bugs(SocorroMiddleware):
         ),
     }
 
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
+
+        hits = list(
+            BugAssociation.objects
+            .get_bugs_and_related_bugs(signatures=params['signatures'])
+            .values('bug_id', 'signature')
+            .order_by('-bug_id', 'signature')
+        )
+
+        hits = [
+            {
+                'id': int(hit['bug_id']),
+                'signature': hit['signature']
+            } for hit in hits
+        ]
+
+        return {
+            'hits': hits,
+            'total': len(hits)
+        }
+
 
 class SignaturesByBugs(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.bugs.Bugs
+    # NOTE(willkg): This is implemented with a Django model.
 
     required_params = (
         ('bug_ids', list),
@@ -896,8 +929,31 @@ class SignaturesByBugs(SocorroMiddleware):
         ),
     }
 
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
+
+        hits = list(
+            BugAssociation.objects
+            .filter(bug_id__in=params['bug_ids'])
+            .values('bug_id', 'signature')
+        )
+
+        hits = [
+            {
+                'id': int(hit['bug_id']),
+                'signature': hit['signature']
+            } for hit in hits
+        ]
+
+        return {
+            'hits': hits,
+            'total': len(hits)
+        }
+
 
 class SignatureFirstDate(SocorroMiddleware):
+    # NOTE(willkg): This is implemented with a Django model.
+
     # Set to a short cache time because, the only real user of this
     # model is the Top Crasher page and that one uses the highly
     # optimized method `.get_dates()` which internally uses caching
@@ -922,9 +978,6 @@ class SignatureFirstDate(SocorroMiddleware):
 
     def get(self, *args, **kwargs):
         params = self.parse_parameters(kwargs)
-
-        if 'signatures' not in params:
-            raise MissingArgumentError('signatures')
 
         hits = list(
             Signature.objects
