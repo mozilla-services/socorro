@@ -6,18 +6,9 @@
 Tips on how to run this locally
 -------------------------------
 
-The easiest way to run this locally is with crontabber_app.py.
-You need a local Postgres to connect to and it needs to have the
-socorro tables (bug_associations, crontabber and crontabber_log).
+Run this:
 
-This examples shows how::
-
-    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations
-
-Since this running through crontabber, it has a frequency and won't run
-until it's time to run again. To override that use::
-
-    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations --force
+    $ socorro-cmd crontabber --job=bugzilla-associations
 
 To change the database config, use --help to see what the parameters are called.
 
