@@ -5,6 +5,7 @@ from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from crashstats.crashstats.models import (
     BugAssociation,
     GraphicsDevice,
+    Platform,
     Signature,
 )
 
@@ -93,6 +94,14 @@ class GraphicsDeviceAdmin(admin.ModelAdmin):
         'adapter_hex',
         'vendor_name',
         'adapter_name'
+    ]
+
+
+@admin.register(Platform)
+class PlatformAdmin(admin.ModelAdmin):
+    list_display = [
+        'name',
+        'short_name'
     ]
 
 

@@ -107,6 +107,18 @@ class GraphicsDevice(models.Model):
         unique_together = ('vendor_hex', 'adapter_hex')
 
 
+class Platform(models.Model):
+    """Lookup table for platforms"""
+    name = models.CharField(
+        max_length=20, blank=False, null=False,
+        help_text='Name of the platform'
+    )
+    short_name = models.CharField(
+        max_length=20, blank=False, null=False,
+        help_text='Short abbreviated name of the platform'
+    )
+
+
 class Signature(models.Model):
     """Bookkeeping table to keep track of when we first saw a signature"""
     signature = models.TextField(
