@@ -103,7 +103,7 @@ testshell: my.env .docker-build
 
 .PHONY: run
 run: my.env
-	${DC} up processor webapp webpack oidcprovider
+	${DC} up processor webapp webpack
 
 .PHONY: stop
 stop: my.env
