@@ -487,33 +487,6 @@ class TestModels(DjangoTestCase):
         r = api.get(crash_id='some-crash-id', format='raw', name='other')
         assert r == '\xe0\xe0'
 
-    def test_platforms(self):
-        api = models.Platforms()
-
-        def mocked_get(**options):
-            return {
-                'hits': [
-                    {
-                        'code': 'win',
-                        'name': 'Windows'
-                    },
-                    {
-                        'code': 'unk',
-                        'name': 'Unknown'
-                    }
-                ],
-                'total': 2
-            }
-
-        models.Platforms.implementation().get.side_effect = mocked_get
-
-        r = api.get()
-        assert len(r) == 2
-        assert 'Windows' in settings.DISPLAY_OS_NAMES
-        assert r[0] == {'code': 'win', 'name': 'Windows', 'display': True}
-        assert 'Unknown' not in settings.DISPLAY_OS_NAMES
-        assert r[1] == {'code': 'unk', 'name': 'Unknown', 'display': False}
-
     @mock.patch('requests.Session')
     def test_massive_querystring_caching(self, rsession):
         # doesn't actually matter so much what API model we use

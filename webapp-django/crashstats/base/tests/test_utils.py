@@ -50,10 +50,11 @@ class TestUtils(TestCase):
             }
         }
         platforms = [
-            {'code': 'win', 'name': 'Windows'},
-            {'code': 'mac', 'name': 'Mac OS X'},
-            {'code': 'lin', 'name': 'Linux'},
-            {'code': 'unknown', 'name': 'Unknown'}]
+            {'short_name': 'win', 'name': 'Windows'},
+            {'short_name': 'mac', 'name': 'Mac OS X'},
+            {'short_name': 'lin', 'name': 'Linux'},
+            {'short_name': 'unknown', 'name': 'Unknown'}
+        ]
         signature_stats = SignatureStats(
             signature=signature,
             rank=1,
@@ -63,12 +64,16 @@ class TestUtils(TestCase):
         )
 
         assert signature_stats.rank == 1
-        assert signature_stats.signature_term \
-            == 'EMPTY: no crashing thread identified; ERROR_NO_MINIDUMP_HEADER'
+        assert (
+            signature_stats.signature_term ==
+            'EMPTY: no crashing thread identified; ERROR_NO_MINIDUMP_HEADER'
+        )
         assert signature_stats.percent_of_total_crashes == 100.0
         assert signature_stats.num_crashes == 2
-        assert signature_stats.num_crashes_per_platform \
-            == {'mac_count': 0, 'lin_count': 0, 'win_count': 0}
+        assert (
+            signature_stats.num_crashes_per_platform ==
+            {'mac_count': 0, 'lin_count': 0, 'win_count': 0}
+        )
         assert signature_stats.num_crashes_in_garbage_collection == 0
         assert signature_stats.num_installs == 1
         assert signature_stats.num_crashes == 2

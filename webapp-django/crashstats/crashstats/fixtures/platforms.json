@@ -1,0 +1,34 @@
+[
+  {
+    "model": "crashstats.Platform",
+    "pk": 1,
+    "fields": {
+      "name": "Windows",
+      "short_name": "win"
+    }
+  },
+  {
+    "model": "crashstats.Platform",
+    "pk": 2,
+    "fields": {
+      "name": "Mac OS X",
+      "short_name": "mac"
+    }
+  },
+  {
+    "model": "crashstats.Platform",
+    "pk": 3,
+    "fields": {
+      "name": "Linux",
+      "short_name": "lin"
+    }
+  },
+  {
+    "model": "crashstats.Platform",
+    "pk": 4,
+    "fields": {
+      "name": "Unknown",
+      "short_name": "unknown"
+    }
+  }
+]

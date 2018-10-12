@@ -183,8 +183,14 @@ class TestViews(BaseTestViews):
         assert dump['hits'][0] == expected
 
     def test_metrics_gathering(self):
-        # note: this gets mocked out in the setUp
-        url = reverse('api:model_wrapper', args=('Platforms',))
+        def mocked_get(**options):
+            return {
+                'state': {}
+            }
+
+        CrontabberState.implementation().get.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('CrontabberState',))
         with MetricsMock() as metrics_mock:
             response = self.client.get(url)
         assert response.status_code == 200
@@ -192,17 +198,8 @@ class TestViews(BaseTestViews):
             fun_name='incr',
             stat='webapp.api.pageview',
             value=1,
-            tags=['endpoint:apiPlatforms']
+            tags=['endpoint:apiCrontabberState']
         )
-
-    def test_Platforms(self):
-        # note: this gets mocked out in the setUp
-        url = reverse('api:model_wrapper', args=('Platforms',))
-        response = self.client.get(url)
-        assert response.status_code == 200
-        dump = json.loads(response.content)
-        # see the setUp for this fixture
-        assert dump[0] == {'code': 'win', 'name': 'Windows'}
 
     def test_ProcessedCrash(self):
         url = reverse('api:model_wrapper', args=('ProcessedCrash',))

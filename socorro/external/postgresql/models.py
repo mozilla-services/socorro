@@ -223,32 +223,6 @@ class AlembicVersion(DeclarativeBase):
     __mapper_args__ = {"primary_key": (version_num)}
 
 
-class OsName(DeclarativeBase):
-    __tablename__ = 'os_names'
-
-    # column definitions
-    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', CITEXT(), nullable=False)
-
-
-class OsNameMatche(DeclarativeBase):
-    __tablename__ = 'os_name_matches'
-
-    # column definitions
-    match_string = Column(u'match_string', TEXT(),
-                          primary_key=True, nullable=False)
-    os_name = Column(u'os_name', CITEXT(), ForeignKey(
-        'os_names.os_name'), primary_key=True, nullable=False)
-
-    __table_args__ = (
-        Index('os_name_matches_key', os_name, match_string, unique=True),
-    )
-
-    # relationship definitions
-    os_names = relationship(
-        'OsName', primaryjoin='OsNameMatche.os_name==OsName.os_name')
-
-
 class Product(DeclarativeBase):
     __tablename__ = 'products'
 

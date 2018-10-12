@@ -11,24 +11,6 @@ class BaseTable(object):
         return iter(self.rows)
 
 
-class OSNames(BaseTable):
-    table = 'os_names'
-    columns = ['os_name', 'os_short_name']
-    rows = [['Windows', 'win'],
-            ['Mac OS X', 'mac'],
-            ['Linux', 'lin'],
-            ['Unknown', 'unknown']]
-
-
-class OSNameMatches(BaseTable):
-    table = 'os_name_matches'
-    columns = ['os_name', 'match_string']
-    rows = [['Windows', 'Windows%'],
-            ['Mac OS X', 'Mac%'],
-            ['Mac OS X', 'Darwin%'],
-            ['Linux', 'Linux%']]
-
-
 class ReleaseChannels(BaseTable):
     table = 'release_channels'
     columns = ['release_channel', 'sort']
@@ -169,7 +151,12 @@ class SpecialProductPlatforms(BaseTable):
 
 
 # NOTE(willkg): the order that tables are loaded is important
-tables = [OSNames, OSNameMatches, ReleaseChannels,
-          ReleaseRepositories,
-          Products, ProductBuildTypes, ProductReleaseChannels,
-          ProductProductIDMap, SpecialProductPlatforms]
+tables = [
+    ReleaseChannels,
+    ReleaseRepositories,
+    Products,
+    ProductBuildTypes,
+    ProductReleaseChannels,
+    ProductProductIDMap,
+    SpecialProductPlatforms
+]

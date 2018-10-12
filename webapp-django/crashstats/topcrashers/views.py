@@ -88,7 +88,7 @@ def get_topcrashers_stats(**kwargs):
                 signature=signature,
                 num_total_crashes=search_results['total'],
                 rank=index,
-                platforms=models.Platforms().get_all()['hits'],
+                platforms=models.Platform.objects.values(),
                 previous_signature=previous_signature,
             ))
     return signatures_stats
@@ -176,9 +176,8 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     context['crash_type'] = crash_type
 
-    os_api = models.Platforms()
-    operating_systems = os_api.get()
-    if os_name not in (os_['name'] for os_ in operating_systems):
+    platforms = models.Platform.objects.values()
+    if os_name not in (item['name'] for item in platforms):
         os_name = None
 
     context['os_name'] = os_name
@@ -255,18 +254,14 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     for topcrashers_stats_item in topcrashers_stats:
         crash_counts = []
-        # Due to the inconsistencies of OS usage and naming of
-        # codes and props for operating systems the hacky bit below
-        # is required. Socorro and the world will be a better place
-        # once https://bugzilla.mozilla.org/show_bug.cgi?id=790642 lands.
-        for operating_system in operating_systems:
-            if operating_system['name'] == 'Unknown':
+        for item in platforms:
+            if item['name'] == 'Unknown':
                 # not applicable in this context
                 continue
-            os_code = operating_system['code'][0:3].lower()
-            key = '%s_count' % os_code
-            crash_counts.append([topcrashers_stats_item.num_crashes_per_platform[key],
-                                operating_system['name']])
+            key = '%s_count' % item['short_name']
+            crash_counts.append(
+                [topcrashers_stats_item.num_crashes_per_platform[key], item['name']]
+            )
 
         signature_term = topcrashers_stats_item.signature_term
         # Augment with bugs.
@@ -300,6 +295,6 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
             label = option.capitalize()
         context['process_type_values'].append((value, label))
 
-    context['platform_values'] = settings.DISPLAY_OS_NAMES
+    context['platform_values'] = [item['name'] for item in platforms]
 
     return render(request, 'topcrashers/topcrashers.html', context)

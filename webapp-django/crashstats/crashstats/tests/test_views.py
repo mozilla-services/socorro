@@ -208,29 +208,6 @@ class BaseTestViews(DjangoTestCase):
         # Tests assume and require a non-persistent cache backend
         assert 'LocMemCache' in settings.CACHES['default']['BACKEND']
 
-        def mocked_platforms_get(**options):
-            return {
-                'hits': [
-                    {
-                        'code': 'win',
-                        'name': 'Windows',
-                    },
-                    {
-                        'code': 'mac',
-                        'name': 'Mac OS X',
-                    },
-                    {
-                        'code': 'lin',
-                        'name': 'Linux',
-                    }
-                ],
-                'total': 6
-            }
-
-        models.Platforms.implementation().get.side_effect = (
-            mocked_platforms_get
-        )
-
         def mocked_products(**params):
             hits = [
                 # These have versions in the mocked ProductVersions
@@ -411,7 +388,6 @@ class BaseTestViews(DjangoTestCase):
         # it gets used so often
 
         models.ProductVersions().get(active=True)
-        models.Platforms().get()
 
     def tearDown(self):
         super(BaseTestViews, self).tearDown()
