@@ -370,10 +370,6 @@ RATELIMIT_SUPERSEARCH_AUTHENTICATED = '100/m'
 # Path to the view that gets executed if you hit upon a ratelimit block
 RATELIMIT_VIEW = 'crashstats.crashstats.views.ratelimit_blocked'
 
-# When we pull platforms from the Platforms API we later decide which of
-# these to display at various points in the UI.
-DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
-
 # We don't want to test the migrations when we run tests.
 # We trust that syncdb matches what you'd get if you install
 # all the migrations.

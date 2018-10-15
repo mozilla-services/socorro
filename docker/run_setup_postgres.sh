@@ -34,3 +34,6 @@ echo "Setting up the db for Django..."
 cd /app/webapp-django
 python manage.py migrate auth
 python manage.py migrate
+
+# Add initial data from fixtures
+python manage.py loaddata platforms

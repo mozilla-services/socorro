@@ -19,7 +19,6 @@ from socorro.external.rabbitmq.crashstorage import (
     PriorityjobRabbitMQCrashStore,
 )
 from socorro.external.postgresql.base import PostgreSQLStorage
-import socorro.external.postgresql.platforms
 import socorro.external.postgresql.products
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.version_string
@@ -110,7 +109,7 @@ class GraphicsDevice(models.Model):
 class Platform(models.Model):
     """Lookup table for platforms"""
     name = models.CharField(
-        max_length=20, blank=False, null=False,
+        max_length=20, blank=False, null=False, unique=True,
         help_text='Name of the platform'
     )
     short_name = models.CharField(
@@ -610,35 +609,6 @@ class ProductVersions(SocorroMiddleware):
 
     def post(self, **data):
         return self.get_implementation().post(**data)
-
-
-class Platforms(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.platforms.Platforms
-
-    API_WHITELIST = (
-        'code',
-        'name',
-    )
-
-    def get(self):
-        # XXX (peterbe, Mar 2016): Oh I wish we had stats on how many people
-        # are using /api/Platforms/. If we knew we could be brave about
-        # removing this legacy hack.
-
-        # When we first exposed this model it would just return a plain
-        # list. It was hardcoded. To avoid deprecating things for people
-        # we continue this trandition by only returning the hits directly
-        result = super(Platforms, self).get()
-        return [
-            dict(x, display=x['name'] in settings.DISPLAY_OS_NAMES)
-            for x in result['hits']
-        ]
-
-    def get_all(self):
-        """Return all platforms without reducing them to a pre-configured list.
-        """
-        return super(Platforms, self).get()
 
 
 class TelemetryCrash(SocorroMiddleware):

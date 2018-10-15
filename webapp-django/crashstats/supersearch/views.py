@@ -64,7 +64,7 @@ def get_allowed_fields(user):
 
 
 def get_supersearch_form(request):
-    platforms = models.Platforms().get()
+    platforms = models.Platform.objects.values()
     products = models.Products().get()['hits']
     product_versions = models.ProductVersions().get(active=True)['hits']
 

@@ -97,7 +97,7 @@ class SignatureStats(object):
 
     @cached_property
     def platform_codes(self):
-        return [x['code'] for x in self.platforms if x['code'] != 'unknown']
+        return [x['short_name'] for x in self.platforms if x['short_name'] != 'unknown']
 
     @cached_property
     def signature_term(self):
