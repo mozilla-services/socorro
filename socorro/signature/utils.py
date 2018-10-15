@@ -36,7 +36,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
 
     crash_data = {
         # JavaStackTrace or None
-        'java_stack_trace': glom(raw_crash, 'JavaStackTrace', default=None),
+        'java_stack_trace': glom(processed_crash, 'java_stack_trace', default=None),
 
         # int or None
         'crashing_thread': glom(

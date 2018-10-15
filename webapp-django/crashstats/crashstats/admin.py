@@ -3,7 +3,9 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 
 from crashstats.crashstats.models import (
+    BugAssociation,
     GraphicsDevice,
+    Platform,
     Signature,
 )
 
@@ -66,6 +68,18 @@ class LogEntryAdmin(admin.ModelAdmin):
         return True
 
 
+@admin.register(BugAssociation)
+class BugAssociationAdmin(admin.ModelAdmin):
+    list_display = [
+        'bug_id',
+        'signature'
+    ]
+    search_fields = [
+        'bug_id',
+        'signature'
+    ]
+
+
 @admin.register(GraphicsDevice)
 class GraphicsDeviceAdmin(admin.ModelAdmin):
     list_display = [
@@ -83,8 +97,16 @@ class GraphicsDeviceAdmin(admin.ModelAdmin):
     ]
 
 
+@admin.register(Platform)
+class PlatformAdmin(admin.ModelAdmin):
+    list_display = [
+        'name',
+        'short_name'
+    ]
+
+
 @admin.register(Signature)
-class Signature(admin.ModelAdmin):
+class SignatureAdmin(admin.ModelAdmin):
     list_display = [
         'signature',
         'first_build',

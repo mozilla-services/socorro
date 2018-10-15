@@ -6,60 +6,37 @@ import pyquery
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
 
-from crashstats.crashstats.models import SignatureFirstDate, Bugs
+from crashstats.crashstats.models import Signature, BugAssociation
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearchUnredacted
 
 
-class TestViews(BaseTestViews):
+class TestTopCrasherViews(BaseTestViews):
     base_url = reverse('topcrashers:topcrashers')
 
     def test_topcrashers(self):
+        BugAssociation.objects.create(
+            bug_id=123456789,
+            signature='Something'
+        )
+        BugAssociation.objects.create(
+            bug_id=22222,
+            signature=u'FakeSignature1 \u7684 Japanese',
+        )
+        BugAssociation.objects.create(
+            bug_id=33333,
+            signature=u"FakeSignature1 \u7684 Japanese"
+        )
 
-        def mocked_bugs(**options):
-            return {
-                "hits": [
-                    {"id": 123456789,
-                     "signature": "Something"},
-                    {"id": 22222,
-                     "signature": u"FakeSignature1 \u7684 Japanese"},
-                    {"id": 33333,
-                     "signature": u"FakeSignature1 \u7684 Japanese"}
-                ]
-            }
-        Bugs.implementation().get.side_effect = mocked_bugs
-
-        def mocked_signature_first_date_get(**options):
-            hits = [
-                {
-                    "signature": u"FakeSignature1 \u7684 Japanese",
-                    "first_date": datetime.datetime(
-                        2000, 1, 1, 12, 23, 34,
-                        tzinfo=utc,
-                    ),
-                    "first_build": "20000101122334",
-                },
-                {
-                    "signature": u"mozCool()",
-                    "first_date": datetime.datetime(
-                        2016, 5, 2, 0, 0, 0,
-                        tzinfo=utc,
-                    ),
-                    "first_build": "20160502000000",
-                },
-            ]
-
-            # Simulate filtering by signatures
-            if 'signatures' in options:
-                hits = [hit for hit in hits if hit['signature'] in options['signatures']]
-
-            return {
-                "hits": hits,
-                "total": len(hits)
-            }
-
-        SignatureFirstDate.implementation().get.side_effect = (
-            mocked_signature_first_date_get
+        Signature.objects.create(
+            signature=u'FakeSignature1 \u7684 Japanese',
+            first_date=datetime.datetime(2000, 1, 1, 12, 23, 34, tzinfo=utc),
+            first_build='20000101122334'
+        )
+        Signature.objects.create(
+            signature='mozCool()',
+            first_date=datetime.datetime(2016, 5, 2, 0, 0, 0, tzinfo=utc),
+            first_build='20160502000000'
         )
 
         def mocked_supersearch_get(**params):
@@ -220,8 +197,7 @@ class TestViews(BaseTestViews):
             in response.content
         )
 
-    def test_topcrashers_product_sans_featured_version(self):
-
+    def test_product_sans_featured_version(self):
         def mocked_supersearch_get(**params):
             if '_columns' not in params:
                 params['_columns'] = []
@@ -272,7 +248,7 @@ class TestViews(BaseTestViews):
         # See test_topcrashers() above instead. Here we just want to make
         # sure it renders at all when the product has no featured versions.
 
-    def test_topcrashers_400_by_bad_days(self):
+    def test_400_by_bad_days(self):
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
             'version': '0.1',
@@ -282,7 +258,7 @@ class TestViews(BaseTestViews):
         assert 'not a number' in response.content
         assert response['Content-Type'] == 'text/html; charset=utf-8'
 
-    def test_topcrashers_400_by_bad_facets_size(self):
+    def test_400_by_bad_facets_size(self):
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
             '_facets_size': 'notanumber',
@@ -291,7 +267,7 @@ class TestViews(BaseTestViews):
         assert 'Enter a whole number' in response.content
         assert response['Content-Type'] == 'text/html; charset=utf-8'
 
-    def test_topcrasher_with_unsupported_product(self):
+    def test_with_unsupported_product(self):
         # SnowLion is not in the mocked Products list
         response = self.client.get(self.base_url, {
             'product': 'SnowLion',
@@ -299,7 +275,7 @@ class TestViews(BaseTestViews):
         })
         assert response.status_code == 404
 
-    def test_topcrasher_without_any_signatures(self):
+    def test_without_any_signatures(self):
         url = self.base_url + '?product=WaterWolf&version=19.0'
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
@@ -324,7 +300,7 @@ class TestViews(BaseTestViews):
         })
         assert response.status_code == 200
 
-    def test_topcrasher_modes(self):
+    def test_modes(self):
 
         def mocked_supersearch_get(**params):
             return {
@@ -364,7 +340,7 @@ class TestViews(BaseTestViews):
             assert today in response.content
             assert now not in response.content
 
-    def test_topcrasher_by_build(self):
+    def test_by_build(self):
 
         def mocked_supersearch_get(**params):
             assert 'build_id' in params

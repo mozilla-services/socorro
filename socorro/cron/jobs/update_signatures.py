@@ -16,7 +16,6 @@ from socorro.external.postgresql.dbapi2_util import (
     single_row_sql,
     SQLDidNotReturnSingleRow,
 )
-from socorro.external.postgresql.signature_first_date import SignatureFirstDate
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFields
@@ -155,7 +154,6 @@ class UpdateSignaturesCronApp(BaseCronApp):
         signature_data = results.values()
 
         # Save signature data to the db
-        signature_first_date_api = SignatureFirstDate(config=self.config)
         for item in signature_data:
             if self.config.dry_run:
                 self.config.logger.info(
@@ -165,14 +163,6 @@ class UpdateSignaturesCronApp(BaseCronApp):
                     item['build_id']
                 )
             else:
-                # Insert into the old table
-                signature_first_date_api.post(
-                    signature=item['signature'],
-                    first_report=item['date'],
-                    first_build=item['build_id']
-                )
-
-                # Insert into the new table
                 self.database_transaction_executor(
                     self.update_crashstats_signature,
                     signature=item['signature'],

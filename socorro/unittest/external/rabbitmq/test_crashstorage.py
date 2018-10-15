@@ -6,7 +6,7 @@ from socorro.external.rabbitmq.crashstorage import (
     RabbitMQCrashStorage,
 )
 from socorro.lib.util import DotDict
-from socorro.database.transaction_executor import (
+from socorro.lib.transaction import (
     TransactionExecutorWithInfiniteBackoff,
     TransactionExecutor
 )

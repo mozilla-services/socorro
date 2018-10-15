@@ -13,7 +13,7 @@
             <ul class="bug_ids_expanded full_bug_ids full">
             {% for bug in bugs %}
             {% if bug.signature == signature %}
-                <li>{{ show_bug_link(bug.id) }}</li>
+                <li>{{ show_bug_link(bug.bug_id) }}</li>
             {% endif %}
             {% endfor %}
             </ul>
@@ -32,7 +32,7 @@
         <div class="body bug_ids_expanded_list">
             <p>Bugs for <code>{{ bug.signature }}</code></p>
             <ul class="bug_ids_expanded full_bug_ids full">
-                <li>{{ show_bug_link(bug.id) }}</li>
+                <li>{{ show_bug_link(bug.bug_id) }}</li>
             </ul>
         </div>
         {% endif %}

@@ -260,13 +260,21 @@
                             <tr title="{{ fields_desc['raw_crash.AdapterVendorID'] }}">
                                 <th scope="row">Adapter Vendor ID</th>
                                 <td>
-                                    <pre>{{ raw.AdapterVendorID }}{% if raw.AdapterVendorName %} ({{ raw.AdapterVendorName }}){% endif %}</pre>
+                                    {% if raw.AdapterVendorName %}
+                                        <pre>{{ raw.AdapterVendorName }} ({{ raw.AdapterVendorID }})</pre>
+                                    {% else %}
+                                        <pre>{{ raw.AdapterVendorID }}</pre>
+                                    {% endif %}
                                 </td>
                             </tr>
                             <tr title="{{ fields_desc['raw_crash.AdapterDeviceID'] }}">
                                 <th scope="row">Adapter Device ID</th>
                                 <td>
-                                    <pre>{{ raw.AdapterDeviceID }}{% if raw.AdapterDeviceName %} ({{ raw.AdapterDeviceName }}){% endif %}</pre>
+                                    {% if raw.AdapterDeviceName %}
+                                        <pre>{{ raw.AdapterDeviceName }} ({{ raw.AdapterDeviceID }})</pre>
+                                    {% else %}
+                                        <pre>{{ raw.AdapterDeviceID }}</pre>
+                                    {% endif %}
                                 </td>
                             </tr>
 
@@ -321,13 +329,24 @@
                                 <th scope="row">Crash Address</th>
                                 <td>{{ report.address }}</td>
                             </tr>
-                            {% if raw.JavaStackTrace %}
-                            <tr title="{{ fields_desc['processed_crash.java_stack_trace'] }}">
-                                <th scope="row">Java Stack Trace</th>
-                                <td>
-                                    <pre>{{ raw.JavaStackTrace }}</pre>
-                                </td>
-                            </tr>
+                            {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
+                                {% if report.java_stack_trace_full %}
+                                <tr title="{{ fields_desc['processed_crash.java_stack_trace_full'] }}">
+                                    <th scope="row">Java Stack Trace (Full)</th>
+                                    <td>
+                                        <pre>{{ report.java_stack_trace_full }}</pre>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% else %}
+                                {% if report.java_stack_trace %}
+                                <tr title="{{ fields_desc['processed_crash.java_stack_trace'] }}">
+                                    <th scope="row">Java Stack Trace (Redacted)</th>
+                                    <td>
+                                        <pre>{{ report.java_stack_trace }}</pre>
+                                    </td>
+                                    </tr>
+                                {% endif %}
                             {% endif %}
                             {% if request.user.has_perm('crashstats.view_exploitability') or your_crash %}
                             <tr title="{{ fields_desc['processed_crash.exploitability'] }}">
@@ -714,7 +733,7 @@
                         <div class="bug_ids_expanded_list">
                             <ul class="bug_ids_expanded full_bug_ids full">
                                 {% for bug in bug_associations %}
-                                <li>{{ show_bug_link(bug.id) }}</li>
+                                <li>{{ show_bug_link(bug.bug_id) }}</li>
                                 {% endfor %}
                             </ul>
                         </div>

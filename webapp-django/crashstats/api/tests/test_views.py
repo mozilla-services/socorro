@@ -16,14 +16,12 @@ from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.crashstats.models import (
-    Bugs,
+    BugAssociation,
     CrontabberState,
     ProcessedCrash,
     ProductVersions,
     Reprocessing,
     RawCrash,
-    SignaturesByBugs,
-    SocorroCommon,
     UnredactedCrash,
 )
 from crashstats.tokens.models import Token
@@ -458,6 +456,10 @@ class TestViews(BaseTestViews):
         assert response.status_code == 400
 
     def test_Bugs(self):
+        BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
         url = reverse('api:model_wrapper', args=('Bugs',))
         response = self.client.get(url)
         assert response.status_code == 400
@@ -465,33 +467,21 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         assert dump['errors']['signatures']
 
-        def mocked_get_bugs(**options):
-            return {
-                "hits": [
-                    {
-                        "id": "123456789",
-                        "signature": "Something"
-                    }
-                ]
-            }
-        Bugs.implementation().get.side_effect = mocked_get_bugs
-
-        response = self.client.get(url, {
-            'signatures': 'one & two',
-        })
+        response = self.client.get(url, {'signatures': 'OOM | small'})
         assert response.status_code == 200
-        dump = json.loads(response.content)
-        assert dump['hits']
+        assert json.loads(response.content) == {
+            'hits': [{
+                'id': 999999,
+                'signature': 'OOM | small'
+            }],
+            'total': 1
+        }
 
     def test_SignaturesForBugs(self):
-
-        def mocked_get_bugs(**options):
-            return {
-                "hits": [
-                    {"id": "123456789", "signature": "Something"}
-                ]
-            }
-        SignaturesByBugs.implementation().get.side_effect = mocked_get_bugs
+        BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
 
         url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
         response = self.client.get(url)
@@ -500,12 +490,15 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         assert dump['errors']['bug_ids']
 
-        response = self.client.get(url, {
-            'bug_ids': '123456789',
-        })
+        response = self.client.get(url, {'bug_ids': '999999'})
         assert response.status_code == 200
-        dump = json.loads(response.content)
-        assert dump['hits']
+        assert json.loads(response.content) == {
+            'hits': [{
+                'id': 999999,
+                'signature': 'OOM | small'
+            }],
+            'total': 1
+        }
 
     def test_NewSignatures(self):
 
@@ -1046,7 +1039,6 @@ class TestVersionString(object):
                 'hits': results
             }
             yield
-        SocorroCommon.clear_implementations_cache()
         cache.clear()
 
     def test_version_string_no_args(self, client):

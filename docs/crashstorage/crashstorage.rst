@@ -63,8 +63,8 @@ fork "streams of crashes" into different storage engines. Also, the
 *TODO: Add an attribute to or rename the CrashStorage containers.*
 
 
-socorro.database.transaction_executor
-=====================================
+socorro.lib.transaction
+=======================
 
 * `TransactionExecutor`: A functor; a default version of a transaction function
   that contains a commit, rollback depending on whether a transaction succeeds

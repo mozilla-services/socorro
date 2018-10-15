@@ -2,7 +2,6 @@ import json
 import urllib
 import re
 
-import mock
 import pyquery
 
 from django.conf import settings
@@ -12,6 +11,7 @@ from waffle.models import Switch
 
 from socorro.lib import BadArgumentError
 
+from crashstats.crashstats.models import BugAssociation
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import Query, SuperSearchUnredacted
 
@@ -88,20 +88,11 @@ class TestViews(BaseTestViews):
 
         assert 'exploitability' in content
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_search_results(self, cpost):
-        def mocked_post(**options):
-            return {
-                "hits": [
-                    {
-                        "id": "123456",
-                        "signature": u"nsASDOMWindowEnumerator::GetNext()"
-                    }
-                ],
-                "total": 1
-            }
-
-        cpost.side_effect = mocked_post
+    def test_search_results(self):
+        BugAssociation.objects.create(
+            bug_id=123456,
+            signature='nsASDOMWindowEnumerator::GetNext()'
+        )
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params

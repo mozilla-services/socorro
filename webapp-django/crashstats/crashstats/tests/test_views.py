@@ -413,28 +413,9 @@ class BaseTestViews(DjangoTestCase):
         models.ProductVersions().get(active=True)
         models.Platforms().get()
 
-        def mocked_bugs_get(**options):
-            return {
-                'hits': [{
-                    'id': '123456789',
-                    'signature': 'Something'
-                }]
-            }
-
-        # The default mocking of Bugs.get
-        models.Bugs.implementation().get.side_effect = mocked_bugs_get
-
     def tearDown(self):
         super(BaseTestViews, self).tearDown()
         cache.clear()
-
-        from crashstats.crashstats.models import SocorroCommon
-        # We use a memoization technique on the SocorroCommon so that we
-        # can get the same implementation class instance repeatedly under
-        # the same request. This is great for low-level performance but
-        # it makes it impossible to test classes that are imported only
-        # once like they are in unit test running.
-        SocorroCommon.clear_implementations_cache()
 
     def _add_permission(self, user, codename, group_name='Hackers'):
         group = self._create_group_with_permission(codename)
@@ -695,15 +676,18 @@ class TestViews(BaseTestViews):
             }
         }
 
-        def mocked_bugs_get(**options):
-            return {
-                'hits': [
-                    {'id': '222222', 'signature': 'FakeSignature1'},
-                    {'id': '333333', 'signature': 'FakeSignature1'},
-                    {'id': '444444', 'signature': 'Other FakeSignature'}
-                ]
-            }
-        models.Bugs.implementation().get.side_effect = mocked_bugs_get
+        models.BugAssociation.objects.create(
+            bug_id=222222,
+            signature='FakeSignature1'
+        )
+        models.BugAssociation.objects.create(
+            bug_id=333333,
+            signature='FakeSignature1'
+        )
+        models.BugAssociation.objects.create(
+            bug_id=444444,
+            signature='Other FakeSignature'
+        )
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params

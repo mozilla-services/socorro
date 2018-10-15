@@ -1,5 +1,4 @@
 import json
-import datetime
 import random
 import urlparse
 from past.builtins import basestring
@@ -10,7 +9,7 @@ from six import text_type
 
 from django.core.cache import cache
 from django.conf import settings
-from django.utils import timezone
+from django.utils import dateparse
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
@@ -34,23 +33,268 @@ class Response(object):
         return self.raw
 
 
+class TestGraphicsDevices(DjangoTestCase):
+    def setUp(self):
+        super(TestGraphicsDevices, self).setUp()
+        cache.clear()
+
+    def tearDown(self):
+        super(TestGraphicsDevices, self).tearDown()
+
+    def test_get_pairs(self):
+        """Test get_pairs() works correctly
+
+        The GraphicsDevice.get_pairs() lets you expand a bunch of (vendor, adapter)
+        pairs at the same time. It's more performant since it does a single query.
+
+        """
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex3',
+            vendor_name='V 3',
+            adapter_hex='ahex3',
+            adapter_name='A 3'
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex2',
+            vendor_name='V 2',
+            adapter_hex='ahex2',
+            adapter_name='A 2',
+        )
+        models.GraphicsDevice.objects.create(
+            vendor_hex='vhex1',
+            vendor_name='V 1',
+            adapter_hex='ahex1',
+            adapter_name='A 1',
+        )
+
+        r = models.GraphicsDevice.objects.get_pairs(
+            ['vhex1', 'vhex2'],
+            ['ahex1', 'ahex2'],
+        )
+        expected = {
+            ('vhex1', 'ahex1'): ('V 1', 'A 1'),
+            ('vhex2', 'ahex2'): ('V 2', 'A 2'),
+        }
+        assert r == expected
+
+        r = models.GraphicsDevice.objects.get_pairs(
+            ['vhex2', 'vhex3'],
+            ['ahex2', 'ahex3'],
+        )
+        assert len(r) == 2
+        expected = {
+            ('vhex2', 'ahex2'): ('V 2', 'A 2'),
+            ('vhex3', 'ahex3'): ('V 3', 'A 3'),
+        }
+        assert r == expected
+
+
+class TestBugs(DjangoTestCase):
+    def setUp(self):
+        super(TestBugs, self).setUp()
+        cache.clear()
+
+    def test_get_one(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+
+        api = models.Bugs()
+
+        resp = api.get(signatures=['OOM | small'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                }
+            ],
+            'total': 1
+        }
+
+    def test_get_multiple(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='1000000',
+            signature='OOM | large'
+        )
+
+        api = models.Bugs()
+
+        resp = api.get(signatures=['OOM | small', 'OOM | large'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                },
+                {
+                    'id': 1000000,
+                    'signature': 'OOM | large'
+                }
+            ],
+            'total': 2
+        }
+
+    def test_related(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | medium'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='1000000',
+            signature='OOM | large'
+        )
+
+        api = models.Bugs()
+
+        resp = api.get(signatures=['OOM | small'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | medium'
+                },
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                }
+            ],
+            'total': 2
+        }
+
+
+class TestSignaturesByBugs(DjangoTestCase):
+    def setUp(self):
+        super(TestSignaturesByBugs, self).setUp()
+        cache.clear()
+
+    def test_get_one(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+
+        api = models.SignaturesByBugs()
+
+        resp = api.get(bug_ids=['999999'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                }
+            ],
+            'total': 1
+        }
+
+    def test_get_multiple(self):
+        models.BugAssociation.objects.create(
+            bug_id='999999',
+            signature='OOM | small'
+        )
+        models.BugAssociation.objects.create(
+            bug_id='1000000',
+            signature='OOM | large'
+        )
+
+        api = models.SignaturesByBugs()
+
+        resp = api.get(bug_ids=['999999', '1000000'])
+        assert resp == {
+            'hits': [
+                {
+                    'id': 999999,
+                    'signature': 'OOM | small'
+                },
+                {
+                    'id': 1000000,
+                    'signature': 'OOM | large'
+                }
+            ],
+            'total': 2
+        }
+
+
+class TestSignatureFirstDate(DjangoTestCase):
+    def setUp(self):
+        super(TestSignatureFirstDate, self).setUp()
+        cache.clear()
+
+    def test_get_one(self):
+        some_date = dateparse.parse_datetime('2018-10-06T00:22:58.074859+00:00')
+
+        models.Signature.objects.create(
+            signature='OOM | Small',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+        models.Signature.objects.create(
+            signature='OOM | Large',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+
+        api = models.SignatureFirstDate()
+
+        resp = api.get(signatures='OOM | Small')
+        assert resp['total'] == 1
+        assert resp['hits'] == [
+            {
+                'first_build': '20180920131237',
+                'first_date': '2018-10-06T00:22:58.074859+00:00',
+                'signature': 'OOM | Small'
+            }
+        ]
+
+    def test_get_two(self):
+        some_date = dateparse.parse_datetime('2018-10-06T00:22:58.074859+00:00')
+
+        models.Signature.objects.create(
+            signature='OOM | Small',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+        models.Signature.objects.create(
+            signature='OOM | Large',
+            first_build='20180920131237',
+            first_date=some_date
+        )
+
+        api = models.SignatureFirstDate()
+
+        resp = api.get(signatures=['OOM | Small', 'OOM | Large'])
+        assert resp['total'] == 2
+        assert resp['hits'] == [
+            {
+                'first_build': '20180920131237',
+                'first_date': '2018-10-06T00:22:58.074859+00:00',
+                'signature': 'OOM | Small'
+            },
+            {
+                'first_build': '20180920131237',
+                'first_date': '2018-10-06T00:22:58.074859+00:00',
+                'signature': 'OOM | Large'
+            }
+        ]
+
+
 class TestModels(DjangoTestCase):
 
     def setUp(self):
         super(TestModels, self).setUp()
-        # thanks to crashstats.settings.test
-        assert settings.CACHE_IMPLEMENTATION_FETCHES
         cache.clear()
 
     def tearDown(self):
         super(TestModels, self).tearDown()
-
-        # We use a memoization technique on the SocorroCommon so that we
-        # can get the same implementation class instance repeatedly under
-        # the same request. This is great for low-level performance but
-        # it makes it impossible to test classes that are imported only
-        # once like they are in unit test running.
-        models.SocorroCommon.clear_implementations_cache()
 
     @mock.patch('requests.Session')
     def test_bugzilla_api(self, rsession):
@@ -191,132 +435,6 @@ class TestModels(DjangoTestCase):
         assert r['product']
         assert r['exploitability']
 
-    def test_bugs(self):
-        model = models.Bugs
-        api = model()
-
-        def mocked_get(**options):
-            assert options == {'signatures': ['Pickle::ReadBytes']}
-            return {'hits': ['123456789']}
-
-        models.Bugs.implementation().get.side_effect = mocked_get
-
-        r = api.get(signatures='Pickle::ReadBytes')
-        assert r['hits']
-
-    def test_bugs_called_without_signatures(self):
-        model = models.Bugs
-        api = model()
-
-        with pytest.raises(models.RequiredParameterError):
-            api.get()
-
-    def test_signatures_by_bugs(self):
-        model = models.SignaturesByBugs
-        api = model()
-
-        def mocked_get(**options):
-            assert options == {'bug_ids': ['123456789']}
-            return {'hits': {'signatures': 'Pickle::ReadBytes'}}
-
-        models.SignaturesByBugs.implementation().get.side_effect = mocked_get
-
-        r = api.get(bug_ids='123456789')
-        assert r['hits']
-
-    def test_sigs_by_bugs_called_without_bug_ids(self):
-        model = models.SignaturesByBugs
-        api = model()
-
-        with pytest.raises(models.RequiredParameterError):
-            api.get()
-
-    def test_signature_first_date(self):
-        api = models.SignatureFirstDate()
-
-        def mocked_get(**options):
-            return {
-                'hits': [],
-                'total': 0
-            }
-
-        models.SignatureFirstDate.implementation().get.side_effect = mocked_get
-        r = api.get(
-            signatures=['Pickle::ReadBytes', 'FakeSignature'],
-        )
-        assert r['total'] == 0
-
-    def test_signature_first_date_get_dates(self):
-        api = models.SignatureFirstDate()
-
-        now = timezone.now()
-        tomorrow = now + datetime.timedelta(days=1)
-        tomorrow_tomorrow = tomorrow + datetime.timedelta(days=1)
-
-        def mocked_get(**kwargs):
-            signatures = kwargs['signatures']
-            # This mocking function really makes sure that only what is
-            # expected to be called for is called for.
-            # Basically, the first time it expects to be asked
-            # about 'Sig 1' and 'Sig 2'.
-            # The second time it expect to only be asked about 'Sig 3'.
-            # Anything else will raise a NotImplementedError.
-            if sorted(signatures) == ['Sig 1', 'Sig 2']:
-                return {
-                    'hits': [
-                        {
-                            'signature': 'Sig 1',
-                            'first_build': '201601010101',
-                            'first_date': now,
-                        },
-                        {
-                            'signature': 'Sig 2',
-                            'first_build': '201602020202',
-                            'first_date': tomorrow,
-                        }
-                    ],
-                    'total': 2
-                }
-            elif sorted(signatures) == ['Sig 3']:
-                return {
-                    'hits': [
-                        {
-                            'signature': 'Sig 3',
-                            'first_build': '201603030303',
-                            'first_date': tomorrow_tomorrow,
-                        }
-                    ],
-                    'total': 1
-                }
-            raise NotImplementedError(signatures)
-
-        models.SignatureFirstDate.implementation().get.side_effect = mocked_get
-        r = api.get_dates(['Sig 1', 'Sig 2'])
-        expected = {
-            'Sig 1': {
-                'first_build': '201601010101',
-                'first_date': now,
-            },
-            'Sig 2': {
-                'first_build': '201602020202',
-                'first_date': tomorrow,
-            },
-        }
-        assert r == expected
-
-        r = api.get_dates(['Sig 2', 'Sig 3'])
-        expected = {
-            'Sig 2': {
-                'first_build': '201602020202',
-                'first_date': tomorrow,
-            },
-            'Sig 3': {
-                'first_build': '201603030303',
-                'first_date': tomorrow_tomorrow,
-            },
-        }
-        assert r == expected
-
     def test_raw_crash(self):
         model = models.RawCrash
         api = model()
@@ -395,55 +513,6 @@ class TestModels(DjangoTestCase):
         assert r[0] == {'code': 'win', 'name': 'Windows', 'display': True}
         assert 'Unknown' not in settings.DISPLAY_OS_NAMES
         assert r[1] == {'code': 'unk', 'name': 'Unknown', 'display': False}
-
-    def test_graphics_devices_get_pairs(self):
-        """Test get_pairs() works correctly
-
-        The GraphicsDevice.get_pairs() lets you make a bunch of requests at
-        the same time. It's more performant since it caches results.
-
-        """
-        models.GraphicsDevice.objects.create(
-            vendor_hex='vhex3',
-            vendor_name='V 3',
-            adapter_hex='ahex3',
-            adapter_name='A 3'
-        )
-        models.GraphicsDevice.objects.create(
-            vendor_hex='vhex2',
-            vendor_name='V 2',
-            adapter_hex='ahex2',
-            adapter_name='A 2',
-        )
-        models.GraphicsDevice.objects.create(
-            vendor_hex='vhex1',
-            vendor_name='V 1',
-            adapter_hex='ahex1',
-            adapter_name='A 1',
-        )
-
-        r = models.GraphicsDevice.objects.get_pairs(
-            ['ahex1', 'ahex2'],
-            ['vhex1', 'vhex2'],
-        )
-        expected = {
-            ('ahex1', 'vhex1'): ('A 1', 'V 1'),
-            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
-        }
-        assert r == expected
-
-        r = models.GraphicsDevice.objects.get_pairs(
-            ['ahex2', 'ahex3'],
-            ['vhex2', 'vhex3'],
-        )
-        assert len(r) == 2
-        expected = {
-            ('ahex2', 'vhex2'): ('A 2', 'V 2'),
-            ('ahex3', 'vhex3'): ('A 3', 'V 3'),
-        }
-        assert r == expected
-
-        # FIXME(willkg): verify caching is working
 
     @mock.patch('requests.Session')
     def test_massive_querystring_caching(self, rsession):

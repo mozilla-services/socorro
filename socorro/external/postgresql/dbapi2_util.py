@@ -6,16 +6,14 @@
 
 from collections import Sequence
 
+from socorro.lib.transaction import NonFatalException
 
-class DBApiUtilNonFatalBaseException(Exception):
+
+class SQLDidNotReturnSingleValue(NonFatalException):
     pass
 
 
-class SQLDidNotReturnSingleValue(DBApiUtilNonFatalBaseException):
-    pass
-
-
-class SQLDidNotReturnSingleRow(DBApiUtilNonFatalBaseException):
+class SQLDidNotReturnSingleRow(NonFatalException):
     pass
 
 

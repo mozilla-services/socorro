@@ -137,15 +137,12 @@ def report_index(request, crash_id, default_context=None):
     context['parsed_dump'] = parsed_dump
     context['bug_product_map'] = settings.BUG_PRODUCT_MAP
 
-    bugs_api = models.Bugs()
-    hits = bugs_api.get(signatures=[context['report']['signature']])['hits']
-    # bugs_api.get(signatures=...) will return all signatures associated
-    # with the bugs found, but we only want those with matching signature
-    context['bug_associations'] = [
-        x for x in hits
-        if x['signature'] == context['report']['signature']
-    ]
-    context['bug_associations'].sort(key=lambda x: x['id'], reverse=True)
+    context['bug_associations'] = list(
+        models.BugAssociation.objects
+        .filter(signature=context['report']['signature'])
+        .values('bug_id', 'signature')
+        .order_by('-bug_id')
+    )
 
     context['raw_keys'] = []
     if request.user.has_perm('crashstats.view_pii'):

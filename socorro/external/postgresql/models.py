@@ -223,15 +223,6 @@ class AlembicVersion(DeclarativeBase):
     __mapper_args__ = {"primary_key": (version_num)}
 
 
-class BugAssociation(DeclarativeBase):
-    __tablename__ = 'bug_associations'
-
-    # column definitions
-    bug_id = Column(u'bug_id', INTEGER(), primary_key=True,
-                    nullable=False, index=True)
-    signature = Column(u'signature', TEXT(), primary_key=True, nullable=False)
-
-
 class OsName(DeclarativeBase):
     __tablename__ = 'os_names'
 
@@ -284,12 +275,6 @@ class Product(DeclarativeBase):
         primaryjoin='Product.product_name==ProductVersion.product_name',
         secondary='ProductVersion',
         secondaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id'
-    )
-    signatures = relationship(
-        'Signature',
-        primaryjoin='Product.product_name==SignatureProductsRollup.product_name',
-        secondary='SignatureProductsRollup',
-        secondaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id'
     )
 
 
@@ -480,17 +465,6 @@ class ReleasesRaw(DeclarativeBase):
     # TODO function-based index
     # from sqlalchemy import func
     # Index('releases_raw_date', func.build_date(build_id));
-
-
-class Signature(DeclarativeBase):
-    __tablename__ = 'signatures'
-
-    # column definitions
-    first_build = Column(u'first_build', NUMERIC())
-    first_report = Column(u'first_report', TIMESTAMP(timezone=True))
-    signature = Column(u'signature', TEXT(), index=True, unique=True)
-    signature_id = Column(u'signature_id', INTEGER(),
-                          primary_key=True, nullable=False)
 
 
 class SpecialProductPlatform(DeclarativeBase):

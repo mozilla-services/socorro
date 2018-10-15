@@ -20,10 +20,8 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 from socorro.external.postgresql.base import PostgreSQLStorage
 import socorro.external.postgresql.platforms
-import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.crontabber_state
-import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.version_string
 import socorro.external.boto.crash_data
 
@@ -44,40 +42,54 @@ logger = logging.getLogger('crashstats.models')
 # Django models first
 
 
+class BugAssociationManager(models.Manager):
+    def get_bugs_and_related_bugs(self, signatures):
+        # NOTE(willkg): We might be able to do this in a single SQL pass, but
+        # it seemed prudent to go for simpler for now
+        bug_ids = [
+            bug[0]
+            for bug in self.filter(signature__in=signatures).values_list('bug_id')
+        ]
+        return self.filter(bug_id__in=bug_ids)
+
+        # FIXME(willkg): rewrite anything that used the Bugs api
+
+
+class BugAssociation(models.Model):
+    """Specifies assocations between bug ids in Bugzilla and signatures"""
+    bug_id = models.IntegerField(
+        null=False,
+        help_text='Bugzilla bug id'
+    )
+    signature = models.TextField(
+        null=False, blank=False,
+        help_text='Socorro-style crash report signature'
+    )
+
+    objects = BugAssociationManager()
+
+    class Meta:
+        unique_together = ('bug_id', 'signature')
+
+
 class GraphicsDeviceManager(models.Manager):
-    def get_pair(self, adapter_hex, vendor_hex):
-        """Returns (adapter_name, vendor_name) or None"""
+    def get_pair(self, vendor_hex, adapter_hex):
+        """Returns (vendor_name, adapter_name) or None"""
         try:
-            obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hex)
-            return (obj.adapter_name, obj.vendor_name)
+            obj = self.get(vendor_hex=vendor_hex, adapter_hex=adapter_hex)
+            return (obj.vendor_name, obj.adapter_name)
         except self.model.DoesNotExist:
             return None
 
-    def get_pairs(self, adapter_hexes, vendor_hexes):
-        """Return dict where each tuple of (adapter_hex, vendor_hex)
-        corresponds to a (adapter_name, vendor_name) pair
-
-        """
-        assert len(adapter_hexes) == len(vendor_hexes)
-        names = {}
-        for i, adapter_hex in enumerate(adapter_hexes):
-            cache_key = (
-                'graphics_adapters:' + adapter_hex + ':' + vendor_hexes[i]
-            )
-            key = (adapter_hex, vendor_hexes[i])
-
-            name_pair = cache.get(cache_key)
-
-            if name_pair is None:
-                try:
-                    obj = self.get(adapter_hex=adapter_hex, vendor_hex=vendor_hexes[i])
-                except self.model.DoesNotExist:
-                    continue
-
-                name_pair = (obj.adapter_name, obj.vendor_name)
-                cache.set(cache_key, name_pair, 60 * 60 * 24)
-
-            names[key] = name_pair
+    def get_pairs(self, vendor_hexes, adapter_hexes):
+        """Returns dict of (vendor_hex, adapter_hex) -> (vendor_name, adapter_name)"""
+        # NOTE(willkg): graphics devices are hierarchical, but it's easier to do
+        # one query and get some extra stuff than to do one query per vendor
+        qs = self.filter(vendor_hex__in=vendor_hexes, adapter_hex__in=adapter_hexes).values()
+        names = {
+            (item['vendor_hex'], item['adapter_hex']): (item['vendor_name'], item['adapter_name'])
+            for item in qs
+        }
 
         return names
 
@@ -93,6 +105,18 @@ class GraphicsDevice(models.Model):
 
     class Meta:
         unique_together = ('vendor_hex', 'adapter_hex')
+
+
+class Platform(models.Model):
+    """Lookup table for platforms"""
+    name = models.CharField(
+        max_length=20, blank=False, null=False,
+        help_text='Name of the platform'
+    )
+    short_name = models.CharField(
+        max_length=20, blank=False, null=False,
+        help_text='Short abbreviated name of the platform'
+    )
 
 
 class Signature(models.Model):
@@ -323,16 +347,12 @@ class SocorroCommon(object):
             self.cache_seconds
         ):
             name = implementation.__class__.__name__
-            cache_key = hashlib.md5(
-                name + text_type(params)
-            ).hexdigest()
+            cache_key = hashlib.md5(name + text_type(params)).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)
                 if result is not None:
-                    logger.debug(
-                        "CACHE HIT %s" % implementation.__class__.__name__
-                    )
+                    logger.debug('CACHE HIT %s' % implementation.__class__.__name__)
                     return result, True
 
         implementation_method = getattr(implementation, method)
@@ -352,33 +372,11 @@ class SocorroCommon(object):
 
     def get_implementation(self):
         if self.implementation:
-            key = self.__class__.__name__
-            global _implementations
-            try:
-                return _implementations[key]
-            except KeyError:
-                config = config_from_configman()
-                if self.implementation_config_namespace:
-                    config = config[self.implementation_config_namespace]
-                _implementations[key] = self.implementation(
-                    config=config
-                )
-                return _implementations[key]
+            config = config_from_configman()
+            if self.implementation_config_namespace:
+                config = config[self.implementation_config_namespace]
+            return self.implementation(config=config)
         return None
-
-    @classmethod
-    def clear_implementations_cache(cls):
-        # Why not allow of specific keys to clear?
-        # Because it's sometimes complicated to know which implementation
-        # something depends on. "Is it SuperSearch or SuperSearchUnredacted?"
-        # Also, the price of losing them all is not that expensive.
-        global _implementations
-        _implementations = {}
-
-
-# Global cache dict to helps us only instantiate an implementation
-# class only once per process.
-_implementations = {}
 
 
 class SocorroMiddleware(SocorroCommon):
@@ -429,21 +427,7 @@ class SocorroMiddleware(SocorroCommon):
             dont_cache=True,
         )
 
-    def _get(
-        self,
-        method='get',
-        dont_cache=False,
-        refresh_cache=False,
-        expect_json=True,
-        **kwargs
-    ):
-        """
-        This is the generic `get` method that will take
-        `self.required_params` and `self.possible_params` and construct
-        a call to the parent `fetch` method.
-        """
-        implementation = self.get_implementation()
-
+    def parse_parameters(self, kwargs):
         defaults = getattr(self, 'defaults', {})
         aliases = getattr(self, 'aliases', {})
 
@@ -455,6 +439,24 @@ class SocorroMiddleware(SocorroCommon):
             if aliases.get(param):
                 params[aliases.get(param)] = params[param]
                 del params[param]
+        return params
+
+    def _get(
+        self,
+        method='get',
+        dont_cache=False,
+        refresh_cache=False,
+        expect_json=True,
+        **kwargs
+    ):
+        """
+        Generic `get` method that will take `self.required_params` and
+        `self.possible_params` and construct a call to the parent `fetch`
+        method.
+        """
+        implementation = self.get_implementation()
+
+        params = self.parse_parameters(kwargs)
 
         return self.fetch(
             implementation,
@@ -674,53 +676,53 @@ class ProcessedCrash(SocorroMiddleware):
     }
 
     API_WHITELIST = (
-        'ReleaseChannel',
+        'additional_minidumps',
+        'addons',
         'addons_checked',
         'address',
+        'app_notes',
         'build',
         'client_crash_date',
         'completeddatetime',
+        'cpu_info',
         'cpu_name',
+        'crashedThread',
+        'crash_time',
         'date_processed',
+        'distributor',
         'distributor_version',
         'dump',
         'flash_version',
         'hangid',
+        'hang_type',
         'id',
+        'install_age',
+        'java_stack_trace',
+        'json_dump',
         'last_crash',
+        'mdsw_status_string',
         'os_name',
         'os_version',
+        'pluginFilename',
+        'pluginName',
+        'pluginVersion',
+        'processor_notes',
         'process_type',
         'product',
+        'productid',
         'reason',
         'release_channel',
+        'ReleaseChannel',
         'signature',
+        'startedDateTime',
         'success',
+        'topmost_filenames',
         'truncated',
+        'upload_file_minidump_*',
         'uptime',
         'uuid',
         'version',
-        'install_age',
-        'startedDateTime',
-        'java_stack_trace',
-        'crashedThread',
-        'cpu_info',
-        'pluginVersion',
-        'hang_type',
-        'distributor',
-        'topmost_filenames',
-        'additional_minidumps',
-        'processor_notes',
-        'app_notes',
-        'crash_time',
         'Winsock_LSP',
-        'productid',
-        'pluginFilename',
-        'pluginName',
-        'addons',
-        'json_dump',
-        'upload_file_minidump_*',
-        'mdsw_status_string',
     )
 
     # Same as for RawCrash, we supplement with the existing list, on top
@@ -790,6 +792,7 @@ class RawCrash(SocorroMiddleware):
         'AdapterRendererIDs',
         'AdapterSubsysID',
         'AdapterVendorID',
+        'additional_minidumps',
         'Add-ons',
         'Android_Board',
         'Android_Brand',
@@ -808,6 +811,8 @@ class RawCrash(SocorroMiddleware):
         'AvailableVirtualMemory',
         'B2G_OS_Version',
         'BIOS_Manufacturer',
+        'bug836263-size',
+        'buildid',
         'BuildID',
         'CpuUsageFlashProcess1',
         'CpuUsageFlashProcess2',
@@ -817,8 +822,10 @@ class RawCrash(SocorroMiddleware):
         'FlashVersion',
         'FramePoisonBase',
         'FramePoisonSize',
+        'id',
         'InstallTime',
         'IsGarbageCollecting',
+        'legacy_processing',
         'Min_ARM_Version',
         'MinidumpSha256Hash',
         'Notes',
@@ -839,24 +846,19 @@ class RawCrash(SocorroMiddleware):
         'SecondsSinceLastCrash',
         'ShutdownProgress',
         'StartupTime',
+        'submitted_timestamp',
         'SystemMemoryUsePercentage',
         'Theme',
         'Throttleable',
-        'TotalVirtualMemory',
-        'Vendor',
-        'Version',
-        'Winsock_LSP',
-        'additional_minidumps',
-        'bug836263-size',
-        'buildid',
-        'id',
-        'legacy_processing',
-        'submitted_timestamp',
         'throttle_rate',
         'timestamp',
+        'TotalVirtualMemory',
         'upload_file_minidump_*',
         'useragent_locale',
+        'Vendor',
         'version',
+        'Version',
+        'Winsock_LSP',
     )
 
     # The reason we use the old list and pass it into the more dynamic wrapper
@@ -890,9 +892,7 @@ class RawCrash(SocorroMiddleware):
 
 
 class Bugs(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.bugs.Bugs
-
+    # NOTE(willkg): This is implemented with a Django model.
     required_params = (
         ('signatures', list),
     )
@@ -904,10 +904,31 @@ class Bugs(SocorroMiddleware):
         ),
     }
 
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
+
+        hits = list(
+            BugAssociation.objects
+            .get_bugs_and_related_bugs(signatures=params['signatures'])
+            .values('bug_id', 'signature')
+            .order_by('bug_id', 'signature')
+        )
+
+        hits = [
+            {
+                'id': int(hit['bug_id']),
+                'signature': hit['signature']
+            } for hit in hits
+        ]
+
+        return {
+            'hits': hits,
+            'total': len(hits)
+        }
+
 
 class SignaturesByBugs(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.bugs.Bugs
+    # NOTE(willkg): This is implemented with a Django model.
 
     required_params = (
         ('bug_ids', list),
@@ -920,21 +941,40 @@ class SignaturesByBugs(SocorroMiddleware):
         ),
     }
 
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
+
+        hits = list(
+            BugAssociation.objects
+            .filter(bug_id__in=params['bug_ids'])
+            .values('bug_id', 'signature')
+        )
+
+        hits = [
+            {
+                'id': int(hit['bug_id']),
+                'signature': hit['signature']
+            } for hit in hits
+        ]
+
+        return {
+            'hits': hits,
+            'total': len(hits)
+        }
+
 
 class SignatureFirstDate(SocorroMiddleware):
+    # NOTE(willkg): This is implemented with a Django model.
 
     # Set to a short cache time because, the only real user of this
     # model is the Top Crasher page and that one uses the highly
     # optimized method `.get_dates()` which internally uses caching
     # for each individual signature and does so with a very long
     # cache time.
+    #
     # Making it non-0 is to prevent the stampeding herd on this endpoint
     # alone when exposed in the API.
     cache_seconds = 5 * 60  # 5 minutes only
-
-    implementation = (
-        socorro.external.postgresql.signature_first_date.SignatureFirstDate
-    )
 
     required_params = (
         ('signatures', list),
@@ -948,50 +988,27 @@ class SignatureFirstDate(SocorroMiddleware):
         )
     }
 
-    def get_dates(self, signatures):
-        """A highly optimized version, that returns a dictionary where
-        the keys are the signature and the values are dicts that look
-        like this for example::
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
 
+        hits = list(
+            Signature.objects
+            .filter(signature__in=params['signatures'])
+            .values('signature', 'first_build', 'first_date')
+        )
+
+        hits = [
             {
-                'first_build': u'20101214170338',
-                'first_date': datetime.datetime(
-                    2011, 1, 17, 21, 24, 18, 979850, tzinfo=...)
-                )
-            }
+                'signature': hit['signature'],
+                'first_build': str(hit['first_build']),
+                'first_date': hit['first_date'].isoformat()
+            } for hit in hits
+        ]
 
-        """
-        dates = {}
-        missing = {}
-        for signature in signatures:
-            # calculate a good cache key for each signature
-            cache_key = 'signature_first_date-{}'.format(
-                hashlib.md5(signature.encode('utf-8')).hexdigest()
-            )
-            cached = cache.get(cache_key)
-            if cached is not None:
-                dates[signature] = cached
-            else:
-                # remember the cache keys of those we need to look up
-                missing[signature] = cache_key
-
-        if missing:
-            hits = super(SignatureFirstDate, self).get(
-                signatures=missing.keys()
-            )['hits']
-
-            for hit in hits:
-                signature = hit.pop('signature')
-                cache.set(
-                    # get the cache key back
-                    missing[signature],
-                    # what's left when 'signature' is popped
-                    hit,
-                    # make it a really large number
-                    60 * 60 * 24
-                )
-                dates[signature] = hit
-        return dates
+        return {
+            'hits': hits,
+            'total': len(hits)
+        }
 
 
 class CrontabberState(SocorroMiddleware):
@@ -1063,13 +1080,14 @@ class BugzillaBugInfo(SocorroCommon):
             url = settings.BZAPI_BASE_URL + (
                 '/bug?id=%(bugs)s&include_fields=%(fields)s' % params
             )
-            response = requests_retry_session(
+            session = requests_retry_session(
                 # BZAPI isn't super reliable, so be extra patient
                 retries=5,
                 # 502 = Bad Gateway
                 # 504 = Gateway Time-out
-                status_forcelist=(500, 502, 504),
-            ).get(
+                status_forcelist=(500, 502, 504)
+            )
+            response = session.get(
                 url,
                 headers=headers,
                 timeout=self.BUGZILLA_REST_TIMEOUT,

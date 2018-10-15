@@ -6,18 +6,9 @@
 Tips on how to run this locally
 -------------------------------
 
-The easiest way to run this locally is with crontabber_app.py.
-You need a local Postgres to connect to and it needs to have the
-socorro tables (bug_associations, crontabber and crontabber_log).
+Run this:
 
-This examples shows how::
-
-    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations
-
-Since this running through crontabber, it has a frequency and won't run
-until it's time to run again. To override that use::
-
-    $ python socorro/cron/crontabber_app.py --job=bugzilla-associations --force
+    $ socorro-cmd crontabber --job=bugzilla-associations
 
 To change the database config, use --help to see what the parameters are called.
 
@@ -52,22 +43,25 @@ BUGZILLA_BASE_URL = 'https://bugzilla.mozilla.org/rest/bug'
 
 
 def find_signatures(content):
-    """Return a list of signatures found inside a string.
+    """Return a set of signatures found inside a string
 
     Signatures are found between `[@` and `]`. There can be any number of them
     in the content.
 
     Example:
+
     >>> find_signatures("some [@ signature] [@ another] and [@ even::this[] ]")
     set(['signature', 'another', 'even::this[]'])
+
     """
     if not content:
         return set()
 
     signatures = set()
     parts = content.split('[@')
-    # The first item of this list is always not interesting, as it cannot
-    # contain any signatures. We thus skip it.
+
+    # NOTE(willkg): Because we use split, the first item in the list is always
+    # a non-signature--so skip it.
     for part in parts[1:]:
         try:
             last_bracket = part.rindex(']')
@@ -80,12 +74,6 @@ def find_signatures(content):
     return signatures
 
 
-class NothingUsefulHappened(Exception):
-    """an exception to be raised when a pass through the inner loop has
-    done nothing useful and we wish to induce a transaction rollback"""
-    abandon_transaction = True
-
-
 @using_postgres()
 class BugzillaCronApp(BaseCronApp):
     """Updates Socorro's knowledge of which bugs cover which crash signatures
@@ -93,8 +81,8 @@ class BugzillaCronApp(BaseCronApp):
     This queries Bugzilla for all the bugs that were created or had their crash
     signature value changed during the specified period.
 
-    For all the bugs in this group, it updates the bug_associations table with
-    the signatures and bug ids.
+    For all the bugs in this group, it updates the crashstats_bugassociation
+    table with the signatures and bug ids.
 
     """
     app_name = 'bugzilla-associations'
@@ -112,38 +100,42 @@ class BugzillaCronApp(BaseCronApp):
     )
 
     def run(self):
-        # if this is non-zero, we use it.
+        # Figure out how far back we want to ask Bugzilla about
         if self.config.days_into_past:
-            last_run = (
-                utc_now() -
-                datetime.timedelta(days=self.config.days_into_past)
-            )
+            last_run = utc_now() - datetime.timedelta(days=self.config.days_into_past)
+
         else:
             try:
-                # KeyError if it's never run successfully
+                # KeyError if it has never run successfully
                 # TypeError if self.job_information is None
                 last_run = self.job_information['last_success']
             except (KeyError, TypeError):
-                # basically, the "virgin run" of this job
+                # This job has never been run
                 last_run = utc_now()
 
         # bugzilla runs on PST, so we need to communicate in its time zone
         PST = tz.gettz('PST8PDT')
         last_run_formatted = last_run.astimezone(PST).strftime('%Y-%m-%d')
+
+        # Fetch recent relevant changes and iterate over them updating our
+        # data set
         for bug_id, signature_set in self._iterator(last_run_formatted):
-            # each run of this loop is a transaction
             self.database_transaction_executor(
-                self.inner_transaction,
+                self.update_bug_data,
                 bug_id,
                 signature_set
             )
 
-    def inner_transaction(self, connection, bug_id, signature_set):
-        self.config.logger.debug("bug %s: %s", bug_id, signature_set)
+    def update_bug_data(self, connection, bug_id, signature_set):
+        self.config.logger.debug('bug %s: %s', bug_id, signature_set)
+
+        # If there's no associated signatures, delete everything for this bug id
         if not signature_set:
             execute_no_results(
                 connection,
-                "DELETE FROM bug_associations WHERE bug_id = %s",
+                """
+                DELETE FROM crashstats_bugassociation WHERE bug_id = %s
+                """,
                 (bug_id,)
             )
             return
@@ -151,7 +143,9 @@ class BugzillaCronApp(BaseCronApp):
         try:
             signature_rows = execute_query_fetchall(
                 connection,
-                "SELECT signature FROM bug_associations WHERE bug_id = %s",
+                """
+                SELECT signature FROM crashstats_bugassociation WHERE bug_id = %s
+                """,
                 (bug_id,)
             )
             signatures_db = [x[0] for x in signature_rows]
@@ -161,11 +155,13 @@ class BugzillaCronApp(BaseCronApp):
                     execute_no_results(
                         connection,
                         """
-                        DELETE FROM bug_associations
-                        WHERE signature = %s and bug_id = %s""",
+                        DELETE FROM crashstats_bugassociation
+                        WHERE signature = %s and bug_id = %s
+                        """,
                         (signature, bug_id)
                     )
                     self.config.logger.info('association removed: %s - "%s"', bug_id, signature)
+
         except SQLDidNotReturnSingleRow:
             signatures_db = []
 
@@ -174,13 +170,16 @@ class BugzillaCronApp(BaseCronApp):
                 execute_no_results(
                     connection,
                     """
-                    INSERT INTO bug_associations (signature, bug_id)
-                    VALUES (%s, %s)""",
+                    INSERT INTO crashstats_bugassociation (signature, bug_id)
+                    VALUES (%s, %s)
+                    """,
                     (signature, bug_id)
                 )
                 self.config.logger.info('association added: %s - "%s"', bug_id, signature)
 
     def _iterator(self, from_date):
+        # Fetch all the bugs that have been created or had the crash_signature
+        # field changed since from_date
         payload = BUGZILLA_PARAMS.copy()
         payload['chfieldfrom'] = from_date
         session = session_with_retries()
@@ -189,6 +188,7 @@ class BugzillaCronApp(BaseCronApp):
             r.raise_for_status()
         results = r.json()
 
+        # Yield each one as a (bug_id, set of signatures)
         for report in results['bugs']:
             yield (
                 int(report['id']),
