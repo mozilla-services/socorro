@@ -18,7 +18,8 @@ $(document).ready(function() {
           $('#telemetryenvironment-json').JSONView(jsonData);
         } catch (ex) {
           console.warn('The data in the #telemetryenvironment-json dataset is not valid JSON');
-          container.append($('<p>Invalid JSON in TelemetryEnvironment</p>'));
+          container.append($('<p>Error when parsing JSON. Showing raw value:</p>'));
+          container.append(document.createTextNode(jsonData));
         }
       }
     };
