@@ -579,7 +579,8 @@ class VersionString(SocorroMiddleware):
     required_params = (
         'product',
         'version',
-        ('build_id', int)
+        ('build_id', int),
+        'release_channel',
     )
 
     API_WHITELIST = (
