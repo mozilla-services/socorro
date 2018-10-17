@@ -19,7 +19,7 @@ $(document).ready(function() {
         } catch (ex) {
           console.warn('The data in the #telemetryenvironment-json dataset is not valid JSON');
           container.append($('<p>Error when parsing JSON. Showing raw value:</p>'));
-          container.append($(document.createTextNode(jsonData)));
+          container.append(document.createTextNode(jsonData));
         }
       }
     };
