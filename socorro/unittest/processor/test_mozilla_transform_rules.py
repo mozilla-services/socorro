@@ -5,6 +5,7 @@
 import copy
 import json
 from StringIO import StringIO
+from urllib import urlencode
 
 from configman.dotdict import DotDict as CDotDict
 from mock import call, Mock, patch
@@ -1320,17 +1321,18 @@ class TestBetaVersionRule:
         config = get_basic_config()
         config.version_string_api = self.API_URL
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = {}
         raw_dumps = {}
-        processed_crash = DotDict()
-        processed_crash.date_processed = '2014-12-31'
-        processed_crash.product = 'WaterWolf'
 
         # A release crash, version won't get changed.
         with requests_mock.Mocker() as req_mock:
-            processed_crash.version = '2.0'
-            processed_crash.release_channel = 'release'
-            processed_crash.build = '20000801101010'
+            processed_crash = {
+                'product': 'WaterWolf',
+                'version': '2.0',
+                'release_channel': 'release',
+                'build': '20000801101010',
+            }
+
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)
@@ -1341,15 +1343,24 @@ class TestBetaVersionRule:
         # A normal beta crash, with a known version.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
-                self.API_URL + '?product=WaterWolf&version=3.0&build_id=20001001101010',
+                self.API_URL + '?' + urlencode({
+                    'product': 'WaterWolf',
+                    'version': '3.0',
+                    'build_id': '20001001101010',
+                    'release_channel': 'beta'
+                }),
                 json={
                     'hits': ['3.0b1']
                 }
             )
 
-            processed_crash.version = '3.0'
-            processed_crash.release_channel = 'beta'
-            processed_crash.build = '20001001101010'
+            processed_crash = {
+                'product': 'WaterWolf',
+                'version': '3.0',
+                'release_channel': 'beta',
+                'build': '20001001101010',
+            }
+
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)
@@ -1359,9 +1370,13 @@ class TestBetaVersionRule:
 
         # A nightly.
         with requests_mock.Mocker() as req_mock:
-            processed_crash.version = '5.0a1'
-            processed_crash.release_channel = 'nightly'
-            processed_crash.build = '20000105101010'
+            processed_crash = {
+                'product': 'WaterWolf',
+                'version': '5.0a1',
+                'release_channel': 'nightly',
+                'build': '20000105101010',
+            }
+
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)
@@ -1371,9 +1386,13 @@ class TestBetaVersionRule:
 
         # An incorrect build id.
         with requests_mock.Mocker() as req_mock:
-            processed_crash.version = '5.0'
-            processed_crash.release_channel = 'beta'
-            processed_crash.build = '",381,,"'
+            processed_crash = {
+                'product': 'WaterWolf',
+                'version': '5.0',
+                'release_channel': 'beta',
+                'build': '2",381,,"',
+            }
+
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)
@@ -1387,15 +1406,24 @@ class TestBetaVersionRule:
         # A beta crash with an unknown version, gets a special mark.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
-                self.API_URL + '?product=WaterWolf&version=3.0&build_id=20000101101011',
+                self.API_URL + '?' + urlencode({
+                    'product': 'Waterwolf',
+                    'version': '3.0',
+                    'build_id': '220000101101011',
+                    'release_channel': 'beta'
+                }),
                 json={
                     'hits': []
                 }
             )
 
-            processed_crash.version = '3.0'
-            processed_crash.release_channel = 'beta'
-            processed_crash.build = '20000101101011'
+            processed_crash = {
+                'product': 'WaterWolf',
+                'version': '3.0',
+                'release_channel': 'beta',
+                'build': '220000101101011',
+            }
+
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)
@@ -1422,15 +1450,24 @@ class TestBetaVersionRule:
         # A normal aurora crash, with a known version.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
-                self.API_URL + '?product=WaterWolf&version=3.0&build_id=20001001101010',
+                self.API_URL + '?' + urlencode({
+                    'product': 'WaterWolf',
+                    'version': '3.0',
+                    'build_id': '20001001101010',
+                    'release_channel': 'aurora'
+                }),
                 json={
                     'hits': ['3.0b1']
                 }
             )
 
-            processed_crash.version = '3.0'
-            processed_crash.release_channel = 'aurora'
-            processed_crash.build = '20001001101010'
+            processed_crash = {
+                'product': 'WaterWolf',
+                'version': '3.0',
+                'release_channel': 'aurora',
+                'build': '20001001101010',
+            }
+
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)

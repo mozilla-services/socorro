@@ -17,9 +17,10 @@ class VersionString(PostgreSQLBase):
             ('product', None, 'str'),
             ('version', None, 'str'),
             ('build_id', None, 'int'),
+            ('release_channel', None, 'str'),
         ]
         params = external_common.parse_arguments(filters, kwargs)
-        required = ('product', 'build_id', 'version')
+        required = ('product', 'build_id', 'version', 'release_channel')
         for key in required:
             if not params.get(key):
                 raise MissingArgumentError(key)
@@ -33,6 +34,7 @@ class VersionString(PostgreSQLBase):
             WHERE pv.product_name = %(product)s
             AND pv.release_version = %(version)s
             AND pvb.build_id = %(build_id)s
+            AND pv.build_type = %(release_channel)s
         """
         results = self.query(sql, params)
 

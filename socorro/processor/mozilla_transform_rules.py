@@ -638,8 +638,8 @@ class BetaVersionRule(Rule):
     def version(self):
         return '1.0'
 
-    def _get_version_data(self, product, version, build_id):
-        """Return the real version number of a specific product, version and build
+    def _get_version_data(self, product, version, build_id, release_channel):
+        """Return the real version number of a specified product, version, build, channel
 
         For example, beta builds of Firefox declare their version number as the
         major version (i.e. version 54.0b3 would say its version is 54.0). This
@@ -648,7 +648,8 @@ class BetaVersionRule(Rule):
 
         :arg product: the product
         :arg version: the version as a string. e.g. "56.0"
-        :arg build_id: the build_id as a string.
+        :arg build_id: the build_id as a string
+        :arg release_channel: the release channel
 
         :returns: ``None`` or the version string that should be used
 
@@ -656,10 +657,7 @@ class BetaVersionRule(Rule):
             the host specified in ``version_string_api``
 
         """
-        if not (product and version and build_id):
-            return None
-
-        key = '%s:%s:%s' % (product, version, build_id)
+        key = '%s:%s:%s:%s' % (product, version, build_id, release_channel)
         if key in self.cache:
             return self.cache[key]
 
@@ -668,7 +666,8 @@ class BetaVersionRule(Rule):
         resp = session.get(self.version_string_api, params={
             'product': product,
             'version': version,
-            'build_id': build_id
+            'build_id': build_id,
+            'release_channel': release_channel
         })
 
         if resp.status_code == 200:
@@ -697,43 +696,48 @@ class BetaVersionRule(Rule):
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # Beta and aurora versions send the wrong version in the crash report,
-        # so we need to fix them.
+        # so we need to fix them
         return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        product = processed_crash.get('product').strip()
+        version = processed_crash.get('version').strip()
         try:
-            # Sanitize the build id to avoid errors during the SQL query.
+            build_id = int(processed_crash.get('build').strip())
+        except ValueError:
+            build_id = None
+        release_channel = processed_crash.get('release_channel').strip()
+
+        # If we're missing one of the magic ingredients, then there's nothing
+        # to do
+        if product and version and build_id and release_channel:
             try:
-                build_id = int(processed_crash['build'])
-            except ValueError:
-                build_id = None
-
-            real_version = self._get_version_data(
-                processed_crash['product'],
-                processed_crash['version'],
-                build_id,
-            )
-
-            if real_version:
-                processed_crash['version'] = real_version
-            else:
-                # We don't have a real version to use, so we tack on "b0" to
-                # make it better and match the channel.
-                processed_crash['version'] += 'b0'
-                processor_meta.processor_notes.append(
-                    'release channel is %s but no version data was found '
-                    '- added "b0" suffix to version number' % (
-                        processed_crash['release_channel'],
-                    )
+                real_version = self._get_version_data(
+                    product,
+                    version,
+                    build_id,
+                    release_channel
                 )
-        except KeyError:
-            return False
-        except RequestException as exc:
-            processed_crash['version'] += 'b0'
-            processor_meta.processor_notes.append(
-                'could not connect to VersionString API - added "b0" suffix to version number'
-            )
-            self.config.logger.exception('%s when connecting to %s', exc, self.version_string_api)
+
+                # If we got a real version, toss that in and we're done
+                if real_version:
+                    processed_crash['version'] = real_version
+                    return True
+
+            except RequestException as exc:
+                processor_meta.processor_notes.append('could not connect to VersionString API')
+                self.config.logger.exception(
+                    '%s when connecting to %s', exc, self.version_string_api
+                )
+
+        # No real version, but this is an aurora or beta crash report, so we
+        # tack on "b0" to make it match the channel
+        processed_crash['version'] += 'b0'
+        processor_meta.processor_notes.append(
+            'release channel is %s but no version data was found - added "b0" '
+            'suffix to version number' % processed_crash['release_channel']
+        )
+
         return True
 
 

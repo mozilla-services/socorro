@@ -1050,7 +1050,8 @@ class TestVersionString(object):
             response = client.get(url, {
                 'product': 'Test',
                 'version': '62.0',
-                'build_id': '20180816151750'
+                'build_id': '20180816151750',
+                'release_channel': 'beta'
             })
             assert response.status_code == 200
             assert json.loads(response.content) == {'hits': ['62.0b4']}
@@ -1061,7 +1062,8 @@ class TestVersionString(object):
             response = client.get(url, {
                 'product': 'Test',
                 'version': '62.0',
-                'build_id': '20180816151750'
+                'build_id': '20180816151750',
+                'release_channel': 'beta'
             })
             assert response.status_code == 200
             assert json.loads(response.content) == {'hits': []}
