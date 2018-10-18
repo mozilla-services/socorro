@@ -20,4 +20,21 @@ WORKING_TESTS=(
     # socorro/unittest/external/rabbitmq/test_*.py
 )
 
+# This is the list of known working tests by directory/filename for the webapp.
+# The webapp is a separate test suite. When you have tests in a directory/file
+# working, add it to this list as a new line.
+WEBAPP_WORKING_TESTS=(
+    # crashstats/crashstats/tests/test_decorators.py
+)
+
+# Run socorro tests
 pytest ${WORKING_TESTS[@]}
+
+# If there are webapp tests to run, do this
+if [ ${#WEBAPP_WORKING_TESTS[@]} -gt 0 ]; then
+    # Collect static and run py.test in webapp
+    pushd webapp-django
+    "${WEBPACK_BINARY}" --mode=production --bail
+    python manage.py collectstatic --noinput
+    pytest ${WEBAPP_WORKING_TESTS[@]}
+fi
