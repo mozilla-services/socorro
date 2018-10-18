@@ -51,8 +51,6 @@ class BugAssociationManager(models.Manager):
         ]
         return self.filter(bug_id__in=bug_ids)
 
-        # FIXME(willkg): rewrite anything that used the Bugs api
-
 
 class BugAssociation(models.Model):
     """Specifies assocations between bug ids in Bugzilla and signatures"""
@@ -592,6 +590,10 @@ class ProductVersions(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.products.ProductVersions
 
+    deprecation_warning = (
+        'This endpoint is deprecated and will be removed soon. Please use '
+        'BuildHub instead.'
+    )
     possible_params = (
         ('product', list),
         ('version', list),

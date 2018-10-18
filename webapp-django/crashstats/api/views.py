@@ -387,6 +387,8 @@ def documentation(request, default_context=None):
             continue
         endpoints.append(_describe_model(model))
 
+    endpoints.sort(key=lambda ep: ep['name'])
+
     base_url = (
         '%s://%s' % (request.is_secure() and 'https' or 'http',
                      RequestSite(request).domain)
