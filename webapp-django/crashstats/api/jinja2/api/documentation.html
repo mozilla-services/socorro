@@ -33,7 +33,7 @@
     <div class="body">
         <ul>
             {% for endpoint in endpoints %}
-            <li><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></li>
+            <li><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a>{% if endpoint.deprecation_warning %} (DEPRECATED){% endif %}</li>
             {% endfor %}
         </ul>
     </div>
