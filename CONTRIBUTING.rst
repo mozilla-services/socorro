@@ -196,16 +196,16 @@ alembic migrations
 
 To create an alembic migration, use your local development environment::
 
-    $ docker-compose run processor bash
-    app@processor:/app$ alembic -c docker/config/alembic.ini revision -m "bug xxx summary here"
+    $ make shell
+    app@socorro:/app$ alembic -c docker/config/alembic.ini revision -m "bug xxx summary here"
 
 Alembic migrations are stored in ``alembic/versions/``. There's a lot of
 material you can crib from there.
 
 To apply alembic migrations, do::
 
-    $ docker-compose run processor bash
-    app@processor:/app$ alembic -c docker/config/alembic.ini upgrade heads
+    $ make shell
+    app@socorro:/app$ alembic -c docker/config/alembic.ini upgrade heads
 
 Helper functions in ``socorro.lib.migrations``:
 
@@ -224,9 +224,9 @@ Django migrations
 
 To create a Django migration, user your local development environment::
 
-    $ docker-compose run webapp bash
-    app@webapp:/app$ cd webapp-django
-    app@webapp:/app/webapp-django$ ./manage.py makemigrations
+    $ make shell
+    app@socorro:/app$ cd webapp-django
+    app@socorro:/app/webapp-django$ ./manage.py makemigrations
 
 Django migrations are stored in ``webapp-django/crashstats/<appname>/migrations/``.
 
@@ -258,36 +258,36 @@ Then you can run pytest or the webapp tests as you like.
 
 Running all the unittests::
 
-  app@...:/app$ pytest
+  app@socorro:/app$ pytest
 
 
 Running a directory of unittests::
 
-  app@...:/app$ pytest socorro/unittest/processor/
+  app@socorro:/app$ pytest socorro/unittest/processor/
 
 
 Running a file of unittests::
 
-  app@...:/app$ pytest socorro/unittest/processor/test_processor_app.py
+  app@socorro:/app$ pytest socorro/unittest/processor/test_processor_app.py
 
 
 Running webapp tests (make sure you run ``./manage.py collectstatic`` first)::
 
-  app@...:/app/webapp-django$ ./manage.py test
+  app@socorro:/app/webapp-django$ ./manage.py test
 
 
 Running a directory of webapp tests::
 
-  app@...:/app/webapp-django$ ./manage.py test crashstats/home/tests/
+  app@socorro:/app/webapp-django$ ./manage.py test crashstats/home/tests/
 
 
 Running a file of tests::
 
-  app@...:/app/webapp-django$ ./manage.py test crashstats/home/tests/test_views.py
+  app@socorro:/app/webapp-django$ ./manage.py test crashstats/home/tests/test_views.py
 
 Running the staticfiles Jest tests and watching for changes::
 
-  app@...:/app/webapp-django$ /webapp-frontend-deps/node_modules/.bin/jest staticfiles/ --watch
+  app@socorro:/app/webapp-django$ /webapp-frontend-deps/node_modules/.bin/jest staticfiles/ --watch
 
 
 Writing tests

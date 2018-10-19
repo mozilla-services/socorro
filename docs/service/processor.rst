@@ -24,7 +24,7 @@ configuration.
 
 To ease debugging in the container, you can run a shell::
 
-  $ docker-compose run processor bash
+  $ make shell
 
 
 Then you can start and stop the processor and tweak files and all that jazz.
@@ -91,8 +91,8 @@ For example (assumes this crash exists)::
 Use with ``fetch_crashids`` to fetch crash data from 100 crashes from yesterday
 for Firefox::
 
-  $ docker-compose run processor bash
-  app@processor:/app$ ./socorro-cmd fetch_crashids | socorro-cmd fetch_crash_data ./testdata
+  $ make shell
+  app@socorro:/app$ ./socorro-cmd fetch_crashids | socorro-cmd fetch_crash_data ./testdata
 
 
 You can get command help::
@@ -182,27 +182,27 @@ Let's process crashes for Firefox from yesterday. We'd do this:
 
 .. code-block:: shell
 
-  # Start bash in the processor container
-  $ docker-compose run processor bash
+  # Start bash in the socorro container
+  $ make shell
 
   # Generate a file of crashids--one per line
-  app@processor:/app$ socorro-cmd fetch_crashids > crashids.txt
+  app@socorro:/app$ socorro-cmd fetch_crashids > crashids.txt
 
   # Pull raw crash data from -prod for each crash id and put it in the
   # "crashdata" directory on the host
-  app@processor:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
+  app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
 
   # Create a dev_bucket in localstack-s3
-  app@processor:/app$ ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+  app@socorro:/app$ ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
 
   # Copy that data from the host into the localstack-s3 container
-  app@processor:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
+  app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
 
   # Add all the crash ids to the queue
-  app@processor:/app$ cat crashids.txt | socorro-cmd add_crashid_to_queue socorro.normal
+  app@socorro:/app$ cat crashids.txt | socorro-cmd add_crashid_to_queue socorro.normal
 
   # Then exit the container
-  app@processor:/app$ exit
+  app@socorro:/app$ exit
 
   # Run the processor to process all those crashes
   $ docker-compose up processor

@@ -58,7 +58,7 @@ Checklist
 
       Local dev environment:
 
-      1. "docker-compose run webapp bash"
+      1. "make shell"
       2. "cd webapp-django/"
       3. "./manage.py showmigrations"
 
@@ -70,7 +70,7 @@ Checklist
 
       Local dev environment:
 
-      1. "docker-compose run processor bash"
+      1. "make shell"
       2. "alembic -c docker/config/alembic.ini current"
 
       -stage/-prod:

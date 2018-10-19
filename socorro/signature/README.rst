@@ -19,7 +19,7 @@ You need to run this inside a Socorro environment. For example, you could
 run this in the processor Docker container. You can start a container
 like that like this::
 
-    $ docker-compose run processor bash
+    $ make shell
 
 
 Once you're in your Socorro environment, you can run signature generation.
