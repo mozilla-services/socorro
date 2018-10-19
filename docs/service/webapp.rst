@@ -17,7 +17,7 @@ webapp using the ``/app/docker/run_webapp.sh`` script.
 
 To ease debugging, you can run a shell in the container::
 
-  $ docker-compose run --service-ports webapp /bin/bash
+  $ docker-compose run --service-ports webapp shell
 
 
 Then you can start and stop the webapp, adjust files, and debug.
@@ -60,7 +60,7 @@ superuser.
 
 Run this::
 
-  $ docker-compose run webapp python webapp-django/manage.py makesuperuser email@example.com
+  $ docker-compose run app shell ./webapp-django/manage.py makesuperuser email@example.com
 
 
 You can do this as many times as you like.
@@ -216,17 +216,17 @@ webapp using ``uwsgi`` and with ``DEBUG=False``. Here's how you do that.
 
 First start a ``bash`` shell with service ports::
 
-  $ docker-compose run --service-ports webapp bash
+  $ docker-compose run --service-ports webapp shell
 
 Then compile the static assets::
 
-  app@...:/app$ cd webapp-django/
-  app@...:/app/webapp-django$ ./manage.py collectstatic --noinput
-  app@...:/app/webapp-django$ cd ..
+  app@socorro:/app$ cd webapp-django/
+  app@socorro:/app/webapp-django$ ./manage.py collectstatic --noinput
+  app@socorro:/app/webapp-django$ cd ..
 
 Now run the webapp with ``uwsgi`` and ``DEBUG=False``::
 
-  app@...:/app$ DEBUG=False bash docker/run_webapp.sh
+  app@socorro:/app$ DEBUG=False bash docker/run_webapp.sh
 
 You will now be able to open ``http://localhost:8000`` on the host and if you
 view the source you see that the minified and concatenated static assets are

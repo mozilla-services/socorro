@@ -53,10 +53,10 @@ permission. You can use this token in conjunction with the
 
 For example, this reprocesses a single crash::
 
-    $ docker-compose run processor bash
-    app@processor:app$ socorro-cmd reprocess c2815fd1-e87b-45e9-9630-765060180110
+    $ make shell
+    app@socorro:app$ socorro-cmd reprocess c2815fd1-e87b-45e9-9630-765060180110
 
 This reprocesses crashes all crashes with a specified signature::
 
-    $ docker-compose run processor bash
-    app@processor:app$ socorro-cmd fetch_crashids --signature="some | signature" | socorro-cmd reprocess
+    $ make shell
+    app@socorro:app$ socorro-cmd fetch_crashids --signature="some | signature" | socorro-cmd reprocess
