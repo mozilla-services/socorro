@@ -9,6 +9,26 @@ Socorro keeps track of the first time it saw a signature and the first build it
 saw a signature.
 
 
+.. graphviz::
+
+   digraph G {
+     rankdir=LR;
+     splines=lines;
+
+     subgraph webapp {
+       signaturefirstdateapi [shape=rect, label="SignatureFirstDate API"];
+       topcrashersreport [shape=tab, label="topcrashers report"];
+     }
+
+     updatesignatures [shape=rect, label="UpdateSignaturesCronApp"];
+     model [shape=box3d, label="crashstats_bugassociation"];
+
+     updatesignatures -> model [label="produces"];
+     model -> signaturefirstdateapi [label="used by"];
+     model -> topcrashersreport [label="used by"];
+   }
+
+
 Tables
 ======
 

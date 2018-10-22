@@ -8,6 +8,34 @@ Summary
 Bugs in Bugzilla can store which Socorro crash signatures are relevant to that
 bug. Socorro keeps a cache of that data to show in various webapp views.
 
+.. graphviz::
+
+   digraph G {
+     rankdir=LR;
+     splines=lines;
+
+     subgraph webapp {
+       rank=same;
+       bugsapi [shape=rect, label="Bugs API"];
+       signaturesbybugsapi [shape=rect, label="SignaturesByBugs API"];
+       reportview [shape=tab, label="report view"];
+       topcrashersreport [shape=tab, label="topcrashers report"];
+       signaturereport [shape=tab, label="signature report"];
+       exploitabilityreport [shape=tab, label="exploitability report"];
+     }
+
+     bugzilla [shape=rect, label="BugzillaCronApp"];
+     model [shape=box3d, label="crashstats_bugassociation"];
+
+     bugzilla -> model [label="produces"];
+     model -> bugsapi [label="used by"];
+     model -> signaturesbybugsapi [label="used by"];
+     model -> reportview [label="used by"];
+     model -> topcrashersreport [label="used by"];
+     model -> signaturereport [label="used by"];
+     model -> exploitabilityreport [label="used by"];
+   }
+
 
 Tables
 ======
