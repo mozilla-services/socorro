@@ -1,6 +1,8 @@
-===============
-Getting started
-===============
+.. _localdevenv-chapter:
+
+===========================
+Local dev environment setup
+===========================
 
 This chapter covers getting started with Socorro using Docker for a local
 development environment.
@@ -9,8 +11,8 @@ If you're interested in running Socorro in a server environment, then check out
 :ref:`deploying-socorro-chapter`.
 
 
-Quickstart
-==========
+Setup Quickstart
+================
 
 1. Install required software: Docker, docker-compose (1.10+), make, and git.
 
