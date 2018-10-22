@@ -32,7 +32,8 @@ saw a signature.
 Tables
 ======
 
-The data is stored in the ``crashstats.Signature`` Django model.
+The data is stored in the ``crashstats.Signature`` Django model and stored
+in the ``crashstats_signature`` PostgreSQL table.
 
 
 Where the data comes from

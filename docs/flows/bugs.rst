@@ -40,7 +40,8 @@ bug. Socorro keeps a cache of that data to show in various webapp views.
 Tables
 ======
 
-The data is stored in the ``crashstats.BugAssociation`` Django model.
+The data is stored in the ``crashstats.BugAssociation`` Django model and stored
+in the ``crashstats_bugassociation`` PostgreSQL table.
 
 
 Where the data comes from
