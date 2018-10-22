@@ -49,6 +49,25 @@ Examples of bugs:
 * https://bugzilla.mozilla.org/show_bug.cgi?id=1402037
 
 
+How to make a signature generation change
+=========================================
+
+If you've made changes to signature generation before or you're confident in
+the change you're making, you can make changes directly using the GitHub
+interface:
+
+https://github.com/mozilla-services/socorro/tree/master/socorro/signature/siglists
+
+If you want to test your changes or experiment with them, then you'll need to
+set up a local development environment and make the changes with a GitHub
+pull request.
+
+See :ref:`localdevenv-chapter` for setting up a local development environment.
+
+Read through the rest of this chapter which describes how signature generation
+works, what files are involved, and how to test changes.
+
+
 How to review a signature generation changes
 ============================================
 
