@@ -164,16 +164,20 @@ def model_wrapper(request, model_name):
     if model_name in BLACKLIST:
         raise http.Http404("Don't know what you're talking about!")
 
+    model = None
+
     for source in MODELS_MODULES:
         try:
             model = getattr(source, model_name)
             break
         except AttributeError:
             pass
-    else:
-        raise http.Http404('no service called `%s`' % model_name)
+        try:
+            model = getattr(source, model_name + 'Middleware')
+        except AttributeError:
+            pass
 
-    if not is_valid_model_class(model):
+    if model is None or not is_valid_model_class(model):
         raise http.Http404('no service called `%s`' % model_name)
 
     required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
@@ -367,10 +371,14 @@ def documentation(request, default_context=None):
                 unique_model_names.add(name)
 
     for model in all_models:
+        model_name = model.__name__
+        if model_name.endswith('Middleware'):
+            model_name = model_name[:-10]
+
         try:
             if not is_valid_model_class(model):
                 continue
-            if model.__name__ in BLACKLIST:
+            if model_name in BLACKLIST:
                 continue
         except TypeError:
             # most likely a builtin class or something
@@ -385,7 +393,7 @@ def documentation(request, default_context=None):
             )
         ):
             continue
-        endpoints.append(_describe_model(model))
+        endpoints.append(_describe_model(model_name, model))
 
     endpoints.sort(key=lambda ep: ep['name'])
 
@@ -405,7 +413,7 @@ def documentation(request, default_context=None):
     return render(request, 'api/documentation.html', context)
 
 
-def _describe_model(model):
+def _describe_model(model_name, model):
     model_inst = model()
     params = list(model_inst.get_annotated_params())
     params.sort(key=lambda x: (not x['required'], x['name']))
@@ -431,8 +439,8 @@ def _describe_model(model):
             )
 
     data = {
-        'name': model.__name__,
-        'url': reverse('api:model_wrapper', args=(model.__name__,)),
+        'name': model_name,
+        'url': reverse('api:model_wrapper', args=(model_name,)),
         'parameters': params,
         'defaults': getattr(model, 'defaults', {}),
         'methods': methods,

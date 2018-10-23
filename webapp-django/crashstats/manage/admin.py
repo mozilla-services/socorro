@@ -14,7 +14,7 @@ from crashstats.manage.decorators import superuser_required
 from crashstats.manage import forms
 from crashstats.manage import utils
 from crashstats.supersearch.models import SuperSearchMissingFields
-from crashstats.crashstats.models import GraphicsDevice, Products
+from crashstats.crashstats.models import GraphicsDevice, ProductsMiddleware
 
 
 @superuser_required
@@ -219,7 +219,7 @@ def debug_view(request):
 @superuser_required
 def products(request):
     context = {}
-    api = Products()
+    api = ProductsMiddleware()
     context['products'] = api.get()['hits']
     context['title'] = 'Products'
 
