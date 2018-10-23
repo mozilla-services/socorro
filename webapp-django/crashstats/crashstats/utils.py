@@ -361,7 +361,7 @@ def build_default_context(product=None, versions=None):
     context = {}
 
     # Build product information
-    api = models.Products()
+    api = models.ProductsMiddleware()
     # NOTE(willkg): using an OrderedDict here since Products returns products
     # sorted by sort order and we don't want to lose that ordering
     all_products = OrderedDict()
@@ -374,7 +374,7 @@ def build_default_context(product=None, versions=None):
     context['products'] = all_products
 
     # Build product version information
-    api = models.ProductVersions()
+    api = models.ProductVersionsMiddleware()
     active_versions = OrderedDict()
 
     # Turn the list of all product versions into a dict, one per product.

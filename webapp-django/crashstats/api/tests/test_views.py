@@ -19,7 +19,7 @@ from crashstats.crashstats.models import (
     BugAssociation,
     CrontabberState,
     ProcessedCrash,
-    ProductVersions,
+    ProductVersionsMiddleware,
     Reprocessing,
     RawCrash,
     UnredactedCrash,
@@ -145,17 +145,17 @@ class TestViews(BaseTestViews):
                 ]
             }
 
-        ProductVersions.implementation().get.side_effect = mocked_get
+        ProductVersionsMiddleware.implementation().get.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('ProductVersions',))
         response = self.client.get(url, {'product': settings.DEFAULT_PRODUCT})
         assert response.status_code == 200
         assert response['Cache-Control']
         assert 'private' in response['Cache-Control']
-        cache_seconds = ProductVersions.cache_seconds
+        cache_seconds = ProductVersionsMiddleware.cache_seconds
         assert 'max-age={}'.format(cache_seconds) in response['Cache-Control']
 
-    def test_ProductVersions(self):
+    def test_ProductVersionsMiddleware(self):
 
         def mocked_get(*args, **k):
             return {
@@ -169,7 +169,7 @@ class TestViews(BaseTestViews):
             }
             raise NotImplementedError
 
-        ProductVersions.implementation().get.side_effect = mocked_get
+        ProductVersionsMiddleware.implementation().get.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('ProductVersions',))
         response = self.client.get(url)

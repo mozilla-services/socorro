@@ -210,7 +210,7 @@ class BaseTestViews(DjangoTestCase):
 
         def mocked_products(**params):
             hits = [
-                # These have versions in the mocked ProductVersions
+                # These have versions in the mocked ProductVersionsMiddleware
                 {
                     'product_name': 'WaterWolf',
                     'release_name': 'waterwolf',
@@ -239,7 +239,7 @@ class BaseTestViews(DjangoTestCase):
                     'rapid_beta_version': '1.0',
                     'rapid_release_version': '999.0',
                 },
-                # This does not have versions in the mocked ProductVersions
+                # This does not have versions in the mocked ProductVersionsMiddleware
                 {
                     'product_name': 'Tinkerbell',
                     'release_name': 'tinkerbell',
@@ -253,7 +253,7 @@ class BaseTestViews(DjangoTestCase):
                 'total': len(hits),
             }
 
-        models.Products.implementation().get.side_effect = (
+        models.ProductsMiddleware.implementation().get.side_effect = (
             mocked_products
         )
 
@@ -365,7 +365,7 @@ class BaseTestViews(DjangoTestCase):
                 'total': len(hits),
             }
 
-        models.ProductVersions.implementation().get.side_effect = (
+        models.ProductVersionsMiddleware.implementation().get.side_effect = (
             mocked_product_versions
         )
 
@@ -387,7 +387,7 @@ class BaseTestViews(DjangoTestCase):
         # call these here so it gets patched for each test because
         # it gets used so often
 
-        models.ProductVersions().get(active=True)
+        models.ProductVersionsMiddleware().get(active=True)
 
     def tearDown(self):
         super(BaseTestViews, self).tearDown()

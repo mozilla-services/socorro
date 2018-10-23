@@ -560,7 +560,7 @@ class SocorroMiddleware(SocorroCommon):
                 }
 
 
-class Products(SocorroMiddleware):
+class ProductsMiddleware(SocorroMiddleware):
     implementation = socorro.external.postgresql.products.Products
 
     possible_params = ()
@@ -586,7 +586,7 @@ class VersionString(SocorroMiddleware):
     )
 
 
-class ProductVersions(SocorroMiddleware):
+class ProductVersionsMiddleware(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.products.ProductVersions
 
