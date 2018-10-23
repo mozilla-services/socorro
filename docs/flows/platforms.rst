@@ -1,6 +1,6 @@
-=========
-Platforms
-=========
+====================
+Data flow: Platforms
+====================
 
 Summary
 =======
@@ -39,7 +39,8 @@ The data is stored in the ``crashstats.Platform`` Django model. This is the
 Where the data comes from
 =========================
 
-The data is maintained by a Django admin page.
+Data is added by data migrations. In the local development environment, there's
+a fixture.
 
 
 What uses this data
