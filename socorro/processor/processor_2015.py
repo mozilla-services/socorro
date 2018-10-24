@@ -114,8 +114,8 @@ class Processor2015(RequiredConfig):
     )
     required_config.add_option(
         'buildhub_api',
-        doc='url for the Buildhub api',
-        default='https://buildhub.prod.mozaws.net/v1/'
+        doc='url for the Buildhub API to query records',
+        default='https://buildhub.prod.mozaws.net/v1/buckets/build-hub/collections/releases/records'
     )
     required_config.add_option(
         'dump_field',

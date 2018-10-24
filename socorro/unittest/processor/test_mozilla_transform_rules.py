@@ -1314,12 +1314,11 @@ class TestTopMostFilesRule(TestCase):
 
 
 class TestBetaVersionRule:
-    API_URL = 'http://buildhub.example.com/v1/'
+    API_URL = 'http://buildhub.example.com/v1/buckets/build-hub/collections/releases/records'
 
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
         config.buildhub_api = self.API_URL
-        api_endpoint = self.API_URL + 'buckets/build-hub/collections/releases/records'
 
         raw_crash = {}
         raw_dumps = {}
@@ -1343,7 +1342,7 @@ class TestBetaVersionRule:
         # A normal beta crash, with a known version
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
-                api_endpoint + '?' + urlencode({
+                self.API_URL + '?' + urlencode({
                     'source.product': 'WaterWolf',
                     'build.id': '"20001001101010"',
                     'target.channel': 'beta',
@@ -1412,7 +1411,7 @@ class TestBetaVersionRule:
         # beta crash with an unknown version gets a special mark.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
-                api_endpoint + '?' + urlencode({
+                self.API_URL + '?' + urlencode({
                     'source.product': 'Waterwolf',
                     'build.id': '"220000101101011"',
                     'target.channel': 'beta',
@@ -1444,7 +1443,6 @@ class TestBetaVersionRule:
         """Verify this works with aurora channel"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
-        api_endpoint = self.API_URL + 'buckets/build-hub/collections/releases/records'
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1455,7 +1453,7 @@ class TestBetaVersionRule:
         # A normal aurora crash, with a known version.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
-                api_endpoint + '?' + urlencode({
+                self.API_URL + '?' + urlencode({
                     'source.product': 'WaterWolf',
                     'build.id': '"20001001101010"',
                     'target.channel': 'aurora',

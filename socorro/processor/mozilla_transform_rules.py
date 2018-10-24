@@ -662,14 +662,13 @@ class BetaVersionRule(Rule):
 
         session = session_with_retries(self.buildhub_api)
 
-        url = self.buildhub_api + 'buckets/build-hub/collections/releases/records'
         query = {
             'source.product': product,
             'build.id': '"%s"' % build_id,
             'target.channel': channel,
             '_limit': 1
         }
-        resp = session.get(url, params=query)
+        resp = session.get(self.buildhub_api, params=query)
 
         if resp.status_code == 200:
             hits = resp.json()['data']
