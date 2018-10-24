@@ -626,20 +626,20 @@ class BetaVersionRule(Rule):
     #: Items in cache expire after 30 minutes by default
     SHORT_CACHE_TTL = 60 * 30
 
-    #: If we know it's good, cache it for 6 hours
-    LONG_CACHE_TTL = 60 * 60 * 6
+    #: If we know it's good, cache it for 24 hours because it won't change
+    LONG_CACHE_TTL = 60 * 60 * 24
 
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
         # NOTE(willkg): These config values come from Processor2015 instance.
-        self.version_string_api = config.version_string_api
+        self.buildhub_api = config.buildhub_api
         self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
 
     def version(self):
         return '1.0'
 
-    def _get_version_data(self, product, version, build_id, release_channel):
-        """Return the real version number of a specified product, version, build, channel
+    def _get_version_data(self, product, build_id, channel):
+        """Return the real version number of a specified product, build, channel
 
         For example, beta builds of Firefox declare their version number as the
         major version (i.e. version 54.0b3 would say its version is 54.0). This
@@ -647,9 +647,8 @@ class BetaVersionRule(Rule):
         54.0b3 for the previous example).
 
         :arg product: the product
-        :arg version: the version as a string. e.g. "56.0"
         :arg build_id: the build_id as a string
-        :arg release_channel: the release channel
+        :arg channel: the release channel
 
         :returns: ``None`` or the version string that should be used
 
@@ -657,21 +656,23 @@ class BetaVersionRule(Rule):
             the host specified in ``version_string_api``
 
         """
-        key = '%s:%s:%s:%s' % (product, version, build_id, release_channel)
+        key = '%s:%s:%s' % (product, build_id, channel)
         if key in self.cache:
             return self.cache[key]
 
-        session = session_with_retries(self.version_string_api)
+        session = session_with_retries(self.buildhub_api)
 
-        resp = session.get(self.version_string_api, params={
-            'product': product,
-            'version': version,
-            'build_id': build_id,
-            'release_channel': release_channel
-        })
+        url = self.buildhub_api + 'buckets/build-hub/collections/releases/records'
+        query = {
+            'source.product': product,
+            'build.id': '"%s"' % build_id,
+            'target.channel': channel,
+            '_limit': 1
+        }
+        resp = session.get(url, params=query)
 
         if resp.status_code == 200:
-            hits = resp.json()['hits']
+            hits = resp.json()['data']
 
             # Shimmy to add to ttl so as to distribute cache misses over time and reduce
             # HTTP requests from bunching up.
@@ -681,16 +682,15 @@ class BetaVersionRule(Rule):
                 # If we got an answer we should keep it around for a while because it's
                 # a real answer and it's not going to change so use the long ttl plus
                 # a fudge factor.
-                real_version = hits[0]
+                real_version = hits[0]['target']['version']
                 self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL + shimmy)
                 return real_version
-            else:
-                # We didn't get an answer which could mean that this is a weird build and there
-                # is no answer or it could mean that ftpscraper hasn't picked up the relevant
-                # build information or it could mean we're getting cached answers from the webapp.
-                # Regardless, maybe in the future we get a better answer so we use the short
-                # ttl plus a fudge factor.
-                self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL + shimmy)
+
+            # We didn't get an answer which could mean that this is a weird
+            # build and there is no answer or it could mean that Buildhub
+            # doesn't know, yet. Maybe in the future we get a better answer
+            # so we use the short ttl plus a fudge factor.
+            self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL + shimmy)
 
         return None
 
@@ -701,7 +701,6 @@ class BetaVersionRule(Rule):
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         product = processed_crash.get('product').strip()
-        version = processed_crash.get('version').strip()
         try:
             build_id = int(processed_crash.get('build').strip())
         except ValueError:
@@ -710,11 +709,10 @@ class BetaVersionRule(Rule):
 
         # If we're missing one of the magic ingredients, then there's nothing
         # to do
-        if product and version and build_id and release_channel:
+        if product and build_id and release_channel:
             try:
                 real_version = self._get_version_data(
-                    product,
-                    version,
+                    product.lower(),
                     build_id,
                     release_channel
                 )
@@ -725,7 +723,7 @@ class BetaVersionRule(Rule):
                     return True
 
             except RequestException as exc:
-                processor_meta.processor_notes.append('could not connect to VersionString API')
+                processor_meta.processor_notes.append('could not connect to Buildhub')
                 self.config.logger.exception(
                     '%s when connecting to %s', exc, self.version_string_api
                 )
@@ -738,50 +736,6 @@ class BetaVersionRule(Rule):
             'suffix to version number' % processed_crash['release_channel']
         )
 
-        return True
-
-
-class AuroraVersionFixitRule(Rule):
-    """Starting with Firefox 55, we ditched the aurora channel and converted
-    devedition to its own "product" that are respins of the beta channel
-    builds. These builds still use "aurora" as the release channel.
-
-    However, the devedition .0b1 and .0b2 releases need to be treated as an
-    "aurora" for Firefox. Because this breaks the invariants of Socorro
-    (channel and version don't match) as well as the laws of physics, we fix
-    these crashes by hand using a processor rule until we have time to swap
-    ftpscraper and all the stored procedures out for buildhub scraper.
-
-    """
-
-    # NOTE(willkg): We'll have to add a build id -> version every time a new one comes
-    # out. Ugh.
-    buildid_to_version = {
-        '20170612224034': '55.0b1',
-        '20170615070049': '55.0b2',
-        '20170808170225': '56.0b1',
-        '20170810180547': '56.0b2',
-        '20170917031738': '57.0b1',
-        '20170921191414': '57.0b2',
-        '20171103003834': '58.0b1',
-        '20171109154410': '58.0b2',
-        '20180116202029': '59.0b1',
-        '20180117222144': '59.0b2',
-        '20180302190033': '60.0b1',
-        '20180428110614': '61.0b1',
-        '20180619022742': '62.0b1',
-        '20180824192747': '63.0b1',
-    }
-
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return raw_crash.get('BuildID', '') in self.buildid_to_version
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        real_version = self.buildid_to_version[raw_crash['BuildID']]
-        processed_crash['version'] = real_version
         return True
 
 

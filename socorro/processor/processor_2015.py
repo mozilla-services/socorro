@@ -41,7 +41,6 @@ from socorro.processor.rules.memory_report_extraction import (
 
 from socorro.processor.mozilla_transform_rules import (
     AddonsRule,
-    AuroraVersionFixitRule,
     BetaVersionRule,
     DatesAndTimesRule,
     EnvironmentRule,
@@ -88,7 +87,6 @@ DEFAULT_RULES = [
     OSInfoRule,
     BetaVersionRule,
     ExploitablityRule,
-    AuroraVersionFixitRule,
     FlashVersionRule,
     OSPrettyVersionRule,
     TopMostFilesRule,
@@ -115,9 +113,9 @@ class Processor2015(RequiredConfig):
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
-        'version_string_api',
-        doc='url for the version string api endpoint',
-        default='https://crash-stats.mozilla.com/api/VersionString'
+        'buildhub_api',
+        doc='url for the Buildhub api',
+        default='https://buildhub.prod.mozaws.net/v1/'
     )
     required_config.add_option(
         'dump_field',

@@ -21,7 +21,6 @@ from socorro.external.rabbitmq.crashstorage import (
 from socorro.external.postgresql.base import PostgreSQLStorage
 import socorro.external.postgresql.products
 import socorro.external.postgresql.crontabber_state
-import socorro.external.postgresql.version_string
 import socorro.external.boto.crash_data
 
 from socorro.app import socorro_app
@@ -568,21 +567,6 @@ class ProductsMiddleware(SocorroMiddleware):
     API_WHITELIST = (
         'hits',
         'total',
-    )
-
-
-class VersionString(SocorroMiddleware):
-    implementation = socorro.external.postgresql.version_string.VersionString
-
-    required_params = (
-        'product',
-        'version',
-        ('build_id', int),
-        'release_channel',
-    )
-
-    API_WHITELIST = (
-        'hits',
     )
 
 
