@@ -12,5 +12,6 @@ google_breakpad::ExceptionHandler::HandleInvalidParameter
 
 # These mark the top-most interesting frame in a Rust panic. Anything before
 # these is a lot of, "yes, I'm panicking!"
+core::panicking::panic
 std::panicking::begin_panic
 std::panicking::begin_panic_fmt
