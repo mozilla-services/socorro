@@ -3,7 +3,6 @@ import datetime
 from cStringIO import StringIO
 import json
 
-import pytest
 from six import text_type, binary_type
 
 from django.http import HttpResponse
