@@ -3,7 +3,6 @@ import datetime
 from cStringIO import StringIO
 import json
 
-import pytest
 from six import text_type, binary_type
 
 from django.http import HttpResponse
@@ -388,36 +387,3 @@ def test_json_view_custom_status():
     assert isinstance(response, HttpResponse)
     assert json.loads(response.content) == {'one': 'One'}
     assert response.status_code == 403
-
-
-@pytest.mark.parametrize('version_string, expected', [
-    ('59.0', (59, 0, 0, 'zz')),
-    ('59.0.1', (59, 0, 1, 'zz')),
-
-    # alphas
-    ('59.0a1', (59, 0, 0, 'a1')),
-
-    # betas
-    ('59.0b1', (59, 0, 0, 'b1')),
-    ('59.0.1b1', (59, 0, 1, 'b1')),
-
-    # esr
-    ('59.0.1esr', (59, 0, 1, 'zz', 'esr')),
-
-    # junk data
-    ('49p', (-1)),
-])
-def test_parse_version(version_string, expected):
-    assert utils.parse_version(version_string) == expected
-
-
-def test_sorted_versions():
-    """Test that using parse_version produces version keys that sort correctly"""
-    versions = ['59.0', '59.0b2', '59.0.2', '59.0a1', '60p', '59.0.2esr']
-    assert utils.sorted_versions(versions) == [
-        '59.0.2esr',
-        '59.0.2',
-        '59.0',
-        '59.0b2',
-        '59.0a1',
-    ]

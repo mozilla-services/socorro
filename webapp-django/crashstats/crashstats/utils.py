@@ -19,6 +19,7 @@ from django.utils import timezone
 
 from . import models
 import crashstats.supersearch.models as supersearch_models
+from socorro.lib.versionutil import generate_version_key
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -179,85 +180,6 @@ def enhance_raw(raw_crash):
             raw_crash['AdapterDeviceName'] = result[1]
 
 
-def parse_version(version):
-    """Parses a version string into a comparable tuple
-
-    >>> parse_version('59.0')
-    (59, 0, 0, 'zz')
-    >>> parse_version('59.0.2')
-    (59, 0, 2, 'zz')
-    >>> parse_version('59.0b1')
-    (59, 0, 0, 'b1')
-    >>> parse_version('59.0a1')
-    (59, 0, 0, 'a1')
-
-    This is a good key for sorting:
-
-    >>> versions = ['59.0', '59.0b2', '59.0.2', '59.0a1']
-    >>> sorted(versions, key=parse_version, reverse=1)
-    ['59.0.2', '59.0', '59.0b2', '59.0a1']
-
-    :arg version: version string like "59.0b1" or "59.0.2"
-
-    :returns: tuple for comparing
-
-    """
-    try:
-        if 'a' in version:
-            version, ending = version.split('a')
-            ending = ['a' + ending]
-        elif 'b' in version:
-            version, ending = version.split('b')
-            ending = ['b' + ending]
-        elif 'esr' in version:
-            version = version.replace('esr', '')
-            # Add zz, then esr so that esr is bigger than release versions.
-            ending = ['zz', 'esr']
-        else:
-            ending = ['zz']
-
-        version = [int(part) for part in version.split('.')]
-        while len(version) < 3:
-            version.append(0)
-        version.extend(ending)
-        return tuple(version)
-    except (ValueError, IndexError):
-        # If we hit an error, it's probably junk data so return an tuple with a
-        # -1 in it which put it at the bottom of the pack
-        return (-1)
-
-
-def sorted_versions(list_of_versions):
-    """Returns versions sorted from most recent to least recent
-
-    Accounts for betas, alphas, X.Y.Z versioning, ESR, etc. This also removes
-    strings that aren't proper versions.
-
-    :arg list of str list_of_versions: list of version strings
-
-    :returns: sorted list of version strings
-
-    Example:
-
-    >>> sorted_versions(['63.0', '63.0.2', '62.0b1', '62.0esr', '47.0'])
-    ['63.0.2', '63.0', '62.0esr', '62.0b1', '47.0'])
-
-    """
-    # Build a list of (parsed, version) tuples--parsed is first because that's
-    # what we want to sort on
-    version_parsed = [(parse_version(version), version) for version in list_of_versions]
-
-    # Remove bad versions which are denoted by the parsed version being (-1)
-    version_parsed = [
-        vp for vp in version_parsed if vp[0] != (-1)
-    ]
-
-    # Sort, reverse, and return the actual version string
-    return [
-        vp[1] for vp in sorted(version_parsed, reverse=True)
-    ]
-
-
 #: Number of days to look at for versions in crash reports. This is set
 #: for two months. If we haven't gotten a crash report for some version in
 #: two months, then seems like that version isn't active.
@@ -305,15 +227,17 @@ def get_versions_for_product(product):
     if 'facets' not in ret or 'version' not in ret['facets']:
         return []
 
-    versions = sorted_versions([item['term'] for item in ret['facets']['version']])
+    # Get versions from facet and sort in reverse so most recent version is first
+    versions = [item['term'] for item in ret['facets']['version']]
+    versions.sort(key=lambda v: generate_version_key(v), reverse=True)
 
     # Set of X.Yb to add
     betas = set()
 
-    # Map of major version (int) -> list of versions (str) so we can
-    # get the most recent version of the last three majors which
-    # we'll assume are "featured versions"
-    major_to_versions = {}
+    # Map of major version (int) -> list of versions (str) so we can get the
+    # most recent version of the last three majors which we'll assume are
+    # "featured versions"
+    major_to_versions = OrderedDict()
     for version in versions:
         try:
             major = int(version.split('.', 1)[0])
@@ -330,12 +254,12 @@ def get_versions_for_product(product):
     # The featured versions is the most recent 3 of the list of recent versions
     # for each major version. Since versions were sorted when we went through
     # them, the most recent one is in index 0.
-    featured_versions = sorted_versions([values[0] for values in major_to_versions.values()])
+    featured_versions = [values[0] for values in major_to_versions.values()]
     featured_versions = featured_versions[:3]
 
     # Add the beta versions and then resort the versions
     versions.extend(betas)
-    versions = sorted_versions(versions)
+    versions.sort(key=lambda v: generate_version_key(v))
 
     # Generate the version data the context needs
     ret = [
