@@ -16,7 +16,6 @@ from socorro.lib.revision_data import get_version
 from socorro.lib.util import DotDict
 from socorro.processor.mozilla_transform_rules import (
     AddonsRule,
-    AuroraVersionFixitRule,
     BetaVersionRule,
     DatesAndTimesRule,
     ESRVersionRewrite,
@@ -1315,16 +1314,16 @@ class TestTopMostFilesRule(TestCase):
 
 
 class TestBetaVersionRule:
-    API_URL = 'https://example.com/api/VersionString'
+    API_URL = 'http://buildhub.example.com/v1/buckets/build-hub/collections/releases/records'
 
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
-        config.version_string_api = self.API_URL
+        config.buildhub_api = self.API_URL
 
         raw_crash = {}
         raw_dumps = {}
 
-        # A release crash, version won't get changed.
+        # Release channel--doesn't trigger rule
         with requests_mock.Mocker() as req_mock:
             processed_crash = {
                 'product': 'WaterWolf',
@@ -1340,17 +1339,23 @@ class TestBetaVersionRule:
             assert processed_crash['version'] == '2.0'
             assert len(processor_meta.processor_notes) == 0
 
-        # A normal beta crash, with a known version.
+        # A normal beta crash, with a known version
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
                 self.API_URL + '?' + urlencode({
-                    'product': 'WaterWolf',
-                    'version': '3.0',
-                    'build_id': '20001001101010',
-                    'release_channel': 'beta'
+                    'source.product': 'WaterWolf',
+                    'build.id': '"20001001101010"',
+                    'target.channel': 'beta',
+                    '_limit': 1
                 }),
                 json={
-                    'hits': ['3.0b1']
+                    'data': [
+                        {
+                            'target': {
+                                'version': '3.0b1'
+                            }
+                        }
+                    ]
                 }
             )
 
@@ -1368,7 +1373,7 @@ class TestBetaVersionRule:
             assert processed_crash['version'] == '3.0b1'
             assert processor_meta.processor_notes == []
 
-        # A nightly.
+        # A nightly--doesn't trigger rule
         with requests_mock.Mocker() as req_mock:
             processed_crash = {
                 'product': 'WaterWolf',
@@ -1384,7 +1389,7 @@ class TestBetaVersionRule:
             assert processed_crash['version'] == '5.0a1'
             assert processor_meta.processor_notes == []
 
-        # An incorrect build id.
+        # Bad buildid doesn't error out
         with requests_mock.Mocker() as req_mock:
             processed_crash = {
                 'product': 'WaterWolf',
@@ -1403,17 +1408,17 @@ class TestBetaVersionRule:
                 'added "b0" suffix to version number'
             ]
 
-        # A beta crash with an unknown version, gets a special mark.
+        # beta crash with an unknown version gets a special mark.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
                 self.API_URL + '?' + urlencode({
-                    'product': 'Waterwolf',
-                    'version': '3.0',
-                    'build_id': '220000101101011',
-                    'release_channel': 'beta'
+                    'source.product': 'Waterwolf',
+                    'build.id': '"220000101101011"',
+                    'target.channel': 'beta',
+                    '_limit': 1
                 }),
                 json={
-                    'hits': []
+                    'data': []
                 }
             )
 
@@ -1435,11 +1440,9 @@ class TestBetaVersionRule:
             ]
 
     def test_with_aurora_channel(self):
-        """Verify the version change is applied to crash reports with a
-        release channel of "aurora".
-        """
+        """Verify this works with aurora channel"""
         config = get_basic_config()
-        config.version_string_api = self.API_URL
+        config.buildhub_api = self.API_URL
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1451,13 +1454,19 @@ class TestBetaVersionRule:
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
                 self.API_URL + '?' + urlencode({
-                    'product': 'WaterWolf',
-                    'version': '3.0',
-                    'build_id': '20001001101010',
-                    'release_channel': 'aurora'
+                    'source.product': 'WaterWolf',
+                    'build.id': '"20001001101010"',
+                    'target.channel': 'aurora',
+                    '_limit': 1
                 }),
                 json={
-                    'hits': ['3.0b1']
+                    'data': [
+                        {
+                            'target': {
+                                'version': '3.0b1'
+                            }
+                        }
+                    ]
                 }
             )
 
@@ -1474,32 +1483,6 @@ class TestBetaVersionRule:
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0b1'
             assert processor_meta.processor_notes == []
-
-
-class TestAuroraVersionFixitRule:
-    def test_predicate(self):
-        rule = AuroraVersionFixitRule(get_basic_config())
-
-        # No BuildID and wrong BuildID lead to False
-        assert rule._predicate({}, {}, {}, {}) is False
-        assert rule._predicate({'BuildID': 'ou812'}, {}, {}, {}) is False
-
-        # Correct BuildID leads to True
-        assert rule._predicate({'BuildID': '20170612224034'}, {}, {}, {}) is True
-
-    def test_action(self):
-        rule = AuroraVersionFixitRule(get_basic_config())
-
-        raw_crash = {
-            # This is the build id for Firefox aurora 55.0b1
-            'BuildID': '20170612224034'
-        }
-        processed_crash = {}
-
-        # The AuroraVersionFixitRule changes the version for the
-        # processed_crash in place for a known set of build ids
-        assert rule._action(raw_crash, {}, processed_crash, {}) is True
-        assert processed_crash['version'] == '55.0b1'
 
 
 class TestOsPrettyName(TestCase):
