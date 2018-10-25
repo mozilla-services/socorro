@@ -227,7 +227,7 @@ def get_versions_for_product(product):
     if 'facets' not in ret or 'version' not in ret['facets']:
         return []
 
-    # Get versions from facet and sort in reverse so most recent version is first
+    # Get versions from facet and sort it
     versions = [item['term'] for item in ret['facets']['version']]
     versions.sort(key=lambda v: generate_version_key(v), reverse=True)
 
@@ -255,11 +255,13 @@ def get_versions_for_product(product):
     # for each major version. Since versions were sorted when we went through
     # them, the most recent one is in index 0.
     featured_versions = [values[0] for values in major_to_versions.values()]
+    featured_versions.sort(key=lambda v: generate_version_key(v), reverse=True)
     featured_versions = featured_versions[:3]
 
-    # Add the beta versions and then resort the versions
+    # Add the beta versions and then resort the versions in reverse so
+    # the most recent is first
     versions.extend(betas)
-    versions.sort(key=lambda v: generate_version_key(v))
+    versions.sort(key=lambda v: generate_version_key(v), reverse=True)
 
     # Generate the version data the context needs
     ret = [
