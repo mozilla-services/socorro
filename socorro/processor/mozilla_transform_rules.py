@@ -652,6 +652,14 @@ class BetaVersionRule(Rule):
             the host specified in ``version_string_api``
 
         """
+        # NOTE(willkg): AURORA LIVES!
+        #
+        # But seriously, if this is for Firefox/aurora and the build id is after
+        # 20170601, then we ask Buildhub about devedition/aurora instead because
+        # devedition is the aurora channel
+        if (product, channel) == ('firefox', 'aurora') and build_id > '20170601':
+            product = 'devedition'
+
         key = '%s:%s:%s' % (product, build_id, channel)
         if key in self.cache:
             return self.cache[key]
@@ -708,7 +716,7 @@ class BetaVersionRule(Rule):
             try:
                 real_version = self._get_version_data(
                     product.lower(),
-                    build_id,
+                    str(build_id),
                     release_channel
                 )
 
