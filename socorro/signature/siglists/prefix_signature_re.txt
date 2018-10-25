@@ -155,6 +155,7 @@ nsTArray<
 nsTArray_base<
 nsTArray_Impl<
 nsTHashtable<.*>::
+nsTSubstring<.*>::Assign
 nsThread::Shutdown
 NtUser
 objc_exception_throw
