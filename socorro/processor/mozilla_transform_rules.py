@@ -388,10 +388,6 @@ class ProductRewrite(Rule):
         if raw_crash.get('ProductID', '') in self.PRODUCT_MAP:
             product_name = self.PRODUCT_MAP[raw_crash['ProductID']]
 
-        # Rewrite Focus crashes (bug #1481696).
-        if product_name == 'FennecAndroid' and raw_crash.get('ProcessType', '') == 'content':
-            product_name = 'Focus'
-
         # If we made any product name changes, persist them and keep the
         # original one so we can look at things later
         if product_name != original_product_name:

@@ -914,27 +914,6 @@ class TestProductRewriteRule(TestCase):
             "Rewriting ProductName from 'Fennec' to 'FennecAndroid'"
         ]
 
-    def test_focus_rewrite(self):
-        config = get_basic_config()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_crash['ProductName'] = 'Fennec'
-        raw_crash['ProductID'] = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}'
-        raw_crash['ProcessType'] = 'content'
-        processed_crash = DotDict()
-        processor_meta = get_basic_processor_meta()
-
-        rule = ProductRewrite(config)
-        rule.act(raw_crash, {}, processed_crash, processor_meta)
-
-        assert raw_crash.ProductName == 'Focus'
-        assert raw_crash.OriginalProductName == 'Fennec'
-
-        # processed_crash should be unchanged
-        assert processed_crash == DotDict()
-        assert processor_meta.processor_notes == [
-            "Rewriting ProductName from 'Fennec' to 'Focus'"
-        ]
-
 
 class TestESRVersionRewrite(TestCase):
     def test_everything_we_hoped_for(self):
