@@ -45,9 +45,6 @@ CrashStorage containers for aggregating multiple crash storage implementations:
   predicate function. If predicate is false, store in primary, otherwise store
   in secondary. Usecase: situation where we want crashes to be put somewhere
   else and not be processed.
-* `PrimaryDeferredProcessedStorage`: Container for a PrimaryDeferredStorage, but
-  there's a third separate storage for Processed crashes. Example: could fork on
-  Product.
 
 Helper for PolyCrashStore:
 

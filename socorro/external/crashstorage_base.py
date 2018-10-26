@@ -1114,42 +1114,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         return self.primary_store.new_crashes()
 
 
-class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
-    """
-    PrimaryDeferredProcessedStorage aggregates three methods of storage: it
-    uses a deferral criteria predicate to decide where to store a raw crash,
-    like PrimaryDeferredStorage -- but it stores all processed crashes in a
-    third, separate storage.
-    """
-    required_config = Namespace()
-    required_config.processed = Namespace()
-    required_config.processed.add_option(
-        'storage_class',
-        doc='storage class for processed storage',
-        default='',
-        from_string_converter=class_converter
-    )
-
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super(PrimaryDeferredProcessedStorage, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
-        self.processed_store = config.processed.storage_class(
-            config.processed,
-            quit_check_callback
-        )
-
-    def save_processed(self, processed_crash):
-        self.processed_store.save_processed(processed_crash)
-
-    def get_unredacted_processed(self, crash_id):
-        """fetch an unredacted processed crash from the underlying
-        storage implementation"""
-        return self.processed_store.get_unredacted_processed(crash_id)
-
-
 class BenchmarkingCrashStorage(CrashStorageBase):
     """a wrapper around crash stores that will benchmark the calls in the logs
     """
