@@ -28,26 +28,12 @@ Base class:
 
 Concrete implementation:
 
-* `NullCrashStorage`: Silently ignores everything it is told to do.
-
-Examples of other concrete implementations are: `PostgreSQLCrashStorage`,
-`BotoCrashStorage`.
+* `PostgreSQLCrashStorage`
+* `BotoCrashStorage`
 
 CrashStorage containers for aggregating multiple crash storage implementations:
 
 * `PolyCrashStorage`: Container for other crash storage systems.
-* `FallbackCrashStorage`: Container for two other crash storage systems, a
-  primary and a secondary. Attempts on the primary, if it fails it will fallback
-  to the secondary. In use when we have cutover between data stores. Can be
-  heterogeneous, example: S3 + filesystem and use crashmovers to move from
-  filesystem into S3 when S3 comes back.
-* `PrimaryDeferredStorage`: Container for two different storage systems and a
-  predicate function. If predicate is false, store in primary, otherwise store
-  in secondary. Usecase: situation where we want crashes to be put somewhere
-  else and not be processed.
-* `PrimaryDeferredProcessedStorage`: Container for a PrimaryDeferredStorage, but
-  there's a third separate storage for Processed crashes. Example: could fork on
-  Product.
 
 Helper for PolyCrashStore:
 
