@@ -84,6 +84,7 @@ INSTALLED_APPS = (
     'crashstats.crashstats',
     'crashstats.api',
     'crashstats.authentication',
+    'crashstats.cron',
     'crashstats.documentation',
     'crashstats.exploitability',
     'crashstats.graphics',
