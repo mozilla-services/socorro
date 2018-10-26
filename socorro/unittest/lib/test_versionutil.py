@@ -4,7 +4,10 @@
 
 import pytest
 
-from socorro.lib.versionutil import generate_version_key
+from socorro.lib.versionutil import (
+    generate_version_key,
+    VersionParseError
+)
 
 
 @pytest.mark.parametrize('version, expected', [
@@ -32,6 +35,16 @@ from socorro.lib.versionutil import generate_version_key
 ])
 def test_generate_version_key(version, expected):
     assert generate_version_key(version) == expected
+
+
+@pytest.mark.parametrize('version', [
+    None,
+    '',
+    '42p',
+])
+def test_junk(version):
+    with pytest.raises(VersionParseError):
+        generate_version_key(version)
 
 
 def test_generate_version_key_sorted():
