@@ -19,7 +19,10 @@ from django.utils import timezone
 
 from . import models
 import crashstats.supersearch.models as supersearch_models
-from socorro.lib.versionutil import generate_version_key
+from socorro.lib.versionutil import (
+    generate_version_key,
+    VersionParseError
+)
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -227,25 +230,33 @@ def get_versions_for_product(product):
     if 'facets' not in ret or 'version' not in ret['facets']:
         return []
 
-    # Get versions from facet and sort it
-    versions = [item['term'] for item in ret['facets']['version']]
-    versions.sort(key=lambda v: generate_version_key(v), reverse=True)
+    # Get versions from facet, drop junk, and sort the final list
+    versions = []
+    for item in ret['facets']['version']:
+        version = item['term']
+        try:
+            versions.append((generate_version_key(version), version))
+        except VersionParseError:
+            pass
+    versions.sort(key=lambda v: v[0], reverse=True)
 
     # Set of X.Yb to add
     betas = set()
 
-    # Map of major version (int) -> list of versions (str) so we can get the
-    # most recent version of the last three majors which we'll assume are
-    # "featured versions"
+    # Map of major version (int) -> list of (key (str), versions (str)) so
+    # we can get the most recent version of the last three majors which
+    # we'll assume are "featured versions"
     major_to_versions = OrderedDict()
-    for version in versions:
+    for version_tuple in versions:
+        version = version_tuple[1]
         try:
             major = int(version.split('.', 1)[0])
             major_to_versions.setdefault(major, []).append(version)
 
             if 'b' in version:
-                # Add X.Yb to the betas set
-                betas.add(version[:version.find('b') + 1])
+                # Add (key, X.Yb) to the betas set
+                beta_version = version[:version.find('b') + 1]
+                betas.add((generate_version_key(beta_version), beta_version))
         except ValueError:
             # If the first thing in the major version isn't an int, then skip
             # it
@@ -261,17 +272,18 @@ def get_versions_for_product(product):
     # Add the beta versions and then resort the versions in reverse so
     # the most recent is first
     versions.extend(betas)
-    versions.sort(key=lambda v: generate_version_key(v), reverse=True)
+    versions.sort(key=lambda v: v[0], reverse=True)
+    versions = [version_tuple[1] for version_tuple in versions]
 
     # Generate the version data the context needs
     ret = [
         {
             'product': product,
-            'version': version,
-            'is_featured': version in featured_versions,
+            'version': ver,
+            'is_featured': ver in featured_versions,
             'has_builds': False
         }
-        for version in versions
+        for ver in versions
     ]
 
     # Cache value for an hour plus a fudge factor in seconds
