@@ -28,10 +28,8 @@ Base class:
 
 Concrete implementation:
 
-* `NullCrashStorage`: Silently ignores everything it is told to do.
-
-Examples of other concrete implementations are: `PostgreSQLCrashStorage`,
-`BotoCrashStorage`.
+* `PostgreSQLCrashStorage`
+* `BotoCrashStorage`
 
 CrashStorage containers for aggregating multiple crash storage implementations:
 

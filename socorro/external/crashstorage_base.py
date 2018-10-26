@@ -375,52 +375,6 @@ class CrashStorageBase(RequiredConfig):
         return crash_id
 
 
-class NullCrashStorage(CrashStorageBase):
-    """a testing crashstorage that silently ignores everything it's told to do
-    """
-    def get_raw_crash(self, crash_id):
-        """the default implementation of fetching a raw_crash
-
-        parameters:
-           crash_id - the id of a raw crash to fetch"""
-        return SocorroDotDict()
-
-    def get_raw_dump(self, crash_id, name):
-        """the default implementation of fetching a dump
-
-        parameters:
-           crash_id - the id of a dump to fetch"""
-        return ''
-
-    def get_raw_dumps(self, crash_id):
-        """the default implementation of fetching all the dumps
-
-        parameters:
-           crash_id - the id of a dump to fetch"""
-        return SocorroDotDict()
-
-    def get_raw_dumps_as_files(self, crash_id):
-        """the default implementation of fetching all the dumps
-
-        parameters:
-           crash_id - the id of a dump to fetch"""
-        return SocorroDotDict()
-
-    def get_unredacted_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash
-
-        parameters:
-           crash_id - the id of a processed_crash to fetch"""
-        return SocorroDotDict()
-
-    def remove(self, crash_id):
-        """delete a crash from storage
-
-        parameters:
-           crash_id - the id of a crash to fetch"""
-        pass
-
-
 class PolyStorageError(Exception, collections.MutableSequence):
     """an exception container holding a sequence of exceptions with tracebacks.
 
