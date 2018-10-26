@@ -165,7 +165,7 @@ class JobStateDatabase(RequiredConfig):
     def has_data(self):
         return bool(self.transaction_executor(
             single_value_sql,
-            "SELECT COUNT(*) FROM crontabber"
+            'SELECT count(*) FROM cron_job'
         ))
 
     def __iter__(self):
@@ -173,7 +173,7 @@ class JobStateDatabase(RequiredConfig):
             record[0] for record in
             self.transaction_executor(
                 execute_query_fetchall,
-                "SELECT app_name FROM crontabber"
+                'SELECT app_name FROM cron_job'
             )
         ])
 
@@ -183,9 +183,8 @@ class JobStateDatabase(RequiredConfig):
             self.transaction_executor(
                 single_value_sql,
                 """SELECT app_name
-                   FROM crontabber
-                   WHERE
-                        app_name = %s""",
+                   FROM cron_job
+                   WHERE app_name = %s""",
                 (key,)
             )
             return True
@@ -204,7 +203,7 @@ class JobStateDatabase(RequiredConfig):
                 depends_on,
                 error_count,
                 last_error
-            FROM crontabber"""
+            FROM cron_job"""
         columns = (
             'app_name',
             'next_run', 'first_run', 'last_run', 'last_success',
@@ -236,9 +235,9 @@ class JobStateDatabase(RequiredConfig):
                 error_count,
                 last_error,
                 ongoing
-            FROM crontabber
-            WHERE
-                app_name = %s"""
+            FROM cron_job
+            WHERE app_name = %s
+        """
         columns = (
             'next_run', 'first_run', 'last_run', 'last_success',
             'depends_on', 'error_count', 'last_error', 'ongoing'
@@ -261,8 +260,9 @@ class JobStateDatabase(RequiredConfig):
         try:
             single_value_sql(
                 connection,
-                """SELECT ongoing
-                FROM crontabber
+                """
+                SELECT ongoing
+                FROM cron_job
                 WHERE
                     app_name = %s
                 FOR UPDATE NOWAIT
@@ -274,7 +274,7 @@ class JobStateDatabase(RequiredConfig):
             # there is a row by this app_name.
             # Therefore, the next SQL is an update.
             next_sql = """
-                UPDATE crontabber
+                UPDATE cron_job
                 SET
                     next_run = %(next_run)s,
                     first_run = %(first_run)s,
@@ -295,7 +295,7 @@ class JobStateDatabase(RequiredConfig):
         except SQLDidNotReturnSingleValue:
             # the key does not exist, do an insert
             next_sql = """
-                INSERT INTO crontabber (
+                INSERT INTO cron_job (
                     app_name,
                     next_run,
                     first_run,
@@ -356,7 +356,7 @@ class JobStateDatabase(RequiredConfig):
                 error_count,
                 last_error,
                 ongoing
-            FROM crontabber
+            FROM cron_job
         """
         columns = (
             'app_name',
@@ -403,7 +403,7 @@ class JobStateDatabase(RequiredConfig):
             single_value_sql(
                 connection,
                 """SELECT app_name
-                   FROM crontabber
+                   FROM cron_job
                    WHERE
                         app_name = %s""",
                 (key,)
@@ -413,7 +413,7 @@ class JobStateDatabase(RequiredConfig):
         # item exists
         execute_no_results(
             connection,
-            """DELETE FROM crontabber
+            """DELETE FROM cron_job
                WHERE app_name = %s""",
             (key,)
         )
@@ -832,13 +832,14 @@ class CronTabberApp(App, RequiredConfig):
                     stream.write(' (in %s)\n' % timesince(_now, info['next_run']))
             else:
                 stream.write('none\n')
-            if info.get('last_error'):
+            if info.get('last_error') not in (None, '{}'):
+                last_error = json.loads(info['last_error'])
                 stream.write('Error!!'.ljust(PAD) + ' (%s times)\n' % info['error_count'])
                 stream.write('Traceback (most recent call last):')
                 stream.write(
-                    info['last_error']['traceback'] +
-                    ' %s:' % info['last_error']['type'] +
-                    info['last_error']['value'] +
+                    last_error['traceback'] +
+                    ' %s:' % last_error['type'] +
+                    last_error['value'] +
                     '\n'
                 )
             stream.write('\n')
@@ -1013,16 +1014,18 @@ class CronTabberApp(App, RequiredConfig):
         app_name = class_.app_name
         execute_no_results(
             connection,
-            """INSERT INTO crontabber_log (
+            """INSERT INTO cron_log (
                 app_name,
                 success,
-                duration
+                duration,
+                log_time
             ) VALUES (
+                %s,
                 %s,
                 %s,
                 %s
             )""",
-            (app_name, success_date, '%.5f' % duration),
+            (app_name, success_date, '%.5f' % duration, utc_now()),
         )
         metrics.gauge('job_success_runtime', value=duration, tags=['job:%s' % app_name])
 
@@ -1040,13 +1043,15 @@ class CronTabberApp(App, RequiredConfig):
         app_name = class_.app_name
         execute_no_results(
             connection,
-            """INSERT INTO crontabber_log (
+            """INSERT INTO cron_log (
                 app_name,
                 duration,
                 exc_type,
                 exc_value,
-                exc_traceback
+                exc_traceback,
+                log_time
             ) VALUES (
+                %s,
                 %s,
                 %s,
                 %s,
@@ -1058,7 +1063,8 @@ class CronTabberApp(App, RequiredConfig):
                 '%.5f' % duration,
                 repr(exc_type),
                 repr(exc_value),
-                exc_traceback
+                exc_traceback,
+                utc_now()
             ),
         )
         metrics.gauge('job_failure_runtime', value=duration, tags=['job:%s' % app_name])

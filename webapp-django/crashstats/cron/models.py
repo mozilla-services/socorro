@@ -50,12 +50,14 @@ class Log(models.Model):
         help_text='the crontabber app this log entry is for'
     )
     log_time = models.DateTimeField(
+        auto_now_add=True,
         help_text='the datetime for this entry'
     )
     duration = models.FloatField(
         help_text='duration in seconds'
     )
     success = models.DateTimeField(
+        blank=True, null=True,
         help_text=''
     )
     exc_type = models.TextField(

@@ -11,22 +11,66 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
     class """
 
     def setUp(self):
-        self.truncate()
         super(IntegrationTestCrontabberStatus, self).setUp()
+        cursor = self.connection.cursor()
+
+        # NOTE(willkg): Sometimes the test db gets into a "state", so
+        # drop the table if it exists.
+        cursor.execute("""
+        DROP TABLE IF EXISTS cron_job, cron_log
+        """)
+
+        # NOTE(willkg): The socorro tests don't run with the Django-managed
+        # database models created in the db, so we have to do it by hand until
+        # we've moved everything out of sqlalchemy/alembic land to Django land.
+        #
+        # FIXME(willkg): Please stop this madness soon.
+        #
+        # From "./manage.py sqlmigrate cron 0002";
+
+        cursor.execute("""
+        CREATE TABLE "cron_job" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "app_name" varchar(100) NOT NULL UNIQUE,
+        "next_run" timestamp with time zone NULL,
+        "first_run" timestamp with time zone NULL,
+        "last_run" timestamp with time zone NULL,
+        "last_success" timestamp with time zone NULL,
+        "error_count" integer NOT NULL,
+        "depends_on" text NULL,
+        "last_error" text NULL,
+        "ongoing" timestamp with time zone NULL);
+        """)
+        cursor.execute("""
+        CREATE TABLE "cron_log" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "app_name" varchar(100) NOT NULL,
+        "log_time" timestamp with time zone NOT NULL,
+        "duration" double precision NOT NULL,
+        "success" timestamp with time zone NULL,
+        "exc_type" text NULL,
+        "exc_value" text NULL,
+        "exc_traceback" text NULL);
+        """)
+        self.connection.commit()
 
     def tearDown(self):
-        self.truncate()
+        self.connection.cursor().execute("""
+        DROP TABLE IF EXISTS cron_job, cron_log;
+        """)
         super(IntegrationTestCrontabberStatus, self).tearDown()
 
     def truncate(self):
         cursor = self.connection.cursor()
-        cursor.execute("TRUNCATE crontabber")
+        cursor.execute("""
+        TRUNCATE cron_job, cron_log CASCADE;
+        """)
         self.connection.commit()
 
     def test_get(self):
         cursor = self.connection.cursor()
         cursor.execute("""
-            INSERT INTO crontabber (
+            INSERT INTO cron_job (
                 app_name,
                 next_run,
                 first_run,
@@ -42,7 +86,7 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
                 '2013-02-09 00:16:00.893834',
                 '2012-12-24 22:27:07.316893',
                 6,
-                '{}',
+                '',
                 '{"traceback": "error error error",
                   "type": "<class ''sluggish.jobs.InternalError''>",
                   "value": "Have already run this for 2012-12-24 23:27"
@@ -54,7 +98,7 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
                 '2012-11-12 18:39:59.521605',
                 '2012-11-12 18:27:17.341895',
                 0,
-                '{"slow-one"}',
+                'slow-one',
                 '{}'
             );
         """)
@@ -69,7 +113,7 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         assert slow_one['last_run'].isoformat() == '2013-02-09T00:16:00.893834+00:00'
         assert slow_one['last_success'].isoformat() == '2012-12-24T22:27:07.316893+00:00'
         assert slow_one['error_count'] == 6
-        assert slow_one['depends_on'] == []
+        assert slow_one['depends_on'] == ''
         expected = {
             'traceback': 'error error error',
             'type': "<class 'sluggish.jobs.InternalError'>",
@@ -83,13 +127,13 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         assert slow_two['last_run'].isoformat() == '2012-11-12T18:39:59.521605+00:00'
         assert slow_two['last_success'].isoformat() == '2012-11-12T18:27:17.341895+00:00'
         assert slow_two['error_count'] == 0
-        assert slow_two['depends_on'] == ['slow-one']
+        assert slow_two['depends_on'] == 'slow-one'
         assert slow_two['last_error'] == {}
 
     def test_get_with_some_null(self):
         cursor = self.connection.cursor()
         cursor.execute("""
-            INSERT INTO crontabber (
+            INSERT INTO cron_job (
                 app_name,
                 next_run,
                 first_run,

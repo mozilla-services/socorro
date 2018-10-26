@@ -16,10 +16,7 @@ from configman import (
 )
 
 
-def get_standard_config_manager(
-    more_definitions=None,
-    overrides=None,
-):
+def get_standard_config_manager(more_definitions=None, overrides=None):
     # MOCKED CONFIG DONE HERE
     required_config = Namespace()
     required_config.add_option(

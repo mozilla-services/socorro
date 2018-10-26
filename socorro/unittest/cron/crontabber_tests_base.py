@@ -8,8 +8,6 @@
 import datetime
 import json
 import os
-import shutil
-import tempfile
 import unittest
 from past.builtins import basestring
 from collections import Sequence, Mapping, defaultdict
@@ -20,26 +18,19 @@ import configman
 from configman.dotdict import DotDictWithAcquisition
 
 from socorro.cron.crontabber_app import CronTabberApp, JobStateDatabase
+from socorro.unittest.cron.setup_configman import get_config_manager_for_crontabber
 
 
 environment = DotDictWithAcquisition(os.environ)
 environment.always_ignore_mismatches = True
 
 
-class TestCaseBase(unittest.TestCase):
+class IntegrationTestCaseBase(unittest.TestCase):
+    """Useful class for running integration tests related to crontabber apps
+    since this class takes care of setting up a psycopg connection and it
+    makes sure the ``cron_job`` and ``cron_log`` tables are empty.
 
-    def shortDescription(self):
-        return None
-
-    @classmethod
-    def setUpClass(cls):
-        cls.tempdir = tempfile.mkdtemp()
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.isdir(cls.tempdir):
-            shutil.rmtree(cls.tempdir)
-
+    """
     def _setup_config_manager(self, jobs_string, extra_value_source=None):
         """setup and return a configman.ConfigurationManager and a the
         crontabber json file.
@@ -103,13 +94,6 @@ class TestCaseBase(unittest.TestCase):
         _wind(state)
         return state
 
-
-class IntegrationTestCaseBase(TestCaseBase):
-    """Useful class for running integration tests related to crontabber apps
-    since this class takes care of setting up a psycopg connection and it
-    makes sure the `crontabber` table is emptied.
-    """
-
     @classmethod
     def get_standard_config(cls):
         config_manager = configman.ConfigurationManager(
@@ -132,35 +116,68 @@ class IntegrationTestCaseBase(TestCaseBase):
         super(IntegrationTestCaseBase, cls).setUpClass()
         cls.config = cls.get_standard_config()
 
-        db_connection_factory = cls.config.crontabber.database_class(
-            cls.config.crontabber
-        )
+        db_connection_factory = cls.config.crontabber.database_class(cls.config.crontabber)
         cls.conn = db_connection_factory.connection()
-        cursor = cls.conn.cursor()
-        cursor.execute('SHOW timezone;')
-        try:
-            failed = True
-            tz, = cursor.fetchone()
-            if tz != 'UTC':
-                cursor.execute("""
-                   ALTER DATABASE %(dbname)s SET TIMEZONE TO UTC;
-                """ % cls.config.crontabber)
-            failed = False
-        finally:
-            failed and cls.conn.rollback() or cls.conn.commit()
 
         # instanciate one of these to make sure the tables are created
         JobStateDatabase(cls.config.crontabber)
 
     def _truncate(self):
         self.conn.cursor().execute("""
-            TRUNCATE crontabber, crontabber_log CASCADE;
+        TRUNCATE cron_job, cron_log CASCADE;
+        """)
+        self.conn.commit()
+
+    def setUp(self):
+        super(IntegrationTestCaseBase, self).setUp()
+
+        cursor = self.conn.cursor()
+
+        # NOTE(willkg): Sometimes the test db gets into a "state", so
+        # drop the table if it exists.
+        cursor.execute("""
+        DROP TABLE IF EXISTS cron_job, cron_log
+        """)
+
+        # NOTE(willkg): The socorro tests don't run with the Django-managed
+        # database models created in the db, so we have to do it by hand until
+        # we've moved everything out of sqlalchemy/alembic land to Django land.
+        #
+        # FIXME(willkg): Please stop this madness soon.
+        #
+        # From "./manage.py sqlmigrate cron 0002";
+
+        cursor.execute("""
+        CREATE TABLE "cron_job" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "app_name" varchar(100) NOT NULL UNIQUE,
+        "next_run" timestamp with time zone NULL,
+        "first_run" timestamp with time zone NULL,
+        "last_run" timestamp with time zone NULL,
+        "last_success" timestamp with time zone NULL,
+        "error_count" integer NOT NULL,
+        "depends_on" text NULL,
+        "last_error" text NULL,
+        "ongoing" timestamp with time zone NULL);
+        """)
+        cursor.execute("""
+        CREATE TABLE "cron_log" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "app_name" varchar(100) NOT NULL,
+        "log_time" timestamp with time zone NOT NULL,
+        "duration" double precision NOT NULL,
+        "success" timestamp with time zone NULL,
+        "exc_type" text NULL,
+        "exc_value" text NULL,
+        "exc_traceback" text NULL);
         """)
         self.conn.commit()
 
     def tearDown(self):
         super(IntegrationTestCaseBase, self).tearDown()
-        self._truncate()
+        self.conn.cursor().execute("""
+        DROP TABLE IF EXISTS cron_job, cron_log
+        """)
 
     @classmethod
     def tearDownClass(cls):
@@ -190,7 +207,7 @@ class IntegrationTestCaseBase(TestCaseBase):
                 depends_on,
                 last_error,
                 ongoing
-            FROM crontabber
+            FROM cron_job
         """)
         columns = (
             'app_name', 'next_run', 'first_run', 'last_run', 'last_success',
@@ -219,7 +236,7 @@ class IntegrationTestCaseBase(TestCaseBase):
         )
         cursor.execute("""
             UPDATE
-                crontabber
+                cron_job
             SET
                 next_run = %(next_run)s,
                 first_run = %(first_run)s,
@@ -245,7 +262,7 @@ class IntegrationTestCaseBase(TestCaseBase):
                 exc_type,
                 exc_value,
                 exc_traceback
-            FROM crontabber_log
+            FROM cron_log
             ORDER BY log_time;
         """)
         columns = (
