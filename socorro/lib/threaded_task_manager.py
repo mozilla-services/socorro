@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """This module defines classes that implements a threaded
 producer/consumer system.  A single iterator thread pushes jobs into an
 internal queue while a flock of consumer/worker threads do the jobs.  A job
