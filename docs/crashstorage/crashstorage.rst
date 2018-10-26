@@ -36,11 +36,6 @@ Examples of other concrete implementations are: `PostgreSQLCrashStorage`,
 CrashStorage containers for aggregating multiple crash storage implementations:
 
 * `PolyCrashStorage`: Container for other crash storage systems.
-* `FallbackCrashStorage`: Container for two other crash storage systems, a
-  primary and a secondary. Attempts on the primary, if it fails it will fallback
-  to the secondary. In use when we have cutover between data stores. Can be
-  heterogeneous, example: S3 + filesystem and use crashmovers to move from
-  filesystem into S3 when S3 comes back.
 
 Helper for PolyCrashStore:
 
