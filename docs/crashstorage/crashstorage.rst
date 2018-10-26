@@ -41,10 +41,6 @@ CrashStorage containers for aggregating multiple crash storage implementations:
   to the secondary. In use when we have cutover between data stores. Can be
   heterogeneous, example: S3 + filesystem and use crashmovers to move from
   filesystem into S3 when S3 comes back.
-* `PrimaryDeferredStorage`: Container for two different storage systems and a
-  predicate function. If predicate is false, store in primary, otherwise store
-  in secondary. Usecase: situation where we want crashes to be put somewhere
-  else and not be processed.
 
 Helper for PolyCrashStore:
 
