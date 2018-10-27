@@ -18,7 +18,6 @@ import configman
 from configman.dotdict import DotDictWithAcquisition
 
 from socorro.cron.crontabber_app import CronTabberApp, JobStateDatabase
-from socorro.unittest.cron.setup_configman import get_config_manager_for_crontabber
 
 
 environment = DotDictWithAcquisition(os.environ)
