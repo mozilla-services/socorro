@@ -48,9 +48,10 @@ class TransactionExecutor(RequiredConfig):
                 connection.commit()
                 return result
             except NonFatalException:
+                excinfo = sys.exc_info()
                 # This is a non-fatal exception so we don't need to reconnect
                 connection.rollback()
-                raise
+                reraise(*excinfo)
             except BaseException:
                 # This is possibly a fatal exception requiring a reconnect
                 excinfo = sys.exc_info()

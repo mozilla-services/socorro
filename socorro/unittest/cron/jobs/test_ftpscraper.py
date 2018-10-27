@@ -4,6 +4,7 @@
 
 import datetime
 from functools import wraps
+import unittest
 
 import mock
 import requests
@@ -14,18 +15,14 @@ from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs import ftpscraper
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
-from socorro.unittest.cron.crontabber_tests_base import TestCaseBase
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.unittest.cron.setup_configman import (
-    get_config_manager_for_crontabber,
-)
+from socorro.unittest.cron.setup_configman import get_config_manager_for_crontabber
 
 
 BASE_URL = 'https://archive.example.com/pub/'
 
 
 class Response(object):
-
     def __init__(self, content, status_code=200):
         self.content = content
         self.status_code = status_code
@@ -39,8 +36,7 @@ def responsify(func):
 
 
 @requests_mock.Mocker()
-class TestFTPScraper(TestCaseBase):
-
+class TestFTPScraper(unittest.TestCase):
     def get_standard_config(self):
         return get_config_manager_for_crontabber().get_config()
 
