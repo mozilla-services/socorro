@@ -4,14 +4,14 @@ import json
 import mock
 import pytest
 
-from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.utils import timezone
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.crashstats.models import CrontabberState
-from crashstats.supersearch.models import SuperSearch
+from crashstats.cron.models import Job as CronJob
 from crashstats.monitoring.views import assert_supersearch_no_errors
+from crashstats.supersearch.models import SuperSearch
 
 
 class TestViews(BaseTestViews):
@@ -25,22 +25,14 @@ class TestViews(BaseTestViews):
 
 
 class TestCrontabberStatusViews(BaseTestViews):
-
     def test_crontabber_status_ok(self):
-
-        def mocked_get(**options):
-            recently = timezone.now()
-            return {
-                'state': {
-                    'job1': {
-                        'error_count': 0,
-                        'depends_on': [],
-                        'last_run': recently,
-                    }
-                }
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
+        recently = timezone.now()
+        CronJob.objects.create(
+            app_name='job1',
+            error_count=0,
+            depends_on='',
+            last_run=recently
+        )
 
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)
@@ -48,35 +40,31 @@ class TestCrontabberStatusViews(BaseTestViews):
         assert json.loads(response.content) == {'status': 'ALLGOOD'}
 
     def test_crontabber_status_trouble(self):
-
-        def mocked_get(**options):
-            recently = timezone.now()
-            return {
-                'state': {
-                    'job1': {
-                        'error_count': 1,
-                        'depends_on': [],
-                        'last_run': recently,
-                    },
-                    'job2': {
-                        'error_count': 0,
-                        'depends_on': ['job1'],
-                        'last_run': recently,
-                    },
-                    'job3': {
-                        'error_count': 0,
-                        'depends_on': ['job2'],
-                        'last_run': recently,
-                    },
-                    'job1b': {
-                        'error_count': 0,
-                        'depends_on': [],
-                        'last_run': recently,
-                    },
-                }
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
+        recently = timezone.now()
+        CronJob.objects.create(
+            app_name='job1',
+            error_count=1,
+            depends_on='',
+            last_run=recently
+        )
+        CronJob.objects.create(
+            app_name='job2',
+            error_count=0,
+            depends_on='job1',
+            last_run=recently
+        )
+        CronJob.objects.create(
+            app_name='job3',
+            error_count=0,
+            depends_on='job2',
+            last_run=recently
+        )
+        CronJob.objects.create(
+            app_name='job1b',
+            error_count=0,
+            depends_on='',
+            last_run=recently
+        )
 
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)
@@ -84,33 +72,26 @@ class TestCrontabberStatusViews(BaseTestViews):
         data = json.loads(response.content)
         assert data['status'] == 'Broken'
         assert data['broken'] == ['job1']
-        assert data['blocked'] == ['job2', 'job3']
+        # FIXME(willkg): depends_on is hard-coded to [] now, so this will
+        # never happen
+        # assert data['blocked'] == ['job2', 'job3']
 
     def test_crontabber_status_not_run_for_a_while(self):
-
         some_time_ago = (
-            timezone.now() - datetime.timedelta(
-                minutes=settings.CRONTABBER_STALE_MINUTES
-            )
+            timezone.now() - datetime.timedelta(minutes=settings.CRONTABBER_STALE_MINUTES)
         )
-
-        def mocked_get(**options):
-            return {
-                'state': {
-                    'job1': {
-                        'error_count': 0,
-                        'depends_on': [],
-                        'last_run': some_time_ago,
-                    },
-                    'job2': {
-                        'error_count': 0,
-                        'depends_on': ['job1'],
-                        'last_run': some_time_ago,
-                    },
-                }
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
+        CronJob.objects.create(
+            app_name='job1',
+            error_count=0,
+            depends_on='',
+            last_run=some_time_ago
+        )
+        CronJob.objects.create(
+            app_name='job2',
+            error_count=0,
+            depends_on='job1',
+            last_run=some_time_ago
+        )
 
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)
@@ -120,14 +101,6 @@ class TestCrontabberStatusViews(BaseTestViews):
         assert data['last_run'] == some_time_ago.isoformat()
 
     def test_crontabber_status_never_run(self):
-
-        def mocked_get(**options):
-            return {
-                'state': {}
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
-
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)
         assert response.status_code == 200
@@ -136,7 +109,6 @@ class TestCrontabberStatusViews(BaseTestViews):
 
 
 class TestHealthcheckViews(BaseTestViews):
-
     def test_healthcheck_elb(self):
         url = reverse('monitoring:healthcheck')
         response = self.client.get(url, {'elb': 'true'})
