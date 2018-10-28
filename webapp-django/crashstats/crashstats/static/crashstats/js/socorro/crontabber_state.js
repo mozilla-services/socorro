@@ -1,49 +1,8 @@
 /* global _, d3 */
 
-var margin = { top: 1, right: 20, bottom: 6, left: 10 };
-var height = 500 - margin.top - margin.bottom;
 // To be obsolete it means that your next_run was more than
 // 24 hours ago.
 var longAgo = new Date(new Date() - 24 * 3600 * 1000);
-
-var format = d3.format(',.0f'),
-  color = function(node) {
-    if (node.error_count > 0 || node.errors > 0) {
-      return '#E41A1C'; // red
-    }
-    if (node.skips > 0) {
-      return '#fafa78'; // yellow
-    }
-    if (node.ongoing) {
-      return '#9f3774'; // pinkish
-    }
-    if (node._obsolete) {
-      return '#cfcfcf'; // light grey
-    }
-    return '#4DAF4A'; // green
-  },
-  title = function(d) {
-    var name = d.name,
-      errors = d.errors,
-      skips = d.skips;
-
-    if (name === undefined) {
-      name = d.source.name;
-    }
-    if (errors > 0) {
-      return name + ' has failed ' + format(errors) + ' times';
-    }
-    if (skips > 0) {
-      return name + ' has been skipped ' + format(skips) + ' times.';
-    }
-    if (d.ongoing) {
-      return name + ' is ongoing for ' + moment(d.ongoing).fromNow(true);
-    }
-    if (d._obsolete) {
-      return name + ' is obsolete. Last run ' + moment(d.last_run).fromNow(false);
-    }
-    return name + ' is working normally.';
-  };
 
 function escapeHtml(unsafe) {
   return unsafe
