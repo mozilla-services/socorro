@@ -61,8 +61,6 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                         >By Day</a>
                     </li>
                 </ul>
-
-                {% if versions_have_builds %}
                 <ul class="tc-filter">
                     <li class="tc-selector-heading">Range Type:</li>
                     <li>
@@ -78,7 +76,6 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                         >By Build Date</a>
                     </li>
                 </ul>
-                {% endif %}
             </div>
 
             <ul class="tc-duration-type tc-filter">
@@ -233,11 +230,6 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                 {% endfor %}
                 </tbody>
             </table>
-            {% elif not versions_have_builds %}
-            <p class="no-results">
-                Some versions do not support the by build date range option.
-                <a href="{{ change_query_string(_range_type=None) }}">Range by Report Date instead?</a>
-            </p>
             {% else %}
             <p class="no-results">
                 No crashing signatures found for the period
