@@ -63,9 +63,6 @@ NPM_FILE_PATTERNS = {
     'underscore': [
         '*.js',
     ],
-    'd3-sankey': [
-        'build/*',
-    ],
     'jquery-jsonview': [
         'dist/*',
     ],
@@ -322,7 +319,6 @@ PIPELINE_JS = {
     'crontabber_state': {
         'source_filenames': (
             'underscore/underscore-min.js',
-            'd3-sankey/build/d3-sankey.js',
             'crashstats/js/socorro/crontabber_state.js',
         ),
         'output_filename': 'js/crontabber-state.min.js',

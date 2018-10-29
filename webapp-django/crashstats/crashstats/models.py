@@ -5,6 +5,7 @@ in the public API in the `api` app.
 import datetime
 import functools
 import hashlib
+import json
 import logging
 import time
 from past.builtins import basestring
@@ -20,7 +21,6 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 from socorro.external.postgresql.base import PostgreSQLStorage
 import socorro.external.postgresql.products
-import socorro.external.postgresql.crontabber_state
 import socorro.external.boto.crash_data
 
 from socorro.app import socorro_app
@@ -32,6 +32,7 @@ from django.template.defaultfilters import slugify
 from django.utils.encoding import iri_to_uri
 
 from crashstats.base.utils import requests_retry_session
+from crashstats.cron.models import Job as CronJob
 
 
 logger = logging.getLogger('crashstats.models')
@@ -969,11 +970,6 @@ class SignatureFirstDate(SocorroMiddleware):
 
 
 class CrontabberState(SocorroMiddleware):
-
-    implementation = (
-        socorro.external.postgresql.crontabber_state.CrontabberState
-    )
-
     # make it small but but non-zero
     cache_seconds = 60  # 1 minute
 
@@ -981,21 +977,41 @@ class CrontabberState(SocorroMiddleware):
     API_WHITELIST = None
 
     def get(self, *args, **kwargs):
-        resp = super(CrontabberState, self).get(*args, **kwargs)
-        apps = resp['state']
+        job_states = {}
+        jobs = CronJob.objects.order_by('app_name')
+        for job in jobs:
+            state = {
+                'next_run': job.next_run,
+                'first_run': job.first_run,
+                'last_run': job.last_run,
+                'last_success': job.last_success,
+                'error_count': job.error_count,
+                'ongoing': job.ongoing,
+                # FIXME(willkg): hardcode depends_on to an empty list to save
+                # us grief because none of the apps have dependencies and it's
+                # stored differently than before
+                'depends_on': [],
+                'last_error': {}
+            }
 
-        # Redact last_error data so it doesn't bleed infrastructure info into
-        # the world
-        for name, state in apps.items():
-            if state.get('last_error'):
-                # NOTE(willkg): The structure of last_error is defined in
-                # crontabber in crontabber/app.py.
-                state['last_error'] = {
-                    'traceback': 'See error logging system.',
-                    'value': 'See error logging system.',
-                    'type': state['last_error'].get('type', 'Unknown')
-                }
-        return resp
+            # Redact last_error data so it doesn't bleed infrastructure info into
+            # the world
+            if job.last_error:
+                last_error = json.loads(job.last_error)
+                if last_error:
+                    # NOTE(willkg): The structure of last_error is defined in
+                    # crontabber in crontabber/app.py.
+                    state['last_error'] = {
+                        'traceback': 'See error logging system.',
+                        'value': 'See error logging system.',
+                        'type': last_error.get('type', 'Unknown')
+                    }
+
+            job_states[job.app_name] = state
+
+        return {
+            'state': job_states
+        }
 
 
 class BugzillaBugInfo(SocorroCommon):

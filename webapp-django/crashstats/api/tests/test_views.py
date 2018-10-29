@@ -12,17 +12,17 @@ from moto import mock_s3_deprecated
 import pyquery
 
 from crashstats.base.tests.testbase import TestCase
-from crashstats.crashstats.tests.test_views import BaseTestViews
-from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.crashstats.models import (
     BugAssociation,
-    CrontabberState,
     ProcessedCrash,
     ProductVersionsMiddleware,
     Reprocessing,
     RawCrash,
     UnredactedCrash,
 )
+from crashstats.crashstats.tests.test_views import BaseTestViews
+from crashstats.cron.models import Job as CronJob
+from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.tokens.models import Token
 from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import create_new_ooid
@@ -30,7 +30,6 @@ from socorro.unittest.external.boto.conftest import BotoHelper
 
 
 class TestDedentLeft(TestCase):
-
     def test_dedent_left(self):
         from crashstats.api.views import dedent_left
         assert dedent_left('Hello', 2) == 'Hello'
@@ -89,33 +88,27 @@ class TestViews(BaseTestViews):
 
     def test_CORS(self):
         """any use of model_wrapper should return a CORS header"""
-
-        def mocked_get(**options):
-            dt = timezone.now()
-            return {
-                "state": {
-                    "automatic-emails": {
-                        "next_run": dt,
-                        "first_run": dt,
-                        "depends_on": [],
-                        "last_run": dt,
-                        "last_success": dt,
-                        "error_count": 0,
-                        "last_error": {}
-                    },
-                    "ftpscraper": {
-                        "next_run": dt,
-                        "first_run": dt,
-                        "depends_on": [],
-                        "last_run": dt,
-                        "last_success": dt,
-                        "error_count": 0,
-                        "last_error": {}
-                    }
-                }
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
+        dt = timezone.now()
+        CronJob.objects.create(
+            app_name='automatic-emails',
+            next_run=dt,
+            first_run=dt,
+            depends_on='',
+            last_run=dt,
+            last_success=dt,
+            error_count=0,
+            last_error='{}'
+        )
+        CronJob.objects.create(
+            app_name='ftpscraper',
+            next_run=dt,
+            first_run=dt,
+            depends_on='',
+            last_run=dt,
+            last_success=dt,
+            error_count=0,
+            last_error='{}'
+        )
 
         url = reverse('api:model_wrapper', args=('CrontabberState',))
         response = self.client.get(url)
@@ -182,13 +175,6 @@ class TestViews(BaseTestViews):
         assert dump['hits'][0] == expected
 
     def test_metrics_gathering(self):
-        def mocked_get(**options):
-            return {
-                'state': {}
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
-
         url = reverse('api:model_wrapper', args=('CrontabberState',))
         with MetricsMock() as metrics_mock:
             response = self.client.get(url)
@@ -560,35 +546,27 @@ class TestViews(BaseTestViews):
         assert len(res['errors']) == 3
 
     def test_CrontabberState(self):
-        # The actual dates dont matter, but it matters that it's a
-        # datetime.datetime object.
-
-        def mocked_get(**options):
-            dt = timezone.now()
-            return {
-                "state": {
-                    "automatic-emails": {
-                        "next_run": dt,
-                        "first_run": dt,
-                        "depends_on": [],
-                        "last_run": dt,
-                        "last_success": dt,
-                        "error_count": 0,
-                        "last_error": {}
-                    },
-                    "ftpscraper": {
-                        "next_run": dt,
-                        "first_run": dt,
-                        "depends_on": [],
-                        "last_run": dt,
-                        "last_success": dt,
-                        "error_count": 0,
-                        "last_error": {}
-                    }
-                }
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
+        dt = timezone.now()
+        CronJob.objects.create(
+            app_name='automatic-emails',
+            next_run=dt,
+            first_run=dt,
+            depends_on='',
+            last_run=dt,
+            last_success=dt,
+            error_count=0,
+            last_error='{}'
+        )
+        CronJob.objects.create(
+            app_name='ftpscraper',
+            next_run=dt,
+            first_run=dt,
+            depends_on='',
+            last_run=dt,
+            last_success=dt,
+            error_count=0,
+            last_error='{}'
+        )
 
         url = reverse('api:model_wrapper', args=('CrontabberState',))
         response = self.client.get(url)
@@ -602,33 +580,27 @@ class TestViews(BaseTestViews):
         assert response.status_code == 404
 
     def test_hit_or_not_hit_ratelimit(self):
-
-        def mocked_get(**options):
-            dt = timezone.now()
-            return {
-                "state": {
-                    "automatic-emails": {
-                        "next_run": dt,
-                        "first_run": dt,
-                        "depends_on": [],
-                        "last_run": dt,
-                        "last_success": dt,
-                        "error_count": 0,
-                        "last_error": {}
-                    },
-                    "ftpscraper": {
-                        "next_run": dt,
-                        "first_run": dt,
-                        "depends_on": [],
-                        "last_run": dt,
-                        "last_success": dt,
-                        "error_count": 0,
-                        "last_error": {}
-                    },
-                }
-            }
-
-        CrontabberState.implementation().get.side_effect = mocked_get
+        dt = timezone.now()
+        CronJob.objects.create(
+            app_name='automatic-emails',
+            next_run=dt,
+            first_run=dt,
+            depends_on='',
+            last_run=dt,
+            last_success=dt,
+            error_count=0,
+            last_error='{}'
+        )
+        CronJob.objects.create(
+            app_name='ftpscraper',
+            next_run=dt,
+            first_run=dt,
+            depends_on='',
+            last_run=dt,
+            last_success=dt,
+            error_count=0,
+            last_error='{}'
+        )
 
         # doesn't matter much which model we use
         url = reverse('api:model_wrapper', args=('CrontabberState',))
