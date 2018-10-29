@@ -1295,34 +1295,18 @@ class TestTopMostFilesRule(TestCase):
 class TestBetaVersionRule:
     API_URL = 'http://buildhub.example.com/v1/buckets/build-hub/collections/releases/records'
 
-    def test_everything_we_hoped_for(self):
+    def test_beta_channel_known_version(self):
+        # Beta channel with known version gets converted correctly
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
         raw_crash = {}
         raw_dumps = {}
 
-        # Release channel--doesn't trigger rule
-        with requests_mock.Mocker() as req_mock:
-            processed_crash = {
-                'product': 'WaterWolf',
-                'version': '2.0',
-                'release_channel': 'release',
-                'build': '20000801101010',
-            }
-
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '2.0'
-            assert len(processor_meta.processor_notes) == 0
-
-        # A normal beta crash, with a known version
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
                 self.API_URL + '?' + urlencode({
-                    'source.product': 'WaterWolf',
+                    'source.product': 'firefox',
                     'build.id': '"20001001101010"',
                     'target.channel': 'beta',
                     '_limit': 1
@@ -1339,7 +1323,7 @@ class TestBetaVersionRule:
             )
 
             processed_crash = {
-                'product': 'WaterWolf',
+                'product': 'Firefox',
                 'version': '3.0',
                 'release_channel': 'beta',
                 'build': '20001001101010',
@@ -1352,10 +1336,41 @@ class TestBetaVersionRule:
             assert processed_crash['version'] == '3.0b1'
             assert processor_meta.processor_notes == []
 
-        # A nightly--doesn't trigger rule
-        with requests_mock.Mocker() as req_mock:
+    def test_release_channel(self):
+        # Release channel ignored
+        config = get_basic_config()
+        config.buildhub_api = self.API_URL
+
+        raw_crash = {}
+        raw_dumps = {}
+
+        # Release channel--doesn't trigger rule
+        with requests_mock.Mocker():
             processed_crash = {
-                'product': 'WaterWolf',
+                'product': 'Firefox',
+                'version': '2.0',
+                'release_channel': 'release',
+                'build': '20000801101010',
+            }
+
+            processor_meta = get_basic_processor_meta()
+
+            rule = BetaVersionRule(config)
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '2.0'
+            assert len(processor_meta.processor_notes) == 0
+
+    def test_nightly_channel(self):
+        # A nightly--doesn't trigger rule
+        config = get_basic_config()
+        config.buildhub_api = self.API_URL
+
+        raw_crash = {}
+        raw_dumps = {}
+
+        with requests_mock.Mocker():
+            processed_crash = {
+                'product': 'Firefox',
                 'version': '5.0a1',
                 'release_channel': 'nightly',
                 'build': '20000105101010',
@@ -1368,10 +1383,17 @@ class TestBetaVersionRule:
             assert processed_crash['version'] == '5.0a1'
             assert processor_meta.processor_notes == []
 
+    def test_bad_buildid(self):
         # Bad buildid doesn't error out
-        with requests_mock.Mocker() as req_mock:
+        config = get_basic_config()
+        config.buildhub_api = self.API_URL
+
+        raw_crash = {}
+        raw_dumps = {}
+
+        with requests_mock.Mocker():
             processed_crash = {
-                'product': 'WaterWolf',
+                'product': 'Firefox',
                 'version': '5.0',
                 'release_channel': 'beta',
                 'build': '2",381,,"',
@@ -1387,11 +1409,18 @@ class TestBetaVersionRule:
                 'added "b0" suffix to version number'
             ]
 
-        # beta crash with an unknown version gets a special mark.
+    def test_beta_channel_unknown_version(self):
+        # beta crash with an unknown version gets b0
+        config = get_basic_config()
+        config.buildhub_api = self.API_URL
+
+        raw_crash = {}
+        raw_dumps = {}
+
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
                 self.API_URL + '?' + urlencode({
-                    'source.product': 'Waterwolf',
+                    'source.product': 'firefox',
                     'build.id': '"220000101101011"',
                     'target.channel': 'beta',
                     '_limit': 1
@@ -1402,7 +1431,34 @@ class TestBetaVersionRule:
             )
 
             processed_crash = {
-                'product': 'WaterWolf',
+                'product': 'Firefox',
+                'version': '3.0.1',
+                'release_channel': 'beta',
+                'build': '220000101101011',
+            }
+
+            processor_meta = get_basic_processor_meta()
+
+            rule = BetaVersionRule(config)
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '3.0.1b0'
+            assert processor_meta.processor_notes == [
+                'release channel is beta but no version data was found - '
+                'added "b0" suffix to version number'
+            ]
+
+    def test_beta_channel_non_buildhub_product(self):
+        # beta crash with a a product not on Buildhub gets b0 without hitting
+        # Buildhub
+        config = get_basic_config()
+        config.buildhub_api = self.API_URL
+
+        raw_crash = {}
+        raw_dumps = {}
+
+        with requests_mock.Mocker():
+            processed_crash = {
+                'product': 'Waterwolf',
                 'version': '3.0',
                 'release_channel': 'beta',
                 'build': '220000101101011',
@@ -1418,22 +1474,18 @@ class TestBetaVersionRule:
                 'added "b0" suffix to version number'
             ]
 
-    def test_with_aurora_channel(self):
+    def test_aurora_channel(self):
         """Verify this works with aurora channel"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = {}
         raw_dumps = {}
-        processed_crash = DotDict()
-        processed_crash.date_processed = '2014-12-31'
-        processed_crash.product = 'WaterWolf'
 
-        # A normal aurora crash, with a known version.
         with requests_mock.Mocker() as req_mock:
             req_mock.get(
                 self.API_URL + '?' + urlencode({
-                    'source.product': 'WaterWolf',
+                    'source.product': 'firefox',
                     'build.id': '"20001001101010"',
                     'target.channel': 'aurora',
                     '_limit': 1
@@ -1450,7 +1502,7 @@ class TestBetaVersionRule:
             )
 
             processed_crash = {
-                'product': 'WaterWolf',
+                'product': 'Firefox',
                 'version': '3.0',
                 'release_channel': 'aurora',
                 'build': '20001001101010',
@@ -1461,6 +1513,61 @@ class TestBetaVersionRule:
             rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0b1'
+            assert processor_meta.processor_notes == []
+
+    def test_b99(self):
+        """Verify the switcheroo for b99 final beta"""
+        config = get_basic_config()
+        config.buildhub_api = self.API_URL
+
+        raw_crash = {}
+        raw_dumps = {}
+
+        with requests_mock.Mocker() as req_mock:
+            # Request for beta yields no data
+            req_mock.get(
+                self.API_URL + '?' + urlencode({
+                    'source.product': 'firefox',
+                    'build.id': '"20181018182531"',
+                    'target.channel': 'beta',
+                    '_limit': 1
+                }),
+                json={
+                    'data': []
+                }
+            )
+
+            # Request for release yields release version number
+            req_mock.get(
+                self.API_URL + '?' + urlencode({
+                    'source.product': 'firefox',
+                    'build.id': '"20181018182531"',
+                    'target.channel': 'release',
+                    '_limit': 1
+                }),
+                json={
+                    'data': [
+                        {
+                            'target': {
+                                'version': '63.0'
+                            }
+                        }
+                    ]
+                }
+            )
+
+            processed_crash = {
+                'product': 'Firefox',
+                'version': '63.0',
+                'release_channel': 'beta',
+                'build': '20181018182531',
+            }
+
+            processor_meta = get_basic_processor_meta()
+
+            rule = BetaVersionRule(config)
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '63.0b99'
             assert processor_meta.processor_notes == []
 
 
