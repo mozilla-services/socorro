@@ -247,6 +247,11 @@ class JobStateDatabase(RequiredConfig):
         except SQLDidNotReturnSingleRow:
             raise KeyError(key)
         row = dict(zip(columns, record))
+
+        # Unserialize last_error into a Python dict
+        if row['last_error']:
+            row['last_error'] = json.loads(row['last_error'])
+
         return row
 
     @database_transaction()
@@ -317,6 +322,12 @@ class JobStateDatabase(RequiredConfig):
                     %(ongoing)s
                 )
             """
+
+        # serialize last_error if it's a {}
+        last_error = value['last_error']
+        if isinstance(last_error, dict):
+            last_error = json.dumps(value['last_error'], cls=LastErrorEncoder)
+
         parameters = {
             'app_name': key,
             'next_run': value['next_run'],
@@ -325,10 +336,7 @@ class JobStateDatabase(RequiredConfig):
             'last_success': value.get('last_success'),
             'depends_on': value['depends_on'],
             'error_count': value['error_count'],
-            'last_error': json.dumps(
-                value['last_error'],
-                cls=LastErrorEncoder
-            ),
+            'last_error': last_error,
             'ongoing': value.get('ongoing'),
         }
         try:
@@ -836,12 +844,9 @@ class CronTabberApp(App, RequiredConfig):
                 last_error = json.loads(info['last_error'])
                 stream.write('Error!!'.ljust(PAD) + ' (%s times)\n' % info['error_count'])
                 stream.write('Traceback (most recent call last):')
-                stream.write(
-                    last_error['traceback'] +
-                    ' %s:' % last_error['type'] +
-                    last_error['value'] +
-                    '\n'
-                )
+                stream.write('%s %s: %s\n' % (
+                    last_error['traceback'], last_error['type'], last_error['value']
+                ))
             stream.write('\n')
 
     def get_job_data(self, job_list_string):
