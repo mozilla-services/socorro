@@ -1309,6 +1309,7 @@ class TestBetaVersionRule:
                     'source.product': 'firefox',
                     'build.id': '"20001001101010"',
                     'target.channel': 'beta',
+                    '_sort': '-target.version',
                     '_limit': 1
                 }),
                 json={
@@ -1423,6 +1424,7 @@ class TestBetaVersionRule:
                     'source.product': 'firefox',
                     'build.id': '"220000101101011"',
                     'target.channel': 'beta',
+                    '_sort': '-target.version',
                     '_limit': 1
                 }),
                 json={
@@ -1488,6 +1490,7 @@ class TestBetaVersionRule:
                     'source.product': 'firefox',
                     'build.id': '"20001001101010"',
                     'target.channel': 'aurora',
+                    '_sort': '-target.version',
                     '_limit': 1
                 }),
                 json={
@@ -1530,6 +1533,7 @@ class TestBetaVersionRule:
                     'source.product': 'firefox',
                     'build.id': '"20181018182531"',
                     'target.channel': 'beta',
+                    '_sort': '-target.version',
                     '_limit': 1
                 }),
                 json={
@@ -1543,13 +1547,14 @@ class TestBetaVersionRule:
                     'source.product': 'firefox',
                     'build.id': '"20181018182531"',
                     'target.channel': 'release',
+                    '_sort': '-target.version',
                     '_limit': 1
                 }),
                 json={
                     'data': [
                         {
                             'target': {
-                                'version': '63.0'
+                                'version': '63.0rc2'
                             }
                         }
                     ]
@@ -1567,7 +1572,7 @@ class TestBetaVersionRule:
 
             rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '63.0b99'
+            assert processed_crash['version'] == '63.0rc2'
             assert processor_meta.processor_notes == []
 
 

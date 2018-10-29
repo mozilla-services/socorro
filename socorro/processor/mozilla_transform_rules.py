@@ -674,10 +674,14 @@ class BetaVersionRule(Rule):
 
         session = session_with_retries(self.buildhub_api)
 
+        # Limit to 1 because otherwise we get a build for every locale and
+        # platform. Sort by target.version so that if it's an rc, we get the
+        # rc version rather than the release version.
         query = {
             'source.product': product,
             'build.id': '"%s"' % build_id,
             'target.channel': channel,
+            '_sort': '-target.version',
             '_limit': 1
         }
         resp = session.get(self.buildhub_api, params=query)
@@ -742,13 +746,13 @@ class BetaVersionRule(Rule):
                 # We didn't get a version from Buildhub, but this might be a
                 # "final beta" which Buildhub has an entry for in the release
                 # channel. So we check Buildhub asking about the release
-                # channel and if it's there, we tack on a b99.
+                # channel and get back an rc version.
                 version = processed_crash.get('version').strip()
                 if version and release_channel == 'beta' and self.is_final_beta(version):
                     real_version = self._get_version_data(product, build_id, 'release')
 
                     if real_version:
-                        processed_crash['version'] = real_version + 'b99'
+                        processed_crash['version'] = real_version
                         return True
 
             except RequestException as exc:
