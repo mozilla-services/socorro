@@ -144,9 +144,8 @@ class TestTopCrasherViews(BaseTestViews):
                 params['_columns']
             )
             return results
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = self.base_url + '?product=WaterWolf&version=19.0'
 
@@ -192,10 +191,7 @@ class TestTopCrasherViews(BaseTestViews):
             'Potential Startup Crash, 50 out of 80 crashes happened during '
             'startup' in response.content
         )
-        assert (
-            'Startup Crash, all crashes happened during startup'
-            in response.content
-        )
+        assert 'Startup Crash, all crashes happened during startup' in response.content
 
     def test_product_sans_featured_version(self):
         def mocked_supersearch_get(**params):
@@ -230,9 +226,8 @@ class TestTopCrasherViews(BaseTestViews):
                 params['_columns']
             )
             return results
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         response = self.client.get(self.base_url, {'product': 'SeaMonkey'})
         assert response.status_code == 302
@@ -290,9 +285,8 @@ class TestTopCrasherViews(BaseTestViews):
                 },
                 'total': 0
             }
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
@@ -301,7 +295,6 @@ class TestTopCrasherViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_modes(self):
-
         def mocked_supersearch_get(**params):
             return {
                 'hits': [],
@@ -310,9 +303,8 @@ class TestTopCrasherViews(BaseTestViews):
                 },
                 'total': 0
             }
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         now = datetime.datetime.utcnow().replace(microsecond=0)
         today = now.replace(hour=0, minute=0, second=0)
@@ -341,7 +333,6 @@ class TestTopCrasherViews(BaseTestViews):
             assert now not in response.content
 
     def test_by_build(self):
-
         def mocked_supersearch_get(**params):
             assert 'build_id' in params
             return {
@@ -351,9 +342,7 @@ class TestTopCrasherViews(BaseTestViews):
                 },
                 'total': 0
             }
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
@@ -361,13 +350,3 @@ class TestTopCrasherViews(BaseTestViews):
             '_range_type': 'build',
         })
         assert response.status_code == 200
-
-        # Test with a version that does not support builds.
-        response = self.client.get(self.base_url, {
-            'product': 'WaterWolf',
-            'version': '18.0',
-            '_range_type': 'build',
-        })
-        assert response.status_code == 200
-        assert 'versions do not support the by build date' in response.content
-        assert 'Range Type:' not in response.content

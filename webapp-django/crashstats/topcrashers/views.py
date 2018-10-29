@@ -142,17 +142,6 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
                 )
                 return redirect(url)
 
-    # See if all versions support builds. If not, refuse to show the "by build"
-    # range option in the UI.
-    versions_have_builds = True
-    for version in versions:
-        for pv in context['active_versions'][product]:
-            if pv['version'] == version and not pv['has_builds']:
-                versions_have_builds = False
-                break
-
-    context['versions_have_builds'] = versions_have_builds
-
     # Used to pick a version in the dropdown menu.
     context['version'] = versions[0] if versions else ''
 
