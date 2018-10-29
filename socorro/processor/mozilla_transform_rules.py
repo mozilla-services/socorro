@@ -625,6 +625,9 @@ class BetaVersionRule(Rule):
     #: If we know it's good, cache it for 24 hours because it won't change
     LONG_CACHE_TTL = 60 * 60 * 24
 
+    #: Products that are on Buildhub--we don't want to ask Buildhub about others
+    BUILDHUB_PRODUCTS = ['firefox', 'fennec', 'fennecandroid']
+
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
         # NOTE(willkg): These config values come from Processor2015 instance.
@@ -659,6 +662,11 @@ class BetaVersionRule(Rule):
         # devedition is the aurora channel
         if (product, channel) == ('firefox', 'aurora') and build_id > '20170601':
             product = 'devedition'
+
+        # Buildhub product is "fennec", not "fennecandroid", so we have to switch
+        # it
+        if product == 'fennecandroid':
+            product = 'fennec'
 
         key = '%s:%s:%s' % (product, build_id, channel)
         if key in self.cache:
@@ -697,14 +705,21 @@ class BetaVersionRule(Rule):
 
         return None
 
+    def is_final_beta(self, version):
+        """Denotes whether this version could be a final beta"""
+        # NOTE(willkg): this started with 26.0 and 38.0.5 was an out-of-cycle
+        # exception
+        return version > 26.0 and (version.endswith('.0') or version == '38.0.5')
+
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # Beta and aurora versions send the wrong version in the crash report,
         # so we need to fix them
         return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        product = processed_crash.get('product').strip()
+        product = processed_crash.get('product').strip().lower()
         try:
+            # Convert the build id to an int as a hand-wavey validity check
             build_id = int(processed_crash.get('build').strip())
         except ValueError:
             build_id = None
@@ -712,18 +727,29 @@ class BetaVersionRule(Rule):
 
         # If we're missing one of the magic ingredients, then there's nothing
         # to do
-        if product and build_id and release_channel:
+        if product and build_id and release_channel and product in self.BUILDHUB_PRODUCTS:
+            # Convert the build_id to a str for lookups
+            build_id = str(build_id)
+
             try:
-                real_version = self._get_version_data(
-                    product.lower(),
-                    str(build_id),
-                    release_channel
-                )
+                real_version = self._get_version_data(product, build_id, release_channel)
 
                 # If we got a real version, toss that in and we're done
                 if real_version:
                     processed_crash['version'] = real_version
                     return True
+
+                # We didn't get a version from Buildhub, but this might be a
+                # "final beta" which Buildhub has an entry for in the release
+                # channel. So we check Buildhub asking about the release
+                # channel and if it's there, we tack on a b99.
+                version = processed_crash.get('version').strip()
+                if version and release_channel == 'beta' and self.is_final_beta(version):
+                    real_version = self._get_version_data(product, build_id, 'release')
+
+                    if real_version:
+                        processed_crash['version'] = real_version + 'b99'
+                        return True
 
             except RequestException as exc:
                 processor_meta.processor_notes.append('could not connect to Buildhub')
@@ -736,7 +762,7 @@ class BetaVersionRule(Rule):
         processed_crash['version'] += 'b0'
         processor_meta.processor_notes.append(
             'release channel is %s but no version data was found - added "b0" '
-            'suffix to version number' % processed_crash['release_channel']
+            'suffix to version number' % release_channel
         )
 
         return True
