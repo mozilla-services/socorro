@@ -3328,7 +3328,9 @@ FIELDS = {
         'is_returned': True,
         'name': 'moz_crash_reason_raw',
         'namespace': 'processed_crash',
-        'permissions_needed': [],
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
         'query_type': 'string',
         'storage_mapping': {
             'fields': {
