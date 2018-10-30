@@ -83,7 +83,7 @@ class ConnectionContextBase(RequiredConfig):
     )
 
     conditional_exceptions = (
-        boto.exception.StorageResponseError
+        boto.exception.StorageResponseError,
     )
 
     def is_operational_exception(self, x):

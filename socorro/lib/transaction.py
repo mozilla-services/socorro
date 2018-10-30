@@ -117,38 +117,33 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         last_failure = sys.exc_info()
                         connection.rollback()
                         reraise(*last_failure)
-
-            except self.db_conn_context_source.conditional_exceptions as x:
-                # these exceptions may or may not be retriable the test is
-                # for is a last ditch effort to see if we can retry
-                if not self.db_conn_context_source.is_operational_exception(x):
-                    # If the logger exists, log the issue, otherwise print it
-                    # to stdout.
-                    if self.config.logger:
+            except Exception as x:
+                if type(x) in self.db_conn_context_source.conditional_exceptions:
+                    # these exceptions may or may not be retriable the test is
+                    # for is a last ditch effort to see if we can retry
+                    if not self.db_conn_context_source.is_operational_exception(x):
                         self.config.logger.critical(
                             'Unrecoverable %s transaction error',
                             self.connection_source_type,
                             exc_info=True
                         )
-                    else:
-                        print('Unrecoverable %s transaction error' % self.connection_source_type)
+                        reraise(*last_failure)
+
+                    self.config.logger.critical(
+                        '%s transaction error eligible for retry',
+                        self.connection_source_type,
+                        exc_info=True
+                    )
+
+                elif type(x) in self.db_conn_context_source.operational_exceptions:
+                    self.config.logger.critical(
+                        '%s transaction error eligible for retry',
+                        self.connection_source_type,
+                        exc_info=True
+                    )
+
+                else:
                     reraise(*last_failure)
-
-                self.config.logger.critical(
-                    '%s transaction error eligible for retry',
-                    self.connection_source_type,
-                    exc_info=True
-                )
-
-            except self.db_conn_context_source.operational_exceptions:
-                self.config.logger.critical(
-                    '%s transaction error eligible for retry',
-                    self.connection_source_type,
-                    exc_info=True
-                )
-
-            except BaseException as x:
-                reraise(*last_failure)
 
             self.db_conn_context_source.force_reconnect()
             self.config.logger.debug('retry in %s seconds' % wait_in_seconds)
