@@ -1,22 +1,32 @@
 import json
-import urllib
 import re
+import urllib
 
+import mock
 import pyquery
+from waffle.models import Switch
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
-from waffle.models import Switch
-
-from socorro.lib import BadArgumentError
-
 from crashstats.crashstats.models import BugAssociation
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import Query, SuperSearchUnredacted
+from socorro.lib import BadArgumentError
 
 
 class TestViews(BaseTestViews):
+    def setUp(self):
+        super(TestViews, self).setUp()
+        # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
+        # supersearch mocking
+        self.mock_gvfp = mock.patch('crashstats.crashstats.utils.get_versions_for_product')
+        self.mock_gvfp.return_value = ['20.0', '19.1', '19.0', '18.0']
+        self.mock_gvfp.start()
+
+    def tearDown(self):
+        self.mock_gvfp.stop()
+        super(TestViews, self).tearDown()
 
     def test_search_waffle_switch(self):
         url_custom = reverse('supersearch:search_custom')
