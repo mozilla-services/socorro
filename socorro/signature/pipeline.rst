@@ -70,7 +70,7 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
 
 9. Rule: SignatureParentIDNotEqualsChildID
    
-   Stomp on the signature if MozCrashReason is ``parentBuildID != childBuildID``.
+   Stomp on the signature if moz_crash_reason is ``parentBuildID != childBuildID``.
    
    In the case where the assertion fails, then the parent buildid and the child buildid are
    different. This causes a lot of strangeness particularly in symbolification, so the signatures

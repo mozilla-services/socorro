@@ -74,7 +74,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
         'ipc_message_name': glom(raw_crash, 'IPCMessageName', default=None),
 
         # text
-        'moz_crash_reason': glom(raw_crash, 'MozCrashReason', default=None),
+        'moz_crash_reason': glom(processed_crash, 'moz_crash_reason', default=None),
 
         # text; comma-delimited e.g. "browser,flash1,flash2"
         'additional_minidumps': glom(raw_crash, 'additional_minidumps', default=''),

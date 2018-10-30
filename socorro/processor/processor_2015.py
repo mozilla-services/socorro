@@ -48,6 +48,7 @@ from socorro.processor.mozilla_transform_rules import (
     ExploitablityRule,
     FlashVersionRule,
     JavaProcessRule,
+    MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PluginContentURL,
@@ -80,6 +81,7 @@ DEFAULT_RULES = [
     DatesAndTimesRule,
     OutOfMemoryBinaryRule,
     JavaProcessRule,
+    MozCrashReasonRule,
     Winsock_LSPRule,
     # post processing of the processed crash
     CrashingThreadRule,

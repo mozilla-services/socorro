@@ -23,6 +23,7 @@ from socorro.processor.mozilla_transform_rules import (
     ExploitablityRule,
     FlashVersionRule,
     JavaProcessRule,
+    MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PluginContentURL,
@@ -717,6 +718,59 @@ class TestJavaProcessRule(TestCase):
 
         # Make sure there's a note in the notes about it
         assert 'malformed java stack trace' in processor_meta.processor_notes[0]
+
+
+class TestMozCrashReasonRule(TestCase):
+    def test_no_mozcrashreason(self):
+        config = get_basic_config()
+
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = MozCrashReasonRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash == {}
+
+    def test_good_mozcrashreason(self):
+        config = get_basic_config()
+
+        raw_crash = {
+            'MozCrashReason': 'MOZ_CRASH(OOM)'
+        }
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = MozCrashReasonRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash == {
+            'moz_crash_reason_raw': 'MOZ_CRASH(OOM)',
+            'moz_crash_reason': 'MOZ_CRASH(OOM)'
+        }
+
+    def test_bad_mozcrashreason(self):
+        config = get_basic_config()
+        rule = MozCrashReasonRule(config)
+
+        bad_reasons = [
+            'byte index 21548 is not a char boundary',
+            'Failed to load module "jar:file..."'
+        ]
+        for reason in bad_reasons:
+            raw_crash = {
+                'MozCrashReason': reason
+            }
+            raw_dumps = {}
+            processed_crash = {}
+            processor_meta = get_basic_processor_meta()
+
+            rule._action(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash == {
+                'moz_crash_reason_raw': reason,
+                'moz_crash_reason': 'sanitized--see moz_crash_reason_raw'
+            }
 
 
 class TestOutOfMemoryBinaryRule(TestCase):

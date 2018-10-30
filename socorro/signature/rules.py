@@ -794,7 +794,7 @@ class SignatureIPCMessageName(Rule):
 
 
 class SignatureParentIDNotEqualsChildID(Rule):
-    """Stomp on the signature if MozCrashReason is ``parentBuildID != childBuildID``.
+    """Stomp on the signature if moz_crash_reason is ``parentBuildID != childBuildID``.
 
     In the case where the assertion fails, then the parent buildid and the child buildid are
     different. This causes a lot of strangeness particularly in symbolification, so the signatures
@@ -808,7 +808,7 @@ class SignatureParentIDNotEqualsChildID(Rule):
 
     def action(self, crash_data, result):
         result['notes'].append(
-            'Signature replaced with MozCrashAssert, was: "%s"' % result['signature']
+            'Signature replaced with MOZ_RELEASE_ASSERT, was: "%s"' % result['signature']
         )
 
         # The MozCrashReason lists the assertion that failed, so we put "!=" in the signature

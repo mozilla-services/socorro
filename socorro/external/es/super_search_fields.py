@@ -3290,16 +3290,44 @@ FIELDS = {
         'default_value': None,
         'description': (
             'For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the '
-            'accompanying description.'
+            'accompanying description. This is the sanitized value from the crash report.'
         ),
         'form_field_choices': [],
         'has_full_version': True,
-        'in_database_name': 'MozCrashReason',
+        'in_database_name': 'moz_crash_reason',
         'is_exposed': True,
         'is_mandatory': False,
         'is_returned': True,
         'name': 'moz_crash_reason',
-        'namespace': 'raw_crash',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'query_type': 'string',
+        'storage_mapping': {
+            'fields': {
+                'full': {
+                    'index': 'not_analyzed',
+                    'type': 'string'
+                }
+            },
+            'index': 'analyzed',
+            'type': 'string'
+        }
+    },
+    'moz_crash_reason_raw': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'description': (
+            'For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the '
+            'accompanying description. This is the raw value from the crash report.'
+        ),
+        'form_field_choices': [],
+        'has_full_version': True,
+        'in_database_name': 'moz_crash_reason_raw',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'moz_crash_reason_raw',
+        'namespace': 'processed_crash',
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {

@@ -300,6 +300,44 @@ class JavaProcessRule(Rule):
         return True
 
 
+class MozCrashReasonRule(Rule):
+    """This rule sanitizes the MozCrashReason value
+
+    MozCrashReason values should be constants defined in the code, but currently
+    some reasons can come from Rust error messages which are dynamic and related
+    to the specifics of whatever triggered the crash which includes url parsing.
+
+    This rule generates raw and sanitized values of MozCrashReason.
+
+    """
+
+    # NOTE(willkg): We're going with a "disallow" list because it seems like
+    # there's a very limited set of problematic prefixes. If that changes,
+    # we should switch to only allowing values that start with "MOZ" since
+    # those are constants.
+    DISALLOWED_PREFIXES = (
+        'Failed to load module',
+        'byte index',
+    )
+
+    def sanitize_reason(self, reason):
+        if reason.startswith(self.DISALLOWED_PREFIXES):
+            return 'sanitized--see moz_crash_reason_raw'
+        return reason
+
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return bool(raw_crash.get('MozCrashReason', None))
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        crash_reason = raw_crash['MozCrashReason']
+
+        # This can contain PII in the exception message
+        processed_crash['moz_crash_reason_raw'] = crash_reason
+        processed_crash['moz_crash_reason'] = self.sanitize_reason(crash_reason)
+
+        return True
+
+
 class OutOfMemoryBinaryRule(Rule):
 
     # Number of bytes, max, that we accept memory info payloads as JSON.
