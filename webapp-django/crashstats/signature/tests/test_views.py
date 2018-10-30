@@ -1,4 +1,3 @@
-import contextlib
 import json
 import urllib
 
@@ -15,23 +14,17 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 DUMB_SIGNATURE = 'hang | mozilla::wow::such_signature(smth*)'
 
 
-@contextlib.contextmanager
-def gvfp_mock(value=None):
-    """Mock get_versions_for_product() so it doesn't hit supersearch"""
-    value = value if value is not None else ['20.0', '19.1', '19.0', '18.0']
-    with mock.patch('crashstats.crashstats.utils.get_versions_for_product') as mock_gvfp:
-        mock_gvfp.return_value = value
-        yield
-
-
 class TestViews(BaseTestViews):
     def setUp(self):
         super(TestViews, self).setUp()
-        self._gvfp_patch = mock.patch('crashstats.crashstats.utils.get_versions_for_product')
-        mocked_gvfp = self._gvfp_patch.start()
-        mocked_gvfp.get.side_effect = mocked_gvfp
+        # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
+        # supersearch mocking
+        self.mock_gvfp = mock.patch('crashstats.crashstats.utils.get_versions_for_product')
+        self.mock_gvfp.return_value = ['20.0', '19.1', '19.0', '18.0']
+        self.mock_gvfp.start()
 
     def tearDown(self):
+        self.mock_gvfp.stop()
         super(TestViews, self).tearDown()
 
     def test_signature_report(self):
@@ -98,15 +91,12 @@ class TestViews(BaseTestViews):
 
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
-        # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
-        # supersearch mocking
-        with gvfp_mock():
-            # Test with no results.
-            url = reverse('signature:signature_reports')
-            response = self.client.get(url, {
-                'signature': DUMB_SIGNATURE,
-                'date': '2012-01-01',
-            })
+        # Test with no results.
+        url = reverse('signature:signature_reports')
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'date': '2012-01-01',
+        })
 
         assert response.status_code == 200
         assert 'table id="reports-list"' not in response.content
@@ -179,7 +169,6 @@ class TestViews(BaseTestViews):
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_reports')
-
         response = self.client.get(
             url, {
                 'signature': DUMB_SIGNATURE,
