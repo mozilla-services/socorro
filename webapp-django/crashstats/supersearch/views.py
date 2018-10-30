@@ -66,7 +66,9 @@ def get_allowed_fields(user):
 def get_supersearch_form(request):
     platforms = models.Platform.objects.values()
     products = models.ProductsMiddleware().get()['hits']
-    product_versions = models.ProductVersionsMiddleware().get(active=True)['hits']
+    # FIXME(willkg): this hardcodes always getting Firefox versions which
+    # seems unhelpful
+    product_versions = utils.get_versions_for_product('Firefox')
 
     all_fields = SuperSearchFields().get()
 
@@ -276,7 +278,6 @@ def search_fields(request):
     '''Return the JSON document describing the fields used by the JavaScript
     dynamic_form library. '''
     form = get_supersearch_form(request)
-
     exclude = request.GET.getlist('exclude')
     return form.get_fields_list(exclude=exclude)
 

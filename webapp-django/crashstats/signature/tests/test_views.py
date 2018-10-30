@@ -1,6 +1,8 @@
+import contextlib
 import json
 import urllib
 
+import mock
 import pyquery
 
 from django.core.urlresolvers import reverse
@@ -13,7 +15,24 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 DUMB_SIGNATURE = 'hang | mozilla::wow::such_signature(smth*)'
 
 
+@contextlib.contextmanager
+def gvfp_mock(value=None):
+    """Mock get_versions_for_product() so it doesn't hit supersearch"""
+    value = value if value is not None else ['20.0', '19.1', '19.0', '18.0']
+    with mock.patch('crashstats.crashstats.utils.get_versions_for_product') as mock_gvfp:
+        mock_gvfp.return_value = value
+        yield
+
+
 class TestViews(BaseTestViews):
+    def setUp(self):
+        super(TestViews, self).setUp()
+        self._gvfp_patch = mock.patch('crashstats.crashstats.utils.get_versions_for_product')
+        mocked_gvfp = self._gvfp_patch.start()
+        mocked_gvfp.get.side_effect = mocked_gvfp
+
+    def tearDown(self):
+        super(TestViews, self).tearDown()
 
     def test_signature_report(self):
         url = reverse('signature:signature_report')
@@ -23,12 +42,9 @@ class TestViews(BaseTestViews):
         assert 'Loading' in response.content
 
     def test_signature_reports(self):
-
         def mocked_supersearch_get(**params):
             assert '_columns' in params
-
             assert 'uuid' in params['_columns']
-
             assert 'signature' in params
             assert params['signature'] == ['=' + DUMB_SIGNATURE]
 
@@ -80,17 +96,18 @@ class TestViews(BaseTestViews):
 
             return {"hits": [], "total": 0}
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
-        url = reverse('signature:signature_reports')
+        # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
+        # supersearch mocking
+        with gvfp_mock():
+            # Test with no results.
+            url = reverse('signature:signature_reports')
+            response = self.client.get(url, {
+                'signature': DUMB_SIGNATURE,
+                'date': '2012-01-01',
+            })
 
-        # Test with no results.
-        response = self.client.get(url, {
-            'signature': DUMB_SIGNATURE,
-            'date': '2012-01-01',
-        })
         assert response.status_code == 200
         assert 'table id="reports-list"' not in response.content
         assert 'No results were found' in response.content
@@ -136,7 +153,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 400
 
     def test_parameters(self):
-
         def mocked_supersearch_get(**params):
             # Verify that all expected parameters are in the URL.
             assert 'product' in params
@@ -160,9 +176,7 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_reports')
 
@@ -178,9 +192,7 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_signature_reports_pagination(self):
-        """Test that the pagination of results works as expected.
-        """
-
+        """Test that the pagination of results works as expected"""
         def mocked_supersearch_get(**params):
             assert '_columns' in params
 
@@ -205,9 +217,7 @@ class TestViews(BaseTestViews):
                 "total": len(hits)
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_reports')
 
@@ -243,7 +253,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_signature_aggregation(self):
-
         def mocked_supersearch_get(**params):
             assert 'signature' in params
             assert params['signature'] == ['=' + DUMB_SIGNATURE]
@@ -281,15 +290,10 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         # Test with no results.
-        url = reverse(
-            'signature:signature_aggregation',
-            args=('platform',)
-        )
+        url = reverse('signature:signature_aggregation', args=('platform',))
 
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
@@ -297,10 +301,7 @@ class TestViews(BaseTestViews):
         assert 'No results were found' in response.content
 
         # Test with results.
-        url = reverse(
-            'signature:signature_aggregation',
-            args=('product',)
-        )
+        url = reverse('signature:signature_aggregation', args=('product',))
 
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
@@ -312,7 +313,6 @@ class TestViews(BaseTestViews):
         assert 'mac' in response.content
 
     def test_signature_graphs(self):
-
         def mocked_supersearch_get(**params):
             assert 'signature' in params
             assert params['signature'] == ['=' + DUMB_SIGNATURE]
@@ -370,15 +370,10 @@ class TestViews(BaseTestViews):
                 }
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         # Test with no results
-        url = reverse(
-            'signature:signature_graphs',
-            args=('platform',)
-        )
+        url = reverse('signature:signature_graphs', args=('platform',))
 
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
@@ -390,10 +385,7 @@ class TestViews(BaseTestViews):
         assert len(struct['term_counts']) == 0
 
         # Test with results
-        url = reverse(
-            'signature:signature_graphs',
-            args=('product',)
-        )
+        url = reverse('signature:signature_graphs', args=('product',))
 
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
@@ -405,7 +397,6 @@ class TestViews(BaseTestViews):
         assert len(struct['term_counts']) == 1
 
     def test_signature_comments(self):
-
         def mocked_supersearch_get(**params):
             assert '_columns' in params
 
@@ -465,9 +456,7 @@ class TestViews(BaseTestViews):
 
             return {"hits": [], "total": 0}
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_comments')
 
@@ -492,8 +481,7 @@ class TestViews(BaseTestViews):
         assert 'locale1' in response.content
 
     def test_signature_comments_pagination(self):
-        """Test that the pagination of comments works as expected. """
-
+        """Test that the pagination of comments works as expected"""
         def mocked_supersearch_get(**params):
             assert '_columns' in params
 
@@ -515,9 +503,7 @@ class TestViews(BaseTestViews):
                 'total': 140
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_comments')
 
@@ -714,9 +700,7 @@ class TestViews(BaseTestViews):
 
             return res
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         # Test with no results
         url = reverse('signature:signature_summary')

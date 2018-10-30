@@ -4,7 +4,6 @@ from socorro.external.es.super_search_fields import FIELDS
 
 
 class TestForms(TestCase):
-
     def setUp(self):
         self.products = [
             {
@@ -21,26 +20,10 @@ class TestForms(TestCase):
             }
         ]
         self.product_versions = [
-            {
-                'product': 'WaterWolf',
-                'version': '20.0',
-                'build_type': 'Beta',
-            },
-            {
-                'product': 'WaterWolf',
-                'version': '21.0a1',
-                'build_type': 'Nightly',
-            },
-            {
-                'product': 'NightTrain',
-                'version': '20.0',
-                'build_type': 'Beta',
-            },
-            {
-                'product': 'SeaMonkey',
-                'version': '9.5',
-                'build_type': 'Beta',
-            },
+            '20.0',
+            '21.0a1',
+            '20.0',
+            '9.5',
         ]
         self.current_platforms = [
             {
@@ -59,9 +42,7 @@ class TestForms(TestCase):
         self.all_fields = FIELDS
 
     def test_search_form(self):
-
         def get_new_form(data):
-
             class User(object):
                 def has_perm(self, permission):
                     return {
@@ -112,9 +93,7 @@ class TestForms(TestCase):
         assert 'exploitability' not in form.fields
 
     def test_search_form_with_admin_mode(self):
-
         def get_new_form(data):
-
             class User(object):
                 def has_perm(self, permission):
                     return {
@@ -164,9 +143,7 @@ class TestForms(TestCase):
         assert 'exploitability' in form.fields
 
     def test_get_fields_list(self):
-
         def get_new_form(data):
-
             class User(object):
                 def has_perm(self, permission):
                     return {

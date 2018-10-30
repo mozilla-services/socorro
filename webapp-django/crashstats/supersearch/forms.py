@@ -28,7 +28,7 @@ def make_restricted_choices(sequence, exclude=None):
 
 
 class SearchForm(forms.Form):
-    '''Handle the data populating the search form. '''
+    """Handle the data populating the search form"""
 
     def __init__(
         self,
@@ -45,17 +45,12 @@ class SearchForm(forms.Form):
         self.all_fields = all_fields.copy()
 
         # Default values loaded from a database.
-        product_names = list(set(
-            x['product_name'] for x in products
-        ))
+        product_names = list(set(x['product_name'] for x in products))
         if 'product' in self.all_fields:
             self.all_fields['product']['form_field_choices'] = product_names
 
         if 'version' in self.all_fields:
-            versions = uniqify_keep_order(
-                x['version'] for x in product_versions
-            )
-            self.all_fields['version']['form_field_choices'] = versions
+            self.all_fields['version']['form_field_choices'] = uniqify_keep_order(product_versions)
 
         if 'platform' in self.all_fields:
             self.all_fields['platform']['form_field_choices'] = [
