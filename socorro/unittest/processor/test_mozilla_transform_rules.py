@@ -685,7 +685,7 @@ class TestJavaProcessRule(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # The entire JavaStackTrace blob
-        assert processed_crash['java_stack_trace_full'] == raw_crash['JavaStackTrace']
+        assert processed_crash['java_stack_trace_raw'] == raw_crash['JavaStackTrace']
 
         # Everything except the exception message and "Caused by" section
         # which can contain PII
@@ -711,7 +711,7 @@ class TestJavaProcessRule(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # The entire JavaStackTrace blob
-        assert processed_crash['java_stack_trace_full'] == raw_crash['JavaStackTrace']
+        assert processed_crash['java_stack_trace_raw'] == raw_crash['JavaStackTrace']
 
         # The data is malformed, so this should just show "malformed"
         assert processed_crash['java_stack_trace'] == 'malformed'

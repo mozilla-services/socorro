@@ -277,7 +277,6 @@ class DatesAndTimesRule(Rule):
 
 
 class JavaProcessRule(Rule):
-
     def version(self):
         return '1.0'
 
@@ -285,8 +284,9 @@ class JavaProcessRule(Rule):
         return bool(raw_crash.get('JavaStackTrace', None))
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        # This can contain PII in the exception message
-        processed_crash['java_stack_trace_full'] = raw_crash['JavaStackTrace']
+        # NOTE(willkg): This is the unadjusted java_stack_trace value and can
+        # contain PII in the exception message
+        processed_crash['java_stack_trace_raw'] = raw_crash['JavaStackTrace']
 
         try:
             java_exception = javautil.parse_java_stack_trace(raw_crash['JavaStackTrace'])
