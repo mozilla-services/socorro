@@ -1873,4 +1873,4 @@ class TestSignatureParentIDNotEqualsChildID:
         action_result = rule.action(crash_data, result)
         assert action_result is True
         assert result['signature'] == 'parentBuildID != childBuildID'
-        assert result['notes'][0] == 'Signature replaced with MozCrashAssert, was: "fooo::baar"'
+        assert result['notes'][0] == 'Signature replaced with MOZ_RELEASE_ASSERT, was: "fooo::baar"'

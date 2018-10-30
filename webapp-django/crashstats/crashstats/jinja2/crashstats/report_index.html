@@ -315,11 +315,32 @@
                                 </td>
                             </tr>
                             {% endif %}
-                            {% if raw.MozCrashReason %}
-                            <tr title="{{ fields_desc['raw_crash.MozCrashReason'] }}">
-                                <th scope="row">MOZ_CRASH Reason</th>
-                                <td>{{ raw.MozCrashReason }}</td>
-                            </tr>
+                            {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
+                                {% if report.moz_crash_reason_raw %}
+                                    <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
+                                        <th scope="row">MOZ_CRASH Reason (Raw)</th>
+                                        <td>{{ report.moz_crash_reason_raw }} - {{ sensitive_warning(your_crash) }}</td>
+                                    </tr>
+                                {% elif raw.MozCrashReason %}
+                                    {# FIXME(willkg): This can get removed in April 2019 #}
+                                    <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
+                                        <th scope="row">MOZ_CRASH Reason</th>
+                                        <td>{{ raw.MozCrashReason }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% else %}
+                               {% if report.moz_crash_reason %}
+                                <tr title="{{ fields_desc['processed_crash.moz_crash_reason'] }}">
+                                    <th scope="row">MOZ_CRASH Reason (Sanitized)</th>
+                                        <td><pre>{{ report.moz_crash_reason }}</pre></td>
+                                    </tr>
+                                {% elif raw.MozCrashReason %}
+                                    {# FIXME(willkg): This can get removed in April 2019 #}
+                                    <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
+                                        <th scope="row">MOZ_CRASH Reason</th>
+                                        <td>{{ raw.MozCrashReason }}</td>
+                                    </tr>
+                                {% endif %}
                             {% endif %}
                             <tr title="{{ fields_desc['processed_crash.reason'] }}">
                                 <th scope="row">Crash Reason</th>
