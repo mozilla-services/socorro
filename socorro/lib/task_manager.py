@@ -151,7 +151,7 @@ class TaskManager(RequiredConfig):
         called at least once after the end of the task loop."""
         self.logger.debug('threadless start')
         try:
-            # May never raise StopIteration
+            # May never exhaust
             for job_params in self._get_iterator():
                 self.config.logger.debug('received %r', job_params)
                 self.quit_check()

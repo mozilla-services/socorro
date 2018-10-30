@@ -15,9 +15,8 @@ WORKING_TESTS=(
     socorro/unittest/external/boto/test_*.py
     socorro/unittest/external/es/test_*.py
     socorro/unittest/external/postgresql/test_*.py
+    socorro/unittest/external/rabbitmq/test_*.py
     socorro/unittest/lib/test_*.py
-
-    # socorro/unittest/external/rabbitmq/test_*.py
 )
 
 # This is the list of known working tests by directory/filename for the webapp.
