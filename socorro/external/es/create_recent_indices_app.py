@@ -29,7 +29,13 @@ class CreateRecentESIndicesApp(App):
         from_string_converter=class_converter
     )
     required_config.add_option(
-        'elasticsearch_weeks_to_create',
+        'weeks_to_create_future',
+        default=2,
+        reference_value_from='resource.elasticsearch',
+    )
+
+    required_config.add_option(
+        'weeks_to_create_past',
         default=2,
         reference_value_from='resource.elasticsearch',
     )
@@ -41,7 +47,10 @@ class CreateRecentESIndicesApp(App):
         today = date.today()
         current_monday = today - timedelta(days=today.weekday())
 
-        for week_diff in range(-2, self.config.elasticsearch_weeks_to_create):
+        past = self.config.weeks_to_create_past * -1
+        future = self.config.weeks_to_create_future
+
+        for week_diff in range(past, future):
             week_monday = current_monday + timedelta(weeks=week_diff)
             index = week_monday.strftime(index_name_template)
             index_creator.create_socorro_index(index)

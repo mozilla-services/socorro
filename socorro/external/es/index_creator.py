@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
+
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 import elasticsearch
@@ -45,6 +47,11 @@ class IndexCreator(RequiredConfig):
             'default is 5.'
         )
     )
+    required_config.elasticsearch.add_option(
+        'dry_run',
+        default=False,
+        doc='Dry run mode will print the mapping rather than push it.'
+    )
 
     def __init__(self, config):
         super(IndexCreator, self).__init__()
@@ -78,7 +85,10 @@ class IndexCreator(RequiredConfig):
             mappings = SuperSearchFields(config=self.config).get_mapping()
 
         es_settings = self.get_socorro_index_settings(mappings)
-        self.create_index(es_index, es_settings)
+        if self.config.elasticsearch.dry_run:
+            print(json.dumps(es_settings, indent=2))
+        else:
+            self.create_index(es_index, es_settings)
 
     def create_index(self, es_index, es_settings):
         """Create an index in elasticsearch, with specified settings.
@@ -98,3 +108,4 @@ class IndexCreator(RequiredConfig):
             # NOTE! This is NOT how the error looks like in ES 2.x
             if 'IndexAlreadyExistsException' not in str(e):
                 raise
+            self.config.logger.info('Index exists: %s', es_index)
