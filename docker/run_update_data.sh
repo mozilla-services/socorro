@@ -24,9 +24,9 @@ CRONTABBERCMD="./socorro/cron/crontabber_app.py"
 ./docker/run_ftpscraper_wrapper.sh
 
 # Update featured versions data based on release data
-${DC} run app shell bash -c ${CRONTABBERCMD} --reset-job=featured-versions-automatic
-${DC} run app shell bash -c ${CRONTABBERCMD} --job=featured-versions-automatic \
+${DC} run app shell ${CRONTABBERCMD} --reset-job=featured-versions-automatic
+${DC} run app shell ${CRONTABBERCMD} --job=featured-versions-automatic \
     --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
 
 # Create ES indexes for the next few weeks
-${DC} run app shell bash -c socorro/external/es/create_recent_indices_app.py
+${DC} run app shell ./socorro-cmd create_recent_indices
