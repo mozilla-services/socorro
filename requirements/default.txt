@@ -163,9 +163,9 @@ requests-mock==1.5.2 \
 isoweek==1.3.3 \
     --hash=sha256:d3324c497d97f1534669de225ec877964222e4cc773a4a99063086f7a4e342b6 \
     --hash=sha256:73f3f7bac443e05a3ab45c32a72048b0c4f26d53d81462ec4b142c7581d3ffe8
-oauth2client==4.1.2 \
-    --hash=sha256:cf061f52f75e91d489bf5c276498f8af2655fe331b454f10022441513cf445a6 \
-    --hash=sha256:bd3062c06f8b10c6ef7a890b22c2740e5f87d61b6e1f4b1c90d069cdfc9dadb5
+oauth2client==4.1.3 \
+    --hash=sha256:b8a81cc5d60e2d364f0b1b98f958dbd472887acaf1a5b05e21c28c31a2d6d3ac \
+    --hash=sha256:d486741e451287f69568a4d26d70d9acd73a2bbfa275746c535b4209891cccc6
 json-schema-reducer==0.1.4 \
     --hash=sha256:b6fbe437361e0ec14f5c05daf752604834bd9abe5af9ab6bdcb05ea1f8df1df6 \
     --hash=sha256:41c674275c2650dadb7f8af1193640ca41eb863926985ecda5bfee93aef265c0
