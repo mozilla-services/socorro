@@ -736,19 +736,19 @@ class BetaVersionRule(Rule):
             # HTTP requests from bunching up.
             shimmy = random.randint(1, 120)
 
-            if hits:
-                if channel in ('aurora', 'beta'):
-                    # For aurora and beta channel lookups, we want a non-"rc"
-                    # version, but we can't specify that. So we ask for all the
-                    # versions and winnow out the rc ones on our own.
-                    #
-                    # FIXME(willkg): This is silly and it'd be better to filter
-                    # it out on Buildhub.
-                    hits = [
-                        hit for hit in hits
-                        if 'rc' not in hit['target']['version']
-                    ]
+            if hits and channel in ('aurora', 'beta'):
+                # For aurora and beta channel lookups, we want a non-"rc"
+                # version, but we can't specify that. So we ask for all the
+                # versions and winnow out the rc ones on our own.
+                #
+                # FIXME(willkg): This is silly and it'd be better to filter
+                # it out on Buildhub.
+                hits = [
+                    hit for hit in hits
+                    if 'rc' not in hit['target']['version']
+                ]
 
+            if hits:
                 # If we got an answer we should keep it around for a while because it's
                 # a real answer and it's not going to change so use the long ttl plus
                 # a fudge factor.
