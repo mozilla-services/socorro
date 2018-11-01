@@ -675,13 +675,16 @@ class BetaVersionRule(Rule):
     def version(self):
         return '1.0'
 
-    def _get_version_data(self, product, build_id, channel):
+    def _get_real_version(self, product, build_id, channel):
         """Return the real version number of a specified product, build, channel
 
         For example, beta builds of Firefox declare their version number as the
         major version (i.e. version 54.0b3 would say its version is 54.0). This
         database call returns the actual version number of said build (i.e.
         54.0b3 for the previous example).
+
+        This caches good answers for a long time and bad answers for a short
+        time to reduce Buildhub usage.
 
         :arg product: the product
         :arg build_id: the build_id as a string
@@ -712,16 +715,18 @@ class BetaVersionRule(Rule):
 
         session = session_with_retries(self.buildhub_api)
 
-        # Limit to 1 because otherwise we get a build for every locale and
-        # platform. Sort by target.version so that if it's an rc, we get the
-        # rc version rather than the release version.
         query = {
             'source.product': product,
             'build.id': '"%s"' % build_id,
             'target.channel': channel,
-            '_sort': '-target.version',
-            '_limit': 1
         }
+
+        if channel == 'release':
+            # If it's the release channel, we can specify we only want to see
+            # "rc" versions and thus limit the result set to 1
+            query['like_target.version'] = '*rc*'
+            query['_limit'] = 1
+
         resp = session.get(self.buildhub_api, params=query)
 
         if resp.status_code == 200:
@@ -732,6 +737,18 @@ class BetaVersionRule(Rule):
             shimmy = random.randint(1, 120)
 
             if hits:
+                if channel in ('aurora', 'beta'):
+                    # For aurora and beta channel lookups, we want a non-"rc"
+                    # version, but we can't specify that. So we ask for all the
+                    # versions and winnow out the rc ones on our own.
+                    #
+                    # FIXME(willkg): This is silly and it'd be better to filter
+                    # it out on Buildhub.
+                    hits = [
+                        hit for hit in hits
+                        if 'rc' not in hit['target']['version']
+                    ]
+
                 # If we got an answer we should keep it around for a while because it's
                 # a real answer and it's not going to change so use the long ttl plus
                 # a fudge factor.
@@ -774,7 +791,7 @@ class BetaVersionRule(Rule):
             build_id = str(build_id)
 
             try:
-                real_version = self._get_version_data(product, build_id, release_channel)
+                real_version = self._get_real_version(product, build_id, release_channel)
 
                 # If we got a real version, toss that in and we're done
                 if real_version:
@@ -787,7 +804,7 @@ class BetaVersionRule(Rule):
                 # channel and get back an rc version.
                 version = processed_crash.get('version').strip()
                 if version and release_channel == 'beta' and self.is_final_beta(version):
-                    real_version = self._get_version_data(product, build_id, 'release')
+                    real_version = self._get_real_version(product, build_id, 'release')
 
                     if real_version:
                         processed_crash['version'] = real_version

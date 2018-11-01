@@ -1358,19 +1358,23 @@ class TestBetaVersionRule:
         raw_dumps = {}
 
         with requests_mock.Mocker() as req_mock:
+            # Beta and aurora channels get back lots of version data
             req_mock.get(
                 self.API_URL + '?' + urlencode({
                     'source.product': 'firefox',
                     'build.id': '"20001001101010"',
                     'target.channel': 'beta',
-                    '_sort': '-target.version',
-                    '_limit': 1
                 }),
                 json={
                     'data': [
                         {
                             'target': {
                                 'version': '3.0b1'
+                            }
+                        },
+                        {
+                            'target': {
+                                'version': '3.0b1rc1'
                             }
                         }
                     ]
@@ -1392,14 +1396,13 @@ class TestBetaVersionRule:
             assert processor_meta.processor_notes == []
 
     def test_release_channel(self):
-        # Release channel ignored
+        """Release channel doesn't trigger rule"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
         raw_crash = {}
         raw_dumps = {}
 
-        # Release channel--doesn't trigger rule
         with requests_mock.Mocker():
             processed_crash = {
                 'product': 'Firefox',
@@ -1416,7 +1419,7 @@ class TestBetaVersionRule:
             assert len(processor_meta.processor_notes) == 0
 
     def test_nightly_channel(self):
-        # A nightly--doesn't trigger rule
+        """Nightly channel doesn't trigger rule"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
@@ -1439,7 +1442,7 @@ class TestBetaVersionRule:
             assert processor_meta.processor_notes == []
 
     def test_bad_buildid(self):
-        # Bad buildid doesn't error out
+        """Invalid buildids don't cause errors"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
@@ -1465,7 +1468,7 @@ class TestBetaVersionRule:
             ]
 
     def test_beta_channel_unknown_version(self):
-        # beta crash with an unknown version gets b0
+        """Beta crash that Buildhub doesn't know about gets b0"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
@@ -1478,8 +1481,6 @@ class TestBetaVersionRule:
                     'source.product': 'firefox',
                     'build.id': '"220000101101011"',
                     'target.channel': 'beta',
-                    '_sort': '-target.version',
-                    '_limit': 1
                 }),
                 json={
                     'data': []
@@ -1504,8 +1505,7 @@ class TestBetaVersionRule:
             ]
 
     def test_beta_channel_non_buildhub_product(self):
-        # beta crash with a a product not on Buildhub gets b0 without hitting
-        # Buildhub
+        """Beta crash with a product not on Buildhub gets b0"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
@@ -1531,7 +1531,7 @@ class TestBetaVersionRule:
             ]
 
     def test_aurora_channel(self):
-        """Verify this works with aurora channel"""
+        """Test aurora channel lookup"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
@@ -1539,19 +1539,23 @@ class TestBetaVersionRule:
         raw_dumps = {}
 
         with requests_mock.Mocker() as req_mock:
+            # Beta and aurora channels get back lots of version data
             req_mock.get(
                 self.API_URL + '?' + urlencode({
                     'source.product': 'firefox',
                     'build.id': '"20001001101010"',
                     'target.channel': 'aurora',
-                    '_sort': '-target.version',
-                    '_limit': 1
                 }),
                 json={
                     'data': [
                         {
                             'target': {
                                 'version': '3.0b1'
+                            }
+                        },
+                        {
+                            'target': {
+                                'version': '3.0b1rc1'
                             }
                         }
                     ]
@@ -1572,8 +1576,8 @@ class TestBetaVersionRule:
             assert processed_crash['version'] == '3.0b1'
             assert processor_meta.processor_notes == []
 
-    def test_b99(self):
-        """Verify the switcheroo for b99 final beta"""
+    def test_rc(self):
+        """Test rc which are marked beta channel, but the data is in release channel"""
         config = get_basic_config()
         config.buildhub_api = self.API_URL
 
@@ -1581,27 +1585,26 @@ class TestBetaVersionRule:
         raw_dumps = {}
 
         with requests_mock.Mocker() as req_mock:
-            # Request for beta yields no data
+            # Request for beta channel yields no data
             req_mock.get(
                 self.API_URL + '?' + urlencode({
                     'source.product': 'firefox',
                     'build.id': '"20181018182531"',
                     'target.channel': 'beta',
-                    '_sort': '-target.version',
-                    '_limit': 1
                 }),
                 json={
                     'data': []
                 }
             )
 
-            # Request for release yields release version number
+            # Request for the same thing, but in the release channel yields
+            # release version number
             req_mock.get(
                 self.API_URL + '?' + urlencode({
                     'source.product': 'firefox',
                     'build.id': '"20181018182531"',
                     'target.channel': 'release',
-                    '_sort': '-target.version',
+                    'like_target.version': '*rc*',
                     '_limit': 1
                 }),
                 json={
