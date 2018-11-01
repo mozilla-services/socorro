@@ -42,6 +42,7 @@ class DjangoTestCase(django.test.TestCase):
     def tearDown(self):
         for klass in classes_with_implementation:
             klass.implementation = self._mockeries[klass]
+        super(DjangoTestCase, self).tearDown()
 
     def _login(
         self,
