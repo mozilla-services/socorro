@@ -64,6 +64,7 @@ JNI_GetCreatedJavaVM
 js::AutoCompartment::AutoCompartment
 js::AutoEnterOOMUnsafeRegion::crash
 js::detail::HashTable<.*>::
+mozilla::detail::HashTable<.*>::
 js::HashSet<.*>::
 js::HashMap<.*>::
 js::LifoAlloc::getOrCreateChunk
