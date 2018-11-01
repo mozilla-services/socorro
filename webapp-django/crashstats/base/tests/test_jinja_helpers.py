@@ -1,7 +1,6 @@
 from django.test.client import RequestFactory
 from django.core.urlresolvers import reverse
 
-from crashstats.base.tests.testbase import TestCase
 from crashstats.base.templatetags.jinja_helpers import (
     change_query_string,
     is_dangerous_cpu,
@@ -9,8 +8,7 @@ from crashstats.base.templatetags.jinja_helpers import (
 )
 
 
-class TestChangeURL(TestCase):
-
+class TestChangeURL(object):
     def test_root_url_no_query_string(self):
         context = {}
         context['request'] = RequestFactory().get('/')
@@ -60,8 +58,7 @@ class TestChangeURL(TestCase):
         assert result == '?foo=else'
 
 
-class TestURL(TestCase):
-
+class TestURL(object):
     def test_basic(self):
         output = url('crashstats:login')
         assert output == reverse('crashstats:login')
@@ -90,8 +87,7 @@ class TestURL(TestCase):
         assert output == reverse('crashstats:product_home', args=('Winterfoxnn',))
 
 
-class TestIsDangerousCPU:
-
+class TestIsDangerousCPU(object):
     def test_false(self):
         assert is_dangerous_cpu(None, None) is False
         assert is_dangerous_cpu(None, 'family 20 model 1') is False

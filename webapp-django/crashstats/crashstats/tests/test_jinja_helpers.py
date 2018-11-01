@@ -6,7 +6,6 @@ from urllib import quote_plus
 from django.core.cache import cache
 from django.utils.safestring import SafeText
 
-from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.templatetags.jinja_helpers import (
     bugzilla_submit_url,
     digitgroupseparator,
@@ -19,8 +18,7 @@ from crashstats.crashstats.templatetags.jinja_helpers import (
 )
 
 
-class TestTimestampToDate(TestCase):
-
+class TestTimestampToDate(object):
     def test_timestamp_to_date(self):
         timestamp = time.time()
         date = datetime.datetime.fromtimestamp(timestamp)
@@ -36,8 +34,7 @@ class TestTimestampToDate(TestCase):
         assert output == ''
 
 
-class TestTimeTag(TestCase):
-
+class TestTimeTag(object):
     def test_time_tag_with_datetime(self):
         date = datetime.datetime(2000, 1, 2, 3, 4, 5)
         output = time_tag(date)
@@ -84,8 +81,7 @@ class TestTimeTag(TestCase):
         assert output == expected
 
 
-class TestBugzillaLink(TestCase):
-
+class TestBugzillaLink(object):
     def test_show_bug_link_no_cache(self):
         output = show_bug_link(123)
         assert 'data-id="123"' in output
@@ -109,8 +105,7 @@ class TestBugzillaLink(TestCase):
         assert 'data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output
 
 
-class TestBugzillaSubmitURL(TestCase):
-
+class TestBugzillaSubmitURL(object):
     EMPTY_PARSED_DUMP = {}
     CRASHING_THREAD = 0
 
@@ -397,7 +392,7 @@ class TestBugzillaSubmitURL(TestCase):
         assert quote_plus('frames of crashing thread:') not in url
 
 
-class TestReplaceBugzillaLinks(TestCase):
+class TestReplaceBugzillaLinks(object):
     def test_simple(self):
         text = 'foo https://bugzilla.mozilla.org/show_bug.cgi?id=1129515 bar'
         res = replace_bugzilla_links(text)
@@ -446,8 +441,7 @@ class TestReplaceBugzillaLinks(TestCase):
         assert '</a>' in res
 
 
-class TesDigitGroupSeparator(TestCase):
-
+class TesDigitGroupSeparator(object):
     def test_basics(self):
         assert digitgroupseparator(None) is None
         assert digitgroupseparator(1000) == '1,000'
@@ -455,8 +449,7 @@ class TesDigitGroupSeparator(TestCase):
         assert digitgroupseparator(1000000) == '1,000,000'
 
 
-class TestHumanizers(TestCase):
-
+class TestHumanizers(object):
     def test_show_duration(self):
         html = show_duration(59)
         assert isinstance(html, SafeText)

@@ -6,7 +6,6 @@ import json
 from six import text_type, binary_type
 
 from django.http import HttpResponse
-from django.test.client import RequestFactory
 
 from crashstats.crashstats import utils
 
@@ -337,8 +336,8 @@ def test_unicode_writer():
     assert '1.23' in u_result
 
 
-def test_json_view_basic():
-    request = RequestFactory().get('/')
+def test_json_view_basic(rf):
+    request = rf.get('/')
 
     def func(request):
         return {'one': 'One'}
@@ -350,8 +349,8 @@ def test_json_view_basic():
     assert response.status_code == 200
 
 
-def test_json_view_indented():
-    request = RequestFactory().get('/?pretty=print')
+def test_json_view_indented(rf):
+    request = rf.get('/?pretty=print')
 
     def func(request):
         return {'one': 'One'}
@@ -363,8 +362,8 @@ def test_json_view_indented():
     assert response.status_code == 200
 
 
-def test_json_view_already_httpresponse():
-    request = RequestFactory().get('/')
+def test_json_view_already_httpresponse(rf):
+    request = rf.get('/')
 
     def func(request):
         return HttpResponse('something')
@@ -376,8 +375,8 @@ def test_json_view_already_httpresponse():
     assert response.status_code == 200
 
 
-def test_json_view_custom_status():
-    request = RequestFactory().get('/')
+def test_json_view_custom_status(rf):
+    request = rf.get('/')
 
     def func(request):
         return {'one': 'One'}, 403

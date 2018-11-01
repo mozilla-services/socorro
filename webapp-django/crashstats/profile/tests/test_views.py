@@ -8,9 +8,7 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 class TestViews(BaseTestViews):
-
     def test_profile(self):
-
         def mocked_supersearch_get(**params):
             assert '_columns' in params
             assert '_sort' in params
@@ -41,19 +39,14 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('profile:profile')
 
         # Test that the user must be signed in.
-        response = self.client.get(url)
+        response = self.client.get(url, follow=False)
         assert response.status_code == 302
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
+        assert response.url == reverse('crashstats:login') + '?next=%s' % url
 
         # Now log in for the remaining tests.
         user = self._login()
@@ -65,9 +58,7 @@ class TestViews(BaseTestViews):
         assert '1234abcd-ef56-7890-ab12-abcdef130802' in response.content
         assert 'test@example.com' in response.content
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get_no_data
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get_no_data
 
         # Test with no results.
         response = self.client.get(url)
@@ -103,12 +94,9 @@ class TestViews(BaseTestViews):
         # If the user ceases to be active, this page should redirect instead
         user.is_active = False
         user.save()
-        response = self.client.get(url)
+        response = self.client.get(url, follow=False)
         assert response.status_code == 302
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
+        assert response.url == reverse('crashstats:login') + '?next=%s' % url
 
     def test_homepage_profile_footer(self):
         """This test isn't specifically for the profile page, because

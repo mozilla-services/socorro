@@ -29,11 +29,8 @@ class TestViews(BaseTestViews):
 
     def test_home_page(self):
         url = reverse('tokens:home')
-        response = self.client.get(url)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
+        response = self.client.get(url, follow=False)
+        assert response.url == reverse('crashstats:login') + '?next=%s' % url
 
         user = self._login()
         response = self.client.get(url)
@@ -41,11 +38,8 @@ class TestViews(BaseTestViews):
 
         user.is_active = False
         user.save()
-        response = self.client.get(url)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
+        response = self.client.get(url, follow=False)
+        assert response.url == reverse('crashstats:login') + '?next=%s' % url
 
     def test_generate_new_token_form(self):
         url = reverse('tokens:home')
@@ -80,14 +74,12 @@ class TestViews(BaseTestViews):
         p2 = self._make_permission('Clean Things')
         p3 = self._make_permission('Play with sticks')
 
-        response = self.client.post(url, {
+        params = {
             'notes': ' Some notes ',
             'permissions': [p1.pk, p3.pk]
-        })
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
+        }
+        response = self.client.post(url, params, follow=False)
+        assert response.url == reverse('crashstats:login') + '?next=%s' % url
 
         # try again, but this time logged in
         user = self._login()

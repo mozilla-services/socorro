@@ -1,10 +1,9 @@
-from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import forms
 from socorro.external.es.super_search_fields import FIELDS
 
 
-class TestForms(TestCase):
-    def setUp(self):
+class TestForms(object):
+    def setup_method(self):
         self.products = [
             {
                 'product_name': 'WaterWolf',

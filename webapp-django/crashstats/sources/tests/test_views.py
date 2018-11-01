@@ -2,15 +2,13 @@ import mock
 
 from django.core.urlresolvers import reverse
 
-from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.sources.views import ALLOWED_SOURCE_HOSTS
 from crashstats.crashstats.tests.test_models import Response
 
 
-class SourcesTestViews(DjangoTestCase):
-
+class SourcesTestViews(object):
     @mock.patch('requests.get')
-    def test_highlight_url(self, rget):
+    def test_highlight_url(self, client, rget):
         def mocked_get(url, **params):
             if url.endswith('404.h'):
                 return Response('Nada', status_code=404)
@@ -29,27 +27,27 @@ class SourcesTestViews(DjangoTestCase):
         url = reverse('sources:highlight_url')
 
         # No url provided and empty url
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 400
-        response = self.client.get(url, {'url': ''})
+        response = client.get(url, {'url': ''})
         assert response.status_code == 400
 
         # Bad host
-        response = self.client.get(url, {'url': 'https://example.com/404.h'})
+        response = client.get(url, {'url': 'https://example.com/404.h'})
         assert response.status_code == 403
 
         ok_netloc = ALLOWED_SOURCE_HOSTS[0]
 
         # Correct host, but bad scheme
-        response = self.client.get(url, {'url': 'ftp://{}/404.h'.format(ok_netloc)})
+        response = client.get(url, {'url': 'ftp://{}/404.h'.format(ok_netloc)})
         assert response.status_code == 403
 
         # Correct host, but missing page
-        response = self.client.get(url, {'url': 'https://{}/404.h'.format(ok_netloc)})
+        response = client.get(url, {'url': 'https://{}/404.h'.format(ok_netloc)})
         assert response.status_code == 404
 
         # Correct host and correct page
-        response = self.client.get(url, {'url': 'https://{}/200.h'.format(ok_netloc)})
+        response = client.get(url, {'url': 'https://{}/200.h'.format(ok_netloc)})
         assert response.status_code == 200
 
         # Make sure it's really an HTML page.
@@ -62,5 +60,5 @@ class SourcesTestViews(DjangoTestCase):
         assert response['content-security-policy']
 
         # Do it also for a file called *.cpp
-        response = self.client.get(url, {'url': 'https://{}/200.cpp'.format(ok_netloc)})
+        response = client.get(url, {'url': 'https://{}/200.cpp'.format(ok_netloc)})
         assert response.status_code == 200

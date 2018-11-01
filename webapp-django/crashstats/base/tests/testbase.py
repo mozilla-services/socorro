@@ -1,10 +1,9 @@
 import inspect
-import unittest
 
 import mock
 
-import django.test
 from django.contrib.auth.models import User
+import django.test
 
 import crashstats.crashstats.models
 import crashstats.supersearch.models
@@ -21,14 +20,7 @@ for module in (crashstats.crashstats.models, crashstats.supersearch.models):
                 classes_with_implementation.append(klass)
 
 
-class TestCase(unittest.TestCase):
-
-    def shortDescription(self):
-        return None
-
-
 class DjangoTestCase(django.test.TestCase):
-
     def setUp(self):
         super(DjangoTestCase, self).setUp()
 
