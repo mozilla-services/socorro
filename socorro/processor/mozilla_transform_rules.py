@@ -700,7 +700,6 @@ class BetaVersionRule(Rule):
 
         :returns: ``None`` or the version string that should be used
 
-
         """
         if not (product and build_id and version):
             return None

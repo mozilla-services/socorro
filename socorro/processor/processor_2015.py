@@ -110,8 +110,7 @@ class Processor2015(RequiredConfig):
     required_config.add_option(
         'database_class',
         doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=str_to_python_object,
         reference_value_from='resource.postgresql',
     )

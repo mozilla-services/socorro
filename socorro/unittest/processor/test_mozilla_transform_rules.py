@@ -1469,7 +1469,6 @@ class TestBetaVersionRule:
     def test_beta_channel_unknown_version(self):
         """Beta crash that Buildhub doesn't know about gets b0"""
         config = self.get_config()
-
         raw_crash = {}
         raw_dumps = {}
 
@@ -1510,7 +1509,6 @@ class TestBetaVersionRule:
     def test_beta_channel_version_in_db(self):
         """Beta crash that Buildhub doesn't know, but db does gets db version"""
         config = self.get_config()
-
         raw_crash = {}
         raw_dumps = {}
 
@@ -1543,7 +1541,7 @@ class TestBetaVersionRule:
             # tuples
             rule.transaction = lambda *args, **kwargs: [('3.0.1b2',)]
 
-            rule._action(raw_crash, raw_dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0.1b2'
 
     def test_beta_channel_non_buildhub_product(self):
@@ -1664,7 +1662,7 @@ class TestBetaVersionRule:
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)
-            rule._action(raw_crash, raw_dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '63.0rc2'
             assert processor_meta.processor_notes == []
 
