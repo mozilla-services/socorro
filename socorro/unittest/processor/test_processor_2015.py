@@ -13,25 +13,22 @@ from socorro.unittest.testbase import TestCase
 
 
 class TestProcessor2015(TestCase):
+    def get_config(self):
+        cm = ConfigurationManager(
+            definition_source=Processor2015.get_required_config(),
+            values_source_list=[],
+        )
+        config = cm.get_config()
+        config.logger = Mock()
+        config.database_class = Mock()
+        config.transaction_executor_class = Mock()
+        return config
 
     def test_Processor2015_init(self):
-        cm = ConfigurationManager(
-            definition_source=Processor2015.get_required_config(),
-            values_source_list=[],
-        )
-        config = cm.get_config()
-        config.logger = Mock()
-
-        Processor2015(config)
+        Processor2015(self.get_config())
 
     def test_process_crash_existing_processed_crash(self):
-        cm = ConfigurationManager(
-            definition_source=Processor2015.get_required_config(),
-            values_source_list=[],
-        )
-        config = cm.get_config()
-        config.logger = Mock()
-
+        config = self.get_config()
         config.processor_name = 'dwight'
 
         p = Processor2015(config, rules=[
@@ -114,14 +111,7 @@ class TestProcessor2015(TestCase):
             },
         })
 
-        cm = ConfigurationManager(
-            definition_source=(
-                Processor2015.get_required_config(),
-            ),
-            values_source_list=[]
-        )
-        config = cm.get_config()
-        config.logger = Mock()
+        config = self.get_config()
         config.processor_name = 'dwight'
 
         mocked_subprocess_handle = (

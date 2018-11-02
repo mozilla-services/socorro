@@ -6,14 +6,16 @@ import datetime
 import gzip
 import random
 import re
-from sys import maxint
 from past.builtins import basestring
+from sys import maxint
 import time
 from urllib import unquote_plus
 
+import markus
 from requests import RequestException
 import ujson
 
+from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 from socorro.lib import javautil
 from socorro.lib import raven_client
 from socorro.lib.cache import ExpiringCache
@@ -671,9 +673,60 @@ class BetaVersionRule(Rule):
         # NOTE(willkg): These config values come from Processor2015 instance.
         self.buildhub_api = config.buildhub_api
         self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
+        self.metrics = markus.get_metrics('processor.betaversionrule')
+
+        # NOTE(willkg): These config values come from Processor2015 instance and are
+        # used for lookup in product_versions
+        database = config.database_class(config)
+        self.transaction = config.transaction_executor_class(
+            config,
+            database,
+        )
 
     def version(self):
         return '1.0'
+
+    def _get_real_version_db(self, product, build_id, version):
+        """Return real version number for specified product, build_id, version from db
+
+        NOTE(willkg): This differs from how the Buildhub equivalent works. This is
+        how we used to do it.
+
+        FIXME(willkg): We should remove this as soon as we can.
+
+        :arg product: the product
+        :arg build_id: the build_id as a string
+        :arg channel: the release channel
+
+        :returns: ``None`` or the version string that should be used
+
+
+        """
+        if not (product and build_id and version):
+            return None
+
+        sql = """
+            SELECT
+                pv.version_string
+            FROM product_versions pv
+                LEFT JOIN product_version_builds pvb ON
+                    (pv.product_version_id = pvb.product_version_id)
+            WHERE pv.product_name = %(product)s
+            AND pv.release_version = %(version)s
+            AND pvb.build_id = %(build_id)s
+        """
+        params = {
+            'product': product,
+            'version': version,
+            'build_id': build_id,
+        }
+        results = self.transaction(execute_query_fetchall, sql, params)
+        if results:
+            self.metrics.incr('lookup_db', tags=['result:success'])
+            return results[0][0]
+
+        self.metrics.incr('lookup_db', tags=['result:fail'])
+        return None
 
     def _get_real_version(self, product, build_id, channel):
         """Return the real version number of a specified product, build, channel
@@ -686,9 +739,9 @@ class BetaVersionRule(Rule):
         This caches good answers for a long time and bad answers for a short
         time to reduce Buildhub usage.
 
-        :arg product: the product
-        :arg build_id: the build_id as a string
-        :arg channel: the release channel
+        :arg str product: the product
+        :arg str build_id: the build_id as a string
+        :arg str channel: the release channel
 
         :returns: ``None`` or the version string that should be used
 
@@ -711,7 +764,10 @@ class BetaVersionRule(Rule):
 
         key = '%s:%s:%s' % (product, build_id, channel)
         if key in self.cache:
+            self.metrics.incr('cache', tags=['result:hit'])
             return self.cache[key]
+
+        self.metrics.incr('cache', tags=['result:miss'])
 
         session = session_with_retries(self.buildhub_api)
 
@@ -749,6 +805,8 @@ class BetaVersionRule(Rule):
                 ]
 
             if hits:
+                self.metrics.incr('lookup', tags=['result:success'])
+
                 # If we got an answer we should keep it around for a while because it's
                 # a real answer and it's not going to change so use the long ttl plus
                 # a fudge factor.
@@ -756,6 +814,7 @@ class BetaVersionRule(Rule):
                 self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL + shimmy)
                 return real_version
 
+            self.metrics.incr('lookup', tags=['result:fail'])
             # We didn't get an answer which could mean that this is a weird
             # build and there is no answer or it could mean that Buildhub
             # doesn't know, yet. Maybe in the future we get a better answer
@@ -783,6 +842,7 @@ class BetaVersionRule(Rule):
         except ValueError:
             build_id = None
         release_channel = processed_crash.get('release_channel').strip()
+        version = processed_crash.get('version').strip()
 
         # If we're missing one of the magic ingredients, then there's nothing
         # to do
@@ -802,7 +862,6 @@ class BetaVersionRule(Rule):
                 # "final beta" which Buildhub has an entry for in the release
                 # channel. So we check Buildhub asking about the release
                 # channel and get back an rc version.
-                version = processed_crash.get('version').strip()
                 if version and release_channel == 'beta' and self.is_final_beta(version):
                     real_version = self._get_real_version(product, build_id, 'release')
 
@@ -815,6 +874,13 @@ class BetaVersionRule(Rule):
                 self.config.logger.exception(
                     '%s when connecting to %s', exc, self.version_string_api
                 )
+
+            # If we haven't found anything, yet, try product_versions
+            if version:
+                real_version = self._get_real_version_db(product, build_id, version)
+                if real_version:
+                    processed_crash['version'] = real_version
+                    return True
 
         # No real version, but this is an aurora or beta crash report, so we
         # tack on "b0" to make it match the channel
