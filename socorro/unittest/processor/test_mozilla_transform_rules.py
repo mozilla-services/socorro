@@ -1349,11 +1349,16 @@ class TestTopMostFilesRule(TestCase):
 class TestBetaVersionRule:
     API_URL = 'http://buildhub.example.com/v1/buckets/build-hub/collections/releases/records'
 
-    def test_beta_channel_known_version(self):
-        # Beta channel with known version gets converted correctly
+    def get_config(self):
         config = get_basic_config()
         config.buildhub_api = self.API_URL
+        config.database_class = Mock()
+        config.transaction_executor_class = Mock()
+        return config
 
+    def test_beta_channel_known_version(self):
+        # Beta channel with known version gets converted correctly
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
@@ -1397,9 +1402,7 @@ class TestBetaVersionRule:
 
     def test_release_channel(self):
         """Release channel doesn't trigger rule"""
-        config = get_basic_config()
-        config.buildhub_api = self.API_URL
-
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
@@ -1420,9 +1423,7 @@ class TestBetaVersionRule:
 
     def test_nightly_channel(self):
         """Nightly channel doesn't trigger rule"""
-        config = get_basic_config()
-        config.buildhub_api = self.API_URL
-
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
@@ -1443,9 +1444,7 @@ class TestBetaVersionRule:
 
     def test_bad_buildid(self):
         """Invalid buildids don't cause errors"""
-        config = get_basic_config()
-        config.buildhub_api = self.API_URL
-
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
@@ -1469,13 +1468,12 @@ class TestBetaVersionRule:
 
     def test_beta_channel_unknown_version(self):
         """Beta crash that Buildhub doesn't know about gets b0"""
-        config = get_basic_config()
-        config.buildhub_api = self.API_URL
-
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
         with requests_mock.Mocker() as req_mock:
+            # Buildhub has no data for that (product, build_id, channel)
             req_mock.get(
                 self.API_URL + '?' + urlencode({
                     'source.product': 'firefox',
@@ -1497,18 +1495,58 @@ class TestBetaVersionRule:
             processor_meta = get_basic_processor_meta()
 
             rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+            # The db has no data for that (product, build_id, version)
+            rule.transaction = lambda *args, **kwargs: []
+
+            rule._action(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0.1b0'
             assert processor_meta.processor_notes == [
                 'release channel is beta but no version data was found - '
                 'added "b0" suffix to version number'
             ]
 
+    def test_beta_channel_version_in_db(self):
+        """Beta crash that Buildhub doesn't know, but db does gets db version"""
+        config = self.get_config()
+        raw_crash = {}
+        raw_dumps = {}
+
+        with requests_mock.Mocker() as req_mock:
+            # Buildhub has no data for that (product, build_id, channel)
+            req_mock.get(
+                self.API_URL + '?' + urlencode({
+                    'source.product': 'firefox',
+                    'build.id': '"220000101101011"',
+                    'target.channel': 'beta',
+                }),
+                json={
+                    'data': []
+                }
+            )
+
+            processed_crash = {
+                'product': 'Firefox',
+                'version': '3.0.1',
+                'release_channel': 'beta',
+                'build': '220000101101011',
+            }
+
+            processor_meta = get_basic_processor_meta()
+
+            rule = BetaVersionRule(config)
+
+            # The db has one record for (product, build_id, version) which is
+            # returned by the execute_sql_fetchall transaction as a list of
+            # tuples
+            rule.transaction = lambda *args, **kwargs: [('3.0.1b2',)]
+
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            assert processed_crash['version'] == '3.0.1b2'
+
     def test_beta_channel_non_buildhub_product(self):
         """Beta crash with a product not on Buildhub gets b0"""
-        config = get_basic_config()
-        config.buildhub_api = self.API_URL
-
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
@@ -1532,9 +1570,7 @@ class TestBetaVersionRule:
 
     def test_aurora_channel(self):
         """Test aurora channel lookup"""
-        config = get_basic_config()
-        config.buildhub_api = self.API_URL
-
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
@@ -1578,9 +1614,7 @@ class TestBetaVersionRule:
 
     def test_rc(self):
         """Test rc which are marked beta channel, but the data is in release channel"""
-        config = get_basic_config()
-        config.buildhub_api = self.API_URL
-
+        config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
 
