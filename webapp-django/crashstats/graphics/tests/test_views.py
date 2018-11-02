@@ -3,8 +3,8 @@ from cStringIO import StringIO
 import datetime
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Group
+from django.core.urlresolvers import reverse
 
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.graphics.views import GRAPHICS_REPORT_HEADER
@@ -41,9 +41,7 @@ class TestViews(BaseTestViews):
                 'total': 2
             }
 
-        SuperSearch.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('graphics:report')
 

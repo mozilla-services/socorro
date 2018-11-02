@@ -1,11 +1,8 @@
-from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import forms
 
 
-class TestForms(DjangoTestCase):
-
-    def setUp(self):
-        super(TestForms, self).setUp()
+class TestForms(object):
+    def setup_method(self):
         self.active_versions = {
             'WaterWolf': [
                 {'version': '20.0', 'build_type': 'Beta'},
@@ -28,7 +25,6 @@ class TestForms(DjangoTestCase):
         )
 
     def test_buginfoform(self):
-
         def get_new_form(data):
             return forms.BugInfoForm(data)
 

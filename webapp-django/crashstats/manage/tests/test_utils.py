@@ -1,5 +1,4 @@
 import os
-from unittest import TestCase
 
 from crashstats.manage import utils
 
@@ -10,8 +9,7 @@ SAMPLE_CSV_FILE_PCI_IDS = os.path.join(
 )
 
 
-class TestUtils(TestCase):
-
+class TestUtils(object):
     def test_string_hex_to_hex_string(self):
         func = utils.string_hex_to_hex_string
         assert func('919A') == '0x919a'

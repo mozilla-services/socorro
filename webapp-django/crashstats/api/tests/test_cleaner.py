@@ -1,11 +1,9 @@
 import mock
 
-from crashstats.base.tests.testbase import TestCase
 from crashstats.api.cleaner import Cleaner, SmartWhitelistMatcher
 
 
-class TestCleaner(TestCase):
-
+class TestCleaner(object):
     def test_simplest_case(self):
         whitelist = {'hits': ('foo', 'bar')}
         data = {
@@ -207,8 +205,7 @@ class TestCleaner(TestCase):
         assert data == expect
 
 
-class TestSmartWhitelistMatcher(TestCase):
-
+class TestSmartWhitelistMatcher(object):
     def test_basic_in(self):
         whitelist = ['some', 'thing*']
         matcher = SmartWhitelistMatcher(whitelist)

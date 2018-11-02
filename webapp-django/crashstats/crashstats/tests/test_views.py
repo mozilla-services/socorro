@@ -1,33 +1,31 @@
 # -*- coding: utf-8 -*-
 
-import re
 import copy
 import datetime
 import json
+import re
 
-import pyquery
 import mock
+import pyquery
 
-from django.test import Client
-from django.test.client import RequestFactory
-from django.test.utils import override_settings
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.models import (
     Group,
     Permission
 )
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
-from django.contrib.contenttypes.models import ContentType
-
-from socorro.external.crashstorage_base import CrashIDNotFound
+from django.test.client import RequestFactory
+from django.test.utils import override_settings
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.supersearch.models import SuperSearchFields
-from .test_models import Response
+from crashstats.crashstats.tests.test_models import Response
+from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.es.super_search_fields import FIELDS
 
 
@@ -168,29 +166,28 @@ SAMPLE_SIGNATURE_SUMMARY = {
 }
 
 
-class RobotsTestViews(DjangoTestCase):
-
-    @override_settings(ENGAGE_ROBOTS=True)
-    def test_robots_txt(self):
+class RobotsTestViews(object):
+    def test_robots_txt(self, settings, client):
+        settings.ENGAGE_ROBOTS = True
         url = '/robots.txt'
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
         assert response['Content-Type'] == 'text/plain'
         assert 'Allow: /' in response.content
 
     @override_settings(ENGAGE_ROBOTS=False)
-    def test_robots_txt_disengage(self):
+    def test_robots_txt_disengage(self, settings, client):
+        settings.ENGAGE_ROBOTS = False
         url = '/robots.txt'
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
         assert response['Content-Type'] == 'text/plain'
         assert 'Disallow: /' in response.content
 
 
-class FaviconTestViews(DjangoTestCase):
-
-    def test_favicon(self):
-        response = self.client.get('/favicon.ico')
+class FaviconTestViews(object):
+    def test_favicon(self, client):
+        response = client.get('/favicon.ico')
         assert response.status_code == 200
         # the content type is dependent on the OS
         expected = (
@@ -201,7 +198,6 @@ class FaviconTestViews(DjangoTestCase):
 
 
 class BaseTestViews(DjangoTestCase):
-
     def setUp(self):
         super(BaseTestViews, self).setUp()
 
@@ -253,9 +249,7 @@ class BaseTestViews(DjangoTestCase):
                 'total': len(hits),
             }
 
-        models.ProductsMiddleware.implementation().get.side_effect = (
-            mocked_products
-        )
+        models.ProductsMiddleware.implementation().get.side_effect = mocked_products
 
         def mocked_product_versions(**params):
             now = datetime.datetime.utcnow()
@@ -365,9 +359,7 @@ class BaseTestViews(DjangoTestCase):
                 'total': len(hits),
             }
 
-        models.ProductVersionsMiddleware.implementation().get.side_effect = (
-            mocked_product_versions
-        )
+        models.ProductVersionsMiddleware.implementation().get.side_effect = mocked_product_versions
 
         def mocked_supersearchfields(**params):
             results = copy.deepcopy(FIELDS)
@@ -408,9 +400,7 @@ class BaseTestViews(DjangoTestCase):
             name=PERMISSIONS[codename],
             content_type=ct
         )
-        group, __ = Group.objects.get_or_create(
-            name=group_name,
-        )
+        group, __ = Group.objects.get_or_create(name=group_name)
         group.permissions.add(permission)
         return group
 
@@ -429,7 +419,6 @@ class BaseTestViews(DjangoTestCase):
 
 
 class TestViews(BaseTestViews):
-
     def test_contribute_json(self):
         response = self.client.get('/contribute.json')
         assert response.status_code == 200
@@ -671,9 +660,7 @@ class TestViews(BaseTestViews):
                 return copy.deepcopy(_SAMPLE_META)
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -746,7 +733,6 @@ class TestViews(BaseTestViews):
         assert _SAMPLE_META['URL'] not in response.content
 
     def test_report_index_with_raw_crash_unicode_key(self):
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -755,9 +741,7 @@ class TestViews(BaseTestViews):
                 return raw
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -766,9 +750,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         # Be signed in with view_pii to avoid whitelisting
         user = self._login()
@@ -785,7 +767,6 @@ class TestViews(BaseTestViews):
         assert u'Prénom'.encode('utf-8') in response.content
 
     def test_report_index_with_refreshed_cache(self):
-
         raw_crash_calls = []
 
         def mocked_raw_crash_get(**params):
@@ -795,9 +776,7 @@ class TestViews(BaseTestViews):
                 return copy.deepcopy(_SAMPLE_META)
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         processed_crash_calls = []
 
@@ -809,9 +788,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -842,9 +819,7 @@ class TestViews(BaseTestViews):
                 return raw
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -855,9 +830,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse(
             'crashstats:report_index',
@@ -890,9 +863,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -911,9 +882,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -994,9 +963,7 @@ class TestViews(BaseTestViews):
                 return crash
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1007,9 +974,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -1061,9 +1026,7 @@ class TestViews(BaseTestViews):
                 return crash
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1074,9 +1037,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -1107,9 +1068,7 @@ class TestViews(BaseTestViews):
                 return copy.deepcopy(_SAMPLE_META)
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1121,9 +1080,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -1155,9 +1112,7 @@ class TestViews(BaseTestViews):
                 return copy.deepcopy(_SAMPLE_META)
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1169,9 +1124,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -1184,7 +1137,6 @@ class TestViews(BaseTestViews):
         assert 'Thread 2' in response.content
 
     def test_report_index_with_telemetry_environment(self):
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1202,9 +1154,7 @@ class TestViews(BaseTestViews):
                 return crash
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1213,9 +1163,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -1236,9 +1184,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1249,9 +1195,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -1284,9 +1228,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1298,9 +1240,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -1318,7 +1258,6 @@ class TestViews(BaseTestViews):
         assert bad_url not in response.content
 
     def test_report_index_no_dump(self):
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1326,9 +1265,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1339,9 +1276,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -1359,7 +1294,6 @@ class TestViews(BaseTestViews):
         assert response['Content-Type'] == 'text/html; charset=utf-8'
 
     def test_report_index_with_valid_install_time(self):
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1370,9 +1304,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1381,9 +1313,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse(
             'crashstats:report_index',
@@ -1395,7 +1325,6 @@ class TestViews(BaseTestViews):
         assert '2016-04-20 16:38:24' in response.content
 
     def test_report_index_with_invalid_install_time(self):
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1405,9 +1334,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1416,9 +1343,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse(
             'crashstats:report_index',
@@ -1434,7 +1359,6 @@ class TestViews(BaseTestViews):
                 assert pyquery.PyQuery(row).find('td').text() == ''
 
     def test_report_index_empty_os_name(self):
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1442,9 +1366,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1455,9 +1377,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse(
             'crashstats:report_index',
@@ -1507,9 +1427,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1520,9 +1438,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -1539,9 +1455,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1552,9 +1466,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -1571,9 +1483,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1584,9 +1494,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index', args=[crash_id])
 
@@ -1615,9 +1523,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1628,9 +1534,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index', args=[crash_id])
 
@@ -1660,9 +1564,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1673,9 +1575,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index', args=[crash_id])
 
@@ -1698,9 +1598,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         url = reverse('crashstats:report_index',
                       args=[crash_id])
@@ -1719,9 +1617,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1730,17 +1626,13 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         def mocked_priority_job_process(**params):
             assert params['crash_ids'] == [crash_id]
             return True
 
-        models.Priorityjob.implementation().process.side_effect = (
-            mocked_priority_job_process
-        )
+        models.Priorityjob.implementation().process.side_effect = mocked_priority_job_process
 
         url = reverse('crashstats:report_index', args=[crash_id])
         response = self.client.get(url)
@@ -1759,9 +1651,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1772,9 +1662,7 @@ class TestViews(BaseTestViews):
                 return crash
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index', args=[crash_id])
 
@@ -1784,7 +1672,6 @@ class TestViews(BaseTestViews):
         assert '2015-10-10 15:32:07.620535' in response.content
 
     def test_report_index_redirect_by_prefix(self):
-
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1792,9 +1679,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1803,17 +1688,15 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         base_crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         crash_id = settings.CRASH_ID_PREFIX + base_crash_id
         assert len(crash_id) > 36
         url = reverse('crashstats:report_index', args=[crash_id])
-        response = self.client.get(url)
-        correct_url = reverse('crashstats:report_index', args=[base_crash_id])
-        self.assertRedirects(response, correct_url)
+        response = self.client.get(url, follow=False)
+        expected = reverse('crashstats:report_index', args=[base_crash_id])
+        assert response.url == expected
 
     def test_report_index_with_thread_name(self):
         """Some threads now have a name. If there is one, verify that name is
@@ -1843,9 +1726,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError
 
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1856,9 +1737,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
         url = reverse('crashstats:report_index', args=[crash_id])
 
@@ -1867,7 +1746,6 @@ class TestViews(BaseTestViews):
         assert 'Thread 0, Name: I am a Regular Thread' in response.content
 
     def test_raw_data(self):
-
         def mocked_get(**params):
             if 'datatype' in params and params['datatype'] == 'raw':
                 return "bla bla bla"
@@ -1882,11 +1760,9 @@ class TestViews(BaseTestViews):
 
         crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
         json_url = reverse('crashstats:raw_data', args=(crash_id, 'json'))
-        response = self.client.get(json_url)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % json_url
-        )
+        response = self.client.get(json_url, follow=False)
+        expected = reverse('crashstats:login') + '?next=%s' % json_url
+        assert response.url == expected
         assert response.status_code == 302
 
         user = self._login()
@@ -1917,7 +1793,6 @@ class TestViews(BaseTestViews):
         assert 'bla bla bla' in response.content  # still. good.
 
     def test_raw_data_memory_report(self):
-
         crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
 
         def mocked_get(**params):
@@ -1958,15 +1833,9 @@ class TestViews(BaseTestViews):
         url = reverse(
             'exploitability:report',
         )
-        response = self.client.get(url)
-        self.assertRedirects(
-            response,
-            '%s?%s=%s' % (
-                reverse('crashstats:login'),
-                REDIRECT_FIELD_NAME,
-                url,
-            )
-        )
+        response = self.client.get(url, follow=False)
+        expected = '%s?%s=%s' % (reverse('crashstats:login'), REDIRECT_FIELD_NAME, url)
+        assert response.url == expected
 
     def test_login_page_renders(self):
         url = reverse('crashstats:login')
@@ -1983,28 +1852,25 @@ class TestViews(BaseTestViews):
 
     def test_about_throttling(self):
         # the old url used to NOT have a trailing slash
-        response = self.client.get('/about/throttling')
+        response = self.client.get('/about/throttling', follow=False)
         assert response.status_code == 301
-        self.assertRedirects(
-            response,
-            reverse('crashstats:about_throttling'),
-            status_code=301
-        )
+        expected = reverse('crashstats:about_throttling')
+        assert response.url == expected
 
 
-class TestDockerflow:
-    def test_version_no_file(self, tmpdir):
+class TestDockerflow(object):
+    def test_version_no_file(self, client, settings, tmpdir):
         """Test with no version.json file"""
         # The tmpdir definitely doesn't have a version.json in it, so we use
         # that
-        with override_settings(SOCORRO_ROOT=str(tmpdir)):
-            client = Client()
-            resp = client.get(reverse('crashstats:dockerflow_version'))
-            assert resp.status_code == 200
-            assert resp['Content-Type'] == 'application/json'
-            assert resp.content == '{}'
+        settings.SOCORRO_ROOT = str(tmpdir)
 
-    def test_version_with_file(self, tmpdir):
+        resp = client.get(reverse('crashstats:dockerflow_version'))
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'application/json'
+        assert resp.content == '{}'
+
+    def test_version_with_file(self, client, settings, tmpdir):
         """Test with a version.json file"""
         text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
 
@@ -2012,12 +1878,12 @@ class TestDockerflow:
         version_json = tmpdir.join('version.json')
         version_json.write(text)
 
-        with override_settings(SOCORRO_ROOT=str(tmpdir)):
-            client = Client()
-            resp = client.get(reverse('crashstats:dockerflow_version'))
-            assert resp.status_code == 200
-            assert resp['Content-Type'] == 'application/json'
-            assert resp.content == text
+        settings.SOCORRO_ROOT = str(tmpdir)
+
+        resp = client.get(reverse('crashstats:dockerflow_version'))
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'application/json'
+        assert resp.content == text
 
 
 class TestProductHomeViews(BaseTestViews):

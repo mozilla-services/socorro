@@ -11,7 +11,6 @@ import mock
 from moto import mock_s3_deprecated
 import pyquery
 
-from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.models import (
     BugAssociation,
     ProcessedCrash,
@@ -29,7 +28,7 @@ from socorro.lib.ooid import create_new_ooid
 from socorro.unittest.external.boto.conftest import BotoHelper
 
 
-class TestDedentLeft(TestCase):
+class TestDedentLeft(object):
     def test_dedent_left(self):
         from crashstats.api.views import dedent_left
         assert dedent_left('Hello', 2) == 'Hello'
@@ -45,9 +44,7 @@ class TestDedentLeft(TestCase):
 
 
 class TestDocumentationViews(BaseTestViews):
-
     def test_documentation_home_page(self):
-
         url = reverse('api:documentation')
         response = self.client.get(url)
         assert response.status_code == 200
@@ -60,7 +57,6 @@ class TestDocumentationViews(BaseTestViews):
 
 
 class TestViews(BaseTestViews):
-
     def setUp(self):
         super(TestViews, self).setUp()
         self._middleware_classes = settings.MIDDLEWARE_CLASSES
@@ -148,7 +144,6 @@ class TestViews(BaseTestViews):
         assert 'max-age={}'.format(cache_seconds) in response['Cache-Control']
 
     def test_ProductVersionsMiddleware(self):
-
         def mocked_get(*args, **k):
             return {
                 'hits': [
@@ -320,7 +315,6 @@ class TestViews(BaseTestViews):
         assert 'exploitability' in dump
 
     def test_RawCrash(self):
-
         def mocked_get(**params):
             if 'uuid' in params and params['uuid'] == 'abc123':
                 return {
@@ -384,7 +378,6 @@ class TestViews(BaseTestViews):
         assert 'upload_file_minidump_plugin' in dump
 
     def test_RawCrash_binary_blob(self):
-
         def mocked_get(**params):
             if 'uuid' in params and params['uuid'] == 'abc':
                 return '\xe0'
@@ -483,7 +476,6 @@ class TestViews(BaseTestViews):
         }
 
     def test_NewSignatures(self):
-
         def mocked_supersearch_get(**params):
             assert params['product'] == [settings.DEFAULT_PRODUCT]
 
@@ -646,7 +638,6 @@ class TestViews(BaseTestViews):
             assert response.status_code == 429
 
     def test_SuperSearch(self):
-
         def mocked_supersearch_get(**params):
             assert 'exploitability' not in params
 
@@ -717,7 +708,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_SuperSearchUnredacted(self):
-
         def mocked_supersearch_get(**params):
             assert 'exploitability' in params
             if 'product' in params:
@@ -740,9 +730,7 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('api:model_wrapper', args=('SuperSearchUnredacted',))
         response = self.client.get(url, {'exploitability': 'high'})
@@ -780,7 +768,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_change_certain_exceptions_to_bad_request(self):
-
         # It actually doesn't matter so much which service we use
         # because we're heavily mocking it.
         # Here we use the SuperSearch model.
@@ -802,7 +789,6 @@ class TestViews(BaseTestViews):
         assert 'foobaz' in response.content
 
     def test_Reprocessing(self):
-
         def mocked_reprocess(crash_ids):
             assert crash_ids == ['xxxx']
             return True

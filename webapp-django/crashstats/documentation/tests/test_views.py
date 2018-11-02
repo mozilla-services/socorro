@@ -4,7 +4,6 @@ from crashstats.crashstats.tests.test_views import BaseTestViews
 
 
 class TestViews(BaseTestViews):
-
     def test_supersearch_home(self):
         url = reverse('documentation:supersearch_home')
         response = self.client.get(url)

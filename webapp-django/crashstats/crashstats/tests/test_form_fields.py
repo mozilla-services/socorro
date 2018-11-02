@@ -2,12 +2,10 @@ import pytest
 
 from django.forms import ValidationError
 
-from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats import form_fields
 
 
-class TestFormFields(TestCase):
-
+class TestFormFields(object):
     def test_build_ids_field(self):
         field = form_fields.BuildIdsField(required=False)
         res = field.clean('12')

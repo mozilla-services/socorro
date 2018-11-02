@@ -7,12 +7,10 @@ import pytest
 from django.utils.timezone import utc
 from django.forms import ValidationError
 
-from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import form_fields
 
 
-class TestFormFields(TestCase):
-
+class TestFormFields(object):
     def test_integer_field(self):
         field = form_fields.IntegerField()
         cleaned_value = field.clean(['>13'])

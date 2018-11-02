@@ -7,12 +7,11 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.authentication.management.commands import makesuperuser
 
 
-class TestMakeSuperuserCommand(DjangoTestCase):
-    def test_make_existing_user(self):
+class TestMakeSuperuserCommand(object):
+    def test_make_existing_user(self, db):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
         buffer = StringIO()
         call_command('makesuperuser', 'BOB@mozilla.com', stdout=buffer)
@@ -24,7 +23,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         assert user.is_staff
         assert [g.name for g in user.groups.all()] == ['Hackers']
 
-    def test_make_already_user(self):
+    def test_make_already_user(self, db):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
         bob.is_superuser = True
         bob.is_staff = True
@@ -41,7 +40,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         assert user.is_staff
         assert [g.name for g in user.groups.all()] == ['Hackers']
 
-    def test_make_two_user_superuser(self):
+    def test_make_two_user_superuser(self, db):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
         bob.is_superuser = True  # already
         bob.save()
@@ -63,7 +62,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         assert otto.is_staff
         assert [g.name for g in otto.groups.all()] == ['Hackers']
 
-    def test_nonexisting_user(self):
+    def test_nonexisting_user(self, db):
         buffer = StringIO()
         email = 'neverheardof@mozilla.com'
         call_command('makesuperuser', email, stdout=buffer)
@@ -79,7 +78,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         'get_input',
         return_value='BOB@mozilla.com '
     )
-    def test_with_raw_input(self, mocked_raw_input):
+    def test_with_raw_input(self, mocked_raw_input, db):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
         buffer = StringIO()
         cmd = makesuperuser.Command()
@@ -97,7 +96,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         'get_input',
         return_value='\n'
     )
-    def test_with_raw_input_but_empty(self, mocked_raw_input):
+    def test_with_raw_input_but_empty(self, mocked_raw_input, db):
         with pytest.raises(CommandError):
             buffer = StringIO()
             cmd = makesuperuser.Command()

@@ -1,9 +1,7 @@
-from crashstats.base.tests.testbase import TestCase
 from crashstats.api.templatetags.jinja_helpers import pluralize
 
 
-class TestPluralize(TestCase):
-
+class TestPluralize(object):
     def test_basics(self):
         assert pluralize(0) == 's'
         assert pluralize(1) == ''

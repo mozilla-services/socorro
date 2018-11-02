@@ -1,9 +1,7 @@
-from crashstats.base.tests.testbase import TestCase
 from crashstats.base.utils import render_exception, SignatureStats
 
 
-class TestRenderException(TestCase):
-
+class TestRenderException(object):
     def test_basic(self):
         html = render_exception('hi!')
         assert html == '<ul><li>hi!</li></ul>'
@@ -20,7 +18,7 @@ class TestRenderException(TestCase):
         assert html == '<ul><li>&lt;hack&gt;</li></ul>'
 
 
-class TestUtils(TestCase):
+class TestUtils(object):
     def test_SignatureStats(self):
         signature = {
             'count': 2,

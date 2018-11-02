@@ -15,7 +15,6 @@ from crashstats.supersearch.models import SuperSearch
 
 
 class TestViews(BaseTestViews):
-
     def test_index(self):
         url = reverse('monitoring:index')
         response = self.client.get(url)
@@ -116,7 +115,7 @@ class TestHealthcheckViews(BaseTestViews):
         assert json.loads(response.content)['ok'] is True
 
         # This time, ignoring the results, make sure that running
-        # this does not cause an DB queries.
+        # this does not cause any DB queries.
         self.assertNumQueries(
             0,
             self.client.get,
@@ -143,9 +142,7 @@ class TestHealthcheckViews(BaseTestViews):
                 'errors': [],
             }
 
-        SuperSearch.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         def mocked_requests_get(url, **params):
             return Response(True)
@@ -176,9 +173,7 @@ class TestHealthcheckViews(BaseTestViews):
                 'errors': ['bad'],
             }
 
-        SuperSearch.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
         with pytest.raises(AssertionError):
             assert_supersearch_no_errors()
 
