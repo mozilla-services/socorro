@@ -147,12 +147,15 @@ class TestTopCrasherViews(BaseTestViews):
 
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
-        url = self.base_url + '?product=WaterWolf&version=19.0'
+        self.set_product_versions(['20.0', '19.0', '18.0'])
 
+        # Test that a request that doesn't include a version is redirected to
+        # the latest active version
+        url = self.base_url + '?product=WaterWolf&version=20.0'
         response = self.client.get(self.base_url, {'product': 'WaterWolf'})
         assert url in response['Location']
 
-        # Test that several versions do not raise an error.
+        # Test that several versions do not raise an error
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
             'version': ['19.0', '20.0'],
@@ -229,19 +232,18 @@ class TestTopCrasherViews(BaseTestViews):
 
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
+        self.set_product_versions(['20.0', '19.0', '18.0'])
+
+        # Redirects to the most recent featured version
         response = self.client.get(self.base_url, {'product': 'SeaMonkey'})
         assert response.status_code == 302
-        actual_url = self.base_url + '?product=SeaMonkey&version=9.5'
+        actual_url = self.base_url + '?product=SeaMonkey&version=20.0'
         assert actual_url in response['Location']
 
-        response = self.client.get(self.base_url, {
-            'product': 'SeaMonkey',
-            'version': '9.5',
-        })
+        # This version doesn't exist, but it still renders something and
+        # doesn't throw an error
+        response = self.client.get(self.base_url, {'product': 'SeaMonkey', 'version': '9.5'})
         assert response.status_code == 200
-        # Not testing the response content.
-        # See test_topcrashers() above instead. Here we just want to make
-        # sure it renders at all when the product has no featured versions.
 
     def test_400_by_bad_days(self):
         response = self.client.get(self.base_url, {
@@ -271,12 +273,6 @@ class TestTopCrasherViews(BaseTestViews):
         assert response.status_code == 404
 
     def test_without_any_signatures(self):
-        url = self.base_url + '?product=WaterWolf&version=19.0'
-        response = self.client.get(self.base_url, {
-            'product': 'WaterWolf',
-        })
-        assert url in response['Location']
-
         def mocked_supersearch_get(**params):
             return {
                 'hits': [],
@@ -290,7 +286,7 @@ class TestTopCrasherViews(BaseTestViews):
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
-            'version': '19.0',
+            'version': '19.0'
         })
         assert response.status_code == 200
 
@@ -342,6 +338,7 @@ class TestTopCrasherViews(BaseTestViews):
                 },
                 'total': 0
             }
+
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         response = self.client.get(self.base_url, {

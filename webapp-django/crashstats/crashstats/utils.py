@@ -329,13 +329,23 @@ def get_version_context_for_product(product):
 
 def build_default_context(product=None, versions=None):
     """
-    from ``product`` and ``versions`` transfer to
-    a dict. If there's any left-over, raise a 404 error
+    Given a product and a list of versions, generates navbar context.
+
+    Adds ``products`` is a dict of product name -> product information
+    for all active supported products.
+
+    Adds ``active_versions`` is a dict of product name -> version information
+    for all active supported products.
+
+    Adds ``version`` which is the first version specified from the ``versions``
+    argument.
+
     """
     context = {}
 
     # Build product information
     api = models.ProductsMiddleware()
+
     # NOTE(willkg): using an OrderedDict here since Products returns products
     # sorted by sort order and we don't want to lose that ordering
     all_products = OrderedDict()
@@ -347,46 +357,38 @@ def build_default_context(product=None, versions=None):
         all_products[item['product_name']] = item
     context['products'] = all_products
 
-    # Build product version information
-    api = models.ProductVersionsMiddleware()
-    active_versions = OrderedDict()
+    if not product:
+        product = settings.DEFAULT_PRODUCT
 
-    # Turn the list of all product versions into a dict, one per product.
-    for pv in api.get(active=True)['hits']:
-        if pv['product'] not in active_versions:
-            active_versions[pv['product']] = []
-        active_versions[pv['product']].append(pv)
+    if product not in context['products']:
+        raise http.Http404('Not a recognized product')
+
+    context['product'] = product
+
+    # Build product version information for all products
+    active_versions = {
+        prod: get_version_context_for_product(prod)
+        for prod in context['products'].keys()
+    }
     context['active_versions'] = active_versions
 
-    if product:
-        if product not in context['products']:
-            raise http.Http404('Not a recognized product')
+    if versions is not None:
+        if isinstance(versions, basestring):
+            versions = versions.split(';')
 
-        if product not in active_versions:
-            # This is a product that doesn't have version information in
-            # product_versions, so we pull it from supersearch
-            active_versions[product] = get_version_context_for_product(product)
+        if versions:
+            # Check that versions is a list
+            assert isinstance(versions, list)
 
-        context['product'] = product
-    else:
-        context['product'] = settings.DEFAULT_PRODUCT
+            # Check that the specified versions are all valid for this product
+            pv_versions = [
+                x['version'] for x in active_versions[context['product']]
+            ]
+            for version in versions:
+                if version not in pv_versions:
+                    raise http.Http404("Not a recognized version for that product")
 
-    if versions is None:
-        versions = []
-    elif isinstance(versions, basestring):
-        versions = versions.split(';')
-
-    if versions:
-        assert isinstance(versions, list)
-        context['version'] = versions[0]
-
-        # Also, check that that's a valid version for this product
-        pv_versions = [
-            x['version'] for x in active_versions[context['product']]
-        ]
-        for version in versions:
-            if version not in pv_versions:
-                raise http.Http404("Not a recognized version for that product")
+            context['version'] = versions[0]
 
     return context
 

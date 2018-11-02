@@ -2,8 +2,8 @@ import contextlib
 import json
 
 from django.contrib.auth.models import User, Permission
-from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.utils import timezone
 
 from markus.testing import MetricsMock
@@ -19,7 +19,7 @@ from crashstats.crashstats.models import (
     RawCrash,
     UnredactedCrash,
 )
-from crashstats.crashstats.tests.test_views import BaseTestViews
+from crashstats.crashstats.tests.conftest import BaseTestViews
 from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.tokens.models import Token

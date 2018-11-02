@@ -1,11 +1,9 @@
 import json
 import random
 import urlparse
-from past.builtins import basestring
 
 import mock
 import pytest
-from six import text_type
 
 from django.core.cache import cache
 from django.conf import settings
@@ -13,25 +11,9 @@ from django.utils import dateparse, timezone
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
+from crashstats.crashstats.tests.conftest import Response
 from crashstats.cron.models import Job as CronJob
 from socorro.lib import BadArgumentError
-
-
-class Response(object):
-    def __init__(self, content=None, status_code=200):
-        self.raw = content
-        if not isinstance(content, basestring):
-            content = json.dumps(content)
-        self.content = content.strip()
-        self.status_code = status_code
-
-    @property
-    def text(self):
-        # similar to content but with the right encoding
-        return text_type(self.content, 'utf-8')
-
-    def json(self):
-        return self.raw
 
 
 class TestGraphicsDevices(DjangoTestCase):

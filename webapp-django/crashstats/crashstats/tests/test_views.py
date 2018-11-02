@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import copy
-import datetime
 import json
 import re
 
@@ -10,23 +9,14 @@ import pyquery
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.contrib.auth.models import (
-    Group,
-    Permission
-)
-from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 
-from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
-from crashstats.crashstats.signals import PERMISSIONS
-from crashstats.supersearch.models import SuperSearchFields
-from crashstats.crashstats.tests.test_models import Response
+from crashstats.crashstats.tests.conftest import BaseTestViews, Response
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.external.es.super_search_fields import FIELDS
 
 
 _SAMPLE_META = {
@@ -195,227 +185,6 @@ class FaviconTestViews(object):
             'image/vnd.microsoft.icon'  # jenkins for example
         )
         assert response['Content-Type'] in expected
-
-
-class BaseTestViews(DjangoTestCase):
-    def setUp(self):
-        super(BaseTestViews, self).setUp()
-
-        # Tests assume and require a non-persistent cache backend
-        assert 'LocMemCache' in settings.CACHES['default']['BACKEND']
-
-        def mocked_products(**params):
-            hits = [
-                # These have versions in the mocked ProductVersionsMiddleware
-                {
-                    'product_name': 'WaterWolf',
-                    'release_name': 'waterwolf',
-                    'sort': 1,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                {
-                    'product_name': 'NightTrain',
-                    'release_name': 'nighttrain',
-                    'sort': 2,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                {
-                    'product_name': 'SeaMonkey',
-                    'release_name': 'seamonkey',
-                    'sort': 3,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                {
-                    'product_name': 'LandCrab',
-                    'release_name': 'landcrab',
-                    'sort': 4,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                # This does not have versions in the mocked ProductVersionsMiddleware
-                {
-                    'product_name': 'Tinkerbell',
-                    'release_name': 'tinkerbell',
-                    'sort': 5,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                }
-            ]
-            return {
-                'hits': hits,
-                'total': len(hits),
-            }
-
-        models.ProductsMiddleware.implementation().get.side_effect = mocked_products
-
-        def mocked_product_versions(**params):
-            now = datetime.datetime.utcnow()
-            yesterday = now - datetime.timedelta(days=1)
-
-            end_date = now.strftime('%Y-%m-%d')
-            yesterday = yesterday.strftime('%Y-%m-%d')
-
-            hits = [
-                # WaterWolfs
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '19.0',
-                    'build_type': 'Beta',
-                    'has_builds': True,
-                },
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '18.0',
-                    'build_type': 'Stable',
-                    'has_builds': False,
-                },
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': '2012-03-09',
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '19.1',
-                    'build_type': 'Nightly',
-                    'has_builds': True,
-                },
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '20.0',
-                    'build_type': 'Nightly',
-                    'has_builds': True,
-                },
-                # NightTrains
-                {
-                    'product': 'NightTrain',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '18.0',
-                    'build_type': 'Aurora',
-                    'has_builds': True,
-                },
-                {
-                    'product': 'NightTrain',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '19.0',
-                    'build_type': 'Nightly',
-                    'has_builds': True,
-                },
-                # SeaMonkies
-                {
-                    'product': 'SeaMonkey',
-                    'throttle': '99.00',
-                    'end_date': yesterday,
-                    'start_date': '2012-03-08',
-                    'is_featured': False,
-                    'version': '9.5',
-                    'build_type': 'Alpha',
-                    'has_builds': True,
-                },
-                {
-                    'product': 'SeaMonkey',
-                    'throttle': '99.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': False,
-                    'version': '10.5',
-                    'build_type': 'nightly',
-                    'has_builds': True,
-                },
-                # LandCrab
-                {
-                    'product': 'LandCrab',
-                    'throttle': '99.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': False,
-                    'version': '1.5',
-                    'build_type': 'Release',
-                    'has_builds': False,
-                },
-            ]
-            return {
-                'hits': hits,
-                'total': len(hits),
-            }
-
-        models.ProductVersionsMiddleware.implementation().get.side_effect = mocked_product_versions
-
-        def mocked_supersearchfields(**params):
-            results = copy.deepcopy(FIELDS)
-            # to be realistic we want to introduce some dupes that have a
-            # different key but its `in_database_name` is one that is already
-            # in the hardcoded list (the baseline)
-            results['accessibility2'] = results['accessibility']
-            return results
-
-        supersearchfields_mock_get = mock.Mock()
-        supersearchfields_mock_get.side_effect = mocked_supersearchfields
-        SuperSearchFields.get = supersearchfields_mock_get
-
-        # This will make sure the cache is pre-populated
-        SuperSearchFields().get()
-
-        # call these here so it gets patched for each test because
-        # it gets used so often
-
-        models.ProductVersionsMiddleware().get(active=True)
-
-    def tearDown(self):
-        super(BaseTestViews, self).tearDown()
-        cache.clear()
-
-    def _add_permission(self, user, codename, group_name='Hackers'):
-        group = self._create_group_with_permission(codename)
-        user.groups.add(group)
-
-    def _create_group_with_permission(self, codename, group_name='Group'):
-        appname = 'crashstats'
-        ct, __ = ContentType.objects.get_or_create(
-            model='',
-            app_label=appname,
-        )
-        permission, __ = Permission.objects.get_or_create(
-            codename=codename,
-            name=PERMISSIONS[codename],
-            content_type=ct
-        )
-        group, __ = Group.objects.get_or_create(name=group_name)
-        group.permissions.add(permission)
-        return group
-
-    @staticmethod
-    def only_certain_columns(hits, columns):
-        """return a new list where each dict within only has keys mentioned
-        in the `columns` list."""
-        return [
-            dict(
-                (k, x[k])
-                for k in x
-                if k in columns
-            )
-            for x in hits
-        ]
 
 
 class TestViews(BaseTestViews):
@@ -758,8 +527,7 @@ class TestViews(BaseTestViews):
         user.groups.add(group)
         assert user.has_perm('crashstats.view_pii')
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
         # The response is a byte string so look for 'Pr\xc3\xa9nom' in the
@@ -790,8 +558,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
         assert len(raw_crash_calls) == len(processed_crash_calls) == 1
@@ -806,11 +573,9 @@ class TestViews(BaseTestViews):
         assert len(raw_crash_calls) == len(processed_crash_calls) == 2
 
     def test_report_index_with_remote_type_raw_crash(self):
-        """If a processed crash has a 'process_type' value *and*
-        if the raw crash has as 'RemoteType' then both of these
-        values should be displayed in the HTML.
-        """
-
+        # If a processed crash has a 'process_type' value *and* if the raw
+        # crash has as 'RemoteType' then both of these values should be
+        # displayed in the HTML.
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -832,10 +597,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse(
-            'crashstats:report_index',
-            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
-        )
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
         assert 'Process Type' in response.content
@@ -1091,10 +853,8 @@ class TestViews(BaseTestViews):
         assert 'Crashing Thread (0)' in response.content
 
     def test_report_index_with_no_crashing_thread(self):
-        """If the json_dump has no crashing thread available, do not display a
-        specific crashing thread, but instead display all threads.
-
-        """
+        # If the json_dump has no crashing thread available, do not display a
+        # specific crashing thread, but instead display all threads.
         json_dump = {
             'crash_info': {},
             'status': 'OK',
@@ -1217,10 +977,9 @@ class TestViews(BaseTestViews):
             assert 'product=WinterSun' in link.attr('href')
 
     def test_report_index_odd_product_and_version(self):
-        """If the processed JSON references an unfamiliar product and
-        version it should not use that to make links in the nav to
-        reports for that unfamiliar product and version.
-        """
+        # If the processed JSON references an unfamiliar product and version it
+        # should not use that to make links in the nav to reports for that
+        # unfamiliar product and version.
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
             if params['datatype'] == 'meta':
@@ -1242,8 +1001,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
         # the title should have the "SummerWolf 99.9" in it
@@ -1252,8 +1010,8 @@ class TestViews(BaseTestViews):
         assert 'SummerWolf' in title
         assert '99.9' in title
 
-        # there shouldn't be any links to reports for the product
-        # mentioned in the processed JSON
+        # there shouldn't be any links to reports for the product mentioned in
+        # the processed JSON
         bad_url = reverse('crashstats:product_home', args=('SummerWolf',))
         assert bad_url not in response.content
 
@@ -1278,16 +1036,14 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
         assert 'No dump available' in response.content
 
     def test_report_index_invalid_crash_id(self):
         # last 6 digits indicate 30th Feb 2012 which doesn't exist
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120230'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120230'])
         response = self.client.get(url)
         assert response.status_code == 400
         assert 'Invalid crash ID' in response.content
@@ -1315,10 +1071,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse(
-            'crashstats:report_index',
-            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
-        )
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert 'Install Time</th>' in response.content
         # This is what 1461170304 is in human friendly format.
@@ -1345,10 +1098,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse(
-            'crashstats:report_index',
-            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
-        )
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         # The heading is there but there should not be a value for it
         doc = pyquery.PyQuery(response.content)
@@ -1379,10 +1129,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse(
-            'crashstats:report_index',
-            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
-        )
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         # Despite the `os_name` being null, it should work to render
         # this page.
@@ -1440,8 +1187,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert '<th>Install Time</th>' not in response.content
 
@@ -1468,8 +1214,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
 
@@ -1600,8 +1345,7 @@ class TestViews(BaseTestViews):
 
         models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
-        url = reverse('crashstats:report_index',
-                      args=[crash_id])
+        url = reverse('crashstats:report_index', args=[crash_id])
         response = self.client.get(url)
 
         assert response.status_code == 404
@@ -1699,9 +1443,8 @@ class TestViews(BaseTestViews):
         assert response.url == expected
 
     def test_report_index_with_thread_name(self):
-        """Some threads now have a name. If there is one, verify that name is
-        displayed next to that thread's number.
-        """
+        # Some threads now have a name. If there is one, verify that name is
+        # displayed next to that thread's number.
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         json_dump = {
             'crash_info': {
@@ -1781,8 +1524,7 @@ class TestViews(BaseTestViews):
         assert response['Content-Type'] == 'application/octet-stream'
         assert 'bla bla bla' in response.content, response.content
 
-        # dump files are cached.
-        # check the mock function and expect no change
+        # dump files are cached. check the mock function and expect no change.
         def different_mocked_get(**params):
             raise AssertionError("shouldn't be used due to caching")
 
@@ -1803,10 +1545,7 @@ class TestViews(BaseTestViews):
 
         models.RawCrash.implementation().get.side_effect = mocked_get
 
-        dump_url = reverse(
-            'crashstats:raw_data_named',
-            args=(crash_id, 'memory_report', 'json.gz')
-        )
+        dump_url = reverse('crashstats:raw_data_named', args=(crash_id, 'memory_report', 'json.gz'))
         response = self.client.get(dump_url)
         assert response.status_code == 302
         assert 'login' in response['Location']
@@ -1822,17 +1561,13 @@ class TestViews(BaseTestViews):
         assert 'binary stuff' in response.content, response.content
 
     def test_login_required(self):
-        url = reverse(
-            'exploitability:report',
-        )
+        url = reverse('exploitability:report')
         response = self.client.get(url)
         assert response.status_code == 302
         assert settings.LOGIN_URL in response['Location'] + '?next=%s' % url
 
     def test_unauthenticated_user_redirected_from_protected_page(self):
-        url = reverse(
-            'exploitability:report',
-        )
+        url = reverse('exploitability:report')
         response = self.client.get(url, follow=False)
         expected = '%s?%s=%s' % (reverse('crashstats:login'), REDIRECT_FIELD_NAME, url)
         assert response.url == expected
@@ -1888,43 +1623,18 @@ class TestDockerflow(object):
 
 class TestProductHomeViews(BaseTestViews):
     def test_product_home(self):
+        self.set_product_versions(['20.0', '19.1', '19.0', '18.0'])
         url = reverse('crashstats:product_home', args=('WaterWolf',))
         response = self.client.get(url)
         assert response.status_code == 200
+
+        # Check title
         assert 'WaterWolf Crash Data' in response.content
-        assert 'WaterWolf 19.0' in response.content
 
-    def test_product_without_featured_versions(self):
-        url = reverse('crashstats:product_home', args=('SeaMonkey',))
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert 'SeaMonkey Crash Data' in response.content
-        assert 'SeaMonkey 10.5' in response.content
-        assert 'SeaMonkey 9.5' in response.content
+        # Check headings for link sections which are the active versions
+        assert 'WaterWolf 20.0' in response.content
+        assert 'WaterWolf 19.1' in response.content
+        assert 'WaterWolf 18.0' in response.content
 
-    def test_product_without_any_version_info(self):
-        with mock.patch('crashstats.supersearch.models.SuperSearchUnredacted') as mocked_ssu:
-            mocked_ssu().get.return_value = {
-                'hits': [],
-                'total': 0,
-                'facets': {
-                    'version': [
-                        {'count': 1, 'term': u'53.0b'},
-
-                        # These two have the same major version
-                        {'count': 5, 'term': u'52.9.1'},
-                        {'count': 2, 'term': u'52.9.0'},
-                    ]
-                }
-            }
-
-            url = reverse('crashstats:product_home', args=('Tinkerbell',))
-            response = self.client.get(url)
-            assert response.status_code == 200
-            assert 'Tinkerbell Crash Data' in response.content
-            assert 'Tinkerbell 53.0b' in response.content
-            assert 'Tinkerbell 52.9.1' in response.content
-
-            # This shouldn't show up in the output since it's not the latest of
-            # the major version
-            assert 'Tinkerbell 52.9.0' not in response.content
+        # 19.1 is active, so 19.0 is not--it shouldn't be there
+        assert 'WaterWolf 19.0' not in response.content
