@@ -84,8 +84,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
         between retries.  It produces after exhausting the list, it repeats
-        the last value from the list forever.  This generator will never raise
-        the StopIteration exception."""
+        the last value from the list forever.  This generator will never
+        exhaust"""
         for x in self.config.backoff_delays:
             yield x
         while True:

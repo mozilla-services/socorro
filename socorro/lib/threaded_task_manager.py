@@ -216,7 +216,7 @@ class ThreadedTaskManager(TaskManager):
         quit itself."""
         self.logger.debug('_queuing_thread_func start')
         try:
-            # May never raise StopIteration
+            # May never exhaust
             for job_params in self._get_iterator():
                 self.config.logger.debug('received %r', job_params)
                 if job_params is None:

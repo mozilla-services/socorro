@@ -171,8 +171,7 @@ class FetchTransformSaveApp(App):
     def _all_iterator(self):
         """this is the iterator for the case when "number_of_submissions" is
         set to "all".  It goes through the innermost iterator exactly once
-        and raises the StopIteration exception when that innermost iterator is
-        exhausted"""
+        """
         for crash_id in self._basic_iterator():
             if crash_id is None:
                 break
