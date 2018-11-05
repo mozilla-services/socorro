@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 
 from collections import OrderedDict
@@ -10,11 +11,12 @@ from django.core.cache import cache
 from django.db import connection, transaction
 from django.shortcuts import redirect, render
 
-from crashstats.manage.decorators import superuser_required
+from crashstats.crashstats.models import GraphicsDevice, ProductsMiddleware
 from crashstats.manage import forms
 from crashstats.manage import utils
+from crashstats.manage.decorators import superuser_required
 from crashstats.supersearch.models import SuperSearchMissingFields
-from crashstats.crashstats.models import GraphicsDevice, ProductsMiddleware
+from socorro.lib.requestslib import session_with_retries
 
 
 @superuser_required
@@ -218,9 +220,80 @@ def debug_view(request):
 
 @superuser_required
 def products(request):
+    """Lists products from the products table"""
     context = {}
     api = ProductsMiddleware()
     context['products'] = api.get()['hits']
     context['title'] = 'Products'
 
     return render(request, 'admin/products.html', context)
+
+
+@superuser_required
+def buildhub_check(request):
+    """Compares data in product_versions with what's on Buildhub"""
+    now = datetime.datetime.now()
+
+    buildhub_api = 'https://buildhub.prod.mozaws.net/v1/buckets/build-hub/collections/releases/records'  # noqa
+
+    # Get 10 Firefox versions from product_versions to compare
+    with connection.cursor() as cursor:
+        cursor.execute("""
+        SELECT
+            distinct pv.product_name, pv.build_type, pvb.build_id, pv.release_version,
+            pv.version_string
+        FROM product_versions AS pv, product_version_builds AS pvb
+        WHERE
+            pv.product_version_id = pvb.product_version_id
+            AND pv.build_type = 'beta'
+            AND pv.product_name = 'Firefox'
+        ORDER BY pvb.build_id, pv.product_name, pv.build_type, pv.release_version, pv.version_string
+        LIMIT 15
+        """)
+        pv_data = cursor.fetchall()
+
+    pv_data = [
+        {
+            'product': pv[0],
+            'channel': pv[1],
+            'build_id': pv[2],
+            'release_version': pv[3],
+            'version_string': pv[4],
+        }
+        for pv in pv_data
+    ]
+
+    session = session_with_retries(buildhub_api)
+
+    for pv in pv_data:
+        query = {
+            'source.product': pv['product'].lower(),
+            'build.id': '"%s"' % pv['build_id'],
+            'target.channel': pv['channel']
+        }
+        resp = session.get(buildhub_api, params=query)
+        if resp.status_code != 200:
+            pv['buildhub_resp'] = 'HTTP %s' % resp.status_code
+            continue
+
+        hits = resp.json()['data']
+
+        hits = [
+            hit for hit in hits
+            if 'rc' not in hit['target']['version']
+        ]
+
+        if not hits:
+            pv['buildhub_resp'] = 'no hits--might be release'
+            continue
+
+        pv['buildhub_resp'] = hits[0]['target']['version']
+
+    context = {
+        'title': 'Buildhub check',
+        'rendertime': datetime.datetime.now() - now,
+        'now': datetime.datetime.now(),
+        'pvdata': pv_data
+    }
+
+    return render(request, 'admin/buildhub_check.html', context)
