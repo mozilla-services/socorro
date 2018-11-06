@@ -4,9 +4,10 @@
 
 import datetime
 import gzip
+import json
+from past.builtins import basestring
 import random
 import re
-from past.builtins import basestring
 from sys import maxint
 import time
 from urllib import unquote_plus
@@ -770,38 +771,60 @@ class BetaVersionRule(Rule):
 
         session = session_with_retries(self.buildhub_api)
 
-        query = {
-            'source.product': product,
-            'build.id': '"%s"' % build_id,
-            'target.channel': channel,
+        es_query = {
+            'query': {
+                'bool': {
+                    'must': {
+                        'match_all': {}
+                    },
+                    'filter': [
+                        {
+                            'term': {
+                                'source.product': product.lower()
+                            }
+                        },
+                        {
+                            'term': {
+                                'build.id': str(build_id)
+                            }
+                        },
+                        {
+                            'term': {
+                                'target.channel': channel
+                            }
+                        },
+                    ],
+                }
+            },
+            'size': 1
         }
 
         if channel == 'release':
-            # If it's the release channel, we can specify we only want to see
-            # "rc" versions and thus limit the result set to 1
-            query['like_target.version'] = '*rc*'
-            query['_limit'] = 1
+            # If it's the release channel, we only want to see rc versions
+            es_query['query']['bool']['filter'].append(
+                {
+                    'wildcard': {
+                        'target.version': '*rc*'
+                    }
+                }
+            )
+        else:
+            # If it's the beta channel, we want to exclude rc versions
+            es_query['query']['bool']['must_not'] = {
+                'wildcard': {
+                    'target.version': '*rc*'
+                }
+            }
 
-        resp = session.get(self.buildhub_api, params=query)
+        resp = session.post(self.buildhub_api, data=json.dumps(es_query, sort_keys=True))
 
         if resp.status_code == 200:
-            hits = resp.json()['data']
+            data = resp.json()
+            hits = data.get('hits', {}).get('hits', [])
 
             # Shimmy to add to ttl so as to distribute cache misses over time and reduce
             # HTTP requests from bunching up.
             shimmy = random.randint(1, 120)
-
-            if hits and channel in ('aurora', 'beta'):
-                # For aurora and beta channel lookups, we want a non-"rc"
-                # version, but we can't specify that. So we ask for all the
-                # versions and winnow out the rc ones on our own.
-                #
-                # FIXME(willkg): This is silly and it'd be better to filter
-                # it out on Buildhub.
-                hits = [
-                    hit for hit in hits
-                    if 'rc' not in hit['target']['version']
-                ]
 
             if hits:
                 self.metrics.incr('lookup', tags=['result:success'])
@@ -809,7 +832,7 @@ class BetaVersionRule(Rule):
                 # If we got an answer we should keep it around for a while because it's
                 # a real answer and it's not going to change so use the long ttl plus
                 # a fudge factor.
-                real_version = hits[0]['target']['version']
+                real_version = hits[0]['_source']['target']['version']
                 self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL + shimmy)
                 return real_version
 

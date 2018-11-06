@@ -5,7 +5,6 @@
 import copy
 import json
 from StringIO import StringIO
-from urllib import urlencode
 
 from configman.dotdict import DotDict as CDotDict
 from mock import call, Mock, patch
@@ -1347,7 +1346,7 @@ class TestTopMostFilesRule(TestCase):
 
 
 class TestBetaVersionRule:
-    API_URL = 'http://buildhub.example.com/v1/buckets/build-hub/collections/releases/records'
+    API_URL = 'http://buildhub.example.com/v1/buckets/build-hub/collections/releases/search'
 
     def get_config(self):
         config = get_basic_config()
@@ -1356,6 +1355,11 @@ class TestBetaVersionRule:
         config.transaction_executor_class = Mock()
         return config
 
+    def payload_matcher(self, payload):
+        def _payload_matcher(req):
+            return req.text == payload
+        return _payload_matcher
+
     def test_beta_channel_known_version(self):
         # Beta channel with known version gets converted correctly
         config = self.get_config()
@@ -1363,26 +1367,53 @@ class TestBetaVersionRule:
         raw_dumps = {}
 
         with requests_mock.Mocker() as req_mock:
-            # Beta and aurora channels get back lots of version data
-            req_mock.get(
-                self.API_URL + '?' + urlencode({
-                    'source.product': 'firefox',
-                    'build.id': '"20001001101010"',
-                    'target.channel': 'beta',
-                }),
-                json={
-                    'data': [
-                        {
-                            'target': {
-                                'version': '3.0b1'
-                            }
+            es_query = {
+                'query': {
+                    'bool': {
+                        'must': {
+                            'match_all': {}
                         },
-                        {
-                            'target': {
-                                'version': '3.0b1rc1'
+                        'filter': [
+                            {
+                                'term': {
+                                    'source.product': 'firefox'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'build.id': '20001001101010'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'target.channel': 'beta'
+                                }
+                            }
+                        ],
+                        'must_not': {
+                            'wildcard': {
+                                'target.version': '*rc*'
                             }
                         }
-                    ]
+                    }
+                },
+                'size': 1
+            }
+            req_mock.post(
+                self.API_URL,
+                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
+                json={
+                    'hits': {
+                        'hits': [
+                            {
+                                '_source': {
+                                    'target': {
+                                        'version': '3.0b1'
+                                    }
+                                }
+                            }
+                        ]
+                    }
                 }
             )
 
@@ -1474,14 +1505,45 @@ class TestBetaVersionRule:
 
         with requests_mock.Mocker() as req_mock:
             # Buildhub has no data for that (product, build_id, channel)
-            req_mock.get(
-                self.API_URL + '?' + urlencode({
-                    'source.product': 'firefox',
-                    'build.id': '"220000101101011"',
-                    'target.channel': 'beta',
-                }),
+            es_query = {
+                'query': {
+                    'bool': {
+                        'must': {
+                            'match_all': {}
+                        },
+                        'filter': [
+                            {
+                                'term': {
+                                    'source.product': 'firefox'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'build.id': '220000101101011',
+                                }
+                            },
+                            {
+                                'term': {
+                                    'target.channel': 'beta'
+                                }
+                            }
+                        ],
+                        'must_not': {
+                            'wildcard': {
+                                'target.version': '*rc*'
+                            }
+                        }
+                    }
+                },
+                'size': 1
+            }
+            req_mock.post(
+                self.API_URL,
+                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
                 json={
-                    'data': []
+                    'hits': {
+                        'hits': []
+                    }
                 }
             )
 
@@ -1514,14 +1576,45 @@ class TestBetaVersionRule:
 
         with requests_mock.Mocker() as req_mock:
             # Buildhub has no data for that (product, build_id, channel)
-            req_mock.get(
-                self.API_URL + '?' + urlencode({
-                    'source.product': 'firefox',
-                    'build.id': '"220000101101011"',
-                    'target.channel': 'beta',
-                }),
+            es_query = {
+                'query': {
+                    'bool': {
+                        'must': {
+                            'match_all': {}
+                        },
+                        'filter': [
+                            {
+                                'term': {
+                                    'source.product': 'firefox'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'build.id': '220000101101011',
+                                }
+                            },
+                            {
+                                'term': {
+                                    'target.channel': 'beta'
+                                }
+                            }
+                        ],
+                        'must_not': {
+                            'wildcard': {
+                                'target.version': '*rc*'
+                            }
+                        }
+                    }
+                },
+                'size': 1
+            }
+            req_mock.post(
+                self.API_URL,
+                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
                 json={
-                    'data': []
+                    'hits': {
+                        'hits': []
+                    }
                 }
             )
 
@@ -1575,26 +1668,53 @@ class TestBetaVersionRule:
         raw_dumps = {}
 
         with requests_mock.Mocker() as req_mock:
-            # Beta and aurora channels get back lots of version data
-            req_mock.get(
-                self.API_URL + '?' + urlencode({
-                    'source.product': 'firefox',
-                    'build.id': '"20001001101010"',
-                    'target.channel': 'aurora',
-                }),
-                json={
-                    'data': [
-                        {
-                            'target': {
-                                'version': '3.0b1'
-                            }
+            es_query = {
+                'query': {
+                    'bool': {
+                        'must': {
+                            'match_all': {}
                         },
-                        {
-                            'target': {
-                                'version': '3.0b1rc1'
+                        'filter': [
+                            {
+                                'term': {
+                                    'source.product': 'firefox'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'build.id': '20001001101010'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'target.channel': 'aurora'
+                                }
+                            }
+                        ],
+                        'must_not': {
+                            'wildcard': {
+                                'target.version': '*rc*'
                             }
                         }
-                    ]
+                    }
+                },
+                'size': 1
+            }
+            req_mock.post(
+                self.API_URL,
+                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
+                json={
+                    'hits': {
+                        'hits': [
+                            {
+                                '_source': {
+                                    'target': {
+                                        'version': '3.0b1'
+                                    }
+                                }
+                            }
+                        ]
+                    }
                 }
             )
 
@@ -1619,38 +1739,26 @@ class TestBetaVersionRule:
         raw_dumps = {}
 
         with requests_mock.Mocker() as req_mock:
-            # Request for beta channel yields no data
-            req_mock.get(
-                self.API_URL + '?' + urlencode({
-                    'source.product': 'firefox',
-                    'build.id': '"20181018182531"',
-                    'target.channel': 'beta',
-                }),
-                json={
-                    'data': []
-                }
-            )
+            def payload_callback(request, context):
+                # The request for the beta channel returns no data
+                if 'beta' in request.text:
+                    return json.dumps({'hits': {'hits': []}})
 
-            # Request for the same thing, but in the release channel yields
-            # release version number
-            req_mock.get(
-                self.API_URL + '?' + urlencode({
-                    'source.product': 'firefox',
-                    'build.id': '"20181018182531"',
-                    'target.channel': 'release',
-                    'like_target.version': '*rc*',
-                    '_limit': 1
-                }),
-                json={
-                    'data': [
-                        {
-                            'target': {
-                                'version': '63.0rc2'
-                            }
+                # The request for the release channel returns a single item
+                if 'release' in request.text:
+                    return json.dumps({
+                        'hits': {
+                            'hits': [{
+                                '_source': {
+                                    'target': {
+                                        'version': '63.0rc2'
+                                    }
+                                }
+                            }]
                         }
-                    ]
-                }
-            )
+                    })
+
+            req_mock.post(self.API_URL, text=payload_callback)
 
             processed_crash = {
                 'product': 'Firefox',
@@ -1663,6 +1771,75 @@ class TestBetaVersionRule:
 
             rule = BetaVersionRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+            # Assert the queries to Buildhub are in the right order
+            es_query = {
+                'query': {
+                    'bool': {
+                        'must': {
+                            'match_all': {}
+                        },
+                        'filter': [
+                            {
+                                'term': {
+                                    'source.product': 'firefox'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'build.id': '20181018182531',
+                                }
+                            },
+                            {
+                                'term': {
+                                    'target.channel': 'beta'
+                                }
+                            }
+                        ],
+                        'must_not': {
+                            'wildcard': {
+                                'target.version': '*rc*'
+                            }
+                        }
+                    }
+                },
+                'size': 1
+            }
+            assert req_mock.request_history[0].text == json.dumps(es_query, sort_keys=True)
+            es_query = {
+                'query': {
+                    'bool': {
+                        'must': {
+                            'match_all': {}
+                        },
+                        'filter': [
+                            {
+                                'term': {
+                                    'source.product': 'firefox'
+                                }
+                            },
+                            {
+                                'term': {
+                                    'build.id': '20181018182531',
+                                }
+                            },
+                            {
+                                'term': {
+                                    'target.channel': 'release'
+                                }
+                            },
+                            {
+                                'wildcard': {
+                                    'target.version': '*rc*'
+                                }
+                            }
+                        ]
+                    }
+                },
+                'size': 1
+            }
+            assert req_mock.request_history[1].text == json.dumps(es_query, sort_keys=True)
+
             assert processed_crash['version'] == '63.0rc2'
             assert processor_meta.processor_notes == []
 
