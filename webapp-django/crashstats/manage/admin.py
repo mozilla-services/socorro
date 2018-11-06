@@ -247,7 +247,9 @@ def buildhub_check(request):
             pv.product_version_id = pvb.product_version_id
             AND pv.build_type = 'beta'
             AND pv.product_name = 'Firefox'
-        ORDER BY pvb.build_id, pv.product_name, pv.build_type, pv.release_version, pv.version_string
+        ORDER BY
+            pvb.build_id DESC, pv.product_name, pv.build_type, pv.release_version,
+            pv.version_string
         LIMIT 15
         """)
         pv_data = cursor.fetchall()
