@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import json
 import time
 
 from collections import OrderedDict
@@ -237,7 +238,8 @@ def buildhub_check(request):
 
     now = datetime.datetime.now()
 
-    buildhub_api = 'https://buildhub.prod.mozaws.net/v1/buckets/build-hub/collections/releases/records'  # noqa
+    # This is the Elasticsearch API endpoint
+    buildhub_api = 'https://buildhub.prod.mozaws.net/v1/buckets/build-hub/collections/releases/search'  # noqa
 
     # Get 10 Firefox versions from product_versions to compare
     with connection.cursor() as cursor:
@@ -271,31 +273,57 @@ def buildhub_check(request):
     session = session_with_retries(buildhub_api)
 
     for pv in pv_data:
-        query = {
-            'source.product': pv['product'].lower(),
-            'build.id': '"%s"' % pv['build_id'],
-            'target.channel': pv['channel']
+        # Lookup (product, buildid, channel) and exclude versions with "rc" in
+        # them because we're looking at the beta channel
+        es_query = {
+            'query': {
+                'bool': {
+                    'must': {
+                        'match_all': {}
+                    },
+                    'filter': [
+                        {
+                            'term': {
+                                'source.product': pv['product'].lower()
+                            }
+                        },
+                        {
+                            'term': {
+                                'build.id': str(pv['build_id'])
+                            }
+                        },
+                        {
+                            'term': {
+                                'target.channel': pv['channel']
+                            }
+                        },
+                    ],
+                    'must_not': {
+                        'wildcard': {
+                            'target.version': '*rc*'
+                        }
+                    }
+                }
+            },
+            'size': 1
         }
+
         buildhub_start = time.time()
-        resp = session.get(buildhub_api, params=query)
+        resp = session.post(buildhub_api, data=json.dumps(es_query))
         buildhub_time = buildhub_time + (time.time() - buildhub_start)
 
         if resp.status_code != 200:
             pv['buildhub_resp'] = 'HTTP %s' % resp.status_code
             continue
 
-        hits = resp.json()['data']
-
-        hits = [
-            hit for hit in hits
-            if 'rc' not in hit['target']['version']
-        ]
+        data = resp.json()
+        hits = data.get('hits', {}).get('hits', [])
 
         if not hits:
             pv['buildhub_resp'] = 'no hits--might be release'
             continue
 
-        pv['buildhub_resp'] = hits[0]['target']['version']
+        pv['buildhub_resp'] = hits[0]['_source']['target']['version']
 
     context = {
         'title': 'Buildhub check',
