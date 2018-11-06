@@ -234,103 +234,98 @@ def products(request):
 @superuser_required
 def buildhub_check(request):
     """Compares data in product_versions with what's on Buildhub"""
-    buildhub_time = 0
-
-    now = datetime.datetime.now()
-
-    # This is the Elasticsearch API endpoint
+    # NOTE(willkg): This is the Elasticsearch API endpoint for Buildhub
     buildhub_api = 'https://buildhub.prod.mozaws.net/v1/buckets/build-hub/collections/releases/search'  # noqa
 
-    # Get 10 Firefox versions from product_versions to compare
-    with connection.cursor() as cursor:
-        cursor.execute("""
-        SELECT
-            distinct pv.product_name, pv.build_type, pvb.build_id, pv.release_version,
-            pv.version_string
-        FROM product_versions AS pv, product_version_builds AS pvb
-        WHERE
-            pv.product_version_id = pvb.product_version_id
-            AND pv.build_type = 'beta'
-            AND pv.product_name = 'Firefox'
-        ORDER BY
-            pvb.build_id DESC, pv.product_name, pv.build_type, pv.release_version,
-            pv.version_string
-        LIMIT 15
-        """)
-        pv_data = cursor.fetchall()
+    def get_data(product):
+        # Get 10 Firefox versions from product_versions to compare
+        with connection.cursor() as cursor:
+            cursor.execute("""
+            SELECT
+                distinct pv.product_name, pv.build_type, pvb.build_id, pv.release_version,
+                pv.version_string
+            FROM product_versions AS pv, product_version_builds AS pvb
+            WHERE
+                pv.product_version_id = pvb.product_version_id
+                AND pv.build_type = 'beta'
+                AND pv.product_name = %s
+            ORDER BY
+                pvb.build_id DESC, pv.product_name, pv.build_type, pv.release_version,
+                pv.version_string
+            LIMIT 15
+            """, (product,))
+            pv_data = cursor.fetchall()
 
-    pv_data = [
-        {
-            'product': pv[0],
-            'channel': pv[1],
-            'build_id': pv[2],
-            'release_version': pv[3],
-            'version_string': pv[4],
-        }
-        for pv in pv_data
-    ]
+        pv_data = [
+            {
+                'product': pv[0],
+                'channel': pv[1],
+                'build_id': pv[2],
+                'release_version': pv[3],
+                'version_string': pv[4],
+            }
+            for pv in pv_data
+        ]
 
-    session = session_with_retries(buildhub_api)
+        session = session_with_retries(buildhub_api)
 
-    for pv in pv_data:
-        # Lookup (product, buildid, channel) and exclude versions with "rc" in
-        # them because we're looking at the beta channel
-        es_query = {
-            'query': {
-                'bool': {
-                    'must': {
-                        'match_all': {}
-                    },
-                    'filter': [
-                        {
-                            'term': {
-                                'source.product': pv['product'].lower()
-                            }
+        for pv in pv_data:
+            # Lookup (product, buildid, channel) and exclude versions with "rc" in
+            # them because we're looking at the beta channel
+            es_query = {
+                'query': {
+                    'bool': {
+                        'must': {
+                            'match_all': {}
                         },
-                        {
-                            'term': {
-                                'build.id': str(pv['build_id'])
+                        'filter': [
+                            {
+                                'term': {
+                                    'source.product': product.lower()
+                                }
+                            },
+                            {
+                                'term': {
+                                    'build.id': str(pv['build_id'])
+                                }
+                            },
+                            {
+                                'term': {
+                                    'target.channel': pv['channel']
+                                }
+                            },
+                        ],
+                        'must_not': {
+                            'wildcard': {
+                                'target.version': '*rc*'
                             }
-                        },
-                        {
-                            'term': {
-                                'target.channel': pv['channel']
-                            }
-                        },
-                    ],
-                    'must_not': {
-                        'wildcard': {
-                            'target.version': '*rc*'
                         }
                     }
-                }
-            },
-            'size': 1
-        }
+                },
+                'size': 1
+            }
 
-        buildhub_start = time.time()
-        resp = session.post(buildhub_api, data=json.dumps(es_query))
-        buildhub_time = buildhub_time + (time.time() - buildhub_start)
+            resp = session.post(buildhub_api, data=json.dumps(es_query))
 
-        if resp.status_code != 200:
-            pv['buildhub_resp'] = 'HTTP %s' % resp.status_code
-            continue
+            if resp.status_code != 200:
+                pv['buildhub_resp'] = 'HTTP %s' % resp.status_code
+                continue
 
-        data = resp.json()
-        hits = data.get('hits', {}).get('hits', [])
+            data = resp.json()
+            hits = data.get('hits', {}).get('hits', [])
 
-        if not hits:
-            pv['buildhub_resp'] = 'no hits--might be release'
-            continue
+            if not hits:
+                pv['buildhub_resp'] = 'no hits--might be release'
+                continue
 
-        pv['buildhub_resp'] = hits[0]['_source']['target']['version']
+            pv['buildhub_resp'] = hits[0]['_source']['target']['version']
+        return pv_data
 
+    pv_data = get_data('Firefox') + get_data('Fennec')
     context = {
         'title': 'Buildhub check',
-        'rendertime': datetime.datetime.now() - now,
         'now': datetime.datetime.now(),
-        'buildhubtime': buildhub_time,
-        'pvdata': pv_data
+        'pvdata': pv_data,
     }
 
     return render(request, 'admin/buildhub_check.html', context)
