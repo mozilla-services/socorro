@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import time
 
 from collections import OrderedDict
 import requests
@@ -232,6 +233,8 @@ def products(request):
 @superuser_required
 def buildhub_check(request):
     """Compares data in product_versions with what's on Buildhub"""
+    buildhub_time = 0
+
     now = datetime.datetime.now()
 
     buildhub_api = 'https://buildhub.prod.mozaws.net/v1/buckets/build-hub/collections/releases/records'  # noqa
@@ -273,7 +276,10 @@ def buildhub_check(request):
             'build.id': '"%s"' % pv['build_id'],
             'target.channel': pv['channel']
         }
+        buildhub_start = time.time()
         resp = session.get(buildhub_api, params=query)
+        buildhub_time = buildhub_time + (time.time() - buildhub_start)
+
         if resp.status_code != 200:
             pv['buildhub_resp'] = 'HTTP %s' % resp.status_code
             continue
@@ -295,6 +301,7 @@ def buildhub_check(request):
         'title': 'Buildhub check',
         'rendertime': datetime.datetime.now() - now,
         'now': datetime.datetime.now(),
+        'buildhubtime': buildhub_time,
         'pvdata': pv_data
     }
 
