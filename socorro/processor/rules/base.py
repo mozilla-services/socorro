@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import re
 import collections
 import inspect
+import re
 
 import configman
 from configman import RequiredConfig, Namespace
-from configman.dotdict import DotDict
 from configman.converters import to_str
+from configman.dotdict import DotDict
 import markus
 
 from socorro.lib import raven_client

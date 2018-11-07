@@ -27,7 +27,7 @@ from socorro.lib.datetimeutil import (
 )
 from socorro.lib.ooid import dateFromOoid
 from socorro.lib.requestslib import session_with_retries
-from socorro.lib.transform_rules import Rule
+from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
 

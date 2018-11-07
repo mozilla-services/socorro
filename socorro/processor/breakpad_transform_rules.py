@@ -12,9 +12,8 @@ from configman.converters import str_to_list
 from configman.dotdict import DotDict as ConfigmanDotDict
 
 from socorro.lib.converters import change_default
-
 from socorro.lib.util import DotDict
-from socorro.lib.transform_rules import Rule
+from socorro.processor.rules.base import Rule
 
 
 class CrashingThreadRule(Rule):

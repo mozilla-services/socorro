@@ -4,7 +4,7 @@
 
 from glom import glom
 
-from socorro.lib.transform_rules import Rule
+from socorro.processor.rules.base import Rule
 
 
 class IdentifierRule(Rule):

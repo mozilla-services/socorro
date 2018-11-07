@@ -4,12 +4,12 @@
 
 import sys
 
-from configman.dotdict import DotDict
 from configman import Namespace
+from configman.dotdict import DotDict
 from mock import Mock, MagicMock, patch
 import pytest
 
-from socorro.lib import transform_rules
+from socorro.processor.rules import base as transform_rules
 from socorro.unittest.testbase import TestCase
 
 
@@ -50,13 +50,11 @@ class RuleTestDangerous(transform_rules.Rule):
 
 
 class RuleTestNoCloseMethod(transform_rules.Rule):
-
     def _action(self, *args, **kwargs):
         return True
 
 
 class RuleTestBrokenCloseMethod(transform_rules.Rule):
-
     def _action(self, *args, **kwargs):
         return true  # noqa
 
@@ -66,7 +64,6 @@ class RuleTestBrokenCloseMethod(transform_rules.Rule):
 
 
 class TestTransformRules(TestCase):
-
     def test_kw_str_parse(self):
         a = 'a=1, b=2'
         actual = transform_rules.kw_str_parse(a)
@@ -104,8 +101,9 @@ class TestTransformRules(TestCase):
         assert r.action_kwargs == {}
 
         r = transform_rules.TransformRule(
-            'socorro.unittest.lib.test_transform_rules.foo', '', '',
-            'socorro.unittest.lib.test_transform_rules.bar', '', '')
+            'socorro.unittest.processor.rules.test_base.foo', '', '',
+            'socorro.unittest.processor.rules.test_base.bar', '', ''
+        )
         repr_pred = repr(r.predicate)
         assert 'foo' in repr_pred
         assert r.predicate_args == ()
@@ -116,10 +114,10 @@ class TestTransformRules(TestCase):
         assert r.action_kwargs == {}
 
         r = transform_rules.TransformRule(
-            'socorro.unittest.lib.test_transform_rules.foo',
+            'socorro.unittest.processor.rules.test_base.foo',
             (1,),
             {'a': 13},
-            'socorro.unittest.lib.test_transform_rules.bar',
+            'socorro.unittest.processor.rules.test_base.bar',
             '',
             ''
         )
@@ -133,10 +131,10 @@ class TestTransformRules(TestCase):
         assert r.action_kwargs == {}
 
         r = transform_rules.TransformRule(
-            'socorro.unittest.lib.test_transform_rules.foo',
+            'socorro.unittest.processor.rules.test_base.foo',
             '1, 2',
             'a=13',
-            'socorro.unittest.lib.test_transform_rules.bar',
+            'socorro.unittest.processor.rules.test_base.bar',
             '',
             ''
         )
@@ -153,7 +151,6 @@ class TestTransformRules(TestCase):
         """test to make sure that classes can be used as predicates and
         actions"""
         class MyRule(object):
-
             def __init__(self, config=None):
                 self.predicate_called = False
                 self.action_called = False
@@ -165,6 +162,7 @@ class TestTransformRules(TestCase):
             def action(self):
                 self.action_called = True
                 return True
+
         r = transform_rules.TransformRule(
             MyRule, (), {},
             MyRule, (), {}
@@ -180,7 +178,6 @@ class TestTransformRules(TestCase):
         """test to make sure that classes can be mixed with functions as
         predicates and actions"""
         class MyRule(object):
-
             def __init__(self, config=None):
                 self.predicate_called = False
                 self.action_called = False
@@ -289,7 +286,6 @@ class TestTransformRules(TestCase):
         assert rules.rules == expected
 
     def test_TransformRuleSystem_apply_all_rules(self):
-
         quit_check_mock = Mock()
 
         def assign_1(s, d):
@@ -303,11 +299,12 @@ class TestTransformRules(TestCase):
             except KeyError:
                 return False
 
-        some_rules = [(True, '', '', increment_1, '', ''),
-                      (True, '', '', assign_1, '', ''),
-                      (False, '', '', increment_1, '', ''),
-                      (True, '', '', increment_1, '', ''),
-                      ]
+        some_rules = [
+            (True, '', '', increment_1, '', ''),
+            (True, '', '', assign_1, '', ''),
+            (False, '', '', increment_1, '', ''),
+            (True, '', '', increment_1, '', ''),
+        ]
         rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
@@ -326,7 +323,6 @@ class TestTransformRules(TestCase):
         assert r1.act() == (True, True)
 
         class BadPredicate(transform_rules.Rule):
-
             def _predicate(self, *args, **kwargs):
                 return False
 
@@ -336,7 +332,6 @@ class TestTransformRules(TestCase):
         assert r2.act() == (False, None)
 
         class BadAction(transform_rules.Rule):
-
             def _action(self, *args, **kwargs):
                 return False
 
@@ -350,7 +345,6 @@ class TestTransformRules(TestCase):
         fake_config.logger = Mock()
 
         class BadPredicate(transform_rules.Rule):
-
             def _predicate(self, *args, **kwargs):
                 raise Exception("highwater")
 
@@ -371,7 +365,6 @@ class TestTransformRules(TestCase):
         fake_config.logger.debug.reset_mock()
 
         class BadAction(transform_rules.Rule):
-
             def _action(self, *args, **kwargs):
                 raise Exception("highwater")
 
@@ -393,7 +386,6 @@ class TestTransformRules(TestCase):
 
     @patch('socorro.lib.raven_client.raven')
     def test_rule_exceptions_send_to_sentry(self, mock_raven):
-
         captured_exceptions = []  # a global
 
         def mock_capture_exception():
@@ -420,7 +412,6 @@ class TestTransformRules(TestCase):
             pass
 
         class BadPredicate(transform_rules.Rule):
-
             def _predicate(self, *args, **kwargs):
                 raise SomeError("highwater")
 
@@ -438,9 +429,7 @@ class TestTransformRules(TestCase):
             exc_info=True,
         )
 
-        fake_config.sentry.dsn = (
-            'https://6e48583:e484@sentry.example.com/01'
-        )
+        fake_config.sentry.dsn = 'https://6e48583:e484@sentry.example.com/01'
         assert BadPredicate(fake_config).predicate() is False
         fake_config.logger.info.assert_called_with(
             'Error captured in Sentry! Reference: someidentifier'
@@ -450,7 +439,6 @@ class TestTransformRules(TestCase):
         assert isinstance(exc, SomeError)
 
         class BadAction(transform_rules.Rule):
-
             def _action(self, *args, **kwargs):
                 raise SomeError("highwater")
 
@@ -461,7 +449,6 @@ class TestTransformRules(TestCase):
 
     @patch('socorro.lib.raven_client.raven')
     def test_rule_exceptions_send_to_sentry_with_crash_id(self, mock_raven):
-
         def mock_capture_exception():
             return 'someidentifier'
 
@@ -482,12 +469,9 @@ class TestTransformRules(TestCase):
         fake_config = DotDict()
         fake_config.logger = Mock()
         fake_config.sentry = DotDict()
-        fake_config.sentry.dsn = (
-            'https://6e48583:e484@sentry.example.com/01'
-        )
+        fake_config.sentry.dsn = 'https://6e48583:e484@sentry.example.com/01'
 
         class BadPredicate(transform_rules.Rule):
-
             def _predicate(self, *args, **kwargs):
                 raise NameError("highwater")
 
@@ -581,13 +565,11 @@ class TestTransformRules(TestCase):
         assert len(config.logger.debug.mock_calls) == 3
         config.logger.debug.assert_any_call(
             'trying to close %s',
-            'socorro.unittest.lib.test_transform_rules.'
-            'RuleTestNoCloseMethod'
+            'socorro.unittest.processor.rules.test_base.RuleTestNoCloseMethod'
         )
         config.logger.debug.assert_any_call(
             'trying to close %s',
-            'socorro.unittest.lib.test_transform_rules.'
-            'RuleTestDangerous'
+            'socorro.unittest.processor.rules.test_base.RuleTestDangerous'
         )
 
     def test_rules_close_bubble_close_errors(self):
@@ -610,6 +592,5 @@ class TestTransformRules(TestCase):
         assert len(config.logger.debug.mock_calls) == 1
         config.logger.debug.assert_any_call(
             'trying to close %s',
-            'socorro.unittest.lib.test_transform_rules.'
-            'RuleTestBrokenCloseMethod'
+            'socorro.unittest.processor.rules.test_base.RuleTestBrokenCloseMethod'
         )
