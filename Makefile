@@ -51,11 +51,11 @@ clean:
 
 .PHONY: docs
 docs: my.env .docker-build-docs
-	${DC} run docs ./docker/run_build_docs.sh
+	${DC} run --rm docs ./docker/run_build_docs.sh
 
 .PHONY: lint
 lint: my.env
-	${DC} run app shell ./docker/run_lint.sh
+	${DC} run --rm --no-deps app shell ./docker/run_lint.sh
 
 my.env:
 	@if [ ! -f my.env ]; \
@@ -83,7 +83,7 @@ build-docs: my.env
 
 .PHONY: setup
 setup: my.env .docker-build
-	${DC} run app shell bash -c /app/docker/run_setup.sh
+	${DC} run --rm app shell bash -c /app/docker/run_setup.sh
 
 .PHONY: updatedata
 updatedata: my.env
@@ -91,7 +91,7 @@ updatedata: my.env
 
 .PHONY: shell
 shell: my.env .docker-build
-	${DC} run app shell
+	${DC} run --rm app shell
 
 .PHONY: test
 test: my.env .docker-build
@@ -111,7 +111,7 @@ stop: my.env
 
 .PHONY: dependencycheck
 dependencycheck: my.env
-	${DC} run crontabber shell ./docker/run_dependency_checks.sh
+	${DC} run --rm crontabber shell ./docker/run_dependency_checks.sh
 
 
 # Python 3 migration related things--remove after we've finished migrating
@@ -126,7 +126,7 @@ build3: my.env
 
 .PHONY: lint3
 lint3: my.env .docker-build3
-	${DC} run --no-deps testpython3 ./docker/run_lint.sh
+	${DC} run --rm --no-deps testpython3 ./docker/run_lint.sh
 
 .PHONY: test3
 test3: my.env .docker-build3
