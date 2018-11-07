@@ -17,7 +17,7 @@ WORKING_TESTS=(
     # socorro/unittest/cron/jobs/test_*.py
     socorro/unittest/external/boto/test_*.py
     socorro/unittest/external/es/test_*.py
-    # socorro/unittest/external/fs/test_*.py
+    socorro/unittest/external/fs/test_*.py
     socorro/unittest/external/postgresql/test_*.py
     socorro/unittest/external/rabbitmq/test_*.py
     socorro/unittest/lib/test_*.py

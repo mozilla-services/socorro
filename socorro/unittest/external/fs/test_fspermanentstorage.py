@@ -48,25 +48,25 @@ class TestFSPermanentStorage(TestCase):
         return config_manager
 
     def _make_test_crash(self, crash_id=CRASH_ID_1):
-        self.fsrts.save_raw_crash({
-            "test": "TEST"
-        }, MemoryDumpsMapping({
-            'foo': 'bar',
-            self.fsrts.config.dump_field: 'baz'
-        }), crash_id)
+        self.fsrts.save_raw_crash(
+            raw_crash={'test': 'TEST'},
+            dumps=MemoryDumpsMapping({
+                'foo': b'bar',
+                self.fsrts.config.dump_field: b'baz'
+            }),
+            crash_id=crash_id
+        )
 
     def _make_processed_test_crash(self):
         self.fsrts.save_processed({
-            "uuid": self.CRASH_ID_2,
-            "test": "TEST",
-            "email": "should not exist"
+            'uuid': self.CRASH_ID_2,
+            'test': 'TEST',
+            'email': 'should not exist'
         })
 
     def test_save_raw_crash(self):
         self._make_test_crash()
-        assert os.path.exists(
-            self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1)
-        )
+        assert os.path.exists(self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1))
 
     def test_save_processed(self):
         self._make_processed_test_crash()
@@ -99,8 +99,12 @@ class TestFSPermanentStorage(TestCase):
 
     def test_get_raw_dump(self):
         self._make_test_crash()
-        assert self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo') == 'bar'
-        assert self.fsrts.get_raw_dump(self.CRASH_ID_1, self.fsrts.config.dump_field) == 'baz'
+        contents = self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo')
+        assert contents == b'bar'
+
+        contents = self.fsrts.get_raw_dump(self.CRASH_ID_1, self.fsrts.config.dump_field)
+        assert contents == b'baz'
+
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_raw_dump(self.CRASH_ID_2, "foo")
 

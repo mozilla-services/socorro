@@ -6,15 +6,14 @@
 saving, fetching and iterating over raw crashes, dumps and processed crashes.
 """
 
-import copy
-import sys
-import os
-import collections
 import datetime
+import collections
+import copy
+import os
 from past.builtins import basestring
+import sys
 
 from socorro.lib.util import DotDict as SocorroDotDict
-from future.utils import iteritems
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, str_to_list
@@ -46,25 +45,26 @@ class MemoryDumpsMapping(dict):
     history of the classes.  The crash dumps have two different
     representations:
 
-    1) a mapping of crash names to binary data blobs
-    2) a mapping of crash names to file pathnames.
+    1. a mapping of crash names to binary data blobs
+    2. a mapping of crash names to file pathnames
 
     It has been a manner of gentleman's agreement that two types do not mix.
     However, as the two methods have evolved in parallel the distinction has
     become more and more inconvenient.
 
-    This class represents case 1 from above.  It is a mapping of crash dump
-    names to binary representation of the dump.  Before using a mapping, a given
+    This class represents case 1 from above. It is a mapping of crash dump
+    names to binary representation of the dump. Before using a mapping, a given
     crash store should call the "as_file_dumps_mapping" or
     "as_memory_dumps_mapping" depend on what that crashstorage implementation
     is going to need.
+
     """
 
     def as_file_dumps_mapping(self, crash_id, temp_path, dump_file_suffix):
         """convert this MemoryDumpMapping into a FileDumpsMappng by writing
         each of the dump to a filesystem."""
         name_to_pathname_mapping = FileDumpsMapping()
-        for a_dump_name, a_dump in iteritems(self):
+        for a_dump_name, a_dump in self.items():
             if a_dump_name in (None, '', 'dump'):
                 a_dump_name = 'upload_file_minidump'
             dump_pathname = os.path.join(
@@ -91,8 +91,8 @@ class FileDumpsMapping(dict):
     history of the classes.  The crash dumps have two different
     representations:
 
-    1) a mapping of crash names to binary data blobs
-    2) a mapping of crash names to file pathnames.
+    1. a mapping of crash names to binary data blobs
+    2. a mapping of crash names to file pathnames.
 
     It has been a manner of gentleman's agreement that two types do not mix.
     However, as the two methods have evolved in parallel the distinction has
@@ -104,13 +104,10 @@ class FileDumpsMapping(dict):
     a given crash store should call the "as_file_dumps_mapping" or
     "as_memory_dumps_mapping" depend on what that crashstorage implementation
     is going to need.
+
     """
 
-    def as_file_dumps_mapping(
-        self,
-        *args,
-        **kwargs
-    ):
+    def as_file_dumps_mapping(self, *args, **kwargs):
         """this crash is already a FileDumpsMapping, so we can just return self.
         However, the arguments to this function are ignored.  The purpose of
         this class is not to move crashes around on filesytem. The arguments
@@ -122,7 +119,7 @@ class FileDumpsMapping(dict):
         """convert this into a MemoryDumpsMapping by opening and reading each
         of the dumps in the mapping."""
         in_memory_dumps = MemoryDumpsMapping()
-        for dump_key, dump_path in self.iteritems():
+        for dump_key, dump_path in self.items():
             with open(dump_path) as f:
                 in_memory_dumps[dump_key] = f.read()
         return in_memory_dumps
@@ -551,8 +548,7 @@ class PolyCrashStorage(CrashStorageBase):
             try:
                 a_store.close()
             except Exception as x:
-                self.logger.error('%s failure: %s', a_store.__class__,
-                                  str(x))
+                self.logger.error('%s failure: %s', a_store.__class__, str(x))
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
@@ -571,8 +567,7 @@ class PolyCrashStorage(CrashStorageBase):
             try:
                 a_store.save_raw_crash(raw_crash, dumps, crash_id)
             except Exception as x:
-                self.logger.error('%s failure: %s', a_store.__class__,
-                                  str(x))
+                self.logger.error('%s failure: %s', a_store.__class__, str(x))
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
@@ -589,8 +584,7 @@ class PolyCrashStorage(CrashStorageBase):
             try:
                 a_store.save_processed(processed_crash)
             except Exception as x:
-                self.logger.error('%s failure: %s', a_store.__class__,
-                                  str(x), exc_info=True)
+                self.logger.error('%s failure: %s', a_store.__class__, str(x), exc_info=True)
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
@@ -617,12 +611,8 @@ class PolyCrashStorage(CrashStorageBase):
                     # you can't deepcopy those, so we deepcopy the
                     # pure dict version and then dress it back up as a
                     # DotDict.
-                    my_processed_crash = SocorroDotDict(
-                        copy.deepcopy(processed_crash_as_dict)
-                    )
-                    my_raw_crash = SocorroDotDict(
-                        copy.deepcopy(raw_crash_as_dict)
-                    )
+                    my_processed_crash = SocorroDotDict(copy.deepcopy(processed_crash_as_dict))
+                    my_raw_crash = SocorroDotDict(copy.deepcopy(raw_crash_as_dict))
                 else:
                     my_processed_crash = processed_crash
                     my_raw_crash = raw_crash
@@ -634,9 +624,7 @@ class PolyCrashStorage(CrashStorageBase):
                     crash_id
                 )
             except Exception:
-                store_class = getattr(
-                    a_store, 'wrapped_object', a_store.__class__
-                )
+                store_class = getattr(a_store, 'wrapped_object', a_store.__class__)
                 self.logger.error(
                     '%r failed (crash id: %s)',
                     store_class,
@@ -673,7 +661,8 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         self.wrapped_crashstore = config.wrapped_crashstore(
             config,
             namespace=namespace,
-            quit_check_callback=quit_check_callback)
+            quit_check_callback=quit_check_callback
+        )
         self.tag = config.benchmark_tag
         self.start_timer = datetime.datetime.now
         self.end_timer = datetime.datetime.now
@@ -686,24 +675,15 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         start_time = self.start_timer()
         self.wrapped_crashstore.save_raw_crash(raw_crash, dumps, crash_id)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s save_raw_crash %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s save_raw_crash %s', self.tag, end_time - start_time)
 
     def save_processed(self, processed_crash):
         start_time = self.start_timer()
         self.wrapped_crashstore.save_processed(processed_crash)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s save_processed %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s save_processed %s', self.tag, end_time - start_time)
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
-                               crash_id):
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
         start_time = self.start_timer()
         self.wrapped_crashstore.save_raw_and_processed(
             raw_crash,
@@ -712,76 +692,48 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             crash_id
         )
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s save_raw_and_processed %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s save_raw_and_processed %s', self.tag, end_time - start_time)
 
     def get_raw_crash(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_crash(crash_id)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s get_raw_crash %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s get_raw_crash %s', self.tag, end_time - start_time)
         return result
 
     def get_raw_dump(self, crash_id, name=None):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dump(crash_id)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s get_raw_dump %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s get_raw_dump %s', self.tag, end_time - start_time)
         return result
 
     def get_raw_dumps(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dumps(crash_id)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s get_raw_dumps %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s get_raw_dumps %s', self.tag, end_time - start_time)
         return result
 
     def get_raw_dumps_as_files(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dumps_as_files(crash_id)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s get_raw_dumps_as_files %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s get_raw_dumps_as_files %s', self.tag, end_time - start_time)
         return result
 
     def get_unredacted_processed(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_unredacted_processed(crash_id)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s get_unredacted_processed %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s get_unredacted_processed %s', self.tag, end_time - start_time)
         return result
 
     def remove(self, crash_id):
         start_time = self.start_timer()
         self.wrapped_crashstore.remove(crash_id)
         end_time = self.end_timer()
-        self.config.logger.debug(
-            '%s remove %s',
-            self.tag,
-            end_time - start_time
-        )
+        self.config.logger.debug('%s remove %s', self.tag, end_time - start_time)
 
 
 class MetricsEnabledBase(RequiredConfig):
