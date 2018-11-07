@@ -1,5 +1,3 @@
-import ujson
-
 from configman import ConfigurationManager
 from configman.dotdict import DotDict
 from mock import MagicMock, Mock, patch
