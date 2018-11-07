@@ -211,12 +211,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         except Exception as x:
             # We don't know what this error is, so we should capture it
             self._capture_error(crash_id, sys.exc_info())
-
-            self.config.logger.warning(
-                'error loading crash %s',
-                crash_id,
-                exc_info=True
-            )
+            self.config.logger.warning('error loading crash %s', crash_id, exc_info=True)
             self.processor.reject_raw_crash(crash_id, 'error in loading: %s' % x)
             return
 

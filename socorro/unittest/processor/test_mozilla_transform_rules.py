@@ -166,8 +166,6 @@ class TestProductRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = ProductRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.product == "Firefox"
@@ -193,8 +191,6 @@ class TestProductRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = ProductRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.product == "Firefox"
@@ -216,8 +212,6 @@ class TestUserDataRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = UserDataRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.url == "http://www.mozilla.com"
@@ -238,8 +232,6 @@ class TestUserDataRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = UserDataRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.url is None
@@ -257,8 +249,6 @@ class TestEnvironmentRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = EnvironmentRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.app_notes == raw_crash.Notes
@@ -274,8 +264,6 @@ class TestEnvironmentRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = EnvironmentRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.app_notes == ""
@@ -297,8 +285,6 @@ class TestPluginRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = PluginRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.hangid == 'fake-00000000-0000-0000-0000-000002140504'
@@ -319,8 +305,6 @@ class TestPluginRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = PluginRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.hangid is None
@@ -341,8 +325,6 @@ class TestAddonsRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule(config)
-
-        # the call to be tested
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # the raw crash & raw_dumps should not have changed
@@ -376,7 +358,6 @@ class TestAddonsRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule(config)
-
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected_addon_list = [
@@ -395,7 +376,6 @@ class TestAddonsRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule(config)
-
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected_addon_list = [
@@ -462,8 +442,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -486,8 +464,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -512,8 +488,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -543,8 +517,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -572,8 +544,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -597,8 +567,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -622,8 +590,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -647,8 +613,6 @@ class TestDatesAndTimesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
@@ -680,7 +644,6 @@ class TestJavaProcessRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = JavaProcessRule(config)
-
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # The entire JavaStackTrace blob
@@ -705,8 +668,6 @@ class TestJavaProcessRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = JavaProcessRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # The entire JavaStackTrace blob
@@ -765,7 +726,7 @@ class TestMozCrashReasonRule(TestCase):
             processed_crash = {}
             processor_meta = get_basic_processor_meta()
 
-            rule._action(raw_crash, raw_dumps, processed_crash, processor_meta)
+            rule.action(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash == {
                 'moz_crash_reason_raw': reason,
                 'moz_crash_reason': 'sanitized--see moz_crash_reason_raw'
@@ -924,8 +885,6 @@ class TestOutOfMemoryBinaryRule(TestCase):
 
         with patch('socorro.processor.mozilla_transform_rules.temp_file_context'):
             rule = MyOutOfMemoryBinaryRule(config)
-
-            # the call to be tested
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash.memory_report == 'mysterious-awesome-memory'
 
@@ -939,8 +898,6 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = OutOfMemoryBinaryRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert 'memory_report' not in processed_crash
@@ -979,8 +936,6 @@ class TestESRVersionRewrite(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert raw_crash.Version == "12.0esr"
@@ -998,8 +953,6 @@ class TestESRVersionRewrite(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert raw_crash.Version == "12.0"
@@ -1018,8 +971,6 @@ class TestESRVersionRewrite(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert "Version" not in raw_crash
@@ -1041,8 +992,6 @@ class TestPluginContentURL(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = PluginContentURL(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert raw_crash.URL == "http://mozilla.com"
@@ -1060,8 +1009,6 @@ class TestPluginContentURL(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = PluginContentURL(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert raw_crash.URL == "http://google.com"
@@ -1082,8 +1029,6 @@ class TestPluginUserComment(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = PluginUserComment(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert raw_crash.Comments == 'I hate it when this happens'
@@ -1101,8 +1046,6 @@ class TestPluginUserComment(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = PluginUserComment(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert raw_crash.Comments == 'I wrote something here'
@@ -1121,8 +1064,6 @@ class TestExploitablityRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = ExploitablityRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.exploitability == 'high'
@@ -1139,8 +1080,6 @@ class TestExploitablityRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = ExploitablityRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.exploitability == 'unknown'
@@ -1195,8 +1134,6 @@ class TestFlashVersionRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = FlashVersionRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.flash_version == '9.1.3.08'
@@ -1217,8 +1154,6 @@ class TestWinsock_LSPRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.Winsock_LSP == 'really long string'
@@ -1237,8 +1172,6 @@ class TestWinsock_LSPRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.Winsock_LSP is None
@@ -1285,8 +1218,6 @@ class TestTopMostFilesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = TopMostFilesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.topmost_filenames == 'wilma.cpp'
@@ -1304,8 +1235,6 @@ class TestTopMostFilesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = TopMostFilesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.topmost_filenames is None
@@ -1335,8 +1264,6 @@ class TestTopMostFilesRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = TopMostFilesRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.topmost_filenames is None
@@ -1561,7 +1488,7 @@ class TestBetaVersionRule:
             # The db has no data for that (product, build_id, version)
             rule.transaction = lambda *args, **kwargs: []
 
-            rule._action(raw_crash, raw_dumps, processed_crash, processor_meta)
+            rule.action(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash['version'] == '3.0.1b0'
             assert processor_meta.processor_notes == [
                 'release channel is beta but no version data was found - '
@@ -1940,9 +1867,6 @@ class TestThemePrettyNameRule(TestCase):
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
-
-        rule = ThemePrettyNameRule(config)
-
         processed_crash.addons = [
             'adblockpopups@jessehakanen.net:0.3',
             'dmpluginff@westbyte.com:1,4.8',
@@ -1957,7 +1881,7 @@ class TestThemePrettyNameRule(TestCase):
             'elemhidehelper@adblockplus.org:1.2.1',
         ]
 
-        # the call to be tested
+        rule = ThemePrettyNameRule(config)
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # the raw crash & raw_dumps should not have changed
@@ -1988,21 +1912,21 @@ class TestThemePrettyNameRule(TestCase):
         rule = ThemePrettyNameRule(config)
 
         # Test with missing key.
-        res = rule._predicate({}, {}, processed_crash, processor_meta)
-        assert not res
+        res = rule.predicate({}, {}, processed_crash, processor_meta)
+        assert res is False
 
         # Test with empty list.
         processed_crash.addons = []
-        res = rule._predicate({}, {}, processed_crash, processor_meta)
-        assert not res
+        res = rule.predicate({}, {}, processed_crash, processor_meta)
+        assert res is False
 
         # Test with key missing from list.
         processed_crash.addons = [
             'adblockpopups@jessehakanen.net:0.3',
             'dmpluginff@westbyte.com:1,4.8',
         ]
-        res = rule._predicate({}, {}, processed_crash, processor_meta)
-        assert not res
+        res = rule.predicate({}, {}, processed_crash, processor_meta)
+        assert res is False
 
     def test_with_malformed_addons_field(self):
         config = get_basic_config()
@@ -2056,8 +1980,7 @@ class TestSignatureGeneratorRule:
         })
         processor_meta = get_basic_processor_meta()
 
-        ret = rule._action(raw_crash, {}, processed_crash, processor_meta)
-        assert ret is True
+        rule.action(raw_crash, {}, processed_crash, processor_meta)
 
         assert processed_crash['signature'] == 'Alpha<T>::Echo<T>'
         assert processed_crash['proto_signature'] == 'Alpha<T>::Echo<T> | std::something::something'
@@ -2069,8 +1992,7 @@ class TestSignatureGeneratorRule:
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
-        ret = rule._action(raw_crash, {}, processed_crash, processor_meta)
-        assert ret is True
+        rule.action(raw_crash, {}, processed_crash, processor_meta)
 
         # NOTE(willkg): This is what the current pipeline yields. If any of
         # those parts change, this might change, too. The point of this test is
@@ -2110,8 +2032,7 @@ class TestSignatureGeneratorRule:
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
-        ret = rule._action(raw_crash, {}, processed_crash, processor_meta)
-        assert ret is True
+        rule.action(raw_crash, {}, processed_crash, processor_meta)
 
         # NOTE(willkg): The signature is an empty string because there are no
         # working rules that add anything to it.

@@ -18,10 +18,7 @@ class MemoryReportExtraction(Rule):
     """Extract key measurements from the memory_report object into a more
     comprehensible and usable dictionary. """
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
             # Verify that...
             return (
@@ -37,7 +34,7 @@ class MemoryReportExtraction(Rule):
         except KeyError:
             return False
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         pid = processed_crash['json_dump']['pid']
         memory_report = processed_crash['memory_report']
 
@@ -45,19 +42,17 @@ class MemoryReportExtraction(Rule):
             measures = self._get_memory_measures(memory_report, pid)
         except ValueError as e:
             self.config.logger.info(
-                'Unable to extract measurements from memory report: {}'
-                .format(e)
+                'Unable to extract measurements from memory report: {}'.format(e)
             )
-            return False
+            return
         except KeyError as e:
             self.config.logger.info(
                 'Unable to extract measurements from memory report: '
                 'key {} is missing from a report'.format(e)
             )
-            return False
+            return
 
         processed_crash['memory_measures'] = measures
-        return True
 
     def _get_memory_measures(self, memory_report, pid):
         explicit_heap = 0

@@ -8,22 +8,14 @@ from socorro.processor.rules.base import Rule
 
 
 class IdentifierRule(Rule):
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
-        processed_crash.crash_id = raw_crash.uuid
-        processed_crash.uuid = raw_crash.uuid
-
-        return True
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        if 'uuid' in raw_crash:
+            processed_crash['crash_id'] = raw_crash['uuid']
+            processed_crash['uuid'] = raw_crash['uuid']
 
 
 class CPUInfoRule(Rule):
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         cpu_name = ''
         cpu_info = ''
 
@@ -44,18 +36,11 @@ class CPUInfoRule(Rule):
         processed_crash['cpu_name'] = cpu_name
         processed_crash['cpu_info'] = cpu_info
 
-        return True
-
 
 class OSInfoRule(Rule):
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         os_name = glom(processed_crash, 'json_dump.system_info.os', default='Unknown').strip()
         processed_crash['os_name'] = os_name
 
         os_ver = glom(processed_crash, 'json_dump.system_info.os_ver', default='').strip()
         processed_crash['os_version'] = os_ver
-
-        return True
