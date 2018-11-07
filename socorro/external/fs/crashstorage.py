@@ -173,7 +173,6 @@ class FSPermanentStorage(CrashStorageBase):
 
             for fn, contents in files.items():
                 with open(os.sep.join([parent_dir, fn]), 'wb') as f:
-                    print(repr(contents))
                     f.write(contents)
 
     def save_processed(self, processed_crash):
