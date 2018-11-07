@@ -63,5 +63,4 @@ class Rule(RequiredConfig):
                 self.action(raw_crash, raw_dumps, processed_crash, processor_meta_data)
 
     def close(self):
-        # FIXME(willkg): see if any of the rules use .close()
-        self.config.logger.debug('null close on rule %s', self.__class__)
+        pass
