@@ -211,12 +211,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         except Exception as x:
             # We don't know what this error is, so we should capture it
             self._capture_error(crash_id, sys.exc_info())
-
-            self.config.logger.warning(
-                'error loading crash %s',
-                crash_id,
-                exc_info=True
-            )
+            self.config.logger.warning('error loading crash %s', crash_id, exc_info=True)
             self.processor.reject_raw_crash(crash_id, 'error in loading: %s' % x)
             return
 
@@ -226,27 +221,17 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             processed_crash = DotDict()
 
         try:
-            processed_crash = self.processor.process_crash(
-                raw_crash,
-                dumps,
-                processed_crash,
-            )
+            # Process the crash to generate a processed crash
+            processed_crash = self.processor.process_crash(raw_crash, dumps, processed_crash)
+
             # bug 866973 - save_raw_and_processed() instead of just save_processed().
             # The raw crash may have been modified by the processor rules. The
             # individual crash storage implementations may choose to honor re-saving
             # the raw_crash or not.
-            self.destination.save_raw_and_processed(
-                raw_crash,
-                None,
-                processed_crash,
-                crash_id
-            )
+            self.destination.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
             self.config.logger.info('saved - %s', crash_id)
         except Exception:
-            # Immediately capture this as local variables.
-            # During this error handling we're going to be using other
-            # try:except: constructs (e.g. swallowing raven send errors)
-            # so we can't reference `sys.exc_info()` later.
+            # Capture the exception so we don't lose it as we do other things
             exc_type, exc_value, exc_tb = sys.exc_info()
 
             # PolyStorage can throw a PolyStorageException which is a sequence
@@ -262,14 +247,12 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             # Re-raise the original exception with the correct traceback
             reraise(exc_type, exc_value, exc_tb)
         finally:
-            # earlier, we created the dumps as files on the file system,
-            # we need to clean up after ourselves.
+            # Clean up any dump files saved to the file system
             for a_dump_pathname in dumps.itervalues():
                 try:
                     if 'TEMPORARY' in a_dump_pathname:
                         os.unlink(a_dump_pathname)
                 except OSError as x:
-                    # the file does not actually exist
                     self.config.logger.info('deletion of dump failed: %s', x)
 
     def _setup_source_and_destination(self):

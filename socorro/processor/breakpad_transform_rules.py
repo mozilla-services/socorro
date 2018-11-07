@@ -12,17 +12,12 @@ from configman.converters import str_to_list
 from configman.dotdict import DotDict as ConfigmanDotDict
 
 from socorro.lib.converters import change_default
-
 from socorro.lib.util import DotDict
-from socorro.lib.transform_rules import Rule
+from socorro.processor.rules.base import Rule
 
 
 class CrashingThreadRule(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             processed_crash.crashedThread = (
                 processed_crash['json_dump']['crash_info']['crashing_thread']
@@ -57,18 +52,13 @@ class CrashingThreadRule(Rule):
         except KeyError:
             processed_crash.reason = None
 
-        return True
-
 
 class MinidumpSha256Rule(Rule):
     """Copy over MinidumpSha256Hash value if there is one"""
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return 'MinidumpSha256Hash' in raw_crash
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash['minidump_sha256_hash'] = raw_crash['MinidumpSha256Hash']
 
 
@@ -116,9 +106,6 @@ class ExternalProcessRule(Rule):
 
     def __init__(self, config):
         super(ExternalProcessRule, self).__init__(config)
-
-    def version(self):
-        return '1.0'
 
     def _interpret_external_command_output(self, fp, processor_meta):
         try:
@@ -181,7 +168,7 @@ class ExternalProcessRule(Rule):
             return_code
         )
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         command_parameters = dict(self.config)
         command_parameters['dump_file_pathname'] = raw_dumps[
             self.config['dump_field']
@@ -198,7 +185,6 @@ class ExternalProcessRule(Rule):
             processed_crash,
             processor_meta
         )
-        return True
 
 
 class BreakpadStackwalkerRule2015(ExternalProcessRule):
@@ -258,9 +244,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         doc='a path where temporary files may be written',
         default=tempfile.gettempdir(),
     )
-
-    def version(self):
-        return '1.0'
 
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
@@ -340,7 +323,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         }
         return self.config.command_line.format(**params)
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if 'additional_minidumps' not in processed_crash:
             processed_crash.additional_minidumps = []
         with self._temp_raw_crash_json_file(
@@ -380,8 +363,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
                     processed_crash.additional_minidumps.append(dump_name)
                     processed_crash[dump_name] = stackwalker_data
 
-        return True
-
 
 class JitCrashCategorizeRule(ExternalProcessRule):
     # FIXME(willkg): command_line and command_pathname are referenced in the
@@ -411,7 +392,7 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         'classifications.jit.category_return_code',
     )
 
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (
             processed_crash.product != 'Firefox' or
             not processed_crash.os_name.startswith('Windows') or

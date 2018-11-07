@@ -27,18 +27,13 @@ from socorro.lib.datetimeutil import (
 )
 from socorro.lib.ooid import dateFromOoid
 from socorro.lib.requestslib import session_with_retries
-from socorro.lib.transform_rules import Rule
+from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
 
 
 class ProductRule(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.product = raw_crash.get('ProductName', '')
         processed_crash.version = raw_crash.get('Version', '')
         processed_crash.productid = raw_crash.get('ProductID', '')
@@ -52,44 +47,23 @@ class ProductRule(Rule):
         processed_crash.ReleaseChannel = raw_crash.get('ReleaseChannel', '')
         processed_crash.build = raw_crash.get('BuildID', '')
 
-        return True
-
 
 class UserDataRule(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.url = raw_crash.get('URL', None)
         processed_crash.user_comments = raw_crash.get('Comments', None)
         processed_crash.email = raw_crash.get('Email', None)
         #processed_crash.user_id = raw_crash.get('UserID', '')
         processed_crash.user_id = ''
 
-        return True
-
 
 class EnvironmentRule(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.app_notes = raw_crash.get('Notes', '')
-
-        return True
 
 
 class PluginRule(Rule):   # Hangs are here
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             plugin_hang_as_int = int(raw_crash.get('PluginHang', False))
         except ValueError:
@@ -120,7 +94,7 @@ class PluginRule(Rule):   # Hangs are here
         processed_crash.process_type = raw_crash.get('ProcessType', None)
 
         if not processed_crash.process_type:
-            return True
+            return
 
         if processed_crash.process_type == 'plugin':
             # Bug#543776 We actually will are relaxing the non-null policy...
@@ -135,14 +109,8 @@ class PluginRule(Rule):   # Hangs are here
                 raw_crash.get('PluginVersion', '')
             )
 
-        return True
-
 
 class AddonsRule(Rule):
-
-    def version(self):
-        return '1.0'
-
     def _get_formatted_addon(self, addon):
         """Return a properly formatted addon string.
 
@@ -153,8 +121,7 @@ class AddonsRule(Rule):
         """
         return addon if ':' in addon else addon + ':NO_VERSION'
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.addons_checked = None
 
         # it's okay to not have EMCheckCompatibility
@@ -173,14 +140,8 @@ class AddonsRule(Rule):
                 for x in original_addon_str.split(',')
             ]
 
-        return True
-
 
 class DatesAndTimesRule(Rule):
-
-    def version(self):
-        return '1.0'
-
     @staticmethod
     def _get_truncate_or_warn(
         a_mapping,
@@ -201,8 +162,7 @@ class DatesAndTimesRule(Rule):
             )
             return default
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processor_notes = processor_meta.processor_notes
 
         processed_crash.submitted_timestamp = raw_crash.get(
@@ -276,18 +236,12 @@ class DatesAndTimesRule(Rule):
             )
         processed_crash.last_crash = last_crash
 
-        return True
-
 
 class JavaProcessRule(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return bool(raw_crash.get('JavaStackTrace', None))
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # This can contain PII in the exception message
         processed_crash['java_stack_trace_full'] = raw_crash['JavaStackTrace']
 
@@ -299,8 +253,6 @@ class JavaProcessRule(Rule):
             java_stack_trace = 'malformed'
 
         processed_crash['java_stack_trace'] = java_stack_trace
-
-        return True
 
 
 class MozCrashReasonRule(Rule):
@@ -328,28 +280,22 @@ class MozCrashReasonRule(Rule):
             return 'sanitized--see moz_crash_reason_raw'
         return reason
 
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return bool(raw_crash.get('MozCrashReason', None))
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         crash_reason = raw_crash['MozCrashReason']
 
         # This can contain PII in the exception message
         processed_crash['moz_crash_reason_raw'] = crash_reason
         processed_crash['moz_crash_reason'] = self.sanitize_reason(crash_reason)
 
-        return True
-
 
 class OutOfMemoryBinaryRule(Rule):
-
     # Number of bytes, max, that we accept memory info payloads as JSON.
     MAX_SIZE_UNCOMPRESSED = 20 * 1024 * 1024  # ~20Mb
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return 'memory_report' in raw_dumps
 
     def _extract_memory_info(self, dump_pathname, processor_notes):
@@ -388,7 +334,7 @@ class OutOfMemoryBinaryRule(Rule):
 
         return memory_info
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         pathname = raw_dumps['memory_report']
         with temp_file_context(pathname):
             memory_report = self._extract_memory_info(
@@ -400,8 +346,6 @@ class OutOfMemoryBinaryRule(Rule):
                 processed_crash.memory_report_error = memory_report['ERROR']
             else:
                 processed_crash.memory_report = memory_report
-
-        return True
 
 
 class ProductRewrite(Rule):
@@ -415,13 +359,7 @@ class ProductRewrite(Rule):
         "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
     }
 
-    def version(self):
-        return '2.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return True
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         product_name = raw_crash.get('ProductName', '')
         original_product_name = product_name
 
@@ -438,18 +376,12 @@ class ProductRewrite(Rule):
             raw_crash['ProductName'] = product_name
             raw_crash['OriginalProductName'] = original_product_name
 
-        return True
-
 
 class ESRVersionRewrite(Rule):
-
-    def version(self):
-        return '2.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return raw_crash.get('ReleaseChannel', '') == 'esr'
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             raw_crash['Version'] += 'esr'
         except KeyError:
@@ -459,43 +391,29 @@ class ESRVersionRewrite(Rule):
 
 
 class PluginContentURL(Rule):
-
-    def version(self):
-        return '2.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
             return bool(raw_crash['PluginContentURL'])
         except KeyError:
             return False
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         raw_crash['URL'] = raw_crash['PluginContentURL']
-        return True
 
 
 class PluginUserComment(Rule):
-
-    def version(self):
-        return '2.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
             return bool(raw_crash['PluginUserComment'])
         except KeyError:
             return False
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         raw_crash['Comments'] = raw_crash['PluginUserComment']
-        return True
 
 
 class ExploitablityRule(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             processed_crash.exploitability = (
                 processed_crash['json_dump']
@@ -506,7 +424,6 @@ class ExploitablityRule(Rule):
             processor_meta.processor_notes.append(
                 "exploitability information missing"
             )
-        return True
 
 
 class FlashVersionRule(Rule):
@@ -556,9 +473,6 @@ class FlashVersionRule(Rule):
         'Flash ?Player-?(.*)'
     )
 
-    def version(self):
-        return '1.0'
-
     def _get_flash_version(self, **kwargs):
         """Extract flash version if recognized or None
 
@@ -586,7 +500,7 @@ class FlashVersionRule(Rule):
             return self.KNOWN_FLASH_IDENTIFIERS.get(debug_id)
         return None
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.flash_version = ''
         flash_version = None
 
@@ -601,15 +515,10 @@ class FlashVersionRule(Rule):
             processed_crash.flash_version = flash_version
         else:
             processed_crash.flash_version = '[blank]'
-        return True
 
 
 class Winsock_LSPRule(Rule):
-
-    def version(self):
-        return '1.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
 
 
@@ -625,12 +534,11 @@ class TopMostFilesRule(Rule):
     This rule does not try to reproduce that imbiguity and avoids the list
     entirely, just giving one single value.  The fact that the destination
     varible in the processed_crash is plural rather than singular is
-    unfortunate."""
+    unfortunate.
 
-    def version(self):
-        return '1.0'
+    """
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.topmost_filenames = None
         try:
             crashing_thread = (
@@ -645,14 +553,13 @@ class TopMostFilesRule(Rule):
             processor_meta.processor_notes.append(
                 "no 'topmost_file' name because '%s' is missing" % x
             )
-            return True
+            return
 
         for a_frame in stack_frames:
             source_filename = a_frame.get('file', None)
             if source_filename:
                 processed_crash.topmost_filenames = source_filename
-                return True
-        return True
+                return
 
 
 class BetaVersionRule(Rule):
@@ -683,9 +590,6 @@ class BetaVersionRule(Rule):
             config,
             database,
         )
-
-    def version(self):
-        return '1.0'
 
     def _get_real_version_db(self, product, build_id, version):
         """Return real version number for specified product, build_id, version from db
@@ -851,12 +755,12 @@ class BetaVersionRule(Rule):
         # exception
         return version > 26.0 and (version.endswith('.0') or version == '38.0.5')
 
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # Beta and aurora versions send the wrong version in the crash report,
         # so we need to fix them
         return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         product = processed_crash.get('product').strip().lower()
         try:
             # Convert the build id to an int as a hand-wavey validity check
@@ -878,7 +782,7 @@ class BetaVersionRule(Rule):
                 # If we got a real version, toss that in and we're done
                 if real_version:
                     processed_crash['version'] = real_version
-                    return True
+                    return
 
                 # We didn't get a version from Buildhub, but this might be a
                 # "final beta" which Buildhub has an entry for in the release
@@ -889,7 +793,7 @@ class BetaVersionRule(Rule):
 
                     if real_version:
                         processed_crash['version'] = real_version
-                        return True
+                        return
 
             except RequestException as exc:
                 processor_meta.processor_notes.append('could not connect to Buildhub')
@@ -902,7 +806,7 @@ class BetaVersionRule(Rule):
                 real_version = self._get_real_version_db(product, build_id, version)
                 if real_version:
                     processed_crash['version'] = real_version
-                    return True
+                    return
 
         # No real version, but this is an aurora or beta crash report, so we
         # tack on "b0" to make it match the channel
@@ -912,14 +816,13 @@ class BetaVersionRule(Rule):
             'suffix to version number' % release_channel
         )
 
-        return True
-
 
 class OSPrettyVersionRule(Rule):
-    '''This rule attempts to extract the most useful, singular, human
+    """This rule attempts to extract the most useful, singular, human
     understandable field for operating system version. This should always be
     attempted.
-    '''
+
+    """
 
     WINDOWS_VERSIONS = {
         '3.5': 'Windows NT',
@@ -936,10 +839,7 @@ class OSPrettyVersionRule(Rule):
         '10.0': 'Windows 10',
     }
 
-    def version(self):
-        return '2.0'
-
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # we will overwrite this field with the current best option
         # in stages, as we divine a better name
         processed_crash['os_pretty_version'] = None
@@ -960,7 +860,7 @@ class OSPrettyVersionRule(Rule):
 
         if len(version_split) < 2:
             # The version number is invalid, there's nothing more to do.
-            return True
+            return
 
         major_version = int(version_split[0])
         minor_version = int(version_split[1])
@@ -970,7 +870,7 @@ class OSPrettyVersionRule(Rule):
                 '%s.%s' % (major_version, minor_version),
                 'Windows Unknown'
             )
-            return True
+            return
 
         if processed_crash.os_name == 'Mac OS X':
             if (
@@ -983,7 +883,6 @@ class OSPrettyVersionRule(Rule):
                 pretty_name = 'OS X Unknown'
 
         processed_crash['os_pretty_version'] = pretty_name
-        return True
 
 
 class ThemePrettyNameRule(Rule):
@@ -994,7 +893,9 @@ class ThemePrettyNameRule(Rule):
     This rule attempts to modify it to have a more identifiable name, like
     other built-in extensions.
 
-    Must be run after the Addons Rule."""
+    Must be run after the Addons Rule.
+
+    """
 
     def __init__(self, config):
         super(ThemePrettyNameRule, self).__init__(config)
@@ -1004,14 +905,11 @@ class ThemePrettyNameRule(Rule):
                 "(default theme)",
         }
 
-    def version(self):
-        return '1.0'
-
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        '''addons is expected to be a list of strings like 'extension:version',
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        """addons is expected to be a list of strings like 'extension:version',
         but we are being overly cautious and consider the case where they
         lack the ':version' part, because user inputs are never reliable.
-        '''
+        """
         addons = processed_crash.get('addons', [])
 
         for addon in addons:
@@ -1020,7 +918,7 @@ class ThemePrettyNameRule(Rule):
                 return True
         return False
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         addons = processed_crash.addons
 
         for index, addon in enumerate(addons):
@@ -1032,7 +930,6 @@ class ThemePrettyNameRule(Rule):
                     )
             elif addon in self.conversions:
                 addons[index] = self.conversions[addon]
-        return True
 
 
 class SignatureGeneratorRule(Rule):
@@ -1055,7 +952,7 @@ class SignatureGeneratorRule(Rule):
             self.sentry_dsn, self.config.logger, exc_info=exc_info, extra=extra
         )
 
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
         crash_data = convert_to_crash_data(raw_crash, processed_crash)
         ret = self.generator.generate(crash_data)
@@ -1063,4 +960,3 @@ class SignatureGeneratorRule(Rule):
         if 'proto_signature' in ret:
             processed_crash['proto_signature'] = ret['proto_signature']
         processor_meta['processor_notes'].extend(ret['notes'])
-        return True

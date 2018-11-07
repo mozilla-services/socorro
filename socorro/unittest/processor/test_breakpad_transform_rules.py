@@ -209,8 +209,6 @@ class TestCrashingThreadRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.crashedThread == 0
@@ -225,8 +223,6 @@ class TestCrashingThreadRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.crashedThread is None
@@ -243,7 +239,6 @@ class TestMinidumpSha256HashRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = MinidumpSha256Rule(config)
-
         assert rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta) is False
 
     def test_hash_in_raw_crash(self):
@@ -257,7 +252,6 @@ class TestMinidumpSha256HashRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = MinidumpSha256Rule(config)
-
         assert rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta) is True
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -271,7 +265,6 @@ cannonical_external_output_str = ujson.dumps(cannonical_external_output)
 
 
 class TestExternalProcessRule(TestCase):
-
     def get_basic_config(self):
         config = get_basic_config()
         config.dump_field = 'upload_file_minidump'
@@ -319,12 +312,8 @@ class TestExternalProcessRule(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            cannonical_external_output_str
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = cannonical_external_output_str
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = ExternalProcessRule(config)
@@ -342,7 +331,6 @@ class TestExternalProcessRule(TestCase):
         )
 
         assert processed_crash.bogus_command_result == cannonical_external_output
-
         assert processed_crash.bogus_command_return_code == 0
 
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
@@ -354,14 +342,11 @@ class TestExternalProcessRule(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = \
-            mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
         mocked_subprocess_handle.stdout.read.return_value = '{}'
         mocked_subprocess_handle.wait.return_value = 124
 
         rule = ExternalProcessRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.bogus_command_result == {}
@@ -377,9 +362,7 @@ class TestExternalProcessRule(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
         mocked_subprocess_handle.stdout.read.return_value = int
         mocked_subprocess_handle.wait.return_value = -1
 
@@ -402,9 +385,7 @@ class TestBreakpadTransformRule2015(TestCase):
     def get_basic_config(self):
         config = get_basic_config()
         config.dump_field = 'upload_file_minidump'
-        config.command_line = (
-            BreakpadStackwalkerRule2015.required_config .command_line.default
-        )
+        config.command_line = BreakpadStackwalkerRule2015.required_config.command_line.default
         config.kill_timeout = 5
         config.command_pathname = '/bin/stackwalker'
         config.symbols_urls = 'https://localhost'
@@ -422,17 +403,11 @@ class TestBreakpadTransformRule2015(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            cannonical_stackwalker_output_str
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = cannonical_stackwalker_output_str
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = BreakpadStackwalkerRule2015(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.json_dump == cannonical_stackwalker_output
@@ -449,14 +424,11 @@ class TestBreakpadTransformRule2015(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = \
-            mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
         mocked_subprocess_handle.stdout.read.return_value = '{}\n'
         mocked_subprocess_handle.wait.return_value = 124
 
         rule = BreakpadStackwalkerRule2015(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.json_dump == {}
@@ -474,15 +446,11 @@ class TestBreakpadTransformRule2015(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
         mocked_subprocess_handle.stdout.read.return_value = int
         mocked_subprocess_handle.wait.return_value = -1
 
         rule = BreakpadStackwalkerRule2015(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.json_dump == {}
@@ -526,13 +494,10 @@ class TestJitCrashCategorizeRule(TestCase):
         config = CDotDict()
         config.logger = Mock()
         config.dump_field = 'upload_file_minidump'
-        config.command_line = (
-            JitCrashCategorizeRule.required_config.command_line.default
-        )
+        config.command_line = JitCrashCategorizeRule.required_config.command_line.default
         config.result_key = 'classifications.jit.category'
         config.return_code_key = 'classifications.jit.category_return_code'
-        config.command_pathname = \
-            '/data/socorro/stackwalk/bin/jit-crash-categorize'
+        config.command_pathname = '/data/socorro/stackwalk/bin/jit-crash-categorize'
         config.temporary_file_system_storage_path = '/tmp'
         return config
 
@@ -552,17 +517,11 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = 'EXTRA-SPECIAL'
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = JitCrashCategorizeRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processor_meta.processor_notes == []
@@ -584,12 +543,8 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = 'EXTRA-SPECIAL'
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = JitCrashCategorizeRule(config)
@@ -605,8 +560,6 @@ class TestJitCrashCategorizeRule(TestCase):
         for signature in signatures:
             processed_crash = CDotDict(base_processed_crash)
             processed_crash.signature = signature
-
-            # the call to be tested
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
             assert processor_meta.processor_notes == []
@@ -629,17 +582,11 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            None
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = None
         mocked_subprocess_handle.wait.return_value = -1
 
         rule = JitCrashCategorizeRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processor_meta.processor_notes == []
@@ -662,17 +609,11 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = 'EXTRA-SPECIAL'
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = JitCrashCategorizeRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert 'classifications.jit.category' not in processed_crash
@@ -694,17 +635,11 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = 'EXTRA-SPECIAL'
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = JitCrashCategorizeRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert 'classifications.jit.category' not in processed_crash
@@ -726,17 +661,11 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = 'EXTRA-SPECIAL'
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = JitCrashCategorizeRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert 'classifications.jit.category' not in processed_crash
@@ -758,17 +687,11 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = 'EXTRA-SPECIAL'
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = JitCrashCategorizeRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert 'classifications.jit.category' not in processed_crash
@@ -790,17 +713,11 @@ class TestJitCrashCategorizeRule(TestCase):
         ]
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = (
-            mocked_subprocess_module.Popen.return_value
-        )
-        mocked_subprocess_handle.stdout.read.return_value = (
-            'EXTRA-SPECIAL'
-        )
+        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = 'EXTRA-SPECIAL'
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = JitCrashCategorizeRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert 'classifications.jit.category' not in processed_crash
@@ -817,7 +734,7 @@ class TestJitCrashCategorizeRule(TestCase):
 
         rule = JitCrashCategorizeRule(config)
 
-        assert rule._predicate({}, {}, processed_crash, {}) is True
+        assert rule.predicate({}, {}, processed_crash, {}) is True
 
     def test_predicate_no_crashing_thread(self):
         config = self.get_basic_config()
@@ -833,7 +750,7 @@ class TestJitCrashCategorizeRule(TestCase):
 
         rule = JitCrashCategorizeRule(config)
 
-        assert rule._predicate({}, {}, processed_crash, {}) is True
+        assert rule.predicate({}, {}, processed_crash, {}) is True
 
     def test_predicate_no_frames(self):
         config = self.get_basic_config()
@@ -851,7 +768,7 @@ class TestJitCrashCategorizeRule(TestCase):
 
         rule = JitCrashCategorizeRule(config)
 
-        assert rule._predicate({}, {}, processed_crash, {}) is True
+        assert rule.predicate({}, {}, processed_crash, {}) is True
 
     def test_predicate_empty_frames(self):
         config = self.get_basic_config()
@@ -871,4 +788,4 @@ class TestJitCrashCategorizeRule(TestCase):
 
         rule = JitCrashCategorizeRule(config)
 
-        assert rule._predicate({}, {}, processed_crash, {}) is True
+        assert rule.predicate({}, {}, processed_crash, {}) is True

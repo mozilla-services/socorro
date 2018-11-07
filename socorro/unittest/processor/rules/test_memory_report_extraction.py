@@ -6,9 +6,7 @@ import os
 import json
 
 import mock
-from socorro.processor.rules.memory_report_extraction import (
-    MemoryReportExtraction,
-)
+from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
 from socorro.unittest.testbase import TestCase
 from socorro.unittest.processor import create_basic_fake_processor
 
@@ -85,9 +83,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
         processed_crash['json_dump'] = {'pid': 11620}
+        rule.action({}, {}, processed_crash, {})
 
-        action_result = rule.action({}, {}, processed_crash, {})
-        assert action_result
         assert 'memory_measures' in processed_crash
 
         expected_res = {
@@ -110,11 +107,10 @@ class TestMemoryReportExtraction(TestCase):
         }
         assert processed_crash['memory_measures'] == expected_res
 
-        # Test with a different pid.
+        # Test with a different pid
         processed_crash['json_dump']['pid'] = 11717
+        rule.action({}, {}, processed_crash, {})
 
-        action_result = rule.action({}, {}, processed_crash, {})
-        assert action_result
         assert 'memory_measures' in processed_crash
 
         expected_res = {
@@ -146,9 +142,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
         processed_crash['json_dump'] = {'pid': 11620}
+        rule.action({}, {}, processed_crash, {})
 
-        action_result = rule.action({}, {}, processed_crash, {})
-        assert not action_result
         assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(
@@ -165,9 +160,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
         processed_crash['json_dump'] = {'pid': 11620}
+        rule.action({}, {}, processed_crash, {})
 
-        action_result = rule.action({}, {}, processed_crash, {})
-        assert not action_result
         assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(
@@ -184,9 +178,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
         processed_crash['json_dump'] = {'pid': 12345}
+        rule.action({}, {}, processed_crash, {})
 
-        action_result = rule.action({}, {}, processed_crash, {})
-        assert not action_result
         assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(
@@ -203,9 +196,8 @@ class TestMemoryReportExtraction(TestCase):
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
         processed_crash['json_dump'] = {'pid': 11620}
+        rule.action({}, {}, processed_crash, {})
 
-        action_result = rule.action({}, {}, processed_crash, {})
-        assert not action_result
         assert 'memory_measures' not in processed_crash
 
         config.logger.info.assert_called_with(

@@ -16,6 +16,7 @@ from configman import (
 )
 from configman.converters import str_to_list, str_to_python_object
 
+from socorro.lib import raven_client
 from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
@@ -225,12 +226,19 @@ class Processor2015(RequiredConfig):
         for a_rule_class in rule_set:
             self.rules.append(a_rule_class(config))
 
+        if self.config.sentry and self.config.sentry.dsn:
+            self.sentry_dsn = self.config.sentry.dsn
+        else:
+            self.sentry_dsn = None
+
     def process_crash(self, raw_crash, raw_dumps, processed_crash):
-        """Take a raw_crash and its associated raw_dumps and return a
-        processed_crash.
+        """Take a raw_crash and its associated raw_dumps and return a processed_crash
+
+        If this throws an exception, the crash was not processed correctly.
+
         """
         # processor_meta_data will be used to ferry "inside information" to
-        # transformation rules.  Sometimes rules need a bit more extra
+        # transformation rules. Sometimes rules need a bit more extra
         # information about the transformation process itself.
         processor_meta_data = DotDict()
         processor_meta_data.processor_notes = [
@@ -261,51 +269,47 @@ class Processor2015(RequiredConfig):
         processed_crash.signature = 'EMPTY: crash failed to process'
 
         crash_id = raw_crash['uuid']
-        try:
-            # quit_check calls ought to be scattered around the code to allow
-            # the processor to be responsive to requests to shut down.
+
+        # quit_check calls ought to be scattered around the code to allow
+        # the processor to be responsive to requests to shut down.
+        self.quit_check()
+
+        start_time = self.config.logger.info('starting transform for crash: %s', crash_id)
+        processor_meta_data.started_timestamp = start_time
+
+        # Apply rules; if a rule fails, capture the error and continue onward
+        for rule in self.rules:
+            try:
+                rule.act(raw_crash, raw_dumps, processed_crash, processor_meta_data)
+
+            except Exception as exc:
+                # If a rule throws an error, capture it and toss it in the
+                # processor notes
+                raven_client.capture_error(
+                    sentry_dsn=self.sentry_dsn,
+                    logger=self.config.logger,
+                    extra={'crash_id': crash_id}
+                )
+                # NOTE(willkg): notes are public, so we can't put exception
+                # messages in them
+                processor_meta_data.processor_notes.append(
+                    'rule %s failed: %s' % (rule.__class__.__name__, exc.__class__.__name__)
+                )
+
             self.quit_check()
 
-            start_time = self.config.logger.info(
-                "starting transform for crash: %s",
-                crash_id
-            )
-            processor_meta_data.started_timestamp = start_time
+        # The crash made it through the processor rules with no exceptions
+        # raised, call it a success
+        processed_crash.success = True
 
-            # apply_all_rules
-            for rule in self.rules:
-                rule.act(
-                    raw_crash,
-                    raw_dumps,
-                    processed_crash,
-                    processor_meta_data
-                )
-                self.quit_check()
-
-            # the crash made it through the processor rules with no exceptions
-            # raised, call it a success.
-            processed_crash.success = True
-
-        except Exception as exception:
-            self.config.logger.warning(
-                'Error while processing %s: %s',
-                crash_id,
-                str(exception),
-                exc_info=True
-            )
-            processor_meta_data.processor_notes.append(
-                'unrecoverable processor error: %s' % exception
-            )
-
-        # the processor notes are in the form of a list.  Join them all
+        # The processor notes are in the form of a list.  Join them all
         # together to make a single string
         processor_meta_data.processor_notes.extend(original_processor_notes)
-        processed_crash.processor_notes = '; '.join(
-            processor_meta_data.processor_notes
-        )
+        processed_crash.processor_notes = '; '.join(processor_meta_data.processor_notes)
         completed_datetime = utc_now()
         processed_crash.completed_datetime = completed_datetime
-        # for backwards compatibility:
+
+        # For backwards compatibility
         processed_crash.completeddatetime = completed_datetime
 
         self.config.logger.info(

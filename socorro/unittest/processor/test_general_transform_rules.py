@@ -103,47 +103,34 @@ class TestIdentifierRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        uuid = '00000000-0000-0000-0000-000002140504'
+        raw_crash = {
+            'uuid': uuid
+        }
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = IdentifierRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.crash_id == "00000000-0000-0000-0000-000002140504"
-        assert processed_crash.uuid == "00000000-0000-0000-0000-000002140504"
+        assert processed_crash['crash_id'] == uuid
+        assert processed_crash['uuid'] == uuid
 
-        # raw crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
-
-    def test_stuff_missing(self):
+    def test_uuid_missing(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        del raw_crash.uuid
-        expected_raw_crash = copy.copy(raw_crash)
-
+        raw_crash = {}
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = IdentifierRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        # the call to be tested
-        result = rule.act(
-            raw_crash,
-            raw_dumps,
-            processed_crash,
-            processor_meta
-        )
-
-        assert result == (True, False)
-
-        # raw crash should be unchanged
-        assert raw_crash == expected_raw_crash
+        # raw crash and processed crashes should be unchanged
+        assert raw_crash == {}
+        assert processed_crash == {}
 
 
 class TestCPUInfoRule(TestCase):
