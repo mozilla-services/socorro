@@ -13,12 +13,13 @@ import os
 from past.builtins import basestring
 import sys
 
-from socorro.lib.util import DotDict as SocorroDotDict
-
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, str_to_list
 from configman.dotdict import DotDict as ConfigmanDotDict
+import six
 import markus
+
+from socorro.lib.util import DotDict as SocorroDotDict
 
 
 def socorrodotdict_to_dict(sdotdict):
@@ -69,11 +70,7 @@ class MemoryDumpsMapping(dict):
                 a_dump_name = 'upload_file_minidump'
             dump_pathname = os.path.join(
                 temp_path,
-                "%s.%s.TEMPORARY%s" % (
-                    crash_id,
-                    a_dump_name,
-                    dump_file_suffix
-                )
+                "%s.%s.TEMPORARY%s" % (crash_id, a_dump_name, dump_file_suffix)
             )
             name_to_pathname_mapping[a_dump_name] = dump_pathname
             with open(dump_pathname, 'wb') as f:
@@ -116,11 +113,11 @@ class FileDumpsMapping(dict):
         return self
 
     def as_memory_dumps_mapping(self):
-        """convert this into a MemoryDumpsMapping by opening and reading each
+        """Convert this into a MemoryDumpsMapping by opening and reading each
         of the dumps in the mapping."""
         in_memory_dumps = MemoryDumpsMapping()
         for dump_key, dump_path in self.items():
-            with open(dump_path) as f:
+            with open(dump_path, 'rb') as f:
                 in_memory_dumps[dump_key] = f.read()
         return in_memory_dumps
 
@@ -135,12 +132,14 @@ class Redactor(RequiredConfig):
     required_config.add_option(
         name='forbidden_keys',
         doc='a list of keys not allowed in a redacted processed crash',
-        default="url, email, user_id, exploitability,"
-                "json_dump.sensitive,"
-                "upload_file_minidump_flash1.json_dump.sensitive,"
-                "upload_file_minidump_flash2.json_dump.sensitive,"
-                "upload_file_minidump_browser.json_dump.sensitive,"
-                "memory_info",
+        default=(
+            "url, email, user_id, exploitability,"
+            "json_dump.sensitive,"
+            "upload_file_minidump_flash1.json_dump.sensitive,"
+            "upload_file_minidump_flash2.json_dump.sensitive,"
+            "upload_file_minidump_browser.json_dump.sensitive,"
+            "memory_info"
+        ),
         reference_value_from='resource.redactor',
     )
 
@@ -263,11 +262,7 @@ class CrashStorageBase(RequiredConfig):
             dumps - a dict of dump name keys and paths to file system locations
                     for the dump data
             crash_id - the crash key to use for this crash"""
-        self.save_raw_crash(
-            raw_crash,
-            dumps.as_memory_dumps_mapping(),
-            crash_id
-        )
+        self.save_raw_crash(raw_crash, dumps.as_memory_dumps_mapping(), crash_id)
 
     def save_processed(self, processed_crash):
         """this method saves the processed_crash and must be overridden in
@@ -286,8 +281,7 @@ class CrashStorageBase(RequiredConfig):
             processed_crash - a mapping containing the processed crash"""
         pass
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
-                               crash_id):
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
         """Mainly for the convenience and efficiency of the processor,
         this unified method combines saving both raw and processed crashes.
 
@@ -347,9 +341,7 @@ class CrashStorageBase(RequiredConfig):
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
-        raise NotImplementedError(
-            "get_unredacted_processed is not implemented"
-        )
+        raise NotImplementedError("get_unredacted_processed is not implemented")
 
     def remove(self, crash_id):
         """delete a crash from storage
@@ -373,47 +365,41 @@ class CrashStorageBase(RequiredConfig):
 
 
 class PolyStorageError(Exception, collections.MutableSequence):
-    """an exception container holding a sequence of exceptions with tracebacks.
+    """Exception container holding a sequence of exceptions with tracebacks
 
-    parameters:
-        message - an optional over all error message
+    :arg message: an optional over all error message
+
     """
     def __init__(self, *args):
         super(PolyStorageError, self).__init__(*args)
         self.exceptions = []  # the collection
 
     def gather_current_exception(self):
-        """append the currently active exception to the collection"""
+        """Append the currently active exception to the collection"""
         self.exceptions.append(sys.exc_info())
 
     def has_exceptions(self):
-        """the boolean opposite of is_empty"""""
+        """Boolean opposite of is_empty"""""
         return bool(self.exceptions)
 
     def __len__(self):
-        """how many exceptions are stored?
-        this method is required by the MutableSequence abstract base class"""
+        """Length of exception collection"""
         return len(self.exceptions)
 
     def __iter__(self):
-        """start an iterator over the squence.
-        this method is required by the MutableSequence abstract base class"""
+        """Start an iterator over the sequence"""
         return iter(self.exceptions)
 
     def __contains__(self, value):
-        """search the sequence for a value and return true if it is present
-        this method is required by the MutableSequence abstract base class"""
-
+        """Search the sequence for a value and return true if it is present"""
         return self.exceptions.__contains__(value)
 
     def __getitem__(self, index):
-        """fetch a specific exception
-        this method is required by the MutableSequence abstract base class"""
+        """Get a specific exception by index"""
         return self.exceptions.__getitem__(index)
 
     def __setitem__(self, index, value):
-        """change the value for an index in the sequence
-        this method is required by the MutableSequence abstract base class"""
+        """Set the value for an index in the sequence"""
         self.exceptions.__setitem__(index, value)
 
     def __str__(self):
@@ -421,7 +407,13 @@ class PolyStorageError(Exception, collections.MutableSequence):
         if self.args:
             output.append(self.args[0])
         for e in self.exceptions:
-            output.append(repr(e[1]).encode('ascii', 'ignore'))
+            output.append(repr(e[1]))
+        if six.PY2:
+            # If this is Python2, encode everything into strings before joining
+            output = [
+                part.encode('ascii', 'ignore')
+                for part in output
+            ]
         return ','.join(output)
 
 
@@ -544,7 +536,7 @@ class PolyCrashStorage(CrashStorageBase):
                              exceptions raised by the subordinate storage
                              systems"""
         storage_exception = PolyStorageError()
-        for a_store in self.stores.itervalues():
+        for a_store in self.stores.values():
             try:
                 a_store.close()
             except Exception as x:
@@ -562,7 +554,7 @@ class PolyCrashStorage(CrashStorageBase):
             dumps - a mapping of dump name keys to dump binary values
             crash_id - the id of the crash to use"""
         storage_exception = PolyStorageError()
-        for a_store in self.stores.itervalues():
+        for a_store in self.stores.values():
             self.quit_check()
             try:
                 a_store.save_raw_crash(raw_crash, dumps, crash_id)
@@ -579,7 +571,7 @@ class PolyCrashStorage(CrashStorageBase):
         parameters:
             processed_crash - a mapping containing the processed crash"""
         storage_exception = PolyStorageError()
-        for a_store in self.stores.itervalues():
+        for a_store in self.stores.values():
             self.quit_check()
             try:
                 a_store.save_processed(processed_crash)
@@ -589,8 +581,7 @@ class PolyCrashStorage(CrashStorageBase):
         if storage_exception.has_exceptions():
             raise storage_exception
 
-    def save_raw_and_processed(self, raw_crash, dump, processed_crash,
-                               crash_id):
+    def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
         storage_exception = PolyStorageError()
 
         # Later we're going to need to clone this per every crash storage
@@ -600,7 +591,7 @@ class PolyCrashStorage(CrashStorageBase):
         processed_crash_as_dict = socorrodotdict_to_dict(processed_crash)
         raw_crash_as_dict = socorrodotdict_to_dict(raw_crash)
 
-        for a_store in self.stores.itervalues():
+        for a_store in self.stores.values():
             self.quit_check()
             try:
                 actual_store = getattr(a_store, 'wrapped_object', a_store)
@@ -617,28 +608,17 @@ class PolyCrashStorage(CrashStorageBase):
                     my_processed_crash = processed_crash
                     my_raw_crash = raw_crash
 
-                a_store.save_raw_and_processed(
-                    my_raw_crash,
-                    dump,
-                    my_processed_crash,
-                    crash_id
-                )
+                a_store.save_raw_and_processed(my_raw_crash, dump, my_processed_crash, crash_id)
             except Exception:
                 store_class = getattr(a_store, 'wrapped_object', a_store.__class__)
-                self.logger.error(
-                    '%r failed (crash id: %s)',
-                    store_class,
-                    crash_id,
-                    exc_info=True
-                )
+                self.logger.error('%r failed (crash id: %s)', store_class, crash_id, exc_info=True)
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
 
 
 class BenchmarkingCrashStorage(CrashStorageBase):
-    """a wrapper around crash stores that will benchmark the calls in the logs
-    """
+    """Wrapper around crash stores that will benchmark the calls in the logs"""
     required_config = Namespace()
     required_config.add_option(
         name="benchmark_tag",
@@ -685,12 +665,7 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
         start_time = self.start_timer()
-        self.wrapped_crashstore.save_raw_and_processed(
-            raw_crash,
-            dumps,
-            processed_crash,
-            crash_id
-        )
+        self.wrapped_crashstore.save_raw_and_processed(raw_crash, dumps, processed_crash, crash_id)
         end_time = self.end_timer()
         self.config.logger.debug('%s save_raw_and_processed %s', self.tag, end_time - start_time)
 

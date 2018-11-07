@@ -114,8 +114,8 @@ class TestFSPermanentStorage(TestCase):
     def test_get_raw_dumps(self):
         self._make_test_crash()
         expected = MemoryDumpsMapping({
-            'foo': 'bar',
-            self.fsrts.config.dump_field: 'baz'
+            'foo': b'bar',
+            self.fsrts.config.dump_field: b'baz'
         })
         assert self.fsrts.get_raw_dumps(self.CRASH_ID_1) == expected
 

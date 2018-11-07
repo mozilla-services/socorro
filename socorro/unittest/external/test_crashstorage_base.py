@@ -7,7 +7,6 @@ import copy
 from configman import Namespace, ConfigurationManager
 from configman.dotdict import DotDict
 import mock
-from mock import Mock
 import pytest
 
 from socorro.external.crashstorage_base import (
@@ -50,13 +49,7 @@ class B(A):
 
 
 class NonMutatingProcessedCrashCrashStorage(CrashStorageBase):
-    def save_raw_and_processed(
-        self,
-        raw_crash,
-        dump,
-        processed_crash,
-        crash_id
-    ):
+    def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
         # This is sort of a lie, but we lie so that we can verify the code went
         # through the right path.
         del processed_crash['foo']
@@ -66,13 +59,7 @@ class MutatingProcessedCrashCrashStorage(CrashStorageBase):
     def is_mutator(self):
         return True
 
-    def save_raw_and_processed(
-        self,
-        raw_crash,
-        dump,
-        processed_crash,
-        crash_id
-    ):
+    def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
         del processed_crash['foo']
 
 
@@ -151,12 +138,10 @@ class Testsocorrodotdict_to_dict(TestCase):
 
 
 class TestBase(TestCase):
-
     def test_basic_crashstorage(self):
-
         required_config = Namespace()
 
-        mock_logging = Mock()
+        mock_logging = mock.Mock()
         required_config.add_option('logger', default=mock_logging)
         required_config.update(CrashStorageBase.required_config)
 
@@ -172,10 +157,7 @@ class TestBase(TestCase):
         )
 
         with config_manager.context() as config:
-            crashstorage = CrashStorageBase(
-                config,
-                quit_check_callback=fake_quit_check
-            )
+            crashstorage = CrashStorageBase(config, quit_check_callback=fake_quit_check)
             crashstorage.save_raw_crash({}, 'payload', 'ooid')
             crashstorage.save_processed({})
             with pytest.raises(NotImplementedError):
@@ -194,7 +176,7 @@ class TestBase(TestCase):
             crashstorage.close()
 
         with config_manager.context() as config:
-            class MyCrashStorageTest(CrashStorageBase):
+            class MyCrashStorage(CrashStorageBase):
                 def save_raw_crash(self, raw_crash, dumps, crash_id):
                     assert crash_id == "fake_id"
                     assert raw_crash == "fake raw crash"
@@ -206,17 +188,11 @@ class TestBase(TestCase):
             def open_function(*args, **kwargs):
                 return values.pop(0)
 
-            crashstorage = MyCrashStorageTest(
-                config,
-                quit_check_callback=fake_quit_check
-            )
+            crashstorage = MyCrashStorage(config, quit_check_callback=fake_quit_check)
 
-            with mock.patch("__builtin__.open") as open_mock:
+            with mock.patch("socorro.external.crashstorage_base.open") as open_mock:
                 open_mock.return_value = mock.MagicMock()
-                (
-                    open_mock.return_value.__enter__
-                    .return_value.read.side_effect
-                ) = open_function
+                open_mock.return_value.__enter__.return_value.read.side_effect = open_function
                 crashstorage.save_raw_crash_with_file_dumps(
                     "fake raw crash",
                     FileDumpsMapping({
@@ -243,6 +219,7 @@ class TestBase(TestCase):
             except AttributeError:
                 p.gather_current_exception()
             raise p
+
         except PolyStorageError as x:
             assert len(x) == 3
             assert x.has_exceptions()
@@ -314,26 +291,21 @@ class TestBase(TestCase):
             raw_crash = {'ooid': ''}
             dump = '12345'
             processed_crash = {'ooid': '', 'product': 17}
-            for v in poly_store.stores.itervalues():
-                v.save_raw_crash = Mock()
-                v.save_processed = Mock()
-                v.close = Mock()
+            for v in poly_store.stores.values():
+                v.save_raw_crash = mock.Mock()
+                v.save_processed = mock.Mock()
+                v.close = mock.Mock()
 
             poly_store.save_raw_crash(raw_crash, dump, '')
-            for v in poly_store.stores.itervalues():
+            for v in poly_store.stores.values():
                 v.save_raw_crash.assert_called_once_with(raw_crash, dump, '')
 
             poly_store.save_processed(processed_crash)
-            for v in poly_store.stores.itervalues():
+            for v in poly_store.stores.values():
                 v.save_processed.assert_called_once_with(processed_crash)
 
-            poly_store.save_raw_and_processed(
-                raw_crash,
-                dump,
-                processed_crash,
-                'n'
-            )
-            for v in poly_store.stores.itervalues():
+            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, 'n')
+            for v in poly_store.stores.values():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
                 v.save_processed.assert_called_with(processed_crash)
 
@@ -342,27 +314,27 @@ class TestBase(TestCase):
             processed_crash = {'ooid': 'aoeu', 'product': 33}
 
             expected = Exception('this is messed up')
-            poly_store.stores['A2'].save_raw_crash = Mock()
+            poly_store.stores['A2'].save_raw_crash = mock.Mock()
             poly_store.stores['A2'].save_raw_crash.side_effect = expected
-            poly_store.stores['B'].save_processed = Mock()
+            poly_store.stores['B'].save_processed = mock.Mock()
             poly_store.stores['B'].save_processed.side_effect = expected
 
             with pytest.raises(PolyStorageError):
                 poly_store.save_raw_crash(raw_crash, dump, '')
 
-            for v in poly_store.stores.itervalues():
+            for v in poly_store.stores.values():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, '')
 
             with pytest.raises(PolyStorageError):
                 poly_store.save_processed(processed_crash)
 
-            for v in poly_store.stores.itervalues():
+            for v in poly_store.stores.values():
                 v.save_processed.assert_called_with(processed_crash)
 
             with pytest.raises(PolyStorageError):
                 poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, 'n')
 
-            for v in poly_store.stores.itervalues():
+            for v in poly_store.stores.values():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
                 v.save_processed.assert_called_with(processed_crash)
 
@@ -370,7 +342,7 @@ class TestBase(TestCase):
             with pytest.raises(PolyStorageError):
                 poly_store.close()
 
-            for v in poly_store.stores.itervalues():
+            for v in poly_store.stores.values():
                 v.close.assert_called_with()
 
     def test_poly_crash_storage_processed_crash_immutability(self):
@@ -397,13 +369,8 @@ class TestBase(TestCase):
             processed_crash = {'foo': 'bar'}
 
             poly_store = config.storage(config)
+            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, 'n')
 
-            poly_store.save_raw_and_processed(
-                raw_crash,
-                dump,
-                processed_crash,
-                'n'
-            )
             # It's important to be aware that the only thing
             # MutatingProcessedCrashCrashStorage class does, in its
             # save_raw_and_processed() is that it deletes a key called
@@ -441,12 +408,7 @@ class TestBase(TestCase):
 
             poly_store = config.storage(config)
 
-            poly_store.save_raw_and_processed(
-                raw_crash,
-                dump,
-                processed_crash,
-                'n'
-            )
+            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, 'n')
             # We have a crashstorage that says it's not mutating, but deletes a
             # key so that we can verify that the code went down the right path
             # in the processor.
@@ -480,20 +442,13 @@ class TestBase(TestCase):
 
             poly_store = config.storage(config)
 
-            poly_store.save_raw_and_processed(
-                raw_crash,
-                dump,
-                processed_crash,
-                'n'
-            )
+            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, 'n')
             assert processed_crash['foo']['other'] == 'thing'
             assert processed_crash['bar']['something'] == 'else'
 
 
 class TestRedactor(TestCase):
-
     def test_redact(self):
-
         d = DotDict()
         # these keys survive redaction
         d['a.b.c'] = 11
@@ -536,14 +491,13 @@ class TestRedactor(TestCase):
 
 
 class TestBench(TestCase):
-
     def test_benchmarking_crashstore(self):
         required_config = Namespace()
 
-        mock_logging = Mock()
+        mock_logging = mock.Mock()
         required_config.add_option('logger', default=mock_logging)
         required_config.update(BenchmarkingCrashStorage.get_required_config())
-        fake_crash_store = Mock()
+        fake_crash_store = mock.Mock()
 
         config_manager = ConfigurationManager(
             [required_config],
@@ -595,13 +549,12 @@ class TestBench(TestCase):
             mock_logging.debug.reset_mock()
 
             crashstorage.save_raw_and_processed({}, 'payload', {}, 'ooid')
-            crashstorage.wrapped_crashstore.save_raw_and_processed \
-                .assert_called_with(
-                    {},
-                    'payload',
-                    {},
-                    'ooid'
-                )
+            crashstorage.wrapped_crashstore.save_raw_and_processed.assert_called_with(
+                {},
+                'payload',
+                {},
+                'ooid'
+            )
             mock_logging.debug.assert_called_with(
                 '%s save_raw_and_processed %s',
                 'test',
@@ -643,10 +596,9 @@ class TestBench(TestCase):
             mock_logging.debug.reset_mock()
 
             crashstorage.get_raw_dumps_as_files('uuid')
-            crashstorage.wrapped_crashstore.get_raw_dumps_as_files \
-                .assert_called_with(
-                    'uuid'
-                )
+            crashstorage.wrapped_crashstore.get_raw_dumps_as_files.assert_called_with(
+                'uuid'
+            )
             mock_logging.debug.assert_called_with(
                 '%s get_raw_dumps_as_files %s',
                 'test',
@@ -655,10 +607,9 @@ class TestBench(TestCase):
             mock_logging.debug.reset_mock()
 
             crashstorage.get_unredacted_processed('uuid')
-            crashstorage.wrapped_crashstore.get_unredacted_processed \
-                .assert_called_with(
-                    'uuid'
-                )
+            crashstorage.wrapped_crashstore.get_unredacted_processed.assert_called_with(
+                'uuid'
+            )
             mock_logging.debug.assert_called_with(
                 '%s get_unredacted_processed %s',
                 'test',
@@ -668,18 +619,13 @@ class TestBench(TestCase):
 
 
 class TestDumpsMappings(TestCase):
-
     def test_simple(self):
         mdm = MemoryDumpsMapping({
-            'upload_file_minidump': 'binary_data',
-            'moar_dump': "more binary data",
+            'upload_file_minidump': b'binary_data',
+            'moar_dump': b'more binary data',
         })
         assert mdm.as_memory_dumps_mapping() is mdm
-        fdm = mdm.as_file_dumps_mapping(
-            'a',
-            '/tmp',
-            'dump'
-        )
+        fdm = mdm.as_file_dumps_mapping('a', '/tmp', 'dump')
         assert fdm.as_file_dumps_mapping() is fdm
         assert fdm.as_memory_dumps_mapping() == mdm
 
