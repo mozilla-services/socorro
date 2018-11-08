@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from configman.dotdict import DotDict
 import pytest
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.lib import DatabaseError
-from socorro.lib import util
 from socorro.unittest.testbase import TestCase
 from socorro.unittest.external.postgresql.unittestbase import PostgreSQLTestCase
 
@@ -17,7 +17,7 @@ class TestPostgreSQLBase(TestCase):
 
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
-        context = util.DotDict({
+        context = DotDict({
             'database_class': ConnectionContext,
             'database_hostname': 'somewhere',
             'database_port': '8888',

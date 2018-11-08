@@ -6,10 +6,9 @@ from contextlib import contextmanager
 import copy
 import ujson
 
-from configman.dotdict import DotDict as CDotDict
+from configman.dotdict import DotDict
 from mock import Mock, patch
 
-from socorro.lib.util import DotDict
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
@@ -299,7 +298,7 @@ class TestExternalProcessRule(TestCase):
         ExternalProcessRule.dot_save(d, 'a.b.c', 100)
         assert d['a']['b']['c'] == 100
 
-        dd = CDotDict()
+        dd = DotDict()
         ExternalProcessRule.dot_save(dd, 'a.b.c.d.e.f', 1000)
         assert dd.a.b.c.d.e.f == 1000
 
@@ -491,7 +490,7 @@ class TestBreakpadTransformRule2015(TestCase):
 class TestJitCrashCategorizeRule(TestCase):
 
     def get_basic_config(self):
-        config = CDotDict()
+        config = DotDict()
         config.logger = Mock()
         config.dump_field = 'upload_file_minidump'
         config.command_line = JitCrashCategorizeRule.required_config.command_line.default
@@ -506,7 +505,7 @@ class TestJitCrashCategorizeRule(TestCase):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
-        processed_crash = CDotDict()
+        processed_crash = DotDict()
         processed_crash.product = 'Firefox'
         processed_crash.os_name = 'Windows 386'
         processed_crash.cpu_name = 'x86'
@@ -533,7 +532,7 @@ class TestJitCrashCategorizeRule(TestCase):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
-        base_processed_crash = CDotDict()
+        base_processed_crash = DotDict()
         base_processed_crash.product = 'Firefox'
         base_processed_crash.os_name = 'Windows 386'
         base_processed_crash.cpu_name = 'x86'
@@ -558,7 +557,7 @@ class TestJitCrashCategorizeRule(TestCase):
             'Small | js::irregexp::ExecuteCode<T>',
         ]
         for signature in signatures:
-            processed_crash = CDotDict(base_processed_crash)
+            processed_crash = DotDict(base_processed_crash)
             processed_crash.signature = signature
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
@@ -571,7 +570,7 @@ class TestJitCrashCategorizeRule(TestCase):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
-        processed_crash = CDotDict()
+        processed_crash = DotDict()
         processed_crash.product = 'Firefox'
         processed_crash.os_name = 'Windows 386'
         processed_crash.cpu_name = 'x86'

@@ -10,35 +10,13 @@ import datetime
 import collections
 import copy
 import os
-from past.builtins import basestring
 import sys
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, str_to_list
-from configman.dotdict import DotDict as ConfigmanDotDict
+from configman.dotdict import DotDict
 import six
 import markus
-
-from socorro.lib.util import DotDict as SocorroDotDict
-
-
-def socorrodotdict_to_dict(sdotdict):
-    """Takes a socorro.lib.util.DotDict and returns a dict
-
-    This does a complete object traversal converting all instances of the
-    things named DotDict to dict so it's deep-copyable.
-
-    """
-    def _dictify(thing):
-        if isinstance(thing, collections.Mapping):
-            return dict([(key, _dictify(val)) for key, val in thing.items()])
-        elif isinstance(thing, basestring):
-            return thing
-        elif isinstance(thing, collections.Sequence):
-            return [_dictify(item) for item in thing]
-        return thing
-
-    return _dictify(sdotdict)
 
 
 class MemoryDumpsMapping(dict):
@@ -158,7 +136,7 @@ class Redactor(RequiredConfig):
                 for a_sub_key in sub_keys[:-1]:  # step through the subkeys
                     sub_mapping = sub_mapping[a_sub_key.strip()]
                 del sub_mapping[sub_keys[-1]]
-            except KeyError:
+            except (AttributeError, KeyError):
                 # this is okay, our key was already deleted by
                 # another pattern that matched at a higher level
                 pass
@@ -330,8 +308,9 @@ class CrashStorageBase(RequiredConfig):
         method should not be overridden in subclasses unless the intent is to
         alter the redaction process.
 
-        parameters:
-           crash_id - the id of a processed_crash to fetch"""
+        :arg crash_id: the id of a processed_crash to fetch
+
+        """
         processed_crash = self.get_unredacted_processed(crash_id)
         self.redactor(processed_crash)
         return processed_crash
@@ -515,7 +494,7 @@ class PolyCrashStorage(CrashStorageBase):
         """
         super(PolyCrashStorage, self).__init__(config, namespace, quit_check_callback)
         self.storage_namespaces = config.storage_namespaces
-        self.stores = ConfigmanDotDict()
+        self.stores = DotDict()
         for storage_namespace in self.storage_namespaces:
             absolute_namespace = '.'.join(x for x in [namespace, storage_namespace] if x)
             self.stores[storage_namespace] = config[storage_namespace].crashstorage_class(
@@ -584,26 +563,14 @@ class PolyCrashStorage(CrashStorageBase):
     def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
         storage_exception = PolyStorageError()
 
-        # Later we're going to need to clone this per every crash storage
-        # in the loop. But, to save time, before we do that, convert the
-        # processed crash which is a SocorroDotDict into a pure python
-        # dict which we can more easily copy.deepcopy() operate on.
-        processed_crash_as_dict = socorrodotdict_to_dict(processed_crash)
-        raw_crash_as_dict = socorrodotdict_to_dict(raw_crash)
-
         for a_store in self.stores.values():
             self.quit_check()
             try:
                 actual_store = getattr(a_store, 'wrapped_object', a_store)
 
                 if hasattr(actual_store, 'is_mutator') and actual_store.is_mutator():
-                    # We do this because `a_store.save_raw_and_processed`
-                    # expects the processed crash to be a DotDict but
-                    # you can't deepcopy those, so we deepcopy the
-                    # pure dict version and then dress it back up as a
-                    # DotDict.
-                    my_processed_crash = SocorroDotDict(copy.deepcopy(processed_crash_as_dict))
-                    my_raw_crash = SocorroDotDict(copy.deepcopy(raw_crash_as_dict))
+                    my_processed_crash = copy.deepcopy(processed_crash)
+                    my_raw_crash = copy.deepcopy(raw_crash)
                 else:
                     my_processed_crash = processed_crash
                     my_raw_crash = raw_crash

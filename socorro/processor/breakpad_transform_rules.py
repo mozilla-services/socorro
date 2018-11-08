@@ -9,10 +9,9 @@ from collections import Mapping
 
 from configman import Namespace
 from configman.converters import str_to_list
-from configman.dotdict import DotDict as ConfigmanDotDict
+from configman.dotdict import DotDict as DotDict
 
 from socorro.lib.converters import change_default
-from socorro.lib.util import DotDict
 from socorro.processor.rules.base import Rule
 
 
@@ -136,7 +135,7 @@ class ExternalProcessRule(Rule):
 
     @staticmethod
     def dot_save(a_mapping, key, value):
-        if '.' not in key or isinstance(a_mapping, ConfigmanDotDict):
+        if '.' not in key or isinstance(a_mapping, DotDict):
             a_mapping[key] = value
             return
         current_mapping = a_mapping

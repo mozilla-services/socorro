@@ -5,6 +5,7 @@
 import json
 from os.path import join
 
+from configman.dotdict import DotDict
 from moto import mock_s3_deprecated
 import pytest
 
@@ -17,7 +18,7 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.lib.util import DotDict
+from socorro.lib.util import dotdict_to_dict
 from socorro.unittest.external.boto import get_config
 
 
@@ -114,7 +115,7 @@ class TestBotoS3CrashStorage:
 
     def _fake_unredacted_processed_crash_as_string(self):
         d = self._fake_unredacted_processed_crash()
-        s = json.dumps(d)
+        s = json.dumps(dotdict_to_dict(d))
         return s
 
     @mock_s3_deprecated

@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
-
 from configman import Namespace, ConfigurationManager
 from configman.dotdict import DotDict
 import mock
@@ -17,11 +15,9 @@ from socorro.external.crashstorage_base import (
     BenchmarkingCrashStorage,
     MemoryDumpsMapping,
     FileDumpsMapping,
-    socorrodotdict_to_dict,
     MetricsCounter,
     MetricsBenchmarkingWrapper,
 )
-from socorro.lib.util import DotDict as SocorroDotDict
 from socorro.unittest.testbase import TestCase
 
 
@@ -65,76 +61,6 @@ class MutatingProcessedCrashCrashStorage(CrashStorageBase):
 
 def fake_quit_check():
     return False
-
-
-class Testsocorrodotdict_to_dict(TestCase):
-    def test_primitives(self):
-        # Test all the primitives
-        assert socorrodotdict_to_dict(None) is None
-        assert socorrodotdict_to_dict([]) == []
-        assert socorrodotdict_to_dict('') == ''
-        assert socorrodotdict_to_dict(1) == 1
-        assert socorrodotdict_to_dict({}) == {}
-
-    def test_complex(self):
-        def comp(data, expected):
-            # First socorrodotdict_to_dict the data and compare it.
-            new_dict = socorrodotdict_to_dict(data)
-            assert new_dict == expected
-
-            # Now deepcopy the new dict to make sure it's ok.
-            copy.deepcopy(new_dict)
-
-        # dict -> dict
-        comp({'a': 1}, {'a': 1})
-
-        # outer socorrodotdict -> dict
-        comp(SocorroDotDict({'a': 1}), {'a': 1})
-
-        # nested socorrodotdict -> dict
-        comp(
-            SocorroDotDict({
-                'a': 1,
-                'b': SocorroDotDict({
-                    'a': 2
-                })
-            }),
-            {'a': 1, 'b': {'a': 2}}
-        )
-        # inner socorrodotdict
-        comp(
-            {
-                'a': 1,
-                'b': SocorroDotDict({
-                    'a': 2
-                })
-            },
-            {'a': 1, 'b': {'a': 2}}
-        )
-        # in a list
-        comp(
-            {
-                'a': 1,
-                'b': [
-                    SocorroDotDict({
-                        'a': 2
-                    }),
-                    3,
-                    4
-                ]
-            },
-            {'a': 1, 'b': [{'a': 2}, 3, 4]}
-        )
-        # mixed dotdicts
-        comp(
-            DotDict({
-                'a': 1,
-                'b': SocorroDotDict({
-                    'a': 2
-                })
-            }),
-            {'a': 1, 'b': {'a': 2}}
-        )
 
 
 class TestBase(TestCase):
@@ -437,7 +363,7 @@ class TestBase(TestCase):
             dump = '12345'
             processed_crash = {
                 'foo': DotDict({'other': 'thing'}),
-                'bar': SocorroDotDict({'something': 'else'}),
+                'bar': DotDict({'something': 'else'}),
             }
 
             poly_store = config.storage(config)

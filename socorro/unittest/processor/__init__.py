@@ -1,9 +1,8 @@
 import logging
 
-from configman.dotdict import DotDict as CDotDict
+from configman.dotdict import DotDict as DotDict
 from mock import Mock
 
-from socorro.lib.util import DotDict
 from socorro.signature.rules import CSignatureTool
 
 
@@ -27,7 +26,7 @@ def create_basic_fake_processor():
 
 
 def get_basic_config():
-    config = CDotDict()
+    config = DotDict()
     config.logger = Mock()
     return config
 

@@ -11,12 +11,13 @@ import sys
 
 from configman import Namespace
 from configman.converters import class_converter
+from configman.dotdict import DotDict
 from six import reraise
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.lib.util import DotDict
 from socorro.lib import raven_client
+from socorro.lib.util import dotdict_to_dict
 
 
 # Defined separately for readability
@@ -224,10 +225,16 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             # Process the crash to generate a processed crash
             processed_crash = self.processor.process_crash(raw_crash, dumps, processed_crash)
 
+            # Convert the raw and processed crashes from DotDict into Python standard data
+            # structures
+            raw_crash = dotdict_to_dict(raw_crash)
+            processed_crash = dotdict_to_dict(processed_crash)
+
             # bug 866973 - save_raw_and_processed() instead of just save_processed().
             # The raw crash may have been modified by the processor rules. The
             # individual crash storage implementations may choose to honor re-saving
             # the raw_crash or not.
+
             self.destination.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
             self.config.logger.info('saved - %s', crash_id)
         except Exception:

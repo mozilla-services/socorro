@@ -15,13 +15,11 @@ from configman import (
     RequiredConfig,
 )
 from configman.converters import str_to_list, str_to_python_object
+from configman.dotdict import DotDict
 
 from socorro.lib import raven_client
 from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import utc_now
-from socorro.lib.util import DotDict
-
-
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,

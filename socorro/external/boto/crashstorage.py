@@ -5,12 +5,10 @@
 import json
 
 import json_schema_reducer
-from socorro.lib.converters import change_default
 from future.utils import iteritems
 
 from configman import Namespace
 from configman.converters import class_converter
-
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -18,6 +16,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.lib.converters import change_default
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
 
@@ -49,8 +48,7 @@ class BotoCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'temporary_file_system_storage_path',
-        doc='a local filesystem path where dumps temporarily '
-            'during processing',
+        doc='a local filesystem path where dumps temporarily during processing',
         default='/home/socorro/temp',
         reference_value_from='resource.boto',
     )
@@ -62,7 +60,7 @@ class BotoCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'json_object_hook',
-        default='socorro.lib.util.DotDict',
+        default='configman.dotdict.DotDict',
         from_string_converter=class_converter,
     )
 
@@ -100,22 +98,15 @@ class BotoCrashStorage(CrashStorageBase):
     def do_save_raw_crash(boto_connection, raw_crash, dumps, crash_id):
         if dumps is None:
             dumps = MemoryDumpsMapping()
-        raw_crash_as_string = boto_connection._convert_mapping_to_string(
-            raw_crash
-        )
+
+        raw_crash_as_string = boto_connection._convert_mapping_to_string(raw_crash)
         boto_connection.submit(
             crash_id,
             "raw_crash",
             raw_crash_as_string
         )
-        dump_names_as_string = boto_connection._convert_list_to_string(
-            dumps.keys()
-        )
-        boto_connection.submit(
-            crash_id,
-            "dump_names",
-            dump_names_as_string
-        )
+        dump_names_as_string = boto_connection._convert_list_to_string(dumps.keys())
+        boto_connection.submit(crash_id, "dump_names", dump_names_as_string)
 
         # we don't know what type of dumps mapping we have.  We do know,
         # however, that by calling the memory_dump_mapping method, we will
@@ -132,9 +123,7 @@ class BotoCrashStorage(CrashStorageBase):
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
         crash_id = processed_crash['uuid']
-        processed_crash_as_string = boto_connection._convert_mapping_to_string(
-            processed_crash
-        )
+        processed_crash_as_string = boto_connection._convert_mapping_to_string(processed_crash)
         boto_connection.submit(
             crash_id,
             "processed_crash",
@@ -144,22 +133,16 @@ class BotoCrashStorage(CrashStorageBase):
     def save_processed(self, processed_crash):
         self.transaction(self._do_save_processed, processed_crash)
 
-    def save_raw_and_processed(
-        self,
-        raw_crash,
-        dumps,
-        processed_crash,
-        crash_id
-    ):
-        """ bug 866973 - do not put raw_crash back into permanent storage again
-            We are doing this in lieu of a queuing solution that could allow
-            us to operate an independent crashmover. When the queuing system
-            is implemented, we could remove this, and have the raw crash
-            saved by a crashmover that's consuming crash_ids the same way
-            that the processor consumes them.
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        # bug 866973 - do not put raw_crash back into permanent storage again
+        # We are doing this in lieu of a queuing solution that could allow us
+        # to operate an independent crashmover. When the queuing system is
+        # implemented, we could remove this, and have the raw crash saved by a
+        # crashmover that's consuming crash_ids the same way that the processor
+        # consumes them.
+        #
+        # See further comments in the ProcesorApp class.
 
-            See further comments in the ProcesorApp class.
-        """
         self.save_processed(processed_crash)
 
     @staticmethod
@@ -240,11 +223,7 @@ class BotoCrashStorage(CrashStorageBase):
         )
 
     @staticmethod
-    def _do_get_unredacted_processed(
-        boto_connection,
-        crash_id,
-        json_object_hook,
-    ):
+    def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):
         try:
             processed_crash_as_string = boto_connection.fetch(
                 crash_id,
@@ -304,13 +283,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         )
         self._all_fields = SuperSearchFields(config=self.config).get()
 
-    def save_raw_and_processed(
-        self,
-        raw_crash,
-        dumps,
-        processed_crash,
-        crash_id
-    ):
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
         crash_report = {}
 
         # TODO Opportunity of optimization;
