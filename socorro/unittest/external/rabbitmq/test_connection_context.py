@@ -4,6 +4,7 @@
 
 from threading import currentThread
 
+from configman.dotdict import DotDict
 from mock import Mock, call, patch
 import pytest
 
@@ -12,7 +13,6 @@ from socorro.external.rabbitmq.connection_context import (
     ConnectionContext,
     ConnectionContextPooled
 )
-from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 

@@ -10,8 +10,9 @@ import json
 import datetime
 from past.builtins import basestring
 
+from configman.dotdict import DotDict
+
 from socorro.lib import BadArgumentError
-from socorro.lib.util import DotDict
 import socorro.lib.datetimeutil as dtutil
 
 

@@ -4,7 +4,8 @@
 
 import copy
 
-from socorro.lib.util import DotDict
+from configman.dotdict import DotDict
+
 from socorro.processor.general_transform_rules import (
     IdentifierRule,
     CPUInfoRule,

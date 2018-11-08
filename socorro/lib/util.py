@@ -4,7 +4,10 @@
 
 from __future__ import print_function
 
+import collections
+
 from itertools import islice
+import six
 
 
 def chunkify(iterable, n):
@@ -42,7 +45,22 @@ def backoff_seconds_generator():
         yield seconds[-1]
 
 
-class DotDict(dict):
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+def dotdict_to_dict(sdotdict):
+    """Takes a DotDict and returns a dict
+
+    This does a complete object traversal converting all instances of the
+    things named DotDict to dict so it's deep-copyable.
+
+    """
+    def _dictify(thing):
+        if isinstance(thing, collections.Mapping):
+            return dict([(key, _dictify(val)) for key, val in thing.items()])
+        elif isinstance(thing, six.string_types):
+            # NOTE(willkg): Need to do this because strings are sequences but
+            # we don't want to convert them into lists in the next clause
+            return thing
+        elif isinstance(thing, collections.Sequence):
+            return [_dictify(item) for item in thing]
+        return thing
+
+    return _dictify(sdotdict)

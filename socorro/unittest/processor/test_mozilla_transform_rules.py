@@ -6,13 +6,13 @@ import copy
 import json
 from StringIO import StringIO
 
-from configman.dotdict import DotDict as CDotDict
+from configman.dotdict import DotDict
 from mock import call, Mock, patch
 import requests_mock
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.revision_data import get_version
-from socorro.lib.util import DotDict
+from socorro.lib.util import dotdict_to_dict
 from socorro.processor.mozilla_transform_rules import (
     AddonsRule,
     BetaVersionRule,
@@ -160,7 +160,7 @@ class TestProductRule(TestCase):
         # does it even instantiate?
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -180,7 +180,7 @@ class TestProductRule(TestCase):
         # does it even instantiate?
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash.Version
         del raw_crash.Distributor
         del raw_crash.Distributor_version
@@ -206,7 +206,7 @@ class TestUserDataRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -222,7 +222,7 @@ class TestUserDataRule(TestCase):
     def test_stuff_missing(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash.URL
         del raw_crash.Comments
         del raw_crash.Email
@@ -243,7 +243,7 @@ class TestEnvironmentRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -256,7 +256,7 @@ class TestEnvironmentRule(TestCase):
     def test_stuff_missing(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash.Notes
 
         raw_dumps = {}
@@ -273,7 +273,7 @@ class TestPluginRule(TestCase):
     def test_plugin_hang(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.PluginHang = 1
         raw_crash.Hang = 0
         raw_crash.ProcessType = 'plugin'
@@ -297,7 +297,7 @@ class TestPluginRule(TestCase):
     def test_browser_hang(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.Hang = 1
         raw_crash.ProcessType = 'browser'
         raw_dumps = {}
@@ -319,7 +319,7 @@ class TestAddonsRule(TestCase):
     def test_action_nothing_unexpected(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -350,7 +350,7 @@ class TestAddonsRule(TestCase):
     def test_action_colon_in_addon_version(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash['Add-ons'] = 'adblockpopups@jessehakanen.net:0:3:1'
         raw_crash['EMCheckCompatibility'] = 'Nope'
         raw_dumps = {}
@@ -369,7 +369,7 @@ class TestAddonsRule(TestCase):
     def test_action_addon_is_nonsense(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash['Add-ons'] = 'naoenut813teq;mz;<[`19ntaotannn8999anxse `'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -387,7 +387,7 @@ class TestAddonsRule(TestCase):
 
 class TestDatesAndTimesRule(TestCase):
     def test_get_truncate_or_warn(self):
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         processor_notes = []
         ret = DatesAndTimesRule._get_truncate_or_warn(
             raw_crash,
@@ -436,7 +436,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -457,7 +457,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_bad_timestamp(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.timestamp = 'hi there'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -480,7 +480,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_bad_timestamp_and_no_crash_time(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.timestamp = 'hi there'
         del raw_crash.CrashTime
         raw_dumps = {}
@@ -509,7 +509,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_no_startup_time_bad_timestamp(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.timestamp = 'hi there'
         del raw_crash.StartupTime
         raw_dumps = {}
@@ -537,7 +537,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_no_startup_time(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash.StartupTime
         raw_dumps = {}
         processed_crash = DotDict()
@@ -560,7 +560,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_bad_startup_time(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.StartupTime = 'feed the goats'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -583,7 +583,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_bad_install_time(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.InstallTime = 'feed the goats'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -606,7 +606,7 @@ class TestDatesAndTimesRule(TestCase):
     def test_bad_seconds_since_last_crash(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.SecondsSinceLastCrash = 'feed the goats'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -735,7 +735,7 @@ class TestMozCrashReasonRule(TestCase):
 
 class TestOutOfMemoryBinaryRule(TestCase):
     def test_extract_memory_info(self):
-        config = CDotDict()
+        config = DotDict()
         config.logger = Mock()
 
         processor_meta = get_basic_processor_meta()
@@ -757,10 +757,10 @@ class TestOutOfMemoryBinaryRule(TestCase):
             assert memory == {'myserious': ['awesome', 'memory']}
 
     def test_extract_memory_info_too_big(self):
-        config = CDotDict()
+        config = DotDict()
         config.logger = Mock()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
@@ -804,11 +804,11 @@ class TestOutOfMemoryBinaryRule(TestCase):
             assert processed_crash.memory_report_error == expected_error_message
 
     def test_extract_memory_info_with_trouble(self):
-        config = CDotDict()
+        config = DotDict()
         config.max_size_uncompressed = 1024
         config.logger = Mock()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
@@ -832,11 +832,11 @@ class TestOutOfMemoryBinaryRule(TestCase):
             assert processed_crash.memory_report_error == 'error in gzip for a_pathname: IOError()'
 
     def test_extract_memory_info_with_json_trouble(self):
-        config = CDotDict()
+        config = DotDict()
         config.max_size_uncompressed = 1024
         config.logger = Mock()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
@@ -869,7 +869,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {'memory_report': 'a_pathname'}
         processed_crash = DotDict()
@@ -891,7 +891,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
     def test_this_is_not_the_crash_you_are_looking_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
         raw_dumps = {}
         processed_crash = DotDict()
@@ -906,7 +906,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
 class TestProductRewriteRule(TestCase):
     def test_product_map_rewrite(self):
         config = get_basic_config()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash['ProductName'] = 'Fennec'
         raw_crash['ProductID'] = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}'
         processed_crash = DotDict()
@@ -929,7 +929,7 @@ class TestESRVersionRewrite(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.ReleaseChannel = 'esr'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -946,7 +946,7 @@ class TestESRVersionRewrite(TestCase):
     def test_this_is_not_the_crash_you_are_looking_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.ReleaseChannel = 'not_esr'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -963,7 +963,7 @@ class TestESRVersionRewrite(TestCase):
     def test_this_is_really_broken(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.ReleaseChannel = 'esr'
         del raw_crash.Version
         raw_dumps = {}
@@ -984,7 +984,7 @@ class TestPluginContentURL(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.PluginContentURL = 'http://mozilla.com'
         raw_crash.URL = 'http://google.com'
         raw_dumps = {}
@@ -1002,7 +1002,7 @@ class TestPluginContentURL(TestCase):
     def test_this_is_not_the_crash_you_are_looking_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.URL = 'http://google.com'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -1021,7 +1021,7 @@ class TestPluginUserComment(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.PluginUserComment = 'I hate it when this happens'
         raw_crash.Comments = 'I wrote something here, too'
         raw_dumps = {}
@@ -1039,7 +1039,7 @@ class TestPluginUserComment(TestCase):
     def test_this_is_not_the_crash_you_are_looking_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.Comments = 'I wrote something here'
         raw_dumps = {}
         processed_crash = DotDict()
@@ -1058,9 +1058,9 @@ class TestExploitablityRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(canonical_processed_crash)
+        processed_crash = copy.deepcopy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = ExploitablityRule(config)
@@ -1074,7 +1074,7 @@ class TestExploitablityRule(TestCase):
     def test_this_is_not_the_crash_you_are_looking_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -1128,9 +1128,9 @@ class TestFlashVersionRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(canonical_processed_crash)
+        processed_crash = copy.deepcopy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = FlashVersionRule(config)
@@ -1146,11 +1146,11 @@ class TestWinsock_LSPRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.Winsock_LSP = 'really long string'
-        expected_raw_crash = copy.copy(raw_crash)
+        expected_raw_crash = copy.deepcopy(raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(canonical_processed_crash)
+        processed_crash = copy.deepcopy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
@@ -1164,11 +1164,11 @@ class TestWinsock_LSPRule(TestCase):
     def test_missing_key(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash.Winsock_LSP
-        expected_raw_crash = copy.copy(raw_crash)
+        expected_raw_crash = copy.deepcopy(raw_crash)
         raw_dumps = {}
-        processed_crash = copy.copy(canonical_processed_crash)
+        processed_crash = copy.deepcopy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = Winsock_LSPRule(config)
@@ -1184,7 +1184,7 @@ class TestTopMostFilesRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processed_crash.json_dump = {
@@ -1228,8 +1228,8 @@ class TestTopMostFilesRule(TestCase):
     def test_missing_key(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        expected_raw_crash = copy.copy(raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        expected_raw_crash = copy.deepcopy(raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -1245,7 +1245,7 @@ class TestTopMostFilesRule(TestCase):
     def test_missing_key_2(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processed_crash.json_dump = {
@@ -1775,7 +1775,7 @@ class TestOsPrettyName(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
 
         processor_meta = get_basic_processor_meta()
@@ -1863,7 +1863,7 @@ class TestThemePrettyNameRule(TestCase):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
@@ -1885,7 +1885,7 @@ class TestThemePrettyNameRule(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # the raw crash & raw_dumps should not have changed
-        assert raw_crash == canonical_standard_raw_crash
+        assert dotdict_to_dict(raw_crash) == dotdict_to_dict(canonical_standard_raw_crash)
         assert raw_dumps == {}
 
         expected_addon_list = [
@@ -1953,7 +1953,7 @@ class TestThemePrettyNameRule(TestCase):
 class TestSignatureGeneratorRule:
     def test_signature(self):
         rule = SignatureGeneratorRule(get_basic_config())
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         processed_crash = DotDict({
             'json_dump': {
                 'crash_info': {
@@ -2017,7 +2017,7 @@ class TestSignatureGeneratorRule:
         sentry_dsn = 'https://username:password@sentry.example.com/'
 
         config = get_basic_config()
-        config.sentry = CDotDict()
+        config.sentry = DotDict()
         config.sentry.dsn = sentry_dsn
         rule = SignatureGeneratorRule(config)
 

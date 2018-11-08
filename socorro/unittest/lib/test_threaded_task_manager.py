@@ -5,6 +5,7 @@
 import logging
 import time
 
+from configman.dotdict import DotDict
 from mock import Mock
 
 from socorro.lib.threaded_task_manager import (
@@ -12,7 +13,6 @@ from socorro.lib.threaded_task_manager import (
     ThreadedTaskManagerWithConfigSetup,
     default_task_func,
 )
-from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 

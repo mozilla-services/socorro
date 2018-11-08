@@ -4,10 +4,11 @@
 
 import datetime
 
+from configman.dotdict import DotDict
 import isodate
 import pytest
 
-from socorro.lib import BadArgumentError, external_common, util
+from socorro.lib import BadArgumentError, external_common
 from socorro.unittest.testbase import TestCase
 
 
@@ -102,7 +103,7 @@ class TestExternalCommon(TestCase):
             "param1": "value1",
             "unknown": 12345
         }
-        params_exp = util.DotDict()
+        params_exp = DotDict()
         params_exp.param1 = ["value1"]
         params_exp.param2 = None
         params_exp.param3 = ["list", "of", "4", "values"]
@@ -136,7 +137,7 @@ class TestExternalCommon(TestCase):
             "param8": datetime.datetime(2016, 2, 9).isoformat(),
             # note the 'param9' is deliberately not specified.
         }
-        params_exp = util.DotDict()
+        params_exp = DotDict()
         params_exp.param1 = ["value1"]
         params_exp.param2 = None
         params_exp.param3 = ['some', 'default', 'list']
@@ -178,7 +179,7 @@ class TestExternalCommon(TestCase):
         arguments = {
             "param1": "one",
         }
-        params_exp = util.DotDict()
+        params_exp = DotDict()
         params_exp.param1 = 1
 
         params = external_common.parse_arguments(

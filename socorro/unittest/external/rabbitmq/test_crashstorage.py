@@ -1,18 +1,13 @@
+from configman.dotdict import DotDict
 from mock import Mock, MagicMock, patch
 
-from socorro.external.rabbitmq.crashstorage import (
-    RabbitMQCrashStorage,
-)
-from socorro.lib.util import DotDict
-from socorro.lib.transaction import (
-    TransactionExecutor
-)
+from socorro.external.rabbitmq.crashstorage import RabbitMQCrashStorage
+from socorro.lib.transaction import TransactionExecutor
 from socorro.external.crashstorage_base import Redactor
 from socorro.unittest.testbase import TestCase
 
 
 class TestCrashStorage(TestCase):
-
     def _setup_config(self):
         config = DotDict()
         config.transaction_executor_class = Mock()

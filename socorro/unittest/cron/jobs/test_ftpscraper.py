@@ -6,6 +6,7 @@ import datetime
 from functools import wraps
 import unittest
 
+from configman.dotdict import DotDict
 import mock
 import requests
 import requests_mock
@@ -14,7 +15,6 @@ import pytest
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs import ftpscraper
 from socorro.lib.datetimeutil import utc_now
-from socorro.lib.util import DotDict
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.unittest.cron.setup_configman import get_config_manager_for_crontabber
 

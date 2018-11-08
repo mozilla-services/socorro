@@ -463,11 +463,8 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         # This crash storage mutates the crash, so we mark it as such.
         return True
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
-                               crash_id):
-        """This is the only write mechanism that is actually employed in normal
-        usage.
-        """
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """This is the only write mechanism that is actually employed in normal usage"""
         self.redactor.redact(processed_crash)
         self.raw_crash_redactor.redact(raw_crash)
 
@@ -514,11 +511,8 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         )
     )
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
-                               crash_id):
-        """This is the only write mechanism that is actually employed in normal
-        usage.
-        """
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """This is the only write mechanism that is actually employed in normal usage"""
         # Replace the `json_dump` with a subset.
         json_dump = processed_crash.get('json_dump', {})
         redacted_json_dump = {
@@ -570,7 +564,6 @@ class QueueContextSource(object):
 
 
 def _create_bulk_load_crashstore(base_class):
-
     class ESBulkClassTemplate(base_class):
         required_config = Namespace()
         required_config.add_option(
@@ -674,9 +667,7 @@ def _create_bulk_load_crashstore(base_class):
 ESBulkCrashStorage = _create_bulk_load_crashstore(ESCrashStorage)
 
 
-ESBulkCrashStorageRedactedSave = _create_bulk_load_crashstore(
-    ESCrashStorageRedactedSave
-)
+ESBulkCrashStorageRedactedSave = _create_bulk_load_crashstore(ESCrashStorageRedactedSave)
 
 
 ESCrashStorageNoStackwalkerOutput = ESCrashStorageRedactedSave

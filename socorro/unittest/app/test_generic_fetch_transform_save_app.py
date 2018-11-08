@@ -4,14 +4,13 @@
 
 import logging
 
+from configman.dotdict import DotDict
 from mock import Mock
-
 import pytest
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.task_manager import TaskManager
-from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 

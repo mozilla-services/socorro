@@ -8,6 +8,7 @@ import json
 import os
 
 from configman import Namespace
+from configman.dotdict import DotDict
 from six import BytesIO
 
 from socorro.external.crashstorage_base import (
@@ -18,7 +19,6 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.lib.datetimeutil import utc_now, JsonDTISOEncoder
 from socorro.lib.ooid import dateFromOoid, depthFromOoid
-from socorro.lib.util import DotDict
 
 
 @contextmanager
