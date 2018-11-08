@@ -4,7 +4,6 @@
 
 import logging
 import time
-from past.builtins import xrange
 
 from mock import Mock
 
@@ -93,7 +92,7 @@ class TestThreadedTaskManager(TestCase):
         ttm = ThreadedTaskManager(config,
                                   task_func=insert_into_list,
                                   job_source_iterator=(((x,), {}) for x in
-                                                       xrange(10))
+                                                       range(10))
                                   )
         try:
             ttm.start()
@@ -108,7 +107,7 @@ class TestThreadedTaskManager(TestCase):
 
     def test_doing_work_with_two_workers_and_config_setup(self):
         def new_iter():
-            for x in xrange(5):
+            for x in range(5):
                 yield ((x,), {})
 
         my_list = []
@@ -143,7 +142,7 @@ class TestThreadedTaskManager(TestCase):
         count = 0
 
         def new_iter():
-            for x in xrange(10):
+            for x in range(10):
                 yield (x,)
 
         my_list = []
