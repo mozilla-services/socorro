@@ -4,11 +4,11 @@
 
 import copy
 import json
-from StringIO import StringIO
 
 from configman.dotdict import DotDict
 from mock import call, Mock, patch
 import requests_mock
+import six
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.revision_data import get_version
@@ -740,21 +740,17 @@ class TestOutOfMemoryBinaryRule(TestCase):
 
         processor_meta = get_basic_processor_meta()
 
-        with patch(
-            'socorro.processor.mozilla_transform_rules.gzip.open'
-        ) as mocked_gzip_open:
-            mocked_gzip_open.return_value = StringIO(
-                json.dumps({'myserious': ['awesome', 'memory']})
-            )
+        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
+            ret = json.dumps({'mysterious': ['awesome', 'memory']})
+            if six.PY3:
+                ret = ret.encode('utf-8')
+            mocked_gzip_open.return_value = six.BytesIO(ret)
             rule = OutOfMemoryBinaryRule(config)
             # Stomp on the value to make it easier to test with
             rule.MAX_SIZE_UNCOMPRESSED = 1024
-            memory = rule._extract_memory_info(
-                'a_pathname',
-                processor_meta.processor_notes
-            )
+            memory = rule._extract_memory_info('a_pathname', processor_meta.processor_notes)
             mocked_gzip_open.assert_called_with('a_pathname', 'rb')
-            assert memory == {'myserious': ['awesome', 'memory']}
+            assert memory == {'mysterious': ['awesome', 'memory']}
 
     def test_extract_memory_info_too_big(self):
         config = DotDict()
@@ -766,10 +762,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch(
-            'socorro.processor.mozilla_transform_rules.gzip.open'
-        ) as mocked_gzip_open:
-
+        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
             opened = Mock()
             opened.read.return_value = json.dumps({
                 'some': 'notveryshortpieceofjson'
@@ -785,14 +778,10 @@ class TestOutOfMemoryBinaryRule(TestCase):
             # Stomp on the value to make it easier to test with
             rule.MAX_SIZE_UNCOMPRESSED = 5
 
-            memory = rule._extract_memory_info(
-                'a_pathname',
-                processor_meta.processor_notes
-            )
+            memory = rule._extract_memory_info('a_pathname', processor_meta.processor_notes)
             expected_error_message = (
                 "Uncompressed memory info too large %d (max: %s)" % (
-                    35,
-                    rule.MAX_SIZE_UNCOMPRESSED
+                    35, rule.MAX_SIZE_UNCOMPRESSED
                 )
             )
             assert memory == {"ERROR": expected_error_message}
@@ -814,22 +803,33 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch(
-            'socorro.processor.mozilla_transform_rules.gzip.open'
-        ) as mocked_gzip_open:
+        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
             mocked_gzip_open.side_effect = IOError
             rule = OutOfMemoryBinaryRule(config)
-            memory = rule._extract_memory_info(
-                'a_pathname',
-                processor_meta.processor_notes
-            )
+            memory = rule._extract_memory_info('a_pathname', processor_meta.processor_notes)
 
-            assert memory == {"ERROR": "error in gzip for a_pathname: IOError()"}
-            assert processor_meta.processor_notes == ["error in gzip for a_pathname: IOError()"]
+            assert memory['ERROR'] in [
+                # Python 2
+                'error in gzip for a_pathname: IOError()',
+                # Python 3
+                'error in gzip for a_pathname: OSError()',
+            ]
+
+            assert processor_meta.processor_notes in [
+                # Python 2
+                ['error in gzip for a_pathname: IOError()'],
+                # Python 3
+                ['error in gzip for a_pathname: OSError()']
+            ]
 
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert 'memory_report' not in processed_crash
-            assert processed_crash.memory_report_error == 'error in gzip for a_pathname: IOError()'
+            assert processed_crash.memory_report_error in [
+                # Python 2
+                'error in gzip for a_pathname: IOError()',
+                # Python 3
+                'error in gzip for a_pathname: OSError()',
+            ]
 
     def test_extract_memory_info_with_json_trouble(self):
         config = DotDict()
@@ -842,19 +842,14 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch(
-            'socorro.processor.mozilla_transform_rules.gzip.open'
-        ) as mocked_gzip_open:
+        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
             with patch(
                 'socorro.processor.mozilla_transform_rules.ujson.loads'
             ) as mocked_json_loads:
                 mocked_json_loads.side_effect = ValueError
 
                 rule = OutOfMemoryBinaryRule(config)
-                memory = rule._extract_memory_info(
-                    'a_pathname',
-                    processor_meta.processor_notes
-                )
+                memory = rule._extract_memory_info('a_pathname', processor_meta.processor_notes)
                 mocked_gzip_open.assert_called_with('a_pathname', 'rb')
                 assert memory == {"ERROR": "error in json for a_pathname: ValueError()"}
                 expected = ["error in json for a_pathname: ValueError()"]
@@ -876,7 +871,6 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         class MyOutOfMemoryBinaryRule(OutOfMemoryBinaryRule):
-
             @staticmethod
             def _extract_memory_info(dump_pathname, processor_notes):
                 assert dump_pathname == raw_dumps['memory_report']

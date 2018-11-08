@@ -329,7 +329,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
             raw_crash,
             raw_crash.uuid
         ) as raw_crash_pathname:
-            for dump_name in raw_dumps.iterkeys():
+            for dump_name in raw_dumps.keys():
 
                 if processor_meta.quit_check:
                     processor_meta.quit_check()
