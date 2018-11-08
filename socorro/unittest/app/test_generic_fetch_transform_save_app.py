@@ -58,7 +58,7 @@ class TestFetchTransformSaveApp(TestCase):
         fts_app = TestFTSAppClass(config)
         fts_app.main()
         assert len(fts_app.the_list) == 5
-        assert sorted(fts_app.the_list) == range(5)
+        assert sorted(fts_app.the_list) == [0, 1, 2, 3, 4]
 
     def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(FetchTransformSaveApp):
