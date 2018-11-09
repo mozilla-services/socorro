@@ -1,14 +1,18 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import datetime
 
 import requests_mock
 
 from socorro.cron.crontabber_app import CronTabberApp
-from socorro.lib.datetimeutil import utc_now
-from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
     execute_query_fetchall,
 )
+from socorro.lib.datetimeutil import utc_now
+from socorro.unittest.cron.crontabber_tests_base import IntegrationTestBase, get_config_manager
 
 
 @requests_mock.Mocker()
@@ -160,11 +164,11 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
         self.conn.commit()
 
     def _setup_config_manager(self):
-        return super(IntegrationTestFeaturedVersionsAutomatic, self)._setup_config_manager(
-            jobs_string=(
+        return get_config_manager(
+            jobs=(
                 'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1d'
             ),
-            extra_value_source={
+            overrides={
                 'crontabber.class-FeaturedVersionsAutomaticCronApp.api_endpoint_url': (
                     'http://example.com/{product}_versions.json'
                 ),

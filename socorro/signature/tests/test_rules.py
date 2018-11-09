@@ -24,7 +24,7 @@ class TestCSignatureTool:
         ig=['ignored1'],
         pr=['pre1', 'pre2'],
         si=['fnNeedNumber'],
-        td=['foo32\.dll.*'],
+        td=[r'foo32\.dll.*'],
         ss=('sentinel', ('sentinel2', lambda x: 'ff' in x)),
     ):
 

@@ -7,11 +7,12 @@ from __future__ import print_function
 import re
 import os
 import json
-import urlparse
 import fnmatch
 import functools
 
 import lxml.html
+import six
+from six.moves.urllib.parse import urlparse, urljoin
 
 from configman import Namespace
 from configman.converters import str_to_list
@@ -50,13 +51,11 @@ class ScrapersMixin(object):
             return []
 
         if not (starts_with or ends_with):
-            raise NotImplementedError(
-                'get_links requires either `startswith` or `endswith`'
-            )
+            raise NotImplementedError('get_links requires either `startswith` or `endswith`')
 
         html = lxml.html.document_fromstring(content)
 
-        path = urlparse.urlparse(url).path
+        path = urlparse(url).path
 
         def url_match(link):
             # The link might be something like "/pub/mobile/nightly/"
@@ -76,7 +75,7 @@ class ScrapersMixin(object):
 
         for _, _, link, _ in html.iterlinks():
             if url_match(link):
-                results.append(urlparse.urljoin(url, link))
+                results.append(urljoin(url, link))
         return results
 
     def parse_build_json_file(self, url, nightly=False):
@@ -86,23 +85,20 @@ class ScrapersMixin(object):
                 kvpairs = json.loads(content)
                 kvpairs['repository'] = kvpairs.get('moz_source_repo')
                 if kvpairs['repository']:
-                    kvpairs['repository'] = kvpairs['repository'].split(
-                        '/', -1
-                    )[-1]
+                    kvpairs['repository'] = kvpairs['repository'].split('/', -1)[-1]
                 kvpairs['build_type'] = kvpairs.get('moz_update_channel')
                 kvpairs['buildID'] = kvpairs.get('buildid')
 
                 # bug 1065071 - ignore JSON files that have keys with
                 # missing values.
                 if None in kvpairs.values():
-                    self.config.logger.warning(
-                        'warning, unsupported JSON file: %s', url
-                    )
+                    self.config.logger.warning('warning, unsupported JSON file: %s', url)
 
                 return kvpairs
-            # bug 963431 - it is valid to have an empty file
-            # due to a quirk in our build system
+
             except ValueError:
+                # bug 963431 - it is valid to have an empty file due to a quirk
+                # in our build system
                 self.config.logger.warning(
                     'Unable to JSON parse content %r',
                     content,
@@ -114,13 +110,16 @@ class ScrapersMixin(object):
         content = self.download(url)
         results = {}
         bad_lines = []
+
         if not content:
             return results, bad_lines
         contents = content.splitlines()
+
         if nightly:
             results = {'buildID': contents[0], 'rev': contents[1]}
             if len(contents) > 2:
                 results['altrev'] = contents[2]
+
         elif contents:
             results = {}
             for line in contents:
@@ -165,11 +164,8 @@ class ScrapersMixin(object):
                 if not platform_url.endswith('/'):
                     continue
 
-                platform_local_url = urlparse.urljoin(platform_url, 'en-US/')
-                json_files = self.get_links(
-                    platform_local_url,
-                    ends_with='.json'
-                )
+                platform_local_url = urljoin(platform_url, 'en-US/')
+                json_files = self.get_links(platform_local_url, ends_with='.json')
                 for json_url in json_files:
                     if self.skip_json_file(json_url):
                         continue
@@ -186,9 +182,9 @@ class ScrapersMixin(object):
                 continue
             basename = os.path.basename(url)
             if '.en-US.' in url:
-                pv, platform = re.sub('\.json$', '', basename).split('.en-US.')
+                pv, platform = re.sub(r'\.json$', '', basename).split('.en-US.')
             elif '.multi.' in url:
-                pv, platform = re.sub('\.json$', '', basename).split('.multi.')
+                pv, platform = re.sub(r'\.json$', '', basename).split('.multi.')
             else:
                 continue
 
@@ -227,7 +223,7 @@ class ScrapersMixin(object):
             # "-candidates" part.
             version, = [
                 x.split('-candidates')[0]
-                for x in urlparse.urlparse(info_url).path.split('/')
+                for x in urlparse(info_url).path.split('/')
                 if x.endswith('-candidates')
             ]
             kvpairs['version_build'] = version_build
@@ -273,15 +269,12 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         self.session = session_with_retries()
 
     def url_to_filename(self, url):
-        fn = re.sub('\W', '_', url)
-        fn = re.sub('__', '_', fn)
+        fn = re.sub(r'\W', '_', url)
+        fn = re.sub(r'__', '_', fn)
         return fn
 
     @memoize_download
     def download(self, url):
-        is_caching = False
-        fn = None
-
         response = self.session.get(url)
         if response.status_code == 404:
             self.config.logger.warning('404 when downloading %s', url)
@@ -290,9 +283,9 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         assert response.status_code == 200, response.status_code
         data = response.content
 
-        if is_caching:
-            with open(fn, 'w') as fp:
-                fp.write(data)
+        # All the things we're downloading should be text files
+        if not isinstance(data, six.text_type):
+            data = data.decode('utf-8')
 
         return data
 
@@ -306,23 +299,14 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     def run(self, date):
         # record_associations
         for product_name in self.config.products:
-            self.config.logger.debug(
-                'scraping %s releases for date %s',
-                product_name,
-                date
-            )
+            self.config.logger.debug('scraping %s releases for date %s', product_name, date)
             self.database_transaction_executor(
                 self._scrape_json_releases_and_nightlies,
                 product_name,
                 date
             )
 
-    def _scrape_json_releases_and_nightlies(
-        self,
-        connection,
-        product_name,
-        date
-    ):
+    def _scrape_json_releases_and_nightlies(self, connection, product_name, date):
         self.scrape_json_releases(connection, product_name)
         self.scrape_json_nightlies(connection, product_name, date)
 
@@ -342,7 +326,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         return version.endswith('.0') or version == '38.0.5'
 
     def scrape_json_releases(self, connection, product_name):
-        prod_url = urlparse.urljoin(self.config.base_url, product_name + '/')
+        prod_url = urljoin(self.config.base_url, product_name + '/')
         logger = self.config.logger
         cursor = connection.cursor()
 
@@ -350,8 +334,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             try:
                 url, = self.get_links(prod_url, starts_with=directory)
             except (IndexError, ValueError):
-                logger.debug('Dir %s not found for %s',
-                             directory, product_name)
+                logger.debug('Dir %s not found for %s', directory, product_name)
                 continue
 
             releases = self.get_links(url, ends_with='-candidates/')
@@ -420,9 +403,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         )
         nightly_url = self.config.base_url
         for part in directories:
-            nightly_url = urlparse.urljoin(
-                nightly_url, part + '/'
-            )
+            nightly_url = urljoin(nightly_url, part + '/')
         cursor = connection.cursor()
         dir_prefix = date.strftime('%Y-%m-%d')
         nightlies = self.get_links(nightly_url, starts_with=dir_prefix)

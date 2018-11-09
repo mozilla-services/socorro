@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-from urlparse import urlparse
 import json
 import os
 
 import jsonschema
 import requests
+from six.moves.urllib.parse import urlparse
 
 from socorro.external.boto.crashstorage import TelemetryBotoS3CrashStorage
+
 
 API_BASE = 'https://crash-stats.mozilla.com/api/{}/'
 HERE = os.path.dirname(__file__)

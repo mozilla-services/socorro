@@ -49,9 +49,7 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
     required_config = Namespace()
     required_config.add_option(
         'api_endpoint_url',
-        default=(
-            'https://product-details.mozilla.org/1.0/{product}_versions.json'
-        ),
+        default='https://product-details.mozilla.org/1.0/{product}_versions.json',
         doc='URL from which we can download all the featured versions'
     )
     required_config.add_option(
@@ -108,7 +106,7 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
             # If the beta version is something like '59.0b12'
             # then convert that to '59.0b' which is basically right-stripping
             # any numbers after the 'b'.
-            beta = re.sub('b(\d+)$', 'b', beta)
+            beta = re.sub(r'b(\d+)$', 'b', beta)
             featured.add(beta)
 
         elif product_name == 'FennecAndroid':

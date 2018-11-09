@@ -521,7 +521,7 @@ def classes_in_namespaces_converter_with_compression(
                     pass
                 # add options frr the classes required config
                 try:
-                    for k, v in a_class.get_required_config().iteritems():
+                    for k, v in a_class.get_required_config().items():
                         if k not in reference_namespace:
                             a_class_namespace[k] = v
                 except AttributeError:  # a_class has no get_required_config
@@ -596,7 +596,6 @@ def pipe_splitter(text):
 
 
 class CronTabberApp(App, RequiredConfig):
-
     app_name = 'crontabber'
     app_version = 1
     app_description = "crontabber app"
@@ -619,11 +618,11 @@ class CronTabberApp(App, RequiredConfig):
     required_config = Namespace()
     # the most important option, 'jobs', is defined last
     required_config.namespace('crontabber')
-
     required_config.crontabber.add_option(
         name='job_state_db_class',
-        default=JobStateDatabase,
+        default='socorro.cron.crontabber_app.JobStateDatabase',
         doc='Class to load and save the state and runs',
+        from_string_converter=class_converter,
     )
     required_config.crontabber.add_option(
         'jobs',

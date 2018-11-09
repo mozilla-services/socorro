@@ -5,13 +5,13 @@
 import mock
 
 from socorro.cron.crontabber_app import CronTabberApp
-from socorro.unittest.cron.jobs.base import IntegrationTestBase
+from socorro.unittest.cron.crontabber_tests_base import IntegrationTestBase, get_config_manager
 
 
 class IntegrationTestElasticsearchCleanup(IntegrationTestBase):
     def _setup_config_manager(self):
-        return super(IntegrationTestElasticsearchCleanup, self)._setup_config_manager(
-            jobs_string='socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|30d'
+        return get_config_manager(
+            jobs='socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|30d'
         )
 
     @mock.patch('socorro.external.es.connection_context.ConnectionContext')

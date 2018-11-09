@@ -628,8 +628,8 @@ class SigFixWhitespace(Rule):
 
     """
 
-    WHITESPACE_RE = re.compile('\s')
-    CONSECUTIVE_WHITESPACE_RE = re.compile('\s\s+')
+    WHITESPACE_RE = re.compile(r'\s')
+    CONSECUTIVE_WHITESPACE_RE = re.compile(r'\s\s+')
 
     def predicate(self, crash_data, result):
         return isinstance(result.get('signature'), six.string_types)

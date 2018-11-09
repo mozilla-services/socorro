@@ -5,7 +5,7 @@
 import mock
 
 from socorro.cron.crontabber_app import CronTabberApp
-from socorro.unittest.cron.jobs.base import IntegrationTestBase
+from socorro.unittest.cron.crontabber_tests_base import IntegrationTestBase, get_config_manager
 
 
 class FakeModel(object):
@@ -65,8 +65,8 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
         """)
 
     def _setup_config_manager(self):
-        return super(UpdateSignaturesCronAppTestCase, self)._setup_config_manager(
-            jobs_string='socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h'
+        return get_config_manager(
+            jobs='socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h'
         )
 
     def fetch_crashstats_signature_data(self):

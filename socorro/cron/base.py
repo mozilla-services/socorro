@@ -139,8 +139,8 @@ def convert_frequency(frequency):
         3m   : 3 minutes
         12h  : 12 hours
     """
-    number = int(re.findall('\d+', frequency)[0])
-    unit = re.findall('[^\d]+', frequency)[0]
+    number = int(re.findall(r'\d+', frequency)[0])
+    unit = re.findall(r'[^\d]+', frequency)[0]
     if unit == 'h':
         number *= 60 * 60
     elif unit == 'm':
