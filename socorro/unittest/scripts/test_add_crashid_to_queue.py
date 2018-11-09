@@ -21,11 +21,15 @@ def test_missing_args(capsys):
 
         # Make sure it prints some stuff to stdout
         out, err = capsys.readouterr()
-        usage_text = (
+        python2_usage_text = (
             'usage: add_crashid_to_queue [-h] queue [crashid [crashid ...]]\n'
             'add_crashid_to_queue: error: too few arguments\n'
         )
-        assert err == usage_text
+        python3_usage_text = (
+            'usage: add_crashid_to_queue [-h] queue [crashid [crashid ...]]\n'
+            'add_crashid_to_queue: error: the following arguments are required: queue, crashid\n'
+        )
+        assert err in [python2_usage_text, python3_usage_text]
 
 
 def test_bad_crashid(capsys):

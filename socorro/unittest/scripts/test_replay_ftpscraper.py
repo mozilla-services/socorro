@@ -17,11 +17,15 @@ def test_missing_args(capsys):
 
         # Make sure it prints some stuff to stdout
         out, err = capsys.readouterr()
-        usage_text = (
+        python2_usage_text = (
             'usage: replay_ftpscraper [-h] ftpscraperlog\n'
             'replay_ftpscraper: error: too few arguments\n'
         )
-        assert err == usage_text
+        python3_usage_text = (
+            'usage: replay_ftpscraper [-h] ftpscraperlog\n'
+            'replay_ftpscraper: error: the following arguments are required: ftpscraperlog\n'
+        )
+        assert err in [python2_usage_text, python3_usage_text]
 
 
 def test_bad_file(capsys):

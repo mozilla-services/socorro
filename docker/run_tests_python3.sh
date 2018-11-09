@@ -22,9 +22,9 @@ WORKING_TESTS=(
     socorro/unittest/external/postgresql/test_*.py
     socorro/unittest/external/rabbitmq/test_*.py
     socorro/unittest/lib/test_*.py
-    # socorro/unittest/processor/test_*.py
-    # socorro/unittest/processor/rules/test_*.py
-    # socorro/unittest/scripts/test_*.py
+    socorro/unittest/processor/test_*.py
+    socorro/unittest/processor/rules/test_*.py
+    socorro/unittest/scripts/test_*.py
 )
 
 # This is the list of known working tests by directory/filename for the webapp.

@@ -255,7 +255,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             reraise(exc_type, exc_value, exc_tb)
         finally:
             # Clean up any dump files saved to the file system
-            for a_dump_pathname in dumps.itervalues():
+            for a_dump_pathname in dumps.values():
                 try:
                     if 'TEMPORARY' in a_dump_pathname:
                         os.unlink(a_dump_pathname)

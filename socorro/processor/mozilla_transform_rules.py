@@ -8,12 +8,11 @@ import json
 from past.builtins import basestring
 import random
 import re
-from sys import maxint
 import time
-from urllib import unquote_plus
 
 import markus
 from requests import RequestException
+from six.moves.urllib.parse import unquote_plus
 import ujson
 
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
@@ -30,6 +29,12 @@ from socorro.lib.requestslib import session_with_retries
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
+
+
+# NOTE(willkg): This is the sys.maxint value for Python in the docker container
+# we run it in. Python 3 doesn't have a maxint, so when we switch to Python 3
+# I'm not sure what we should replace this with.
+MAXINT = 9223372036854775807
 
 
 class ProductRule(Rule):
@@ -229,7 +234,7 @@ class DatesAndTimesRule(Rule):
             processor_notes.append(
                 'non-integer value of "SecondsSinceLastCrash"'
             )
-        if last_crash > maxint:
+        if last_crash and last_crash > MAXINT:
             last_crash = None
             processor_notes.append(
                 '"SecondsSinceLastCrash" larger than MAXINT - set to NULL'
@@ -750,10 +755,16 @@ class BetaVersionRule(Rule):
         return None
 
     def is_final_beta(self, version):
-        """Denotes whether this version could be a final beta"""
+        """Denotes whether this version could be a final beta
+
+        :arg str version: the version string to check
+
+        :returns: True if it could be a final beta, False if not
+
+        """
         # NOTE(willkg): this started with 26.0 and 38.0.5 was an out-of-cycle
         # exception
-        return version > 26.0 and (version.endswith('.0') or version == '38.0.5')
+        return version > '26.0' and (version.endswith('.0') or version == '38.0.5')
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # Beta and aurora versions send the wrong version in the crash report,

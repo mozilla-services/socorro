@@ -23,16 +23,13 @@ def sequencer(*args):
 
 
 class TestProcessorApp(TestCase):
-
     def get_standard_config(self, sentry_dsn=None):
         config = DotDict()
 
         config.source = DotDict()
         mocked_source_crashstorage = mock.Mock()
         mocked_source_crashstorage.id = 'mocked_source_crashstorage'
-        config.source.crashstorage_class = mock.Mock(
-            return_value=mocked_source_crashstorage
-        )
+        config.source.crashstorage_class = mock.Mock(return_value=mocked_source_crashstorage)
 
         config.destination = DotDict()
         mocked_destination_crashstorage = mock.Mock()
@@ -44,15 +41,12 @@ class TestProcessorApp(TestCase):
         config.processor = DotDict()
         mocked_processor = mock.Mock()
         mocked_processor.id = 'mocked_processor'
-        config.processor.processor_class = mock.Mock(
-            return_value=mocked_processor
-        )
+        config.processor.processor_class = mock.Mock(return_value=mocked_processor)
 
         config.number_of_submissions = 'forever'
         config.new_crash_source = DotDict()
 
         class FakedNewCrashSource(object):
-
             def __init__(self, *args, **kwargs):
                 pass
 
@@ -68,9 +62,7 @@ class TestProcessorApp(TestCase):
 
         config.companion_process = DotDict()
         mocked_companion_process = mock.Mock()
-        config.companion_process.companion_class = mock.Mock(
-            return_value=mocked_companion_process
-        )
+        config.companion_process.companion_class = mock.Mock(return_value=mocked_companion_process)
 
         config.logger = mock.MagicMock()
 
@@ -84,10 +76,10 @@ class TestProcessorApp(TestCase):
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         g = pa.source_iterator()
-        assert g.next() == ((1,), {})
-        assert g.next() == ((2,), {})
-        assert g.next() is None
-        assert g.next() == ((3,), {})
+        assert next(g) == ((1,), {})
+        assert next(g) == ((2,), {})
+        assert next(g) is None
+        assert next(g) == ((3,), {})
 
     def test_transform_success(self):
         config = self.get_standard_config()
@@ -103,9 +95,7 @@ class TestProcessorApp(TestCase):
         pa.source.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
 
         fake_processed_crash = DotDict()
-        mocked_get_unredacted_processed = mock.Mock(
-            return_value=fake_processed_crash
-        )
+        mocked_get_unredacted_processed = mock.Mock(return_value=fake_processed_crash)
         pa.source.get_unredacted_processed = mocked_get_unredacted_processed
 
         mocked_process_crash = mock.Mock(return_value=7)
