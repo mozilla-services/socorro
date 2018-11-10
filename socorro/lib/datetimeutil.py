@@ -77,17 +77,13 @@ def string_to_datetime(date):
         date = 'T'.join(date)
     if isinstance(date, basestring):
         if len(date) <= len('2000-01-01'):
-            return (datetime.datetime
-                    .strptime(date, '%Y-%m-%d')
-                    .replace(tzinfo=UTC))
+            return datetime.datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=UTC)
         else:
             try:
                 parsed = isodate.parse_datetime(date)
             except ValueError:
                 # e.g. '2012-01-10 12:13:14Z' becomes '2012-01-10T12:13:14Z'
-                parsed = isodate.parse_datetime(
-                    re.sub('(\d)\s(\d)', r'\1T\2', date)
-                )
+                parsed = isodate.parse_datetime(re.sub(r'(\d)\s(\d)', r'\1T\2', date))
             if not parsed.tzinfo:
                 parsed = parsed.replace(tzinfo=UTC)
             return parsed

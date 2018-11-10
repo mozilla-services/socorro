@@ -8,7 +8,7 @@ import requests_mock
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs.bugzilla import find_signatures
 from socorro.cron.jobs.bugzilla import BUGZILLA_BASE_URL
-from socorro.unittest.cron.jobs.base import IntegrationTestBase
+from socorro.unittest.cron.crontabber_tests_base import IntegrationTestBase, get_config_manager
 
 
 SAMPLE_BUGZILLA_RESULTS = {
@@ -96,9 +96,9 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
-        return super(IntegrationTestBugzilla, self)._setup_config_manager(
-            jobs_string='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
-            extra_value_source={
+        return get_config_manager(
+            jobs='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
+            overrides={
                 'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
             }
         )

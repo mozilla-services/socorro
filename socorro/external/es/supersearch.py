@@ -20,9 +20,9 @@ from socorro.lib import (
 from socorro.lib.search_common import SearchBase
 
 
-BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
+BAD_INDEX_REGEX = re.compile(r'\[\[(.*)\] missing\]')
 ELASTICSEARCH_PARSE_EXCEPTION_REGEX = re.compile(
-    'ElasticsearchParseException\[Failed to parse \[([^\]]+)\]\]'
+    r'ElasticsearchParseException\[Failed to parse \[([^\]]+)\]\]'
 )
 
 

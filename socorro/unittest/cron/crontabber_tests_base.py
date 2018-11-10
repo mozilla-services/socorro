@@ -7,72 +7,50 @@
 
 import datetime
 import json
-import os
 import unittest
-from past.builtins import basestring
-from collections import Sequence, Mapping, defaultdict
+from collections import defaultdict, Sequence
 
-import mock
-
-import configman
-from configman.dotdict import DotDictWithAcquisition
+from configman import ConfigurationManager
+from mock import Mock
+import six
 
 from socorro.cron.crontabber_app import CronTabberApp, JobStateDatabase
 
 
-environment = DotDictWithAcquisition(os.environ)
-environment.always_ignore_mismatches = True
+def get_config_manager(jobs=None, overrides=None):
+    crontabber_config = CronTabberApp.get_required_config()
+    crontabber_config.add_option('logger', default=Mock())
+    crontabber_config.add_option('metrics', default=Mock())
+
+    local_overrides = {}
+    if jobs:
+        local_overrides['crontabber.jobs'] = jobs
+
+    if isinstance(overrides, Sequence):
+        overrides.append(local_overrides)
+    elif overrides is not None:
+        overrides = [overrides, local_overrides]
+    else:
+        overrides = [local_overrides]
+
+    # Be sure to include defaults
+    overrides.insert(0, CronTabberApp.config_defaults)
+
+    return ConfigurationManager(
+        [crontabber_config],
+        values_source_list=overrides,
+        app_name='test-crontabber',
+        app_description='',
+        argv_source=[]
+    )
 
 
-class IntegrationTestCaseBase(unittest.TestCase):
+class IntegrationTestBase(unittest.TestCase):
     """Useful class for running integration tests related to crontabber apps
     since this class takes care of setting up a psycopg connection and it
     makes sure the ``cron_job`` and ``cron_log`` tables are empty.
 
     """
-    def _setup_config_manager(self, jobs_string, extra_value_source=None):
-        """setup and return a configman.ConfigurationManager and a the
-        crontabber json file.
-            jobs_string - a formatted string list services to be offered
-            config - a string representing a config file OR a mapping of
-                     key/value pairs to be used to override config defaults or
-                     a list of any of the previous
-            extra_value_source - supplemental values required by a service
-
-        """
-        mock_logging = mock.Mock()
-        required_config = CronTabberApp.get_required_config()
-        required_config.add_option('logger', default=mock_logging)
-
-        value_source = [
-            CronTabberApp.config_defaults,
-            configman.ConfigFileFutureProxy,
-            environment,
-            {
-                'logger': mock_logging,
-                'crontabber.jobs': jobs_string,
-                'admin.strict': False,
-            },
-            extra_value_source,
-        ]
-
-        if extra_value_source is None:
-            pass
-        elif isinstance(extra_value_source, basestring):
-            value_source.append(extra_value_source)
-        elif isinstance(extra_value_source, Sequence):
-            value_source.extend(extra_value_source)
-        elif isinstance(extra_value_source, Mapping):
-            value_source.append(extra_value_source)
-
-        config_manager = configman.ConfigurationManager(
-            [required_config],
-            values_source_list=value_source,
-            app_name='test-crontabber',
-            app_description=__doc__,
-        )
-        return config_manager
-
     def _wind_clock(self, state, days=0, hours=0, seconds=0):
         # note that 'hours' and 'seconds' can be negative numbers
         if days:
@@ -95,24 +73,11 @@ class IntegrationTestCaseBase(unittest.TestCase):
 
     @classmethod
     def get_standard_config(cls):
-        config_manager = configman.ConfigurationManager(
-            [CronTabberApp.get_required_config(), JobStateDatabase.get_required_config()],
-            values_source_list=[
-                CronTabberApp.config_defaults,
-                configman.ConfigFileFutureProxy,
-                environment,
-            ],
-            app_name='test-crontabber',
-            app_description=__doc__,
-        )
-
-        config = config_manager.get_config()
-        config.crontabber.logger = mock.Mock()
-        return config
+        return get_config_manager().get_config()
 
     @classmethod
     def setUpClass(cls):
-        super(IntegrationTestCaseBase, cls).setUpClass()
+        super(IntegrationTestBase, cls).setUpClass()
         cls.config = cls.get_standard_config()
 
         db_connection_factory = cls.config.crontabber.database_class(cls.config.crontabber)
@@ -128,7 +93,7 @@ class IntegrationTestCaseBase(unittest.TestCase):
         self.conn.commit()
 
     def setUp(self):
-        super(IntegrationTestCaseBase, self).setUp()
+        super(IntegrationTestBase, self).setUp()
 
         cursor = self.conn.cursor()
 
@@ -173,7 +138,7 @@ class IntegrationTestCaseBase(unittest.TestCase):
         self.conn.commit()
 
     def tearDown(self):
-        super(IntegrationTestCaseBase, self).tearDown()
+        super(IntegrationTestBase, self).tearDown()
         self.conn.cursor().execute("""
         DROP TABLE IF EXISTS cron_job, cron_log
         """)
@@ -181,13 +146,10 @@ class IntegrationTestCaseBase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.conn.close()
-        super(IntegrationTestCaseBase, cls).tearDownClass()
+        super(IntegrationTestBase, cls).tearDownClass()
 
     def assertAlmostEqual(self, val1, val2):
-        if (
-            isinstance(val1, datetime.datetime) and
-            isinstance(val2, datetime.datetime)
-        ):
+        if isinstance(val1, datetime.datetime) and isinstance(val2, datetime.datetime):
             # if there difference is just in the microseconds, they're
             # sufficiently equal
             return not abs(val1 - val2).seconds
@@ -217,7 +179,7 @@ class IntegrationTestCaseBase(unittest.TestCase):
             for record in cursor.fetchall():
                 row = dict(zip(columns, record))
                 last_error = row.pop('last_error')
-                if isinstance(last_error, basestring):
+                if isinstance(last_error, six.string_types):
                     last_error = json.loads(last_error)
                 row['last_error'] = last_error
                 structure[row.pop('app_name')] = row

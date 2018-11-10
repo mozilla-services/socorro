@@ -8,15 +8,15 @@ import unittest
 
 from configman.dotdict import DotDict
 import mock
+import pytest
 import requests
 import requests_mock
-import pytest
+import six
 
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs import ftpscraper
 from socorro.lib.datetimeutil import utc_now
-from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorro.unittest.cron.setup_configman import get_config_manager_for_crontabber
+from socorro.unittest.cron.crontabber_tests_base import IntegrationTestBase, get_config_manager
 
 
 BASE_URL = 'https://archive.example.com/pub/'
@@ -37,9 +37,6 @@ def responsify(func):
 
 @requests_mock.Mocker()
 class TestFTPScraper(unittest.TestCase):
-    def get_standard_config(self):
-        return get_config_manager_for_crontabber().get_config()
-
     def setUp(self):
         super(TestFTPScraper, self).setUp()
         self.psycopg2_patcher = mock.patch('psycopg2.connect')
@@ -48,7 +45,10 @@ class TestFTPScraper(unittest.TestCase):
         self.mocked_session = requests.Session()
 
         def download(url):
-            return self.mocked_session.get(url).content
+            content = self.mocked_session.get(url).content
+            if not isinstance(content, six.text_type):
+                content = content.decode('utf-8')
+            return content
 
         def skip_json_file(url):
             if url.endswith('mozinfo.json'):
@@ -153,24 +153,30 @@ class TestFTPScraper(unittest.TestCase):
         )
         requests_mocker.get(
             BASE_URL + 'ONE/build-11/',
-            text="""<html><body>
-            <a href="/pub/ONE-candidates/linux_info.txt">l</a>
-            </body></html>"""
+            text=(
+                '<html><body>'
+                '<a href="/pub/ONE-candidates/linux_info.txt">l</a>'
+                '</body></html>'
+            )
         )
         requests_mocker.get(
             BASE_URL + 'ONE/',
-            text="""<html><body>
-            <a href="build-10/">build-10</a>
-            <a href="build-11/">build-11</a>
-            </body></html>"""
+            text=(
+                '<html><body>'
+                '<a href="build-10/">build-10</a>'
+                '<a href="build-11/">build-11</a>'
+                '</body></html>'
+            )
         )
 
         # Links to nothing
         requests_mocker.get(
             BASE_URL + 'TWO/',
-            text="""<html><body>
-            <a href="/pub/ignore/">ignore</a>
-            </body></html>"""
+            text=(
+                '<html><body>'
+                '<a href="/pub/ignore/">ignore</a>'
+                '</body></html>'
+            )
         )
 
         assert list(self.scrapers.get_release(BASE_URL + 'ONE/')) == [
@@ -362,16 +368,16 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
     def _setup_config_manager_firefox(self):
         # Set a completely bogus looking base_url so it can never
         # accidentally work if the network request mocking leaks
-        return super(TestIntegrationFTPScraper, self)._setup_config_manager(
-            jobs_string='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
-            extra_value_source={
+        return get_config_manager(
+            jobs='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
+            overrides={
                 'crontabber.class-FTPScraperCronApp.products': 'firefox',
                 'crontabber.class-FTPScraperCronApp.base_url': BASE_URL,
             }
         )
 
     def _setup_config_manager(self):
-        return get_config_manager_for_crontabber(
+        return get_config_manager(
             jobs='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
             overrides={
                 'crontabber.class-FTPScraperCronApp.products': 'mobile',
@@ -724,9 +730,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             assert information['ftpscraper']['last_success']
 
             config.logger.warning.assert_any_call(
-                'Unable to JSON parse content %r',
-                ' ',
-                exc_info=True
+                'Unable to JSON parse content %r', ' ', exc_info=True
             )
 
             config.logger.warning.assert_any_call(
