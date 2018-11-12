@@ -12,55 +12,44 @@
     </p>
     <p>
         Incoming crash reports have a <code>ProductName</code> key which
-        specifies which product the crash report is for. For example, incoming
-        crash reports for Firefox desktop have <code>Firefox</code> as the
-        key. The crash reporter sets this using the value of
-        <code>MOZ_APP_BASENAME</code> in <code>browser/confvars.sh</code>.
+        specifies which product the crash report is for.
     </p>
     <p>
-        Crash reports for products that Socorro doesn't recognize are
-        discarded.
-    </p>
-    <p>
-        Socorro collects build information for products. Currently, build
-        information is scraped from
-        <a href="https://archive.mozilla.org/pub/">archive.mozilla.org</a>. In
-        the future, we plan to switch to using
-        <a href="https://mozilla-services.github.io/buildhub/">BuildHub</a>.
-    </p>
-    <p>
-        Build information is required to:
+        For example:
     </p>
     <ul>
-        <li>fix version numbers in processing</li>
-        <li>drive the product home page in the Crash Stats site</li>
-        <li>support forms in the Top Crashers page in the Crash Stats site</li>
-        <li>support forms in the Exploitability page in the Crash Stats
-            site</li>
-        <li>suggest products in the "Product" field in the Super Search page in
-            the Crash Stats site</li>
+        <li>
+            Incoming crash reports for Firefox desktop have
+            <code>Firefox</code> as the key. The Firefox crash reporter sets
+            this using the value of <code>MOZ_APP_BASENAME</code> in
+            <code>browser/confvars.sh</code>.
+        </li>
+        <li>
+            GeckoView-based products set this value when setting up the
+            <code>MozillaSocorroService</code>. The "your app name" is the
+            <code>ProductName</code> value. See the
+            <a href="https://github.com/mozilla-mobile/android-components/blob/master/components/lib/crash/README.md#sending-crash-reports-to-mozilla-socorro">documentation for MozillaSocorroService</a>
+            for details.
+        </li>
     </ul>
     <p>
-        If your product doesn't have build information on archive.mozilla.org,
-        then parts of the site won't work for your product.
+        Socorro only accepts crash reports from supported products. Crash
+        reports for products that Socorro doesn't recognize are rejected.
     </p>
+
+    <h1 id="collection">Collection of crash report data</h1>
     <p>
-        Socorro collects active version information from
-        <a href="https://product-details.mozilla.org">product-details.mozilla.org</a>.
+        Crash report data falls under category 4 of our
+        <a href="https://wiki.mozilla.org/Firefox/Data_Collection">data collection categories</a>
+        because it contains information about the state of the application
+        when it crashed including memory dumps.
+        As such, it has the following requirements regarding collection:
     </p>
-    <p>
-        Current active version information is required to:
-    </p>
-    <ul>
-        <li>drive the product home page in the Crash Stats site</li>
-        <li>support forms in the Top Crashers page in the Crash Stats site</li>
-        <li>support forms in the Exploitability page in the Crash Stats site</li>
-    </ul>
-    <p>
-        If your product doesn't have active version information on
-        product-details.mozilla.org, then parts of the site won't work for your
-        product.
-    </p>
+    <ol>
+        <li>collection of this data must default to OFF</li>
+        <li>collection requires advanced user notice, consent of the user,
+            and the ability to opt-out</li>
+    </ol>
 
     <h1 id="requestaccess">How to request a new product on Socorro</h1>
     <p>
@@ -73,13 +62,7 @@
     <ol>
         <li>The name of the product as you want it to show up in the Crash Stats
             web interface.</li>
-        <li>The <code>MOZ_APP_BASENAME</code> used when building the binaries
-            for the product. This is used to set the <code>ProductName</code>
-            value by the crash reporter for incoming crash reports.</li>
-        <li>(Optional) The URL for build information for your product--parts of
-            the site won't work without it.</li>
-        <li>(Optional) The URL for active version information--parts of the site
-            won't work without it.</li>
+        <li>The <code>ProductName</code> value in the crash reports.</li>
     </ol>
     <p>
         If you have any questions or additional needs, please email us.
