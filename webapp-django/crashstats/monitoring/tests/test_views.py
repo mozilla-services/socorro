@@ -71,9 +71,6 @@ class TestCrontabberStatusViews(BaseTestViews):
         data = json.loads(response.content)
         assert data['status'] == 'Broken'
         assert data['broken'] == ['job1']
-        # FIXME(willkg): depends_on is hard-coded to [] now, so this will
-        # never happen
-        # assert data['blocked'] == ['job2', 'job3']
 
     def test_crontabber_status_not_run_for_a_while(self):
         some_time_ago = (

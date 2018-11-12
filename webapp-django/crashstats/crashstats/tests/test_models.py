@@ -1,4 +1,3 @@
-import json
 import random
 import urlparse
 
@@ -7,12 +6,11 @@ import pytest
 
 from django.core.cache import cache
 from django.conf import settings
-from django.utils import dateparse, timezone
+from django.utils import dateparse
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
-from crashstats.cron.models import Job as CronJob
 from socorro.lib import BadArgumentError
 
 
@@ -524,45 +522,3 @@ class TestModels(DjangoTestCase):
         # Note that it doesn't raise an error if
         # the PriorityjobRabbitMQCrashStore choses NOT to queue it.
         assert not api.post(crash_ids='bad-crash-id')
-
-    def test_CrontabberState(self):
-        dt = timezone.now()
-        CronJob.objects.create(
-            app_name='automatic-emails',
-            next_run=dt,
-            first_run=dt,
-            depends_on='',
-            last_run=dt,
-            last_success=dt,
-            error_count=0,
-            last_error=json.dumps({
-                'traceback': 'TRACEBACK HERE',
-                'type': '<class \'boto.exception.S3ResponseError\'>',
-                'value': 'EXCEPTION VALUE HERE'
-            }),
-        )
-
-        api = models.CrontabberState()
-        resp = api.get()
-
-        # Verify that the response redacts the last_error.traceback and
-        # last_error.value and otherwise maintains the expected shape
-        expected_resp = {
-            'state': {
-                'automatic-emails': {
-                    'depends_on': [],
-                    'error_count': 0,
-                    'first_run': dt,
-                    'last_error': {
-                        'traceback': 'See error logging system.',
-                        'type': u"<class 'boto.exception.S3ResponseError'>",
-                        'value': 'See error logging system.'
-                    },
-                    'last_run': dt,
-                    'last_success': dt,
-                    'next_run': dt,
-                    'ongoing': None
-                }
-            }
-        }
-        assert resp == expected_resp
