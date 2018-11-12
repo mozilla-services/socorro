@@ -11,27 +11,22 @@
         available for search and analysis using the Crash Stats web site.
     </p>
     <p>
-        Incoming crash reports have a <code>ProductName</code> key which
-        specifies which product the crash report is for.
+        Incoming crash reports have a <code>ProductName</code> which specifies
+        which product the crash report came from.
     </p>
     <p>
-        For example:
+        Incoming crash reports for Firefox desktop have
+        <code>ProductName</code> as <code>Firefox</code>. The Firefox crash
+        reporter sets this using the value of <code>MOZ_APP_BASENAME</code> in
+        <code>browser/confvars.sh</code>.
     </p>
-    <ul>
-        <li>
-            Incoming crash reports for Firefox desktop have
-            <code>Firefox</code> as the key. The Firefox crash reporter sets
-            this using the value of <code>MOZ_APP_BASENAME</code> in
-            <code>browser/confvars.sh</code>.
-        </li>
-        <li>
-            GeckoView-based products set this value when setting up the
-            <code>MozillaSocorroService</code>. The "your app name" is the
-            <code>ProductName</code> value. See the
-            <a href="https://github.com/mozilla-mobile/android-components/blob/master/components/lib/crash/README.md#sending-crash-reports-to-mozilla-socorro">documentation for MozillaSocorroService</a>
-            for details.
-        </li>
-    </ul>
+    <p>
+        Incoming crash reports for GeckoView-based products have <code>ProductName</code> set to
+        the app name argument when setting up <code>MozillaSocorroService</code>.
+        See the
+        <a href="https://github.com/mozilla-mobile/android-components/blob/master/components/lib/crash/README.md#sending-crash-reports-to-mozilla-socorro">documentation for MozillaSocorroService</a>
+        for details.
+    </p>
     <p>
         Socorro only accepts crash reports from supported products. Crash
         reports for products that Socorro doesn't recognize are rejected.
@@ -43,13 +38,12 @@
         <a href="https://wiki.mozilla.org/Firefox/Data_Collection">data collection categories</a>
         because it contains information about the state of the application
         when it crashed including memory dumps.
-        As such, it has the following requirements regarding collection:
     </p>
-    <ol>
-        <li>collection of this data must default to OFF</li>
-        <li>collection requires advanced user notice, consent of the user,
-            and the ability to opt-out</li>
-    </ol>
+    <p>
+        Collection of this data should default to off and requires user notice
+        for consent, share what will be sent, and allow a user to decline
+        sending.
+    </p>
 
     <h1 id="requestaccess">How to request a new product on Socorro</h1>
     <p>
