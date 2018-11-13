@@ -4,19 +4,18 @@ import os
 
 from django import http
 from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
+from django.core.urlresolvers import reverse
 from django.shortcuts import redirect, render
 from django.utils.http import urlquote
 
 from csp.decorators import csp_update
 
-from socorro.external.crashstorage_base import CrashIDNotFound
-from . import forms, models, utils
-from .decorators import pass_default_context
-
+from crashstats.crashstats import forms, models, utils
+from crashstats.crashstats.decorators import pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
+from socorro.external.crashstorage_base import CrashIDNotFound
 
 
 # To prevent running in to a known Python bug
@@ -250,12 +249,6 @@ def dockerflow_version(requst):
     else:
         data = '{}'
     return http.HttpResponse(data, content_type='application/json')
-
-
-@pass_default_context
-def crontabber_state(request, default_context=None):
-    context = default_context or {}
-    return render(request, 'crashstats/crontabber_state.html', context)
 
 
 @pass_default_context

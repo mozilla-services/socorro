@@ -24,9 +24,6 @@ urlpatterns = [
         views.status_json,
         name='status_json'),
 
-    url(r'^crontabber-state/$',
-        views.crontabber_state,
-        name='crontabber_state'),
     url(r'^report/index/(?P<crash_id>[\w-]+)$',
         views.report_index,
         name='report_index'),

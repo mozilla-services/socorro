@@ -4,7 +4,6 @@ import json
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.utils import timezone
 
 from markus.testing import MetricsMock
 import mock
@@ -13,6 +12,7 @@ import pyquery
 
 from crashstats.crashstats.models import (
     BugAssociation,
+    NoOpMiddleware,
     ProcessedCrash,
     ProductVersionsMiddleware,
     Reprocessing,
@@ -20,10 +20,8 @@ from crashstats.crashstats.models import (
     UnredactedCrash,
 )
 from crashstats.crashstats.tests.conftest import BaseTestViews
-from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.tokens.models import Token
-from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import create_new_ooid
 from socorro.unittest.external.boto.conftest import BotoHelper
 
@@ -84,64 +82,86 @@ class TestViews(BaseTestViews):
 
     def test_CORS(self):
         """any use of model_wrapper should return a CORS header"""
-        dt = timezone.now()
-        CronJob.objects.create(
-            app_name='automatic-emails',
-            next_run=dt,
-            first_run=dt,
-            depends_on='',
-            last_run=dt,
-            last_success=dt,
-            error_count=0,
-            last_error='{}'
-        )
-        CronJob.objects.create(
-            app_name='ftpscraper',
-            next_run=dt,
-            first_run=dt,
-            depends_on='',
-            last_run=dt,
-            last_success=dt,
-            error_count=0,
-            last_error='{}'
-        )
-
-        url = reverse('api:model_wrapper', args=('CrontabberState',))
-        response = self.client.get(url)
+        url = reverse('api:model_wrapper', args=('NoOp',))
+        response = self.client.get(url, {'product': 'good'})
         assert response.status_code == 200
         assert response['Access-Control-Allow-Origin'] == '*'
 
     def test_cache_control(self):
-        """successful queries against models with caching should
-        set a Cache-Control header."""
-
-        def mocked_get(**options):
-            assert options['product'] == [settings.DEFAULT_PRODUCT]
-            return {
-                "hits": [
-                    {
-                        "product": settings.DEFAULT_PRODUCT,
-                        "throttle": 100.0,
-                        "end_date": "2018-10-29",
-                        "is_featured": True,
-                        "build_type": "nightly",
-                        "version": "63.0a1",
-                        "start_date": "2018-06-25",
-                        "has_builds": True,
-                        "is_rapid_beta": False
-                    },
-                ]
-            }
-
-        ProductVersionsMiddleware.implementation().get.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('ProductVersions',))
+        """Verifies Cache-Control header for models that cache results"""
+        url = reverse('api:model_wrapper', args=('NoOp',))
         response = self.client.get(url, {'product': settings.DEFAULT_PRODUCT})
         assert response.status_code == 200
         assert response['Cache-Control']
         assert 'private' in response['Cache-Control']
-        cache_seconds = ProductVersionsMiddleware.cache_seconds
+        cache_seconds = NoOpMiddleware.cache_seconds
         assert 'max-age={}'.format(cache_seconds) in response['Cache-Control']
+
+    def test_metrics_gathering(self):
+        url = reverse('api:model_wrapper', args=('NoOp',))
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url, {'product': 'good'})
+        assert response.status_code == 200
+        assert metrics_mock.has_record(
+            fun_name='incr',
+            stat='webapp.api.pageview',
+            value=1,
+            tags=['endpoint:apiNoOp']
+        )
+
+    def test_param_exceptions(self):
+        # missing required parameter
+        url = reverse('api:model_wrapper', args=('NoOp',))
+        response = self.client.get(url)
+        assert response.status_code == 400
+        assert 'This field is required.' in response.content
+
+        response = self.client.get(url, {'product': 'bad'})
+        assert response.status_code == 400
+        assert 'Bad value for parameter(s) \'Bad product\'' in response.content
+
+    def test_hit_or_not_hit_ratelimit(self):
+        url = reverse('api:model_wrapper', args=('NoOp',))
+
+        response = self.client.get(url, {'product': 'good'})
+        assert response.status_code == 200
+        with self.settings(
+            API_RATE_LIMIT='3/m',
+            API_RATE_LIMIT_AUTHENTICATED='6/m'
+        ):
+            current_limit = 3  # see above mentioned settings override
+            # Double to avoid
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
+            for i in range(current_limit * 2):
+                response = self.client.get(url, {'product': 'good'}, HTTP_X_REAL_IP='12.12.12.12')
+            assert response.status_code == 429
+
+            # But it'll work if you use a different X-Real-IP
+            # because the rate limit is based on your IP address
+            response = self.client.get(url, {'product': 'good'}, HTTP_X_REAL_IP='11.11.11.11')
+            assert response.status_code == 200
+
+            user = User.objects.create(username='test')
+            token = Token.objects.create(
+                user=user,
+                notes="Just for avoiding rate limit"
+            )
+
+            response = self.client.get(url, {'product': 'good'}, HTTP_AUTH_TOKEN=token.key)
+            assert response.status_code == 200
+
+            for i in range(current_limit):
+                response = self.client.get(url, {'product': 'good'})
+            assert response.status_code == 200
+
+            # But even being signed in has a limit.
+            authenticated_limit = 6  # see above mentioned settings override
+            assert authenticated_limit > current_limit
+            for i in range(authenticated_limit * 2):
+                response = self.client.get(url, {'product': 'good'})
+            # Even if you're authenticated - sure the limit is higher -
+            # eventually you'll run into the limit there too.
+            assert response.status_code == 429
 
     def test_ProductVersionsMiddleware(self):
         def mocked_get(*args, **k):
@@ -168,18 +188,6 @@ class TestViews(BaseTestViews):
             'version': '1.0',
         }
         assert dump['hits'][0] == expected
-
-    def test_metrics_gathering(self):
-        url = reverse('api:model_wrapper', args=('CrontabberState',))
-        with MetricsMock() as metrics_mock:
-            response = self.client.get(url)
-        assert response.status_code == 200
-        assert metrics_mock.has_record(
-            fun_name='incr',
-            stat='webapp.api.pageview',
-            value=1,
-            tags=['endpoint:apiCrontabberState']
-        )
 
     def test_ProcessedCrash(self):
         url = reverse('api:model_wrapper', args=('ProcessedCrash',))
@@ -537,105 +545,10 @@ class TestViews(BaseTestViews):
         assert 'errors' in res
         assert len(res['errors']) == 3
 
-    def test_CrontabberState(self):
-        dt = timezone.now()
-        CronJob.objects.create(
-            app_name='automatic-emails',
-            next_run=dt,
-            first_run=dt,
-            depends_on='',
-            last_run=dt,
-            last_success=dt,
-            error_count=0,
-            last_error='{}'
-        )
-        CronJob.objects.create(
-            app_name='ftpscraper',
-            next_run=dt,
-            first_run=dt,
-            depends_on='',
-            last_run=dt,
-            last_success=dt,
-            error_count=0,
-            last_error='{}'
-        )
-
-        url = reverse('api:model_wrapper', args=('CrontabberState',))
-        response = self.client.get(url)
-        assert response.status_code == 200
-        dump = json.loads(response.content)
-        assert dump['state']
-
     def test_Field(self):
         url = reverse('api:model_wrapper', args=('Field',))
         response = self.client.get(url)
         assert response.status_code == 404
-
-    def test_hit_or_not_hit_ratelimit(self):
-        dt = timezone.now()
-        CronJob.objects.create(
-            app_name='automatic-emails',
-            next_run=dt,
-            first_run=dt,
-            depends_on='',
-            last_run=dt,
-            last_success=dt,
-            error_count=0,
-            last_error='{}'
-        )
-        CronJob.objects.create(
-            app_name='ftpscraper',
-            next_run=dt,
-            first_run=dt,
-            depends_on='',
-            last_run=dt,
-            last_success=dt,
-            error_count=0,
-            last_error='{}'
-        )
-
-        # doesn't matter much which model we use
-        url = reverse('api:model_wrapper', args=('CrontabberState',))
-
-        response = self.client.get(url)
-        assert response.status_code == 200
-        with self.settings(
-            API_RATE_LIMIT='3/m',
-            API_RATE_LIMIT_AUTHENTICATED='6/m'
-        ):
-            current_limit = 3  # see above mentioned settings override
-            # Double to avoid
-            # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
-            for __ in range(current_limit * 2):
-                response = self.client.get(url, HTTP_X_REAL_IP='12.12.12.12')
-            assert response.status_code == 429
-
-            # But it'll work if you use a different X-Real-IP
-            # because the rate limit is based on your IP address
-            response = self.client.get(url, HTTP_X_REAL_IP='11.11.11.11')
-            assert response.status_code == 200
-
-            user = User.objects.create(username='test')
-            token = Token.objects.create(
-                user=user,
-                notes="Just for avoiding rate limit"
-            )
-
-            response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
-            assert response.status_code == 200
-
-            for __ in range(current_limit):
-                response = self.client.get(url)
-            assert response.status_code == 200
-
-            # But even being signed in has a limit.
-            authenticated_limit = 6  # see above mentioned settings override
-            assert authenticated_limit > current_limit
-            for __ in range(authenticated_limit * 2):
-                response = self.client.get(url)
-            # Even if you're authenticated - sure the limit is higher -
-            # eventually you'll run into the limit there too.
-            assert response.status_code == 429
 
     def test_SuperSearch(self):
         def mocked_supersearch_get(**params):
@@ -766,27 +679,6 @@ class TestViews(BaseTestViews):
             'product': ['WaterWolf', 'NightTrain']
         })
         assert response.status_code == 200
-
-    def test_change_certain_exceptions_to_bad_request(self):
-        # It actually doesn't matter so much which service we use
-        # because we're heavily mocking it.
-        # Here we use the SuperSearch model.
-
-        def mocked_supersearch_get(**params):
-            if params.get('product'):
-                raise MissingArgumentError(params['product'])
-            else:
-                raise BadArgumentError('That was a bad thing to do')
-
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
-
-        url = reverse('api:model_wrapper', args=('SuperSearch',))
-        response = self.client.get(url)
-        assert response.status_code == 400
-        assert 'That was a bad thing to do' in response.content
-        response = self.client.get(url, {'product': 'foobaz'})
-        assert response.status_code == 400
-        assert 'foobaz' in response.content
 
     def test_Reprocessing(self):
         def mocked_reprocess(crash_ids):

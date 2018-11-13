@@ -391,11 +391,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 302
         assert response['location'].endswith(target)
 
-    def test_crontabber_state(self):
-        url = reverse('crashstats:crontabber_state')
-        response = self.client.get(url)
-        assert response.status_code == 200
-
     def test_report_index(self):
         json_dump = {
             'system_info': {

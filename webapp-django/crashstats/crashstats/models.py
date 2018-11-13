@@ -5,7 +5,6 @@ in the public API in the `api` app.
 import datetime
 import functools
 import hashlib
-import json
 import logging
 import time
 from past.builtins import basestring
@@ -32,7 +31,6 @@ from django.template.defaultfilters import slugify
 from django.utils.encoding import iri_to_uri
 
 from crashstats.base.utils import requests_retry_session
-from crashstats.cron.models import Job as CronJob
 
 
 logger = logging.getLogger('crashstats.models')
@@ -263,7 +261,6 @@ def _clean_query(query, max_length=30):
 
 
 def measure_fetches(method):
-
     @functools.wraps(method)
     def inner(*args, **kwargs):
         t0 = time.time()
@@ -303,7 +300,6 @@ def measure_fetches(method):
 
 
 class SocorroCommon(object):
-
     # by default, we don't need username and password
     username = password = None
     # http_host
@@ -377,7 +373,6 @@ class SocorroCommon(object):
 
 
 class SocorroMiddleware(SocorroCommon):
-
     # by default, assume the class to not have an implementation reference
     implementation = None
 
@@ -572,7 +567,6 @@ class ProductsMiddleware(SocorroMiddleware):
 
 
 class ProductVersionsMiddleware(SocorroMiddleware):
-
     implementation = socorro.external.postgresql.products.ProductVersions
 
     deprecation_warning = (
@@ -614,7 +608,6 @@ class TelemetryCrash(SocorroMiddleware):
 
 
 class ProcessedCrash(SocorroMiddleware):
-
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
     implementation_config_namespace = 'crashdata'
 
@@ -693,7 +686,6 @@ class ProcessedCrash(SocorroMiddleware):
 
 
 class UnredactedCrash(ProcessedCrash):
-
     defaults = {
         'datatype': 'unredacted',
     }
@@ -969,53 +961,7 @@ class SignatureFirstDate(SocorroMiddleware):
         }
 
 
-class CrontabberState(SocorroMiddleware):
-    # make it small but but non-zero
-    cache_seconds = 60  # 1 minute
-
-    # will never contain PII
-    API_WHITELIST = None
-
-    def get(self, *args, **kwargs):
-        job_states = {}
-        jobs = CronJob.objects.order_by('app_name')
-        for job in jobs:
-            state = {
-                'next_run': job.next_run,
-                'first_run': job.first_run,
-                'last_run': job.last_run,
-                'last_success': job.last_success,
-                'error_count': job.error_count,
-                'ongoing': job.ongoing,
-                # FIXME(willkg): hardcode depends_on to an empty list to save
-                # us grief because none of the apps have dependencies and it's
-                # stored differently than before
-                'depends_on': [],
-                'last_error': {}
-            }
-
-            # Redact last_error data so it doesn't bleed infrastructure info into
-            # the world
-            if job.last_error:
-                last_error = json.loads(job.last_error)
-                if last_error:
-                    # NOTE(willkg): The structure of last_error is defined in
-                    # crontabber in crontabber/app.py.
-                    state['last_error'] = {
-                        'traceback': 'See error logging system.',
-                        'value': 'See error logging system.',
-                        'type': last_error.get('type', 'Unknown')
-                    }
-
-            job_states[job.app_name] = state
-
-        return {
-            'state': job_states
-        }
-
-
 class BugzillaBugInfo(SocorroCommon):
-
     # This is for how long we cache the metadata of each individual bug.
     BUG_CACHE_SECONDS = 60 * 60
 
@@ -1117,3 +1063,25 @@ class Priorityjob(SocorroMiddleware):
 
     def post(self, **kwargs):
         return self.get_implementation().process(**kwargs)
+
+
+class NoOpMiddleware(SocorroMiddleware):
+    """Does nothing--used for testing API infrastructure"""
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
+
+    required_params = ('product',)
+
+    def get(self, **kwargs):
+        params = self.parse_parameters(kwargs)
+
+        if params['product'] == 'bad':
+            raise BadArgumentError('Bad product')
+
+        return {
+            'hits': [],
+            'total': 0
+        }

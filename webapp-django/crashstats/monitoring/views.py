@@ -9,7 +9,7 @@ from django.contrib.auth.models import Permission
 from django.core.cache import cache
 
 from crashstats.crashstats import utils
-from crashstats.crashstats.models import CrontabberState
+from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch
 
 
@@ -19,16 +19,21 @@ def index(request):
 
 @utils.json_view
 def crontabber_status(request):
-    api = CrontabberState()
+    """Returns the high-level status of crontabber jobs"""
+    context = {
+        'status': 'ALLGOOD'
+    }
 
-    # start by assuming the status is OK which means no jobs are broken
-    context = {'status': 'ALLGOOD'}
+    last_runs = []
+    broken = []
+    for job in CronJob.objects.all():
+        if job.last_run:
+            last_runs.append(job.last_run)
 
-    all_apps = api.get()['state']
-    last_runs = [
-        x['last_run'] for x in all_apps.values()
-        if x['last_run']
-    ]
+        if job.error_count:
+            broken.append(job.app_name)
+
+    # Adjust status based on last_run
     if last_runs:
         ancient_times = timezone.now() - datetime.timedelta(
             minutes=settings.CRONTABBER_STALE_MINUTES
@@ -41,33 +46,11 @@ def crontabber_status(request):
         # if it's never run, then it's definitely stale
         context['status'] = 'Stale'
 
-    broken = [
-        name for name, state in all_apps.items()
-        if state['error_count']
-    ]
-    blocked = [
-        name for name, state in all_apps.items()
-        if set(broken) & set(state['depends_on'])
-    ]
-
-    # This infinite loop recurses deeper and deeper into the structure
-    # to find all jobs that are blocked. If we find that job X is blocked
-    # by job Y in iteration 1, we need to do another iteration to see if
-    # there are jobs that are blocked by job X (which was blocked by job Y)
-    while True:
-        also_blocked = [
-            name for name, state in all_apps.items()
-            if name not in blocked and set(blocked) & set(state['depends_on'])
-        ]
-        if not also_blocked:
-            break
-        blocked += also_blocked
-
+    # Adjust status based on broken jobs
     if broken:
-        # let's change our mind
         context['status'] = 'Broken'
         context['broken'] = broken
-        context['blocked'] = blocked
+
     return context
 
 

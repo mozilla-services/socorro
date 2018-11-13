@@ -139,12 +139,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/api-documentation.min.css',
     },
-    'crontabber_state': {
-        'source_filenames': (
-            'crashstats/css/pages/crontabber_state.less',
-        ),
-        'output_filename': 'css/crontabber-state.min.css',
-    },
     'documentation': {
         'source_filenames': (
             'documentation/css/documentation.less',
@@ -315,13 +309,6 @@ PIPELINE_JS = {
             'api/js/testdrive.js'
         ),
         'output_filename': 'js/api-documentation.min.js',
-    },
-    'crontabber_state': {
-        'source_filenames': (
-            'underscore/underscore-min.js',
-            'crashstats/js/socorro/crontabber_state.js',
-        ),
-        'output_filename': 'js/crontabber-state.min.js',
     },
     'documentation': {
         'source_filenames': (
