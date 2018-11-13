@@ -13,7 +13,6 @@ import time
 import markus
 from requests import RequestException
 from six.moves.urllib.parse import unquote_plus
-import ujson
 
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 from socorro.lib import javautil
@@ -327,7 +326,7 @@ class OutOfMemoryBinaryRule(Rule):
                 )
                 return error_out(error_message)
 
-            memory_info = ujson.loads(memory_info_as_string)
+            memory_info = json.loads(memory_info_as_string)
         except IOError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)

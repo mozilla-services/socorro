@@ -1679,6 +1679,7 @@ class TestSignatureShutdownTimeout:
         rule = rules.SignatureShutdownTimeout()
 
         crash_data = {
+            # This will cause json.load to raise an error
             'async_shutdown_timeout': '{{{{'
         }
         result = {
@@ -1691,7 +1692,7 @@ class TestSignatureShutdownTimeout:
         assert result['signature'] == 'AsyncShutdownTimeout | UNKNOWN'
 
         assert 'Error parsing AsyncShutdownTimeout:' in result['notes'][0]
-        assert 'Expected object or value' in result['notes'][0]
+        assert 'Expecting property name' in result['notes'][0]
         assert (
             'Signature replaced with a Shutdown Timeout signature, was: "foo"' in result['notes'][1]
         )

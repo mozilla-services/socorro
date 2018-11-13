@@ -100,13 +100,9 @@ class BotoCrashStorage(CrashStorageBase):
             dumps = MemoryDumpsMapping()
 
         raw_crash_as_string = boto_connection._convert_mapping_to_string(raw_crash)
-        boto_connection.submit(
-            crash_id,
-            "raw_crash",
-            raw_crash_as_string
-        )
+        boto_connection.submit(crash_id, 'raw_crash', raw_crash_as_string)
         dump_names_as_string = boto_connection._convert_list_to_string(dumps.keys())
-        boto_connection.submit(crash_id, "dump_names", dump_names_as_string)
+        boto_connection.submit(crash_id, 'dump_names', dump_names_as_string)
 
         # we don't know what type of dumps mapping we have.  We do know,
         # however, that by calling the memory_dump_mapping method, we will
@@ -124,11 +120,7 @@ class BotoCrashStorage(CrashStorageBase):
     def _do_save_processed(boto_connection, processed_crash):
         crash_id = processed_crash['uuid']
         processed_crash_as_string = boto_connection._convert_mapping_to_string(processed_crash)
-        boto_connection.submit(
-            crash_id,
-            "processed_crash",
-            processed_crash_as_string
-        )
+        boto_connection.submit(crash_id, "processed_crash", processed_crash_as_string)
 
     def save_processed(self, processed_crash):
         self.transaction(self._do_save_processed, processed_crash)
@@ -148,18 +140,10 @@ class BotoCrashStorage(CrashStorageBase):
     @staticmethod
     def do_get_raw_crash(boto_connection, crash_id, json_object_hook):
         try:
-            raw_crash_as_string = boto_connection.fetch(
-                crash_id,
-                "raw_crash"
-            )
-            return json.loads(
-                raw_crash_as_string,
-                object_hook=json_object_hook
-            )
+            raw_crash_as_string = boto_connection.fetch(crash_id, 'raw_crash')
+            return json.loads(raw_crash_as_string, object_hook=json_object_hook)
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound(
-                '%s not found: %s' % (crash_id, x)
-            )
+            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_raw_crash(self, crash_id):
         return self.transaction_for_get(
@@ -176,9 +160,7 @@ class BotoCrashStorage(CrashStorageBase):
             a_dump = boto_connection.fetch(crash_id, name)
             return a_dump
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound(
-                '%s not found: %s' % (crash_id, x)
-            )
+            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_raw_dump(self, crash_id, name=None):
         return self.transaction_for_get(self.do_get_raw_dump, crash_id, name)
@@ -186,28 +168,19 @@ class BotoCrashStorage(CrashStorageBase):
     @staticmethod
     def do_get_raw_dumps(boto_connection, crash_id):
         try:
-            dump_names_as_string = boto_connection.fetch(
-                crash_id,
-                "dump_names"
-            )
-            dump_names = boto_connection._convert_string_to_list(
-                dump_names_as_string
-            )
+            dump_names_as_string = boto_connection.fetch(crash_id, 'dump_names')
+            dump_names = boto_connection._convert_string_to_list(dump_names_as_string)
+
             # when we fetch the dumps, they are by default in memory, so we'll
             # put them into a MemoryDumpMapping.
             dumps = MemoryDumpsMapping()
             for dump_name in dump_names:
                 if dump_name in (None, '', 'upload_file_minidump'):
                     dump_name = 'dump'
-                dumps[dump_name] = boto_connection.fetch(
-                    crash_id,
-                    dump_name
-                )
+                dumps[dump_name] = boto_connection.fetch(crash_id, dump_name)
             return dumps
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound(
-                '%s not found: %s' % (crash_id, x)
-            )
+            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_raw_dumps(self, crash_id):
         """this returns a MemoryDumpsMapping"""
@@ -225,18 +198,10 @@ class BotoCrashStorage(CrashStorageBase):
     @staticmethod
     def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):
         try:
-            processed_crash_as_string = boto_connection.fetch(
-                crash_id,
-                "processed_crash"
-            )
-            return json.loads(
-                processed_crash_as_string,
-                object_hook=json_object_hook,
-            )
+            processed_crash_as_string = boto_connection.fetch(crash_id, 'processed_crash')
+            return json.loads(processed_crash_as_string, object_hook=json_object_hook,)
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound(
-                '%s not found: %s' % (crash_id, x)
-            )
+            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_unredacted_processed(self, crash_id):
         return self.transaction_for_get(
@@ -312,34 +277,21 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
             crash_report[processed_fields_map.get(key, key)] = val
 
         # Validate crash_report.
-        crash_report = json_schema_reducer.make_reduced_dict(
-            CRASH_REPORT_JSON_SCHEMA, crash_report
-        )
+        crash_report = json_schema_reducer.make_reduced_dict(CRASH_REPORT_JSON_SCHEMA, crash_report)
         self.save_processed(crash_report)
 
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
         """Overriding this to change "name of thing" to crash_report"""
         crash_id = processed_crash['uuid']
-        processed_crash_as_string = boto_connection._convert_mapping_to_string(
-            processed_crash
-        )
-        boto_connection.submit(
-            crash_id,
-            "crash_report",
-            processed_crash_as_string
-        )
+        processed_crash_as_string = boto_connection._convert_mapping_to_string(processed_crash)
+        boto_connection.submit(crash_id, "crash_report", processed_crash_as_string)
 
     @staticmethod
     def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):
         """Overriding this to change "name of thing" to crash_report"""
         try:
             processed_crash_as_string = boto_connection.fetch(crash_id, 'crash_report')
-            return json.loads(
-                processed_crash_as_string,
-                object_hook=json_object_hook,
-            )
+            return json.loads(processed_crash_as_string, object_hook=json_object_hook)
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound(
-                '%s not found: %s' % (crash_id, x)
-            )
+            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
