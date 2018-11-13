@@ -58,7 +58,6 @@ This code can sort of be used as a library. It's been decoupled from many of
 Socorro's bits, but still has some requirements. Roughtly, it requires:
 
 * requests
-* ujson
 
 
 The main class is ``socorro.signature.SignatureGenerator``. It takes a pipeline

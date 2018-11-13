@@ -237,12 +237,7 @@ def model_wrapper(request, model_name):
         try:
             result = function(**form.cleaned_data)
         except ValueError as e:
-            if (
-                # built in json module ValueError
-                'No JSON object could be decoded' in e or
-                # ujson module ValueError
-                'Expected object or value' in e
-            ):
+            if 'No JSON object could be decoded' in e:
                 return http.HttpResponseBadRequest(
                     json.dumps({'error': 'Not a valid JSON response'}),
                     content_type='application/json; charset=UTF-8'

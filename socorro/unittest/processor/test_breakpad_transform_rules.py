@@ -4,7 +4,7 @@
 
 from contextlib import contextmanager
 import copy
-import ujson
+import json
 
 from configman.dotdict import DotDict
 from mock import Mock, patch
@@ -188,7 +188,7 @@ cannonical_stackwalker_output = {
     # ...
 
 }
-cannonical_stackwalker_output_str = ujson.dumps(cannonical_stackwalker_output)
+cannonical_stackwalker_output_str = json.dumps(cannonical_stackwalker_output)
 
 
 class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
@@ -260,7 +260,7 @@ class TestMinidumpSha256HashRule(object):
 cannonical_external_output = {
     "key": "value"
 }
-cannonical_external_output_str = ujson.dumps(cannonical_external_output)
+cannonical_external_output_str = json.dumps(cannonical_external_output)
 
 
 class TestExternalProcessRule(TestCase):
@@ -362,32 +362,29 @@ class TestExternalProcessRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = int
+        # This data will fail in json.loads and throw an error
+        mocked_subprocess_handle.stdout.read.return_value = '{ff'
         mocked_subprocess_handle.wait.return_value = -1
 
         rule = ExternalProcessRule(config)
-
-        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash.bogus_command_result == {}
         assert processed_crash.bogus_command_return_code == -1
-        expected = [
-            'bogus_command output failed in '
-            'json: Expected String or Unicode',
-        ]
-        assert processor_meta.processor_notes == expected
+        assert (
+            'bogus_command output failed in json: Expecting property name'
+            in processor_meta.processor_notes[0]
+        )
 
 
 class TestBreakpadTransformRule2015(TestCase):
-
     def get_basic_config(self):
         config = get_basic_config()
         config.dump_field = 'upload_file_minidump'
         config.command_line = BreakpadStackwalkerRule2015.required_config.command_line.default
         config.kill_timeout = 5
         config.command_pathname = '/bin/stackwalker'
-        config.symbols_urls = 'https://localhost'
+        config.symbols_urls = ['https://example.com']
         config.symbol_cache_path = '/mnt/socorro/symbols'
         config.symbol_tmp_path = '/mnt/socorro/symbols'
         config.temporary_file_system_storage_path = '/tmp'
@@ -441,12 +438,15 @@ class TestBreakpadTransformRule2015(TestCase):
         config = self.get_basic_config()
 
         raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        raw_dumps = {
+            config.dump_field: 'a_fake_dump.dump'
+        }
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = int
+        # This will cause json.loads to throw an error
+        mocked_subprocess_handle.stdout.read.return_value = '{ff'
         mocked_subprocess_handle.wait.return_value = -1
 
         rule = BreakpadStackwalkerRule2015(config)
@@ -458,15 +458,16 @@ class TestBreakpadTransformRule2015(TestCase):
         assert not processed_crash.success
         command_line = rule.expand_commandline(
             dump_file_pathname='a_fake_dump.dump',
-            raw_crash_pathname=(
-                '/tmp/00000000-0000-0000-0000-000002140504.MainThread.TEMPORARY.json'
-            )
+            raw_crash_pathname='/tmp/00000000-0000-0000-0000-000002140504.MainThread.TEMPORARY.json'
         )
-        expected = [
-            '%s output failed in json: Expected String or Unicode' % config.command_pathname,
-            'MDSW failed on \'%s\': unknown error' % command_line
-        ]
-        assert processor_meta.processor_notes == expected
+        assert (
+            config.command_pathname + ' output failed in json: Expecting property name'
+            in processor_meta.processor_notes[0]
+        )
+        assert (
+            processor_meta.processor_notes[1] ==
+            'MDSW failed on "%s": unknown error' % command_line
+        )
 
     @patch('socorro.processor.breakpad_transform_rules.os.unlink')
     def test_temp_file_context(self, mocked_unlink):

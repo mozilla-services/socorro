@@ -225,8 +225,7 @@ class ConnectionContextBase(RequiredConfig):
             )
 
     def fetch(self, id, name_of_thing):
-        """retrieve something from boto.
-        """
+        """retrieve something from boto"""
         conn = self._connect()
         bucket = self._get_bucket(conn, self.config.bucket_name)
 
@@ -234,6 +233,8 @@ class ConnectionContextBase(RequiredConfig):
         for key in all_keys:
             key_object = bucket.get_key(key)
             if key_object is not None:
+                # NOTE(willkg): this says "as string", but in Python 3 this
+                # will be bytes.
                 return key_object.get_contents_as_string()
 
         # None of the keys worked, so raise an error

@@ -1,7 +1,7 @@
 import os
 import subprocess
 import threading
-import ujson
+import json
 import tempfile
 
 from contextlib import contextmanager, closing
@@ -9,9 +9,10 @@ from collections import Mapping
 
 from configman import Namespace
 from configman.converters import str_to_list
-from configman.dotdict import DotDict as DotDict
+from configman.dotdict import DotDict
 
 from socorro.lib.converters import change_default
+from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 
 
@@ -73,50 +74,42 @@ class ExternalProcessRule(Rule):
     )
     required_config.add_option(
         'command_line',
-        doc=(
-            'the template for the command to invoke the external program; uses Python format '
-            'syntax'
-        ),
-        default=(
-            'timeout -s KILL 30 {command_pathname} 2>/dev/null'
-        ),
+        doc='template for the command to invoke the external program; uses Python format syntax',
+        default='timeout -s KILL 30 {command_pathname} 2>/dev/null',
     )
     required_config.add_option(
         'command_pathname',
-        doc='the full pathname to the external program to run '
-        '(quote path with embedded spaces)',
+        doc='the full pathname to the external program to run (quote path with embedded spaces)',
         default='/data/socorro/stackwalk/bin/dumplookup',
     )
     required_config.add_option(
         'result_key',
-        doc='the key where the external process result should be stored '
-            'in the processed crash',
-        default='%s_result' %
-            required_config.command_pathname.default.split('/')[-1]
-            .replace('-', ''),
+        doc='where the external process result should be stored in the processed crash',
+        default='%s_result' % (
+            required_config.command_pathname.default.split('/')[-1].replace('-', '')
+        ),
     )
     required_config.add_option(
         'return_code_key',
-        doc='the key where the external process return code should be stored '
-            'in the processed crash',
-        default='%s_return_code' %
-            required_config.command_pathname.default.split('/')[-1],
+        doc='where the external process return code should be stored in the processed crash',
+        default='%s_return_code' % required_config.command_pathname.default.split('/')[-1],
     )
 
     def __init__(self, config):
         super(ExternalProcessRule, self).__init__(config)
 
     def _interpret_external_command_output(self, fp, processor_meta):
+        data = fp.read()
         try:
-            return ujson.load(fp)
+            return json.loads(data)
         except Exception as x:
-            processor_meta.processor_notes.append(
-                "%s output failed in json: %s" % (
-                    self.config.command_pathname,
-                    x
-                )
+            self.config.logger.error(
+                '%s non-json output: "%s"' % (self.config.command_pathname, data[:100])
             )
-            return {}
+            processor_meta.processor_notes.append(
+                "%s output failed in json: %s" % (self.config.command_pathname, x)
+            )
+        return {}
 
     def _execute_external_process(self, command_line, processor_meta):
         subprocess_handle = subprocess.Popen(
@@ -156,22 +149,13 @@ class ExternalProcessRule(Rule):
         processed_crash,
         processor_meta
     ):
-        self.dot_save(
-            processed_crash,
-            self.config.result_key,
-            external_command_output
-        )
-        self.dot_save(
-            processed_crash,
-            self.config.return_code_key,
-            return_code
-        )
+        # FIXME(willkg): we could replace this with glom
+        self.dot_save(processed_crash, self.config.result_key, external_command_output)
+        self.dot_save(processed_crash, self.config.return_code_key, return_code)
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         command_parameters = dict(self.config)
-        command_parameters['dump_file_pathname'] = raw_dumps[
-            self.config['dump_field']
-        ]
+        command_parameters['dump_file_pathname'] = raw_dumps[self.config['dump_field']]
         command_line = self.config.command_line.format(**command_parameters)
 
         external_command_output, external_process_return_code = \
@@ -248,13 +232,10 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         file_pathname = os.path.join(
             self.config.temporary_file_system_storage_path,
-            "%s.%s.TEMPORARY.json" % (
-                crash_id,
-                threading.currentThread().getName()
-            )
+            '%s.%s.TEMPORARY.json' % (crash_id, threading.currentThread().getName())
         )
         with open(file_pathname, "w") as f:
-            ujson.dump(raw_crash, f)
+            json.dump(dotdict_to_dict(raw_crash), f)
         try:
             yield file_pathname
         finally:
@@ -268,7 +249,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
         if not isinstance(stackwalker_output, Mapping):
             processor_meta.processor_notes.append(
-                "MDSW produced unexpected output: %s..." %
+                'MDSW produced unexpected output: %s...' %
                 str(stackwalker_output)[:10]
             )
             stackwalker_output = {}
@@ -277,22 +258,15 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         stackwalker_data.json_dump = stackwalker_output
         stackwalker_data.mdsw_return_code = return_code
 
-        stackwalker_data.mdsw_status_string = stackwalker_output.get(
-            'status',
-            'unknown error'
-        )
+        stackwalker_data.mdsw_status_string = stackwalker_output.get('status', 'unknown error')
         stackwalker_data.success = stackwalker_data.mdsw_status_string == 'OK'
 
         if return_code == 124:
-            processor_meta.processor_notes.append(
-                "MDSW terminated with SIGKILL due to timeout"
-            )
+            processor_meta.processor_notes.append('MDSW terminated with SIGKILL due to timeout')
+
         elif return_code != 0 or not stackwalker_data.success:
             processor_meta.processor_notes.append(
-                "MDSW failed on '%s': %s" % (
-                    command_line,
-                    stackwalker_data.mdsw_status_string
-                )
+                'MDSW failed on "%s": %s' % (command_line, stackwalker_data.mdsw_status_string)
             )
 
         return stackwalker_data, return_code
@@ -325,12 +299,9 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if 'additional_minidumps' not in processed_crash:
             processed_crash.additional_minidumps = []
-        with self._temp_raw_crash_json_file(
-            raw_crash,
-            raw_crash.uuid
-        ) as raw_crash_pathname:
-            for dump_name in raw_dumps.keys():
 
+        with self._temp_raw_crash_json_file(raw_crash, raw_crash.uuid) as raw_crash_pathname:
+            for dump_name in raw_dumps.keys():
                 if processor_meta.quit_check:
                     processor_meta.quit_check()
 

@@ -844,7 +844,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
 
         with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
             with patch(
-                'socorro.processor.mozilla_transform_rules.ujson.loads'
+                'socorro.processor.mozilla_transform_rules.json.loads'
             ) as mocked_json_loads:
                 mocked_json_loads.side_effect = ValueError
 

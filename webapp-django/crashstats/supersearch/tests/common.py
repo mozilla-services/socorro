@@ -1,4 +1,4 @@
-import ujson
+import json
 from past.builtins import basestring
 
 from crashstats.crashstats.tests.test_models import Response
@@ -7,7 +7,7 @@ from crashstats.crashstats.tests.test_models import Response
 class SuperSearchResponse(Response):
     def __init__(self, content=None, status_code=200, columns=None):
         if isinstance(content, basestring):
-            content = ujson.loads(content)
+            content = json.loads(content)
 
         if columns is None:
             columns = []

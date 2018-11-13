@@ -3,11 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from itertools import islice
+import json
 import re
 
 from glom import glom
 import six
-import ujson
 
 from . import siglists_utils
 from .utils import (
@@ -713,7 +713,7 @@ class SignatureShutdownTimeout(Rule):
     def action(self, crash_data, result):
         parts = ['AsyncShutdownTimeout']
         try:
-            shutdown_data = ujson.loads(crash_data['async_shutdown_timeout'])
+            shutdown_data = json.loads(crash_data['async_shutdown_timeout'])
             parts.append(shutdown_data['phase'])
             conditions = [
                 # NOTE(willkg): The AsyncShutdownTimeout notation condition can either be a string
