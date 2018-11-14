@@ -1,15 +1,15 @@
+from collections import Mapping
+from contextlib import contextmanager, closing
+import json
 import os
 import subprocess
 import threading
-import json
 import tempfile
-
-from contextlib import contextmanager, closing
-from collections import Mapping
 
 from configman import Namespace
 from configman.converters import str_to_list
 from configman.dotdict import DotDict
+import markus
 
 from socorro.lib.converters import change_default
 from socorro.lib.util import dotdict_to_dict
@@ -30,24 +30,21 @@ class CrashingThreadRule(Rule):
 
         try:
             processed_crash.truncated = (
-                processed_crash['json_dump']
-                ['crashing_thread']['frames_truncated']
+                processed_crash['json_dump']['crashing_thread']['frames_truncated']
             )
         except KeyError:
             processed_crash.truncated = False
 
         try:
             processed_crash.address = (
-                processed_crash['json_dump']
-                ['crash_info']['address']
+                processed_crash['json_dump']['crash_info']['address']
             )
         except KeyError:
             processed_crash.address = None
 
         try:
             processed_crash.reason = (
-                processed_crash['json_dump']
-                ['crash_info']['type']
+                processed_crash['json_dump']['crash_info']['type']
             )
         except KeyError:
             processed_crash.reason = None
@@ -228,6 +225,10 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         default=tempfile.gettempdir(),
     )
 
+    def __init__(self, *args, **kwargs):
+        super(BreakpadStackwalkerRule2015, self).__init__(*args, **kwargs)
+        self.metrics = markus.get_metrics('processor.breakpadstackwalkerrule')
+
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         file_pathname = os.path.join(
@@ -249,8 +250,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
         if not isinstance(stackwalker_output, Mapping):
             processor_meta.processor_notes.append(
-                'MDSW produced unexpected output: %s...' %
-                str(stackwalker_output)[:10]
+                'MDSW produced unexpected output: %s...' % str(stackwalker_output)[:10]
             )
             stackwalker_output = {}
 
@@ -261,13 +261,23 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         stackwalker_data.mdsw_status_string = stackwalker_output.get('status', 'unknown error')
         stackwalker_data.success = stackwalker_data.mdsw_status_string == 'OK'
 
+        self.metrics.incr(
+            'run',
+            tags=[
+                'outcome:%s' % ('success' if stackwalker_data.success else 'fail'),
+                'exitcode:%s' % return_code,
+            ]
+        )
+
         if return_code == 124:
-            processor_meta.processor_notes.append('MDSW terminated with SIGKILL due to timeout')
+            msg = 'MDSW terminated with SIGKILL due to timeout'
+            processor_meta.processor_notes.append(msg)
+            self.config.logger.warning(msg)
 
         elif return_code != 0 or not stackwalker_data.success:
-            processor_meta.processor_notes.append(
-                'MDSW failed on "%s": %s' % (command_line, stackwalker_data.mdsw_status_string)
-            )
+            msg = 'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
+            processor_meta.processor_notes.append(msg)
+            self.config.logger.warning(msg)
 
         return stackwalker_data, return_code
 
