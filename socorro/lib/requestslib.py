@@ -24,7 +24,7 @@ class HTTPAdapterWithTimeout(HTTPAdapter):
         self.default_timeout = kwargs.get('default_timeout', None)
         if 'default_timeout' in kwargs:
             del kwargs['default_timeout']
-        super(HTTPAdapterWithTimeout, self).__init__()
+        super(HTTPAdapterWithTimeout, self).__init__(*args, **kwargs)
 
     def send(self, *args, **kwargs):
         kwargs['timeout'] = kwargs.get('timeout', self.default_timeout)
@@ -59,18 +59,15 @@ def session_with_retries(total_retries=5, backoff_factor=0.2,
         status_forcelist=list(status_forcelist)
     )
 
-    s = requests.Session()
+    session = requests.Session()
 
     # Set the User-Agent header so we can distinguish our stuff from other stuff
-    s.headers.update({
+    session.headers.update({
         'User-Agent': 'socorro-requests/1.0'
     })
 
-    s.mount(
-        'http://', HTTPAdapterWithTimeout(max_retries=retries, default_timeout=default_timeout)
-    )
-    s.mount(
-        'https://', HTTPAdapterWithTimeout(max_retries=retries, default_timeout=default_timeout)
-    )
+    adapter = HTTPAdapterWithTimeout(max_retries=retries, default_timeout=default_timeout)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
 
-    return s
+    return session
