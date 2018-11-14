@@ -114,6 +114,33 @@ class Platform(models.Model):
     )
 
 
+class ProductManager(models.Manager):
+    def active_products(self):
+        """Returns queryset of active products"""
+        return self.filter(is_active=True)
+
+
+class Product(models.Model):
+    """Lookup table for products"""
+    product_name = models.CharField(
+        max_length=50, blank=False, null=False, unique=True,
+        help_text='ProductName of product as it appears in crash reports'
+    )
+    sort = models.IntegerField(
+        default=100,
+        help_text='sort order spot for this product'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='whether or not this product is active and should show up on the site'
+    )
+
+    objects = ProductManager()
+
+    class Meta:
+        ordering = ['sort']
+
+
 class Signature(models.Model):
     """Bookkeeping table to keep track of when we first saw a signature"""
     signature = models.TextField(
@@ -553,17 +580,6 @@ class SocorroMiddleware(SocorroCommon):
                     'required': required,
                     'type': type_,
                 }
-
-
-class ProductsMiddleware(SocorroMiddleware):
-    implementation = socorro.external.postgresql.products.Products
-
-    possible_params = ()
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
 
 
 class ProductVersionsMiddleware(SocorroMiddleware):

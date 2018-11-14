@@ -12,7 +12,7 @@ from django.core.cache import cache
 from django.db import connection, transaction
 from django.shortcuts import redirect, render
 
-from crashstats.crashstats.models import GraphicsDevice, ProductsMiddleware
+from crashstats.crashstats.models import GraphicsDevice
 from crashstats.manage import forms
 from crashstats.manage import utils
 from crashstats.manage.decorators import superuser_required
@@ -217,17 +217,6 @@ def debug_view(request):
     context['title'] = 'Debug information'
 
     return render(request, 'admin/debug_view.html', context)
-
-
-@superuser_required
-def products(request):
-    """Lists products from the products table"""
-    context = {}
-    api = ProductsMiddleware()
-    context['products'] = api.get()['hits']
-    context['title'] = 'Products'
-
-    return render(request, 'admin/products.html', context)
 
 
 @superuser_required

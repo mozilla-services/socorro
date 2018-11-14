@@ -4,40 +4,9 @@ from socorro.external.es.super_search_fields import FIELDS
 
 class TestForms(object):
     def setup_method(self):
-        self.products = [
-            {
-                'product_name': 'WaterWolf',
-            },
-            {
-                'product_name': 'NightTrain',
-            },
-            {
-                'product_name': 'SeaMonkey',
-            },
-            {
-                'product_name': 'Tinkerbell',
-            }
-        ]
-        self.product_versions = [
-            '20.0',
-            '21.0a1',
-            '20.0',
-            '9.5',
-        ]
-        self.current_platforms = [
-            {
-                'code': 'windows',
-                'name': 'Windows'
-            },
-            {
-                'code': 'mac',
-                'name': 'Mac OS X'
-            },
-            {
-                'code': 'linux',
-                'name': 'Linux'
-            }
-        ]
+        self.products = ['WaterWolf', 'NightTrain', 'SeaMonkey', 'Tinkerbell']
+        self.product_versions = ['20.0', '21.0a1', '20.0', '9.5']
+        self.platforms = ['Windows', 'Mac OS X', 'Linux']
         self.all_fields = FIELDS
 
     def test_search_form(self):
@@ -53,7 +22,7 @@ class TestForms(object):
                 self.all_fields,
                 self.products,
                 self.product_versions,
-                self.current_platforms,
+                self.platforms,
                 User(),
                 data
             )
@@ -104,7 +73,7 @@ class TestForms(object):
                 self.all_fields,
                 self.products,
                 self.product_versions,
-                self.current_platforms,
+                self.platforms,
                 User(),
                 data
             )
@@ -145,16 +114,17 @@ class TestForms(object):
         def get_new_form(data):
             class User(object):
                 def has_perm(self, permission):
-                    return {
+                    permissions = {
                         'crashstats.view_pii': False,
                         'crashstats.view_exploitability': False,
-                    }.get(permission, False)
+                    }
+                    return permissions.get(permission, False)
 
             return forms.SearchForm(
                 self.all_fields,
                 self.products,
                 self.product_versions,
-                self.current_platforms,
+                self.platforms,
                 User(),
                 data
             )

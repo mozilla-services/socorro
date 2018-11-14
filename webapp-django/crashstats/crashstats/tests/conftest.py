@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 
 from crashstats.base.tests.testbase import DjangoTestCase
-from crashstats.crashstats import models
+from crashstats.crashstats.models import Product
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.supersearch.models import SuperSearchFields
 from socorro.external.es.super_search_fields import FIELDS
@@ -34,7 +34,9 @@ class Response(object):
 
 
 class ProductVersionsMixin(object):
-    """Mixin for DjangoTestCase tests to mock product versions
+    """Mixin for DjangoTestCase tests to create products and versions
+
+    This creates products.
 
     This mocks the function that sets the versions in the response context
     and the versions dropdown in the navbar.
@@ -45,7 +47,7 @@ class ProductVersionsMixin(object):
 
     Usage::
 
-        class TestViews(BaseTestViews, ProductVersionsMixin):
+        class TestViews(TestCase, ProductVersionsMixin):
             def test_something(self):
                 # ...
                 pass
@@ -59,6 +61,13 @@ class ProductVersionsMixin(object):
     def setUp(self):
         super(ProductVersionsMixin, self).setUp()
         cache.clear()
+
+        # Create products
+        Product.objects.create(product_name='WaterWolf', sort=1, is_active=True)
+        Product.objects.create(product_name='NightTrain', sort=2, is_active=True)
+        Product.objects.create(product_name='SeaMonkey', sort=3, is_active=True)
+
+        # Create product versions
         self.mock_gvfp_patcher = mock.patch('crashstats.crashstats.utils.get_versions_for_product')
         self.mock_gvfp = self.mock_gvfp_patcher.start()
         self.set_product_versions(['20.0', '19.1', '19.0', '18.0'])
@@ -77,51 +86,6 @@ class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
 
         # Tests assume and require a non-persistent cache backend
         assert 'LocMemCache' in settings.CACHES['default']['BACKEND']
-
-        def mocked_products(**params):
-            hits = [
-                {
-                    'product_name': 'WaterWolf',
-                    'release_name': 'waterwolf',
-                    'sort': 1,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                {
-                    'product_name': 'NightTrain',
-                    'release_name': 'nighttrain',
-                    'sort': 2,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                {
-                    'product_name': 'SeaMonkey',
-                    'release_name': 'seamonkey',
-                    'sort': 3,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                {
-                    'product_name': 'LandCrab',
-                    'release_name': 'landcrab',
-                    'sort': 4,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                },
-                {
-                    'product_name': 'Tinkerbell',
-                    'release_name': 'tinkerbell',
-                    'sort': 5,
-                    'rapid_beta_version': '1.0',
-                    'rapid_release_version': '999.0',
-                }
-            ]
-            return {
-                'hits': hits,
-                'total': len(hits),
-            }
-
-        models.ProductsMiddleware.implementation().get.side_effect = mocked_products
 
         def mocked_supersearchfields(**params):
             results = copy.deepcopy(FIELDS)

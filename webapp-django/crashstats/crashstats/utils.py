@@ -344,18 +344,10 @@ def build_default_context(product=None, versions=None):
     context = {}
 
     # Build product information
-    api = models.ProductsMiddleware()
-
-    # NOTE(willkg): using an OrderedDict here since Products returns products
-    # sorted by sort order and we don't want to lose that ordering
-    all_products = OrderedDict()
-    for item in api.get()['hits']:
-        if item['sort'] == -1:
-            # A sort of -1 means this item is inactive and we shouldn't show it
-            # in product lists
-            continue
-        all_products[item['product_name']] = item
-    context['products'] = all_products
+    context['products'] = list(
+        models.Product.objects.active_products()
+        .values_list('product_name', flat=True)
+    )
 
     if not product:
         product = settings.DEFAULT_PRODUCT
@@ -368,7 +360,7 @@ def build_default_context(product=None, versions=None):
     # Build product version information for all products
     active_versions = {
         prod: get_version_context_for_product(prod)
-        for prod in context['products'].keys()
+        for prod in context['products']
     }
     context['active_versions'] = active_versions
 
