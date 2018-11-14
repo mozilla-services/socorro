@@ -7,6 +7,7 @@ import copy
 import json
 
 from configman.dotdict import DotDict
+from markus.testing import MetricsMock
 from mock import Mock, patch
 
 from socorro.processor.breakpad_transform_rules import (
@@ -403,13 +404,21 @@ class TestBreakpadTransformRule2015(TestCase):
         mocked_subprocess_handle.stdout.read.return_value = cannonical_stackwalker_output_str
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule = BreakpadStackwalkerRule2015(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with MetricsMock() as mm:
+            rule = BreakpadStackwalkerRule2015(config)
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.json_dump == cannonical_stackwalker_output
-        assert processed_crash.mdsw_return_code == 0
-        assert processed_crash.mdsw_status_string == "OK"
-        assert processed_crash.success
+            assert processed_crash.json_dump == cannonical_stackwalker_output
+            assert processed_crash.mdsw_return_code == 0
+            assert processed_crash.mdsw_status_string == "OK"
+            assert processed_crash.success is True
+
+            assert mm.has_record(
+                'incr',
+                stat='processor.breakpadstackwalkerrule.run',
+                value=1,
+                tags=['outcome:success', 'exitcode:0']
+            )
 
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_stackwalker_fails(self, mocked_subprocess_module):
@@ -424,14 +433,22 @@ class TestBreakpadTransformRule2015(TestCase):
         mocked_subprocess_handle.stdout.read.return_value = '{}\n'
         mocked_subprocess_handle.wait.return_value = 124
 
-        rule = BreakpadStackwalkerRule2015(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with MetricsMock() as mm:
+            rule = BreakpadStackwalkerRule2015(config)
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.json_dump == {}
-        assert processed_crash.mdsw_return_code == 124
-        assert processed_crash.mdsw_status_string == "unknown error"
-        assert not processed_crash.success
-        assert processor_meta.processor_notes == ["MDSW terminated with SIGKILL due to timeout"]
+            assert processed_crash.json_dump == {}
+            assert processed_crash.mdsw_return_code == 124
+            assert processed_crash.mdsw_status_string == "unknown error"
+            assert processed_crash.success is False
+            assert processor_meta.processor_notes == ["MDSW terminated with SIGKILL due to timeout"]
+
+            assert mm.has_record(
+                'incr',
+                stat='processor.breakpadstackwalkerrule.run',
+                value=1,
+                tags=['outcome:fail', 'exitcode:124']
+            )
 
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_stackwalker_fails_2(self, mocked_subprocess_module):

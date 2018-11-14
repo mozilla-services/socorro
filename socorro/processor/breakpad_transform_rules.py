@@ -1,15 +1,15 @@
+from collections import Mapping
+from contextlib import contextmanager, closing
+import json
 import os
 import subprocess
 import threading
-import json
 import tempfile
-
-from contextlib import contextmanager, closing
-from collections import Mapping
 
 from configman import Namespace
 from configman.converters import str_to_list
 from configman.dotdict import DotDict
+import markus
 
 from socorro.lib.converters import change_default
 from socorro.lib.util import dotdict_to_dict
@@ -228,6 +228,10 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         default=tempfile.gettempdir(),
     )
 
+    def __init__(self, *args, **kwargs):
+        super(BreakpadStackwalkerRule2015, self).__init__(*args, **kwargs)
+        self.metrics = markus.get_metrics('processor.breakpadstackwalkerrule')
+
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         file_pathname = os.path.join(
@@ -261,12 +265,24 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         stackwalker_data.mdsw_status_string = stackwalker_output.get('status', 'unknown error')
         stackwalker_data.success = stackwalker_data.mdsw_status_string == 'OK'
 
+        self.metrics.incr(
+            'run',
+            tags=[
+                'outcome:%s' % ('success' if stackwalker_data.success else 'fail'),
+                'exitcode:%s' % return_code,
+            ]
+        )
+
         if return_code == 124:
             processor_meta.processor_notes.append('MDSW terminated with SIGKILL due to timeout')
+            self.config.logger.warning('MDSW terminated with SIGKILL due to timeout')
 
-        elif return_code != 0 or not stackwalker_data.success:
+        if return_code != 0 or not stackwalker_data.success:
             processor_meta.processor_notes.append(
-                'MDSW failed on "%s": %s' % (command_line, stackwalker_data.mdsw_status_string)
+                'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
+            )
+            self.config.logger.warning(
+                'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
             )
 
         return stackwalker_data, return_code
