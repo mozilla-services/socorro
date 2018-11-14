@@ -95,7 +95,7 @@ canonical_standard_raw_crash = DotDict({
 })
 
 
-cannonical_stackwalker_output = {
+canonical_stackwalker_output = {
     u'crash_info': {
         u'address': u'0x0',
         u'crashing_thread': 0,
@@ -189,7 +189,7 @@ cannonical_stackwalker_output = {
     # ...
 
 }
-cannonical_stackwalker_output_str = json.dumps(cannonical_stackwalker_output)
+canonical_stackwalker_output_str = json.dumps(canonical_stackwalker_output)
 
 
 class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
@@ -205,7 +205,7 @@ class TestCrashingThreadRule(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processed_crash.json_dump = copy.copy(cannonical_stackwalker_output)
+        processed_crash.json_dump = copy.copy(canonical_stackwalker_output)
         processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule(config)
@@ -258,10 +258,10 @@ class TestMinidumpSha256HashRule(object):
         assert processed_crash['minidump_sha256_hash'] == 'hash'
 
 
-cannonical_external_output = {
+canonical_external_output = {
     "key": "value"
 }
-cannonical_external_output_str = json.dumps(cannonical_external_output)
+canonical_external_output_str = json.dumps(canonical_external_output)
 
 
 class TestExternalProcessRule(TestCase):
@@ -313,7 +313,7 @@ class TestExternalProcessRule(TestCase):
         processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = cannonical_external_output_str
+        mocked_subprocess_handle.stdout.read.return_value = canonical_external_output_str
         mocked_subprocess_handle.wait.return_value = 0
 
         rule = ExternalProcessRule(config)
@@ -330,7 +330,7 @@ class TestExternalProcessRule(TestCase):
             stdout=mocked_subprocess_module.PIPE
         )
 
-        assert processed_crash.bogus_command_result == cannonical_external_output
+        assert processed_crash.bogus_command_result == canonical_external_output
         assert processed_crash.bogus_command_return_code == 0
 
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
@@ -401,14 +401,14 @@ class TestBreakpadTransformRule2015(TestCase):
         processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = cannonical_stackwalker_output_str
+        mocked_subprocess_handle.stdout.read.return_value = canonical_stackwalker_output_str
         mocked_subprocess_handle.wait.return_value = 0
 
         with MetricsMock() as mm:
             rule = BreakpadStackwalkerRule2015(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-            assert processed_crash.json_dump == cannonical_stackwalker_output
+            assert processed_crash.json_dump == canonical_stackwalker_output
             assert processed_crash.mdsw_return_code == 0
             assert processed_crash.mdsw_status_string == "OK"
             assert processed_crash.success is True
@@ -473,17 +473,13 @@ class TestBreakpadTransformRule2015(TestCase):
         assert processed_crash.mdsw_return_code == -1
         assert processed_crash.mdsw_status_string == "unknown error"
         assert not processed_crash.success
-        command_line = rule.expand_commandline(
-            dump_file_pathname='a_fake_dump.dump',
-            raw_crash_pathname='/tmp/00000000-0000-0000-0000-000002140504.MainThread.TEMPORARY.json'
-        )
         assert (
             config.command_pathname + ' output failed in json: Expecting property name'
             in processor_meta.processor_notes[0]
         )
         assert (
             processor_meta.processor_notes[1] ==
-            'MDSW failed on "%s": unknown error' % command_line
+            'MDSW failed with -1: unknown error'
         )
 
     @patch('socorro.processor.breakpad_transform_rules.os.unlink')
@@ -506,7 +502,6 @@ class TestBreakpadTransformRule2015(TestCase):
 
 
 class TestJitCrashCategorizeRule(TestCase):
-
     def get_basic_config(self):
         config = DotDict()
         config.logger = Mock()
@@ -750,7 +745,6 @@ class TestJitCrashCategorizeRule(TestCase):
         })
 
         rule = JitCrashCategorizeRule(config)
-
         assert rule.predicate({}, {}, processed_crash, {}) is True
 
     def test_predicate_no_crashing_thread(self):
@@ -766,7 +760,6 @@ class TestJitCrashCategorizeRule(TestCase):
         })
 
         rule = JitCrashCategorizeRule(config)
-
         assert rule.predicate({}, {}, processed_crash, {}) is True
 
     def test_predicate_no_frames(self):
@@ -784,7 +777,6 @@ class TestJitCrashCategorizeRule(TestCase):
         })
 
         rule = JitCrashCategorizeRule(config)
-
         assert rule.predicate({}, {}, processed_crash, {}) is True
 
     def test_predicate_empty_frames(self):
@@ -804,5 +796,4 @@ class TestJitCrashCategorizeRule(TestCase):
         })
 
         rule = JitCrashCategorizeRule(config)
-
         assert rule.predicate({}, {}, processed_crash, {}) is True

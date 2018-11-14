@@ -30,24 +30,21 @@ class CrashingThreadRule(Rule):
 
         try:
             processed_crash.truncated = (
-                processed_crash['json_dump']
-                ['crashing_thread']['frames_truncated']
+                processed_crash['json_dump']['crashing_thread']['frames_truncated']
             )
         except KeyError:
             processed_crash.truncated = False
 
         try:
             processed_crash.address = (
-                processed_crash['json_dump']
-                ['crash_info']['address']
+                processed_crash['json_dump']['crash_info']['address']
             )
         except KeyError:
             processed_crash.address = None
 
         try:
             processed_crash.reason = (
-                processed_crash['json_dump']
-                ['crash_info']['type']
+                processed_crash['json_dump']['crash_info']['type']
             )
         except KeyError:
             processed_crash.reason = None
@@ -253,8 +250,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
         if not isinstance(stackwalker_output, Mapping):
             processor_meta.processor_notes.append(
-                'MDSW produced unexpected output: %s...' %
-                str(stackwalker_output)[:10]
+                'MDSW produced unexpected output: %s...' % str(stackwalker_output)[:10]
             )
             stackwalker_output = {}
 
@@ -274,16 +270,14 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         )
 
         if return_code == 124:
-            processor_meta.processor_notes.append('MDSW terminated with SIGKILL due to timeout')
-            self.config.logger.warning('MDSW terminated with SIGKILL due to timeout')
+            msg = 'MDSW terminated with SIGKILL due to timeout'
+            processor_meta.processor_notes.append(msg)
+            self.config.logger.warning(msg)
 
-        if return_code != 0 or not stackwalker_data.success:
-            processor_meta.processor_notes.append(
-                'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
-            )
-            self.config.logger.warning(
-                'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
-            )
+        elif return_code != 0 or not stackwalker_data.success:
+            msg = 'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
+            processor_meta.processor_notes.append(msg)
+            self.config.logger.warning(msg)
 
         return stackwalker_data, return_code
 
