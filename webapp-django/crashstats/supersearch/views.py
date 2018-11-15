@@ -64,8 +64,12 @@ def get_allowed_fields(user):
 
 
 def get_supersearch_form(request):
-    platforms = models.Platform.objects.values()
-    products = models.ProductsMiddleware().get()['hits']
+    platforms = list(models.Platform.objects.values_list('name', flat=True))
+    products = list(
+        models.Product.objects.active_products()
+        .values_list('product_name', flat=True)
+    )
+
     # FIXME(willkg): this hardcodes always getting Firefox versions which
     # seems unhelpful
     product_versions = utils.get_versions_for_product('Firefox')
@@ -172,7 +176,7 @@ def search(request, default_context=None):
     block=True
 )
 def search_results(request):
-    '''Return the results of a search. '''
+    """Return the results of a search"""
     try:
         params = get_params(request)
     except ValidationError as e:
@@ -275,8 +279,7 @@ def search_results(request):
 
 @utils.json_view
 def search_fields(request):
-    '''Return the JSON document describing the fields used by the JavaScript
-    dynamic_form library. '''
+    """Return JSON document describing fields used by JavaScript dynamic_form library"""
     form = get_supersearch_form(request)
     exclude = request.GET.getlist('exclude')
     return form.get_fields_list(exclude=exclude)
@@ -286,7 +289,7 @@ def search_fields(request):
 @permission_required('crashstats.run_custom_queries')
 @pass_default_context
 def search_custom(request, default_context=None):
-    '''Return the basic search page, without any result. '''
+    """Return the basic search page, without any result"""
     error = None
     query = None
 

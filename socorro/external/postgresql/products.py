@@ -18,7 +18,6 @@ logger = logging.getLogger("webapi")
 
 
 class SmartDate(object):
-
     def clean(self, value):
         if any(map(value.startswith, ('>=', '<='))):
             op = value[:2]
@@ -31,30 +30,7 @@ class SmartDate(object):
         return (op, string_to_datetime(value).date())
 
 
-class Products(PostgreSQLBase):
-    def get(self, **kwargs):
-        sql_params = {}
-
-        sql = """
-            SELECT
-                product_name,
-                release_name,
-                sort,
-                rapid_beta_version,
-                rapid_release_version
-            FROM products
-            ORDER BY sort
-        """
-        results = self.query(sql, sql_params).zipped()
-
-        return {
-            'hits': results,
-            'total': len(results),
-        }
-
-
 class ProductVersions(PostgreSQLBase):
-
     def get(self, **kwargs):
         filters = [
             ("version", None, [str]),

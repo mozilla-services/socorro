@@ -30,34 +30,22 @@ def make_restricted_choices(sequence, exclude=None):
 class SearchForm(forms.Form):
     """Handle the data populating the search form"""
 
-    def __init__(
-        self,
-        all_fields,
-        products,
-        product_versions,
-        current_platforms,
-        user,
-        *args,
-        **kwargs
-    ):
+    def __init__(self, all_fields, products, product_versions, platforms, user, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
         self.all_fields = all_fields.copy()
 
-        # Default values loaded from a database.
-        product_names = list(set(x['product_name'] for x in products))
+        # Generate default values
         if 'product' in self.all_fields:
-            self.all_fields['product']['form_field_choices'] = product_names
+            self.all_fields['product']['form_field_choices'] = products
 
         if 'version' in self.all_fields:
             self.all_fields['version']['form_field_choices'] = uniqify_keep_order(product_versions)
 
         if 'platform' in self.all_fields:
-            self.all_fields['platform']['form_field_choices'] = [
-                x['name'] for x in current_platforms
-            ]
+            self.all_fields['platform']['form_field_choices'] = platforms
 
-        # Generate the list of fields.
+        # Generate list of fields
         for field_name, field_data in all_fields.iteritems():
             if not field_data['is_exposed']:
                 del self.all_fields[field_name]
@@ -94,8 +82,7 @@ class SearchForm(forms.Form):
             self.fields[field_name] = field_obj
 
     def get_fields_list(self, exclude=None):
-        '''Return a dictionary describing the fields, to pass to the
-        dynamic_form.js library. '''
+        """Return dictionary describing fields to pass to dynamic_form.js library"""
         fields_list = {}
 
         if exclude is None:
