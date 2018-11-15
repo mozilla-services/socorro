@@ -6,6 +6,7 @@ from crashstats.crashstats.models import (
     BugAssociation,
     GraphicsDevice,
     Platform,
+    Product,
     Signature,
 )
 
@@ -102,6 +103,15 @@ class PlatformAdmin(admin.ModelAdmin):
     list_display = [
         'name',
         'short_name'
+    ]
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = [
+        'product_name',
+        'sort',
+        'is_active'
     ]
 
 
