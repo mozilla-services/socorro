@@ -141,6 +141,37 @@ class Product(models.Model):
         ordering = ['sort']
 
 
+class ProductVersion(models.Model):
+    """Lookup table for product versions and build information"""
+    product_name = models.CharField(
+        max_length=50, blank=False, null=False,
+        help_text='ProductName of product as it appears in crash reports'
+    )
+    release_channel = models.CharField(
+        max_length=50, blank=False, null=False,
+        help_text='release channel for this version'
+    )
+    release_version = models.CharField(
+        max_length=50, blank=False, null=False,
+        help_text='version as it appears in crash reports'
+    )
+    version_string = models.CharField(
+        max_length=50, blank=False, null=False,
+        help_text='actual version'
+    )
+    build_id = models.CharField(
+        max_length=50, blank=False, null=False,
+        help_text='the build id for this version'
+    )
+    archive_url = models.TextField(
+        blank=True, null=True,
+        help_text='the url on archive.mozilla.org for data on this build'
+    )
+
+    class Meta:
+        unique_together = ('product_name', 'release_channel', 'build_id', 'version_string')
+
+
 class Signature(models.Model):
     """Bookkeeping table to keep track of when we first saw a signature"""
     signature = models.TextField(
