@@ -19,20 +19,21 @@ class HTTPAdapterWithTimeout(HTTPAdapter):
         This can be a float or a (connect timeout, read timeout) tuple
         of floats.
 
+        Defaults to 5.0 seconds.
+
     """
     def __init__(self, *args, **kwargs):
-        self.default_timeout = kwargs.get('default_timeout', None)
-        if 'default_timeout' in kwargs:
-            del kwargs['default_timeout']
+        self._default_timeout = kwargs.pop('default_timeout', 5.0)
         super(HTTPAdapterWithTimeout, self).__init__(*args, **kwargs)
 
     def send(self, *args, **kwargs):
-        kwargs['timeout'] = kwargs.get('timeout', self.default_timeout)
+        # If there's a timeout, use that. Otherwise, use the default.
+        kwargs['timeout'] = kwargs.get('timeout') or self._default_timeout
         return super(HTTPAdapterWithTimeout, self).send(*args, **kwargs)
 
 
 def session_with_retries(total_retries=5, backoff_factor=0.2,
-                         status_forcelist=(429, 500), default_timeout=5):
+                         status_forcelist=(429, 500), default_timeout=5.0):
     """Returns session that retries on HTTP 429 and 500 with default timeout
 
     :arg int total_retries: total number of times to retry
