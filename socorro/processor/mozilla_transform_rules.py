@@ -606,8 +606,8 @@ class BetaVersionRule(Rule):
         performs compared to the existing product_version table.
 
         :arg product: the product
-        :arg build_id: the build id as a string
         :arg channel: the release channel
+        :arg build_id: the build id as a string
 
         :returns: ``None`` or the version string that should be used
         """
@@ -641,12 +641,14 @@ class BetaVersionRule(Rule):
 
             if versions:
                 if 'b' in versions[0]:
-                    # If we're looking at betas, then ignore "rc" versions
+                    # If we're looking at betas which have a "b" in the versions,
+                    # then ignore "rc" versions because they didn't get released
                     versions = [version for version in versions if 'rc' not in version]
 
                 else:
-                    # If we're looking at the release channel, then only return "rc"
-                    # versions
+                    # If we're looking at non-betas, then only return "rc"
+                    # versions because this crash report is in the beta channel
+                    # and not the release channel
                     versions = [version for version in versions if 'rc' in version]
 
         if versions:
@@ -664,7 +666,7 @@ class BetaVersionRule(Rule):
 
         :arg product: the product
         :arg build_id: the build_id as a string
-        :arg channel: the release channel
+        :arg version: the release version
 
         :returns: ``None`` or the version string that should be used
 
