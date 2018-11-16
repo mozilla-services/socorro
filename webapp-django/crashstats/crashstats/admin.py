@@ -7,6 +7,7 @@ from crashstats.crashstats.models import (
     GraphicsDevice,
     Platform,
     Product,
+    ProductVersion,
     Signature,
 )
 
@@ -112,6 +113,27 @@ class ProductAdmin(admin.ModelAdmin):
         'product_name',
         'sort',
         'is_active'
+    ]
+
+
+@admin.register(ProductVersion)
+class ProductVersionAdmin(admin.ModelAdmin):
+    list_display = [
+        'product_name',
+        'release_channel',
+        'release_version',
+        'version_string',
+        'build_id',
+        'archive_url'
+    ]
+
+    search_fields = [
+        'version_string'
+    ]
+
+    list_filter = [
+        'product_name',
+        'release_channel',
     ]
 
 

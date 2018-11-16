@@ -1299,6 +1299,7 @@ DEFAULT_JOBS = ','.join([
     'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d|06:00',
 
     # Product/version maintenance
+    'socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
     'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h',
     'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h',
 
