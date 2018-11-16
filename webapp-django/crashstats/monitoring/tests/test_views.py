@@ -7,6 +7,7 @@ import pytest
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils import timezone
+from django.utils.encoding import smart_text
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.cron.models import Job as CronJob
@@ -20,7 +21,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert reverse('monitoring:crontabber_status') in response.content
+        assert reverse('monitoring:crontabber_status') in smart_text(response.content)
 
 
 class TestCrontabberStatusViews(BaseTestViews):

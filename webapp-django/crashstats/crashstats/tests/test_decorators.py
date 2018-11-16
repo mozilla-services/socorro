@@ -1,4 +1,5 @@
 from django import http
+from django.utils.encoding import smart_text
 
 from crashstats.crashstats import decorators
 
@@ -11,11 +12,11 @@ class TestCheckDays(object):
 
         request = rf.get('/')
         response = view(request)
-        assert response.content == '10002'  # default
+        assert smart_text(response.content) == '10002'  # default
 
         request = rf.get('/', {'days': '1'})
         response = view(request)
-        assert response.content == '10001'
+        assert smart_text(response.content) == '10001'
 
         # not a number
         request = rf.get('/', {'days': 'xxx'})
@@ -36,7 +37,7 @@ class TestCheckDays(object):
 
         request = rf.get('/', {'days': 1})
         response = view(request)
-        assert response.content == '10001'
+        assert smart_text(response.content) == '10001'
 
         request = rf.get('/')
         response = view(request)
@@ -49,7 +50,7 @@ class TestCheckDays(object):
 
         request = rf.get('/')
         response = view(request)
-        assert response.content == 'None'
+        assert smart_text(response.content) == 'None'
 
     def test_using_possible_days(self, rf):
         @decorators.check_days_parameter([1, 2], 2)
@@ -58,4 +59,4 @@ class TestCheckDays(object):
 
         request = rf.get('/')
         response = view(request)
-        assert response.content == str([1, 2])
+        assert smart_text(response.content) == str([1, 2])

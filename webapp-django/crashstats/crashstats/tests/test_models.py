@@ -1,8 +1,8 @@
 import random
-import urlparse
 
 import mock
 import pytest
+from six.moves.urllib.parse import urlparse, parse_qs
 
 from django.core.cache import cache
 from django.conf import settings
@@ -285,8 +285,8 @@ class TestModels(DjangoTestCase):
 
         def mocked_get(url, **options):
             assert url.startswith(settings.BZAPI_BASE_URL)
-            parsed = urlparse.urlparse(url)
-            query = urlparse.parse_qs(parsed.query)
+            parsed = urlparse(url)
+            query = parse_qs(parsed.query)
             assert query['include_fields'] == ['summary,status,id,resolution']
             return Response({
                 'bugs': [

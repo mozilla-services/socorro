@@ -1,5 +1,6 @@
 import datetime
-from StringIO import StringIO
+
+import six
 
 from django.contrib.auth.models import Group, User
 from django.core.management import call_command
@@ -10,7 +11,7 @@ from crashstats.tokens.models import Token
 
 class TestAuditGroupsCommand(object):
     def test_no_users(self, db):
-        buffer = StringIO()
+        buffer = six.StringIO()
         call_command('auditgroups', stdout=buffer)
         assert 'Removing:' not in buffer.getvalue()
 
@@ -25,7 +26,7 @@ class TestAuditGroupsCommand(object):
 
         assert hackers_group.user_set.count() == 1
 
-        buffer = StringIO()
+        buffer = six.StringIO()
         call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert 'Removing: bob@mozilla.com (!is_active)' in buffer.getvalue()
@@ -40,7 +41,7 @@ class TestAuditGroupsCommand(object):
         bob.groups.add(hackers_group)
         bob.save()
 
-        buffer = StringIO()
+        buffer = six.StringIO()
         call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert 'Removing: bob@mozilla.com (inactive 366d, no tokens)' in buffer.getvalue()
@@ -53,7 +54,7 @@ class TestAuditGroupsCommand(object):
         bob.groups.add(hackers_group)
         bob.save()
 
-        buffer = StringIO()
+        buffer = six.StringIO()
         call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert 'Removing: bob@example.com (invalid email domain)' in buffer.getvalue()
@@ -69,7 +70,7 @@ class TestAuditGroupsCommand(object):
         token = Token.objects.create(user=bob)
         token.save()
 
-        buffer = StringIO()
+        buffer = six.StringIO()
         call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
         assert (
@@ -84,7 +85,7 @@ class TestAuditGroupsCommand(object):
         bob.groups.add(hackers_group)
         bob.save()
 
-        buffer = StringIO()
+        buffer = six.StringIO()
         call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
         assert 'Removing:' not in buffer.getvalue()
@@ -99,7 +100,7 @@ class TestAuditGroupsCommand(object):
 
         assert hackers_group.user_set.count() == 1
 
-        buffer = StringIO()
+        buffer = six.StringIO()
         call_command('auditgroups', persist=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ['bob@mozilla.com']
         assert 'Removing: bob@mozilla.com (inactive 366d, no tokens)' in buffer.getvalue()

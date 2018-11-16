@@ -1,14 +1,15 @@
+import csv
 import datetime
-import gzip
-from io import BytesIO
+
+import six
 
 from django import http
 from django.conf import settings
 from django.utils import timezone
+from django.utils.encoding import smart_text
 
 from crashstats.graphics.forms import GraphicsReportForm
 from crashstats.supersearch.models import SuperSearch
-from crashstats.crashstats.utils import UnicodeWriter
 
 
 GRAPHICS_REPORT_HEADER = (
@@ -96,11 +97,14 @@ def graphics_report(request):
     data = api.get(**params)
     assert 'hits' in data
 
-    accept_gzip = 'gzip' in request.META.get('HTTP_ACCEPT_ENCODING', '')
     response = http.HttpResponse(content_type='text/csv')
-    out = BytesIO()
-    writer = UnicodeWriter(out, delimiter='\t')
-    writer.writerow(GRAPHICS_REPORT_HEADER)
+
+    out = six.StringIO()
+    writer = csv.writer(out, dialect=csv.excel, delimiter='\t')
+    writer.writerow([
+        smart_text(part) for part in GRAPHICS_REPORT_HEADER
+    ])
+
     pages = data['total'] // batch_size
     # if there is a remainder, add one more page
     if data['total'] % batch_size:
@@ -159,21 +163,11 @@ def graphics_report(request):
             # python's None, we'll replace those with '' to make the
             # CSV not have the word 'None' where the data is None.
             writer.writerow([
-                get_value(row, x)
+                six.text_type(get_value(row, x))
                 for x in GRAPHICS_REPORT_HEADER
             ])
 
     payload = out.getvalue()
-    if accept_gzip:
-        zbuffer = BytesIO()
-        zfile = gzip.GzipFile(mode='wb', compresslevel=6, fileobj=zbuffer)
-        zfile.write(payload)
-        zfile.close()
-        compressed_payload = zbuffer.getvalue()
-        response.write(compressed_payload)
-        response['Content-Length'] = len(compressed_payload)
-        response['Content-Encoding'] = 'gzip'
-    else:
-        response.write(payload)
-        response['Content-Length'] = len(payload)
+    response.write(payload)
+    response['Content-Length'] = len(payload)
     return response

@@ -1,10 +1,12 @@
 import csv
-from cStringIO import StringIO
 import datetime
+
+import six
 
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_text
 
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.graphics.views import GRAPHICS_REPORT_HEADER
@@ -73,8 +75,9 @@ class TestViews(BaseTestViews):
         assert response['Content-Length'] == str(len(response.content))
 
         # the response content should be parseable
-        length = len(response.content)
-        inp = StringIO(response.content)
+        text = smart_text(response.content)
+        inp = six.StringIO(text)
+
         reader = csv.reader(inp, delimiter='\t')
         lines = list(reader)
         assert len(lines) == 3
@@ -84,17 +87,9 @@ class TestViews(BaseTestViews):
         assert first[GRAPHICS_REPORT_HEADER.index('signature')] == 'my signature'
         assert first[GRAPHICS_REPORT_HEADER.index('date_processed')] == '201510082322'
 
-        # now fetch it with gzip
-        response = self.client.get(url, data, HTTP_ACCEPT_ENCODING='gzip')
-        assert response.status_code == 200
-        assert response['Content-Type'] == 'text/csv'
-        assert response['Content-Length'] == str(len(response.content))
-        assert response['Content-Encoding'] == 'gzip'
-        assert len(response.content) < length
-
     def test_graphics_report_not_available_via_regular_web_api(self):
         # check that the model isn't available in the API documentation
         api_url = reverse('api:model_wrapper', args=('GraphicsReport',))
         response = self.client.get(reverse('api:documentation'))
         assert response.status_code == 200
-        assert api_url not in response.content
+        assert api_url not in smart_text(response.content)

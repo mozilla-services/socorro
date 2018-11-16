@@ -153,7 +153,7 @@ def report_index(request, crash_id, default_context=None):
             if x in models.RawCrash.API_WHITELIST()
         ]
     # Sort keys case-insensitively
-    context['raw_keys'].sort(key=lambda s: s.lower())
+    context['raw_keys'] = sorted(context['raw_keys'], key=lambda s: s.lower())
 
     if request.user.has_perm('crashstats.view_rawdump'):
         context['raw_dump_urls'] = [

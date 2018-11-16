@@ -1,10 +1,11 @@
-import requests
 from pygments import highlight
-from pygments.lexers import get_lexer_for_filename, CppLexer
 from pygments.formatters import HtmlFormatter
+from pygments.lexers import get_lexer_for_filename, CppLexer
+import requests
 
 from django import http
-from django.utils.six.moves.urllib.parse import urlparse
+
+from six.moves.urllib.parse import urlparse
 
 
 # List of hosts that we will fetch source files from that we syntax highlight and return to the

@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.utils.encoding import smart_text
 
 
 class SetRemoteAddrFromRealIP(object):
@@ -43,7 +44,7 @@ class Pretty400Errors(object):
             return render(
                 request,
                 '400.html',
-                {'error': response.content},
+                {'error': smart_text(response.content)},
                 status=400
             )
         return response

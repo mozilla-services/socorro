@@ -46,7 +46,7 @@ class SearchForm(forms.Form):
             self.all_fields['platform']['form_field_choices'] = platforms
 
         # Generate list of fields
-        for field_name, field_data in all_fields.iteritems():
+        for field_name, field_data in all_fields.items():
             if not field_data['is_exposed']:
                 del self.all_fields[field_name]
                 continue
@@ -88,7 +88,7 @@ class SearchForm(forms.Form):
         if exclude is None:
             exclude = []
 
-        for field in self.all_fields.itervalues():
+        for field in self.all_fields.values():
             if field['name'] in exclude:
                 continue
 

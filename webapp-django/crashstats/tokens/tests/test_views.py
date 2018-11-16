@@ -3,13 +3,13 @@ import pyquery
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User, Permission, Group
+from django.utils.encoding import smart_text
 
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.tokens import models
 
 
 class TestViews(BaseTestViews):
-
     def _login(self):
         user = User.objects.create_user('test', 'test@example.com', 'secret')
         assert self.client.login(username='test', password='secret')
@@ -97,7 +97,7 @@ class TestViews(BaseTestViews):
             'notes': 'X' * 10000,
         })
         assert response.status_code == 200
-        assert 'Text too long' in response.content
+        assert 'Text too long' in smart_text(response.content)
 
         group = Group.objects.create(name='Cool people')
         group.permissions.add(p1)
@@ -123,7 +123,7 @@ class TestViews(BaseTestViews):
         # this should be listed on the home page now
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'data-key="{}"'.format(token.key) in response.content
+        assert 'data-key="' + smart_text(token.key) + '"' in smart_text(response.content)
 
     def test_delete_token(self):
         user = self._login()

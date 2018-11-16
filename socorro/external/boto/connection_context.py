@@ -176,9 +176,9 @@ class ConnectionContextBase(RequiredConfig):
             return self._bucket_cache[bucket_name]
 
     def submit(self, id, name_of_thing, thing):
-        """Submit something to boto"""
-        # can only submit strings to boto
-        assert isinstance(thing, six.string_types), type(thing)
+        """submit something to boto"""
+        # can only submit binary to boto
+        assert isinstance(thing, six.binary_type), type(thing)
         try:
             start_time = time.time()
 

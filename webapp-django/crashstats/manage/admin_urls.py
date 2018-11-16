@@ -3,6 +3,7 @@ from django.conf.urls import url
 from crashstats.manage import admin
 
 
+app_name = 'manage'
 urlpatterns = [
     url('^analyze-model-fetches/$',
         admin.analyze_model_fetches,

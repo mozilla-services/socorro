@@ -27,7 +27,7 @@ def indent(text, prefix):
     return text.strip()
 
 
-LEAD_WHITESPACE = re.compile('^[ \t]*')
+LEAD_WHITESPACE = re.compile(r'^[ \t]*')
 
 
 def dedent_docstring(text):

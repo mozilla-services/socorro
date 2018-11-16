@@ -1,6 +1,7 @@
 import pyquery
 
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_text
 
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.crashstats.tests.test_views import BaseTestViews
@@ -54,17 +55,17 @@ class TestViews(BaseTestViews):
         # Test with results and check email is there.
         response = self.client.get(url)
         assert response.status_code == 200
-        assert '1234abcd-ef56-7890-ab12-abcdef130801' in response.content
-        assert '1234abcd-ef56-7890-ab12-abcdef130802' in response.content
-        assert 'test@example.com' in response.content
+        assert '1234abcd-ef56-7890-ab12-abcdef130801' in smart_text(response.content)
+        assert '1234abcd-ef56-7890-ab12-abcdef130802' in smart_text(response.content)
+        assert 'test@example.com' in smart_text(response.content)
 
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get_no_data
 
         # Test with no results.
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'test@example.com' in response.content
-        assert 'no crash report' in response.content
+        assert 'test@example.com' in smart_text(response.content)
+        assert 'no crash report' in smart_text(response.content)
 
         # Make some permissions.
         self._create_group_with_permission(
@@ -79,8 +80,8 @@ class TestViews(BaseTestViews):
 
         # Test permissions.
         response = self.client.get(url)
-        assert PERMISSIONS['view_pii'] in response.content
-        assert PERMISSIONS['view_exploitability'] in response.content
+        assert PERMISSIONS['view_pii'] in smart_text(response.content)
+        assert PERMISSIONS['view_exploitability'] in smart_text(response.content)
         doc = pyquery.PyQuery(response.content)
         for row in doc('table.permissions tbody tr'):
             cells = []
@@ -106,17 +107,17 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
         profile_url = reverse('profile:profile')
-        assert profile_url not in response.content
+        assert profile_url not in smart_text(response.content)
 
         # Render again when signed in
         user = self._login()
         response = self.client.get(url)
         assert response.status_code == 200
-        assert profile_url in response.content
+        assert profile_url in smart_text(response.content)
 
         # Render again when no longer an active user
         user.is_active = False
         user.save()
         response = self.client.get(url)
         assert response.status_code == 200
-        assert profile_url not in response.content
+        assert profile_url not in smart_text(response.content)

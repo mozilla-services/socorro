@@ -1,10 +1,10 @@
 import datetime
-import urllib
 import warnings
 
 from django_jinja import library
 import jinja2
 import six
+from six.moves.urllib.parse import quote
 
 from django.forms.widgets import RadioSelect
 
@@ -58,7 +58,7 @@ def make_test_input(parameter, defaults):
     if parameter['type'] is not six.text_type:
         classes.append('validate-%s' % parameter['type'].__name__)
     if defaults.get(parameter['name']):
-        data['value'] = urllib.quote(six.text_type(defaults.get(parameter['name'])))
+        data['value'] = quote(six.text_type(defaults.get(parameter['name'])))
     else:
         data['value'] = ''
 

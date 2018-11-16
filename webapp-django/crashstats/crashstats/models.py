@@ -17,7 +17,6 @@ from django.db import models
 from django.template.defaultfilters import slugify
 from django.utils.encoding import iri_to_uri
 
-from crashstats.base.utils import requests_retry_session
 from socorro.app import socorro_app
 import socorro.external.boto.crash_data
 from socorro.external.es.base import ElasticsearchConfig
@@ -26,6 +25,7 @@ from socorro.external.rabbitmq.crashstorage import (
     PriorityjobRabbitMQCrashStore,
 )
 from socorro.lib import BadArgumentError
+from socorro.lib.requestslib import session_with_retries
 
 
 logger = logging.getLogger('crashstats.models')
@@ -257,13 +257,13 @@ def get_api_whitelist(*args, **kwargs):
             # This needs to be imported in runtime because otherwise you'll
             # get a circular import.
             from crashstats.supersearch.models import SuperSearchFields
-            all = SuperSearchFields().get()
+            all_fields = SuperSearchFields().get()
             fields = []
             if baseline:
                 if isinstance(baseline, tuple):
                     baseline = list(baseline)
                 fields.extend(baseline)
-            for meta in all.itervalues():
+            for meta in all_fields.values():
                 if (
                     meta['namespace'] == namespace and
                     not meta['permissions_needed'] and
@@ -385,13 +385,10 @@ class SocorroCommon(object):
     ):
         cache_key = None
 
-        if (
-            settings.CACHE_IMPLEMENTATION_FETCHES and
-            not dont_cache and
-            self.cache_seconds
-        ):
+        if settings.CACHE_IMPLEMENTATION_FETCHES and not dont_cache and self.cache_seconds:
             name = implementation.__class__.__name__
-            cache_key = hashlib.md5(name + six.text_type(params)).hexdigest()
+            key_string = name + repr(params)
+            cache_key = hashlib.md5(key_string.encode('utf-8')).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)
@@ -1009,9 +1006,9 @@ class BugzillaBugInfo(SocorroCommon):
             url = settings.BZAPI_BASE_URL + (
                 '/bug?id=%(bugs)s&include_fields=%(fields)s' % params
             )
-            session = requests_retry_session(
+            session = session_with_retries(
                 # BZAPI isn't super reliable, so be extra patient
-                retries=5,
+                total_retries=5,
                 # 502 = Bad Gateway
                 # 504 = Gateway Time-out
                 status_forcelist=(500, 502, 504)

@@ -469,9 +469,9 @@ class FlashVersionRule(Rule):
     # A regular expression to match Flash file names
     FLASH_RE = re.compile(
         r'NPSWF32_?(.*)\.dll|'
-        'FlashPlayerPlugin_?(.*)\.exe|'
-        'libflashplayer(.*)\.(.*)|'
-        'Flash ?Player-?(.*)'
+        r'FlashPlayerPlugin_?(.*)\.exe|'
+        r'libflashplayer(.*)\.(.*)|'
+        r'Flash ?Player-?(.*)'
     )
 
     def _get_flash_version(self, **kwargs):

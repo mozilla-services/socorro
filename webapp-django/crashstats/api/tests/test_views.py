@@ -4,6 +4,7 @@ import json
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_text
 
 from markus.testing import MetricsMock
 import mock
@@ -113,11 +114,11 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('NoOp',))
         response = self.client.get(url)
         assert response.status_code == 400
-        assert 'This field is required.' in response.content
+        assert 'This field is required.' in smart_text(response.content)
 
         response = self.client.get(url, {'product': 'bad'})
         assert response.status_code == 400
-        assert 'Bad value for parameter(s) \'Bad product\'' in response.content
+        assert 'Bad value for parameter(s) \'Bad product\'' in smart_text(response.content)
 
     def test_hit_or_not_hit_ratelimit(self):
         url = reverse('api:model_wrapper', args=('NoOp',))

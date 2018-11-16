@@ -14,7 +14,7 @@ perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 app_name = 'crashstats'
 urlpatterns = [
-    url('^robots\.txt$',
+    url(r'^robots\.txt$',
         views.robots_txt,
         name='robots_txt'),
 
@@ -84,7 +84,7 @@ urlpatterns = [
             url="https://missioncontrol.telemetry.mozilla.org/#/",
             permanent=True
         )),
-    url('^crashes-per-day/$',
+    url(r'^crashes-per-day/$',
         RedirectView.as_view(
             url="https://missioncontrol.telemetry.mozilla.org/#/",
             permanent=True

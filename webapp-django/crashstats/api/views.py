@@ -3,9 +3,6 @@ import inspect
 import json
 import re
 
-from ratelimit.decorators import ratelimit
-import six
-
 from django import http
 from django import forms
 from django.conf import settings
@@ -17,13 +14,16 @@ from django.forms.forms import DeclarativeFieldsMetaclass
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-import crashstats
+from ratelimit.decorators import ratelimit
+import six
+
 from crashstats.api.cleaner import Cleaner
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
 from crashstats.supersearch import models as supersearch_models
-from crashstats.tokens.models import Token
+from crashstats.tokens import models as tokens_models
+from crashstats.tools import models as tools_models
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import is_crash_id_valid
@@ -32,8 +32,8 @@ from socorro.lib.ooid import is_crash_id_valid
 # List of all modules that contain models we want to expose.
 MODELS_MODULES = (
     models,
-    crashstats.tools.models,
-    crashstats.supersearch.models,
+    tools_models,
+    supersearch_models,
 )
 
 
@@ -69,6 +69,10 @@ TYPE_MAP = {
     int: forms.IntegerField,
     bool: forms.BooleanField,
 }
+if six.PY2:
+    # NOTE(willkg): In python 2, we need to additionally add str which is a
+    # text type
+    TYPE_MAP[str] = forms.CharField
 
 
 def fancy_init(self, model, *args, **kwargs):
@@ -91,9 +95,8 @@ class FormWrapperMeta(DeclarativeFieldsMetaclass):
         return super(FormWrapperMeta, cls).__new__(cls, name, bases, attrs)
 
 
+@six.add_metaclass(FormWrapperMeta)
 class FormWrapper(forms.Form):
-    __metaclass__ = FormWrapperMeta
-
     def clean(self):
         cleaned_data = super(FormWrapper, self).clean()
 
@@ -143,7 +146,7 @@ def is_valid_model_class(model):
     return (
         issubclass(model, models.SocorroMiddleware) and
         model is not models.SocorroMiddleware and
-        model is not crashstats.supersearch.models.ESSocorroMiddleware
+        model is not supersearch_models.ESSocorroMiddleware
     )
 
 
@@ -238,12 +241,12 @@ def model_wrapper(request, model_name):
             raise
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
-                json.dumps({'error': six.text_type(exception)}),
+                json.dumps({'error': ('%s: %s' % (type(exception).__name__, exception))}),
                 content_type='application/json; charset=UTF-8'
             )
         except BAD_REQUEST_EXCEPTIONS as exception:
             return http.HttpResponseBadRequest(
-                json.dumps({'error': six.text_type(exception)}),
+                json.dumps({'error': ('%s: %s' % (type(exception).__name__, exception))}),
                 content_type='application/json; charset=UTF-8'
             )
 
@@ -369,9 +372,9 @@ def documentation(request, default_context=None):
                      RequestSite(request).domain)
     )
     if request.user.is_active:
-        your_tokens = Token.objects.active().filter(user=request.user)
+        your_tokens = tokens_models.Token.objects.active().filter(user=request.user)
     else:
-        your_tokens = Token.objects.none()
+        your_tokens = tokens_models.Token.objects.none()
     context.update({
         'endpoints': endpoints,
         'base_url': base_url,
@@ -430,7 +433,7 @@ def dedent_left(text, spaces):
         'Three\n'
     """
     lines = []
-    regex = re.compile('^\s{%s}' % spaces)
+    regex = re.compile(r'^\s{%s}' % spaces)
     for line in text.splitlines():
         line = regex.sub('', line)
         lines.append(line)

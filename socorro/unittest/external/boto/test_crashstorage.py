@@ -124,10 +124,10 @@ class TestBotoS3CrashStorage(object):
 
         # Run save_raw_crash
         boto_s3_store.save_raw_crash(
-            {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
+            {'submitted_timestamp': '2013-01-09T22:21:18.646733+00:00'},
             # This is an empty set of dumps--no dumps!
             MemoryDumpsMapping(),
-            "0bba929f-8721-460c-dead-a43c20071027"
+            '0bba929f-8721-460c-dead-a43c20071027'
         )
 
         # Verify the raw_crash made it to the right place and has the right

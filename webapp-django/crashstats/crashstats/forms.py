@@ -1,5 +1,6 @@
-from django import forms
 import six
+
+from django import forms
 
 from crashstats.crashstats import form_fields
 
@@ -45,7 +46,6 @@ class Html5DateInput(forms.DateInput):
 
 
 class BugInfoForm(BaseForm):
-
     bug_ids = forms.CharField(required=True)
 
     def clean_bug_ids(self):

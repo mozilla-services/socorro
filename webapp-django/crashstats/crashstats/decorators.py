@@ -14,11 +14,7 @@ from django.contrib.auth.decorators import (
 from crashstats.crashstats import utils
 
 
-def login_required(
-    function=None,
-    redirect_field_name=REDIRECT_FIELD_NAME,
-    login_url=None
-):
+def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None):
     """This is a re-implementation of the ever useful default decorator
     in django.contrib.auth.decorators which is exactly the same except
     that it also requires the user to be active.
