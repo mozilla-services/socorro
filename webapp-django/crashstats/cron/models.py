@@ -11,19 +11,19 @@ class Job(models.Model):
         help_text='the name of the crontabber app'
     )
     next_run = models.DateTimeField(
-        null=True,
+        null=True, blank=True,
         help_text='the datetime of the next time to run'
     )
     first_run = models.DateTimeField(
-        null=True,
+        null=True, blank=True,
         help_text='the datetime of the first time ever run'
     )
     last_run = models.DateTimeField(
-        null=True,
+        null=True, blank=True,
         help_text='the datetime of the last time this was run'
     )
     last_success = models.DateTimeField(
-        null=True,
+        null=True, blank=True,
         help_text='the datetime of the last successful run'
     )
     error_count = models.IntegerField(
@@ -31,15 +31,15 @@ class Job(models.Model):
         help_text='the number of consecutive error runs'
     )
     depends_on = models.TextField(
-        null=True,
+        null=True, blank=True,
         help_text='comma separated list of apps this app depends on'
     )
     last_error = models.TextField(
-        null=True,
+        null=True, blank=True,
         help_text='JSON blob of the last error'
     )
     ongoing = models.DateTimeField(
-        null=True,
+        null=True, blank=True,
         help_text='the datetime this job entry was locked'
     )
 
