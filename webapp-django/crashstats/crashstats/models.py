@@ -151,6 +151,9 @@ class ProductVersion(models.Model):
         max_length=50, blank=False, null=False,
         help_text='release channel for this version'
     )
+    major_version = models.IntegerField(
+        help_text='major version of this version; for example "63.0b4" would be 63'
+    )
     release_version = models.CharField(
         max_length=50, blank=False, null=False,
         help_text='version as it appears in crash reports'

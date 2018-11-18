@@ -44,6 +44,11 @@ webapp (Django).
 The record includes the full url of the build file archivescraper pulled the
 information from. This will help for diagnosis of issues in the future.
 
+The first run will collect everything. After that, it'll skip versions that
+are before the latest major version in the database minus 3. For example, if
+there are builds in the database for 63, then it'll only scrape information
+for 60 and higher for that product.
+
 You can run this in a local development environment like this::
 
     docker-compose run app shell ./socorro-cmd crontabber \
@@ -106,17 +111,41 @@ class ArchiveScraperCronApp(BaseCronApp):
         self.session = session_with_retries()
         self.successful_inserts = 0
 
+    def _get_max_major_version(self, connection, product_name):
+        cursor = connection.cursor()
+        sql = """
+        SELECT max(major_version)
+        FROM crashstats_productversion
+        WHERE product_name = %s
+        """
+        params = (product_name,)
+        cursor.execute(sql, params)
+        data = cursor.fetchall()
+        if data:
+            return data[0][0]
+        return None
+
+    def get_max_major_version(self, product_name):
+        """Retrieves the max major version for this product
+
+        :arg str product_name: the name of the product
+
+        :returns: maximum major version as an int or None
+
+        """
+        return self.database_transaction_executor(self._get_max_major_version, product_name)
+
     def _insert_build_transaction(self, connection, params):
         if self.config.verbose:
             self.config.logger.info('INSERTING: %s' % list(sorted(params.items())))
         cursor = connection.cursor()
         sql = """
         INSERT INTO crashstats_productversion (
-            product_name, release_channel, release_version,
+            product_name, release_channel, major_version, release_version,
             version_string, build_id, archive_url
         )
         VALUES (
-            %(product_name)s, %(release_channel)s, %(release_version)s,
+            %(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
             %(version_string)s, %(build_id)s, %(archive_url)s
         )
         """
@@ -129,11 +158,12 @@ class ArchiveScraperCronApp(BaseCronApp):
         except psycopg2.Error:
             self.config.logger.exception('failed to insert')
 
-    def insert_build(self, product_name, release_channel, release_version, version_string,
-                     build_id, archive_url):
+    def insert_build(self, product_name, release_channel, major_version, release_version,
+                     version_string, build_id, archive_url):
         data = {
             'product_name': product_name,
             'release_channel': release_channel,
+            'major_version': major_version,
             'release_version': release_version,
             'version_string': version_string,
             'build_id': build_id,
@@ -184,12 +214,12 @@ class ArchiveScraperCronApp(BaseCronApp):
 
         return resp.content
 
-    def get_json_link(self, path):
-        """Traverses a directory of platforms and finds the first helpful json file
+    def get_json_links(self, path):
+        """Traverses a directory of platforms and returns links to build info files
 
         :arg str path: the path to start at
 
-        :returns: url or None
+        :returns: list of urls
 
         """
         build_contents = self.download(path)
@@ -197,6 +227,8 @@ class ArchiveScraperCronApp(BaseCronApp):
             link['path'] for link in self.get_links(build_contents)
             if link['text'].endswith('/')
         ]
+
+        all_json_links = []
         for directory_link in directory_links:
             # Skip known unhelpful directories
             if any([(bad_dir in directory_link) for bad_dir in NON_PLATFORM_SUBSTRINGS]):
@@ -220,20 +252,33 @@ class ArchiveScraperCronApp(BaseCronApp):
                 link for link in json_links if link.endswith('buildhub.json')
             ]
             if buildhub_links:
-                return buildhub_links[0]
+                all_json_links.append(buildhub_links[0])
+            elif json_links:
+                # If there isn't a buildhub link, return the first json file we found
+                all_json_links.append(json_links[0])
 
-            # If there isn't a buildhub link, return the first json file we found
-            return json_links[0]
-
-        return None
+        return all_json_links
 
     def scrape_candidates(self, product_name, url_path):
         """Scrape the candidates/ directory for beta, release candidate, and final releases"""
+        major_version = self.get_max_major_version(product_name)
+
         content = self.download(url_path)
         version_links = [
             link for link in self.get_links(content)
             if link['text'][0].isdigit()
         ]
+
+        # If we've got a major_version, then we only want to scrape data for versions
+        # greater than (major_version - 3)
+        if major_version:
+            major_version_minus_3 = major_version - 3
+            self.config.logger.info('Skipping anything before %s', major_version_minus_3)
+            version_links = [
+                link for link in version_links
+                # "63.0b7-candidates/" -> 63
+                if int(link['text'].split('.')[0]) >= major_version_minus_3
+            ]
 
         # For each version in the candidates/ directory, we traverse the tree finding
         # the first build info file we can find
@@ -251,84 +296,87 @@ class ArchiveScraperCronApp(BaseCronApp):
 
             for i, build_link in enumerate(build_links):
                 # Get the json file somewhere in this part of the tree
-                json_link = self.get_json_link(build_link['path'])
-                if not json_link:
+                json_links = self.get_json_links(build_link['path'])
+                if not json_links:
                     self.config.logger.warning(
-                        'could not find json file in: %s', build_link['path']
+                        'could not find json files in: %s', build_link['path']
                     )
                     continue
 
-                json_file = self.download(json_link)
-                data = json.loads(json_file)
+                for json_link in json_links:
+                    json_file = self.download(json_link)
+                    data = json.loads(json_file)
 
-                if 'buildhub' in json_link:
-                    # We have a buildhub.json file to use, so we use that
-                    # structure
-                    data = {
-                        'product_name': product_name,
-                        'release_channel': data['target']['channel'],
-                        'release_version': data['target']['version'],
-                        'build_id': data['build']['id'],
-                        'archive_url': urljoin(self.config.base_url, json_link)
-                    }
-
-                else:
-                    # We have the older build info file format, so we use that
-                    # structure
-                    data = {
-                        'product_name': product_name,
-                        'release_channel': data['moz_update_channel'],
-                        'release_version': data['moz_app_version'],
-                        'build_id': data['buildid'],
-                        'archive_url': urljoin(self.config.base_url, json_link)
-                    }
-
-                # The build link text is something like "build1/" and we
-                # want just the number part, so we drop "build" and the "/"
-                rc_version_string = version_root + 'rc' + build_link['text'][5:-1]
-
-                # Whether or not this is the final build for a set of builds; for
-                # example for [build1, build2, build3] the final build is build3
-                final_build = (i + 1 == len(build_links))
-
-                if final_build:
-                    if data['release_channel'] == 'release':
-                        # If this is a final build for a major release, then we want to
-                        # insert two entries--one for the last rc in the beta channel
-                        # and one for the final release in the release channel. This
-                        # makes it possible to look up version strings in one request.
-
-                        # Insert the rc beta build
-                        data['release_channel'] = 'beta'
-                        data['version_string'] = rc_version_string
-                        self.insert_build(**data)
-
-                        # Insert the final release build
-                        data['version_string'] = version_root
-                        data['release_channel'] = 'release'
-                        self.insert_build(**data)
+                    if 'buildhub' in json_link:
+                        # We have a buildhub.json file to use, so we use that
+                        # structure
+                        data = {
+                            'product_name': product_name,
+                            'release_channel': data['target']['channel'],
+                            'major_version': int(data['target']['version'].split('.')[0]),
+                            'release_version': data['target']['version'],
+                            'build_id': data['build']['id'],
+                            'archive_url': urljoin(self.config.base_url, json_link)
+                        }
 
                     else:
-                        # This is the final build for a beta release, so we insert both
-                        # an rc as well as a final as betas
-                        data['version_string'] = version_root
-                        self.insert_build(**data)
+                        # We have the older build info file format, so we use that
+                        # structure
+                        data = {
+                            'product_name': product_name,
+                            'release_channel': data['moz_update_channel'],
+                            'major_version': int(data['moz_app_version'].split('.')[0]),
+                            'release_version': data['moz_app_version'],
+                            'build_id': data['buildid'],
+                            'archive_url': urljoin(self.config.base_url, json_link)
+                        }
 
-                        data['version_string'] = rc_version_string
-                        self.insert_build(**data)
+                    # The build link text is something like "build1/" and we
+                    # want just the number part, so we drop "build" and the "/"
+                    rc_version_string = version_root + 'rc' + build_link['text'][5:-1]
 
-                else:
-                    if data['release_channel'] == 'release':
-                        # This is a release channel build, but it's not a final build,
-                        # so insert it as an rc beta build
-                        data['version_string'] = rc_version_string
-                        data['release_channel'] = 'beta'
+                    # Whether or not this is the final build for a set of builds; for
+                    # example for [build1, build2, build3] the final build is build3
+                    final_build = (i + 1 == len(build_links))
+
+                    if final_build:
+                        if data['release_channel'] == 'release':
+                            # If this is a final build for a major release, then we want to
+                            # insert two entries--one for the last rc in the beta channel
+                            # and one for the final release in the release channel. This
+                            # makes it possible to look up version strings in one request.
+
+                            # Insert the rc beta build
+                            data['release_channel'] = 'beta'
+                            data['version_string'] = rc_version_string
+                            self.insert_build(**data)
+
+                            # Insert the final release build
+                            data['version_string'] = version_root
+                            data['release_channel'] = 'release'
+                            self.insert_build(**data)
+
+                        else:
+                            # This is the final build for a beta release, so we insert both
+                            # an rc as well as a final as betas
+                            data['version_string'] = version_root
+                            self.insert_build(**data)
+
+                            data['version_string'] = rc_version_string
+                            self.insert_build(**data)
 
                     else:
-                        # Insert the rc beta build
-                        data['version_string'] = rc_version_string
+                        if data['release_channel'] == 'release':
+                            # This is a release channel build, but it's not a final build,
+                            # so insert it as an rc beta build
+                            data['version_string'] = rc_version_string
+                            data['release_channel'] = 'beta'
+                            self.insert_build(**data)
 
-                    self.insert_build(**data)
+                        else:
+                            # Insert the rc beta build
+                            data['version_string'] = rc_version_string
+                            self.insert_build(**data)
 
     def run(self):
         # Capture Firefox beta and release builds
