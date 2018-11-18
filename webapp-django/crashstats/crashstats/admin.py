@@ -121,6 +121,7 @@ class ProductVersionAdmin(admin.ModelAdmin):
     list_display = [
         'product_name',
         'release_channel',
+        'major_version',
         'release_version',
         'version_string',
         'build_id',
@@ -132,6 +133,7 @@ class ProductVersionAdmin(admin.ModelAdmin):
     ]
 
     list_filter = [
+        'major_version',
         'product_name',
         'release_channel',
     ]
