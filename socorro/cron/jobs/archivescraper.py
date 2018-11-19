@@ -108,7 +108,9 @@ class ArchiveScraperCronApp(BaseCronApp):
 
     def __init__(self, *args, **kwargs):
         super(ArchiveScraperCronApp, self).__init__(*args, **kwargs)
-        self.session = session_with_retries()
+        # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds,
+        # then it has issues and we should try again some other time
+        self.session = session_with_retries(default_timeout=5.0)
         self.successful_inserts = 0
 
     def _get_max_major_version(self, connection, product_name):

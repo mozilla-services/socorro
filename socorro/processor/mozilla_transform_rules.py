@@ -883,8 +883,11 @@ class BetaVersionRule(Rule):
                 maybe_version = self._get_real_version_db2(product, release_channel, build_id)
                 if real_version != maybe_version:
                     self.config.logger.info(
-                        'betaversionrule: got different versions: %r %r vs. %r',
+                        'betaversionrule: got different versions: %r %r %r %r %r vs. %r',
                         raw_crash.get('uuid', None),
+                        product,
+                        build_id,
+                        release_channel,
                         real_version,
                         maybe_version
                     )
