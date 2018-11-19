@@ -472,7 +472,7 @@ def classes_in_namespaces_converter_with_compression(
         if isinstance(class_list_str, six.string_types):
             class_str_list = list_splitter_fn(class_list_str)
         else:
-            raise TypeError('must be derivative of a basestring')
+            raise TypeError('must be derivative of str')
 
         class InnerClassList(RequiredConfig):
             """This nested class is a proxy list for the classes.  It collects

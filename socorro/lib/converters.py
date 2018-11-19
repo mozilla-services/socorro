@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from past.builtins import basestring
 from configman import RequiredConfig, Namespace, class_converter
+import six
 
 
 def _default_list_splitter(class_list_str):
@@ -42,10 +42,10 @@ def str_to_classes_in_namespaces_converter(
         one for each class in the list.  It does this by creating a proxy
         class stuffed with its own 'required_config' that's dynamically
         generated."""
-        if isinstance(class_list_str, basestring):
+        if isinstance(class_list_str, six.string_types):
             class_str_list = list_splitter_fn(class_list_str)
         else:
-            raise TypeError('must be derivative of a basestring')
+            raise TypeError('must be derivative of a str')
 
         class InnerClassList(RequiredConfig):
             """This nested class is a proxy list for the classes.  It collects

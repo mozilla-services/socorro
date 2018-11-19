@@ -1,4 +1,4 @@
-from past.builtins import basestring
+import six
 
 
 def string_hex_to_hex_string(snippet):
@@ -10,7 +10,7 @@ def string_hex_to_hex_string(snippet):
     we always return a 4 character string preceeded by 0x.
     This function tries to make that conversion.
     """
-    assert isinstance(snippet, basestring)
+    assert isinstance(snippet, six.string_types)
     return '0x' + format(int(snippet, 16), '04x')
 
 

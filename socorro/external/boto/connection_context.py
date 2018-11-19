@@ -2,20 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import contextlib
+import datetime
 import json
 import socket
-import datetime
-import contextlib
 import time
-from past.builtins import basestring
 
 import boto
-import boto.s3.connection
 import boto.exception
-
+import boto.s3.connection
 from configman import Namespace, RequiredConfig, class_converter
 from configman.converters import str_to_boolean
 import markus
+import six
 
 from socorro.lib.converters import change_default
 from socorro.lib.ooid import dateFromOoid
@@ -200,7 +199,7 @@ class ConnectionContextBase(RequiredConfig):
         """submit something to boto.
         """
         # can only submit strings to boto
-        assert isinstance(thing, basestring), type(thing)
+        assert isinstance(thing, six.string_types), type(thing)
         try:
             start_time = time.time()
 

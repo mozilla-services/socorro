@@ -1,34 +1,32 @@
-import json
-import re
 import datetime
 import inspect
-from past.builtins import basestring
+import json
+import re
+
+from ratelimit.decorators import ratelimit
+import six
 
 from django import http
-from django.shortcuts import render
+from django import forms
+from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
 from django.core.urlresolvers import reverse
-from django.conf import settings
-from django import forms
-from django.views.decorators.csrf import csrf_exempt
-from six import text_type
 # explicit import because django.forms has an __all__
 from django.forms.forms import DeclarativeFieldsMetaclass
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
-from ratelimit.decorators import ratelimit
-
+import crashstats
+from crashstats.api.cleaner import Cleaner
+from crashstats.crashstats import models
+from crashstats.crashstats import utils
+from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
+from crashstats.supersearch import models as supersearch_models
+from crashstats.tokens.models import Token
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import is_crash_id_valid
-
-import crashstats
-from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
-from crashstats.crashstats import models
-from crashstats.crashstats import utils
-from crashstats.supersearch import models as supersearch_models
-from crashstats.tokens.models import Token
-from .cleaner import Cleaner
 
 
 # List of all modules that contain models we want to expose.
@@ -64,7 +62,7 @@ class MultipleStringField(forms.TypedMultipleChoiceField):
 
 
 TYPE_MAP = {
-    basestring: forms.CharField,
+    six.text_type: forms.CharField,
     list: MultipleStringField,
     datetime.date: forms.DateField,
     datetime.datetime: forms.DateTimeField,
@@ -180,7 +178,7 @@ def model_wrapper(request, model_name):
         raise http.Http404('no service called `%s`' % model_name)
 
     required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
-    if isinstance(required_permissions, basestring):
+    if isinstance(required_permissions, six.string_types):
         required_permissions = [required_permissions]
     if (
         required_permissions and
@@ -193,11 +191,7 @@ def model_wrapper(request, model_name):
         for permission in required_permissions:
             codename = permission.split('.', 1)[1]
             try:
-                permission_names.append(
-                    Permission.objects.get(
-                        codename=codename
-                    ).name
-                )
+                permission_names.append(Permission.objects.get(codename=codename).name)
             except Permission.DoesNotExist:
                 permission_names.append(codename)
         # you're not allowed to use this model
@@ -244,12 +238,12 @@ def model_wrapper(request, model_name):
             raise
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
-                json.dumps({'error': text_type(exception)}),
+                json.dumps({'error': six.text_type(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
         except BAD_REQUEST_EXCEPTIONS as exception:
             return http.HttpResponseBadRequest(
-                json.dumps({'error': text_type(exception)}),
+                json.dumps({'error': six.text_type(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
 
@@ -269,21 +263,14 @@ def model_wrapper(request, model_name):
         if binary_response:
             # if you don't have all required permissions, you'll get a 403
             required_permissions = model.API_BINARY_PERMISSIONS
-            if isinstance(required_permissions, basestring):
+            if isinstance(required_permissions, six.string_types):
                 required_permissions = [required_permissions]
-            if (
-                required_permissions and
-                not has_permissions(request.user, required_permissions)
-            ):
+            if required_permissions and not has_permissions(request.user, required_permissions):
                 permission_names = []
                 for permission in required_permissions:
                     codename = permission.split('.', 1)[1]
                     try:
-                        permission_names.append(
-                            Permission.objects.get(
-                                codename=codename
-                            ).name
-                        )
+                        permission_names.append(Permission.objects.get(codename=codename).name)
                     except Permission.DoesNotExist:
                         permission_names.append(codename)
                 # you're not allowed to get the binary response
@@ -313,36 +300,25 @@ def model_wrapper(request, model_name):
 
     if binary_response:
         assert model.API_BINARY_FILENAME, 'No API_BINARY_FILENAME set on model'
-        response = http.HttpResponse(
-            result,
-            content_type='application/octet-stream'
-        )
+        response = http.HttpResponse(result, content_type='application/octet-stream')
         filename = model.API_BINARY_FILENAME % form.cleaned_data
-        response['Content-Disposition'] = (
-            'attachment; filename="%s"' % filename
-        )
+        response['Content-Disposition'] = 'attachment; filename="%s"' % filename
         return response
 
-    if (
-        getattr(model, 'deprecation_warning', False)
-    ):
+    if getattr(model, 'deprecation_warning', False):
         if isinstance(result, dict):
             result['DEPRECATION_WARNING'] = model.deprecation_warning
         # If you return a tuple of two dicts, the second one becomes
         # the extra headers.
         # return result, {
-        headers['DEPRECATION-WARNING'] = (
-            model.deprecation_warning.replace('\n', ' ')
-        )
+        headers['DEPRECATION-WARNING'] = model.deprecation_warning.replace('\n', ' ')
 
     if model.cache_seconds:
         # We can set a Cache-Control header.
         # We say 'private' because the content can depend on the user
         # and we don't want the response to be collected in HTTP proxies
         # by mistake.
-        headers['Cache-Control'] = 'private, max-age={}'.format(
-            model.cache_seconds,
-        )
+        headers['Cache-Control'] = 'private, max-age={}'.format(model.cache_seconds)
 
     return result, headers
 
@@ -381,10 +357,7 @@ def documentation(request, default_context=None):
         model_inst = model()
         if (
             model_inst.API_REQUIRED_PERMISSIONS and
-            not has_permissions(
-                request.user,
-                model_inst.API_REQUIRED_PERMISSIONS
-            )
+            not has_permissions(request.user, model_inst.API_REQUIRED_PERMISSIONS)
         ):
             continue
         endpoints.append(_describe_model(model_name, model))
@@ -424,13 +397,11 @@ def _describe_model(model_name, model):
     required_permissions = []
     if model_inst.API_REQUIRED_PERMISSIONS:
         permissions = model_inst.API_REQUIRED_PERMISSIONS
-        if isinstance(permissions, basestring):
+        if isinstance(permissions, six.string_types):
             permissions = [permissions]
         for permission in permissions:
             codename = permission.split('.', 1)[1]
-            required_permissions.append(
-                Permission.objects.get(codename=codename).name
-            )
+            required_permissions.append(Permission.objects.get(codename=codename).name)
 
     data = {
         'name': model_name,

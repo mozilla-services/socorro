@@ -7,22 +7,9 @@ import functools
 import hashlib
 import logging
 import time
-from past.builtins import basestring
 
 from configman import configuration, Namespace
-from six import text_type
-
-from socorro.lib import BadArgumentError
-from socorro.external.es.base import ElasticsearchConfig
-from socorro.external.rabbitmq.crashstorage import (
-    ReprocessingOneRabbitMQCrashStore,
-    PriorityjobRabbitMQCrashStore,
-)
-from socorro.external.postgresql.base import PostgreSQLStorage
-import socorro.external.postgresql.products
-import socorro.external.boto.crash_data
-
-from socorro.app import socorro_app
+import six
 
 from django.conf import settings
 from django.core.cache import cache
@@ -31,6 +18,16 @@ from django.template.defaultfilters import slugify
 from django.utils.encoding import iri_to_uri
 
 from crashstats.base.utils import requests_retry_session
+from socorro.app import socorro_app
+import socorro.external.boto.crash_data
+from socorro.external.es.base import ElasticsearchConfig
+from socorro.external.postgresql.base import PostgreSQLStorage
+import socorro.external.postgresql.products
+from socorro.external.rabbitmq.crashstorage import (
+    ReprocessingOneRabbitMQCrashStore,
+    PriorityjobRabbitMQCrashStore,
+)
+from socorro.lib import BadArgumentError
 
 
 logger = logging.getLogger('crashstats.models')
@@ -401,7 +398,7 @@ class SocorroCommon(object):
             self.cache_seconds
         ):
             name = implementation.__class__.__name__
-            cache_key = hashlib.md5(name + text_type(params)).hexdigest()
+            cache_key = hashlib.md5(name + six.text_type(params)).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)
@@ -557,15 +554,12 @@ class SocorroMiddleware(SocorroCommon):
                 continue
 
             if isinstance(value, param['type']):
-                if (
-                    isinstance(value, datetime.datetime) and
-                    param['type'] is datetime.date
-                ):
+                if isinstance(value, datetime.datetime) and param['type'] is datetime.date:
                     value = value.date()
             else:
-                if isinstance(value, basestring) and param['type'] is list:
+                if isinstance(value, six.string_types) and param['type'] is list:
                     value = [value]
-                elif param['type'] is basestring:
+                elif param['type'] is six.text_type:
                     # we'll let the url making function later deal with this
                     pass
                 else:
@@ -598,8 +592,8 @@ class SocorroMiddleware(SocorroCommon):
         for required, items in ((True, getattr(self, 'required_params', [])),
                                 (False, getattr(self, 'possible_params', []))):
             for item in items:
-                if isinstance(item, basestring):
-                    type_ = basestring
+                if isinstance(item, six.string_types):
+                    type_ = six.text_type
                     name = item
                 elif isinstance(item, dict):
                     type_ = item['type']
@@ -1025,7 +1019,7 @@ class BugzillaBugInfo(SocorroCommon):
         return 'buginfo:{}'.format(bug_id)
 
     def get(self, bugs):
-        if isinstance(bugs, basestring):
+        if isinstance(bugs, six.string_types):
             bugs = [bugs]
         fields = ('summary', 'status', 'id', 'resolution')
         results = []

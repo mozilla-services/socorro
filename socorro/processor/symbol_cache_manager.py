@@ -2,11 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from collections import OrderedDict
 import os
 import sys
 import tempfile
-from past.builtins import basestring
-from collections import OrderedDict
+
+import six
 
 from configman import Namespace, RequiredConfig
 
@@ -109,7 +110,7 @@ def from_string_to_parse_size(size_as_string):
         'M': 1024 ** 2,
         'G': 1024 ** 3,
     }
-    if not isinstance(size_as_string, basestring) or not size_as_string:
+    if not isinstance(size_as_string, six.string_types) or not size_as_string:
         raise ValueError('Bad size value: "%s"' % size_as_string)
 
     if size_as_string[-1].isdigit():

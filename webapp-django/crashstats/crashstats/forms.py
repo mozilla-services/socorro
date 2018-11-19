@@ -1,7 +1,7 @@
-from past.builtins import basestring
-
 from django import forms
-from . import form_fields
+import six
+
+from crashstats.crashstats import form_fields
 
 
 class _BaseForm(object):
@@ -24,7 +24,7 @@ class _BaseForm(object):
     def clean(self):
         cleaned_data = super(_BaseForm, self).clean()
         for field in cleaned_data:
-            if isinstance(cleaned_data[field], basestring):
+            if isinstance(cleaned_data[field], six.string_types):
                 cleaned_data[field] = (
                     cleaned_data[field].replace('\r\n', '\n')
                     .replace(u'\u2018', "'").replace(u'\u2019', "'").strip())

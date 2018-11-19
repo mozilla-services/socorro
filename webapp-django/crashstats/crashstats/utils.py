@@ -6,11 +6,10 @@ import functools
 import json
 import random
 import re
-from past.builtins import basestring
 from collections import OrderedDict
 
-from six import text_type
-from six.moves import cStringIO
+import six
+from six.moves import StringIO
 
 from django import http
 from django.conf import settings
@@ -37,7 +36,7 @@ def parse_isodate(ds):
     """
     return a datetime object from a date string
     """
-    if isinstance(ds, text_type):
+    if isinstance(ds, six.text_type):
         # isodate struggles to convert unicode strings with
         # its parse_datetime() if the input string is unicode.
         ds = ds.encode('ascii')
@@ -365,7 +364,7 @@ def build_default_context(product=None, versions=None):
     context['active_versions'] = active_versions
 
     if versions is not None:
-        if isinstance(versions, basestring):
+        if isinstance(versions, six.string_types):
             versions = versions.split(';')
 
         if versions:
@@ -409,13 +408,13 @@ class UnicodeWriter:
 
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
         # Redirect output to a queue
-        self.queue = cStringIO()
+        self.queue = StringIO()
         self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
         self.stream = f
         self.encoder = codecs.getincrementalencoder(encoding)()
 
     def writerow(self, row):
-        self.writer.writerow([text_type(s).encode("utf-8") for s in row])
+        self.writer.writerow([six.text_type(s).encode("utf-8") for s in row])
         # Fetch UTF-8 output from the queue ...
         data = self.queue.getvalue()
         data = data.decode("utf-8")

@@ -1,18 +1,17 @@
+import datetime
 import urllib
 import warnings
-import datetime
-from past.builtins import basestring
-from six import text_type
 
 from django_jinja import library
 import jinja2
+import six
 
 from django.forms.widgets import RadioSelect
 
 
 @library.global_function
 def describe_friendly_type(type_):
-    if type_ is basestring:
+    if type_ is six.text_type:
         return "String"
     if type_ is int:
         return "Integer"
@@ -56,10 +55,10 @@ def make_test_input(parameter, defaults):
         data['type'] = 'date'
     else:
         data['type'] = 'text'
-    if parameter['type'] is not basestring:
+    if parameter['type'] is not six.text_type:
         classes.append('validate-%s' % parameter['type'].__name__)
     if defaults.get(parameter['name']):
-        data['value'] = urllib.quote(text_type(defaults.get(parameter['name'])))
+        data['value'] = urllib.quote(six.text_type(defaults.get(parameter['name'])))
     else:
         data['value'] = ''
 

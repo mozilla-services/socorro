@@ -5,7 +5,6 @@
 import datetime
 import gzip
 import json
-from past.builtins import basestring
 import random
 import re
 import sys
@@ -13,6 +12,7 @@ import time
 
 import markus
 from requests import RequestException
+import six
 from six.moves.urllib.parse import unquote_plus
 
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
@@ -174,7 +174,7 @@ class DatesAndTimesRule(Rule):
             'submitted_timestamp',
             dateFromOoid(raw_crash.uuid)
         )
-        if isinstance(processed_crash.submitted_timestamp, basestring):
+        if isinstance(processed_crash.submitted_timestamp, six.string_types):
             processed_crash.submitted_timestamp = datetime_from_isodate_string(
                 processed_crash.submitted_timestamp
             )
@@ -950,7 +950,7 @@ class OSPrettyVersionRule(Rule):
         processed_crash['os_pretty_version'] = None
 
         pretty_name = processed_crash.get('os_name')
-        if not isinstance(pretty_name, basestring):
+        if not isinstance(pretty_name, six.string_types):
             # This data is bogus or isn't there, there's nothing we can do.
             return True
 

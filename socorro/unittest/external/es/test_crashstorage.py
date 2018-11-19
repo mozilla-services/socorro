@@ -1056,14 +1056,14 @@ class Test_get_fields_by_analyzer:
 
 class Test_truncate_keyword_field_values:
     @pytest.mark.parametrize('data, expected', [
-        # Top-level, non-basestring values are left alone
+        # Top-level, non-str values are left alone
         ({'key': None}, {'key': None}),
         ({'key': 1}, {'key': 1}),
 
         # Second-level values are left alone
         ({'key': {'key': 'a' * 10001}}, {'key': {'key': 'a' * 10001}}),
 
-        # Top-level, basestring values are truncated if > 10,000 characters
+        # Top-level, str values are truncated if > 10,000 characters
         ({'key': 'a' * 9999}, {'key': 'a' * 9999}),
         ({'key': 'a' * 10000}, {'key': 'a' * 10000}),
         ({'key': 'a' * 10001}, {'key': 'a' * 10000}),
