@@ -2,14 +2,12 @@ import datetime
 import json
 import re
 import urllib
-from past.builtins import basestring
-from past.builtins import long
 
+from django_jinja import library
+import humanfriendly
 import isodate
 import jinja2
-import humanfriendly
-from django_jinja import library
-from six import text_type
+import six
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
@@ -35,10 +33,10 @@ def urlencode(txt):
 
     This function ensures white spaces are encoded with '%20' and not '+'.
     """
-    if not isinstance(txt, basestring):
+    if not isinstance(txt, six.string_types):
         # Do nothing on non-strings.
         return txt
-    if isinstance(txt, text_type):
+    if isinstance(txt, six.text_type):
         txt = txt.encode('utf-8')
     return urllib.quote_plus(txt).replace('+', '%20')
 
@@ -46,7 +44,7 @@ def urlencode(txt):
 @library.filter
 def digitgroupseparator(number):
     """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
-    if not isinstance(number, (long, int)):
+    if not isinstance(number, six.integer_types):
         return number
     return format(number, ',')
 

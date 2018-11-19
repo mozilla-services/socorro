@@ -22,6 +22,8 @@ import sys
 import textwrap
 import types
 
+import six
+
 from socorro.app.socorro_app import App
 
 
@@ -43,7 +45,7 @@ def showcommands_cmd(argv):
     for group in COMMANDS:
         print('%s:' % group.name)
         for cmd, runner in group:
-            if not isinstance(runner, basestring):
+            if not isinstance(runner, six.string_types):
                 runner = '%s in %s' % (runner.__name__, inspect.getfile(runner))
             print('  %-24s %s' % (cmd, runner))
         print('')
@@ -107,7 +109,7 @@ def import_and_run(runner):
     run, or a callable which will get run directly.
 
     """
-    if isinstance(runner, basestring):
+    if isinstance(runner, six.string_types):
         # Import the class from the module
         module_path, cls_name = runner.rsplit('.', 1)
         __import__(module_path)

@@ -5,7 +5,6 @@
 import datetime
 import sys
 import re
-from past.builtins import basestring
 from collections import defaultdict
 
 from elasticsearch.exceptions import NotFoundError, RequestError
@@ -291,7 +290,7 @@ class SuperSearch(SearchBase):
                     if len(param.value) == 1:
                         val = param.value[0]
 
-                        if not isinstance(val, basestring) or ' ' not in val:
+                        if not isinstance(val, six.string_types) or ' ' not in val:
                             # There's only one term and no white space, this
                             # is a simple term filter.
                             filter_value = val

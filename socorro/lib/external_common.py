@@ -6,11 +6,11 @@
 Common functions for external modules.
 """
 
-import json
 import datetime
-from past.builtins import basestring
+import json
 
 from configman.dotdict import DotDict
+import six
 
 from socorro.lib import BadArgumentError
 import socorro.lib.datetimeutil as dtutil
@@ -140,7 +140,7 @@ def check_type(param, datatype):
             'int': int,
         }[datatype]
 
-    if datatype is str and not isinstance(param, basestring):
+    if datatype is str and not isinstance(param, six.string_types):
         try:
             param = str(param)
         except ValueError:
@@ -155,10 +155,7 @@ def check_type(param, datatype):
     elif datatype is bool and not isinstance(param, bool):
         param = str(param).lower() in ("true", "t", "1", "y", "yes")
 
-    elif (
-        datatype is datetime.datetime and
-        not isinstance(param, datetime.datetime)
-    ):
+    elif datatype is datetime.datetime and not isinstance(param, datetime.datetime):
         try:
             param = dtutil.string_to_datetime(param)
         except ValueError:
@@ -170,16 +167,13 @@ def check_type(param, datatype):
         except ValueError:
             param = None
 
-    elif (
-        datatype is datetime.timedelta and
-        not isinstance(param, datetime.timedelta)
-    ):
+    elif datatype is datetime.timedelta and not isinstance(param, datetime.timedelta):
         try:
             param = dtutil.str_hours_to_time_delta(param)
         except ValueError:
             param = None
 
-    elif datatype == "json" and isinstance(param, basestring):
+    elif datatype == "json" and isinstance(param, six.string_types):
         try:
             param = json.loads(param)
         except ValueError:

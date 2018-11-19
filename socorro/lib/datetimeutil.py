@@ -4,10 +4,10 @@
 
 import datetime
 import json
-from past.builtins import basestring
 import re
 
 import isodate
+import six
 
 
 UTC = isodate.UTC
@@ -75,7 +75,7 @@ def string_to_datetime(date):
         return date
     if isinstance(date, list):
         date = 'T'.join(date)
-    if isinstance(date, basestring):
+    if isinstance(date, six.string_types):
         if len(date) <= len('2000-01-01'):
             return datetime.datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=UTC)
         else:

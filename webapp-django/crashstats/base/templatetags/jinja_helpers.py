@@ -1,9 +1,9 @@
 import urlparse
 import urllib
-from past.builtins import basestring
 
-import jinja2
 from django_jinja import library
+import jinja2
+import six
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.urlresolvers import reverse
@@ -19,7 +19,7 @@ def url(viewname, *args, **kwargs):
     string values), we have to sanitize the values.
     """
     def clean_argument(s):
-        if isinstance(s, basestring):
+        if isinstance(s, six.string_types):
             # First remove all proper control characters like '\n',
             # '\r' or '\t'.
             s = ''.join(c for c in s if ord(c) >= 32)

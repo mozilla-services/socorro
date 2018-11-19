@@ -1,14 +1,13 @@
 import copy
 import functools
-from past.builtins import basestring
 
+from django.core.cache import cache
+import six
+
+from crashstats.crashstats import models
 from socorro.external.es import query
 from socorro.external.es import supersearch
 from socorro.external.es import super_search_fields
-
-from django.core.cache import cache
-
-from crashstats.crashstats import models
 
 
 SUPERSEARCH_META_PARAMS = (
@@ -132,7 +131,7 @@ class SuperSearch(ESSocorroMiddleware):
                 # Intervals can be strings for dates (like "day" or "1.5h")
                 # and can only be integers for numbers.
                 interval_type = {
-                    'date': basestring,
+                    'date': six.text_type,
                     'number': int
                 }.get(field['query_type'])
 

@@ -1,12 +1,13 @@
 import json
-from past.builtins import basestring
+
+import six
 
 from crashstats.crashstats.tests.test_models import Response
 
 
 class SuperSearchResponse(Response):
     def __init__(self, content=None, status_code=200, columns=None):
-        if isinstance(content, basestring):
+        if isinstance(content, six.string_types):
             content = json.loads(content)
 
         if columns is None:
