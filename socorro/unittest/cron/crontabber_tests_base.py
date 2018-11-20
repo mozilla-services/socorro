@@ -14,7 +14,7 @@ from configman import ConfigurationManager
 from mock import Mock
 import six
 
-from socorro.cron.crontabber_app import CronTabberApp, JobStateDatabase
+from socorro.cron.crontabber_app import CronTabberApp
 from socorro.unittest.conftest import DjangoTablesMixin
 
 

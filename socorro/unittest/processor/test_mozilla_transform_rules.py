@@ -4,12 +4,13 @@
 
 import copy
 import json
+import os
 
 from configman.dotdict import DotDict
 from mock import call, Mock, patch
-import requests_mock
 import six
 
+from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.revision_data import get_version
 from socorro.lib.util import dotdict_to_dict
@@ -1266,503 +1267,169 @@ class TestTopMostFilesRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
 
-class TestBetaVersionRule:
-    API_URL = 'http://buildhub.example.com/v1/buckets/build-hub/collections/releases/search'
-
+class TestBetaVersionRule(object):
     def get_config(self):
         config = get_basic_config()
-        config.buildhub_api = self.API_URL
-        config.database_class = Mock()
-        config.transaction_executor_class = Mock()
+        config.database_port = os.environ['database_port']
+        config.database_hostname = os.environ['database_hostname']
+        config.database_name = os.environ['database_name']
+        config.database_username = os.environ['database_username']
+        config.database_password = os.environ['database_password']
+        config.database_class = ConnectionContext
         return config
 
-    def payload_matcher(self, payload):
-        def _payload_matcher(req):
-            return req.text == payload
-        return _payload_matcher
+    def insert_product_version(self, conn, product, channel, build_id, version_string):
+        cursor = conn.cursor()
+        sql = """
+        INSERT INTO crashstats_productversion
+            (product_name, release_channel, major_version, release_version,
+            version_string, build_id, archive_url)
+        VALUES
+            (%(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
+            %(version_string)s, %(build_id)s, %(archive_url)s)
+        """
+        params = {
+            'product_name': product,
+            'release_channel': channel,
+            'build_id': build_id,
+            'major_version': int(version_string.split('.')[0]),
+            'release_version': version_string.split('.')[0],
+            'version_string': version_string,
+            'archive_url': 'test',
+        }
+        cursor.execute(sql, params)
+        conn.commit()
 
-    def test_beta_channel_known_version(self):
+    def test_beta_channel_known_version(self, db_conn, django_tables):
         # Beta channel with known version gets converted correctly
         config = self.get_config()
+
+        self.insert_product_version(
+            conn=db_conn,
+            product='Firefox',
+            channel='beta',
+            build_id='20001001101010',
+            version_string='3.0b1'
+        )
+
         raw_crash = {}
         raw_dumps = {}
+        processed_crash = {
+            'product': 'Firefox',
+            'release_channel': 'beta',
+            'version': '3.0',
+            'build': '20001001101010',
+        }
+        processor_meta = get_basic_processor_meta()
 
-        with requests_mock.Mocker() as req_mock:
-            es_query = {
-                'query': {
-                    'bool': {
-                        'must': {
-                            'match_all': {}
-                        },
-                        'filter': [
-                            {
-                                'term': {
-                                    'source.product': 'firefox'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'build.id': '20001001101010'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'target.channel': 'beta'
-                                }
-                            }
-                        ],
-                        'must_not': {
-                            'wildcard': {
-                                'target.version': '*rc*'
-                            }
-                        }
-                    }
-                },
-                'size': 1
-            }
-            req_mock.post(
-                self.API_URL,
-                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
-                json={
-                    'hits': {
-                        'hits': [
-                            {
-                                '_source': {
-                                    'target': {
-                                        'version': '3.0b1'
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            )
+        rule = BetaVersionRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash['version'] == '3.0b1'
+        assert processor_meta.processor_notes == []
 
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '3.0',
-                'release_channel': 'beta',
-                'build': '20001001101010',
-            }
-
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '3.0b1'
-            assert processor_meta.processor_notes == []
-
-    def test_release_channel(self):
+    def test_release_channel(self, django_tables):
         """Release channel doesn't trigger rule"""
         config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
+        processed_crash = {
+            'product': 'Firefox',
+            'version': '2.0',
+            'release_channel': 'release',
+            'build': '20000801101010',
+        }
+        processor_meta = get_basic_processor_meta()
 
-        with requests_mock.Mocker():
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '2.0',
-                'release_channel': 'release',
-                'build': '20000801101010',
-            }
+        rule = BetaVersionRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash['version'] == '2.0'
+        assert len(processor_meta.processor_notes) == 0
 
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '2.0'
-            assert len(processor_meta.processor_notes) == 0
-
-    def test_nightly_channel(self):
+    def test_nightly_channel(self, django_tables):
         """Nightly channel doesn't trigger rule"""
         config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
+        processed_crash = {
+            'product': 'Firefox',
+            'version': '5.0a1',
+            'release_channel': 'nightly',
+            'build': '20000105101010',
+        }
+        processor_meta = get_basic_processor_meta()
 
-        with requests_mock.Mocker():
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '5.0a1',
-                'release_channel': 'nightly',
-                'build': '20000105101010',
-            }
+        rule = BetaVersionRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash['version'] == '5.0a1'
+        assert processor_meta.processor_notes == []
 
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '5.0a1'
-            assert processor_meta.processor_notes == []
-
-    def test_bad_buildid(self):
+    def test_bad_buildid(self, django_tables):
         """Invalid buildids don't cause errors"""
         config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
+        processed_crash = {
+            'product': 'Firefox',
+            'release_channel': 'beta',
+            'version': '5.0',
+            'build': '2",381,,"',
+        }
+        processor_meta = get_basic_processor_meta()
 
-        with requests_mock.Mocker():
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '5.0',
-                'release_channel': 'beta',
-                'build': '2",381,,"',
-            }
+        rule = BetaVersionRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash['version'] == '5.0b0'
+        assert processor_meta.processor_notes == [
+            'release channel is beta but no version data was found - '
+            'added "b0" suffix to version number'
+        ]
 
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '5.0b0'
-            assert processor_meta.processor_notes == [
-                'release channel is beta but no version data was found - '
-                'added "b0" suffix to version number'
-            ]
-
-    def test_beta_channel_unknown_version(self):
+    def test_beta_channel_unknown_version(self, django_tables):
         """Beta crash that Buildhub doesn't know about gets b0"""
         config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
+        processed_crash = {
+            'product': 'Firefox',
+            'version': '3.0.1',
+            'release_channel': 'beta',
+            'build': '220000101101011',
+        }
+        processor_meta = get_basic_processor_meta()
 
-        with requests_mock.Mocker() as req_mock:
-            # Buildhub has no data for that (product, build_id, channel)
-            es_query = {
-                'query': {
-                    'bool': {
-                        'must': {
-                            'match_all': {}
-                        },
-                        'filter': [
-                            {
-                                'term': {
-                                    'source.product': 'firefox'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'build.id': '220000101101011',
-                                }
-                            },
-                            {
-                                'term': {
-                                    'target.channel': 'beta'
-                                }
-                            }
-                        ],
-                        'must_not': {
-                            'wildcard': {
-                                'target.version': '*rc*'
-                            }
-                        }
-                    }
-                },
-                'size': 1
-            }
-            req_mock.post(
-                self.API_URL,
-                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
-                json={
-                    'hits': {
-                        'hits': []
-                    }
-                }
-            )
+        rule = BetaVersionRule(config)
+        rule.action(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash['version'] == '3.0.1b0'
+        assert processor_meta.processor_notes == [
+            'release channel is beta but no version data was found - '
+            'added "b0" suffix to version number'
+        ]
 
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '3.0.1',
-                'release_channel': 'beta',
-                'build': '220000101101011',
-            }
-
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-
-            # The db has no data for that (product, build_id, version)
-            rule.transaction = lambda *args, **kwargs: []
-
-            rule.action(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '3.0.1b0'
-            assert processor_meta.processor_notes == [
-                'release channel is beta but no version data was found - '
-                'added "b0" suffix to version number'
-            ]
-
-    def test_beta_channel_version_in_db(self):
-        """Beta crash that Buildhub doesn't know, but db does gets db version"""
-        config = self.get_config()
-        raw_crash = {}
-        raw_dumps = {}
-
-        with requests_mock.Mocker() as req_mock:
-            # Buildhub has no data for that (product, build_id, channel)
-            es_query = {
-                'query': {
-                    'bool': {
-                        'must': {
-                            'match_all': {}
-                        },
-                        'filter': [
-                            {
-                                'term': {
-                                    'source.product': 'firefox'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'build.id': '220000101101011',
-                                }
-                            },
-                            {
-                                'term': {
-                                    'target.channel': 'beta'
-                                }
-                            }
-                        ],
-                        'must_not': {
-                            'wildcard': {
-                                'target.version': '*rc*'
-                            }
-                        }
-                    }
-                },
-                'size': 1
-            }
-            req_mock.post(
-                self.API_URL,
-                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
-                json={
-                    'hits': {
-                        'hits': []
-                    }
-                }
-            )
-
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '3.0.1',
-                'release_channel': 'beta',
-                'build': '220000101101011',
-            }
-
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-
-            # The db has one record for (product, build_id, version) which is
-            # returned by the execute_sql_fetchall transaction as a list of
-            # tuples
-            rule.transaction = lambda *args, **kwargs: [('3.0.1b2',)]
-
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '3.0.1b2'
-
-    def test_beta_channel_non_buildhub_product(self):
-        """Beta crash with a product not on Buildhub gets b0"""
-        config = self.get_config()
-        raw_crash = {}
-        raw_dumps = {}
-
-        with requests_mock.Mocker():
-            processed_crash = {
-                'product': 'Waterwolf',
-                'version': '3.0',
-                'release_channel': 'beta',
-                'build': '220000101101011',
-            }
-
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '3.0b0'
-            assert processor_meta.processor_notes == [
-                'release channel is beta but no version data was found - '
-                'added "b0" suffix to version number'
-            ]
-
-    def test_aurora_channel(self):
+    def test_aurora_channel(self, db_conn, django_tables):
         """Test aurora channel lookup"""
+        self.insert_product_version(
+            conn=db_conn,
+            product='Firefox',
+            channel='aurora',
+            build_id='20001001101010',
+            version_string='3.0b1'
+        )
+
         config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
+        processed_crash = {
+            'product': 'Firefox',
+            'version': '3.0',
+            'release_channel': 'aurora',
+            'build': '20001001101010',
+        }
+        processor_meta = get_basic_processor_meta()
 
-        with requests_mock.Mocker() as req_mock:
-            es_query = {
-                'query': {
-                    'bool': {
-                        'must': {
-                            'match_all': {}
-                        },
-                        'filter': [
-                            {
-                                'term': {
-                                    'source.product': 'firefox'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'build.id': '20001001101010'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'target.channel': 'aurora'
-                                }
-                            }
-                        ],
-                        'must_not': {
-                            'wildcard': {
-                                'target.version': '*rc*'
-                            }
-                        }
-                    }
-                },
-                'size': 1
-            }
-            req_mock.post(
-                self.API_URL,
-                additional_matcher=self.payload_matcher(json.dumps(es_query, sort_keys=True)),
-                json={
-                    'hits': {
-                        'hits': [
-                            {
-                                '_source': {
-                                    'target': {
-                                        'version': '3.0b1'
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            )
-
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '3.0',
-                'release_channel': 'aurora',
-                'build': '20001001101010',
-            }
-
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash['version'] == '3.0b1'
-            assert processor_meta.processor_notes == []
-
-    def test_rc(self):
-        """Test rc which are marked beta channel, but the data is in release channel"""
-        config = self.get_config()
-        raw_crash = {}
-        raw_dumps = {}
-
-        with requests_mock.Mocker() as req_mock:
-            def payload_callback(request, context):
-                # The request for the beta channel returns no data
-                if 'beta' in request.text:
-                    return json.dumps({'hits': {'hits': []}})
-
-                # The request for the release channel returns a single item
-                if 'release' in request.text:
-                    return json.dumps({
-                        'hits': {
-                            'hits': [{
-                                '_source': {
-                                    'target': {
-                                        'version': '63.0rc2'
-                                    }
-                                }
-                            }]
-                        }
-                    })
-
-            req_mock.post(self.API_URL, text=payload_callback)
-
-            processed_crash = {
-                'product': 'Firefox',
-                'version': '63.0',
-                'release_channel': 'beta',
-                'build': '20181018182531',
-            }
-
-            processor_meta = get_basic_processor_meta()
-
-            rule = BetaVersionRule(config)
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-            # Assert the queries to Buildhub are in the right order
-            es_query = {
-                'query': {
-                    'bool': {
-                        'must': {
-                            'match_all': {}
-                        },
-                        'filter': [
-                            {
-                                'term': {
-                                    'source.product': 'firefox'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'build.id': '20181018182531',
-                                }
-                            },
-                            {
-                                'term': {
-                                    'target.channel': 'beta'
-                                }
-                            }
-                        ],
-                        'must_not': {
-                            'wildcard': {
-                                'target.version': '*rc*'
-                            }
-                        }
-                    }
-                },
-                'size': 1
-            }
-            assert req_mock.request_history[0].text == json.dumps(es_query, sort_keys=True)
-            es_query = {
-                'query': {
-                    'bool': {
-                        'must': {
-                            'match_all': {}
-                        },
-                        'filter': [
-                            {
-                                'term': {
-                                    'source.product': 'firefox'
-                                }
-                            },
-                            {
-                                'term': {
-                                    'build.id': '20181018182531',
-                                }
-                            },
-                            {
-                                'term': {
-                                    'target.channel': 'release'
-                                }
-                            },
-                            {
-                                'wildcard': {
-                                    'target.version': '*rc*'
-                                }
-                            }
-                        ]
-                    }
-                },
-                'size': 1
-            }
-            assert req_mock.request_history[1].text == json.dumps(es_query, sort_keys=True)
-
-            assert processed_crash['version'] == '63.0rc2'
-            assert processor_meta.processor_notes == []
+        rule = BetaVersionRule(config)
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash['version'] == '3.0b1'
+        assert processor_meta.processor_notes == []
 
 
 class TestOsPrettyName(TestCase):

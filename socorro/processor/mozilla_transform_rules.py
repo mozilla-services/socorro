@@ -5,13 +5,10 @@
 import datetime
 import gzip
 import json
-import random
 import re
-import sys
 import time
 
 import markus
-from requests import RequestException
 import six
 from six.moves.urllib.parse import unquote_plus
 
@@ -25,7 +22,6 @@ from socorro.lib.datetimeutil import (
     datetime_from_isodate_string,
 )
 from socorro.lib.ooid import dateFromOoid
-from socorro.lib.requestslib import session_with_retries
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
@@ -578,42 +574,28 @@ class BetaVersionRule(Rule):
     #: If we know it's good, cache it for 24 hours because it won't change
     LONG_CACHE_TTL = 60 * 60 * 24
 
-    #: Products that are on Buildhub--we don't want to ask Buildhub about others
-    BUILDHUB_PRODUCTS = ['firefox', 'fennec', 'fennecandroid']
+    #: List of products to do lookups for
+    SUPPORTED_PRODUCTS = ['firefox', 'fennec', 'fennecandroid']
 
     def __init__(self, config):
         super(BetaVersionRule, self).__init__(config)
-        # NOTE(willkg): These config values come from Processor2015 instance.
-        self.buildhub_api = config.buildhub_api
         self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
         self.metrics = markus.get_metrics('processor.betaversionrule')
 
         # NOTE(willkg): These config values come from Processor2015 instance and are
         # used for lookup in product_versions
-        database = config.database_class(config)
-        self.transaction = config.transaction_executor_class(config, database)
+        self.conn_context = config.database_class(config)
 
-        try:
-            sentry_dsn = self.config.sentry.dsn
-        except (AttributeError, KeyError):
-            sentry_dsn = None
-        self.sentry_dsn = sentry_dsn
-
-    def _get_real_version_db2(self, product, channel, build_id):
+    def _get_real_version(self, product, channel, build_id):
         """Return real version number from crashstats_productversion table
 
-        NOTE(willkg): This is not live, yet--we're doing this to see how it
-        performs compared to the existing product_version table.
-
-        :arg product: the product
-        :arg channel: the release channel
-        :arg build_id: the build id as a string
+        :arg str product: the product
+        :arg str channel: the release channel
+        :arg int build_id: the build id as a string
 
         :returns: ``None`` or the version string that should be used
-        """
-        if not (product and channel and build_id):
-            return None
 
+        """
         # Fix the product so it matches the data in the table
         if (product, channel) == ('firefox', 'aurora') and build_id > '20170601':
             product = 'DevEdition'
@@ -622,21 +604,29 @@ class BetaVersionRule(Rule):
         elif product in ('fennec', 'fennecandroid'):
             product = 'Fennec'
 
+        key = '%s:%s:%s' % (product, channel, build_id)
+        if key in self.cache:
+            self.metrics.incr('cache', tags=['result:hit'])
+            return self.cache[key]
+
         sql = """
             SELECT version_string
             FROM crashstats_productversion
             WHERE product_name = %(product)s
-            AND release_channel = %(channel)s
-            AND build_id = %(build_id)s
+                AND release_channel = %(channel)s
+                AND build_id = %(build_id)s
         """
         params = {
             'product': product,
             'channel': channel,
             'build_id': build_id
         }
-        versions = self.transaction(execute_query_fetchall, sql, params)
+
+        with self.conn_context() as conn:
+            versions = execute_query_fetchall(conn, sql, params)
+
         if versions:
-            # Flatten versions
+            # Flatten version results from a list of tuples to a list of versions
             versions = [version[0] for version in versions]
 
             if versions:
@@ -651,264 +641,39 @@ class BetaVersionRule(Rule):
                     # and not the release channel
                     versions = [version for version in versions if 'rc' in version]
 
-        if versions:
-            return versions[0]
-
-        return None
-
-    def _get_real_version_db(self, product, build_id, version):
-        """Return real version number for specified product, build_id, version from db
-
-        NOTE(willkg): This differs from how the Buildhub equivalent works. This is
-        how we used to do it.
-
-        FIXME(willkg): We should remove this as soon as we can.
-
-        :arg product: the product
-        :arg build_id: the build_id as a string
-        :arg version: the release version
-
-        :returns: ``None`` or the version string that should be used
-
-        """
-        if not (product and build_id and version):
-            return None
-
-        sql = """
-            SELECT
-                pv.version_string
-            FROM product_versions pv
-                LEFT JOIN product_version_builds pvb ON
-                    (pv.product_version_id = pvb.product_version_id)
-            WHERE pv.product_name = %(product)s
-            AND pv.release_version = %(version)s
-            AND pvb.build_id = %(build_id)s
-        """
-        params = {
-            'product': product,
-            'version': version,
-            'build_id': build_id,
-        }
-        results = self.transaction(execute_query_fetchall, sql, params)
-        if results:
-            self.metrics.incr('lookup_db', tags=['result:success'])
-            return results[0][0]
-
-        self.metrics.incr('lookup_db', tags=['result:fail'])
-        return None
-
-    def _get_real_version_buildhub(self, product, build_id, channel):
-        """Return the real version number of a specified product, build, channel
-
-        For example, beta builds of Firefox declare their version number as the
-        major version (i.e. version 54.0b3 would say its version is 54.0). This
-        database call returns the actual version number of said build (i.e.
-        54.0b3 for the previous example).
-
-        This caches good answers for a long time and bad answers for a short
-        time to reduce Buildhub usage.
-
-        :arg str product: the product
-        :arg str build_id: the build_id as a string
-        :arg str channel: the release channel
-
-        :returns: ``None`` or the version string that should be used
-
-        :raises requests.RequestException: raised if it has connection issues with
-            the host specified in ``version_string_api``
-
-        """
-        # NOTE(willkg): AURORA LIVES!
-        #
-        # But seriously, if this is for Firefox/aurora and the build id is after
-        # 20170601, then we ask Buildhub about devedition/aurora instead because
-        # devedition is the aurora channel
-        if (product, channel) == ('firefox', 'aurora') and build_id > '20170601':
-            product = 'devedition'
-
-        # Buildhub product is "fennec", not "fennecandroid", so we have to switch
-        # it
-        if product == 'fennecandroid':
-            product = 'fennec'
-
-        key = '%s:%s:%s' % (product, build_id, channel)
-        if key in self.cache:
-            self.metrics.incr('cache', tags=['result:hit'])
-            return self.cache[key]
-
-        self.metrics.incr('cache', tags=['result:miss'])
-
-        session = session_with_retries(self.buildhub_api)
-
-        es_query = {
-            'query': {
-                'bool': {
-                    'must': {
-                        'match_all': {}
-                    },
-                    'filter': [
-                        {
-                            'term': {
-                                'source.product': product.lower()
-                            }
-                        },
-                        {
-                            'term': {
-                                'build.id': str(build_id)
-                            }
-                        },
-                        {
-                            'term': {
-                                'target.channel': channel
-                            }
-                        },
-                    ],
-                }
-            },
-            'size': 1
-        }
-
-        if channel == 'release':
-            # If it's the release channel, we only want to see rc versions
-            es_query['query']['bool']['filter'].append(
-                {
-                    'wildcard': {
-                        'target.version': '*rc*'
-                    }
-                }
-            )
-        else:
-            # If it's the beta channel, we want to exclude rc versions
-            es_query['query']['bool']['must_not'] = {
-                'wildcard': {
-                    'target.version': '*rc*'
-                }
-            }
-
-        resp = session.post(self.buildhub_api, data=json.dumps(es_query, sort_keys=True))
-
-        if resp.status_code == 200:
-            data = resp.json()
-            hits = data.get('hits', {}).get('hits', [])
-
-            # Shimmy to add to ttl so as to distribute cache misses over time and reduce
-            # HTTP requests from bunching up.
-            shimmy = random.randint(1, 120)
-
-            if hits:
-                self.metrics.incr('lookup', tags=['result:success'])
-
-                # If we got an answer we should keep it around for a while because it's
-                # a real answer and it's not going to change so use the long ttl plus
-                # a fudge factor.
-                real_version = hits[0]['_source']['target']['version']
-                self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL + shimmy)
-                return real_version
-
-            self.metrics.incr('lookup', tags=['result:fail'])
+        if not versions:
             # We didn't get an answer which could mean that this is a weird
             # build and there is no answer or it could mean that Buildhub
-            # doesn't know, yet. Maybe in the future we get a better answer
-            # so we use the short ttl plus a fudge factor.
-            self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL + shimmy)
+            # doesn't know, yet. Maybe in the future we get a better answer so
+            # we use the short ttl.
+            self.metrics.incr('lookup', tags=['result:fail'])
+            self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL)
+            return None
 
-        return None
-
-    def is_final_beta(self, version):
-        """Denotes whether this version could be a final beta
-
-        :arg str version: the version string to check
-
-        :returns: True if it could be a final beta, False if not
-
-        """
-        # NOTE(willkg): this started with 26.0 and 38.0.5 was an out-of-cycle
-        # exception
-        return version and version > '26.0' and (version.endswith('.0') or version == '38.0.5')
+        # If we got an answer we should keep it around for a while because it's
+        # a real answer and it's not going to change so use the long ttl plus
+        # a fudge factor.
+        real_version = versions[0]
+        self.metrics.incr('lookup', tags=['result:success'])
+        self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL)
+        return real_version
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # Beta and aurora versions send the wrong version in the crash report,
         # so we need to fix them
         return processed_crash.get('release_channel', '').lower() in ('beta', 'aurora')
 
-    def get_version(self, uuid, product, build_id, release_channel, version):
-        try:
-            real_version = self._get_real_version_buildhub(product, build_id, release_channel)
-            if real_version:
-                return real_version
-
-            # We didn't get a version from Buildhub, but this might be a
-            # "final beta" which Buildhub has an entry for in the release
-            # channel. So we check Buildhub asking about the release
-            # channel and get back an rc version.
-            if release_channel == 'beta' and self.is_final_beta(version):
-                real_version = self._get_real_version_buildhub(product, build_id, 'release')
-                if real_version:
-                    return real_version
-
-        except RequestException as exc:
-            self.metrics.incr('lookup_db', tags=['result:connectionerror'])
-            self.config.logger.exception(
-                '%s when connecting to %s', exc, self.version_string_api
-            )
-
-        # If we haven't found anything, yet, try product_versions
-        if version:
-            real_version = self._get_real_version_db(product, build_id, version)
-            if real_version:
-                return real_version
-
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        product = processed_crash.get('product').strip().lower()
-        try:
-            # Convert the build id to an int as a hand-wavey validity check
-            build_id = int(processed_crash.get('build').strip())
-        except ValueError:
-            build_id = None
+        product = processed_crash.get('product', '').strip().lower()
+        build_id = processed_crash.get('build', '').strip()
         release_channel = processed_crash.get('release_channel').strip()
-        version = processed_crash.get('version', '').strip()
-        uuid = raw_crash.get('uuid', None)
 
         # Only run if we've got all the things we need
-        if product and build_id and release_channel and product in self.BUILDHUB_PRODUCTS:
+        if product and build_id and release_channel and product in self.SUPPORTED_PRODUCTS:
             # Convert the build_id to a str for lookups
             build_id = str(build_id)
 
-            real_version = self.get_version(uuid, product, build_id, release_channel, version)
-
-            # Now look it up with the alternative method using the
-            # crashstats_productversion table and compare
-            maybe_version = None
-            try:
-                maybe_version = self._get_real_version_db2(product, release_channel, build_id)
-                if real_version != maybe_version:
-                    self.config.logger.info(
-                        'betaversionrule: got different versions: %r %r %r %r %r vs. %r',
-                        raw_crash.get('uuid', None),
-                        product,
-                        build_id,
-                        release_channel,
-                        real_version,
-                        maybe_version
-                    )
-                    self.metrics.incr('lookup_alternate', 1, tags=['outcome:different'])
-                else:
-                    self.metrics.incr('lookup_alternate', 1, tags=['outcome:same'])
-
-            except Exception:
-                # This is an alternative method and so we want to capture any errors,
-                # surface them, but otherwise prevent them from disrupting the normal
-                # flow of this method
-                self.config.logger.exception(
-                    'exception when trying to get version from crashstats_productversion'
-                )
-                extra = {
-                    'uuid': raw_crash.get('uuid', None)
-                }
-                raven_client.capture_error(
-                    self.sentry_dsn, self.config.logger, exc_info=sys.exc_info(), extra=extra
-                )
-
+            real_version = self._get_real_version(product, release_channel, build_id)
             if real_version:
                 processed_crash['version'] = real_version
                 return

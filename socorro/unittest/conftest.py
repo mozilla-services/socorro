@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import contextlib
 import os
 
 from markus.testing import MetricsMock
@@ -50,6 +49,7 @@ class DjangoTablesMixin(object):
     """
     _DJANGO_TABLES = [
         'crashstats_bugassociation',
+        'crashstats_productversion',
         'crashstats_signature',
         'cron_job',
         'cron_log',
@@ -134,11 +134,32 @@ class DjangoTablesMixin(object):
         CREATE INDEX "crashstats_signature_signature_15c3e97d_like"
         ON "crashstats_signature" ("signature" text_pattern_ops);
         """)
+
+        # From "./manage.py sqlmigrate crashstats 0011" and
+        # "./managepy sqlmigrate crashstats 0012"
+        cursor.execute("""
+        CREATE TABLE "crashstats_productversion" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "product_name" varchar(50) NOT NULL,
+        "release_channel" varchar(50) NOT NULL,
+        "major_version" integer NOT NULL,
+        "release_version" varchar(50) NOT NULL,
+        "version_string" varchar(50) NOT NULL,
+        "build_id" varchar(50) NOT NULL,
+        "archive_url" text NULL);
+        """)
+        cursor.execute("""
+        ALTER TABLE "crashstats_productversion"
+        ADD CONSTRAINT "crashstats_productversio_product_name_release_cha_bf5a2cc1_uniq"
+        UNIQUE ("product_name", "release_channel", "build_id", "version_string");
+        """)
         conn.commit()
 
     @classmethod
     def setUpClass(cls):
-        super(DjangoTablesMixin, cls).setUpClass()
+        super_ = super(DjangoTablesMixin, cls)
+        if hasattr(super_, 'setUpClass'):
+            super(DjangoTablesMixin, cls).setUpClass()
 
         # Drop all the tables first so we have a clean slate
         cls._drop_django_tables()
@@ -152,8 +173,16 @@ class DjangoTablesMixin(object):
 
     @classmethod
     def tearDownClass(cls):
-        super(DjangoTablesMixin, cls).tearDownClass()
+        super_ = super(DjangoTablesMixin, cls)
+        if hasattr(super_, 'tearDownClass'):
+            super(DjangoTablesMixin, cls).tearDownClass()
         cls._drop_django_tables()
+
+
+@pytest.fixture
+def db_conn():
+    dsn = os.environ['DATABASE_URL']
+    return psycopg2.connect(dsn)
 
 
 @pytest.fixture
