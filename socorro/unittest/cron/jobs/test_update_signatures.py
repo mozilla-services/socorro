@@ -26,44 +26,6 @@ class FakeModel(object):
 
 
 class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
-    def setUp(self):
-        super(UpdateSignaturesCronAppTestCase, self).setUp()
-
-        cursor = self.conn.cursor()
-        # NOTE(willkg): Sometimes the test db gets into a "state". So drop
-        # the table if it exists first.
-        cursor.execute("""
-        DROP TABLE IF EXISTS crashstats_signature
-        """)
-        # NOTE(willkg): The socorro tests don't run with the Django-managed
-        # database models created in the db, so we have to do it by hand until
-        # we've moved everything out of sqlalchemy/alembic land to Django land.
-        #
-        # FIXME(willkg): Please stop this madness soon.
-        #
-        # From "./manage.py sqlmigrate crashstats 0004":
-        cursor.execute("""
-        CREATE TABLE "crashstats_signature" (
-        "id" serial NOT NULL PRIMARY KEY,
-        "signature" text NOT NULL UNIQUE,
-        "first_build" bigint NOT NULL,
-        "first_date" timestamp with time zone NOT NULL);
-        """)
-        cursor.execute("""
-        CREATE INDEX "crashstats_signature_signature_15c3e97d_like"
-        ON "crashstats_signature" ("signature" text_pattern_ops);
-        """)
-        # Truncate crontabber tables before running tests
-        self._truncate()
-
-    def tearDown(self):
-        super(UpdateSignaturesCronAppTestCase, self).tearDown()
-
-        cursor = self.conn.cursor()
-        cursor.execute("""
-        DROP TABLE crashstats_signature
-        """)
-
     def _setup_config_manager(self):
         return get_config_manager(
             jobs='socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h'
@@ -166,8 +128,9 @@ class UpdateSignaturesCronAppTestCase(IntegrationTestBase):
             'facets': {}
         })
 
-        # Wipe crontabber state so we can rerun the job
-        self._truncate()
+        # Truncate cron_job table so we can rerun this
+        self.conn.cursor().execute('TRUNCATE cron_job CASCADE;')
+        self.conn.commit()
 
         # Run crontabber again
         self.run_job_and_assert_success()

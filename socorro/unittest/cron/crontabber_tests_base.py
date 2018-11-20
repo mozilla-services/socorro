@@ -15,6 +15,7 @@ from mock import Mock
 import six
 
 from socorro.cron.crontabber_app import CronTabberApp, JobStateDatabase
+from socorro.unittest.conftest import DjangoTablesMixin
 
 
 def get_config_manager(jobs=None, overrides=None):
@@ -45,7 +46,7 @@ def get_config_manager(jobs=None, overrides=None):
     )
 
 
-class IntegrationTestBase(unittest.TestCase):
+class IntegrationTestBase(DjangoTablesMixin, unittest.TestCase):
     """Useful class for running integration tests related to crontabber apps
     since this class takes care of setting up a psycopg connection and it
     makes sure the ``cron_job`` and ``cron_log`` tables are empty.
@@ -75,78 +76,16 @@ class IntegrationTestBase(unittest.TestCase):
     def get_standard_config(cls):
         return get_config_manager().get_config()
 
-    @classmethod
-    def setUpClass(cls):
-        super(IntegrationTestBase, cls).setUpClass()
-        cls.config = cls.get_standard_config()
-
-        db_connection_factory = cls.config.crontabber.database_class(cls.config.crontabber)
-        cls.conn = db_connection_factory.connection()
-
-        # instanciate one of these to make sure the tables are created
-        JobStateDatabase(cls.config.crontabber)
-
-    def _truncate(self):
-        self.conn.cursor().execute("""
-        TRUNCATE cron_job, cron_log CASCADE;
-        """)
-        self.conn.commit()
-
     def setUp(self):
         super(IntegrationTestBase, self).setUp()
+        self.config = self.get_standard_config()
 
-        cursor = self.conn.cursor()
-
-        # NOTE(willkg): Sometimes the test db gets into a "state", so
-        # drop the table if it exists.
-        cursor.execute("""
-        DROP TABLE IF EXISTS cron_job, cron_log
-        """)
-
-        # NOTE(willkg): The socorro tests don't run with the Django-managed
-        # database models created in the db, so we have to do it by hand until
-        # we've moved everything out of sqlalchemy/alembic land to Django land.
-        #
-        # FIXME(willkg): Please stop this madness soon.
-        #
-        # From "./manage.py sqlmigrate cron 0002";
-
-        cursor.execute("""
-        CREATE TABLE "cron_job" (
-        "id" serial NOT NULL PRIMARY KEY,
-        "app_name" varchar(100) NOT NULL UNIQUE,
-        "next_run" timestamp with time zone NULL,
-        "first_run" timestamp with time zone NULL,
-        "last_run" timestamp with time zone NULL,
-        "last_success" timestamp with time zone NULL,
-        "error_count" integer NOT NULL,
-        "depends_on" text NULL,
-        "last_error" text NULL,
-        "ongoing" timestamp with time zone NULL);
-        """)
-        cursor.execute("""
-        CREATE TABLE "cron_log" (
-        "id" serial NOT NULL PRIMARY KEY,
-        "app_name" varchar(100) NOT NULL,
-        "log_time" timestamp with time zone NOT NULL,
-        "duration" double precision NOT NULL,
-        "success" timestamp with time zone NULL,
-        "exc_type" text NULL,
-        "exc_value" text NULL,
-        "exc_traceback" text NULL);
-        """)
-        self.conn.commit()
+        db_connection_factory = self.config.crontabber.database_class(self.config.crontabber)
+        self.conn = db_connection_factory.connection()
 
     def tearDown(self):
+        self.conn.close()
         super(IntegrationTestBase, self).tearDown()
-        self.conn.cursor().execute("""
-        DROP TABLE IF EXISTS cron_job, cron_log
-        """)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.conn.close()
-        super(IntegrationTestBase, cls).tearDownClass()
 
     def assertAlmostEqual(self, val1, val2):
         if isinstance(val1, datetime.datetime) and isinstance(val2, datetime.datetime):

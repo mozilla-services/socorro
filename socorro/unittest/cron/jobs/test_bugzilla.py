@@ -56,45 +56,6 @@ SAMPLE_BUGZILLA_RESULTS = {
 
 @requests_mock.Mocker()
 class IntegrationTestBugzilla(IntegrationTestBase):
-    def setUp(self):
-        super(IntegrationTestBugzilla, self).setUp()
-
-        cursor = self.conn.cursor()
-        # NOTE(willkg): Sometimes the test db gets into a "state", so
-        # drop the table if it exists.
-        cursor.execute("""
-        DROP TABLE IF EXISTS crashstats_bugassociation
-        """)
-
-        # NOTE(willkg): The socorro tests don't run with the Django-managed
-        # database models created in the db, so we have to do it by hand until
-        # we've moved everything out of sqlalchemy/alembic land to Django land.
-        #
-        # FIXME(willkg): Please stop this madness soon.
-        #
-        # From "./manage.py sqlmigrate crashstats 0006":
-        cursor.execute("""
-        CREATE TABLE "crashstats_bugassociation" (
-        "id" serial NOT NULL PRIMARY KEY,
-        "bug_id" integer NOT NULL,
-        "signature" text NOT NULL);
-        """)
-        cursor.execute("""
-        ALTER TABLE "crashstats_bugassociation"
-        ADD CONSTRAINT "crashstats_bugassociation_bug_id_signature_0123b7ff_uniq"
-        UNIQUE ("bug_id", "signature");
-        """)
-        # Truncate crontabber tables before running tests
-        self._truncate()
-
-    def tearDown(self):
-        cursor = self.conn.cursor()
-        cursor.execute("""
-        DROP TABLE crashstats_bugassociation
-        """)
-        self.conn.commit()
-        super(IntegrationTestBugzilla, self).tearDown()
-
     def _setup_config_manager(self, days_into_past):
         return get_config_manager(
             jobs='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
@@ -134,7 +95,6 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             tab.run_all()
 
             information = self._load_structure()
-            print(information)
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
