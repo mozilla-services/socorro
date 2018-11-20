@@ -27,3 +27,6 @@ python webapp-django/manage.py migrate --no-input
 
 # Run Alembic migrations
 alembic -c docker/config/alembic.ini upgrade head
+
+# Insert missing versions
+python scripts/insert_missing_versions.py
