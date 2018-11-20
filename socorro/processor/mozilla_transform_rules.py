@@ -678,6 +678,14 @@ class BetaVersionRule(Rule):
                 processed_crash['version'] = real_version
                 return
 
+            self.config.logger.info(
+                'betaversionrule: failed lookup %s %s %s %s',
+                processed_crash.get('uuid'),
+                product,
+                release_channel,
+                build_id
+            )
+
         # No real version, but this is an aurora or beta crash report, so we
         # tack on "b0" to make it match the channel
         processed_crash['version'] += 'b0'
