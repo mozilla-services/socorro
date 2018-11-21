@@ -21,12 +21,12 @@ from configman import Namespace
 
 from socorro.cron.base import BaseCronApp
 from socorro.cron.mixins import using_postgres
-from socorro.external.postgresql.dbapi2_util import (
+from socorro.lib.datetimeutil import utc_now
+from socorro.lib.dbutil import (
     execute_query_fetchall,
     execute_no_results,
     SQLDidNotReturnSingleRow
 )
-from socorro.lib.datetimeutil import utc_now
 from socorro.lib.requestslib import session_with_retries
 
 

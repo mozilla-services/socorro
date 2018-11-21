@@ -26,17 +26,17 @@ from socorro.cron.base import (
     FrequencyDefinitionError,
     reorder_dag
 )
-from socorro.external.postgresql.dbapi2_util import (
-    single_value_sql,
-    SQLDidNotReturnSingleValue,
-    execute_query_iter,
-    execute_query_fetchall,
-    single_row_sql,
-    SQLDidNotReturnSingleRow,
-    execute_no_results,
-)
 from socorro.lib import raven_client
 from socorro.lib.datetimeutil import utc_now, timesince
+from socorro.lib.dbutil import (
+    SQLDidNotReturnSingleRow,
+    SQLDidNotReturnSingleValue,
+    execute_no_results,
+    execute_query_fetchall,
+    execute_query_iter,
+    single_row_sql,
+    single_value_sql,
+)
 
 
 metrics = markus.get_metrics('crontabber')

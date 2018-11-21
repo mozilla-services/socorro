@@ -12,7 +12,6 @@ import markus
 import six
 from six.moves.urllib.parse import unquote_plus
 
-from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 from socorro.lib import javautil
 from socorro.lib import raven_client
 from socorro.lib.cache import ExpiringCache
@@ -21,6 +20,7 @@ from socorro.lib.datetimeutil import (
     UTC,
     datetime_from_isodate_string,
 )
+from socorro.lib.dbutil import execute_query_fetchall
 from socorro.lib.ooid import dateFromOoid
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator

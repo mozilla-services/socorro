@@ -142,19 +142,6 @@ socorro.external.postgresql
 implement the thin wrapper that ``socorro.external.rabbitmq`` has.
 
 
-**socorro.external.postgresql.dbapi2_util**
-
-A set of utilities for wrapping psycopg2 and designed to be handed to
-Transactions.
-
-* `single_value_sql`: Give an SQL statement and receive a single value from
-  a single column.
-* `single_row_sql`: Give an SQL statement and receive a single row.
-* `execute_query_iter`: Wraps a cursor in an interator.
-* `execute_query_fetchall`: Returns a list of tuples.
-* `execute_no_results`: Executes something you know won't return results.
-
-
 socorro.external.rabbitmq
 =========================
 

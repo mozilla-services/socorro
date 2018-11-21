@@ -11,15 +11,15 @@ from socorro.cron.mixins import (
     as_backfill_cron_app,
     using_postgres,
 )
-from socorro.external.postgresql.dbapi2_util import (
-    execute_no_results,
-    single_row_sql,
-    SQLDidNotReturnSingleRow,
-)
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.lib.datetimeutil import string_to_datetime
+from socorro.lib.dbutil import (
+    execute_no_results,
+    single_row_sql,
+    SQLDidNotReturnSingleRow,
+)
 
 
 # Maximum number of results returned for a super search query
