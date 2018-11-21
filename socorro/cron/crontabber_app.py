@@ -660,6 +660,7 @@ class CronTabberApp(App, RequiredConfig):
         doc='DSN for Sentry via raven',
         default='',
         reference_value_from='secrets.sentry',
+        secret=True
     )
 
     # subcommands
