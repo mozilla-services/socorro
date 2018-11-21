@@ -26,11 +26,6 @@ Base class:
 
 * `CrashStorageBase`: Defines ``save_raw_and_processed()``, ``get_raw()``, etc.
 
-Concrete implementation:
-
-* `PostgreSQLCrashStorage`
-* `BotoCrashStorage`
-
 CrashStorage containers for aggregating multiple crash storage implementations:
 
 * `PolyCrashStorage`: Container for other crash storage systems.
@@ -45,8 +40,6 @@ We use `CrashStorageBase` in our ``socorro/external`` crash storage
 implementations. We use `PolyCrashStorage` (and related containers) as a way to
 fork "streams of crashes" into different storage engines. Also, the
 `CrashStorage` containers can contain each other!
-
-*TODO: Add an attribute to or rename the CrashStorage containers.*
 
 
 socorro.lib.transaction
@@ -141,21 +134,12 @@ Classes:
 socorro.external.postgresql
 ===========================
 
-**socorro.external.postgresql.crashstorage**
-
-* `PostgreSQLCrashStorage`: In Production. `reports` table mapping is a member
-  of the class. Needs to be kept in sync with reports schema. For use with a
-  processed crash
-
-
 **socorro.external.postgresql.connection_context**
 
 * `ConnectionContext`: In Production.
-* `ConnectionContextPooled`: not in use because we use pgbouncer. Is threadsafe.
 
 `psycopg2` implements all the "connection" semantics we need, so we do not
-implement the thin wrapper that ``socorro.external.hb`` and
-``socorro.external.rabbitmq`` have.
+implement the thin wrapper that ``socorro.external.rabbitmq`` has.
 
 
 **socorro.external.postgresql.dbapi2_util**
@@ -169,23 +153,6 @@ Transactions.
 * `execute_query_iter`: Wraps a cursor in an interator.
 * `execute_query_fetchall`: Returns a list of tuples.
 * `execute_no_results`: Executes something you know won't return results.
-
-
-**socorro.external.postgresql.setupdb_app**
-
-This is used by the `Makefile` and ``build.sh`` to create a test database from
-scratch.
-
-
-**socorro.external.postgresql.models**
-
-These contain our canonical schema definitions. This is used by alembic to
-create migrations.
-
-
-**socorro.external.postgresql.raw_sql**
-
-This directory contains all of the stored procedures used by PostgreSQL.
 
 
 socorro.external.rabbitmq
@@ -217,34 +184,3 @@ socorro.external.rabbitmq
 
 A pluggable Functor/generator for feeding new crashes to the processor,
 implemented as a wrapper around new_crashes().
-
-
-Which classes are used with which _app
-======================================
-
-* `socorro.collector.collector_app`: We currently only use `socorro.external.fs`
-  in production. In testing we use `socorro.external.fs` and
-  `socorro.external.rabbitmq`.
-
-* `socorro.collector.crashmover_app`: In production: reads from
-  `socorro.external.fs`, write to `socorro.external.hb`. In testing we use
-  `socorro.external.fs`.
-
-* `socorro.processor.processor_app`: In production: reads from
-  `socorro.external.hb`, writes to `socorro.external.es`, `socorro.external.hb`
-  and `socorro.external.postgresql` using `PolyCrashStore`. In testing we use
-  `socorro.external.fs`, `socorro.external.rabbitmq`, and
-  `socorro.external.postgresql`.
-
-
-Which classes can be used together
-==================================
-
-Cannot mix *LegacyRadix* and *Radix* in one system which runs more than one app
-and shares a filesystem.
-
-
-Potential Edicts
-================
-
-* Every container has an attribute that describes it as a container!

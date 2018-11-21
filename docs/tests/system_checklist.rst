@@ -66,17 +66,6 @@ Checklist
 
       1. See Mana
 
-    * Alembic migrations
-
-      Local dev environment:
-
-      1. "make shell"
-      2. "alembic -c docker/config/alembic.ini current"
-
-      -stage/-prod:
-
-      1. See Mana
-
 
     Collector (Antenna)
     ===================

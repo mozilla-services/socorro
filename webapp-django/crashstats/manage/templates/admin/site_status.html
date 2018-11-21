@@ -34,17 +34,6 @@
         </div>
 
         <div>
-            <h2>Alembic status</h2>
-            <p>
-                {% if alembic_error %}
-                    {{ alembic_error }}
-                {% else %}
-                    HEAD: {{ alembic_version }}
-                {% endif %}
-            </p>
-        </div>
-
-        <div>
             <h2>Django db status</h2>
             {% if django_error %}
                 <p>{{ django_error }}</p>

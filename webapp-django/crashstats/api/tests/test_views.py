@@ -14,7 +14,6 @@ from crashstats.crashstats.models import (
     BugAssociation,
     NoOpMiddleware,
     ProcessedCrash,
-    ProductVersionsMiddleware,
     Reprocessing,
     RawCrash,
     UnredactedCrash,
@@ -162,32 +161,6 @@ class TestViews(BaseTestViews):
             # Even if you're authenticated - sure the limit is higher -
             # eventually you'll run into the limit there too.
             assert response.status_code == 429
-
-    def test_ProductVersionsMiddleware(self):
-        def mocked_get(*args, **k):
-            return {
-                'hits': [
-                    {
-                        'product': 'Firefox',
-                        'version': '1.0',
-                    }
-                ],
-                'total': 1
-            }
-            raise NotImplementedError
-
-        ProductVersionsMiddleware.implementation().get.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('ProductVersions',))
-        response = self.client.get(url)
-        assert response.status_code == 200
-        dump = json.loads(response.content)
-        assert dump['total'] == 1
-        expected = {
-            'product': 'Firefox',
-            'version': '1.0',
-        }
-        assert dump['hits'][0] == expected
 
     def test_ProcessedCrash(self):
         url = reverse('api:model_wrapper', args=('ProcessedCrash',))

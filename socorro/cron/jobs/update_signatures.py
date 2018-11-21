@@ -57,15 +57,13 @@ class UpdateSignaturesCronApp(BaseCronApp):
         # Pull the data in the db. If it's there, then do an update. If it's
         # not there, then do an insert.
         try:
-            sig = single_row_sql(
-                connection,
-                """
-                SELECT signature, first_build, first_date
-                FROM crashstats_signature
-                WHERE signature=%s
-                """,
-                (signature,)
-            )
+            sql = """
+            SELECT signature, first_build, first_date
+            FROM crashstats_signature
+            WHERE signature=%s
+            """
+            sig = single_row_sql(connection, sql, (signature,))
+
             sql = """
             UPDATE crashstats_signature
             SET first_build=%s, first_date=%s

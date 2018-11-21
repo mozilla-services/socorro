@@ -297,8 +297,8 @@ rather than waiting for the next available time period for running them.
 
 Example::
 
-    $ socorro-cmd crontabber --reset-job=ftpscraper
+    $ socorro-cmd crontabber --reset-job=archivescraper
 
 Then you can run them::
 
-    $ socorro-cmd crontabber --job=ftpscraper
+    $ socorro-cmd crontabber --job=archivescraper

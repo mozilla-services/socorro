@@ -65,6 +65,7 @@ The crash ingestion pipeline that we have at Mozilla looks like this:
 
       rabbitmq -> processor [label="crash id"];
       s3raw -> processor [label="load raw"];
+      postgres -> processor [label="betaversionrule"];
       processor -> { s3processed, elasticsearch, s3telemetry } [label="save processed"];
 
       postgres -> webapp;

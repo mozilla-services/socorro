@@ -15,7 +15,6 @@ from mock import Mock
 import six
 
 from socorro.cron.crontabber_app import CronTabberApp
-from socorro.unittest.conftest import DjangoTablesMixin
 
 
 def get_config_manager(jobs=None, overrides=None):
@@ -46,7 +45,7 @@ def get_config_manager(jobs=None, overrides=None):
     )
 
 
-class IntegrationTestBase(DjangoTablesMixin, unittest.TestCase):
+class IntegrationTestBase(unittest.TestCase):
     """Useful class for running integration tests related to crontabber apps
     since this class takes care of setting up a psycopg connection and it
     makes sure the ``cron_job`` and ``cron_log`` tables are empty.
@@ -82,10 +81,24 @@ class IntegrationTestBase(DjangoTablesMixin, unittest.TestCase):
 
         db_connection_factory = self.config.crontabber.database_class(self.config.crontabber)
         self.conn = db_connection_factory.connection()
+        self.truncate_django_tables()
 
     def tearDown(self):
         self.conn.close()
         super(IntegrationTestBase, self).tearDown()
+
+    def truncate_django_tables(self):
+        django_tables = [
+            'crashstats_bugassociation',
+            'crashstats_productversion',
+            'crashstats_signature',
+            'cron_job',
+            'cron_log',
+        ]
+        cursor = self.conn.cursor()
+        for table_name in django_tables:
+            cursor.execute('TRUNCATE %s CASCADE' % table_name)
+        self.conn.commit()
 
     def assertAlmostEqual(self, val1, val2):
         if isinstance(val1, datetime.datetime) and isinstance(val2, datetime.datetime):

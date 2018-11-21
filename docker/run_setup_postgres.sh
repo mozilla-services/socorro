@@ -6,7 +6,7 @@
 
 set -e
 
-# Sets up postgres tables, stored procedures, types, and such.
+# Sets up postgres tables.
 
 # NOTE: This should only be run if you want to drop an existing database and
 # create a new one from scratch for a development environment.
@@ -14,27 +14,24 @@ set -e
 cd /app
 
 # This is a webapp environment variable. If it doesn't exist, then use
-# "breakpad"
+# "breakpad".
 DATABASE="${DATASERVICE_DATABASE_NAME:-breakpad}"
 
 # Wait until postgres is listening
 urlwait "${DATABASE_URL}" 10
 
-# This drops and re-creates the db; the --dropdb code will prompt the user
-# before it does anything giving the user a chance to do a "oh no--don't do
-# that!" kind of thing
-echo "Dropping existing db and creating new db named (${DATABASE})..."
-./socorro/external/postgresql/setupdb_app.py \
-                  --database_name="${DATABASE}" \
-                  --dropdb \
-                  --createdb
+# Create the database if it doesn't exist
+echo "Dropping and creating db..."
+python socorro/scripts/db.py drop || true
+python socorro/scripts/db.py create || true
 
 # Run Django migrations
-echo "Setting up the db for Django..."
+echo "Setting up tables..."
 cd /app/webapp-django
 python manage.py migrate auth
 python manage.py migrate
 
 # Add initial data from fixtures
+echo "Adding fixture data..."
 python manage.py loaddata platforms
 python manage.py loaddata products

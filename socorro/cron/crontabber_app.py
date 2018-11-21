@@ -51,9 +51,7 @@ def database_transaction(transaction_object_name='transaction_executor'):
     def transaction_decorator(method):
         def _do_transaction(self, *args, **kwargs):
             x = getattr(self, transaction_object_name)(
-                partial(method, self),
-                *args,
-                **kwargs
+                partial(method, self), *args, **kwargs
             )
             return x
         return _do_transaction
@@ -110,7 +108,7 @@ def jobs_converter(path_or_jobs):
 
     Example jobs spec::
 
-        jobs_converter('socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h')
+        jobs_converter('socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h')
 
 
     :arg str path_or_jobs: a Python dotted path or a crontabber jobs spec
@@ -602,7 +600,6 @@ class CronTabberApp(App, RequiredConfig):
 
     config_defaults = {
         'always_ignore_mismatches': True,
-
         'resource': {
             'postgresql': {
                 'database_class': (
@@ -638,10 +635,7 @@ class CronTabberApp(App, RequiredConfig):
     required_config.crontabber.add_option(
         'max_ongoing_age_hours',
         default=12.0,
-        doc=(
-            'If a job has been ongoing for longer than this, it gets '
-            'ignored as a lock and the job is run anyway.'
-        )
+        doc='Timeout in hours for a locked job.'
     )
 
     # for local use, independent of the JSONAndPostgresJobDatabase
@@ -763,14 +757,10 @@ class CronTabberApp(App, RequiredConfig):
             try:
                 self.run_all()
             except RowLevelLockError:
-                self.config.logger.debug(
-                    'Next job to work on is already ongoing'
-                )
+                self.config.logger.debug('Next job to work on is already ongoing')
                 return 2
             except OngoingJobError:
-                self.config.logger.debug(
-                    'Next job to work on is already ongoing'
-                )
+                self.config.logger.debug('Next job to work on is already ongoing')
                 return 3
         return 0
 
@@ -940,22 +930,21 @@ class CronTabberApp(App, RequiredConfig):
         raise JobNotFoundError(description)
 
     def _run_one(self, job_class, config, force=False):
-        _debug = self.config.logger.debug
         seconds = convert_frequency(config.frequency)
         time_ = config.time
         if not force:
             if not self.time_to_run(job_class, time_):
-                _debug("skipping %r because it's not time to run", job_class)
+                self.config.logger.debug("skipping %r because it's not time to run", job_class)
                 return
             ok, dependency_error = self.check_dependencies(job_class)
             if not ok:
-                _debug(
+                self.config.logger.debug(
                     "skipping %r dependencies aren't met [%s]",
                     job_class, dependency_error
                 )
                 return
 
-        _debug('about to run %r', job_class)
+        self.config.logger.debug('about to run %r', job_class)
         app_name = job_class.app_name
         info = self.job_state_database.get(app_name)
 
@@ -966,7 +955,7 @@ class CronTabberApp(App, RequiredConfig):
             t0 = time.time()
             for last_success in self._run_job(job_class, config, info):
                 t1 = time.time()
-                _debug('successfully ran %r on %s', job_class, last_success)
+                self.config.logger.debug('successfully ran %r on %s', job_class, last_success)
                 self._remember_success(job_class, last_success, t1 - t0)
                 # _run_job() returns a generator, so we don't know how
                 # many times this will loop. Anyway, we need to reset the
@@ -987,7 +976,9 @@ class CronTabberApp(App, RequiredConfig):
                 identifier = client.get_ident(client.captureException())
                 self.config.logger.info('Error captured in Sentry. Reference: %s' % identifier)
 
-            _debug('error when running %r on %s', job_class, last_success, exc_info=True)
+            self.config.logger.debug(
+                'error when running %r on %s', job_class, last_success, exc_info=True
+            )
             self._remember_failure(
                 job_class,
                 t1 - t0,
@@ -1008,13 +999,7 @@ class CronTabberApp(App, RequiredConfig):
                 )
 
     @database_transaction()
-    def _remember_success(
-        self,
-        connection,
-        class_,
-        success_date,
-        duration,
-    ):
+    def _remember_success(self, connection, class_, success_date, duration):
         app_name = class_.app_name
         execute_no_results(
             connection,
@@ -1034,15 +1019,7 @@ class CronTabberApp(App, RequiredConfig):
         metrics.gauge('job_success_runtime', value=duration, tags=['job:%s' % app_name])
 
     @database_transaction()
-    def _remember_failure(
-        self,
-        connection,
-        class_,
-        duration,
-        exc_type,
-        exc_value,
-        exc_tb,
-    ):
+    def _remember_failure(self, connection, class_, duration, exc_type, exc_value, exc_tb):
         exc_traceback = ''.join(traceback.format_tb(exc_tb))
         app_name = class_.app_name
         execute_no_results(
@@ -1154,11 +1131,8 @@ class CronTabberApp(App, RequiredConfig):
                     raise OngoingJobError(info['ongoing'])
                 else:
                     self.config.logger.debug(
-                        '{} has been ongoing for {:2} hours. '
-                        'Ignore it and running the app anyway.'.format(
-                            app_name,
-                            age_hours,
-                        )
+                        '{} has been ongoing for {:2} hours. Ignore it and running the app anyway.'
+                        .format(app_name, age_hours)
                     )
             info['ongoing'] = utc_now()
         else:
@@ -1179,8 +1153,7 @@ class CronTabberApp(App, RequiredConfig):
             }
         self.job_state_database[app_name] = info
 
-    def _log_run(self, class_, seconds, time_, last_success, now,
-                 exc_type, exc_value, exc_tb):
+    def _log_run(self, class_, seconds, time_, last_success, now, exc_type, exc_value, exc_tb):
         assert inspect.isclass(class_)
         app_name = class_.app_name
         info = self.job_state_database.get(app_name, {})
@@ -1204,10 +1177,9 @@ class CronTabberApp(App, RequiredConfig):
             info['next_run'] = now + datetime.timedelta(seconds=seconds)
             if time_:
                 h, m = [int(x) for x in time_.split(':')]
-                info['next_run'] = info['next_run'].replace(hour=h,
-                                                            minute=m,
-                                                            second=0,
-                                                            microsecond=0)
+                info['next_run'] = info['next_run'].replace(
+                    hour=h, minute=m, second=0, microsecond=0
+                )
 
         if exc_type:
             tb = ''.join(traceback.format_tb(exc_tb))
@@ -1255,10 +1227,7 @@ class CronTabberApp(App, RequiredConfig):
                 JobDescriptionError,
                 FrequencyDefinitionError,
                 TimeDefinitionError):
-            config.logger.critical(
-                'Failed to config test a job',
-                exc_info=True
-            )
+            config.logger.critical('Failed to config test a job', exc_info=True)
             return False
 
     def sentrytest(self):
@@ -1300,8 +1269,6 @@ DEFAULT_JOBS = ','.join([
 
     # Product/version maintenance
     'socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
-    'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h',
-    'socorro.cron.jobs.featured_versions_automatic.FeaturedVersionsAutomaticCronApp|1h',
 
     # Crash data analysis
     'socorro.cron.jobs.bugzilla.BugzillaCronApp|1h',
@@ -1310,7 +1277,3 @@ DEFAULT_JOBS = ','.join([
     # Dependency checking
     'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
 ])
-
-
-if __name__ == '__main__':
-    sys.exit(CronTabberApp.run())

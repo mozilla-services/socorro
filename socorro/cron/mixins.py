@@ -96,65 +96,6 @@ using_postgres = partial(
 )
 
 
-def with_resource_connection_as_argument(resource_name):
-    """a class decorator for Crontabber Apps.  This decorator will a class a
-    _run_proxy method that passes a databsase connection as a context manager
-    into the CronApp's run method.  The connection will automatically be closed
-    when the ConApp's run method ends.
-
-    In order for this dectorator to function properly, it must be used in
-    conjunction with previous dectorator, "with_transactional_resource" or
-    equivalent.  This decorator depends on the mechanims added by that
-    decorator.
-    """
-    connection_factory_attr_name = '%s_connection_factory' % resource_name
-
-    def class_decorator(cls):
-        def _run_proxy(self, *args, **kwargs):
-            factory = getattr(self, connection_factory_attr_name)
-            with factory() as connection:
-                try:
-                    self.run(connection, *args, **kwargs)
-                finally:
-                    factory.close_connection(connection, force=True)
-        cls._run_proxy = _run_proxy
-        return cls
-    return class_decorator
-
-
-def with_single_transaction(resource_name):
-    """a class decorator for Crontabber Apps.  This decorator will give a class
-    a _run_proxy method that passes a databsase connection as a context manager
-    into the CronApp's 'run' method.  The run method may then use the
-    connection at will knowing that after if 'run' exits normally, the
-    connection will automatically be commited.  Any abnormal exit from 'run'
-    will result in the connnection being rolledback.
-
-    In order for this dectorator to function properly, it must be used in
-    conjunction with previous dectorator, "with_transactional_resource" or
-    equivalent.  This decorator depends on the mechanims added by that
-    decorator.
-    """
-    transaction_executor_attr_name = "%s_transaction_executor" % resource_name
-
-    def class_decorator(cls):
-        def _run_proxy(self, *args, **kwargs):
-            getattr(self, transaction_executor_attr_name)(
-                self.run,
-                *args,
-                **kwargs
-            )
-        cls._run_proxy = _run_proxy
-        return cls
-    return class_decorator
-
-
-as_single_postgres_transaction = partial(
-    with_single_transaction,
-    'database'
-)
-
-
 def as_backfill_cron_app(cls):
     """a class decorator for Crontabber Apps.  This decorator embues a CronApp
     with the parts necessary to be a backfill CronApp.  It adds a main method

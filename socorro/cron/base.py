@@ -26,11 +26,11 @@ class CircularDAGError(Exception):
 
 def toposort(data):
     """Dependencies are expressed as a dictionary whose keys are items
-and whose values are a set of dependent items. Output is a list of
-sets in topological order. The first set consists of items with no
-dependences, each subsequent set consists of items that depend upon
-items in the preceeding sets.
-"""
+    and whose values are a set of dependent items. Output is a list of
+    sets in topological order. The first set consists of items with no
+    dependences, each subsequent set consists of items that depend upon
+    items in the preceeding sets.
+    """
 
     # Special case empty input.
     if len(data) == 0:
@@ -68,8 +68,8 @@ items in the preceeding sets.
 
 def toposort_flatten(data, sort=True):
     """Returns a single list of dependencies. For any set returned by
-toposort(), those items are sorted and appended to the result (just to
-make the results deterministic)."""
+    toposort(), those items are sorted and appended to the result (just to
+    make the results deterministic)."""
 
     result = []
     for d in toposort(data):
@@ -90,15 +90,10 @@ def reorder_dag(sequence,
 
     Given the order of [C, B, A] expect it to return [A, B, C]
 
-    parameters:
-
-        :sequence: some sort of iterable list
-
-        :depends_getter: a callable that extracts the depends on sub-list
-
-        :name_getter: a callable that extracts the name
-
-        :impatience_max: a max count that is reached before we end up in
+    :arg sequence: some sort of iterable list
+    :arg depends_getter: a callable that extracts the depends on sub-list
+    :arg name_getter: a callable that extracts the name
+    :arg impatience_max: a max count that is reached before we end up in
                          an infinite loop.
     """
 
@@ -246,4 +241,4 @@ class BaseCronApp(RequiredConfig):
         # crontabber apps should define their own run functions and not rely
         # on these base classes.  This default base method threatens a runtime
         # error
-        raise NotImplementedError("Your fault!")
+        raise NotImplementedError('please implement')

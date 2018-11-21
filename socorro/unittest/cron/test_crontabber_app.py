@@ -11,8 +11,6 @@ class TestJobsConverter(object):
         'BugzillaCronApp',
         'DependencySecurityCheckCronApp',
         'ElasticsearchCleanupCronApp',
-        'FTPScraperCronApp',
-        'FeaturedVersionsAutomaticCronApp',
         'UpdateSignaturesCronApp',
     ]
 

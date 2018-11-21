@@ -15,18 +15,12 @@ HOSTUSER=$(id -u):$(id -g)
 DC="$(which docker-compose)"
 
 # Fetch and update release information for these products (comma-delimited)
-PRODUCTS="firefox,mobile"
 CRONTABBERCMD="./socorro/cron/crontabber_app.py"
 
-
-# Fetch release data -- use the ftpscraper wrapper which will use cached
-# data if it's available and run ftpscraper as a 20-minute last resort
-./docker/run_ftpscraper_wrapper.sh
-
-# Update featured versions data based on release data
-${DC} run app shell ${CRONTABBERCMD} --reset-job=featured-versions-automatic
-${DC} run app shell ${CRONTABBERCMD} --job=featured-versions-automatic \
-    --crontabber.class-FeaturedVersionsAutomaticCronApp.products=${PRODUCTS}
+# Fetch release data (verbosely)
+${DC} run app shell ${CRONTABBERCMD} --reset-job=archivescraper
+${DC} run app shell ${CRONTABBERCMD} --job=archivescraper \
+    --crontabber.class-ArchiveScraperCronApp.verbose
 
 # Create ES indexes for the next few weeks
 ${DC} run app shell ./socorro-cmd create_recent_indices

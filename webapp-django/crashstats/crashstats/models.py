@@ -21,8 +21,6 @@ from crashstats.base.utils import requests_retry_session
 from socorro.app import socorro_app
 import socorro.external.boto.crash_data
 from socorro.external.es.base import ElasticsearchConfig
-from socorro.external.postgresql.base import PostgreSQLStorage
-import socorro.external.postgresql.products
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
     PriorityjobRabbitMQCrashStore,
@@ -208,11 +206,6 @@ def config_from_configman():
     definition_source.elasticsearch.add_option(
         'elasticsearch_class',
         default=ElasticsearchConfig,
-    )
-    definition_source.namespace('database')
-    definition_source.database.add_option(
-        'database_storage_class',
-        default=PostgreSQLStorage,
     )
     definition_source.namespace('queuing')
     definition_source.queuing.add_option(
@@ -608,33 +601,6 @@ class SocorroMiddleware(SocorroCommon):
                     'required': required,
                     'type': type_,
                 }
-
-
-class ProductVersionsMiddleware(SocorroMiddleware):
-    implementation = socorro.external.postgresql.products.ProductVersions
-
-    deprecation_warning = (
-        'This endpoint is deprecated and will be removed soon. Please use '
-        'BuildHub instead.'
-    )
-    possible_params = (
-        ('product', list),
-        ('version', list),
-        ('is_featured', bool),
-        'start_date',
-        'end_date',
-        ('active', bool),
-        ('is_rapid_beta', bool),
-        ('build_type', list),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-    def post(self, **data):
-        return self.get_implementation().post(**data)
 
 
 class TelemetryCrash(SocorroMiddleware):

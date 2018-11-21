@@ -1,7 +1,7 @@
 import functools
-import urlparse
 
 import markus
+from six.moves.urllib.parse import urlparse
 
 from django.http import HttpResponseBadRequest, Http404
 from django.shortcuts import redirect
@@ -113,7 +113,7 @@ def track_api_pageview(view):
                 # If the referer host is the same as the request host
                 # that implies that the API was used as an AJAX request
                 # in our main webapp itself. If so, don't track.
-                referer_host = urlparse.urlparse(referer).netloc
+                referer_host = urlparse(referer).netloc
                 if referer_host == request.META.get('HTTP_HOST'):
                     return response
 
