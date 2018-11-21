@@ -21,12 +21,12 @@ from configman import Namespace
 
 from socorro.cron.base import BaseCronApp
 from socorro.cron.mixins import using_postgres
-from socorro.external.postgresql.dbapi2_util import (
+from socorro.lib.datetimeutil import utc_now
+from socorro.lib.dbutil import (
     execute_query_fetchall,
     execute_no_results,
     SQLDidNotReturnSingleRow
 )
-from socorro.lib.datetimeutil import utc_now
 from socorro.lib.requestslib import session_with_retries
 
 
@@ -120,46 +120,33 @@ class BugzillaCronApp(BaseCronApp):
         # Fetch recent relevant changes and iterate over them updating our
         # data set
         for bug_id, signature_set in self._iterator(last_run_formatted):
-            self.database_transaction_executor(
-                self.update_bug_data,
-                bug_id,
-                signature_set
-            )
+            self.database_transaction_executor(self.update_bug_data, bug_id, signature_set)
 
     def update_bug_data(self, connection, bug_id, signature_set):
         self.config.logger.debug('bug %s: %s', bug_id, signature_set)
 
         # If there's no associated signatures, delete everything for this bug id
         if not signature_set:
-            execute_no_results(
-                connection,
-                """
-                DELETE FROM crashstats_bugassociation WHERE bug_id = %s
-                """,
-                (bug_id,)
-            )
+            sql = """
+            DELETE FROM crashstats_bugassociation WHERE bug_id = %s
+            """
+            execute_no_results(connection, sql, (bug_id,))
             return
 
         try:
-            signature_rows = execute_query_fetchall(
-                connection,
-                """
-                SELECT signature FROM crashstats_bugassociation WHERE bug_id = %s
-                """,
-                (bug_id,)
-            )
+            sql = """
+            SELECT signature FROM crashstats_bugassociation WHERE bug_id = %s
+            """
+            signature_rows = execute_query_fetchall(connection, sql, (bug_id,))
             signatures_db = [x[0] for x in signature_rows]
 
             for signature in signatures_db:
                 if signature not in signature_set:
-                    execute_no_results(
-                        connection,
-                        """
-                        DELETE FROM crashstats_bugassociation
-                        WHERE signature = %s and bug_id = %s
-                        """,
-                        (signature, bug_id)
-                    )
+                    sql = """
+                    DELETE FROM crashstats_bugassociation
+                    WHERE signature = %s and bug_id = %s
+                    """
+                    execute_no_results(connection, sql, (signature, bug_id))
                     self.config.logger.info('association removed: %s - "%s"', bug_id, signature)
 
         except SQLDidNotReturnSingleRow:
@@ -167,14 +154,11 @@ class BugzillaCronApp(BaseCronApp):
 
         for signature in signature_set:
             if signature not in signatures_db:
-                execute_no_results(
-                    connection,
-                    """
-                    INSERT INTO crashstats_bugassociation (signature, bug_id)
-                    VALUES (%s, %s)
-                    """,
-                    (signature, bug_id)
-                )
+                sql = """
+                INSERT INTO crashstats_bugassociation (signature, bug_id)
+                VALUES (%s, %s)
+                """
+                execute_no_results(connection, sql, (signature, bug_id))
                 self.config.logger.info('association added: %s - "%s"', bug_id, signature)
 
     def _iterator(self, from_date):

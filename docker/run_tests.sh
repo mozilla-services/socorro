@@ -28,23 +28,18 @@ ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
 export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
 PYTHON="$(which python)"
-ALEMBIC="$(which alembic)"
-SETUPDB="/app/socorro/external/postgresql/setupdb_app.py"
 JEST="/webapp-frontend-deps/node_modules/.bin/jest"
 
 # Wait for postgres and elasticsearch services to be ready
 urlwait "${DATABASE_URL}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
 
-# Set up socorro_migration_test db for migration testing
-"${PYTHON}" "${SETUPDB}" --database_name=socorro_migration_test --dropdb --logging.level=40 --unlogged --createdb
-
-# Set up socorro_test db for unittests
-"${PYTHON}" "${SETUPDB}" --database_name=socorro_test --dropdb --logging.level=40 --unlogged --no_staticdata --createdb
-
-# Test the last migration
-"${ALEMBIC}" -c "${alembic_config}" downgrade -1
-"${ALEMBIC}" -c "${alembic_config}" upgrade heads
+# Set up socorro_test db
+./socorro-cmd db drop || true
+./socorro-cmd db create
+pushd webapp-django
+${PYTHON} manage.py migrate
+popd
 
 if [ "${USEPYTHON:-2}" == "2" ]; then
     # Run tests
@@ -53,7 +48,7 @@ if [ "${USEPYTHON:-2}" == "2" ]; then
     # Collect static and then run py.test in the webapp
     pushd webapp-django
     "${WEBPACK_BINARY}" --mode=production --bail
-    python manage.py collectstatic --noinput
+    ${PYTHON} manage.py collectstatic --noinput
     "${PYTEST}"
 
     echo ">>> jest (frontend)"

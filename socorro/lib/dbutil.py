@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""short cuts for ugly Python DBAPI2 syntax"""
+"""Helper utilities for db manipulation"""
 
 from collections import Sequence
 
@@ -23,14 +23,14 @@ class FetchAllSequence(Sequence):
     iterable that works the same as regular fetchall() but
     also offers the convenience method zipped().
 
-    You can use this like this::
+    You can use this like this:
 
-        >>> sql = "select col1, col2 from some_table"
-        >>> cursor = connection.cursor()
-        >>> cursor.excute(sql, ())
-        >>> seq = FetchAllSequence(cursor.fetchall(), cursor.description)
-        >>> seq.zipped()
-        [{'col1': value1, 'col2': value2}, {'col1': valueA, 'col2': valueB}]
+    >>> sql = "select col1, col2 from some_table"
+    >>> cursor = connection.cursor()
+    >>> cursor.excute(sql, ())
+    >>> seq = FetchAllSequence(cursor.fetchall(), cursor.description)
+    >>> seq.zipped()
+    [{'col1': value1, 'col2': value2}, {'col1': valueA, 'col2': valueB}]
 
     """
 

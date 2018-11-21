@@ -5,12 +5,11 @@
 from mock import Mock, MagicMock
 import pytest
 
-from socorro.external.postgresql import dbapi2_util
+from socorro.lib import dbutil
 from socorro.unittest.testbase import TestCase
 
 
-class TestDBAPI2Helper(TestCase):
-
+class Testdbutil(TestCase):
     def test_single_value_sql1(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=((17,),))
@@ -20,7 +19,7 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        r = dbapi2_util.single_value_sql(conn, "select 17")
+        r = dbutil.single_value_sql(conn, "select 17")
         assert r == 17
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
@@ -35,7 +34,7 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        dbapi2_util.single_value_sql(conn, "select 17", (1, 2, 3))
+        dbutil.single_value_sql(conn, "select 17", (1, 2, 3))
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with('select 17', (1, 2, 3))
@@ -49,8 +48,8 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        with pytest.raises(dbapi2_util.SQLDidNotReturnSingleValue):
-            dbapi2_util.single_value_sql(conn, 'select 17', (1, 2, 3))
+        with pytest.raises(dbutil.SQLDidNotReturnSingleValue):
+            dbutil.single_value_sql(conn, 'select 17', (1, 2, 3))
 
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
@@ -65,7 +64,7 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        r = dbapi2_util.single_row_sql(conn, "select 17, 22")
+        r = dbutil.single_row_sql(conn, "select 17, 22")
         assert r == (17, 22)
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
@@ -80,7 +79,7 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        dbapi2_util.single_row_sql(conn, "select 17, 22", (1, 2, 3))
+        dbutil.single_row_sql(conn, "select 17, 22", (1, 2, 3))
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
@@ -94,8 +93,8 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        with pytest.raises(dbapi2_util.SQLDidNotReturnSingleRow):
-            dbapi2_util.single_row_sql(conn, 'select 17, 22', (1, 2, 3))
+        with pytest.raises(dbutil.SQLDidNotReturnSingleRow):
+            dbutil.single_row_sql(conn, 'select 17, 22', (1, 2, 3))
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
         m_cursor.execute.assert_called_once_with("select 17, 22", (1, 2, 3))
@@ -115,19 +114,12 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        zipped = zip(
-            dbapi2_util.execute_query_iter(
-                conn,
-                "select * from somewhere"
-            ),
-            expected
-        )
+        zipped = zip(dbutil.execute_query_iter(conn, "select * from somewhere"), expected)
         for x, y in zipped:
             assert x == y
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
-        m_cursor.execute.assert_called_once_with("select * from somewhere",
-                                                 None)
+        m_cursor.execute.assert_called_once_with("select * from somewhere", None)
 
     def test_execute_query2(self):
         m_execute = Mock()
@@ -144,15 +136,12 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        zipped = zip(dbapi2_util.execute_query_iter(conn,
-                                                    "select * from somewhere"),
-                     expected)
+        zipped = zip(dbutil.execute_query_iter(conn, "select * from somewhere"), expected)
         for x, y in zipped:
             assert x == y
         assert conn.cursor.call_count == 1
         assert m_cursor.execute.call_count == 1
-        m_cursor.execute.assert_called_once_with("select * from somewhere",
-                                                 None)
+        m_cursor.execute.assert_called_once_with("select * from somewhere", None)
 
     def test_execute_no_results(self):
         m_execute = Mock()
@@ -161,7 +150,7 @@ class TestDBAPI2Helper(TestCase):
         conn = MagicMock()
         conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        dbapi2_util.execute_no_results(
+        dbutil.execute_no_results(
             conn,
             "insert into table (a, b, c) values (%s, %s, %s)",
             (1, 2, 3)
@@ -174,7 +163,6 @@ class TestDBAPI2Helper(TestCase):
         )
 
     def test_fetch_all_sequence(self):
-
         # A class so we can pretend to return a psycopg2 cursor object's
         # description object.
 
@@ -187,7 +175,7 @@ class TestDBAPI2Helper(TestCase):
             ['Peter', 'Bengtsson'],
             ['Lars', 'Lohn'],
         ]
-        sequence = dbapi2_util.FetchAllSequence(
+        sequence = dbutil.FetchAllSequence(
             things,
             [Description('first_name'), Description('last_name')]
         )

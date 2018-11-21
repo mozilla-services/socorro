@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from functools import partial
 
 from configman import RequiredConfig, class_converter
@@ -11,19 +15,20 @@ def with_transactional_resource(
     """a class decorator for Crontabber Apps.  This decorator will give access
     to a resource connection source.  Configuration will be automatically set
     up and the cron app can expect to have attributes:
-        self.{resource_name}_connection_factory
+
+        self.{resource_name}_class
         self.{resource_name}_transaction_executor
+
     available to use.
     Within the setup, the RequiredConfig structure gets set up like this:
+
         config.{resource_name}.{resource_name}_class = \
             transactional_resource_class
         config.{resource_name}.{resource_name}_transaction_executor_class = \
             'socorro.lib.transaction.TransactionExecutor'
 
     parameters:
-        transactional_resource_class - a string representing the full path of
-            the class that represents a connection to the resource.  An example
-            is "socorro.cron.connection_factory.ConnectionFactory".
+        transactional_resource_class - Python path to ConnectionContext
         resource_name - a string that will serve as an identifier for this
             resource within the mixin. For example, if the resource is
             'database' we'll see configman namespace in the cron job section
@@ -58,21 +63,18 @@ def with_transactional_resource(
             super(cls, self).__init__(*args, **kwargs)
             setattr(
                 self,
-                "%s_connection_factory" % resource_name,
+                "%s_class" % resource_name,
                 self.config[resource_name]['%s_class' % resource_name](
                     self.config[resource_name]
                 )
             )
-            # instantiate a transaction executor bound to the
-            # resource connection
+            # instantiate a transaction executor bound to the resource connection
             setattr(
                 self,
                 "%s_transaction_executor" % resource_name,
-                self.config[resource_name][
-                    '%s_transaction_executor_class' % resource_name
-                ](
+                self.config[resource_name]['%s_transaction_executor_class' % resource_name](
                     self.config[resource_name],
-                    getattr(self, "%s_connection_factory" % resource_name)
+                    getattr(self, "%s_class" % resource_name)
                 )
             )
         if hasattr(cls, '__init__'):
@@ -90,68 +92,9 @@ def with_transactional_resource(
 
 using_postgres = partial(
     with_transactional_resource,
-    'socorro.cron.connection_factory.ConnectionFactory',
+    'socorro.external.postgresql.connection_context.ConnectionContext',
     'database',
     'resource.postgresql'
-)
-
-
-def with_resource_connection_as_argument(resource_name):
-    """a class decorator for Crontabber Apps.  This decorator will a class a
-    _run_proxy method that passes a databsase connection as a context manager
-    into the CronApp's run method.  The connection will automatically be closed
-    when the ConApp's run method ends.
-
-    In order for this dectorator to function properly, it must be used in
-    conjunction with previous dectorator, "with_transactional_resource" or
-    equivalent.  This decorator depends on the mechanims added by that
-    decorator.
-    """
-    connection_factory_attr_name = '%s_connection_factory' % resource_name
-
-    def class_decorator(cls):
-        def _run_proxy(self, *args, **kwargs):
-            factory = getattr(self, connection_factory_attr_name)
-            with factory() as connection:
-                try:
-                    self.run(connection, *args, **kwargs)
-                finally:
-                    factory.close_connection(connection, force=True)
-        cls._run_proxy = _run_proxy
-        return cls
-    return class_decorator
-
-
-def with_single_transaction(resource_name):
-    """a class decorator for Crontabber Apps.  This decorator will give a class
-    a _run_proxy method that passes a databsase connection as a context manager
-    into the CronApp's 'run' method.  The run method may then use the
-    connection at will knowing that after if 'run' exits normally, the
-    connection will automatically be commited.  Any abnormal exit from 'run'
-    will result in the connnection being rolledback.
-
-    In order for this dectorator to function properly, it must be used in
-    conjunction with previous dectorator, "with_transactional_resource" or
-    equivalent.  This decorator depends on the mechanims added by that
-    decorator.
-    """
-    transaction_executor_attr_name = "%s_transaction_executor" % resource_name
-
-    def class_decorator(cls):
-        def _run_proxy(self, *args, **kwargs):
-            getattr(self, transaction_executor_attr_name)(
-                self.run,
-                *args,
-                **kwargs
-            )
-        cls._run_proxy = _run_proxy
-        return cls
-    return class_decorator
-
-
-as_single_postgres_transaction = partial(
-    with_single_transaction,
-    'database'
 )
 
 

@@ -1300,7 +1300,7 @@ class TestBetaVersionRule(object):
         cursor.execute(sql, params)
         conn.commit()
 
-    def test_beta_channel_known_version(self, db_conn, django_tables):
+    def test_beta_channel_known_version(self, db_conn):
         # Beta channel with known version gets converted correctly
         config = self.get_config()
 
@@ -1327,7 +1327,7 @@ class TestBetaVersionRule(object):
         assert processed_crash['version'] == '3.0b1'
         assert processor_meta.processor_notes == []
 
-    def test_release_channel(self, django_tables):
+    def test_release_channel(self):
         """Release channel doesn't trigger rule"""
         config = self.get_config()
         raw_crash = {}
@@ -1345,7 +1345,7 @@ class TestBetaVersionRule(object):
         assert processed_crash['version'] == '2.0'
         assert len(processor_meta.processor_notes) == 0
 
-    def test_nightly_channel(self, django_tables):
+    def test_nightly_channel(self):
         """Nightly channel doesn't trigger rule"""
         config = self.get_config()
         raw_crash = {}
@@ -1363,7 +1363,7 @@ class TestBetaVersionRule(object):
         assert processed_crash['version'] == '5.0a1'
         assert processor_meta.processor_notes == []
 
-    def test_bad_buildid(self, django_tables):
+    def test_bad_buildid(self):
         """Invalid buildids don't cause errors"""
         config = self.get_config()
         raw_crash = {}
@@ -1384,7 +1384,7 @@ class TestBetaVersionRule(object):
             'added "b0" suffix to version number'
         ]
 
-    def test_beta_channel_unknown_version(self, django_tables):
+    def test_beta_channel_unknown_version(self):
         """Beta crash that Buildhub doesn't know about gets b0"""
         config = self.get_config()
         raw_crash = {}
@@ -1405,7 +1405,7 @@ class TestBetaVersionRule(object):
             'added "b0" suffix to version number'
         ]
 
-    def test_aurora_channel(self, db_conn, django_tables):
+    def test_aurora_channel(self, db_conn):
         """Test aurora channel lookup"""
         self.insert_product_version(
             conn=db_conn,

@@ -44,27 +44,6 @@ def site_status(request):
 
     context['version_info'] = version_info
 
-    # Get alembic migration data
-    try:
-        # There's no alembic_version table in the db when the tests run
-        # because it's not managed by Django. Therefore this sql fails
-        # in the tests. When this fails, it kills the transaction the tests
-        # run in which loses the request session which causes the session
-        # middleware to kick up an HTTP 400 which causes the test to fail.
-        #
-        # Wrapping this in an atomic context prevents that cavalcade of
-        # clown shoes from happening.
-        with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor.execute('SELECT version_num FROM alembic_version')
-                alembic_version = cursor.fetchone()[0]
-                alembic_error = ''
-    except Exception as exc:
-        alembic_version = ''
-        alembic_error = 'error: %s' % exc
-    context['alembic_version'] = alembic_version
-    context['alembic_error'] = alembic_error
-
     # Get Django migration data
     try:
         with connection.cursor() as cursor:

@@ -11,15 +11,15 @@ from socorro.cron.mixins import (
     as_backfill_cron_app,
     using_postgres,
 )
-from socorro.external.postgresql.dbapi2_util import (
-    execute_no_results,
-    single_row_sql,
-    SQLDidNotReturnSingleRow,
-)
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.lib.datetimeutil import string_to_datetime
+from socorro.lib.dbutil import (
+    execute_no_results,
+    single_row_sql,
+    SQLDidNotReturnSingleRow,
+)
 
 
 # Maximum number of results returned for a super search query
@@ -57,15 +57,13 @@ class UpdateSignaturesCronApp(BaseCronApp):
         # Pull the data in the db. If it's there, then do an update. If it's
         # not there, then do an insert.
         try:
-            sig = single_row_sql(
-                connection,
-                """
-                SELECT signature, first_build, first_date
-                FROM crashstats_signature
-                WHERE signature=%s
-                """,
-                (signature,)
-            )
+            sql = """
+            SELECT signature, first_build, first_date
+            FROM crashstats_signature
+            WHERE signature=%s
+            """
+            sig = single_row_sql(connection, sql, (signature,))
+
             sql = """
             UPDATE crashstats_signature
             SET first_build=%s, first_date=%s

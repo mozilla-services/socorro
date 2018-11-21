@@ -109,13 +109,6 @@ Setup Quickstart
    Depending on what you're working on, you might want to run this weekly or
    maybe even daily.
 
-   .. Note::
-
-      This runs ftpscraper which takes 10 minutes to run. To save your time
-      and ours, the script will replay the last run for 7 days. That takes
-      10 seconds. If you need fresh data, run ``make clean`` which will
-      wipe out the logs.
-
 
 At this point, you should have a basic functional Socorro development
 environment that has no crash data in it.
@@ -190,12 +183,8 @@ data, and reset the state of the system, run::
 Updating release data
 ---------------------
 
-Release data and comes from running ftpscraper. After you run ftpscraper, you
-have to run featured-versions-automatic which will update the featured versions
-list. Additionally, there's other data that changes day-to-day that you need to
-pick up in order for some views in the webapp to work well.
-
-Updating that data is done with a single make rule.
+Release data and comes from running archivescraper. This is used by the
+``BetaVersionRule`` in the processor.
 
 Run::
 
@@ -204,18 +193,8 @@ Run::
 
 .. Note::
 
-   This can take a long while to run and if you're running it against an
-   existing database, then ftpscraper will "catch up" since the last time it ran
-   which can take a long time, maybe hours.
-
-   If you don't have anything in the database that you need, then it might be
-   better to wipe the database and start over.
-
-
-.. Note::
-
-   This will replay the most recent run. If you need fresh data, delete the
-   ``.cache/`` directory before running ``make updatedata``.
+   This can take 20-30 minutes to run in a clean database. After that, it'll
+   run faster since it'll only look at recent builds.
 
 
 .. _gettingstarted-chapter-configuration:

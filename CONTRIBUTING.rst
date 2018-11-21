@@ -191,37 +191,6 @@ To build the docs, run this:
 Database migrations
 ===================
 
-alembic migrations
-------------------
-
-To create an alembic migration, use your local development environment::
-
-    $ make shell
-    app@socorro:/app$ alembic -c docker/config/alembic.ini revision -m "bug xxx summary here"
-
-Alembic migrations are stored in ``alembic/versions/``. There's a lot of
-material you can crib from there.
-
-To apply alembic migrations, do::
-
-    $ make shell
-    app@socorro:/app$ alembic -c docker/config/alembic.ini upgrade heads
-
-Helper functions in ``socorro.lib.migrations``:
-
-* ``load_stored_proc``
-
-   Loads the latest version of the stored procedures specified. Use this any
-   time you create a new stored procedure or change an existing one.
-
-   Example::
-
-     load_stored_proc(op, ['update_matviews.sql', 'backfill_matviews.sql'])
-
-
-Django migrations
------------------
-
 To create a Django migration, user your local development environment::
 
     $ make shell
@@ -322,9 +291,6 @@ If you clone our `git repository
 folders.
 
 Here is what each of them contains:
-
-**alembic/**
-    Alembic-managed database migrations.
 
 **docker/**
     Docker environment related scripts, configuration, and other bits.
