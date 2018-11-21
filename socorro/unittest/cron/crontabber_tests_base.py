@@ -79,8 +79,8 @@ class IntegrationTestBase(unittest.TestCase):
         super(IntegrationTestBase, self).setUp()
         self.config = self.get_standard_config()
 
-        db_connection_factory = self.config.crontabber.database_class(self.config.crontabber)
-        self.conn = db_connection_factory.connection()
+        connection_context = self.config.crontabber.database_class(self.config.crontabber)
+        self.conn = connection_context.connection()
         self.truncate_django_tables()
 
     def tearDown(self):

@@ -139,7 +139,7 @@ class JobStateDatabase(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         'database_class',
-        default='socorro.cron.connection_factory.ConnectionFactory',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
     )
@@ -154,10 +154,10 @@ class JobStateDatabase(RequiredConfig):
     def __init__(self, config=None):
         self.config = config
 
-        self.database_connection_factory = config.database_class(config)
+        self.database_class = config.database_class(config)
         self.transaction_executor = self.config.transaction_executor_class(
             self.config,
-            self.database_connection_factory
+            self.database_class
         )
 
     def has_data(self):
@@ -641,7 +641,7 @@ class CronTabberApp(App, RequiredConfig):
     # for local use, independent of the JSONAndPostgresJobDatabase
     required_config.crontabber.add_option(
         'database_class',
-        default='socorro.cron.connection_factory.ConnectionFactory',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
     )
@@ -726,11 +726,11 @@ class CronTabberApp(App, RequiredConfig):
 
     def __init__(self, config):
         super(CronTabberApp, self).__init__(config)
-        self.database_connection_factory = self.config.crontabber.database_class(config.crontabber)
+        self.database_class = self.config.crontabber.database_class(config.crontabber)
         self.transaction_executor = (
             self.config.crontabber.transaction_executor_class(
                 config.crontabber,
-                self.database_connection_factory
+                self.database_class
             )
         )
 

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from functools import partial
 
 from configman import RequiredConfig, class_converter
@@ -11,19 +15,20 @@ def with_transactional_resource(
     """a class decorator for Crontabber Apps.  This decorator will give access
     to a resource connection source.  Configuration will be automatically set
     up and the cron app can expect to have attributes:
-        self.{resource_name}_connection_factory
+
+        self.{resource_name}_class
         self.{resource_name}_transaction_executor
+
     available to use.
     Within the setup, the RequiredConfig structure gets set up like this:
+
         config.{resource_name}.{resource_name}_class = \
             transactional_resource_class
         config.{resource_name}.{resource_name}_transaction_executor_class = \
             'socorro.lib.transaction.TransactionExecutor'
 
     parameters:
-        transactional_resource_class - a string representing the full path of
-            the class that represents a connection to the resource.  An example
-            is "socorro.cron.connection_factory.ConnectionFactory".
+        transactional_resource_class - Python path to ConnectionContext
         resource_name - a string that will serve as an identifier for this
             resource within the mixin. For example, if the resource is
             'database' we'll see configman namespace in the cron job section
@@ -58,21 +63,18 @@ def with_transactional_resource(
             super(cls, self).__init__(*args, **kwargs)
             setattr(
                 self,
-                "%s_connection_factory" % resource_name,
+                "%s_class" % resource_name,
                 self.config[resource_name]['%s_class' % resource_name](
                     self.config[resource_name]
                 )
             )
-            # instantiate a transaction executor bound to the
-            # resource connection
+            # instantiate a transaction executor bound to the resource connection
             setattr(
                 self,
                 "%s_transaction_executor" % resource_name,
-                self.config[resource_name][
-                    '%s_transaction_executor_class' % resource_name
-                ](
+                self.config[resource_name]['%s_transaction_executor_class' % resource_name](
                     self.config[resource_name],
-                    getattr(self, "%s_connection_factory" % resource_name)
+                    getattr(self, "%s_class" % resource_name)
                 )
             )
         if hasattr(cls, '__init__'):
@@ -90,7 +92,7 @@ def with_transactional_resource(
 
 using_postgres = partial(
     with_transactional_resource,
-    'socorro.cron.connection_factory.ConnectionFactory',
+    'socorro.external.postgresql.connection_context.ConnectionContext',
     'database',
     'resource.postgresql'
 )

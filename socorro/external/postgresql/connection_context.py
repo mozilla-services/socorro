@@ -2,13 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import contextlib
 import os
 import socket
-import contextlib
-import psycopg2
-import psycopg2.extensions
 
 from configman import RequiredConfig, Namespace
+import psycopg2
+import psycopg2.extensions
 from six.moves.urllib.parse import urlparse
 
 
@@ -77,7 +77,9 @@ class ConnectionContext(RequiredConfig):
                      would be where a logger or other resources could be
                      found.
             local_config - this is the namespace within the complete config
-                           where the actual database parameters are found"""
+                           where the actual database parameters are found
+
+        """
         super(ConnectionContext, self).__init__()
         self.config = config
         if local_config is None:
@@ -100,12 +102,6 @@ class ConnectionContext(RequiredConfig):
         )
 
     def connection(self, name_unused=None):
-        """return a new database connection
-
-        parameters:
-            name_unused - optional named connections.  Used by the
-                          derived class
-        """
         return psycopg2.connect(self.dsn)
 
     @contextlib.contextmanager
@@ -139,9 +135,6 @@ class ConnectionContext(RequiredConfig):
         connection.close()
 
     def close(self):
-        """close any pooled or cached connections.  Since this base class
-        object does no caching, there is no implementation required.  Derived
-        classes may implement it."""
         pass
 
     def is_operational_exception(self, exp):
