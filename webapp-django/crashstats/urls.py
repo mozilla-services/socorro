@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 
 from django.conf import settings
@@ -6,8 +8,8 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import RedirectView
 from django.views.static import serve
 
-from .manage import admin_site
-from .base.monkeypatches import patch
+from crashstats.manage import admin_site
+from crashstats.base.monkeypatches import patch
 
 
 patch()

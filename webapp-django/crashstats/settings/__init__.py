@@ -10,10 +10,10 @@ as much as possible.
 
 import sys
 
-from .base import *  # NOQA
+from crashstats.settings.base import *  # NOQA
 
 
 if len(sys.argv) > 1 and sys.argv[1] == 'test':
     import logging
     logging.disable(logging.CRITICAL)  # Shuts up logging when running tests
-    from .test import *  # NOQA
+    from crashstats.settings.test import *  # NOQA

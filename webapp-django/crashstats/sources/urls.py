@@ -1,5 +1,6 @@
 from django.conf.urls import url
-from . import views
+
+from crashstats.sources import views
 
 
 app_name = 'sources'

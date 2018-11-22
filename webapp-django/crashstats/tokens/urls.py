@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from . import views
+from crashstats.tokens import views
 
 
 app_name = 'tokens'

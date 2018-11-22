@@ -1,13 +1,13 @@
 from django import http
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
-from django.shortcuts import render, get_object_or_404, redirect
-from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.views.decorators.http import require_POST
+from django.shortcuts import render, get_object_or_404, redirect
 
 from crashstats.crashstats.decorators import login_required
-from . import models
-from . import forms
+from crashstats.tokens import forms
+from crashstats.tokens import models
 
 
 @login_required

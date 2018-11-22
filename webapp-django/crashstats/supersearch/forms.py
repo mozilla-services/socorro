@@ -2,7 +2,7 @@ import json
 
 from django import forms
 
-from . import form_fields
+from crashstats.supersearch import form_fields
 
 
 TYPE_TO_FIELD_MAPPING = {

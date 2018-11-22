@@ -1,5 +1,6 @@
 from django.conf.urls import url
-from . import views
+
+from crashstats.profile import views
 
 
 app_name = 'profile'
