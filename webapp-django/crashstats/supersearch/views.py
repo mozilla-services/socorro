@@ -1,7 +1,7 @@
+from collections import defaultdict
 import datetime
 import json
 import math
-from collections import defaultdict
 
 from django import http
 from django.conf import settings
@@ -14,15 +14,13 @@ from django.utils import timezone
 from ratelimit.decorators import ratelimit
 from waffle.decorators import waffle_switch
 
-from socorro.lib import BadArgumentError
-
-from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
+from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
-
-from . import forms
-from .models import Query, SuperSearchFields, SuperSearchUnredacted
+from crashstats.supersearch import forms
+from crashstats.supersearch.models import Query, SuperSearchFields, SuperSearchUnredacted
+from socorro.lib import BadArgumentError
 
 
 DEFAULT_COLUMNS = (

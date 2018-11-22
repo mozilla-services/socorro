@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import (
     user_passes_test,
 )
 
-from . import utils
+from crashstats.crashstats import utils
 
 
 def login_required(

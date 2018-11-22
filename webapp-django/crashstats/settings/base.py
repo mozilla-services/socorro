@@ -4,10 +4,10 @@
 
 import os
 
-import dj_database_url
 from decouple import config, Csv
+import dj_database_url
 
-from .bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
+from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
 from socorro.lib.revision_data import get_version
 
 

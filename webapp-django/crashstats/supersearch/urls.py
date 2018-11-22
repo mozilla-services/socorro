@@ -1,5 +1,7 @@
 from django.conf.urls import url
-from . import views
+
+from crashstats.supersearch import views
+
 
 app_name = 'supersearch'
 urlpatterns = [

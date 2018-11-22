@@ -5,7 +5,7 @@ from django.contrib import auth
 from django.core.exceptions import ImproperlyConfigured
 from django import http
 
-from . import models
+from crashstats.tokens import models
 
 
 def json_forbidden_response(msg):

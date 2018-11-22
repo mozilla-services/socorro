@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from . import admin
+from crashstats.manage import admin
 
 
 urlpatterns = [

@@ -1,8 +1,8 @@
+from django.conf import settings
 from django.conf.urls import url
 from django.views.generic import RedirectView
-from django.conf import settings
 
-from . import views
+from crashstats.crashstats import views
 
 
 products = r'/products/(?P<product>\w+)'

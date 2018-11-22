@@ -1,11 +1,10 @@
 from django import forms
 
 from crashstats.crashstats.forms import BaseModelForm
-from . import models
+from crashstats.tokens import models
 
 
 class GenerateTokenForm(BaseModelForm):
-
     class Meta:
         model = models.Token
         fields = ('permissions', 'notes')
