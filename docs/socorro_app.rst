@@ -23,37 +23,9 @@ it takes care of logging and executing your ``main`` function.
 Connecting and handling transactions
 ====================================
 
-Let's go back to the ``weeklyReportsPartitions.py`` cron script and take a look
-at what it does.
-
-It only really has one ``configman`` option and that's the
-``transaction_executor_class``. The default value is
-`TransactionExecutorWithBackoff
-<https://github.com/mozilla-services/socorro/blob/master/socorro/lib/transaction.py#L59>`_
-which is the class that's going to take care of two things:
-
-1. execute a callable that accepts an opened database connection as first and
-   only parameter
-
-2. committing the transaction if there are no errors and rolling back the
-   transaction if an exception is raised
-
-3. NB: if an ``OperationalError`` or ``InterfaceError`` exception is raised,
-   ``TransactionExecutorWithBackoff`` will log that and retry after configurable
-   delay
-
-Note that ``TransactionExecutorWithBackoff`` is the default
-``transaction_executor_class`` but if you override it, for example by the
-command line, with ``TransactionExecutor`` no exceptions are swallowed and it
-doesn't retry.
-
-Now, connections are created and closed by the `ConnectionContext
+Connections are created and closed by the `ConnectionContext
 <https://github.com/mozilla-services/socorro/blob/master/socorro/external/postgresql/connection_context.py#L11>`_
-class. As you might have noticed, the default ``database_class`` defined in the
-``TransactionExecutor`` is
-``socorro.external.postgresql.connection_context.ConnectionContext`` as you can
-see `here
-<https://github.com/mozilla-services/socorro/blob/master/socorro/lib/transaction.py#L29>`_
+class.
 
 The idea is that any external module (e.g. Boto, PostgreSQL, etc) can define a
 ``ConnectionContext`` class as per this model. What its job is is to create and

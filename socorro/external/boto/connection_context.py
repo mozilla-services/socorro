@@ -36,7 +36,6 @@ class JSONISOEncoder(json.JSONEncoder):
 
 
 class ConnectionContextBase(RequiredConfig):
-
     required_config = Namespace()
     required_config.add_option(
         'access_key',
@@ -73,36 +72,20 @@ class ConnectionContextBase(RequiredConfig):
         reference_value_from='resource.boto'
     )
 
-    operational_exceptions = (
+    RETRYABLE_EXCEPTIONS = (
         socket.timeout,
-        # wild guesses at retriable exceptions
         boto.exception.PleaseRetryException,
         boto.exception.ResumableTransferDisposition,
         boto.exception.ResumableUploadException,
     )
 
-    conditional_exceptions = (
-        boto.exception.StorageResponseError
-    )
-
-    def is_operational_exception(self, x):
-        if "not found, no value returned" in str(x):
-            # the not found error needs to be re-tryable to compensate for
-            # eventual consistency.  However, a method capable of raising this
-            # exception should never be used with a transaction executor that
-            # has infinite back off.
-            return True
-        return False
-
     def __init__(self, config, quit_check_callback=None):
         self.config = config
-
         self._CreateError = boto.exception.StorageCreateError
         self.ResponseError = (
             boto.exception.StorageResponseError,
             KeyNotFound
         )
-
         self._bucket_cache = {}
         self.metrics = markus.get_metrics(config.boto_metrics_prefix)
 
@@ -110,21 +93,18 @@ class ConnectionContextBase(RequiredConfig):
         try:
             return self.connection
         except AttributeError:
-            self.connection = self._connect_to_endpoint(
-                **self._get_credentials()
-            )
+            self.connection = self._connect_to_endpoint(**self._get_credentials())
             return self.connection
 
     def _get_credentials(self):
-        """each subclass must implement this method to provide the type
-        of credentials required for the type of connection"""
+        """Returns credentials for creating the connection"""
         raise NotImplementedError
 
     def _get_datestamp(self, crashid):
-        """Retrieves the datestamp from a crashid or raises an exception"""
+        """Retrieves datestamp from a crashid or raises an exception"""
         datestamp = dateFromOoid(crashid)
         if datestamp is None:
-            # We should never hit this situation unless the crashid is a bad crashid
+            # We should never hit this situation unless the crashid is not valid
             raise CrashidMissingDatestamp('%s is missing datestamp' % crashid)
         return datestamp
 
@@ -196,8 +176,7 @@ class ConnectionContextBase(RequiredConfig):
             return self._bucket_cache[bucket_name]
 
     def submit(self, id, name_of_thing, thing):
-        """submit something to boto.
-        """
+        """Submit something to boto"""
         # can only submit strings to boto
         assert isinstance(thing, six.string_types), type(thing)
         try:
@@ -224,7 +203,7 @@ class ConnectionContextBase(RequiredConfig):
             )
 
     def fetch(self, id, name_of_thing):
-        """retrieve something from boto"""
+        """Retrieve something from boto"""
         conn = self._connect()
         bucket = self._get_bucket(conn, self.config.bucket_name)
 
@@ -254,29 +233,23 @@ class ConnectionContextBase(RequiredConfig):
     def _convert_string_to_list(self, a_string):
         return json.loads(a_string)
 
-    def commit(self):
-        """boto doesn't support transactions so this silently
-        does nothing"""
-
-    def rollback(self):
-        """boto doesn't support transactions so this silently
-        does nothing"""
-
     @contextlib.contextmanager
     def __call__(self):
         yield self
 
-    def in_transaction(self, dummy):
-        """boto doesn't support transactions, so it is never in
-        a transaction."""
-        return False
-
     def force_reconnect(self):
-        try:
-            del self.connection
-        except AttributeError:
-            # already deleted, ignorable
-            pass
+        pass
+
+    def is_retryable_exception(self, exc):
+        return (
+            # These are ephemeral problems that might go away with time
+            isinstance(exc, self.RETRYABLE_EXCEPTIONS) or
+
+            # This indicates that the item isn't there, but in the case of
+            # fetching raw crash data, it's possible it's not there *yet* so we
+            # want to give it a few more chances
+            'not found, no value returned' in str(exc)
+        )
 
 
 class S3ConnectionContext(ConnectionContextBase):
@@ -293,7 +266,6 @@ class S3ConnectionContext(ConnectionContextBase):
 
     def __init__(self, config, quit_check_callback=None):
         super(S3ConnectionContext, self).__init__(config)
-
         self._connect_to_endpoint = boto.connect_s3
         self._calling_format = config.calling_format
 
@@ -307,9 +279,11 @@ class S3ConnectionContext(ConnectionContextBase):
 
 
 class RegionalS3ConnectionContext(S3ConnectionContext):
-    """This derviced class forces you to connect to a specific region
-    which means we can use the OrdinaryCallingFormat as a calling format
-    and then we'll be able to connect to S3 buckets with names in them.
+    """Connection context for a specific region
+
+    This lets you use the OrdinaryCallingFormat as a calling format and then
+    you can use S3 buckets with periods in the names.
+
     """
     required_config = Namespace()
     required_config.add_option(
@@ -351,14 +325,11 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
 
 
 class HostPortS3ConnectionContext(S3ConnectionContext):
-    """Connection context for connecting to an S3-like service at a specified
-    host/port
+    """Connection context for connecting to S3-like service at specified host/port
 
-    This is useful if you're connecting to a fake s3 or minio or some other
-    non-S3 thing.
+    Useful if you're connecting to a fake s3 or minio or some other non-S3 thing.
 
     """
-
     required_config = Namespace()
     required_config.add_option(
         'host',

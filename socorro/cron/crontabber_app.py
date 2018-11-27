@@ -6,7 +6,6 @@
 from __future__ import print_function
 
 import datetime
-from functools import partial
 import inspect
 import json
 import re
@@ -37,25 +36,10 @@ from socorro.lib.dbutil import (
     single_row_sql,
     single_value_sql,
 )
+from socorro.lib.transaction import transaction_context
 
 
 metrics = markus.get_metrics('crontabber')
-
-
-# a method decorator that indicates that the method defines a single transacton
-# on a database connection.  It invokes the method using the instance's
-# transaction object, automatically passing in the appropriate database
-# connection.  Any abnormal exit from the method will result in a 'rollback'
-# any normal exit will result in a 'commit'
-def database_transaction(transaction_object_name='transaction_executor'):
-    def transaction_decorator(method):
-        def _do_transaction(self, *args, **kwargs):
-            x = getattr(self, transaction_object_name)(
-                partial(method, self), *args, **kwargs
-            )
-            return x
-        return _do_transaction
-    return transaction_decorator
 
 
 class JobNotFoundError(Exception):
@@ -143,49 +127,36 @@ class JobStateDatabase(RequiredConfig):
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
     )
-    required_config.add_option(
-        'transaction_executor_class',
-        default='socorro.lib.transaction.TransactionExecutor',
-        doc='a class that will execute transactions',
-        from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
-    )
 
     def __init__(self, config=None):
         self.config = config
-
         self.database_class = config.database_class(config)
-        self.transaction_executor = self.config.transaction_executor_class(
-            self.config,
-            self.database_class
-        )
 
     def has_data(self):
-        return bool(self.transaction_executor(
-            single_value_sql,
-            'SELECT count(*) FROM cron_job'
-        ))
+        with transaction_context(self.database_class) as conn:
+            return bool(single_value_sql(conn, 'SELECT count(*) FROM cron_job'))
 
     def __iter__(self):
-        return iter([
-            record[0] for record in
-            self.transaction_executor(
-                execute_query_fetchall,
-                'SELECT app_name FROM cron_job'
-            )
-        ])
+        records = []
+        with transaction_context(self.database_class) as conn:
+            records.extend([
+                record[0] for record in
+                execute_query_fetchall(conn, 'SELECT app_name FROM cron_job')
+            ])
+        return iter(records)
 
     def __contains__(self, key):
         """return True if we have a job by this key"""
         try:
-            self.transaction_executor(
-                single_value_sql,
-                """SELECT app_name
-                   FROM cron_job
-                   WHERE app_name = %s""",
-                (key,)
-            )
-            return True
+            with transaction_context(self.database_class) as conn:
+                single_value_sql(
+                    conn,
+                    """SELECT app_name
+                    FROM cron_job
+                    WHERE app_name = %s""",
+                    (key,)
+                )
+                return True
         except SQLDidNotReturnSingleValue:
             return False
 
@@ -208,9 +179,10 @@ class JobStateDatabase(RequiredConfig):
             'depends_on', 'error_count', 'last_error'
         )
         items = []
-        for record in self.transaction_executor(execute_query_fetchall, sql):
-            row = dict(zip(columns, record))
-            items.append((row.pop('app_name'), row))
+        with transaction_context(self.database_class) as conn:
+            for record in execute_query_fetchall(conn, sql):
+                row = dict(zip(columns, record))
+                items.append((row.pop('app_name'), row))
         return items
 
     def keys(self):
@@ -241,7 +213,8 @@ class JobStateDatabase(RequiredConfig):
             'depends_on', 'error_count', 'last_error', 'ongoing'
         )
         try:
-            record = self.transaction_executor(single_row_sql, sql, (key,))
+            with transaction_context(self.database_class) as conn:
+                record = single_row_sql(conn, sql, (key,))
         except SQLDidNotReturnSingleRow:
             raise KeyError(key)
         row = dict(zip(columns, record))
@@ -252,53 +225,103 @@ class JobStateDatabase(RequiredConfig):
 
         return row
 
-    @database_transaction()
-    def __setitem__(self, connection, key, value):
+    def __setitem__(self, key, value):
         class LastErrorEncoder(json.JSONEncoder):
             def default(self, obj):
                 if isinstance(obj, type):
                     return repr(obj)
                 return json.JSONEncoder.default(self, obj)
 
-        try:
-            single_value_sql(
-                connection,
+        with transaction_context(self.database_class) as connection:
+            try:
+                single_value_sql(
+                    connection,
+                    """
+                    SELECT ongoing
+                    FROM cron_job
+                    WHERE
+                        app_name = %s
+                    FOR UPDATE NOWAIT
+                    """,
+                    (key,)
+                )
+                # If the above single_value_sql() didn't raise a
+                # SQLDidNotReturnSingleValue exception, it means
+                # there is a row by this app_name.
+                # Therefore, the next SQL is an update.
+                next_sql = """
+                    UPDATE cron_job
+                    SET
+                        next_run = %(next_run)s,
+                        first_run = %(first_run)s,
+                        last_run = %(last_run)s,
+                        last_success = %(last_success)s,
+                        depends_on = %(depends_on)s,
+                        error_count = %(error_count)s,
+                        last_error = %(last_error)s,
+                        ongoing = %(ongoing)s
+                    WHERE
+                        app_name = %(app_name)s
                 """
-                SELECT ongoing
-                FROM cron_job
-                WHERE
-                    app_name = %s
-                FOR UPDATE NOWAIT
-                """,
-                (key,)
-            )
-            # If the above single_value_sql() didn't raise a
-            # SQLDidNotReturnSingleValue exception, it means
-            # there is a row by this app_name.
-            # Therefore, the next SQL is an update.
-            next_sql = """
-                UPDATE cron_job
-                SET
-                    next_run = %(next_run)s,
-                    first_run = %(first_run)s,
-                    last_run = %(last_run)s,
-                    last_success = %(last_success)s,
-                    depends_on = %(depends_on)s,
-                    error_count = %(error_count)s,
-                    last_error = %(last_error)s,
-                    ongoing = %(ongoing)s
-                WHERE
-                    app_name = %(app_name)s
-            """
-        except OperationalError as exception:
-            if 'could not obtain lock' in exception.args[0]:
-                raise RowLevelLockError(exception.args[0])
-            else:
+            except OperationalError as exception:
+                if 'could not obtain lock' in exception.args[0]:
+                    raise RowLevelLockError(exception.args[0])
+                else:
+                    raise
+            except SQLDidNotReturnSingleValue:
+                # the key does not exist, do an insert
+                next_sql = """
+                    INSERT INTO cron_job (
+                        app_name,
+                        next_run,
+                        first_run,
+                        last_run,
+                        last_success,
+                        depends_on,
+                        error_count,
+                        last_error,
+                        ongoing
+                    ) VALUES (
+                        %(app_name)s,
+                        %(next_run)s,
+                        %(first_run)s,
+                        %(last_run)s,
+                        %(last_success)s,
+                        %(depends_on)s,
+                        %(error_count)s,
+                        %(last_error)s,
+                        %(ongoing)s
+                    )
+                """
+
+            # serialize last_error if it's a {}
+            last_error = value['last_error']
+            if isinstance(last_error, dict):
+                last_error = json.dumps(value['last_error'], cls=LastErrorEncoder)
+
+            parameters = {
+                'app_name': key,
+                'next_run': value['next_run'],
+                'first_run': value['first_run'],
+                'last_run': value['last_run'],
+                'last_success': value.get('last_success'),
+                'depends_on': value['depends_on'],
+                'error_count': value['error_count'],
+                'last_error': last_error,
+                'ongoing': value.get('ongoing'),
+            }
+            try:
+                execute_no_results(connection, next_sql, parameters)
+            except IntegrityError as exception:
+                # See CREATE_CRONTABBER_APP_NAME_UNIQUE_INDEX for why
+                # we know to look for this mentioned in the error message.
+                if 'crontabber_unique_app_name_idx' in exception.args[0]:
+                    raise RowLevelLockError(exception.args[0])
                 raise
-        except SQLDidNotReturnSingleValue:
-            # the key does not exist, do an insert
-            next_sql = """
-                INSERT INTO cron_job (
+
+    def copy(self):
+        with transaction_context(self.database_class) as connection:
+            sql = """SELECT
                     app_name,
                     next_run,
                     first_run,
@@ -308,72 +331,18 @@ class JobStateDatabase(RequiredConfig):
                     error_count,
                     last_error,
                     ongoing
-                ) VALUES (
-                    %(app_name)s,
-                    %(next_run)s,
-                    %(first_run)s,
-                    %(last_run)s,
-                    %(last_success)s,
-                    %(depends_on)s,
-                    %(error_count)s,
-                    %(last_error)s,
-                    %(ongoing)s
-                )
+                FROM cron_job
             """
-
-        # serialize last_error if it's a {}
-        last_error = value['last_error']
-        if isinstance(last_error, dict):
-            last_error = json.dumps(value['last_error'], cls=LastErrorEncoder)
-
-        parameters = {
-            'app_name': key,
-            'next_run': value['next_run'],
-            'first_run': value['first_run'],
-            'last_run': value['last_run'],
-            'last_success': value.get('last_success'),
-            'depends_on': value['depends_on'],
-            'error_count': value['error_count'],
-            'last_error': last_error,
-            'ongoing': value.get('ongoing'),
-        }
-        try:
-            execute_no_results(
-                connection,
-                next_sql,
-                parameters
+            columns = (
+                'app_name',
+                'next_run', 'first_run', 'last_run', 'last_success',
+                'depends_on', 'error_count', 'last_error', 'ongoing'
             )
-        except IntegrityError as exception:
-            # See CREATE_CRONTABBER_APP_NAME_UNIQUE_INDEX for why
-            # we know to look for this mentioned in the error message.
-            if 'crontabber_unique_app_name_idx' in exception.args[0]:
-                raise RowLevelLockError(exception.args[0])
-            raise
-
-    @database_transaction()
-    def copy(self, connection):
-        sql = """SELECT
-                app_name,
-                next_run,
-                first_run,
-                last_run,
-                last_success,
-                depends_on,
-                error_count,
-                last_error,
-                ongoing
-            FROM cron_job
-        """
-        columns = (
-            'app_name',
-            'next_run', 'first_run', 'last_run', 'last_success',
-            'depends_on', 'error_count', 'last_error', 'ongoing'
-        )
-        all = {}
-        for record in execute_query_iter(connection, sql):
-            row = dict(zip(columns, record))
-            all[row.pop('app_name')] = row
-        return all
+            all = {}
+            for record in execute_query_iter(connection, sql):
+                row = dict(zip(columns, record))
+                all[row.pop('app_name')] = row
+            return all
 
     def update(self, data):
         for key in data:
@@ -401,28 +370,29 @@ class JobStateDatabase(RequiredConfig):
                 raise
             return default
 
-    @database_transaction()
-    def __delitem__(self, connection, key):
+    def __delitem__(self, key):
         """remove the item by key or raise KeyError"""
-        try:
-            # result intentionally ignored
-            single_value_sql(
+        with transaction_context(self.database_class) as connection:
+            try:
+                # result intentionally ignored
+                single_value_sql(
+                    connection,
+                    """SELECT app_name
+                       FROM cron_job
+                       WHERE
+                            app_name = %s""",
+                    (key,)
+                )
+            except SQLDidNotReturnSingleValue:
+                raise KeyError(key)
+
+            # item exists
+            execute_no_results(
                 connection,
-                """SELECT app_name
-                   FROM cron_job
-                   WHERE
-                        app_name = %s""",
+                """DELETE FROM cron_job
+                   WHERE app_name = %s""",
                 (key,)
             )
-        except SQLDidNotReturnSingleValue:
-            raise KeyError(key)
-        # item exists
-        execute_no_results(
-            connection,
-            """DELETE FROM cron_job
-               WHERE app_name = %s""",
-            (key,)
-        )
 
 
 def _default_list_splitter(class_list_str):
@@ -645,13 +615,6 @@ class CronTabberApp(App, RequiredConfig):
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
     )
-    required_config.crontabber.add_option(
-        'transaction_executor_class',
-        default='socorro.lib.transaction.TransactionExecutor',
-        doc='a class that will execute transactions',
-        from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
-    )
 
     # sentry
     required_config.namespace('sentry')
@@ -728,12 +691,6 @@ class CronTabberApp(App, RequiredConfig):
     def __init__(self, config):
         super(CronTabberApp, self).__init__(config)
         self.database_class = self.config.crontabber.database_class(config.crontabber)
-        self.transaction_executor = (
-            self.config.crontabber.transaction_executor_class(
-                config.crontabber,
-                self.database_class
-            )
-        )
 
     def main(self):
         if self.config.get('list-jobs'):
@@ -952,6 +909,8 @@ class CronTabberApp(App, RequiredConfig):
         last_success = None
         now = utc_now()
         log_run = True
+
+        exc_type = exc_value = exc_tb = None
         try:
             t0 = time.time()
             for last_success in self._run_job(job_class, config, info):
@@ -962,7 +921,6 @@ class CronTabberApp(App, RequiredConfig):
                 # many times this will loop. Anyway, we need to reset the
                 # 't0' for the next loop if there is one.
                 t0 = time.time()
-            exc_type = exc_value = exc_tb = None
         except (OngoingJobError, RowLevelLockError):
             # It's not an actual runtime error. It just basically means
             # you can't start crontabber right now.
@@ -999,57 +957,57 @@ class CronTabberApp(App, RequiredConfig):
                     exc_type, exc_value, exc_tb
                 )
 
-    @database_transaction()
-    def _remember_success(self, connection, class_, success_date, duration):
-        app_name = class_.app_name
-        execute_no_results(
-            connection,
-            """INSERT INTO cron_log (
-                app_name,
-                success,
-                duration,
-                log_time
-            ) VALUES (
-                %s,
-                %s,
-                %s,
-                %s
-            )""",
-            (app_name, success_date, '%.5f' % duration, utc_now()),
-        )
-        metrics.gauge('job_success_runtime', value=duration, tags=['job:%s' % app_name])
+    def _remember_success(self, class_, success_date, duration):
+        with transaction_context(self.database_class) as connection:
+            app_name = class_.app_name
+            execute_no_results(
+                connection,
+                """INSERT INTO cron_log (
+                    app_name,
+                    success,
+                    duration,
+                    log_time
+                ) VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )""",
+                (app_name, success_date, '%.5f' % duration, utc_now()),
+            )
+            metrics.gauge('job_success_runtime', value=duration, tags=['job:%s' % app_name])
 
-    @database_transaction()
-    def _remember_failure(self, connection, class_, duration, exc_type, exc_value, exc_tb):
-        exc_traceback = ''.join(traceback.format_tb(exc_tb))
-        app_name = class_.app_name
-        execute_no_results(
-            connection,
-            """INSERT INTO cron_log (
-                app_name,
-                duration,
-                exc_type,
-                exc_value,
-                exc_traceback,
-                log_time
-            ) VALUES (
-                %s,
-                %s,
-                %s,
-                %s,
-                %s,
-                %s
-            )""",
-            (
-                app_name,
-                '%.5f' % duration,
-                repr(exc_type),
-                repr(exc_value),
-                exc_traceback,
-                utc_now()
-            ),
-        )
-        metrics.gauge('job_failure_runtime', value=duration, tags=['job:%s' % app_name])
+    def _remember_failure(self, class_, duration, exc_type, exc_value, exc_tb):
+        with transaction_context(self.database_class) as connection:
+            exc_traceback = ''.join(traceback.format_tb(exc_tb))
+            app_name = class_.app_name
+            execute_no_results(
+                connection,
+                """INSERT INTO cron_log (
+                    app_name,
+                    duration,
+                    exc_type,
+                    exc_value,
+                    exc_traceback,
+                    log_time
+                ) VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )""",
+                (
+                    app_name,
+                    '%.5f' % duration,
+                    repr(exc_type),
+                    repr(exc_value),
+                    exc_traceback,
+                    utc_now()
+                ),
+            )
+            metrics.gauge('job_failure_runtime', value=duration, tags=['job:%s' % app_name])
 
     def check_dependencies(self, class_):
         try:

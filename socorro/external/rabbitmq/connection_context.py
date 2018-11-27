@@ -6,21 +6,19 @@ import socket
 import contextlib
 import pika
 
-from configman.config_manager import RequiredConfig
-from configman import Namespace
+from configman import Namespace, RequiredConfig
 
 
 class Connection(object):
     """A facade in front of a RabbitMQ channel that standardizes certain gross
-    elements of its API with those of other connection types.  Clients of this
-    class get access to some general behaviors that typically used in the
-    Transaction classes.  Drilling down to the actual underlying connection
-    for implementation of more specific behaviors is encouraged. This class is
-    not intended to be instantiated by clients of this module, though it is
-    not forbidden.  Instances of this class are returned by the connection
-    context factories ConnectionContext and ConnectionContextPooled below.
-    This class is as thread safe as the underlying connection - as of 2013,
-    that means not thread safe.
+    elements of its API with those of other connection types.
+
+    This class is not intended to be instantiated by clients of this module,
+    though it is not forbidden. Instances of this class are returned by the
+    connection context factories ConnectionContext and ConnectionContextPooled
+    below. This class is as thread safe as the underlying connection - as of
+    2013, that means not thread safe.
+
     """
 
     def __init__(self, config, connection,
@@ -61,12 +59,6 @@ class Connection(object):
         # adding some common semantics to aid the implementation of the fully
         # abstracted RabbitMQCrashStorage class.
 
-    def commit(self):
-        pass
-
-    def rollback(self):
-        pass
-
     def close(self):
         self.connection.close()
 
@@ -76,10 +68,9 @@ class ConnectionContext(RequiredConfig):
     to RabbitMQ wrapped in the minimal Connection class above.  Suitable for
     use in a "with" statment this class will handle opening a connection to
     RabbitMQ and its subsequent closure.  Use this class only when connections
-    are never reused outside of the context for which they were created."""
-    # configman parameter definition section
-    # here we're setting up the minimal parameters required for connecting
-    # to a RabbitMQ server.
+    are never reused outside of the context for which they were created.
+
+    """
     required_config = Namespace()
     required_config.add_option(
         name='host',
@@ -136,6 +127,16 @@ class ConnectionContext(RequiredConfig):
         reference_value_from='resource.rabbitmq',
     )
 
+    # These exceptions indicate the connection should get closed and a new
+    # one created and the operation retried
+    RETRYABLE_EXCEPTIONS = (
+        pika.exceptions.AMQPConnectionError,
+        pika.exceptions.ChannelClosed,
+        pika.exceptions.ConnectionClosed,
+        pika.exceptions.NoFreeChannels,
+        socket.timeout
+    )
+
     def __init__(self, config, local_config=None):
         """Initialize the parts needed to start making RabbitMQ connections
 
@@ -144,33 +145,13 @@ class ConnectionContext(RequiredConfig):
                      would be where a logger or other resources could be
                      found.
             local_config - this is the namespace within the complete config
-                           where the actual RabbitMQ parameters are found"""
+                           where the actual RabbitMQ parameters are found
+        """
         super(ConnectionContext, self).__init__()
         self.config = config
         if local_config is None:
             local_config = config
         self.local_config = local_config
-
-        # if a connection raises one of these exceptions, then they are
-        # considered to be retriable exceptions.  This class does not implement
-        # any retry behaviors itself, but just provides this information
-        # about the connections it produces.  This is to facilitate a client
-        # of this class to define its own retry or transaction behavior.
-        # The information is used by the TransactionExector classes
-        self.operational_exceptions = (
-            pika.exceptions.AMQPConnectionError,
-            pika.exceptions.ChannelClosed,
-            pika.exceptions.ConnectionClosed,
-            pika.exceptions.NoFreeChannels,
-            socket.timeout
-        )
-        # conditional exceptions are amibiguous in their eligibilty to
-        # trigger a retry behavior.  They're listed here so that custom code
-        # written in the 'is_operational_exception' method can examine them
-        # more closel and make the determination.  No ambiguous exceptions
-        # have been identified, if and or when they are identified, they should
-        # be entered here.
-        self.conditional_exceptions = ()
 
     def connection(self, name=None):
         """create a new RabbitMQ connection, set it up for our queues, then
@@ -207,7 +188,9 @@ class ConnectionContext(RequiredConfig):
         not try to commit or rollback lingering transactions.
 
         parameters:
-            name - an optional name for the RabbitMQ connection"""
+            name - an optional name for the RabbitMQ connection
+
+        """
         wrapped_rabbitmq_connection = self.connection(name)
         try:
             yield wrapped_rabbitmq_connection
@@ -229,22 +212,21 @@ class ConnectionContext(RequiredConfig):
     def close(self):
         """close any pooled or cached connections.  Since this base class
         object does no caching, there is no implementation required.  Derived
-        classes may implement it."""
+        classes may implement it
+        """
         pass
 
     def force_reconnect(self):
-        """since this class uses a model where connections are opened and
-        closed within the bounds of a context manager, this method is a
-        No Op.  Derived classes may choose to do otherwise."""
+        """Force reconnect
+
+        This is a no-op because connections get created and destroyed in the
+        contextmanager.
+
+        """
         pass
 
-    def is_operational_exception(self, msg):
-        """Sometimes a resource connection can raise an ambiguous exception.
-        The exception could either be an OperationalException (therefore
-        eligible to be retried) or an unrecoverable exception.  This function
-        is for implementation of code that make the determination.  No such
-        exception have yet been identified.  """
-        return False
+    def is_retryable_exception(self, exc):
+        return isinstance(exc, self.RETRYABLE_EXCEPTIONS)
 
 
 class ConnectionContextPooled(ConnectionContext):
@@ -281,9 +263,11 @@ class ConnectionContextPooled(ConnectionContext):
         return self.pool[name]
 
     def close_connection(self, connection, force=False):
-        """overriding the baseclass function, this routine will decline to
-        close a connection at the end of a connection context.  This allows
-        for reuse of connections."""
+        """Closes a connection only if forced
+
+        This allows reuse of connections created in the contextmanager.
+
+        """
         if force:
             try:
                 super(ConnectionContextPooled, self).close_connection(connection, force)
@@ -295,19 +279,14 @@ class ConnectionContextPooled(ConnectionContext):
             del self.pool[name]
 
     def close(self):
-        """close all pooled connections"""
+        """Close all pooled connections"""
         self.config.logger.debug('RabbitMQPooled - shutting down connection pool')
         for name, connection in list(self.pool.items()):
             self.close_connection(connection, force=True)
             self.config.logger.debug('RabbitMQPooled - channel %s closed', name)
 
     def force_reconnect(self, name=None):
-        """tell this functor that the next time it gives out a connection
-        under the given name, it had better make sure it is brand new clean
-        connection.  Use this when you discover that your connection has
-        gone bad and you want to report that fact to the appropriate
-        authority.  You are responsible for actually closing the connection or
-        not, if it is really hosed."""
+        """Force reconnect"""
         if name is None:
             name = self.config.executor_identity()
         if name in self.pool:

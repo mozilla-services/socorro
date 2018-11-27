@@ -2,23 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import pika
-from random import randint
 
-
-from configman import (
-    Namespace,
-    class_converter
-)
+from configman import Namespace
 from configman.dotdict import DotDict
+import pika
 from six.moves.queue import Queue, Empty
 
-from socorro.lib.converters import change_default
+from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.rabbitmq.connection_context import (
     ConnectionContext,
-    ConnectionContextPooled,
+    ConnectionContextPooled
 )
-from socorro.external.crashstorage_base import CrashStorageBase
+from socorro.lib.converters import change_default
+from socorro.lib.transaction import retry
 
 
 class RabbitMQCrashStorage(CrashStorageBase):
@@ -31,26 +27,20 @@ class RabbitMQCrashStorage(CrashStorageBase):
     should be used in conjuction with a more persistant storage mechanism.
 
     The implementations CrashStorage classes can use arbitrarly high or low
-    level semantics to talk to their underlying resource.  In the RabbitMQ,
-    implementation, queing through the 'save_raw_crash' method is given full
-    transactional semantics using the TransactorExecutor classes.  The
-    'new_crashes' generator has a lower level relationship with the
-    underlying connection object"""
+    level semantics to talk to their underlying resource.
+
+    The 'new_crashes' generator has a lower level relationship with the
+    underlying connection object
+
+    """
 
     required_config = Namespace()
     required_config.add_option(
         'rabbitmq_class',
-        default=ConnectionContextPooled,  # we choose a pooled connection
-                                          # because we need thread safe
-                                          # connection behaviors
+        # we choose a pooled connection because we need thread safe connection
+        # behaviors
+        default=ConnectionContextPooled,
         doc='the class responsible for connecting to RabbitMQ',
-        reference_value_from='resource.rabbitmq',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default='socorro.lib.transaction.TransactionExecutorWithInfiniteBackoff',
-        doc='a class that will manage transactions',
-        from_string_converter=class_converter,
         reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
@@ -65,12 +55,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
         doc='toggle for using or ignoring the throttling flag',
         reference_value_from='resource.rabbitmq',
     )
-    required_config.add_option(
-        'throttle',
-        default=100,
-        doc='percentage of the time that rabbit will try to queue',
-        reference_value_from='resource.rabbitmq',
-    )
 
     def __init__(self, config, namespace='', quit_check_callback=None):
         super(RabbitMQCrashStorage, self).__init__(
@@ -79,40 +63,18 @@ class RabbitMQCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
-        self.config = config
-
         # Note: this may continue to grow if we aren't acking certain UUIDs.
         # We should find a way to time out UUIDs after a certain time.
         self.acknowledgement_token_cache = {}
         self.acknowledgment_queue = Queue()
 
         self.rabbitmq = config.rabbitmq_class(config)
-        self.transaction = config.transaction_executor_class(
-            config,
-            self.rabbitmq,
-            quit_check_callback=quit_check_callback
-        )
-
-        # cache this object so we don't have to remake it for every transaction
         self._basic_properties = pika.BasicProperties(
-            delivery_mode=2,  # make message persistent
+            # Make message persistent
+            delivery_mode=2,
         )
-
-        if config.throttle == 100:
-            self.dont_queue_this_crash = lambda: False
-        else:
-            self.dont_queue_this_crash = (
-                lambda: randint(1, 100) > config.throttle
-            )
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        if self.dont_queue_this_crash():
-            self.config.logger.info(
-                'Crash %s filtered out of RabbitMQ queue %s',
-                crash_id,
-                self.config.routing_key
-            )
-            return
         try:
             this_crash_should_be_queued = (
                 not self.config.filter_on_legacy_processing or
@@ -126,10 +88,13 @@ class RabbitMQCrashStorage(CrashStorageBase):
             return
 
         if this_crash_should_be_queued:
-            self.config.logger.debug(
-                'RabbitMQCrashStorage saving crash %s', crash_id
+            self.config.logger.debug('RabbitMQCrashStorage saving crash %s', crash_id)
+            retry(
+                self.rabbitmq,
+                self.quit_check,
+                self._save_raw_crash,
+                crash_id=crash_id
             )
-            self.transaction(self._save_raw_crash_transaction, crash_id)
             return True
         else:
             self.config.logger.debug(
@@ -137,7 +102,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 'flag is %s', crash_id, raw_crash.legacy_processing
             )
 
-    def _save_raw_crash_transaction(self, connection, crash_id):
+    def _save_raw_crash(self, connection, crash_id):
         connection.channel.basic_publish(
             exchange='',
             routing_key=self.config.routing_key,
@@ -145,11 +110,8 @@ class RabbitMQCrashStorage(CrashStorageBase):
             properties=self._basic_properties
         )
 
-    def _basic_get_transaction(self, conn, queue):
-        """reorganize the the call to rabbitmq basic_get so that it can be
-        used by the transaction retry wrapper."""
-        things = conn.channel.basic_get(queue=queue)
-        return things
+    def _basic_get(self, conn, queue):
+        return conn.channel.basic_get(queue=queue)
 
     def new_crashes(self):
         """This generator fetches crash_ids from RabbitMQ."""
@@ -171,14 +133,13 @@ class RabbitMQCrashStorage(CrashStorageBase):
         ]
         while True:
             for queue in queues:
-                method_frame, header_frame, body = self.transaction(
-                    self._basic_get_transaction,
+                method_frame, header_frame, body = retry(
+                    self.rabbitmq,
+                    self.quit_check,
+                    self._basic_get,
                     queue=queue
                 )
-                if method_frame and self._suppress_duplicate_jobs(
-                    body,
-                    method_frame
-                ):
+                if method_frame and self._suppress_duplicate_jobs(body, method_frame):
                     continue
                 if method_frame:
                     break
@@ -201,15 +162,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
         to let the caller know to skip on to the next crash."""
         if crash_id in self.acknowledgement_token_cache:
             # reject this crash - it's already being processsed
-            self.config.logger.info(
-                'duplicate job: %s is already in progress',
-                crash_id
-            )
+            self.config.logger.info('duplicate job: %s is already in progress', crash_id)
             # ack this
-            self.transaction(
-                self._transaction_ack_crash,
-                crash_id,
-                acknowledgement_token
+            retry(
+                self.rabbitmq,
+                self.quit_check,
+                self._ack_crash,
+                crash_id=crash_id,
+                acknowledgement_token=acknowledgement_token
             )
             return True
         return False
@@ -221,25 +181,20 @@ class RabbitMQCrashStorage(CrashStorageBase):
         'acknowledgment_queue'.  That queue is consumed by the QueuingThread"""
         try:
             while True:
-                crash_id_to_be_acknowledged = \
-                    self.acknowledgment_queue.get_nowait()
-                # self.config.logger.debug(
-                #     'RabbitMQCrashStorage set to acknowledge %s',
-                #     crash_id_to_be_acknowledged
-                # )
+                crash_id_to_be_acknowledged = self.acknowledgment_queue.get_nowait()
+
                 try:
-                    acknowledgement_token = \
-                        self.acknowledgement_token_cache[
-                            crash_id_to_be_acknowledged
-                        ]
-                    self.transaction(
-                        self._transaction_ack_crash,
-                        crash_id_to_be_acknowledged,
-                        acknowledgement_token
-                    )
-                    del self.acknowledgement_token_cache[
+                    acknowledgement_token = self.acknowledgement_token_cache[
                         crash_id_to_be_acknowledged
                     ]
+                    retry(
+                        self.rabbitmq,
+                        self.quit_check,
+                        self._ack_crash,
+                        crash_id=crash_id_to_be_acknowledged,
+                        acknowledgement_token=acknowledgement_token
+                    )
+                    del self.acknowledgement_token_cache[crash_id_to_be_acknowledged]
                 except KeyError:
                     self.config.logger.warning(
                         'RabbitMQCrashStorage tried to acknowledge crash %s'
@@ -257,15 +212,8 @@ class RabbitMQCrashStorage(CrashStorageBase):
         except Empty:
             pass  # nothing to do with an empty queue
 
-    def _transaction_ack_crash(
-        self,
-        connection,
-        crash_id,
-        acknowledgement_token
-    ):
-        connection.channel.basic_ack(
-            delivery_tag=acknowledgement_token.delivery_tag
-        )
+    def _ack_crash(self, connection, crash_id, acknowledgement_token):
+        connection.channel.basic_ack(delivery_tag=acknowledgement_token.delivery_tag)
         self.config.logger.debug(
             'RabbitMQCrashStorage acking %s with delivery_tag %s',
             crash_id,

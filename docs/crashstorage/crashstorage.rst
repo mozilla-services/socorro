@@ -42,29 +42,6 @@ fork "streams of crashes" into different storage engines. Also, the
 `CrashStorage` containers can contain each other!
 
 
-socorro.lib.transaction
-=======================
-
-* `TransactionExecutor`: A functor; a default version of a transaction function
-  that contains a commit, rollback depending on whether a transaction succeeds
-  or fails.
-
-* `TransactionExecutorWithInfiniteBackoff` - will retry a transaction forever as
-  long as the failure is a retriable failure. The failures which are retriable
-  are defined in 'operational_exceptions' - in the implementation of
-  `ConnectionContext` for any `CrashStorageBase` class. Also have
-  'conditional_exceptions', where some exceptions are retriable and others are
-  not and we have a function ``is_operational_exception`` to test the contents
-  of the exception string passed back to determine whether or not we really want
-  to retry. ``wait_log_interval`` is the configured value for notifying the
-  logger that the backoff system is sleeping, rather than just silently waiting.
-
-* `TransactionExecutorWithLimitedBackoff` - Redefines the ``backoff_generator()``
-  to stop after the last emitted ``backoff_delays`` list item.
-
-*TODO: Move this to socorro.external*
-
-
 connection_context
 ==================
 

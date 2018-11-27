@@ -25,7 +25,6 @@ class TestProcessor2015(TestCase):
         config = cm.get_config()
         config.logger = Mock()
         config.database_class = Mock()
-        config.transaction_executor_class = Mock()
         config.sentry = Mock()
         config.processor_name = 'dwight'
         return config

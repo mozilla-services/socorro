@@ -2,371 +2,128 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from configman import Namespace, ConfigurationManager, class_converter
 import mock
-import psycopg2
 import pytest
 
 from socorro.lib.transaction import (
-    TransactionExecutor,
-    TransactionExecutorWithInfiniteBackoff
+    retry,
+    transaction_context
 )
-from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.unittest.testbase import TestCase
 
 
-class SomeError(Exception):
-    pass
+class Test_transaction_context(object):
+    def test_commit_called(self):
+        connection_context = mock.MagicMock()
+
+        with transaction_context(connection_context):
+            pass
+
+        # Assert rollback() gets called because an exception was thrown in the
+        # context
+        assert connection_context.return_value.__enter__.return_value.commit.called
+
+    def test_rollback_called(self):
+        connection_context = mock.MagicMock()
+
+        exc = Exception('omg')
+
+        with pytest.raises(Exception) as exc_info:
+            with transaction_context(connection_context):
+                raise exc
+
+        # Assert rollback() gets called because an exception was thrown in the
+        # context
+        assert connection_context.return_value.__enter__.return_value.rollback.called
+
+        # Assert the exception is rethrown
+        assert exc_info.value == exc
 
 
-class MockConnectionContext(ConnectionContext):
+class Test_retry(object):
+    def test_fine(self):
+        conn = object()
+        connection_context = mock.MagicMock()
+        connection_context.return_value.__enter__.return_value = conn
+        quit_check = mock.MagicMock()
+        fun = mock.MagicMock()
 
-    def connection(self, __=None):
-        return MockConnection()
-
-
-class MockLogging:
-    def __init__(self):
-        self.debugs = []
-        self.warnings = []
-        self.errors = []
-        self.criticals = []
-
-    def debug(self, *args, **kwargs):
-        self.debugs.append((args, kwargs))
-
-    def warning(self, *args, **kwargs):
-        self.warnings.append((args, kwargs))
-
-    def error(self, *args, **kwargs):
-        self.errors.append((args, kwargs))
-
-    def critical(self, *args, **kwargs):
-        self.criticals.append((args, kwargs))
-
-
-class MockConnection(object):
-
-    def __init__(self):
-        self.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_IDLE
-
-    def get_transaction_status(self):
-        return self.transaction_status
-
-    def close(self):
-        pass
-
-    def commit(self):
-        global commit_count
-        commit_count += 1
-
-    def rollback(self):
-        global rollback_count
-        rollback_count += 1
-
-
-commit_count = 0
-rollback_count = 0
-
-
-class TestTransactionExecutor(TestCase):
-
-    def setUp(self):
-        global commit_count, rollback_count
-        commit_count = 0
-        rollback_count = 0
-
-    def test_basic_usage_with_postgres(self):
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutor,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
-        )
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
-
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config, mocked_context)
-            _function_calls = []  # some mutable
-
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                _function_calls.append(connection)
-
-            executor(mock_function)
-            assert _function_calls
-            assert commit_count == 1
-            assert rollback_count == 0
-
-    def test_rollback_transaction_exceptions_with_postgres(self):
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutor,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
+        retry(
+            connection_context,
+            quit_check,
+            fun
         )
 
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
+        # Assert fun was called with the connection as the first argument
+        fun.assert_called_with(conn)
 
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config, mocked_context)
+        # Assert quit_check was not called at all
+        assert not quit_check.called
 
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
-                raise SomeError('crap!')
+    def test_retry_once(self):
+        with mock.patch('socorro.lib.transaction.time.sleep') as sleep_mock:
+            sleep_mock.return_value = None
 
-            with pytest.raises(SomeError):
-                executor(mock_function)
+            conn = object()
+            connection_context = mock.MagicMock()
+            connection_context.return_value.__enter__.return_value = conn
+            quit_check = mock.MagicMock()
 
-            assert commit_count == 0
-            assert rollback_count == 1
-            assert mock_logging.errors
+            exc = Exception('omg!')
 
-    def test_basic_usage_with_postgres_with_backoff(self):
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutorWithInfiniteBackoff,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
-        )
+            def fun(conn, call_count):
+                # The first time this is called, raise an exception; use
+                # call_count to maintain state between calls
+                if len(call_count) == 0:
+                    call_count.append(1)
+                    raise exc
+                call_count.append(1)
+                return 1
 
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config, mocked_context)
-            _function_calls = []  # some mutable
+            call_count = []
+            retry(
+                connection_context,
+                quit_check,
+                fun,
+                call_count=call_count
+            )
 
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                _function_calls.append(connection)
+            # Assert fun was called twice
+            assert len(call_count) == 2
 
-            executor(mock_function)
-            assert _function_calls
-            assert commit_count == 1
-            assert rollback_count == 0
+            # Assert quit_check was called once
+            assert quit_check.call_count == 1
 
-    def test_operation_error_with_postgres_with_backoff(self):
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutorWithInfiniteBackoff,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
-        )
+    def test_retry_and_die(self):
+        with mock.patch('socorro.lib.transaction.time.sleep') as sleep_mock:
+            sleep_mock.return_value = None
 
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
+            conn = object()
+            connection_context = mock.MagicMock()
+            connection_context.return_value.__enter__.return_value = conn
+            quit_check = mock.MagicMock()
 
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config, mocked_context)
-            _function_calls = []  # some mutable
+            exc = Exception('omg!')
 
-            _sleep_count = []
+            def fun(conn, call_count):
+                # Raise exceptions to simulate failing; use call_count to keep
+                # track
+                call_count.append(1)
+                raise exc
 
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                _function_calls.append(connection)
-                # the default sleep times are going to be,
-                # 2, 4, 6, 10, 15
-                # so after 2 + 4 + 6 + 10 + 15 seconds
-                # all will be exhausted
-                if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    raise psycopg2.OperationalError('Arh!')
+            call_count = []
+            with pytest.raises(Exception) as exc_info:
+                retry(
+                    connection_context,
+                    quit_check,
+                    fun,
+                    call_count=call_count
+                )
 
-            def sleep_counter(n):
-                _sleep_count.append(n)
+            # Assert retry runs out of backoffs and throws the last error
+            assert exc_info.value == exc
 
-            with mock.patch('socorro.lib.transaction.time.sleep') as mock_sleep:
-                mock_sleep.side_effect = sleep_counter
+            # Assert fun was called six times
+            assert len(call_count) == 6
 
-                executor(mock_function)
-                assert _function_calls
-                assert commit_count == 1
-                assert rollback_count == 5
-                assert mock_logging.criticals
-                assert len(mock_logging.criticals) == 5
-                assert len(_sleep_count) > 10
-
-    def test_operation_error_with_postgres_with_backoff_with_rollback(self):
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutorWithInfiniteBackoff,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
-        )
-
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
-
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config, mocked_context)
-            _function_calls = []  # some mutable
-
-            _sleep_count = []
-
-            def mock_function(connection):
-                assert isinstance(connection, MockConnection)
-                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
-                _function_calls.append(connection)
-                # the default sleep times are going to be,
-                # 2, 4, 6, 10, 15
-                # so after 2 + 4 + 6 + 10 + 15 seconds
-                # all will be exhausted
-                if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    raise psycopg2.OperationalError('Arh!')
-
-            def sleep_counter(n):
-                _sleep_count.append(n)
-
-            with mock.patch('socorro.lib.transaction.time.sleep') as mock_sleep:
-                mock_sleep.side_effect = sleep_counter
-
-                executor(mock_function)
-                assert _function_calls
-                assert commit_count == 1
-                assert rollback_count == 5
-                assert mock_logging.criticals
-                assert len(mock_logging.criticals) == 5
-                assert len(_sleep_count) > 10
-
-    def test_programming_error_with_postgres_with_backoff_with_rollback(self):
-        required_config = Namespace()
-        required_config.add_option(
-            'transaction_executor_class',
-            default=TransactionExecutorWithInfiniteBackoff,
-            doc='a class that will execute transactions'
-        )
-        required_config.add_option(
-            'database_class',
-            default=MockConnectionContext,
-            from_string_converter=class_converter
-        )
-
-        mock_logging = MockLogging()
-        required_config.add_option('logger', default=mock_logging)
-
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
-            argv_source=[]
-        )
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config, mocked_context)
-            _function_calls = []  # some mutable
-
-            _sleep_count = []
-
-            def mock_function_struggling(connection):
-                assert isinstance(connection, MockConnection)
-                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
-                _function_calls.append(connection)
-                # the default sleep times are going to be,
-                # 2, 4, 6, 10, 15
-                # so after 2 + 4 + 6 + 10 + 15 seconds
-                # all will be exhausted
-                if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    raise psycopg2.ProgrammingError(
-                        'SSL SYSCALL error: EOF detected'
-                    )
-
-            def sleep_counter(n):
-                _sleep_count.append(n)
-
-            with mock.patch('socorro.lib.transaction.time.sleep') as mock_sleep:
-                mock_sleep.side_effect = sleep_counter
-
-                executor(mock_function_struggling)
-                assert _function_calls
-                assert commit_count == 1
-                assert rollback_count == 5
-                assert mock_logging.criticals
-                assert len(mock_logging.criticals) == 5
-                assert len(_sleep_count) > 10
-
-        # this time, simulate an actual code bug where a callable function
-        # raises a ProgrammingError() exception by, for example, a syntax error
-        with config_manager.context() as config:
-            mocked_context = config.database_class(config)
-            executor = config.transaction_executor_class(config, mocked_context)
-
-            def mock_function_developer_mistake(connection):
-                assert isinstance(connection, MockConnection)
-                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
-                raise psycopg2.ProgrammingError("syntax error")
-
-            with pytest.raises(psycopg2.ProgrammingError):
-                executor(mock_function_developer_mistake)
+            # quit_check gets called for every backoff, so 6 times
+            assert quit_check.call_count == 6

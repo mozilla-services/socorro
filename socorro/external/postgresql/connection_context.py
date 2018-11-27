@@ -25,10 +25,7 @@ def get_field_from_pg_database_url(field, default):
 
 
 class ConnectionContext(RequiredConfig):
-    """a configman compliant class for setup of Postgres connections"""
-    # configman parameter definition section
-    # here we're setting up the minimal parameters required for connecting
-    # to a database.
+    """Postgres Connection Context"""
     required_config = Namespace()
     required_config.add_option(
         name='database_hostname',
@@ -62,12 +59,10 @@ class ConnectionContext(RequiredConfig):
         secret=True,
     )
 
-    # clients of this class may need to detect Exceptions raised in the
-    # underlying dbapi2 database module.  Rather that forcing them to import
-    # what should be a hidden module, we expose just the Exception. Clients
-    # can then just refer to it as ConnectionContext.IntegrityError
-    IntegrityError = psycopg2.IntegrityError
-    ProgrammingError = psycopg2.ProgrammingError
+    RETRYABLE_EXCEPTIONS = (
+        psycopg2.InterfaceError,
+        socket.timeout
+    )
 
     def __init__(self, config, local_config=None):
         """Initialize the parts needed to start making database connections
@@ -92,14 +87,6 @@ class ConnectionContext(RequiredConfig):
             "port=%(database_port)s "
             "user=%(database_username)s "
             "password=%(database_password)s") % local_config
-        self.operational_exceptions = (
-            psycopg2.InterfaceError,
-            socket.timeout
-        )
-        self.conditional_exceptions = (
-            psycopg2.OperationalError,
-            psycopg2.ProgrammingError,
-        )
 
     def connection(self, name_unused=None):
         return psycopg2.connect(self.dsn)
@@ -112,11 +99,10 @@ class ConnectionContext(RequiredConfig):
         not try to commit or rollback lingering transactions.
 
         parameters:
-            name - an optional name for the database connection"""
-        #self.config.logger.debug('acquiring connection')
+            name - an optional name for the database connection
+        """
         conn = self.connection(name)
         try:
-            #self.config.logger.debug('connection acquired')
             yield conn
         finally:
             #self.config.logger.debug('connection closed')
@@ -137,32 +123,19 @@ class ConnectionContext(RequiredConfig):
     def close(self):
         pass
 
-    def is_operational_exception(self, exp):
-        """return True if a conditional exception is actually an operational
-        error. Return False if it's a genuine error that should probably be
-        raised and propagate up.
-
-        Some conditional exceptions might be actually be some form of
-        operational exception "labelled" wrong by the psycopg2 code error
-        handler.
-        """
-        message = exp.args[0]
+    def is_retryable_exception(self, exc):
+        """Return True if this is a retryable exception"""
+        message = exc.args[0]
         if message in ('SSL SYSCALL error: EOF detected', ):
-            # Ideally we'd like to check against exp.pgcode values
+            # Ideally we'd like to check against exc.pgcode values
             # but certain odd ProgrammingError exceptions don't have
             # pgcodes so we have to rely on reading the pgerror :(
             return True
 
-        if (
-            isinstance(exp, psycopg2.OperationalError) and
-            message not in ('out of memory',)
-        ):
+        if isinstance(exc, psycopg2.OperationalError) and message != 'out of memory':
             return True
 
-        # at the of writing, the list of exceptions is short but this would be
-        # where you add more as you discover more odd cases of psycopg2
-
-        return False
+        return isinstance(exc, self.RETRYABLE_EXCEPTIONS)
 
     def force_reconnect(self):
         pass

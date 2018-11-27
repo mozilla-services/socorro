@@ -4,13 +4,10 @@
 
 import datetime
 
-from configman import Namespace
+from configman import Namespace, class_converter
 
 from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import (
-    as_backfill_cron_app,
-    using_postgres,
-)
+from socorro.cron.mixins import as_backfill_cron_app
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFields
@@ -20,13 +17,13 @@ from socorro.lib.dbutil import (
     single_row_sql,
     SQLDidNotReturnSingleRow,
 )
+from socorro.lib.transaction import transaction_context
 
 
 # Maximum number of results returned for a super search query
 MAX_PAGE = 1000
 
 
-@using_postgres()
 @as_backfill_cron_app
 class UpdateSignaturesCronApp(BaseCronApp):
     """Updates the signatures table using crash data from Elasticsearch"""
@@ -44,6 +41,12 @@ class UpdateSignaturesCronApp(BaseCronApp):
         doc='Length of the window to look at in minutes'
     )
     required_config.add_option(
+        'database_class',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
+    required_config.add_option(
         'elasticsearch_class',
         default=ElasticsearchConfig,
     )
@@ -53,36 +56,41 @@ class UpdateSignaturesCronApp(BaseCronApp):
         doc='Print to stdout instead of updating/inserting data'
     )
 
-    def update_crashstats_signature(self, connection, signature, report_date, report_build):
-        # Pull the data in the db. If it's there, then do an update. If it's
-        # not there, then do an insert.
-        try:
-            sql = """
-            SELECT signature, first_build, first_date
-            FROM crashstats_signature
-            WHERE signature=%s
-            """
-            sig = single_row_sql(connection, sql, (signature,))
+    def __init__(self, *args, **kwargs):
+        super(UpdateSignaturesCronApp, self).__init__(*args, **kwargs)
+        self.database = self.config.database_class(self.config)
 
-            sql = """
-            UPDATE crashstats_signature
-            SET first_build=%s, first_date=%s
-            WHERE signature=%s
-            """
-            params = (
-                min(sig[1], int(report_build)),
-                min(sig[2], string_to_datetime(report_date)),
-                sig[0]
-            )
+    def update_crashstats_signature(self, signature, report_date, report_build):
+        with transaction_context(self.database) as connection:
+            # Pull the data from the db. If it's there, then do an update. If it's
+            # not there, then do an insert.
+            try:
+                sql = """
+                SELECT signature, first_build, first_date
+                FROM crashstats_signature
+                WHERE signature=%s
+                """
+                sig = single_row_sql(connection, sql, (signature,))
 
-        except SQLDidNotReturnSingleRow:
-            sql = """
-            INSERT INTO crashstats_signature (signature, first_build, first_date)
-            VALUES (%s, %s, %s)
-            """
-            params = (signature, report_build, report_date)
+                sql = """
+                UPDATE crashstats_signature
+                SET first_build=%s, first_date=%s
+                WHERE signature=%s
+                """
+                params = (
+                    min(sig[1], int(report_build)),
+                    min(sig[2], string_to_datetime(report_date)),
+                    sig[0]
+                )
 
-        execute_no_results(connection, sql, params)
+            except SQLDidNotReturnSingleRow:
+                sql = """
+                INSERT INTO crashstats_signature (signature, first_build, first_date)
+                VALUES (%s, %s, %s)
+                """
+                params = (signature, report_build, report_date)
+
+            execute_no_results(connection, sql, params)
 
     def run(self, end_datetime):
         # Truncate to the hour
@@ -161,8 +169,7 @@ class UpdateSignaturesCronApp(BaseCronApp):
                     item['build_id']
                 )
             else:
-                self.database_transaction_executor(
-                    self.update_crashstats_signature,
+                self.update_crashstats_signature(
                     signature=item['signature'],
                     report_date=item['date'],
                     report_build=item['build_id'],
