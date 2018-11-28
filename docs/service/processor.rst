@@ -47,6 +47,37 @@ crash id to the "socorro.normal" RabbitMQ queue.
 We have helper scripts for these steps.
 
 
+process_crashes.sh
+------------------
+
+You can use the ``scripts/process_crashes.sh`` script which will fetch crash
+data, sync it with the S3 bucket, and send the crash ids to rabbitmq for a
+specified set of crash ids.
+
+It takes one or more crash ids as arguments.
+
+For example:
+
+.. code-block:: shell
+
+   $ make shell
+   app@socorro:/app$ ./scripts/process_crashes.sh ed35821d-3af5-4fe9-bfa3-dc4dc0181128
+
+You can also use it with ``fecth_crashids``:
+
+.. code-block:: shell
+
+   $ make shell
+   app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | xargs scripts/process_crashes.sh
+
+After running ``scripts/process_crashes.sh``, you will need to run the
+processor which will do the actual processing.
+
+If you find this doesn't meet your needs, you can write a shell script using
+the commands and scripts that ``process_crashes.sh`` uses. They are described
+below.
+
+
 fetch_crashids
 --------------
 
@@ -206,12 +237,6 @@ Let's process crashes for Firefox from yesterday. We'd do this:
 
   # Run the processor to process all those crashes
   $ docker-compose up processor
-
-
-.. Note::
-
-   That's a lot of commands. Definitely worth writing shell scripts to automate
-   this for your specific needs.
 
 
 Processing crashes from Antenna
