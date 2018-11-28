@@ -171,8 +171,8 @@ class TestArchiveScraper(object):
         # Set up a site
         site = [
             (
-                # Create a 63.0 build1 which will add just a 63.0rc1
-                # beta entry because there's a build2
+                # Create a 63.0 build1 which will add just a 63.0rc1 beta entry
+                # because there's a build2
                 '63.0-candidates/build1/win32/en-US/buildhub.json', {
                     'build': {
                         'id': '20181015152800'
@@ -184,8 +184,8 @@ class TestArchiveScraper(object):
                 }
             ),
             (
-                # Create a 63.0 build2 which will add just a 63.0rc2
-                # beta entry and a 63.0 release entry
+                # Create a 63.0 build2 which will add just a 63.0rc2 beta entry
+                # and a 63.0 release entry
                 '63.0-candidates/build2/win32/en-US/buildhub.json', {
                     'build': {
                         'id': '20181018182531'
@@ -197,8 +197,8 @@ class TestArchiveScraper(object):
                 }
             ),
             (
-                # Create a 64.0b4 build1 which will add just a 64.0b4rc1
-                # entry because there's a build2
+                # Create a 64.0b4 build1 which will add just a 64.0b4rc1 entry
+                # because there's a build2
                 '64.0b4-candidates/build1/win32/en-US/buildhub.json', {
                     'build': {
                         'id': '20181025143507'
@@ -211,11 +211,24 @@ class TestArchiveScraper(object):
             ),
             (
                 # Create a 64.0b4 build2 which will add a 64.0b4rc1 and a
-                # 64.0b4 because this is the last buildN/ and also, there's
-                # an entry on the /releases/ page
+                # 64.0b4 because this is the last buildN/ and also, there's an
+                # entry on the /releases/ page
                 '64.0b4-candidates/build2/win32/en-US/buildhub.json', {
                     'build': {
                         'id': '20181025233934'
+                    },
+                    'target': {
+                        'channel': 'beta',
+                        'version': '64.0'
+                    }
+                }
+            ),
+            (
+                # Create a 64.0b5 buil1 which will add a 64.0b5rc1, but
+                # not a 64.0b5 because it's not listed in /releases/ page
+                '64.0b5-candidates/build1/win32/en-US/buildhub.json', {
+                    'build': {
+                        'id': '20181029164536'
                     },
                     'target': {
                         'channel': 'beta',
@@ -226,7 +239,8 @@ class TestArchiveScraper(object):
         ]
         setup_site(req_mock, '/pub/firefox/candidates', site)
 
-        # Add the releases page
+        # Add the releases page with releases for 63.0 and 64.0b4--but not
+        # 64.0b5
         release_page = render_index_template(
             path='/pub/firefox/releases/',
             links=[
@@ -293,6 +307,16 @@ class TestArchiveScraper(object):
                 'release_version': '64.0',
                 'product_name': 'Firefox'
             },
+            # 64.0b5 should have a 64.0b5rc1/beta
+            {
+                'build_id': '20181029164536',
+                'version_string': '64.0b5rc1',
+                'release_channel': 'beta',
+                'archive_url': 'http://archive.example.com/pub/firefox/candidates/64.0b5-candidates/build1/win32/en-US/buildhub.json',  # noqa
+                'major_version': 64,
+                'release_version': '64.0',
+                'product_name': 'Firefox'
+            },
         ]
 
         # Create an archive scraper
@@ -300,12 +324,12 @@ class TestArchiveScraper(object):
 
         # Scrape a first time with an empty db and assert that it inserted all
         # the versions we expected
-        archive_scraper.scrape_candidates('Firefox', '/pub/firefox/candidates/')
+        archive_scraper.scrape_candidates('Firefox', 'firefox')
         data = self.fetch_data()
         assert data == expected_data
 
         # Scrape it a second time and assert that the contents haven't
         # changed
-        archive_scraper.scrape_candidates('Firefox', '/pub/firefox/candidates/')
+        archive_scraper.scrape_candidates('Firefox', 'firefox')
         data = self.fetch_data()
         assert data == expected_data

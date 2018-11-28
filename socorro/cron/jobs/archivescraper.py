@@ -88,6 +88,13 @@ NON_PLATFORM_SUBSTRINGS = [
 ]
 
 
+def key_for_build_link(link):
+    # The path is something like "build10/". We want to pull out the
+    # integer from that.
+    path = link['path']
+    return int(''.join([c for c in path if c.isdigit()]))
+
+
 @using_postgres()
 class ArchiveScraperCronApp(BaseCronApp):
     app_name = 'archivescraper'
@@ -261,9 +268,22 @@ class ArchiveScraperCronApp(BaseCronApp):
 
         return all_json_links
 
-    def scrape_candidates(self, product_name, url_path):
+    def scrape_candidates(self, product_name, archive_directory):
         """Scrape the candidates/ directory for beta, release candidate, and final releases"""
+
+        url_path = '/pub/%s/candidates/' % archive_directory
         major_version = self.get_max_major_version(product_name)
+
+        # First, let's look at /pub/PRODUCT/releases/ so we know what final
+        # builds have been released
+        release_path = '/pub/%s/releases/' % archive_directory
+        release_path_content = self.download(release_path)
+
+        # Get the final release version numbers, so something like "64.0b8/" -> "64.0b8"
+        final_releases = [
+            link['text'].rstrip('/') for link in self.get_links(release_path_content)
+            if link['text'][0].isdigit()
+        ]
 
         content = self.download(url_path)
         version_links = [
@@ -296,8 +316,17 @@ class ArchiveScraperCronApp(BaseCronApp):
             version_root = link['path'].split('/')[4]
             version_root = version_root.replace('-candidates', '')
 
+            # Was there a final release of this series? If so, then we can do
+            # final build versions
+            is_final_release = (version_root in final_releases)
+
+            # Sort the builds by the build number so they're in numeric order because
+            # the last one is possibly a final build
+            build_links.sort(key=key_for_build_link)
+
             for i, build_link in enumerate(build_links):
-                # Get the json file somewhere in this part of the tree
+                # Get all the json files with build information in them for all the
+                # platforms that ahve them
                 json_links = self.get_json_links(build_link['path'])
                 if not json_links:
                     self.config.logger.warning(
@@ -305,6 +334,8 @@ class ArchiveScraperCronApp(BaseCronApp):
                     )
                     continue
 
+                # Go through all the links we acquired by traversing all the platform
+                # directories
                 for json_link in json_links:
                     json_file = self.download(json_link)
                     data = json.loads(json_file)
@@ -338,15 +369,21 @@ class ArchiveScraperCronApp(BaseCronApp):
                     rc_version_string = version_root + 'rc' + build_link['text'][5:-1]
 
                     # Whether or not this is the final build for a set of builds; for
-                    # example for [build1, build2, build3] the final build is build3
-                    final_build = (i + 1 == len(build_links))
+                    # example for [build1, build2, build3] the last build is build3
+                    # and if there was a release in the /pub/PRODUCT/releases/ directory
+                    # then this is a final build
+                    final_build = (
+                        (i + 1 == len(build_links)) and
+                        is_final_release
+                    )
 
                     if final_build:
                         if data['release_channel'] == 'release':
                             # If this is a final build for a major release, then we want to
                             # insert two entries--one for the last rc in the beta channel
                             # and one for the final release in the release channel. This
-                            # makes it possible to look up version strings in one request.
+                            # makes it possible to look up version strings for beta and rc
+                            # builds in one request.
 
                             # Insert the rc beta build
                             data['release_channel'] = 'beta'
@@ -384,18 +421,18 @@ class ArchiveScraperCronApp(BaseCronApp):
         # Capture Firefox beta and release builds
         self.scrape_candidates(
             product_name='Firefox',
-            url_path='/pub/firefox/candidates/'
+            archive_directory='firefox'
         )
         # Pick up DevEdition beta builds for which b1 and b2 are "Firefox builds"
         self.scrape_candidates(
             product_name='DevEdition',
-            url_path='/pub/devedition/candidates/'
+            archive_directory='devedition'
         )
 
         # Capture Fennec beta and release builds
         self.scrape_candidates(
             product_name='Fennec',
-            url_path='/pub/mobile/candidates/'
+            archive_directory='mobile'
         )
 
         self.config.logger.info('Inserted %s builds.', self.successful_inserts)
