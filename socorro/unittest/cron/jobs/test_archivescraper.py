@@ -162,15 +162,13 @@ class TestArchiveScraper(object):
         cursor.execute("""
         SELECT %s
         FROM crashstats_productversion
+        ORDER BY build_id, version_string
         """ % ', '.join(columns))
         data = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        data.sort(key=lambda item: (item['build_id'], item['version_string']))
         return data
 
-    # FIXME(willkg): test scraping a Firefox directory with various properties and
-    # making sure the right builds get inserted
-    def test_basic(self, config, req_mock):
-        # Set up a site with the following things:
+    def test_scrape_candidates(self, config, req_mock):
+        # Set up a site
         site = [
             (
                 # Create a 63.0 build1 which will add just a 63.0rc1
