@@ -166,7 +166,8 @@ class BugzillaCronApp(BaseCronApp):
         # field changed since from_date
         payload = BUGZILLA_PARAMS.copy()
         payload['chfieldfrom'] = from_date
-        session = session_with_retries()
+        # Use a 30-second timeout because Bugzilla is slow sometimes
+        session = session_with_retries(default_timeout=30.0)
         r = session.get(BUGZILLA_BASE_URL, params=payload)
         if r.status_code < 200 or r.status_code >= 300:
             r.raise_for_status()
