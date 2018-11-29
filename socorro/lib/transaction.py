@@ -48,8 +48,9 @@ def transaction_context(connection_context):
             try:
                 conn.rollback()
             except Exception:
-                # NOTE(willkg): This assumes the connection context has a configured
-                # logger; if that ever changes, we need to fix this
+                # NOTE(willkg): This exception is effectively getting
+                # swallowed. We're assuming it's a red herring for whatever
+                # threw the original exception. In Python 3, we can chain them.
                 conn.config.logger.exception('cannot rollback')
             six.reraise(*excinfo)
 
@@ -73,11 +74,6 @@ def retry(connection_context, quit_check, fun, **kwargs):
 
       Forces recreation of the connection the connection context wraps.
 
-    * ``config.logger.critical``
-
-      The connection context should have a configman DotDict for configuration
-      with a logger that implements ``warning``.
-
     :arg connection_context: the connection context
     :arg quit_check: the quit_check function
     :arg fun: the function to retry
@@ -95,11 +91,6 @@ def retry(connection_context, quit_check, fun, **kwargs):
         except Exception as exc:
             last_failure = sys.exc_info()
             if connection_context.is_retryable_exception(exc):
-                connection_context.config.logger.warning(
-                    'Retryable exception in %s',
-                    connection_context.__class__.__name__,
-                    exc_info=True
-                )
                 # Force a reconnection because that sometimes fixes things
                 connection_context.force_reconnect()
             else:

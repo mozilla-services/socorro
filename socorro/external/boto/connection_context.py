@@ -241,15 +241,7 @@ class ConnectionContextBase(RequiredConfig):
         pass
 
     def is_retryable_exception(self, exc):
-        return (
-            # These are ephemeral problems that might go away with time
-            isinstance(exc, self.RETRYABLE_EXCEPTIONS) or
-
-            # This indicates that the item isn't there, but in the case of
-            # fetching raw crash data, it's possible it's not there *yet* so we
-            # want to give it a few more chances
-            'not found, no value returned' in str(exc)
-        )
+        return isinstance(exc, self.RETRYABLE_EXCEPTIONS)
 
 
 class S3ConnectionContext(ConnectionContextBase):
