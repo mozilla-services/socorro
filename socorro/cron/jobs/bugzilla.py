@@ -17,10 +17,9 @@ To change the database config, use --help to see what the parameters are called.
 import datetime
 
 from dateutil import tz
-from configman import Namespace
+from configman import Namespace, class_converter
 
 from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import using_postgres
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.dbutil import (
     execute_query_fetchall,
@@ -28,6 +27,7 @@ from socorro.lib.dbutil import (
     SQLDidNotReturnSingleRow
 )
 from socorro.lib.requestslib import session_with_retries
+from socorro.lib.transaction import transaction_context
 
 
 # Query all bugs that changed since a given date, and that either were created
@@ -74,7 +74,6 @@ def find_signatures(content):
     return signatures
 
 
-@using_postgres()
 class BugzillaCronApp(BaseCronApp):
     """Updates Socorro's knowledge of which bugs cover which crash signatures
 
@@ -98,6 +97,16 @@ class BugzillaCronApp(BaseCronApp):
             'run time, >0 ignore when it last ran successfully)'
         )
     )
+    required_config.add_option(
+        'database_class',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(BugzillaCronApp, self).__init__(*args, **kwargs)
+        self.database = self.config.database_class(self.config)
 
     def run(self):
         # Figure out how far back we want to ask Bugzilla about
@@ -120,46 +129,47 @@ class BugzillaCronApp(BaseCronApp):
         # Fetch recent relevant changes and iterate over them updating our
         # data set
         for bug_id, signature_set in self._iterator(last_run_formatted):
-            self.database_transaction_executor(self.update_bug_data, bug_id, signature_set)
+            self.update_bug_data(bug_id, signature_set)
 
-    def update_bug_data(self, connection, bug_id, signature_set):
-        self.config.logger.debug('bug %s: %s', bug_id, signature_set)
+    def update_bug_data(self, bug_id, signature_set):
+        with transaction_context(self.database) as connection:
+            self.config.logger.debug('bug %s: %s', bug_id, signature_set)
 
-        # If there's no associated signatures, delete everything for this bug id
-        if not signature_set:
-            sql = """
-            DELETE FROM crashstats_bugassociation WHERE bug_id = %s
-            """
-            execute_no_results(connection, sql, (bug_id,))
-            return
+            # If there's no associated signatures, delete everything for this bug id
+            if not signature_set:
+                sql = """
+                DELETE FROM crashstats_bugassociation WHERE bug_id = %s
+                """
+                execute_no_results(connection, sql, (bug_id,))
+                return
 
-        try:
-            sql = """
-            SELECT signature FROM crashstats_bugassociation WHERE bug_id = %s
-            """
-            signature_rows = execute_query_fetchall(connection, sql, (bug_id,))
-            signatures_db = [x[0] for x in signature_rows]
+            try:
+                sql = """
+                SELECT signature FROM crashstats_bugassociation WHERE bug_id = %s
+                """
+                signature_rows = execute_query_fetchall(connection, sql, (bug_id,))
+                signatures_db = [x[0] for x in signature_rows]
 
-            for signature in signatures_db:
-                if signature not in signature_set:
+                for signature in signatures_db:
+                    if signature not in signature_set:
+                        sql = """
+                        DELETE FROM crashstats_bugassociation
+                        WHERE signature = %s and bug_id = %s
+                        """
+                        execute_no_results(connection, sql, (signature, bug_id))
+                        self.config.logger.info('association removed: %s - "%s"', bug_id, signature)
+
+            except SQLDidNotReturnSingleRow:
+                signatures_db = []
+
+            for signature in signature_set:
+                if signature not in signatures_db:
                     sql = """
-                    DELETE FROM crashstats_bugassociation
-                    WHERE signature = %s and bug_id = %s
+                    INSERT INTO crashstats_bugassociation (signature, bug_id)
+                    VALUES (%s, %s)
                     """
                     execute_no_results(connection, sql, (signature, bug_id))
-                    self.config.logger.info('association removed: %s - "%s"', bug_id, signature)
-
-        except SQLDidNotReturnSingleRow:
-            signatures_db = []
-
-        for signature in signature_set:
-            if signature not in signatures_db:
-                sql = """
-                INSERT INTO crashstats_bugassociation (signature, bug_id)
-                VALUES (%s, %s)
-                """
-                execute_no_results(connection, sql, (signature, bug_id))
-                self.config.logger.info('association added: %s - "%s"', bug_id, signature)
+                    self.config.logger.info('association added: %s - "%s"', bug_id, signature)
 
     def _iterator(self, from_date):
         # Fetch all the bugs that have been created or had the crash_signature

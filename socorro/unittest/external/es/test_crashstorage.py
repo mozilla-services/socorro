@@ -16,7 +16,6 @@ from socorro.external.es.crashstorage import (
     ESCrashStorage,
     ESCrashStorageRedactedSave,
     ESCrashStorageRedactedJsonDump,
-    ESBulkCrashStorage,
     get_fields_by_analyzer,
     is_valid_key,
     RawCrashRedactor,
@@ -270,51 +269,9 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
         assert raw_crash == {'foo': 'alpha'}
         es_storage.close()
 
-    def test_bulk_index_crash(self):
-        """Test indexing a crash document.
-        """
-
-        local_config = self.get_tuned_config(
-            ESBulkCrashStorage,
-            {"items_per_bulk_load": 10, }
-        )
-
-        es_storage = ESBulkCrashStorage(config=local_config)
-
-        for x in range(20):
-            uuid = "%02d%s" % (
-                x,
-                a_processed_crash['uuid'][2:]
-            )
-            new_processed_crash = deepcopy(a_processed_crash)
-            new_processed_crash['uuid'] = uuid
-
-            es_storage.save_raw_and_processed(
-                raw_crash=a_raw_crash,
-                dumps=None,
-                processed_crash=new_processed_crash,
-                crash_id=uuid
-            )
-        es_storage.close()
-
-        for x in range(20):
-            uuid = "%02d%s" % (
-                x,
-                a_processed_crash['uuid'][2:]
-            )
-            # Ensure that the document was indexed by attempting to retreive it
-            assert (
-                self.es_client.get(
-                    index=local_config.elasticsearch.elasticsearch_index,
-                    id=uuid
-                )
-            )
-
 
 class TestESCrashStorage(ElasticsearchTestCase):
-    """These tests are self-contained and use Mock where necessary.
-    """
-
+    """These tests are self-contained and use Mock where necessary"""
     def __init__(self, *args, **kwargs):
         super(TestESCrashStorage, self).__init__(*args, **kwargs)
 
@@ -388,19 +345,15 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_success(self, espy_mock):
-        """Test a successful index of a crash report.
-        """
-
-        # It's mocks all the way down.
+        """Test a successful index of a crash report"""
         sub_mock = mock.MagicMock()
         espy_mock.Elasticsearch.return_value = sub_mock
-
-        es_storage = ESCrashStorage(config=self.config)
 
         crash_id = a_processed_crash['uuid']
 
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
+        es_storage = ESCrashStorage(config=self.config)
         es_storage.save_raw_and_processed(
             raw_crash=a_raw_crash,
             dumps=None,
@@ -645,112 +598,12 @@ class TestESCrashStorage(ElasticsearchTestCase):
         with pytest.raises(Exception):
             es_storage.save_raw_and_processed(a_raw_crash, None, a_processed_crash, crash_id)
 
-    @mock.patch('socorro.external.es.connection_context.elasticsearch')
-    def test_fatal_operational_exception(self, espy_mock):
-        """Test an index attempt that experiences an operational exception that
-        it can't recover from.
-        """
-
-        # It's mocks all the way down.
-        sub_mock = mock.MagicMock()
-        espy_mock.Elasticsearch.return_value = sub_mock
-
-        # ESCrashStorage uses the "limited backoff" transaction executor.
-        # In real life this will retry operational exceptions over time, but
-        # in unit tests, we just want it to hurry up and fail.
-        backoff_config = self.config
-        backoff_config['backoff_delays'] = [0, 0, 0]
-        backoff_config['wait_log_interval'] = 0
-
-        es_storage = ESCrashStorage(config=self.config)
-
-        crash_id = a_processed_crash['uuid']
-
-        # It's bad but at least we expected it.
-        failure_exception = elasticsearch.exceptions.ConnectionError(500, '')
-        sub_mock.index.side_effect = failure_exception
-
-        # Submit a crash and ensure that it failed.
-        with pytest.raises(elasticsearch.exceptions.ConnectionError):
-            es_storage.save_raw_and_processed(a_raw_crash, None, a_processed_crash, crash_id)
-
-    @mock.patch('socorro.external.es.connection_context.elasticsearch')
-    def test_success_operational_exception(self, espy_mock):
-        """Test an index attempt that experiences an operational exception that
-        it managed to recover from.
-        """
-
-        # It's mocks all the way down.
-        sub_mock = mock.MagicMock()
-        espy_mock.Elasticsearch.return_value = sub_mock
-
-        # ESCrashStorage uses the "limited backoff" transaction executor.
-        # In real life this will retry operational exceptions over time, but
-        # in unit tests, we just want it to hurry up and fail.
-        backoff_config = self.config
-        backoff_config['backoff_delays'] = [0, 0, 0]
-        backoff_config['wait_log_interval'] = 0
-
-        es_storage = ESCrashStorage(config=self.config)
-
-        crash_id = a_processed_crash['uuid']
-
-        # The transaction executor will try three times, so we will fail
-        # twice for the purposes of this test.
-        bad_results = [
-            elasticsearch.exceptions.ConnectionError(500, ''),
-            elasticsearch.exceptions.ConnectionError(500, '')
-        ]
-
-        # Replace the underlying index method with this function.
-        def esindex_fn(*args, **kwargs):
-            try:
-                result = bad_results.pop(0)
-                raise result
-            except IndexError:
-                return sub_mock.index
-
-        sub_mock.index.side_effect = esindex_fn
-
-        # Submit a crash like normal, except that the index method will
-        # raise twice, then pass as normal.
-        es_storage.save_raw_and_processed(
-            raw_crash=a_raw_crash,
-            dumps=None,
-            processed_crash=a_processed_crash,
-            crash_id=crash_id,
-        )
-
-        # The actual call to index the document (crash).
-        document = {
-            'crash_id': crash_id,
-            'processed_crash': a_processed_crash,
-            'raw_crash': a_raw_crash
-        }
-
-        additional = {
-            'doc_type': 'crash_reports',
-            'id': crash_id,
-            'index': 'socorro_integration_test_reports'
-        }
-
-        sub_mock.index.assert_called_with(
-            body=document,
-            **additional
-        )
-
     @mock.patch('elasticsearch.client')
     @mock.patch('elasticsearch.Elasticsearch')
     def test_indexing_bogus_string_field(self, es_class_mock, es_client_mock):
         """Test an index attempt that fails because of a bogus string field.
         Expected behavior is to remove that field and retry indexing.
         """
-        # ESCrashStorage uses the "limited backoff" transaction executor.
-        # In real life this will retry operational exceptions over time, but
-        # in unit tests, we just want it to hurry up and fail.
-        backoff_config = self.config
-        backoff_config['backoff_delays'] = [0, 0, 0]
-        backoff_config['wait_log_interval'] = 0
 
         es_storage = ESCrashStorage(config=self.config)
 
@@ -817,13 +670,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
         """Test an index attempt that fails because of a bogus number field.
         Expected behavior is to remove that field and retry indexing.
         """
-        # ESCrashStorage uses the "limited backoff" transaction executor.
-        # In real life this will retry operational exceptions over time, but
-        # in unit tests, we just want it to hurry up and fail.
-        backoff_config = self.config
-        backoff_config['backoff_delays'] = [0, 0, 0]
-        backoff_config['wait_log_interval'] = 0
-
         es_storage = ESCrashStorage(config=self.config)
 
         crash_id = a_processed_crash['uuid']
@@ -881,14 +727,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
     def test_indexing_unhandled_errors(self, es_class_mock, es_client_mock):
         """Test an index attempt that fails because of unhandled errors.
         Expected behavior is to fail indexing and raise the error.
-        """
-        # ESCrashStorage uses the "limited backoff" transaction executor.
-        # In real life this will retry operational exceptions over time, but
-        # in unit tests, we just want it to hurry up and fail.
-        backoff_config = self.config
-        backoff_config['backoff_delays'] = [0, 0, 0]
-        backoff_config['wait_log_interval'] = 0
 
+        """
         es_storage = ESCrashStorage(config=self.config)
 
         crash_id = a_processed_crash['uuid']

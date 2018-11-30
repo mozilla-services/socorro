@@ -6,14 +6,12 @@
 
 from collections import Sequence
 
-from socorro.lib.transaction import NonFatalException
 
-
-class SQLDidNotReturnSingleValue(NonFatalException):
+class SQLDidNotReturnSingleValue(Exception):
     pass
 
 
-class SQLDidNotReturnSingleRow(NonFatalException):
+class SQLDidNotReturnSingleRow(Exception):
     pass
 
 

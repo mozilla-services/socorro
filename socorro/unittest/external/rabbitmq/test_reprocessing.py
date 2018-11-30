@@ -25,7 +25,6 @@ class TestReprocessing(TestCase):
         config.filter_on_legacy_processing = True
         config.forbidden_keys = ''
         config.redactor_class = Redactor
-        config.throttle = 100
         return config
 
     def test_post(self):

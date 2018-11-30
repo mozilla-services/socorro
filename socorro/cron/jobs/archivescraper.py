@@ -64,14 +64,14 @@ from __future__ import print_function
 
 import json
 
-from configman import Namespace
+from configman import Namespace, class_converter
 import psycopg2
 from pyquery import PyQuery as pq
 from six.moves.urllib.parse import urljoin
 
 from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import using_postgres
 from socorro.lib.requestslib import session_with_retries
+from socorro.lib.transaction import transaction_context
 
 
 # Substrings that indicate the thing is not a platform we want to traverse
@@ -95,7 +95,6 @@ def key_for_build_link(link):
     return int(''.join([c for c in path if c.isdigit()]))
 
 
-@using_postgres()
 class ArchiveScraperCronApp(BaseCronApp):
     app_name = 'archivescraper'
     app_description = 'scraper for archive.mozilla.org for release info'
@@ -112,27 +111,21 @@ class ArchiveScraperCronApp(BaseCronApp):
         default=False,
         doc='print verbose information about spidering'
     )
+    required_config.add_option(
+        'database_class',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
 
     def __init__(self, *args, **kwargs):
         super(ArchiveScraperCronApp, self).__init__(*args, **kwargs)
+        self.database = self.config.database_class(self.config)
+
         # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds,
         # then it has issues and we should try again some other time
         self.session = session_with_retries(default_timeout=5.0)
         self.successful_inserts = 0
-
-    def _get_max_major_version(self, connection, product_name):
-        cursor = connection.cursor()
-        sql = """
-        SELECT max(major_version)
-        FROM crashstats_productversion
-        WHERE product_name = %s
-        """
-        params = (product_name,)
-        cursor.execute(sql, params)
-        data = cursor.fetchall()
-        if data:
-            return data[0][0]
-        return None
 
     def get_max_major_version(self, product_name):
         """Retrieves the max major version for this product
@@ -142,34 +135,24 @@ class ArchiveScraperCronApp(BaseCronApp):
         :returns: maximum major version as an int or None
 
         """
-        return self.database_transaction_executor(self._get_max_major_version, product_name)
-
-    def _insert_build_transaction(self, connection, params):
-        if self.config.verbose:
-            self.config.logger.info('INSERTING: %s' % list(sorted(params.items())))
-        cursor = connection.cursor()
-        sql = """
-        INSERT INTO crashstats_productversion (
-            product_name, release_channel, major_version, release_version,
-            version_string, build_id, archive_url
-        )
-        VALUES (
-            %(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
-            %(version_string)s, %(build_id)s, %(archive_url)s
-        )
-        """
-        try:
+        with transaction_context(self.database) as conn:
+            cursor = conn.cursor()
+            sql = """
+            SELECT max(major_version)
+            FROM crashstats_productversion
+            WHERE product_name = %s
+            """
+            params = (product_name,)
             cursor.execute(sql, params)
-            self.successful_inserts += 1
-        except psycopg2.IntegrityError:
-            # If it's an IntegrityError, we already have it and everything is fine
-            pass
-        except psycopg2.Error:
-            self.config.logger.exception('failed to insert')
+            data = cursor.fetchall()
+            if data:
+                return data[0][0]
+
+        return None
 
     def insert_build(self, product_name, release_channel, major_version, release_version,
                      version_string, build_id, archive_url):
-        data = {
+        params = {
             'product_name': product_name,
             'release_channel': release_channel,
             'major_version': major_version,
@@ -178,7 +161,30 @@ class ArchiveScraperCronApp(BaseCronApp):
             'build_id': build_id,
             'archive_url': archive_url
         }
-        self.database_transaction_executor(self._insert_build_transaction, data)
+
+        if self.config.verbose:
+            self.config.logger.info('INSERTING: %s' % list(sorted(params.items())))
+
+        with transaction_context(self.database) as conn:
+            cursor = conn.cursor()
+            sql = """
+            INSERT INTO crashstats_productversion (
+                product_name, release_channel, major_version, release_version,
+                version_string, build_id, archive_url
+            )
+            VALUES (
+                %(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
+                %(version_string)s, %(build_id)s, %(archive_url)s
+            )
+            """
+            try:
+                cursor.execute(sql, params)
+                self.successful_inserts += 1
+            except psycopg2.IntegrityError:
+                # If it's an IntegrityError, we already have it and everything is fine
+                pass
+            except psycopg2.Error:
+                self.config.logger.exception('failed to insert')
 
     def get_links(self, content):
         """Retrieves valid links on the page

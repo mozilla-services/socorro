@@ -2,18 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from contextlib import contextmanager
 import json
 import re
-from threading import Thread
 import time
 
-import elasticsearch
 from configman import Namespace
 from configman.converters import class_converter, list_converter
+import elasticsearch
 import markus
 import six
-from six.moves.queue import Queue
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
 from socorro.external.es.super_search_fields import FIELDS
@@ -171,12 +168,6 @@ class ESCrashStorage(CrashStorageBase):
 
     required_config = Namespace()
     required_config.add_option(
-        'transaction_executor_class',
-        default='socorro.lib.transaction.TransactionExecutorWithLimitedBackoff',
-        doc='a class that will manage transactions',
-        from_string_converter=class_converter,
-    )
-    required_config.add_option(
         'index_creator_class',
         doc='a class that can create Elasticsearch indices',
         default='socorro.external.es.index_creator.IndexCreator',
@@ -198,9 +189,7 @@ class ESCrashStorage(CrashStorageBase):
     # These regex will catch field names from Elasticsearch exceptions. They
     # have been tested with Elasticsearch 1.4.
     field_name_string_error_re = re.compile(r'field=\"([\w\-.]+)\"')
-    field_name_number_error_re = re.compile(
-        r'\[failed to parse \[([\w\-.]+)]]'
-    )
+    field_name_number_error_re = re.compile(r'\[failed to parse \[([\w\-.]+)]]')
 
     def __init__(self, config, namespace='', quit_check_callback=None):
         super(ESCrashStorage, self).__init__(
@@ -209,17 +198,9 @@ class ESCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
-        # Ok, it's sane, so let's continue.
         self.es_context = self.config.elasticsearch.elasticsearch_class(
             config=self.config.elasticsearch
         )
-
-        self.transaction = config.transaction_executor_class(
-            config,
-            self.es_context,
-            quit_check_callback
-        )
-
         self.metrics = markus.get_metrics(namespace)
 
     def get_index_for_crash(self, crash_date):
@@ -227,8 +208,8 @@ class ESCrashStorage(CrashStorageBase):
         from config and the date of the crash.
         If the index name contains a datetime pattern (ex. %Y%m%d) then the
         crash_date will be parsed and appended to the index name.
-        """
 
+        """
         index = self.config.elasticsearch.elasticsearch_index
 
         if not index:
@@ -240,12 +221,7 @@ class ESCrashStorage(CrashStorageBase):
         return index
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        """Save raw and processed crash data to Elasticsearch
-
-        Note: This is the only write mechanism that is actually employed in
-        normal usage.
-
-        """
+        """Save raw and processed crash data to Elasticsearch"""
 
         # Massage the crash such that the date_processed field is formatted
         # in the fashion of our established mapping.
@@ -273,10 +249,7 @@ class ESCrashStorage(CrashStorageBase):
             'raw_crash': raw_crash
         }
 
-        self.transaction(
-            self._submit_crash_to_elasticsearch,
-            crash_document=crash_document
-        )
+        self._submit_crash_to_elasticsearch(crash_document)
 
     @staticmethod
     def reconstitute_datetimes(processed_crash):
@@ -340,11 +313,9 @@ class ESCrashStorage(CrashStorageBase):
                 tags=['outcome:' + index_outcome]
             )
 
-    def _submit_crash_to_elasticsearch(self, connection, crash_document):
+    def _submit_crash_to_elasticsearch(self, crash_document):
         """Submit a crash report to elasticsearch"""
-        es_index = self.get_index_for_crash(
-            crash_document['processed_crash']['date_processed']
-        )
+        es_index = self.get_index_for_crash(crash_document['processed_crash']['date_processed'])
         es_doctype = self.config.elasticsearch.elasticsearch_doctype
         crash_id = crash_document['crash_id']
 
@@ -358,9 +329,16 @@ class ESCrashStorage(CrashStorageBase):
         # case of an unhandled exception.
         for attempt in range(5):
             try:
-                self._index_crash(connection, es_index, es_doctype, crash_document, crash_id)
-                break
+                with self.es_context() as conn:
+                    return self._index_crash(conn, es_index, es_doctype, crash_document, crash_id)
+
+            except elasticsearch.exceptions.ConnectionError:
+                # If this is a connection error, sleep a second and then try again
+                time.sleep(1.0)
+
             except elasticsearch.exceptions.TransportError as e:
+                # If this is a TransportError, we try to figure out what the error
+                # is and fix the document and try again
                 field_name = None
 
                 if 'MaxBytesLengthExceededException' in e.error:
@@ -411,11 +389,12 @@ class ESCrashStorage(CrashStorageBase):
                     )
                 else:
                     crash_document['removed_fields'] = field_name
-            except elasticsearch.exceptions.ElasticsearchException as e:
+
+            except elasticsearch.exceptions.ElasticsearchException as exc:
                 self.config.logger.critical(
                     'Submission to Elasticsearch failed for %s (%s)',
                     crash_id,
-                    e,
+                    exc,
                     exc_info=True
                 )
                 raise
@@ -452,11 +431,6 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         self.redactor = config.es_redactor.redactor_class(config.es_redactor)
         self.raw_crash_redactor = config.raw_crash_es_redactor.redactor_class(
             config.raw_crash_es_redactor
-        )
-        self.config.logger.warning(
-            "Beware, this crashstorage class is destructive to the "
-            "processed crash - if you're using a polycrashstore you may "
-            "find the modified processed crash saved to the other crashstores."
         )
 
     def is_mutator(self):
@@ -527,147 +501,3 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
             processed_crash,
             crash_id
         )
-
-
-class QueueWrapper(Queue):
-    """this class allows a queue to be a standin for a connection to an
-    external resource.  The queue then becomes compatible with the
-    TransactionExecutor classes"""
-
-    def commit(self):
-        pass
-
-    def rollback(self):
-        pass
-
-    def close(self):
-        pass
-
-    @contextmanager
-    def __call__(self):
-        yield self
-
-
-class QueueContextSource(object):
-    """this class allows a queue to be a standin for a connection to an
-    external resource.  The queue then becomes compatible with the
-    TransactionExecutor classes"""
-    def __init__(self, a_queue):
-        self.queue = a_queue
-
-    @contextmanager
-    def __call__(self):
-        yield self.queue
-
-    operational_exceptions = ()
-    conditional_exceptions = ()
-
-
-def _create_bulk_load_crashstore(base_class):
-    class ESBulkClassTemplate(base_class):
-        required_config = Namespace()
-        required_config.add_option(
-            'items_per_bulk_load',
-            default=500,
-            doc="the number of crashes that triggers a flush to ES"
-        )
-        required_config.add_option(
-            'maximum_queue_size',
-            default=512,
-            doc='the maximum size of the internal queue'
-        )
-
-        def __init__(self, config, namespace='', quit_check_callback=None):
-            super(ESBulkClassTemplate, self).__init__(
-                config,
-                namespace=namespace,
-                quit_check_callback=quit_check_callback
-            )
-
-            self.task_queue = QueueWrapper(config.maximum_queue_size)
-            self.consuming_thread = Thread(
-                name="ConsumingThread",
-                target=self._consuming_thread_func
-            )
-
-            # overwrites original
-            self.transaction = config.transaction_executor_class(
-                config,
-                QueueContextSource(self.task_queue),
-                quit_check_callback
-            )
-            self.done = False
-            self.consuming_thread.start()
-
-        def _submit_crash_to_elasticsearch(self, queue, crash_document):
-            # Massage the crash such that the date_processed field is formatted
-            # in the fashion of our established mapping.
-            # First create a datetime object from the string in the crash
-            # report.
-            self.reconstitute_datetimes(crash_document['processed_crash'])
-
-            # Obtain the index name.
-            es_index = self.get_index_for_crash(
-                crash_document['processed_crash']['date_processed']
-            )
-            es_doctype = self.config.elasticsearch.elasticsearch_doctype
-            crash_id = crash_document['crash_id']
-
-            # Attempt to create the index; it's OK if it already exists.
-            if es_index not in self.indices_cache:
-                index_creator = self.config.index_creator_class(
-                    config=self.config
-                )
-                index_creator.create_socorro_index(es_index)
-
-            action = {
-                '_index': es_index,
-                '_type': es_doctype,
-                '_id': crash_id,
-                '_source': crash_document,
-            }
-            queue.put(action)
-
-        def _consumer_iter(self):
-            while True:
-                try:
-                    crash_document = self.task_queue.get()
-                except Exception:
-                    self.config.logger.critical(
-                        "Failure in ES Bulktask_queue",
-                        exc_info=True
-                    )
-                    crash_document = None
-                if crash_document is None:
-                    self.done = True
-                    break
-                yield crash_document  # execute the task
-
-        def close(self):
-            self.task_queue.put(None)
-            self.consuming_thread.join()
-
-        def _consuming_thread_func(self):  # execute the bulk load
-            with self.es_context() as es:
-                try:
-                    elasticsearch.helpers.bulk(
-                        es,
-                        self._consumer_iter(),
-                        chunk_size=self.config.items_per_bulk_load
-                    )
-                except Exception:
-                    self.config.logger.critical(
-                        "Failure in ES elasticsearch.helpers.bulk",
-                        exc_info=True
-                    )
-
-    return ESBulkClassTemplate
-
-
-ESBulkCrashStorage = _create_bulk_load_crashstore(ESCrashStorage)
-
-
-ESBulkCrashStorageRedactedSave = _create_bulk_load_crashstore(ESCrashStorageRedactedSave)
-
-
-ESCrashStorageNoStackwalkerOutput = ESCrashStorageRedactedSave

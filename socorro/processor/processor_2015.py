@@ -114,13 +114,6 @@ class Processor2015(RequiredConfig):
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
-        'transaction_executor_class',
-        default='socorro.lib.transaction.TransactionExecutorWithInfiniteBackoff',
-        doc='a class that will manage transactions',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
         'dump_field',
         doc='the default name of a dump',
         default='upload_file_minidump',

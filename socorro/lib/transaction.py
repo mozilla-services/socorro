@@ -8,161 +8,98 @@ that involve doing something and then committing or rolling back
 depending on what happened.
 """
 
+from contextlib import contextmanager
 import sys
 import time
 
-from configman.config_manager import RequiredConfig
-from configman import Namespace
-from six import reraise
+import six
 
 
-class NonFatalException(Exception):
-    """Exception for a non-fatal transaction that doesn't require reconnecting"""
+@contextmanager
+def transaction_context(connection_context):
+    """Creates a transaction context
 
+    The connection context must implement the following:
 
-def string_to_list_of_ints(a_string):
-    a_string = a_string.replace('"', '')
-    a_string = a_string.replace("'", "")
-    ints_as_strings = a_string.split(',')
-    return [int(x) for x in ints_as_strings]
+    * ``commit() -> None``
 
+      Commits the transaction.
 
-class TransactionExecutor(RequiredConfig):
-    required_config = Namespace()
+    * ``rollback() -> None``
 
-    def __init__(self, config, db_conn_context_source, quit_check_callback=None):
-        self.config = config
-        self.db_conn_context_source = db_conn_context_source
-        self.quit_check = quit_check_callback or (lambda: False)
+      Rolls the transaction back.
 
-    @property
-    def connection_source_type(self):
-        return self.db_conn_context_source.__module__
+    * ``config.logger.exception``
 
-    def __call__(self, function, *args, **kwargs):
-        """execute a function within the context of a transaction"""
-        self.quit_check()
-        with self.db_conn_context_source() as connection:
+      ``config`` is a configman ``DotDict`` that has a logger that implements
+      ``exception``.
+
+    :arg connection_context: the connection context to use
+
+    :yields: the connection the context wraps
+
+    """
+    with connection_context() as conn:
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            excinfo = sys.exc_info()
             try:
-                result = function(connection, *args, **kwargs)
-                connection.commit()
-                return result
-            except NonFatalException:
-                excinfo = sys.exc_info()
-                # This is a non-fatal exception so we don't need to reconnect
-                connection.rollback()
-                reraise(*excinfo)
-            except BaseException:
-                # This is possibly a fatal exception requiring a reconnect
-                excinfo = sys.exc_info()
-                connection.rollback()
-                self.config.logger.error(
-                    'Fatal exception raised during %s transaction; will reconnect',
-                    self.connection_source_type,
-                    exc_info=True
-                )
-                self.db_conn_context_source.force_reconnect()
-                reraise(*excinfo)
+                conn.rollback()
+            except Exception:
+                # NOTE(willkg): This exception is effectively getting
+                # swallowed. We're assuming it's a red herring for whatever
+                # threw the original exception. In Python 3, we can chain them.
+                conn.config.logger.exception('cannot rollback')
+            six.reraise(*excinfo)
 
 
-class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
-    # back off times
-    required_config = Namespace()
-    required_config.add_option(
-        'backoff_delays',
-        default="10, 30, 60, 120, 300",
-        doc='delays in seconds between retries',
-        from_string_converter=string_to_list_of_ints
-    )
-    # wait_log_interval
-    required_config.add_option(
-        'wait_log_interval',
-        default=10,
-        doc='seconds between log during retries'
-    )
-
-    def backoff_generator(self):
-        """Generate a series of integers used for the length of the sleep
-        between retries.  It produces after exhausting the list, it repeats
-        the last value from the list forever.  This generator will never
-        exhaust"""
-        for x in self.config.backoff_delays:
-            yield x
-        while True:
-            yield self.config.backoff_delays[-1]
-
-    def responsive_sleep(self, seconds, wait_reason=''):
-        """Sleep for the specified number of seconds, logging every
-        'wait_log_interval' seconds with progress info."""
-        for x in range(int(seconds)):
-            if self.config.wait_log_interval and not x % self.config.wait_log_interval:
-                self.config.logger.debug('%s: %dsec of %dsec' % (wait_reason, x, seconds))
-            self.quit_check()
-            time.sleep(1.0)
-
-    def __call__(self, function, *args, **kwargs):
-        """execute a function within the context of a transaction"""
-        last_failure = None
-        for wait_in_seconds in self.backoff_generator():
-            try:
-                self.quit_check()
-                # self.db_conn_context_source is an instance of a
-                # wrapper class on the actual connection driver
-                with self.db_conn_context_source() as connection:
-                    try:
-                        result = function(connection, *args, **kwargs)
-                        connection.commit()
-                        return result
-                    except Exception:
-                        last_failure = sys.exc_info()
-                        connection.rollback()
-                        reraise(*last_failure)
-
-            except self.db_conn_context_source.conditional_exceptions as x:
-                # these exceptions may or may not be retriable the test is
-                # for is a last ditch effort to see if we can retry
-                if not self.db_conn_context_source.is_operational_exception(x):
-                    # If the logger exists, log the issue, otherwise print it
-                    # to stdout.
-                    if self.config.logger:
-                        self.config.logger.critical(
-                            'Unrecoverable %s transaction error',
-                            self.connection_source_type,
-                            exc_info=True
-                        )
-                    else:
-                        print('Unrecoverable %s transaction error' % self.connection_source_type)
-                    reraise(*last_failure)
-
-                self.config.logger.critical(
-                    '%s transaction error eligible for retry',
-                    self.connection_source_type,
-                    exc_info=True
-                )
-
-            except self.db_conn_context_source.operational_exceptions:
-                self.config.logger.critical(
-                    '%s transaction error eligible for retry',
-                    self.connection_source_type,
-                    exc_info=True
-                )
-
-            except BaseException as x:
-                reraise(*last_failure)
-
-            self.db_conn_context_source.force_reconnect()
-            self.config.logger.debug('retry in %s seconds' % wait_in_seconds)
-            self.responsive_sleep(
-                wait_in_seconds,
-                'waiting for retry after failure in %s transaction' % self.connection_source_type,
-            )
-        if last_failure is not None:
-            reraise(*last_failure)
+# Backoff amounts in seconds; last is a 0 so it doesn't sleep after the last
+# failure before exiting the loop
+BACKOFF_TIMES = [1, 1, 1, 1, 1, 0]
 
 
-class TransactionExecutorWithLimitedBackoff(TransactionExecutorWithInfiniteBackoff):
-    def backoff_generator(self):
-        """Generate a series of integers used for the length of the sleep
-        between retries."""
-        for x in self.config.backoff_delays:
-            yield x
+def retry(connection_context, quit_check, fun, **kwargs):
+    """Runs the function retrying periodically
+
+    The connection context must define the following:
+
+    * ``is_retryable_exception(Exception) -> bool``
+
+      If this returns true, then ``retry` will call ``force_reconnect()``,
+      wait some time, and try again.
+
+    * ``force_reconnect() -> None``
+
+      Forces recreation of the connection the connection context wraps.
+
+    :arg connection_context: the connection context
+    :arg quit_check: the quit_check function
+    :arg fun: the function to retry
+    :arg kwargs: named arguments to pass to the function
+
+    :returns: varies
+
+    """
+    last_failure = None
+
+    for backoff_time in BACKOFF_TIMES:
+        try:
+            with connection_context() as conn:
+                return fun(conn, **kwargs)
+        except Exception as exc:
+            last_failure = sys.exc_info()
+            if connection_context.is_retryable_exception(exc):
+                # Force a reconnection because that sometimes fixes things
+                connection_context.force_reconnect()
+            else:
+                six.reraise(*last_failure)
+
+        time.sleep(backoff_time)
+        if quit_check is not None:
+            quit_check()
+
+    # If it gets here, it's because we've dropped out of the loop and there's
+    # no more retry attempts, so reraise the last error
+    six.reraise(*last_failure)

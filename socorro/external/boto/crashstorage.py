@@ -4,11 +4,10 @@
 
 import json
 
-import json_schema_reducer
-from future.utils import iteritems
-
 from configman import Namespace
 from configman.converters import class_converter
+import json_schema_reducer
+from future.utils import iteritems
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -17,13 +16,12 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.lib.converters import change_default
+from socorro.lib.transaction import retry
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
 
 class BotoCrashStorage(CrashStorageBase):
-    """This class sends processed crash reports to an end point reachable
-    by the boto S3 library.
-    """
+    """Saves and loads crash data to S3"""
     required_config = Namespace()
     required_config.add_option(
         "resource_class",
@@ -31,20 +29,6 @@ class BotoCrashStorage(CrashStorageBase):
         doc='fully qualified dotted Python classname to handle Boto connections',
         from_string_converter=class_converter,
         reference_value_from='resource.boto'
-    )
-    required_config.add_option(
-        'transaction_executor_class_for_get',
-        default='socorro.lib.transaction.TransactionExecutorWithLimitedBackoff',
-        doc='a class that will manage transactions',
-        from_string_converter=class_converter,
-        reference_value_from='resource.boto',
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default='socorro.lib.transaction.TransactionExecutorWithLimitedBackoff',
-        doc='a class that will manage transactions',
-        from_string_converter=class_converter,
-        reference_value_from='resource.boto',
     )
     required_config.add_option(
         'temporary_file_system_storage_path',
@@ -64,35 +48,13 @@ class BotoCrashStorage(CrashStorageBase):
         from_string_converter=class_converter,
     )
 
-    def is_operational_exception(self, x):
-        if "not found, no value returned" in str(x):
-            # the not found error needs to be re-tryable to compensate for
-            # eventual consistency.  However, a method capable of raising this
-            # exception should never be used with a transaction executor that
-            # has infinite back off.
-            return True
-        #elif   # for further cases...
-        return False
-
     def __init__(self, config, namespace='', quit_check_callback=None):
         super(BotoCrashStorage, self).__init__(
             config,
             namespace=namespace,
             quit_check_callback=quit_check_callback
         )
-
         self.connection_source = config.resource_class(config)
-        self.transaction = config.transaction_executor_class(
-            config,
-            self.connection_source,
-            quit_check_callback
-        )
-
-        self.transaction_for_get = config.transaction_executor_class_for_get(
-            config,
-            self.connection_source,
-            quit_check_callback
-        )
 
     @staticmethod
     def do_save_raw_crash(boto_connection, raw_crash, dumps, crash_id):
@@ -104,9 +66,9 @@ class BotoCrashStorage(CrashStorageBase):
         dump_names_as_string = boto_connection._convert_list_to_string(dumps.keys())
         boto_connection.submit(crash_id, 'dump_names', dump_names_as_string)
 
-        # we don't know what type of dumps mapping we have.  We do know,
-        # however, that by calling the memory_dump_mapping method, we will
-        # get a MemoryDumpMapping which is exactly what we need.
+        # We don't know what type of dumps mapping we have. We do know,
+        # however, that by calling the memory_dump_mapping method, we will get
+        # a MemoryDumpMapping which is exactly what we need.
         dumps = dumps.as_memory_dumps_mapping()
         for dump_name, dump in iteritems(dumps):
             if dump_name in (None, '', 'upload_file_minidump'):
@@ -114,7 +76,14 @@ class BotoCrashStorage(CrashStorageBase):
             boto_connection.submit(crash_id, dump_name, dump)
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        self.transaction(self.do_save_raw_crash, raw_crash, dumps, crash_id)
+        retry(
+            self.connection_source,
+            self.quit_check,
+            self.do_save_raw_crash,
+            raw_crash=raw_crash,
+            dumps=dumps,
+            crash_id=crash_id
+        )
 
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
@@ -123,18 +92,16 @@ class BotoCrashStorage(CrashStorageBase):
         boto_connection.submit(crash_id, "processed_crash", processed_crash_as_string)
 
     def save_processed(self, processed_crash):
-        self.transaction(self._do_save_processed, processed_crash)
+        retry(
+            self.connection_source,
+            self.quit_check,
+            self._do_save_processed,
+            processed_crash=processed_crash
+        )
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        # bug 866973 - do not put raw_crash back into permanent storage again
-        # We are doing this in lieu of a queuing solution that could allow us
-        # to operate an independent crashmover. When the queuing system is
-        # implemented, we could remove this, and have the raw crash saved by a
-        # crashmover that's consuming crash_ids the same way that the processor
-        # consumes them.
-        #
-        # See further comments in the ProcesorApp class.
-
+        # NOTE(willkg): Don't save the raw_crash again because that messes up
+        # the original data we got. bug 866973
         self.save_processed(processed_crash)
 
     @staticmethod
@@ -146,10 +113,12 @@ class BotoCrashStorage(CrashStorageBase):
             raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_raw_crash(self, crash_id):
-        return self.transaction_for_get(
+        return retry(
+            self.connection_source,
+            self.quit_check,
             self.do_get_raw_crash,
-            crash_id,
-            self.config.json_object_hook
+            crash_id=crash_id,
+            json_object_hook=self.config.json_object_hook
         )
 
     @staticmethod
@@ -163,7 +132,13 @@ class BotoCrashStorage(CrashStorageBase):
             raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_raw_dump(self, crash_id, name=None):
-        return self.transaction_for_get(self.do_get_raw_dump, crash_id, name)
+        return retry(
+            self.connection_source,
+            self.quit_check,
+            self.do_get_raw_dump,
+            crash_id=crash_id,
+            name=name
+        )
 
     @staticmethod
     def do_get_raw_dumps(boto_connection, crash_id):
@@ -171,8 +146,6 @@ class BotoCrashStorage(CrashStorageBase):
             dump_names_as_string = boto_connection.fetch(crash_id, 'dump_names')
             dump_names = boto_connection._convert_string_to_list(dump_names_as_string)
 
-            # when we fetch the dumps, they are by default in memory, so we'll
-            # put them into a MemoryDumpMapping.
             dumps = MemoryDumpsMapping()
             for dump_name in dump_names:
                 if dump_name in (None, '', 'upload_file_minidump'):
@@ -183,8 +156,17 @@ class BotoCrashStorage(CrashStorageBase):
             raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_raw_dumps(self, crash_id):
-        """this returns a MemoryDumpsMapping"""
-        return self.transaction_for_get(self.do_get_raw_dumps, crash_id)
+        """Fetch raw dumps
+
+        :returns: MemoryDumpsMapping
+
+        """
+        return retry(
+            self.connection_source,
+            self.quit_check,
+            self.do_get_raw_dumps,
+            crash_id=crash_id
+        )
 
     def get_raw_dumps_as_files(self, crash_id):
         in_memory_dumps = self.get_raw_dumps(crash_id)
@@ -204,10 +186,12 @@ class BotoCrashStorage(CrashStorageBase):
             raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
 
     def get_unredacted_processed(self, crash_id):
-        return self.transaction_for_get(
+        return retry(
+            self.connection_source,
+            self.quit_check,
             self._do_get_unredacted_processed,
-            crash_id,
-            self.config.json_object_hook,
+            crash_id=crash_id,
+            json_object_hook=self.config.json_object_hook
         )
 
 
@@ -243,22 +227,18 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     )
 
     def __init__(self, config, *args, **kwargs):
-        super(TelemetryBotoS3CrashStorage, self).__init__(
-            config, *args, **kwargs
-        )
+        super(TelemetryBotoS3CrashStorage, self).__init__(config, *args, **kwargs)
         self._all_fields = SuperSearchFields(config=self.config).get()
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
         crash_report = {}
 
-        # TODO Opportunity of optimization;
-        # We could inspect CRASH_REPORT_JSON_SCHEMA and get a list
-        # of all (recursive) keys that are in there and use that
-        # to limit the two following loops to not bother
-        # filling up `crash_report` with keys that will never be
-        # needed.
+        # TODO Opportunity of optimization: We could inspect
+        # CRASH_REPORT_JSON_SCHEMA and get a list of all (recursive) keys that
+        # are in there and use that to limit the two following loops to not
+        # bother filling up `crash_report` with keys that will never be needed.
 
-        # Rename fields in raw_crash.
+        # Rename fields in raw_crash
         raw_fields_map = dict(
             (x['in_database_name'], x['name'])
             for x in self._all_fields.values()
@@ -267,7 +247,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         for key, val in raw_crash.items():
             crash_report[raw_fields_map.get(key, key)] = val
 
-        # Rename fields in processed_crash.
+        # Rename fields in processed_crash
         processed_fields_map = dict(
             (x['in_database_name'], x['name'])
             for x in self._all_fields.values()
@@ -276,7 +256,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         for key, val in processed_crash.items():
             crash_report[processed_fields_map.get(key, key)] = val
 
-        # Validate crash_report.
+        # Validate crash_report
         crash_report = json_schema_reducer.make_reduced_dict(CRASH_REPORT_JSON_SCHEMA, crash_report)
         self.save_processed(crash_report)
 

@@ -8,24 +8,6 @@ from socorro.external.boto.crashstorage import (
     CrashIDNotFound,
     TelemetryBotoS3CrashStorage
 )
-from socorro.external.crash_data_base import CrashDataBase
-
-
-class CrashData(CrashDataBase):
-    """
-    Implement the /crash_data service with HBase.
-    """
-    def get_storage(self):
-        # why does this say hbase? Aren't we a botos3 module?
-        # yes, this seems odd, but the second generation middleware was
-        # built hard coded to using specific resources, though within those
-        # resources, configman was used to get config details for that
-        # resource.  Now that we're moving away from HBase, we can swap
-        # out the implementation of the hard coded HBase section with details
-        # from its replacement: boto S3.  So all indications in the code
-        # are that it is using HBase, but configuration has replaced the
-        # implementation details with boto S3.
-        return self.config.hbase.hbase_class(self.config.hbase)
 
 
 class SimplifiedCrashData(BotoS3CrashStorage):
