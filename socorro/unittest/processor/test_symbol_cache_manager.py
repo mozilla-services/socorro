@@ -11,12 +11,10 @@ from socorro.processor.symbol_cache_manager import (
     EventHandler,
     from_string_to_parse_size,
 )
-from socorro.unittest.testbase import TestCase
 
 
 @pytest.mark.skipif(os.uname()[0] != 'Linux', reason='only run if on Linux')
-class TestEventHandler(TestCase):
-
+class TestEventHandler(object):
     def test_init(self):
         mocked_monitor = Mock()
 

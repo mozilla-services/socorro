@@ -6,10 +6,9 @@ from mock import Mock, MagicMock
 import pytest
 
 from socorro.lib import dbutil
-from socorro.unittest.testbase import TestCase
 
 
-class Testdbutil(TestCase):
+class Testdbutil(object):
     def test_single_value_sql1(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=((17,),))

@@ -8,7 +8,6 @@ from socorro.processor.general_transform_rules import (
     OSInfoRule
 )
 from socorro.processor.rules.base import Rule
-from socorro.unittest.testbase import TestCase
 
 
 class BadRule(Rule):
@@ -16,7 +15,7 @@ class BadRule(Rule):
         raise KeyError('pii')
 
 
-class TestProcessor2015(TestCase):
+class TestProcessor2015(object):
     def get_config(self):
         cm = ConfigurationManager(
             definition_source=Processor2015.get_required_config(),

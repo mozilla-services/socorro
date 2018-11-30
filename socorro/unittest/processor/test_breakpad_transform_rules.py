@@ -18,7 +18,6 @@ from socorro.processor.breakpad_transform_rules import (
     MinidumpSha256Rule,
 )
 from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
-from socorro.unittest.testbase import TestCase
 
 
 example_uuid = '00000000-0000-0000-0000-000002140504'
@@ -198,7 +197,7 @@ class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
         yield "%s.json" % raw_crash.uuid
 
 
-class TestCrashingThreadRule(TestCase):
+class TestCrashingThreadRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -264,7 +263,7 @@ canonical_external_output = {
 canonical_external_output_str = json.dumps(canonical_external_output)
 
 
-class TestExternalProcessRule(TestCase):
+class TestExternalProcessRule(object):
     def get_basic_config(self):
         config = get_basic_config()
         config.dump_field = 'upload_file_minidump'
@@ -378,7 +377,7 @@ class TestExternalProcessRule(TestCase):
         )
 
 
-class TestBreakpadTransformRule2015(TestCase):
+class TestBreakpadTransformRule2015(object):
     def get_basic_config(self):
         config = get_basic_config()
         config.dump_field = 'upload_file_minidump'
@@ -501,7 +500,7 @@ class TestBreakpadTransformRule2015(TestCase):
         mocked_unlink.reset_mock()
 
 
-class TestJitCrashCategorizeRule(TestCase):
+class TestJitCrashCategorizeRule(object):
     def get_basic_config(self):
         config = DotDict()
         config.logger = Mock()

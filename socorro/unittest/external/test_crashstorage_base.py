@@ -18,7 +18,6 @@ from socorro.external.crashstorage_base import (
     MetricsCounter,
     MetricsBenchmarkingWrapper,
 )
-from socorro.unittest.testbase import TestCase
 
 
 class A(CrashStorageBase):
@@ -63,7 +62,7 @@ def fake_quit_check():
     return False
 
 
-class TestBase(TestCase):
+class TestCrashStorageBase(object):
     def test_basic_crashstorage(self):
         required_config = Namespace()
 
@@ -373,7 +372,7 @@ class TestBase(TestCase):
             assert processed_crash['bar']['something'] == 'else'
 
 
-class TestRedactor(TestCase):
+class TestRedactor(object):
     def test_redact(self):
         d = DotDict()
         # these keys survive redaction
@@ -416,7 +415,7 @@ class TestRedactor(TestCase):
         assert actual_surviving_keys == expected_surviving_keys
 
 
-class TestBench(TestCase):
+class TestBench(object):
     def test_benchmarking_crashstore(self):
         required_config = Namespace()
 
@@ -544,7 +543,7 @@ class TestBench(TestCase):
             mock_logging.debug.reset_mock()
 
 
-class TestDumpsMappings(TestCase):
+class TestDumpsMappings(object):
     def test_simple(self):
         mdm = MemoryDumpsMapping({
             'upload_file_minidump': b'binary_data',

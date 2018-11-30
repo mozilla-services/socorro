@@ -17,7 +17,6 @@ from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.index_creator import IndexCreator
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import FIELDS
-from socorro.unittest.testbase import TestCase
 
 
 DEFAULT_VALUES = {
@@ -43,10 +42,7 @@ def minimum_es_version(minimum_version):
 
     """
     def decorated(test):
-        """Decorator to only run the test if ES version is greater or equal than
-        specified.
-
-        """
+        """Decorator to only run the test if ES version is greater or equal than specified"""
         @wraps(test)
         def test_with_version(self):
             """Only run the test if ES version is not less than specified"""
@@ -74,8 +70,13 @@ class SuperSearchWithFields(SuperSearch):
         return super(SuperSearchWithFields, self).get(**kwargs)
 
 
-class TestCaseWithConfig(TestCase):
+class TestCaseWithConfig(object):
     """A simple TestCase class that can create configuration objects"""
+    def setup_method(self, method):
+        pass
+
+    def teardown_method(self, method):
+        pass
 
     def get_tuned_config(self, sources, extra_values=None):
         if not isinstance(sources, (list, tuple)):
@@ -110,13 +111,10 @@ class TestCaseWithConfig(TestCase):
 class ElasticsearchTestCase(TestCaseWithConfig):
     """Base class for Elastic Search related unit tests"""
 
-    def __init__(self, *args, **kwargs):
-        super(ElasticsearchTestCase, self).__init__(*args, **kwargs)
-
+    def setup_method(self, method):
+        super(ElasticsearchTestCase, self).setup_method(method)
         self.config = self.get_base_config()
-        es_context = self.config.elasticsearch.elasticsearch_class(
-            config=self.config.elasticsearch
-        )
+        es_context = self.config.elasticsearch.elasticsearch_class(config=self.config.elasticsearch)
 
         creator_config = self.get_tuned_config(IndexCreator)
 
@@ -126,23 +124,16 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         with es_context() as conn:
             self.connection = conn
 
-    def setUp(self):
-        super(ElasticsearchTestCase, self).setUp()
         self.index_creator.create_socorro_index(self.config.elasticsearch.elasticsearch_index)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         # Clear the test indices.
-        self.index_client.delete(
-            self.config.elasticsearch.elasticsearch_index
-        )
+        self.index_client.delete(self.config.elasticsearch.elasticsearch_index)
 
-        super(ElasticsearchTestCase, self).tearDown()
+        super(ElasticsearchTestCase, self).teardown_method(method)
 
     def health_check(self):
-        self.connection.cluster.health(
-            wait_for_status='yellow',
-            request_timeout=5
-        )
+        self.connection.cluster.health(wait_for_status='yellow', request_timeout=5)
 
     def get_url(self):
         """Returns the first url in the elasticsearch_urls list"""
@@ -153,9 +144,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         if extra_values:
             values_source.update(extra_values)
 
-        return super(ElasticsearchTestCase, self).get_tuned_config(
-            sources, values_source
-        )
+        return super(ElasticsearchTestCase, self).get_tuned_config(sources, values_source)
 
     def get_base_config(self, es_index=None):
         extra_values = None
@@ -164,10 +153,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
                 'resource.elasticsearch.elasticsearch_index': es_index
             }
 
-        return self.get_tuned_config(
-            ElasticsearchConfig,
-            extra_values=extra_values
-        )
+        return self.get_tuned_config(ElasticsearchConfig, extra_values=extra_values)
 
     def index_crash(self, processed_crash=None, raw_crash=None, crash_id=None):
         if crash_id is None:
@@ -189,9 +175,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         )
         return res['_id']
 
-    def index_many_crashes(
-        self, number, processed_crash=None, raw_crash=None, loop_field=None
-    ):
+    def index_many_crashes(self, number, processed_crash=None, raw_crash=None, loop_field=None):
         processed_crash = processed_crash or {}
         raw_crash = raw_crash or {}
 
@@ -218,13 +202,8 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             }
             actions.append(action)
 
-        bulk(
-            client=self.connection,
-            actions=actions,
-        )
+        bulk(client=self.connection, actions=actions)
         self.refresh_index()
 
     def refresh_index(self, es_index=None):
-        self.index_client.refresh(
-            index=es_index or self.config.elasticsearch.elasticsearch_index
-        )
+        self.index_client.refresh(index=es_index or self.config.elasticsearch.elasticsearch_index)

@@ -13,13 +13,10 @@ from socorro.lib.threaded_task_manager import (
     ThreadedTaskManagerWithConfigSetup,
     default_task_func,
 )
-from socorro.unittest.testbase import TestCase
 
 
-class TestThreadedTaskManager(TestCase):
-
-    def setUp(self):
-        super(TestThreadedTaskManager, self).setUp()
+class TestThreadedTaskManager(object):
+    def setup_method(self, method):
         self.logger = logging.getLogger(__name__)
 
     def test_constuctor1(self):

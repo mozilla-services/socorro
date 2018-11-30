@@ -190,11 +190,7 @@ class TestConnectionContext:
 
         assert result == thing_as_str
 
-    def assert_regional_s3_connection_parameters(
-        self,
-        region,
-        conn
-    ):
+    def assert_regional_s3_connection_parameters(self, region, conn):
         kwargs = {
             'aws_access_key_id': conn.config.access_key,
             'aws_secret_access_key': (

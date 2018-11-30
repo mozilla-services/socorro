@@ -12,7 +12,6 @@ from socorro.processor.general_transform_rules import (
     OSInfoRule,
 )
 from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
-from socorro.unittest.testbase import TestCase
 
 
 canonical_standard_raw_crash = DotDict({
@@ -100,7 +99,7 @@ canonical_processed_crash = DotDict({
 })
 
 
-class TestIdentifierRule(TestCase):
+class TestIdentifierRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -134,7 +133,7 @@ class TestIdentifierRule(TestCase):
         assert processed_crash == {}
 
 
-class TestCPUInfoRule(TestCase):
+class TestCPUInfoRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -198,7 +197,7 @@ class TestCPUInfoRule(TestCase):
         assert raw_crash == {}
 
 
-class TestOSInfoRule(TestCase):
+class TestOSInfoRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
         raw_crash = {}

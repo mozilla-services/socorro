@@ -11,7 +11,6 @@ from socorro.lib import BadArgumentError, datetimeutil
 from socorro.lib.search_common import (
     SearchBase, SearchParam, convert_to_type, get_parameters, restrict_fields
 )
-from socorro.unittest.testbase import TestCase
 
 
 SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
@@ -129,8 +128,7 @@ def _get_config_manager():
     return config_manager
 
 
-class TestSearchBase(TestCase):
-
+class TestSearchBase(object):
     def test_get_parameters(self):
         with _get_config_manager().context() as config:
             search = SearchBaseWithFields(
@@ -364,7 +362,7 @@ class TestSearchBase(TestCase):
                 assert param.value == ['1.9b2']
 
 
-class TestSearchCommon(TestCase):
+class TestSearchCommon(object):
     """Test functions of the search_common module. """
 
     def test_convert_to_type(self):
@@ -449,8 +447,7 @@ class TestSearchCommon(TestCase):
             "plugin_search_mode": "",
             "plugin_terms": ""
         })
-        assert params, "SearchCommon.get_parameters() returned something " \
-                       "empty or null."
+        assert params, "SearchCommon.get_parameters() returned something empty or null."
         for i in params:
             typei = type(params[i])
             if i in ("from_date", "to_date", "build_from", "build_to"):

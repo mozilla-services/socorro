@@ -13,10 +13,9 @@ from socorro.external.rabbitmq.connection_context import (
     ConnectionContext,
     ConnectionContextPooled
 )
-from socorro.unittest.testbase import TestCase
 
 
-class TestConnection(TestCase):
+class TestConnection(object):
     """Test PostgreSQLBase class. """
 
     def test_constructor(self):
@@ -49,8 +48,7 @@ class TestConnection(TestCase):
         faked_connection_object.close.assert_called_once_with()
 
 
-class TestConnectionContext(TestCase):
-
+class TestConnectionContext(object):
     def _setup_config(self):
         config = DotDict()
         config.host = 'localhost'
@@ -62,9 +60,7 @@ class TestConnectionContext(TestCase):
         config.priority_queue_name = 'wilma'
         config.reprocessing_queue_name = 'betty'
         config.rabbitmq_connection_wrapper_class = Connection
-
         config.executor_identity = lambda: 'MainThread'
-
         return config
 
     def test_constructor(self):
@@ -111,8 +107,7 @@ class TestConnectionContext(TestCase):
             conn_context.connection.close.assert_called_once_with()
 
 
-class TestConnectionContextPooled(TestCase):
-
+class TestConnectionContextPooled(object):
     def _setup_config(self):
         config = DotDict()
         config.host = 'localhost'

@@ -12,7 +12,6 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.processor.processor_app import ProcessorApp
 from socorro.unittest import WHATEVER
-from socorro.unittest.testbase import TestCase
 
 
 def sequencer(*args):
@@ -22,7 +21,7 @@ def sequencer(*args):
     return foo
 
 
-class TestProcessorApp(TestCase):
+class TestProcessorApp(object):
     def get_standard_config(self, sentry_dsn=None):
         config = DotDict()
 

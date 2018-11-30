@@ -8,13 +8,9 @@ from mock import Mock, MagicMock
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.rabbitmq.crashstorage import ReprocessingOneRabbitMQCrashStore
 from socorro.external.rabbitmq.connection_context import ConnectionContext
-from socorro.unittest.testbase import TestCase
 
 
-class TestReprocessing(TestCase):
-    def setUp(self):
-        super(TestReprocessing, self).setUp()
-
+class TestReprocessing(object):
     def _setup_config(self):
         config = DotDict()
         self.transaction_executor = MagicMock()

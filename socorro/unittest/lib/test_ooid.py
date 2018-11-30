@@ -9,7 +9,6 @@ from socorro.lib import ooid
 import pytest
 
 from socorro.lib.datetimeutil import utc_now, UTC
-from socorro.unittest.testbase import TestCase
 
 
 @pytest.mark.parametrize('crashid, expected', [
@@ -24,8 +23,8 @@ def test_validate_crash_id(crashid, expected):
     assert ooid.is_crash_id_valid(crashid) == expected
 
 
-class TestOoid(TestCase):
-    def setUp(self):
+class TestOoid(object):
+    def setup_method(self, method):
         self.baseDate = datetime.datetime(2008, 12, 25, tzinfo=UTC)
         self.rawuuids = []
         self.yyyyoids = []
