@@ -3,12 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pytest
-import requests_mock
 
 from socorro.cron.crontabber_app import CronTabberApp
-from socorro.cron.jobs.bugzilla import find_signatures
-from socorro.cron.jobs.bugzilla import BUGZILLA_BASE_URL
-from socorro.unittest.cron.crontabber_tests_base import IntegrationTestBase, get_config_manager
+from socorro.cron.jobs.bugzilla import BUGZILLA_BASE_URL, find_signatures
+from socorro.unittest.cron.crontabber_tests_base import get_config_manager, load_structure
 
 
 SAMPLE_BUGZILLA_RESULTS = {
@@ -54,8 +52,7 @@ SAMPLE_BUGZILLA_RESULTS = {
 }
 
 
-@requests_mock.Mocker()
-class IntegrationTestBugzilla(IntegrationTestBase):
+class TestBugzillaCronApp(object):
     def _setup_config_manager(self, days_into_past):
         return get_config_manager(
             jobs='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
@@ -64,8 +61,8 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             }
         )
 
-    def fetch_data(self):
-        cursor = self.conn.cursor()
+    def fetch_data(self, conn):
+        cursor = conn.cursor()
         cursor.execute("""
         SELECT bug_id, signature
         FROM crashstats_bugassociation
@@ -78,28 +75,28 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             } for result in cursor.fetchall()
         ]
 
-    def insert_data(self, bug_id, signature):
-        cursor = self.conn.cursor()
+    def insert_data(self, conn, bug_id, signature):
+        cursor = conn.cursor()
         cursor.execute("""
         INSERT INTO crashstats_bugassociation (bug_id, signature)
         VALUES (%s, %s);
         """, (bug_id, signature))
-        self.conn.commit()
+        conn.commit()
 
-    def test_basic_run_job(self, requests_mocker):
-        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+    def test_basic_run_job(self, db_conn, req_mock):
+        req_mock.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
         config_manager = self._setup_config_manager(3)
 
         with config_manager.context() as config:
             tab = CronTabberApp(config)
-            tab.run_all()
+            tab.run_one('bugzilla-associations')
 
-            information = self._load_structure()
+            information = load_structure(db_conn)
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        associations = self.fetch_data()
+        associations = self.fetch_data(db_conn)
 
         # Verify we have the expected number of associations
         assert len(associations) == 8
@@ -117,43 +114,43 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         assert 'another::legitimate(sig)' in bug_8_signatures
         assert 'legitimate(sig)' in bug_8_signatures
 
-    def test_run_job_with_reports_with_existing_bugs_different(self, requests_mocker):
+    def test_run_job_with_reports_with_existing_bugs_different(self, db_conn, req_mock):
         """Verify that an association to a signature that no longer is part
         of the crash signatures list gets removed.
         """
-        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
-        self.insert_data(bug_id='8', signature='@different')
+        req_mock.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+        self.insert_data(db_conn, bug_id='8', signature='@different')
 
         config_manager = self._setup_config_manager(3)
         with config_manager.context() as config:
             tab = CronTabberApp(config)
-            tab.run_all()
+            tab.run_one('bugzilla-associations')
 
-            information = self._load_structure()
+            information = load_structure(db_conn)
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
         # The previous association, to signature '@different' that is not in
         # crash signatures, is now missing
-        associations = self.fetch_data()
+        associations = self.fetch_data(db_conn)
         assert '@different' not in [item['signature'] for item in associations]
 
-    def test_run_job_with_reports_with_existing_bugs_same(self, requests_mocker):
-        requests_mocker.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
-        self.insert_data(bug_id='8', signature='legitimate(sig)')
+    def test_run_job_with_reports_with_existing_bugs_same(self, db_conn, req_mock):
+        req_mock.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+        self.insert_data(db_conn, bug_id='8', signature='legitimate(sig)')
 
         config_manager = self._setup_config_manager(3)
         with config_manager.context() as config:
             tab = CronTabberApp(config)
-            tab.run_all()
+            tab.run_one('bugzilla-associations')
 
-            information = self._load_structure()
+            information = load_structure(db_conn)
             assert information['bugzilla-associations']
             assert not information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
-        associations = self.fetch_data()
+        associations = self.fetch_data(db_conn)
         associations = [item['signature'] for item in associations if item['bug_id'] == '8']
 
         # New signatures have correctly been inserted
@@ -163,19 +160,15 @@ class IntegrationTestBugzilla(IntegrationTestBase):
             'legitimate(sig)'
         ]
 
-    def test_with_bugzilla_failure(self, requests_mocker):
-        requests_mocker.get(
-            BUGZILLA_BASE_URL,
-            text='error loading content',
-            status_code=500
-        )
+    def test_with_bugzilla_failure(self, db_conn, req_mock):
+        req_mock.get(BUGZILLA_BASE_URL, text='error loading content', status_code=500)
         config_manager = self._setup_config_manager(3)
 
         with config_manager.context() as config:
             tab = CronTabberApp(config)
-            tab.run_all()
+            tab.run_one('bugzilla-associations')
 
-            information = self._load_structure()
+            information = load_structure(db_conn)
             assert information['bugzilla-associations']
             # Verify there has been an error
             last_error = information['bugzilla-associations']['last_error']

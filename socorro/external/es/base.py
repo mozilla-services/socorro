@@ -8,7 +8,6 @@ from configman import Namespace, class_converter, RequiredConfig
 
 
 class ElasticsearchConfig(RequiredConfig):
-
     required_config = Namespace()
     required_config.namespace('elasticsearch')
     required_config.elasticsearch.add_option(
@@ -55,7 +54,6 @@ class ElasticsearchConfig(RequiredConfig):
 
 
 class ElasticsearchBase(object):
-
     def __init__(self, *args, **kwargs):
         self.config = kwargs.get('config')
         self.es_context = self.config.elasticsearch.elasticsearch_class(

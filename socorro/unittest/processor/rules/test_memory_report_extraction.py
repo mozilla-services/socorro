@@ -7,7 +7,6 @@ import json
 
 import mock
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
-from socorro.unittest.testbase import TestCase
 from socorro.unittest.processor import create_basic_fake_processor
 
 
@@ -20,7 +19,7 @@ def get_example_file_data(filename):
         return json.loads(f.read())
 
 
-class TestMemoryReportExtraction(TestCase):
+class TestMemoryReportExtraction(object):
     def get_config(self):
         fake_processor = create_basic_fake_processor()
         # FIXME(willkg): we should switch logging testing to use pytest's caplog

@@ -6,7 +6,6 @@ from configman import Namespace
 import psycopg2
 
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.unittest.testbase import TestCase
 
 
 _closes = _commits = _rollbacks = 0
@@ -30,16 +29,13 @@ class MockConnection(object):
         _rollbacks += 1
 
 
-class TestConnectionContext(TestCase):
-
-    def setUp(self):
-        super(TestConnectionContext, self).setUp()
+class TestConnectionContext(object):
+    def setup_method(self, method):
         # reset global variables so each test can run separately
         global _closes, _commits, _rollbacks
         _closes = _commits = _rollbacks = 0
 
     def test_basic_postgres_usage(self):
-
         class Sneak(ConnectionContext):
 
             def connection(self, __=None):
@@ -76,8 +72,7 @@ class TestConnectionContext(TestCase):
 
         try:
             with postgres() as connection:
-                connection.transaction_status = \
-                    psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                connection.transaction_status = psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise psycopg2.OperationalError('crap!')
             # OperationalError's aren't bubbled up
         except psycopg2.OperationalError:

@@ -13,9 +13,8 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 
 class IntegrationTestIndexCreator(ElasticsearchTestCase):
-    def __init__(self, *args, **kwargs):
-        super(IntegrationTestIndexCreator, self).__init__(*args, **kwargs)
-
+    def setup_method(self, method):
+        super(IntegrationTestIndexCreator, self).setup_method(method)
         self.config = self.get_tuned_config(IndexCreator)
 
     def test_create_index(self):

@@ -40,7 +40,6 @@ from socorro.processor.mozilla_transform_rules import (
 from socorro.signature.generator import SignatureGenerator
 from socorro.unittest import WHATEVER
 from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
-from socorro.unittest.testbase import TestCase
 
 
 canonical_standard_raw_crash = DotDict({
@@ -156,7 +155,7 @@ canonical_processed_crash = DotDict({
 })
 
 
-class TestProductRule(TestCase):
+class TestProductRule(object):
     def test_everything_we_hoped_for(self):
         # does it even instantiate?
         config = get_basic_config()
@@ -203,7 +202,7 @@ class TestProductRule(TestCase):
         assert processed_crash.build == "20120420145725"
 
 
-class TestUserDataRule(TestCase):
+class TestUserDataRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -240,7 +239,7 @@ class TestUserDataRule(TestCase):
         assert processed_crash.email is None
 
 
-class TestEnvironmentRule(TestCase):
+class TestEnvironmentRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -270,7 +269,7 @@ class TestEnvironmentRule(TestCase):
         assert processed_crash.app_notes == ""
 
 
-class TestPluginRule(TestCase):
+class TestPluginRule(object):
     def test_plugin_hang(self):
         config = get_basic_config()
 
@@ -316,7 +315,7 @@ class TestPluginRule(TestCase):
         assert 'PluginVersion' not in processed_crash
 
 
-class TestAddonsRule(TestCase):
+class TestAddonsRule(object):
     def test_action_nothing_unexpected(self):
         config = get_basic_config()
 
@@ -386,7 +385,7 @@ class TestAddonsRule(TestCase):
         assert processed_crash.addons_checked
 
 
-class TestDatesAndTimesRule(TestCase):
+class TestDatesAndTimesRule(object):
     def test_get_truncate_or_warn(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         processor_notes = []
@@ -628,7 +627,7 @@ class TestDatesAndTimesRule(TestCase):
         assert processor_meta.processor_notes == ['non-integer value of "SecondsSinceLastCrash"']
 
 
-class TestJavaProcessRule(TestCase):
+class TestJavaProcessRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -681,7 +680,7 @@ class TestJavaProcessRule(TestCase):
         assert 'malformed java stack trace' in processor_meta.processor_notes[0]
 
 
-class TestMozCrashReasonRule(TestCase):
+class TestMozCrashReasonRule(object):
     def test_no_mozcrashreason(self):
         config = get_basic_config()
 
@@ -734,7 +733,7 @@ class TestMozCrashReasonRule(TestCase):
             }
 
 
-class TestOutOfMemoryBinaryRule(TestCase):
+class TestOutOfMemoryBinaryRule(object):
     def test_extract_memory_info(self):
         config = DotDict()
         config.logger = Mock()
@@ -898,7 +897,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
         assert 'memory_report' not in processed_crash
 
 
-class TestProductRewriteRule(TestCase):
+class TestProductRewriteRule(object):
     def test_product_map_rewrite(self):
         config = get_basic_config()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
@@ -920,7 +919,7 @@ class TestProductRewriteRule(TestCase):
         ]
 
 
-class TestESRVersionRewrite(TestCase):
+class TestESRVersionRewrite(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -975,7 +974,7 @@ class TestESRVersionRewrite(TestCase):
         assert processed_crash == DotDict()
 
 
-class TestPluginContentURL(TestCase):
+class TestPluginContentURL(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -1012,7 +1011,7 @@ class TestPluginContentURL(TestCase):
         assert processed_crash == DotDict()
 
 
-class TestPluginUserComment(TestCase):
+class TestPluginUserComment(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -1049,7 +1048,7 @@ class TestPluginUserComment(TestCase):
         assert processed_crash == DotDict()
 
 
-class TestExploitablityRule(TestCase):
+class TestExploitablityRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -1083,7 +1082,7 @@ class TestExploitablityRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
 
-class TestFlashVersionRule(TestCase):
+class TestFlashVersionRule(object):
     def test_get_flash_version(self):
         config = get_basic_config()
 
@@ -1137,7 +1136,7 @@ class TestFlashVersionRule(TestCase):
         assert raw_crash == canonical_standard_raw_crash
 
 
-class TestWinsock_LSPRule(TestCase):
+class TestWinsock_LSPRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -1175,7 +1174,7 @@ class TestWinsock_LSPRule(TestCase):
         assert raw_crash == expected_raw_crash
 
 
-class TestTopMostFilesRule(TestCase):
+class TestTopMostFilesRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -1432,7 +1431,7 @@ class TestBetaVersionRule(object):
         assert processor_meta.processor_notes == []
 
 
-class TestOsPrettyName(TestCase):
+class TestOsPrettyName(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 
@@ -1520,7 +1519,7 @@ class TestOsPrettyName(TestCase):
         assert processed_crash['os_pretty_version'] == 'Windows NT'
 
 
-class TestThemePrettyNameRule(TestCase):
+class TestThemePrettyNameRule(object):
     def test_everything_we_hoped_for(self):
         config = get_basic_config()
 

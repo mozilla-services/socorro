@@ -10,7 +10,6 @@ from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
     change_default,
 )
-from socorro.unittest.testbase import TestCase
 
 
 # the following two classes are used in test_classes_in_namespaces_converter1
@@ -74,8 +73,7 @@ class Beta(RequiredConfig):
         self.b = config.b
 
 
-class TestConverters(TestCase):
-
+class TestConverters(object):
     def test_classes_in_namespaces_converter_1(self):
         converter_fn = str_to_classes_in_namespaces_converter()
         class_list_str = (

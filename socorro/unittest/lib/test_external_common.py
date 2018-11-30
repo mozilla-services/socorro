@@ -9,12 +9,10 @@ import isodate
 import pytest
 
 from socorro.lib import BadArgumentError, external_common
-from socorro.unittest.testbase import TestCase
 
 
-class TestExternalCommon(TestCase):
+class TestExternalCommon(object):
     """Test functions of the external_common module. """
-
     def test_check_type(self):
         # Test 1: null
         param = None
@@ -160,9 +158,7 @@ class TestExternalCommon(TestCase):
         assert params == params_exp
 
     def test_parse_arguments_with_class_validators(self):
-
         class NumberConverter(object):
-
             def clean(self, value):
                 conv = {'one': 1, 'two': 2, 'three': 3}
                 try:

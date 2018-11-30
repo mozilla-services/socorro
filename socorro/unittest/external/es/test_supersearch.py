@@ -22,11 +22,9 @@ from socorro.unittest.external.es.base import (
 
 
 class IntegrationTestSuperSearch(ElasticsearchTestCase):
-    """Test SuperSearch with an elasticsearch database containing fake
-    data. """
-
-    def setUp(self):
-        super(IntegrationTestSuperSearch, self).setUp()
+    """Test SuperSearch with an elasticsearch database containing fake data"""
+    def setup_method(self, method):
+        super(IntegrationTestSuperSearch, self).setup_method(method)
 
         self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()
@@ -71,7 +69,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert res == expected
 
     def test_get(self):
-        """Run a very basic test, just to see if things work. """
+        """Run a very basic test, just to see if things work"""
         self.index_crash({
             'signature': 'js::break_your_browser',
             'date_processed': self.now,
@@ -108,7 +106,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert 'write_combine_size' in res['hits'][0]
 
     def test_get_with_bad_results_number(self):
-        """Run a very basic test, just to see if things work. """
+        """Run a very basic test, just to see if things work"""
         with pytest.raises(BadArgumentError):
             self.api.get(_columns=['date'], _results_number=-1)
 
@@ -551,7 +549,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert len(res['hits']) == 0
 
     def test_get_with_sorting(self):
-        """Test a search with sort returns expected results. """
+        """Test a search with sort returns expected results"""
         self.index_crash({
             'product': 'WaterWolf',
             'os_name': 'Windows NT',

@@ -7,6 +7,13 @@ import os
 from markus.testing import MetricsMock
 import psycopg2
 import pytest
+import requests_mock
+
+
+@pytest.fixture
+def req_mock():
+    with requests_mock.mock() as mock:
+        yield mock
 
 
 @pytest.fixture
@@ -33,4 +40,26 @@ def metricsmock():
 @pytest.fixture
 def db_conn():
     dsn = os.environ['DATABASE_URL']
-    return psycopg2.connect(dsn)
+    conn = psycopg2.connect(dsn)
+
+    tables = [
+        'crashstats_bugassociation',
+        'crashstats_productversion',
+        'crashstats_signature',
+        'cron_job',
+        'cron_log',
+    ]
+
+    # Clean specific tables after usage
+    cursor = conn.cursor()
+    for table_name in tables:
+        cursor.execute('TRUNCATE %s CASCADE' % table_name)
+    conn.commit()
+
+    yield conn
+
+    # Clean specific tables after usage
+    cursor = conn.cursor()
+    for table_name in tables:
+        cursor.execute('TRUNCATE %s CASCADE' % table_name)
+    conn.commit()

@@ -7,9 +7,7 @@ import elasticsearch
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.es.index_cleaner import IndexCleaner
-from socorro.unittest.external.es.base import (
-    ElasticsearchTestCase,
-)
+from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
@@ -27,7 +25,8 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
             'resource.elasticsearch.elasticsearch_index_regex': '^test_socorro[0-9]{6}$',
         })
 
-    def setUp(self):
+    def setup_method(self, method):
+        super(IntegrationTestIndexCleaner, self).setup_method(method)
         self.indices = []
 
     def create_index(self, index):
@@ -35,7 +34,7 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         self.indices.append(index)
         assert self.index_client.exists(index)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         """Remove any indices that may have been created during tests.
         """
         for index in self.indices:
@@ -91,8 +90,7 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         assert not self.index_client.exists('test_socorro200201')
 
     def test_delete_old_indices_other_indices_are_not_deleted(self):
-        """Verify that non-week-based indices are not removed.
-        """
+        """Verify that non-week-based indices are not removed"""
         # Create a temporary index.
         self.index_creator.create_index('socorro_test_temp', {})
 

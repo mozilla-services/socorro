@@ -2,24 +2,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
 
 from configman.dotdict import DotDict
-from mock import Mock
+from mock import Mock, MagicMock
 import pytest
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.task_manager import TaskManager
-from socorro.unittest.testbase import TestCase
 
 
-def get_logger():
-    return logging.getLogger(__name__)
-
-
-class TestFetchTransformSaveApp(TestCase):
-
+class TestFetchTransformSaveApp(object):
     def test_bogus_source_iter_and_worker(self):
         class TestFTSAppClass(FetchTransformSaveApp):
             def __init__(self, config):
@@ -38,9 +31,8 @@ class TestFetchTransformSaveApp(TestCase):
             def transform(self, anItem):
                 self.the_list.append(anItem)
 
-        logger = get_logger()
         config = DotDict({
-            'logger': logger,
+            'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
             'number_of_submissions': 'all',
@@ -48,7 +40,7 @@ class TestFetchTransformSaveApp(TestCase):
             'destination': DotDict({'crashstorage_class': None}),
             'producer_consumer': DotDict({
                 'producer_consumer_class': TaskManager,
-                'logger': logger,
+                'logger': MagicMock(),
                 'number_of_threads': 1,
                 'maximum_queue_size': 1
             })
@@ -117,9 +109,8 @@ class TestFetchTransformSaveApp(TestCase):
             def close(self):
                 self.number_of_close_calls += 1
 
-        logger = get_logger()
         config = DotDict({
-            'logger': logger,
+            'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
             'number_of_submissions': 'all',
@@ -127,7 +118,7 @@ class TestFetchTransformSaveApp(TestCase):
             'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
             'producer_consumer': DotDict({
                 'producer_consumer_class': ThreadedTaskManager,
-                'logger': logger,
+                'logger': MagicMock(),
                 'number_of_threads': 1,
                 'maximum_queue_size': 1
             })
@@ -147,7 +138,6 @@ class TestFetchTransformSaveApp(TestCase):
         assert destination.number_of_close_calls == 1
 
     def test_source_iterator(self):
-
         faked_finished_func = Mock()
 
         class FakeStorageSource(object):
@@ -183,9 +173,8 @@ class TestFetchTransformSaveApp(TestCase):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dump
 
-        logger = get_logger()
         config = DotDict({
-            'logger': logger,
+            'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
             'number_of_submissions': 'forever',
@@ -193,7 +182,7 @@ class TestFetchTransformSaveApp(TestCase):
             'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
             'producer_consumer': DotDict({
                 'producer_consumer_class': ThreadedTaskManager,
-                'logger': logger,
+                'logger': MagicMock(),
                 'number_of_threads': 1,
                 'maximum_queue_size': 1
             })
@@ -226,9 +215,7 @@ class TestFetchTransformSaveApp(TestCase):
         assert faked_finished_func.call_count == (999 - no_finished_function_counter)
 
     def test_no_source(self):
-
         class FakeStorageDestination(object):
-
             def __init__(self, config, quit_check_callback):
                 self.store = DotDict()
                 self.dumps = DotDict()
@@ -237,9 +224,8 @@ class TestFetchTransformSaveApp(TestCase):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dump
 
-        logger = get_logger()
         config = DotDict({
-            'logger': logger,
+            'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
             'number_of_submissions': 'forever',
@@ -247,7 +233,7 @@ class TestFetchTransformSaveApp(TestCase):
             'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
             'producer_consumer': DotDict({
                 'producer_consumer_class': ThreadedTaskManager,
-                'logger': logger,
+                'logger': MagicMock(),
                 'number_of_threads': 1,
                 'maximum_queue_size': 1
             })
@@ -294,9 +280,8 @@ class TestFetchTransformSaveApp(TestCase):
                 for k in self.store.keys():
                     yield k
 
-        logger = get_logger()
         config = DotDict({
-            'logger': logger,
+            'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
             'number_of_submissions': 'forever',
@@ -304,7 +289,7 @@ class TestFetchTransformSaveApp(TestCase):
             'destination': DotDict({'crashstorage_class': None}),
             'producer_consumer': DotDict({
                 'producer_consumer_class': ThreadedTaskManager,
-                'logger': logger,
+                'logger': MagicMock(),
                 'number_of_threads': 1,
                 'maximum_queue_size': 1
             })

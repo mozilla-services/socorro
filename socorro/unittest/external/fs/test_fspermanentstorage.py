@@ -10,24 +10,21 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.external.fs.crashstorage import FSPermanentStorage
-from socorro.unittest.testbase import TestCase
 
 
 FS_ROOT = os.environ['resource.fs.fs_root']
 
 
-class TestFSPermanentStorage(TestCase):
+class TestFSPermanentStorage(object):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
     CRASH_ID_3 = "0bba929f-8721-460c-dead-a43c20071027"
 
-    def setUp(self):
-        super(TestFSPermanentStorage, self).setUp()
+    def setup_method(self, method):
         with self._common_config_setup().context() as config:
             self.fsrts = FSPermanentStorage(config)
 
-    def tearDown(self):
-        super(TestFSPermanentStorage, self).tearDown()
+    def teardown_method(self, method):
         shutil.rmtree(self.fsrts.config.fs_root)
 
     def _common_config_setup(self):

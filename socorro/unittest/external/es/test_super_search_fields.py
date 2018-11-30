@@ -15,9 +15,8 @@ from socorro.external.es.super_search_fields import (
     SuperSearchFields,
 )
 from socorro.lib import datetimeutil
-from socorro.unittest.external.es.base import (
-    ElasticsearchTestCase,
-)
+from socorro.unittest.external.es.base import ElasticsearchTestCase
+
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
@@ -27,12 +26,9 @@ from socorro.unittest.external.es.base import (
 
 
 class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
-    """Test SuperSearchFields with an elasticsearch database containing fake
-    data. """
-
-    def setUp(self):
-        super(IntegrationTestSuperSearchFields, self).setUp()
-
+    """Test SuperSearchFields with an elasticsearch database containing fake data"""
+    def setup_method(self, method):
+        super(IntegrationTestSuperSearchFields, self).setup_method(method)
         self.api = SuperSearchFields(config=self.config)
         self.api.get_fields = lambda: copy.deepcopy(FIELDS)
 
@@ -41,9 +37,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         assert results == FIELDS
 
     def test_get_missing_fields(self):
-        config = self.get_base_config(
-            es_index='socorro_integration_test_%W'
-        )
+        config = self.get_base_config(es_index='socorro_integration_test_%W')
 
         fake_mappings = [
             {

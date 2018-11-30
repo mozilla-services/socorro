@@ -13,7 +13,7 @@ from socorro.lib import MissingArgumentError, BadArgumentError
 from socorro.unittest.external.boto import get_config
 
 
-class TestSimplifiedCrashData:
+class TestSimplifiedCrashData(object):
     def get_s3_store(self):
         return SimplifiedCrashData(config=get_config(SimplifiedCrashData))
 
@@ -105,7 +105,7 @@ class TestSimplifiedCrashData:
             )
 
 
-class TestTelemetryCrashData:
+class TestTelemetryCrashData(object):
     def get_s3_store(self):
         config = get_config(
             cls=TelemetryCrashData,

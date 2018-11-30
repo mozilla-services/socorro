@@ -12,11 +12,9 @@ from socorro.app.socorro_app import (
     SocorroApp,
     setup_logger,
 )
-from socorro.unittest.testbase import TestCase
 
 
-class TestSocorroApp(TestCase):
-
+class TestSocorroApp(object):
     def test_instantiation(self):
         config = DotDict()
         sa = SocorroApp(config)
@@ -165,7 +163,7 @@ class AppWithMetrics(App):
         self.config.metrics.histogram('histogram_key', value=1000)
 
 
-class TestSocorroAppMetrics:
+class TestSocorroAppMetrics(object):
     def test_metrics(self, metricsmock):
         """Verify LoggingMetrics work"""
         with metricsmock as mm:

@@ -3,10 +3,9 @@ from mock import Mock, MagicMock, patch
 
 from socorro.external.rabbitmq.crashstorage import RabbitMQCrashStorage
 from socorro.external.crashstorage_base import Redactor
-from socorro.unittest.testbase import TestCase
 
 
-class TestCrashStorage(TestCase):
+class TestCrashStorage(object):
     def _setup_config(self):
         config = DotDict()
         config.backoff_delays = (0, 0, 0)

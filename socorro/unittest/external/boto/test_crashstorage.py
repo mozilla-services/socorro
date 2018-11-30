@@ -63,7 +63,7 @@ def setup_mocked_s3_storage(
     return storage_class(config)
 
 
-class TestBotoS3CrashStorage:
+class TestBotoS3CrashStorage(object):
     def _fake_processed_crash(self):
         d = DotDict()
         # these keys survive redaction

@@ -8,13 +8,10 @@ from configman.dotdict import DotDict
 from mock import Mock
 
 from socorro.lib.task_manager import TaskManager, default_task_func
-from socorro.unittest.testbase import TestCase
 
 
-class TestTaskManager(TestCase):
-
-    def setUp(self):
-        super(TestTaskManager, self).setUp()
+class TestTaskManager(object):
+    def setup_method(self, method):
         self.logger = logging.getLogger(__name__)
 
     def test_constuctor1(self):

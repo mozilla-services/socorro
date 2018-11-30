@@ -4,10 +4,7 @@
 
 from configman.dotdict import DotDict
 
-from socorro.external.rabbitmq.rmq_new_crash_source import (
-    RMQNewCrashSource
-)
-from socorro.unittest.testbase import TestCase
+from socorro.external.rabbitmq.rmq_new_crash_source import RMQNewCrashSource
 
 
 class FakeCrashStore(object):
@@ -23,9 +20,7 @@ class FakeCrashStore(object):
         return crash_id
 
 
-class TestConnection(TestCase):
-    """Test RMQNewCrashSource class. """
-
+class TestRMQNewCrashSource(object):
     def _setup_config(self):
         config = DotDict()
         config.crashstorage_class = FakeCrashStore

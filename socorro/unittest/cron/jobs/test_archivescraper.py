@@ -2,12 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
-
 from jinja2 import Environment
-import psycopg2
 import pytest
-import requests_mock
 
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.cron.jobs.archivescraper import ArchiveScraperCronApp
@@ -131,30 +127,9 @@ def config():
         yield class_config
 
 
-@pytest.fixture
-def req_mock():
-    with requests_mock.mock() as mock:
-        yield mock
-
-
-class TestArchiveScraper(object):
-    @classmethod
-    def setup_class(cls):
-        cls.conn = psycopg2.connect(os.environ['DATABASE_URL'])
-
-    def setup_method(self, method):
-        self.truncate_productversions()
-
-    def teardown_method(self, method):
-        self.truncate_productversions()
-
-    def truncate_productversions(self):
-        cursor = self.conn.cursor()
-        cursor.execute('TRUNCATE crashstats_productversion')
-        self.conn.commit()
-
-    def fetch_data(self):
-        cursor = self.conn.cursor()
+class TestArchiveScraperCronApp(object):
+    def fetch_data(self, conn):
+        cursor = conn.cursor()
         columns = [
             'product_name', 'release_channel', 'release_version', 'version_string', 'build_id',
             'archive_url', 'major_version'
@@ -167,7 +142,7 @@ class TestArchiveScraper(object):
         data = [dict(zip(columns, row)) for row in cursor.fetchall()]
         return data
 
-    def test_scrape_candidates(self, config, req_mock):
+    def test_scrape_candidates(self, config, req_mock, db_conn):
         # Set up a site
         site = [
             (
@@ -325,11 +300,11 @@ class TestArchiveScraper(object):
         # Scrape a first time with an empty db and assert that it inserted all
         # the versions we expected
         archive_scraper.scrape_candidates('Firefox', 'firefox')
-        data = self.fetch_data()
+        data = self.fetch_data(db_conn)
         assert data == expected_data
 
         # Scrape it a second time and assert that the contents haven't
         # changed
         archive_scraper.scrape_candidates('Firefox', 'firefox')
-        data = self.fetch_data()
+        data = self.fetch_data(db_conn)
         assert data == expected_data

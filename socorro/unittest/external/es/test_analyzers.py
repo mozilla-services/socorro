@@ -16,10 +16,9 @@ from socorro.unittest.external.es.base import (
 
 
 class IntegrationTestAnalyzers(ElasticsearchTestCase):
-    """Test the custom analyzers we create in our indices. """
-
-    def setUp(self):
-        super(IntegrationTestAnalyzers, self).setUp()
+    """Test the custom analyzers we create in our indices"""
+    def setup_method(self, method):
+        super(IntegrationTestAnalyzers, self).setup_method(method)
 
         self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()

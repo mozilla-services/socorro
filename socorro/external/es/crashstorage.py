@@ -22,6 +22,30 @@ from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
 MAX_KEYWORD_FIELD_VALUE_SIZE = 10000
 
 
+def reconstitute_datetimes(processed_crash):
+    """Convert string values to datetimes for specified fields
+
+    This operates in-place.
+
+    """
+    # FIXME(willkg): These should be specified in super_search_fields.py
+    # and not hard-coded
+    datetime_fields = [
+        'submitted_timestamp',
+        'date_processed',
+        'client_crash_date',
+        'started_datetime',
+        'startedDateTime',
+        'completed_datetime',
+        'completeddatetime',
+    ]
+    for a_key in datetime_fields:
+        if a_key not in processed_crash:
+            continue
+
+        processed_crash[a_key] = string_to_datetime(processed_crash[a_key])
+
+
 class RawCrashRedactor(Redactor):
     """Remove some specific keys from a dict. The dict is modified.
 
@@ -225,7 +249,7 @@ class ESCrashStorage(CrashStorageBase):
 
         # Massage the crash such that the date_processed field is formatted
         # in the fashion of our established mapping.
-        self.reconstitute_datetimes(processed_crash)
+        reconstitute_datetimes(processed_crash)
 
         # Remove bad keys from the raw crash--these keys are essentially
         # user-provided and can contain junk data
@@ -250,25 +274,6 @@ class ESCrashStorage(CrashStorageBase):
         }
 
         self._submit_crash_to_elasticsearch(crash_document)
-
-    @staticmethod
-    def reconstitute_datetimes(processed_crash):
-        # FIXME(willkg): These should be specified in super_search_fields.py
-        # and not hard-coded
-        datetime_fields = [
-            'submitted_timestamp',
-            'date_processed',
-            'client_crash_date',
-            'started_datetime',
-            'startedDateTime',
-            'completed_datetime',
-            'completeddatetime',
-        ]
-        for a_key in datetime_fields:
-            if a_key not in processed_crash:
-                continue
-
-            processed_crash[a_key] = string_to_datetime(processed_crash[a_key])
 
     def capture_crash_metrics(self, raw_crash, processed_crash):
         """Capture metrics about crash data being saved to Elasticsearch"""
