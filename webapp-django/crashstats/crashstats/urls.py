@@ -35,8 +35,7 @@ urlpatterns = [
         name='quick_search'),
     url(r'^buginfo/bug', views.buginfo,
         name='buginfo'),
-    url(r'^rawdumps/(?P<crash_id>[\w-]{36})-(?P<name>\w+)\.'
-        r'(?P<extension>json|dmp|json\.gz)$',
+    url(r'^rawdumps/(?P<crash_id>[\w-]{36})-(?P<name>\w+)\.(?P<extension>json|dmp|json\.gz)$',
         views.raw_data,
         name='raw_data_named'),
     url(r'^rawdumps/(?P<crash_id>[\w-]{36}).(?P<extension>json|dmp)$',
