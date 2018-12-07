@@ -44,10 +44,10 @@ webapp (Django).
 The record includes the full url of the build file archivescraper pulled the
 information from. This will help for diagnosis of issues in the future.
 
-The first run will collect everything. After that, it'll skip versions that
-are before the latest major version in the database minus 3. For example, if
-there are builds in the database for 63, then it'll only scrape information
-for 60 and higher for that product.
+The first run will collect everything. After that, it'll skip versions that are
+before the latest major version in the database minus 4. For example, if there
+are builds in the database for 63, then it'll only scrape information for 59
+and higher for that product. It will collect anything with "esr" in the name.
 
 You can run this in a local development environment like this::
 
@@ -298,14 +298,19 @@ class ArchiveScraperCronApp(BaseCronApp):
         ]
 
         # If we've got a major_version, then we only want to scrape data for versions
-        # greater than (major_version - 3)
+        # greater than (major_version - 4) and esr builds
         if major_version:
-            major_version_minus_3 = major_version - 3
-            self.config.logger.info('Skipping anything before %s', major_version_minus_3)
+            major_version_minus_4 = major_version - 4
+            self.config.logger.info(
+                'Skipping anything before %s and not esr', major_version_minus_4
+            )
             version_links = [
                 link for link in version_links
-                # "63.0b7-candidates/" -> 63
-                if int(link['text'].split('.')[0]) >= major_version_minus_3
+                if (
+                    # "63.0b7-candidates/" -> 63
+                    int(link['text'].split('.')[0]) >= major_version_minus_4 or
+                    'esr' in link['text']
+                )
             ]
 
         # For each version in the candidates/ directory, we traverse the tree finding
