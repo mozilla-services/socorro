@@ -14,12 +14,9 @@ HOSTUSER=$(id -u):$(id -g)
 
 DC="$(which docker-compose)"
 
-# Fetch and update release information for these products (comma-delimited)
-CRONTABBERCMD="./socorro/cron/crontabber_app.py"
-
 # Fetch release data (verbosely)
-${DC} run app shell ${CRONTABBERCMD} --reset-job=archivescraper
-${DC} run app shell ${CRONTABBERCMD} --job=archivescraper \
+${DC} run app shell ./socorro-cmd crontabber --reset-job=archivescraper
+${DC} run app shell ./socorro-cmd crontabber --job=archivescraper \
     --crontabber.class-ArchiveScraperCronApp.verbose
 
 # Create ES indexes for the next few weeks
