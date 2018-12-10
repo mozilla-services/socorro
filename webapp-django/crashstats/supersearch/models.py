@@ -1,8 +1,9 @@
 import copy
 import functools
 
-from django.core.cache import cache
 import six
+
+from django.core.cache import cache
 
 from crashstats.crashstats import models
 from socorro.external.es import query
@@ -55,9 +56,9 @@ def get_api_whitelist(include_all_fields=False):
         cache_key = 'api_supersearch_fields'
         fields = cache.get(cache_key)
         if fields is None:
-            all = SuperSearchFields().get()
+            all_fields = SuperSearchFields().get()
             fields = []
-            for meta in all.itervalues():
+            for meta in all_fields.values():
                 if (
                     meta['name'] not in fields and
                     meta['is_returned'] and (

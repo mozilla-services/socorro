@@ -1,9 +1,7 @@
-import urlparse
-import urllib
-
 from django_jinja import library
 import jinja2
 import six
+from six.moves.urllib.parse import urlencode, parse_qs
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.urlresolvers import reverse
@@ -79,7 +77,7 @@ def change_query_string(context, **kwargs):
         base = ''
     else:
         base = context['request'].META['PATH_INFO']
-    qs = urlparse.parse_qs(context['request'].META['QUERY_STRING'])
+    qs = parse_qs(context['request'].META['QUERY_STRING'])
     for key, value in kwargs.items():
         if value is None:
             # delete the parameter
@@ -88,7 +86,7 @@ def change_query_string(context, **kwargs):
         else:
             # change it
             qs[key] = value
-    new_qs = urllib.urlencode(qs, True)
+    new_qs = urlencode(qs, True)
 
     # We don't like + as the encoding character for spaces. %20 is better.
     new_qs = new_qs.replace('+', '%20')

@@ -1,7 +1,7 @@
 import datetime
 import time
-import urlparse
-from urllib import quote_plus
+
+from six.moves.urllib.parse import quote_plus, parse_qs, urlparse
 
 from django.core.cache import cache
 from django.utils.safestring import SafeText
@@ -121,7 +121,7 @@ class TestBugzillaSubmitURL(object):
 
     @staticmethod
     def _extract_query_string(url):
-        return urlparse.parse_qs(urlparse.urlparse(url).query)
+        return parse_qs(urlparse(url).query)
 
     @staticmethod
     def _create_frame(

@@ -61,10 +61,11 @@ class BotoCrashStorage(CrashStorageBase):
         if dumps is None:
             dumps = MemoryDumpsMapping()
 
-        raw_crash_as_string = boto_connection._convert_mapping_to_string(raw_crash)
-        boto_connection.submit(crash_id, 'raw_crash', raw_crash_as_string)
-        dump_names_as_string = boto_connection._convert_list_to_string(dumps.keys())
-        boto_connection.submit(crash_id, 'dump_names', dump_names_as_string)
+        raw_crash_data = boto_connection._convert_mapping_to_string(raw_crash).encode('utf-8')
+        boto_connection.submit(crash_id, 'raw_crash', raw_crash_data)
+
+        dump_names_data = boto_connection._convert_list_to_string(dumps.keys()).encode('utf-8')
+        boto_connection.submit(crash_id, 'dump_names', dump_names_data)
 
         # We don't know what type of dumps mapping we have. We do know,
         # however, that by calling the memory_dump_mapping method, we will get
@@ -88,8 +89,8 @@ class BotoCrashStorage(CrashStorageBase):
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
         crash_id = processed_crash['uuid']
-        processed_crash_as_string = boto_connection._convert_mapping_to_string(processed_crash)
-        boto_connection.submit(crash_id, "processed_crash", processed_crash_as_string)
+        data = boto_connection._convert_mapping_to_string(processed_crash).encode('utf-8')
+        boto_connection.submit(crash_id, "processed_crash", data)
 
     def save_processed(self, processed_crash):
         retry(
@@ -264,8 +265,8 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     def _do_save_processed(boto_connection, processed_crash):
         """Overriding this to change "name of thing" to crash_report"""
         crash_id = processed_crash['uuid']
-        processed_crash_as_string = boto_connection._convert_mapping_to_string(processed_crash)
-        boto_connection.submit(crash_id, "crash_report", processed_crash_as_string)
+        data = boto_connection._convert_mapping_to_string(processed_crash).encode('utf-8')
+        boto_connection.submit(crash_id, "crash_report", data)
 
     @staticmethod
     def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):

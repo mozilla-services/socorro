@@ -1,5 +1,7 @@
 import six
 
+from django.utils.encoding import smart_text
+
 
 def string_hex_to_hex_string(snippet):
     """The PCIDatabase.com uses shortened hex strings (e.g. '919A')
@@ -35,6 +37,7 @@ def pci_ids__parse_graphics_devices_iterable(iterable):
 
     """
     for line in iterable:
+        line = smart_text(line)
         if line.startswith('#'):
             if 'List of known device classes' in line:
                 # There's a section at the bottom of the files which

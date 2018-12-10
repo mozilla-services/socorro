@@ -10,7 +10,7 @@ DEFAULT_PRODUCT = 'WaterWolf'
 
 # here we deliberately "destroy" the BZAPI URL so running tests that are
 # badly mocked never accidentally actually use a real working network address
-BZAPI_BASE_URL = 'https://bugzilla.testrunner/rest'
+BZAPI_BASE_URL = 'https://bugzilla.example.com/rest'
 
 STATSD_CLIENT = 'django_statsd.clients.null'
 
@@ -53,7 +53,7 @@ AWS_HOST = ''
 SOCORRO_IMPLEMENTATIONS_CONFIG = {
     'resource': {
         'elasticsearch': {
-            'elasticsearch_urls': ['http://example:9123'],
+            'elasticsearch_urls': ['http://example.com:9123'],
         },
         'boto': {
             'bucket_name': 'crashstats-test'

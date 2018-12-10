@@ -11,6 +11,7 @@ from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_text
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 
@@ -163,7 +164,7 @@ class RobotsTestViews(object):
         response = client.get(url)
         assert response.status_code == 200
         assert response['Content-Type'] == 'text/plain'
-        assert 'Allow: /' in response.content
+        assert 'Allow: /' in smart_text(response.content)
 
     @override_settings(ENGAGE_ROBOTS=False)
     def test_robots_txt_disengage(self, settings, client):
@@ -172,7 +173,7 @@ class RobotsTestViews(object):
         response = client.get(url)
         assert response.status_code == 200
         assert response['Content-Type'] == 'text/plain'
-        assert 'Disallow: /' in response.content
+        assert 'Disallow: /' in smart_text(response.content)
 
 
 class FaviconTestViews(object):
@@ -193,7 +194,8 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         # Should be valid JSON, but it's a streaming content because
         # it comes from django.views.static.serve
-        assert json.loads(''.join(response.streaming_content))
+        data = ''.join([smart_text(part) for part in response.streaming_content])
+        assert json.loads(data)
         assert response['Content-Type'] == 'application/json'
 
     def test_handler500(self):
@@ -202,12 +204,12 @@ class TestViews(BaseTestViews):
             globals(),
             locals(),
             ['urls'],
-            -1
+            0
         )
         # ...so that we can access the 'handler500' defined in there
         par, end = root_urlconf.handler500.rsplit('.', 1)
         # ...which is an importable reference to the real handler500 function
-        views = __import__(par, globals(), locals(), [end], -1)
+        views = __import__(par, globals(), locals(), [end], 0)
         # ...and finally we have the handler500 function at hand
         handler500 = getattr(views, end)
 
@@ -223,8 +225,8 @@ class TestViews(BaseTestViews):
             # do this inside a frame that has a sys.exc_info()
             response = handler500(fake_request)
             assert response.status_code == 500
-            assert 'Internal Server Error' in response.content
-            assert 'id="products_select"' not in response.content
+            assert 'Internal Server Error' in smart_text(response.content)
+            assert 'id="products_select"' not in smart_text(response.content)
 
     def test_handler500_json(self):
         root_urlconf = __import__(
@@ -232,10 +234,10 @@ class TestViews(BaseTestViews):
             globals(),
             locals(),
             ['urls'],
-            -1
+            0
         )
         par, end = root_urlconf.handler500.rsplit('.', 1)
-        views = __import__(par, globals(), locals(), [end], -1)
+        views = __import__(par, globals(), locals(), [end], 0)
         handler500 = getattr(views, end)
 
         fake_request = RequestFactory().request(**{'wsgi.input': None})
@@ -258,7 +260,7 @@ class TestViews(BaseTestViews):
     def test_handler404(self):
         response = self.client.get('/fillbert/mcpicklepants')
         assert response.status_code == 404
-        assert 'The requested page could not be found.' in response.content
+        assert 'The requested page could not be found.' in smart_text(response.content)
 
     def test_handler404_json(self):
         # Just need any view that has the json_view decorator on it.
@@ -441,30 +443,31 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
         # which bug IDs appear is important and the order matters too
+        content = smart_text(response.content)
         assert (
             -1 ==
-            response.content.find('444444') <
-            response.content.find('333333') <
-            response.content.find('222222')
+            content.find('444444') <
+            content.find('333333') <
+            content.find('222222')
         )
 
-        assert 'FakeSignature1' in response.content
-        assert '11cb72f5-eb28-41e1-a8e4-849982120611' in response.content
+        assert 'FakeSignature1' in content
+        assert '11cb72f5-eb28-41e1-a8e4-849982120611' in content
 
         # Verify the "AMD CPU bug" marker is there.
-        assert 'Possible AMD CPU bug related crash report' in response.content
+        assert 'Possible AMD CPU bug related crash report' in content
 
-        assert _SAMPLE_UNREDACTED['user_comments'] not in response.content
-        assert _SAMPLE_META['Email'] not in response.content
-        assert _SAMPLE_META['URL'] not in response.content
-        assert 'You need to be signed in to download raw dumps.' in response.content
-        assert 'You need to be signed in to view unredacted crashes.' in response.content
+        assert _SAMPLE_UNREDACTED['user_comments'] not in content
+        assert _SAMPLE_META['Email'] not in content
+        assert _SAMPLE_META['URL'] not in content
+        assert 'You need to be signed in to download raw dumps.' in content
+        assert 'You need to be signed in to view unredacted crashes.' in content
         # Should not be able to see sensitive key from stackwalker JSON
-        assert '&#34;sensitive&#34;' not in response.content
-        assert '&#34;exploitability&#34;' not in response.content
+        assert '&#34;sensitive&#34;' not in content
+        assert '&#34;exploitability&#34;' not in content
 
         # The pretty platform version should appear.
-        assert 'OS X 10.11' in response.content
+        assert 'OS X 10.11' in content
 
         # the email address will appear if we log in
         user = self._login()
@@ -473,28 +476,30 @@ class TestViews(BaseTestViews):
         assert user.has_perm('crashstats.view_pii')
 
         response = self.client.get(url)
-        assert _SAMPLE_UNREDACTED['user_comments'] in response.content
-        assert _SAMPLE_META['Email'] in response.content
-        assert _SAMPLE_META['URL'] in response.content
-        assert '&#34;sensitive&#34;' in response.content
-        assert '&#34;exploitability&#34;' in response.content
+        content = smart_text(response.content)
+        assert _SAMPLE_UNREDACTED['user_comments'] in content
+        assert _SAMPLE_META['Email'] in content
+        assert _SAMPLE_META['URL'] in content
+        assert '&#34;sensitive&#34;' in content
+        assert '&#34;exploitability&#34;' in content
         assert response.status_code == 200
 
         # Ensure fields have their description in title.
-        assert 'No description for this field.' in response.content
+        assert 'No description for this field.' in content
         # NOTE(willkg): This is the description of "crash address". If we ever
         # change that we'll need to update this to another description that
         # shows up.
-        assert 'The crashing address.' in response.content
+        assert 'The crashing address.' in content
 
         # If the user ceases to be active, these PII fields should disappear
         user.is_active = False
         user.save()
         response = self.client.get(url)
         assert response.status_code == 200
-        assert _SAMPLE_UNREDACTED['user_comments'] not in response.content
-        assert _SAMPLE_META['Email'] not in response.content
-        assert _SAMPLE_META['URL'] not in response.content
+        content = smart_text(response.content)
+        assert _SAMPLE_UNREDACTED['user_comments'] not in content
+        assert _SAMPLE_META['Email'] not in content
+        assert _SAMPLE_META['URL'] not in content
 
     def test_report_index_with_raw_crash_unicode_key(self):
         def mocked_raw_crash_get(**params):
@@ -527,6 +532,7 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         # The response is a byte string so look for 'Pr\xc3\xa9nom' in the
         # the client output.
+        # NOTE(willkg): the right side should be binary format
         assert u'Prénom'.encode('utf-8') in response.content
 
     def test_report_index_with_refreshed_cache(self):
@@ -595,9 +601,9 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'Process Type' in response.content
+        assert 'Process Type' in smart_text(response.content)
         # Expect that it displays '{process_type}\s+({raw_crash.RemoteType})'
-        assert re.findall('contentish\s+\(java-applet\)', response.content)
+        assert re.findall(r'contentish\s+\(java-applet\)', smart_text(response.content))
 
     def test_report_index_with_additional_raw_dump_links(self):
         json_dump = {
@@ -650,35 +656,35 @@ class TestViews(BaseTestViews):
         raw_json_url = reverse('crashstats:raw_data', args=(crash_id, 'json'))
         raw_dmp_url = reverse('crashstats:raw_data', args=(crash_id, 'dmp'))
         # not quite yet
-        assert raw_json_url not in response.content
-        assert raw_dmp_url not in response.content
+        assert raw_json_url not in smart_text(response.content)
+        assert raw_dmp_url not in smart_text(response.content)
 
         user = self._login()
         response = self.client.get(url)
         assert response.status_code == 200
         # still they don't appear
-        assert raw_json_url not in response.content
-        assert raw_dmp_url not in response.content
+        assert raw_json_url not in smart_text(response.content)
+        assert raw_dmp_url not in smart_text(response.content)
 
         group = self._create_group_with_permission('view_rawdump')
         user.groups.add(group)
         response = self.client.get(url)
         assert response.status_code == 200
         # finally they appear
-        assert raw_json_url in response.content
-        assert raw_dmp_url in response.content
+        assert raw_json_url in smart_text(response.content)
+        assert raw_dmp_url in smart_text(response.content)
 
         # also, check that the other links are there
         foo_dmp_url = reverse(
             'crashstats:raw_data_named',
             args=(crash_id, 'upload_file_minidump_foo', 'dmp')
         )
-        assert foo_dmp_url in response.content
+        assert foo_dmp_url in smart_text(response.content)
         bar_dmp_url = reverse(
             'crashstats:raw_data_named',
             args=(crash_id, 'upload_file_minidump_bar', 'dmp')
         )
-        assert bar_dmp_url in response.content
+        assert bar_dmp_url in smart_text(response.content)
 
     def test_report_index_with_symbol_url_in_modules(self):
         json_dump = {
@@ -738,8 +744,11 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert 'id="modules-list"' in response.content
-        assert '<a href="https://s3.example.com/winmm.sym">winmm.dll</a>' in response.content
+        assert 'id="modules-list"' in smart_text(response.content)
+        assert (
+            '<a href="https://s3.example.com/winmm.sym">winmm.dll</a>' in
+            smart_text(response.content)
+        )
 
     def test_report_index_with_cert_subject_in_modules(self):
         json_dump = {
@@ -801,9 +810,10 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert 'id="modules-list"' in response.content
-        assert re.search('<td>userenv\.pdb</td>\s*?<td></td>', response.content)
-        assert re.search('<td>winmm\.pdb</td>\s*?<td>Microsoft Windows</td>', response.content)
+        assert 'id="modules-list"' in smart_text(response.content)
+        assert re.search(r'<td>userenv\.pdb</td>\s*?<td></td>', smart_text(response.content))
+        assert re.search(r'<td>winmm\.pdb</td>\s*?<td>Microsoft Windows</td>',
+                         smart_text(response.content))
 
     def test_report_index_with_shutdownhang_signature(self):
         json_dump = {
@@ -844,8 +854,8 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert 'Crashing Thread (2)' not in response.content
-        assert 'Crashing Thread (0)' in response.content
+        assert 'Crashing Thread (2)' not in smart_text(response.content)
+        assert 'Crashing Thread (0)' in smart_text(response.content)
 
     def test_report_index_with_no_crashing_thread(self):
         # If the json_dump has no crashing thread available, do not display a
@@ -886,10 +896,10 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert 'Crashing Thread' not in response.content
-        assert 'Thread 0' in response.content
-        assert 'Thread 1' in response.content
-        assert 'Thread 2' in response.content
+        assert 'Crashing Thread' not in smart_text(response.content)
+        assert 'Thread 0' in smart_text(response.content)
+        assert 'Thread 1' in smart_text(response.content)
+        assert 'Thread 2' in smart_text(response.content)
 
     def test_report_index_with_telemetry_environment(self):
         def mocked_raw_crash_get(**params):
@@ -925,11 +935,11 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert 'Telemetry Environment' in response.content
+        assert 'Telemetry Environment' in smart_text(response.content)
         # it's non-trivial to check that the dict above is serialized
         # exactly like jinja does it so let's just check the data attribute
         # is there.
-        assert 'id="telemetryenvironment-json"' in response.content
+        assert 'id="telemetryenvironment-json"' in smart_text(response.content)
 
     def test_report_index_fennecandroid_report(self):
         def mocked_raw_crash_get(**params):
@@ -1008,7 +1018,7 @@ class TestViews(BaseTestViews):
         # there shouldn't be any links to reports for the product mentioned in
         # the processed JSON
         bad_url = reverse('crashstats:product_home', args=('SummerWolf',))
-        assert bad_url not in response.content
+        assert bad_url not in smart_text(response.content)
 
     def test_report_index_no_dump(self):
         def mocked_raw_crash_get(**params):
@@ -1034,14 +1044,14 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'No dump available' in response.content
+        assert 'No dump available' in smart_text(response.content)
 
     def test_report_index_invalid_crash_id(self):
         # last 6 digits indicate 30th Feb 2012 which doesn't exist
         url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120230'])
         response = self.client.get(url)
         assert response.status_code == 400
-        assert 'Invalid crash ID' in response.content
+        assert 'Invalid crash ID' in smart_text(response.content)
         assert response['Content-Type'] == 'text/html; charset=utf-8'
 
     def test_report_index_with_valid_install_time(self):
@@ -1068,9 +1078,9 @@ class TestViews(BaseTestViews):
 
         url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
-        assert 'Install Time</th>' in response.content
+        assert 'Install Time</th>' in smart_text(response.content)
         # This is what 1461170304 is in human friendly format.
-        assert '2016-04-20 16:38:24' in response.content
+        assert '2016-04-20 16:38:24' in smart_text(response.content)
 
     def test_report_index_with_invalid_install_time(self):
         def mocked_raw_crash_get(**params):
@@ -1184,7 +1194,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
-        assert '<th>Install Time</th>' not in response.content
+        assert '<th>Install Time</th>' not in smart_text(response.content)
 
     def test_report_index_with_sparse_json_dump(self):
         json_dump = {'status': 'ERROR_NO_MINIDUMP_HEADER', 'sensitive': {}}
@@ -1239,7 +1249,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:report_index', args=[crash_id])
 
         response = self.client.get(url)
-        assert 'Exploitability</th>' not in response.content
+        assert 'Exploitability</th>' not in smart_text(response.content)
 
         # you must be signed in to see exploitability
         user = self._login()
@@ -1247,8 +1257,8 @@ class TestViews(BaseTestViews):
         user.groups.add(group)
 
         response = self.client.get(url)
-        assert 'Exploitability</th>' in response.content
-        assert 'Unknown Exploitability' in response.content
+        assert 'Exploitability</th>' in smart_text(response.content)
+        assert 'Unknown Exploitability' in smart_text(response.content)
 
     def test_report_index_your_crash(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -1279,17 +1289,17 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:report_index', args=[crash_id])
 
         response = self.client.get(url)
-        assert 'Exploitability</th>' not in response.content
-        assert 'peterbe@example.com' not in response.content
-        assert 'https://embarrassing.example.com' not in response.content
+        assert 'Exploitability</th>' not in smart_text(response.content)
+        assert 'peterbe@example.com' not in smart_text(response.content)
+        assert 'https://embarrassing.example.com' not in smart_text(response.content)
 
         # you must be signed in to see exploitability
         self._login(email='peterbe@example.com')
         response = self.client.get(url)
-        assert 'Exploitability</th>' in response.content
-        assert 'Unknown Exploitability' in response.content
-        assert 'peterbe@example.com' in response.content
-        assert 'https://embarrassing.example.com' in response.content
+        assert 'Exploitability</th>' in smart_text(response.content)
+        assert 'Unknown Exploitability' in smart_text(response.content)
+        assert 'peterbe@example.com' in smart_text(response.content)
+        assert 'https://embarrassing.example.com' in smart_text(response.content)
 
     def test_report_index_not_your_crash(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -1323,10 +1333,10 @@ class TestViews(BaseTestViews):
         # raw crash. Make sure that doesn't show the sensitive data
         self._login(email='someone@example.com')
         response = self.client.get(url)
-        assert 'Exploitability</th>' not in response.content
-        assert 'Unknown Exploitability' not in response.content
-        assert 'peterbe@example.com' not in response.content
-        assert 'https://embarrassing.example.com' not in response.content
+        assert 'Exploitability</th>' not in smart_text(response.content)
+        assert 'Unknown Exploitability' not in smart_text(response.content)
+        assert 'peterbe@example.com' not in smart_text(response.content)
+        assert 'https://embarrassing.example.com' not in smart_text(response.content)
 
     def test_report_index_raw_crash_not_found(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -1344,7 +1354,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
 
         assert response.status_code == 404
-        assert 'Crash Not Found' in response.content
+        assert 'Crash Not Found' in smart_text(response.content)
 
     def test_report_index_processed_crash_not_found(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -1377,8 +1387,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
 
         assert response.status_code == 200
-        assert 'Please wait...' in response.content
-        assert 'Processing this crash report only takes a few seconds' in response.content
+        content = smart_text(response.content)
+        assert 'Please wait...' in content
+        assert 'Processing this crash report only takes a few seconds' in content
 
     def test_report_index_with_invalid_date_processed(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -1408,7 +1419,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         # The date could not be converted in the jinja helper
         # to a more human format.
-        assert '2015-10-10 15:32:07.620535' in response.content
+        assert '2015-10-10 15:32:07.620535' in smart_text(response.content)
 
     def test_report_index_redirect_by_prefix(self):
         def mocked_raw_crash_get(**params):
@@ -1480,8 +1491,8 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:report_index', args=[crash_id])
 
         response = self.client.get(url)
-        assert 'Crashing Thread (1), Name: I am a Crashing Thread' in response.content
-        assert 'Thread 0, Name: I am a Regular Thread' in response.content
+        assert 'Crashing Thread (1), Name: I am a Crashing Thread' in smart_text(response.content)
+        assert 'Thread 0, Name: I am a Regular Thread' in smart_text(response.content)
 
     def test_raw_data(self):
         def mocked_get(**params):
@@ -1517,7 +1528,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(dump_url)
         assert response.status_code == 200
         assert response['Content-Type'] == 'application/octet-stream'
-        assert 'bla bla bla' in response.content, response.content
+        assert 'bla bla bla' in smart_text(response.content)
 
         # dump files are cached. check the mock function and expect no change.
         def different_mocked_get(**params):
@@ -1527,7 +1538,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(dump_url)
         assert response.status_code == 200
-        assert 'bla bla bla' in response.content  # still. good.
+        assert 'bla bla bla' in smart_text(response.content)  # still. good.
 
     def test_raw_data_memory_report(self):
         crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
@@ -1553,7 +1564,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(dump_url)
         assert response.status_code == 200
         assert response['Content-Type'] == 'application/octet-stream'
-        assert 'binary stuff' in response.content, response.content
+        assert 'binary stuff' in smart_text(response.content)
 
     def test_login_required(self):
         url = reverse('exploitability:report')
@@ -1571,14 +1582,14 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:login')
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'Login Required' in response.content
-        assert 'Insufficient Privileges' not in response.content
+        assert 'Login Required' in smart_text(response.content)
+        assert 'Insufficient Privileges' not in smart_text(response.content)
 
         self._login()
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'Login Required' not in response.content
-        assert 'Insufficient Privileges' in response.content
+        assert 'Login Required' not in smart_text(response.content)
+        assert 'Insufficient Privileges' in smart_text(response.content)
 
     def test_about_throttling(self):
         # the old url used to NOT have a trailing slash
@@ -1598,7 +1609,7 @@ class TestDockerflow(object):
         resp = client.get(reverse('crashstats:dockerflow_version'))
         assert resp.status_code == 200
         assert resp['Content-Type'] == 'application/json'
-        assert resp.content == '{}'
+        assert smart_text(resp.content) == '{}'
 
     def test_version_with_file(self, client, settings, tmpdir):
         """Test with a version.json file"""
@@ -1613,7 +1624,7 @@ class TestDockerflow(object):
         resp = client.get(reverse('crashstats:dockerflow_version'))
         assert resp.status_code == 200
         assert resp['Content-Type'] == 'application/json'
-        assert resp.content == text
+        assert smart_text(resp.content) == text
 
 
 class TestProductHomeViews(BaseTestViews):
@@ -1624,12 +1635,12 @@ class TestProductHomeViews(BaseTestViews):
         assert response.status_code == 200
 
         # Check title
-        assert 'WaterWolf Crash Data' in response.content
+        assert 'WaterWolf Crash Data' in smart_text(response.content)
 
         # Check headings for link sections which are the active versions
-        assert 'WaterWolf 20.0' in response.content
-        assert 'WaterWolf 19.1' in response.content
-        assert 'WaterWolf 18.0' in response.content
+        assert 'WaterWolf 20.0' in smart_text(response.content)
+        assert 'WaterWolf 19.1' in smart_text(response.content)
+        assert 'WaterWolf 18.0' in smart_text(response.content)
 
         # 19.1 is active, so 19.0 is not--it shouldn't be there
-        assert 'WaterWolf 19.0' not in response.content
+        assert 'WaterWolf 19.0' not in smart_text(response.content)

@@ -1,13 +1,13 @@
 import datetime
 import json
 import re
-import urllib
 
 from django_jinja import library
 import humanfriendly
 import isodate
 import jinja2
 import six
+from six.moves.urllib.parse import urlencode
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
@@ -25,20 +25,6 @@ def truncatechars(str_, max_length):
         return str_
     else:
         return '%s...' % str_[:max_length - len('...')]
-
-
-@library.filter
-def urlencode(txt):
-    """Url encode a path.
-
-    This function ensures white spaces are encoded with '%20' and not '+'.
-    """
-    if not isinstance(txt, six.string_types):
-        # Do nothing on non-strings.
-        return txt
-    if isinstance(txt, six.text_type):
-        txt = txt.encode('utf-8')
-    return urllib.quote_plus(txt).replace('+', '%20')
 
 
 @library.filter
@@ -84,8 +70,7 @@ def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
         except isodate.ISO8601Error:
             return dt
     return jinja2.Markup(
-        '<time datetime="{}" class="{}">{}</time>'
-        .format(
+        '<time datetime="{}" class="{}">{}</time>'.format(
             dt.isoformat(),
             future and 'in' or 'ago',
             dt.strftime(format)
@@ -98,7 +83,7 @@ def datetime_picker(input_name, default_value):
     """Return a datetime picker HTML element to be powered by a JS library.
     """
     return jinja2.Markup(
-        '''
+        """
         <span
             class="datetime-picker {input_name}"
             data-wrap="true"
@@ -106,7 +91,7 @@ def datetime_picker(input_name, default_value):
             data-utc="true"
             data-time_24hr="true"
             data-alt-input="true"
-            data-date-format="Y-m-d\TH:i:S\Z"
+            data-date-format="Y-m-d\\TH:i:S\\Z"
             data-alt-format="F j, Y - H:i"
             date-default-date="{default_value}"
         >
@@ -117,7 +102,7 @@ def datetime_picker(input_name, default_value):
                 data-input
             ><a data-toggle><i class="icon-calendar"></i></a>
         </span>
-        '''.format(
+        """.format(
             input_name=input_name,
             # We need special formatting here because that's the only timezone
             # format the JS library will correctly parse.
@@ -227,7 +212,7 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=1238212
     kwargs['format'] = '__default__'
 
-    url += '?' + urllib.urlencode(kwargs, True)
+    url += '?' + urlencode(kwargs, True)
     return url
 
 
@@ -260,8 +245,7 @@ def replace_bugzilla_links(text):
     """Returns a text with any bugzilla URL replaced with a link to that URL
     with a nice 'Bug XXX' text. """
     bugzilla_finder = re.compile(
-        '(https?://bugzilla.mozilla.org/show_bug.cgi\?id='
-        '([0-9]*)[a-zA-Z0-9#&=]*)'
+        r'(https?://bugzilla.mozilla.org/show_bug.cgi\?id=([0-9]*)[a-zA-Z0-9#&=]*)'
     )
 
     # Sanitize the text first, before adding some HTML into it.

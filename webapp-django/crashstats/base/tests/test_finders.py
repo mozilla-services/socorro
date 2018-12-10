@@ -13,7 +13,7 @@ class TestLeftoverPipelineFinder(object):
         busted_pipeline = copy.deepcopy(settings.PIPELINE)
         # Doesn't matter which key we chose to bust, so let's just
         # pick the first one.
-        key = busted_pipeline['STYLESHEETS'].keys()[0]
+        key = list(busted_pipeline['STYLESHEETS'].keys())[0]
         filenames = busted_pipeline['STYLESHEETS'][key]['source_filenames']
 
         # add a junk one

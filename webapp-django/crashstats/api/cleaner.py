@@ -49,7 +49,7 @@ class Cleaner(object):
                 if result_key == self.ANY:
                     if isinstance(whitelist, (list, tuple)):
                         if isinstance(result, dict):
-                            for key, thing in result.iteritems():
+                            for key, thing in result.items():
                                 if isinstance(thing, dict):
                                     self._scrub_item(thing, whitelist)
                                 elif isinstance(thing, (list, tuple)):
@@ -67,7 +67,7 @@ class Cleaner(object):
 
     def _scrub_item(self, data, whitelist):
         matcher = SmartWhitelistMatcher(whitelist)
-        for key in data.keys():
+        for key in list(data.keys()):
             if key not in matcher:
                 # warnings.warn() never redirects the same message to
                 # the logger more than once in the same python
@@ -85,11 +85,9 @@ class Cleaner(object):
 
 
 class SmartWhitelistMatcher(object):
-
     def __init__(self, whitelist):
-
         def format(item):
-            return '^' + item.replace('*', '[\w-]*') + '$'
+            return '^' + item.replace('*', r'[\w-]*') + '$'
 
         items = [format(x) for x in whitelist]
         self.regex = re.compile('|'.join(items))

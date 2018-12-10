@@ -38,9 +38,9 @@ class TestCSignatureTool:
 
     def test_c_config_tool_init(self):
         """test_C_config_tool_init: constructor test"""
-        exp_irrelevant_signature_re = re.compile('ignored1')
-        exp_prefix_signature_re = re.compile('pre1|pre2')
-        exp_signatures_with_line_numbers_re = re.compile('fnNeedNumber')
+        exp_irrelevant_signature_re = re.compile(r'ignored1')
+        exp_prefix_signature_re = re.compile(r'pre1|pre2')
+        exp_signatures_with_line_numbers_re = re.compile(r'fnNeedNumber')
         fixup_space = re.compile(r' (?=[\*&,])')
         fixup_comma = re.compile(r',(?! )')
 

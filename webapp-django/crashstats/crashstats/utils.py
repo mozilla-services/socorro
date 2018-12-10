@@ -1,15 +1,12 @@
-import csv
-import codecs
+from collections import OrderedDict
 import datetime
-import isodate
 import functools
+import isodate
 import json
 import random
 import re
-from collections import OrderedDict
 
 import six
-from six.moves import StringIO
 
 from django import http
 from django.conf import settings
@@ -33,12 +30,10 @@ class DateTimeEncoder(json.JSONEncoder):
 
 
 def parse_isodate(ds):
-    """
-    return a datetime object from a date string
-    """
-    if isinstance(ds, six.text_type):
+    """Return a datetime object from a date string"""
+    if six.PY2 and isinstance(ds, six.text_type):
         # isodate struggles to convert unicode strings with
-        # its parse_datetime() if the input string is unicode.
+        # its parse_datetime() if the input string is a Python 2 unicode.
         ds = ds.encode('ascii')
     return isodate.parse_datetime(ds)
 
@@ -56,8 +51,8 @@ def json_view(f):
 
         if isinstance(response, http.HttpResponse):
             return response
-        else:
 
+        else:
             indent = 0
             request_data = (
                 request.method == 'GET' and request.GET or request.POST
@@ -398,36 +393,6 @@ def find_crash_id(input_str):
             return match[1]
         except ValueError:
             pass  # will return None
-
-
-class UnicodeWriter:
-    """
-    A CSV writer which will write rows to CSV file "f",
-    which is encoded in the given encoding.
-    """
-
-    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
-        # Redirect output to a queue
-        self.queue = StringIO()
-        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
-        self.stream = f
-        self.encoder = codecs.getincrementalencoder(encoding)()
-
-    def writerow(self, row):
-        self.writer.writerow([six.text_type(s).encode("utf-8") for s in row])
-        # Fetch UTF-8 output from the queue ...
-        data = self.queue.getvalue()
-        data = data.decode("utf-8")
-        # ... and reencode it into the target encoding
-        data = self.encoder.encode(data)
-        # write to the target stream
-        self.stream.write(data)
-        # empty queue
-        self.queue.truncate(0)
-
-    def writerows(self, rows):
-        for row in rows:
-            self.writerow(row)
 
 
 def add_CORS_header(f):

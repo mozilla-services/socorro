@@ -4,6 +4,7 @@ import freezegun
 import pyquery
 
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_text
 from django.utils.timezone import utc
 
 from crashstats.crashstats.models import Signature, BugAssociation
@@ -177,7 +178,7 @@ class TestTopCrasherViews(BaseTestViews):
         assert bug_ids == ['33333', '22222']
 
         # Check the first appearance date is there.
-        assert '2000-01-01 12:23:34' in response.content
+        assert '2000-01-01 12:23:34' in smart_text(response.content)
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
@@ -191,10 +192,10 @@ class TestTopCrasherViews(BaseTestViews):
 
         # Check the startup crash icon is there.
         assert (
-            'Potential Startup Crash, 50 out of 80 crashes happened during '
-            'startup' in response.content
+            'Potential Startup Crash, 50 out of 80 crashes happened during startup'
+            in smart_text(response.content)
         )
-        assert 'Startup Crash, all crashes happened during startup' in response.content
+        assert 'Startup Crash, all crashes happened during startup' in smart_text(response.content)
 
     def test_product_sans_featured_version(self):
         def mocked_supersearch_get(**params):
@@ -252,7 +253,7 @@ class TestTopCrasherViews(BaseTestViews):
             'days': 'xxxxxx',
         })
         assert response.status_code == 400
-        assert 'not a number' in response.content
+        assert 'not a number' in smart_text(response.content)
         assert response['Content-Type'] == 'text/html; charset=utf-8'
 
     def test_400_by_bad_facets_size(self):
@@ -261,7 +262,7 @@ class TestTopCrasherViews(BaseTestViews):
             '_facets_size': 'notanumber',
         })
         assert response.status_code == 400
-        assert 'Enter a whole number' in response.content
+        assert 'Enter a whole number' in smart_text(response.content)
         assert response['Content-Type'] == 'text/html; charset=utf-8'
 
     def test_with_unsupported_product(self):
@@ -315,8 +316,8 @@ class TestTopCrasherViews(BaseTestViews):
                 'version': '19.0',
             })
             assert response.status_code == 200
-            assert now in response.content
-            assert today not in response.content
+            assert now in smart_text(response.content)
+            assert today not in smart_text(response.content)
 
             # Now test the "day time" data.
             response = self.client.get(self.base_url, {
@@ -325,8 +326,8 @@ class TestTopCrasherViews(BaseTestViews):
                 '_tcbs_mode': 'byday',
             })
             assert response.status_code == 200
-            assert today in response.content
-            assert now not in response.content
+            assert today in smart_text(response.content)
+            assert now not in smart_text(response.content)
 
     def test_by_build(self):
         def mocked_supersearch_get(**params):

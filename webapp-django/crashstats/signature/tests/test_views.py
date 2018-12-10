@@ -1,10 +1,11 @@
 import json
-import urllib
 
 import mock
 import pyquery
+from six.moves.urllib.parse import quote
 
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_text
 
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.test_views import BaseTestViews
@@ -31,8 +32,8 @@ class TestViews(BaseTestViews):
         url = reverse('signature:signature_report')
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
-        assert DUMB_SIGNATURE in response.content
-        assert 'Loading' in response.content
+        assert DUMB_SIGNATURE in smart_text(response.content)
+        assert 'Loading' in smart_text(response.content)
 
     def test_signature_reports(self):
         def mocked_supersearch_get(**params):
@@ -99,8 +100,8 @@ class TestViews(BaseTestViews):
         })
 
         assert response.status_code == 200
-        assert 'table id="reports-list"' not in response.content
-        assert 'No results were found' in response.content
+        assert 'table id="reports-list"' not in smart_text(response.content)
+        assert 'No results were found' in smart_text(response.content)
 
         # Test with results.
         response = self.client.get(url, {
@@ -108,13 +109,13 @@ class TestViews(BaseTestViews):
             'product': 'WaterWolf'
         })
         assert response.status_code == 200
-        assert 'table id="reports-list"' in response.content
-        assert 'aaaaaaaaaaaaa1' in response.content
-        assert '888981' in response.content
-        assert 'Linux' in response.content
-        assert '2017-01-31 23:12:57' in response.content
-        assert 'AMD' in response.content
-        assert 'Cpu info' not in response.content
+        assert 'table id="reports-list"' in smart_text(response.content)
+        assert 'aaaaaaaaaaaaa1' in smart_text(response.content)
+        assert '888981' in smart_text(response.content)
+        assert 'Linux' in smart_text(response.content)
+        assert '2017-01-31 23:12:57' in smart_text(response.content)
+        assert 'AMD' in smart_text(response.content)
+        assert 'Cpu info' not in smart_text(response.content)
 
         # Test with a different columns list.
         response = self.client.get(url, {
@@ -123,15 +124,15 @@ class TestViews(BaseTestViews):
             '_columns': ['build_id', 'platform'],
         })
         assert response.status_code == 200
-        assert 'table id="reports-list"' in response.content
+        assert 'table id="reports-list"' in smart_text(response.content)
         # The build and platform appear
-        assert '888981' in response.content
-        assert 'Linux' in response.content
+        assert '888981' in smart_text(response.content)
+        assert 'Linux' in smart_text(response.content)
         # The crash id is always shown
-        assert 'aaaaaaaaaaaaa1' in response.content
+        assert 'aaaaaaaaaaaaa1' in smart_text(response.content)
         # The version and date do not appear
-        assert '1.0' not in response.content
-        assert '2017' not in response.content
+        assert '1.0' not in smart_text(response.content)
+        assert '2017' not in smart_text(response.content)
 
         # Test missing parameter.
         response = self.client.get(url)
@@ -220,7 +221,7 @@ class TestViews(BaseTestViews):
         )
 
         assert response.status_code == 200
-        assert '140' in response.content
+        assert '140' in smart_text(response.content)
 
         # Check that the pagination URL contains all three expected parameters.
         doc = pyquery.PyQuery(response.content)
@@ -232,7 +233,7 @@ class TestViews(BaseTestViews):
         # Verify white spaces are correctly encoded.
         # Note we use `quote` and not `quote_plus`, so white spaces are
         # turned into '%20' instead of '+'.
-        assert urllib.quote(DUMB_SIGNATURE) in next_page_url
+        assert quote(DUMB_SIGNATURE) in next_page_url
 
         # Test that a negative page value does not break it.
         response = self.client.get(url, {
@@ -286,20 +287,20 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
-        assert 'Product' not in response.content
-        assert 'No results were found' in response.content
+        assert 'Product' not in smart_text(response.content)
+        assert 'No results were found' in smart_text(response.content)
 
         # Test with results.
         url = reverse('signature:signature_aggregation', args=('product',))
 
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         assert response.status_code == 200
-        assert 'Product' in response.content
-        assert '1337' in response.content
-        assert 'linux' in response.content
-        assert str(1337 / 1382 * 100) in response.content
-        assert 'windows' in response.content
-        assert 'mac' in response.content
+        assert 'Product' in smart_text(response.content)
+        assert '1337' in smart_text(response.content)
+        assert 'linux' in smart_text(response.content)
+        assert str(int(1337 / 1382 * 100)) in smart_text(response.content)
+        assert 'windows' in smart_text(response.content)
+        assert 'mac' in smart_text(response.content)
 
     def test_signature_graphs(self):
         def mocked_supersearch_get(**params):
@@ -454,8 +455,8 @@ class TestViews(BaseTestViews):
             'signature': DUMB_SIGNATURE,
         })
         assert response.status_code == 200
-        assert 'Crash ID' not in response.content
-        assert 'No comments were found' in response.content
+        assert 'Crash ID' not in smart_text(response.content)
+        assert 'No comments were found' in smart_text(response.content)
 
         # Test with results.
         response = self.client.get(url, {
@@ -463,11 +464,11 @@ class TestViews(BaseTestViews):
             'product': 'WaterWolf'
         })
         assert response.status_code == 200
-        assert 'aaaaaaaaaaaaa1' in response.content
-        assert 'Crash ID' in response.content
-        assert 'hello there' in response.content
-        assert 'WaterWolf Y U SO GOOD' in response.content
-        assert 'locale1' in response.content
+        assert 'aaaaaaaaaaaaa1' in smart_text(response.content)
+        assert 'Crash ID' in smart_text(response.content)
+        assert 'hello there' in smart_text(response.content)
+        assert 'WaterWolf Y U SO GOOD' in smart_text(response.content)
+        assert 'locale1' in smart_text(response.content)
 
     def test_signature_comments_pagination(self):
         """Test that the pagination of comments works as expected"""
@@ -505,9 +506,9 @@ class TestViews(BaseTestViews):
         )
 
         assert response.status_code == 200
-        assert '140' in response.content
-        assert '99' in response.content
-        assert '139' not in response.content
+        assert '140' in smart_text(response.content)
+        assert '99' in smart_text(response.content)
+        assert '139' not in smart_text(response.content)
 
         # Check that the pagination URL contains all expected parameters.
         doc = pyquery.PyQuery(response.content)
@@ -520,9 +521,9 @@ class TestViews(BaseTestViews):
             'page': '2',
         })
         assert response.status_code == 200
-        assert '140' in response.content
-        assert '99' not in response.content
-        assert '139' in response.content
+        assert '140' in smart_text(response.content)
+        assert '99' not in smart_text(response.content)
+        assert '139' in smart_text(response.content)
 
     def test_signature_summary(self):
         models.GraphicsDevice.objects.create(
@@ -702,29 +703,29 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
         # Make sure all boxes are there.
-        assert 'Operating System' in response.content
-        assert 'Uptime Range' in response.content
-        assert 'Product' in response.content
-        assert 'Architecture' in response.content
-        assert 'Process Type' in response.content
-        assert 'Mobile Devices' in response.content
-        assert 'Graphics Adapter' in response.content
-        assert 'Flash&trade; Version' in response.content
+        assert 'Operating System' in smart_text(response.content)
+        assert 'Uptime Range' in smart_text(response.content)
+        assert 'Product' in smart_text(response.content)
+        assert 'Architecture' in smart_text(response.content)
+        assert 'Process Type' in smart_text(response.content)
+        assert 'Mobile Devices' in smart_text(response.content)
+        assert 'Graphics Adapter' in smart_text(response.content)
+        assert 'Flash&trade; Version' in smart_text(response.content)
 
         # Logged out users can't see no exploitability
-        assert 'Exploitability' not in response.content
+        assert 'Exploitability' not in smart_text(response.content)
 
         # Check that some of the expected values are there.
-        assert 'Windows 7' in response.content
-        assert 'x86' in response.content
-        assert 'WaterWolf' in response.content
-        assert '2.1b99' in response.content
-        assert 'browser' in response.content
-        assert '1.1.1.14' in response.content
-        assert '&lt; 1 min' in response.content
-        assert '1-5 min' in response.content
-        assert 'ZTE' in response.content
-        assert 'Intel (0x0086)' in response.content
+        assert 'Windows 7' in smart_text(response.content)
+        assert 'x86' in smart_text(response.content)
+        assert 'WaterWolf' in smart_text(response.content)
+        assert '2.1b99' in smart_text(response.content)
+        assert 'browser' in smart_text(response.content)
+        assert '1.1.1.14' in smart_text(response.content)
+        assert '&lt; 1 min' in smart_text(response.content)
+        assert '1-5 min' in smart_text(response.content)
+        assert 'ZTE' in smart_text(response.content)
+        assert 'Intel (0x0086)' in smart_text(response.content)
 
         user = self._login()
 
@@ -732,7 +733,7 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
         # Logged in users without the permission can't see no exploitability
-        assert 'Exploitability' not in response.content
+        assert 'Exploitability' not in smart_text(response.content)
 
         group = self._create_group_with_permission('view_exploitability')
         user.groups.add(group)
@@ -742,7 +743,7 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
         # Logged in users with the permission can see exploitability
-        assert 'Exploitability' in response.content
+        assert 'Exploitability' in smart_text(response.content)
 
     def test_signature_summary_with_many_hexes(self):
         def mocked_supersearch_get(**params):
@@ -809,21 +810,22 @@ class TestViews(BaseTestViews):
             'signature': 'hang | mozilla::wow::such_signature(smth*)'
         })
         assert response.status_code == 200
-        assert 'There are no bugs' in response.content
+        assert 'There are no bugs' in smart_text(response.content)
 
         # Test with signature that has bugs and related bugs
         response = self.client.get(url, {
             'signature': 'Something',
         })
         assert response.status_code == 200
-        assert '123456789' in response.content
-        assert '111111' in response.content
+        assert '123456789' in smart_text(response.content)
+        assert '111111' in smart_text(response.content)
 
         # because bug id 123456789 is > than 111111 we expect that order
         # in the rendered output
+        content = smart_text(response.content)
         assert (
-            response.content.find('123456789') <
-            response.content.find('111111') <
-            response.content.find('Related Crash Signatures') <
-            response.content.find('Bugs for <code>OOM | small</code>')
+            content.find('123456789') <
+            content.find('111111') <
+            content.find('Related Crash Signatures') <
+            content.find('Bugs for <code>OOM | small</code>')
         )

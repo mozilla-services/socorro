@@ -5,6 +5,7 @@ import pytest
 import requests_mock
 
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_text
 
 from crashstats.crashstats.models import GraphicsDevice
 from crashstats.crashstats.tests.test_views import BaseTestViews
@@ -111,9 +112,9 @@ class TestSuperSearchFieldsMissing(SiteAdminTestViews):
 
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'field_a' in response.content
-        assert 'namespace1.field_b' in response.content
-        assert 'namespace2.subspace1.field_c' in response.content
+        assert 'field_a' in smart_text(response.content)
+        assert 'namespace1.field_b' in smart_text(response.content)
+        assert 'namespace2.subspace1.field_c' in smart_text(response.content)
 
 
 class TestGraphicsDevices(SiteAdminTestViews):
@@ -144,7 +145,7 @@ class TestGraphicsDevices(SiteAdminTestViews):
         url = reverse('siteadmin:graphics_devices')
 
         sample_file = os.path.join(os.path.dirname(__file__), 'sample-pci.ids')
-        with open(sample_file) as fp:
+        with open(sample_file, 'rb') as fp:
             response = self.client.post(url, {
                 'file': fp,
             })

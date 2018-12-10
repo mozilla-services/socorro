@@ -5,7 +5,6 @@ from crashstats.supersearch.form_fields import MultipleValueField
 
 
 class NewSignaturesForm(BaseForm):
-
     end_date = forms.DateField(required=False)
     start_date = forms.DateField(required=False)
     not_after = forms.DateField(required=False)
@@ -15,4 +14,4 @@ class NewSignaturesForm(BaseForm):
     def clean_product(self):
         """Remove all empty values from the list of products. """
         value = self.cleaned_data['product']
-        return filter(bool, value)
+        return list(filter(bool, value))

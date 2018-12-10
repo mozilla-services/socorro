@@ -45,7 +45,7 @@ urlpatterns = [
     # Static pages in Django admin
     url(r'^siteadmin/', include('crashstats.manage.admin_urls', namespace='siteadmin')),
     # Django-model backed pages in Django admin
-    url(r'^siteadmin/', include(admin_site.site.urls)),
+    url(r'^siteadmin/', admin_site.site.urls),
     url(r'^oidc/', include('mozilla_django_oidc.urls')),
 ]
 

@@ -43,7 +43,7 @@ a_thing = {
         'db': 'same db',
     },
 }
-thing_as_str = json.dumps(a_thing)
+thing_as_binary = json.dumps(a_thing).encode('utf-8')
 
 
 def setup_mocked_s3_storage(cls=S3ConnectionContext, **extra):
@@ -103,7 +103,7 @@ class TestConnectionContext:
         conn.submit(
             'fff13cf0-5671-4496-ab89-47a922141114',
             'name_of_thing',
-            thing_as_str
+            thing_as_binary
         )
 
         # this should have happened
@@ -138,7 +138,7 @@ class TestConnectionContext:
             conn.submit(
                 'fff13cf0-5671-4496-ab89-47a922141114',
                 'name_of_thing',
-                thing_as_str
+                thing_as_binary
             )
             # Do a failed submit
             conn._connect = mock.Mock()
@@ -147,7 +147,7 @@ class TestConnectionContext:
                 conn.submit(
                     'fff13cf0-5671-4496-ab89-47a922141114',
                     'name_of_thing',
-                    thing_as_str
+                    thing_as_binary
                 )
 
             assert len(mm.filter_records(stat='processor.s3.submit',
@@ -163,7 +163,7 @@ class TestConnectionContext:
             .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
-        mocked_get_contents_as_string.side_effect = [thing_as_str]
+        mocked_get_contents_as_string.side_effect = [thing_as_binary]
 
         # the tested call
         result = conn.fetch(
@@ -188,7 +188,7 @@ class TestConnectionContext:
             ],
         )
 
-        assert result == thing_as_str
+        assert result == thing_as_binary
 
     def assert_regional_s3_connection_parameters(self, region, conn):
         kwargs = {
