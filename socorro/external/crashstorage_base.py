@@ -15,7 +15,6 @@ import sys
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, str_to_list
 from configman.dotdict import DotDict
-import six
 import markus
 
 
@@ -387,12 +386,6 @@ class PolyStorageError(Exception, collections.MutableSequence):
             output.append(self.args[0])
         for e in self.exceptions:
             output.append(repr(e[1]))
-        if six.PY2:
-            # If this is Python2, encode everything into strings before joining
-            output = [
-                part.encode('ascii', 'ignore')
-                for part in output
-            ]
         return ','.join(output)
 
 

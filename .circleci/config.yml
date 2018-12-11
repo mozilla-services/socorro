@@ -57,11 +57,6 @@ jobs:
           working_directory: /socorro
           command: make test
 
-#      - run:
-#          name: Run tests in Python 3
-#          working_directory: /socorro
-#          command: make dockertest3
-
       - run:
           name: Push to Dockerhub
           working_directory: /socorro

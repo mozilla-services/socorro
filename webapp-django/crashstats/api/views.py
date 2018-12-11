@@ -69,10 +69,6 @@ TYPE_MAP = {
     int: forms.IntegerField,
     bool: forms.BooleanField,
 }
-if six.PY2:
-    # NOTE(willkg): In python 2, we need to additionally add str which is a
-    # text type
-    TYPE_MAP[str] = forms.CharField
 
 
 def fancy_init(self, model, *args, **kwargs):

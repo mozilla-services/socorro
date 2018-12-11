@@ -112,26 +112,3 @@ stop: my.env
 .PHONY: dependencycheck
 dependencycheck: my.env
 	${DC} run --rm crontabber shell ./docker/run_dependency_checks.sh
-
-
-# Python 3 migration related things--remove after we've finished migrating
-
-.docker-build3:
-	make build3
-
-.PHONY: build3
-build3: my.env
-	${DC} build --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} testpython3
-	touch .docker-build3
-
-.PHONY: lint3
-lint3: my.env .docker-build3
-	${DC} run --rm --no-deps testpython3 ./docker/run_lint.sh
-
-.PHONY: test3
-test3: my.env .docker-build3
-	USEPYTHON=3 ./docker/run_tests_in_docker.sh ${ARGS}
-
-.PHONY: testshell3
-testshell3: my.env .docker-build3
-	USEPYTHON=3 ./docker/run_tests_in_docker.sh --shell

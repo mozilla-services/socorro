@@ -29,7 +29,7 @@ set -e
 # First convert configman environment vars which have bad identifiers to ones
 # that don't
 function getenv {
-    python -c "import os; print os.environ['$1']"
+    python -c "import os; print(os.environ['$1'])"
 }
 
 AWS_HOST="$(getenv 'resource.boto.host')"

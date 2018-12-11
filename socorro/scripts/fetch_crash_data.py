@@ -124,7 +124,7 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
         fn = os.path.join(outputdir, 'v1', 'dump_names', crash_id)
         create_dir_if_needed(os.path.dirname(fn))
         with open(fn, 'w') as fp:
-            json.dump(dumps.keys(), fp)
+            json.dump(list(dumps.keys()), fp)
 
         # Save dumps to file system
         for dump_name, data in dumps.items():
