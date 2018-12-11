@@ -22,7 +22,7 @@ SOCORRO_GID=${SOCORRO_GID:-"10001"}
 
 # Use the same image we use for building docker images because it's cached.
 # Otherwise this doesn't make any difference.
-BASEIMAGENAME="python:3.6.5-slim"
+BASEIMAGENAME="python:3.6.7-slim-jessie"
 TESTIMAGE="local/socorro_app"
 
 # Start services in background (this is idempotent)
