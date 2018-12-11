@@ -139,6 +139,10 @@ class RabbitMQCrashStorage(CrashStorageBase):
                     self._basic_get,
                     queue=queue
                 )
+                # The body is always a string, so convert it to a string
+                if body:
+                    body = body.decode('utf-8')
+
                 if method_frame and self._suppress_duplicate_jobs(body, method_frame):
                     continue
                 if method_frame:
