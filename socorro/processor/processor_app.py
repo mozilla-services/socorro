@@ -12,7 +12,7 @@ import sys
 from configman import Namespace
 from configman.converters import class_converter
 from configman.dotdict import DotDict
-from six import reraise
+import six
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -190,24 +190,21 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     def _transform(self, crash_id):
-        """Transforms raw crash into a process crash
+        """Transform a raw crash into a process crash
 
-        This implementation is the framework on how a raw crash is converted into
-        a processed crash.  The 'crash_id' passed in is used as a key to fetch the
-        raw crash from the 'source', the conversion funtion implemented by the
-        'processor_class' is applied, the processed crash is saved to the 'destination'.
+        The ``crash_id`` passed in is used as a key to fetch the raw crash data
+        from the ``source``, the ``processor_class`` processes the crash and
+        the processed crash is saved to the ``destination``.
 
         """
+        # Fetch the raw crash data
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
             dumps = self.source.get_raw_dumps_as_files(crash_id)
         except CrashIDNotFound:
             # If the crash isn't found, we just reject it--no need to capture
             # errors here
-            self.processor.reject_raw_crash(
-                crash_id,
-                'this crash cannot be found in raw crash storage'
-            )
+            self.processor.reject_raw_crash(crash_id, 'crash cannot be found in raw crash storage')
             return
         except Exception as x:
             # We don't know what this error is, so we should capture it
@@ -216,11 +213,14 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             self.processor.reject_raw_crash(crash_id, 'error in loading: %s' % x)
             return
 
+        # Fetch processed crash data--there won't be any if this crash hasn't
+        # been processed, yet
         try:
             processed_crash = self.source.get_unredacted_processed(crash_id)
         except CrashIDNotFound:
             processed_crash = DotDict()
 
+        # Process the crash and remove any temporary artifacts from disk
         try:
             # Process the crash to generate a processed crash
             processed_crash = self.processor.process_crash(raw_crash, dumps, processed_crash)
@@ -242,7 +242,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             exc_type, exc_value, exc_tb = sys.exc_info()
 
             # PolyStorage can throw a PolyStorageException which is a sequence
-            # of exc_info items.
+            # of exc_info items, so we need to capture each one
             if isinstance(exc_value, collections.Sequence):
                 exc_info = exc_value
             else:
@@ -250,17 +250,22 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
             for exc_info_item in exc_info:
                 self._capture_error(crash_id, exc_info_item)
+                self.config.logger.warning(
+                    'error in processing or saving crash %s',
+                    crash_id
+                )
 
             # Re-raise the original exception with the correct traceback
-            reraise(exc_type, exc_value, exc_tb)
+            six.reraise(exc_type, exc_value, exc_tb)
+
         finally:
             # Clean up any dump files saved to the file system
             for a_dump_pathname in dumps.values():
-                try:
-                    if 'TEMPORARY' in a_dump_pathname:
+                if 'TEMPORARY' in a_dump_pathname:
+                    try:
                         os.unlink(a_dump_pathname)
-                except OSError as x:
-                    self.config.logger.info('deletion of dump failed: %s', x)
+                    except OSError as x:
+                        self.config.logger.info('deletion of dump failed: %s', x)
 
     def _setup_source_and_destination(self):
         """Instantiates classes necessary for processing"""

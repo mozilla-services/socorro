@@ -130,7 +130,7 @@ class TestProcessorApp(object):
         pa.source.get_raw_crash.assert_called_with(17)
         pa.processor.reject_raw_crash.assert_called_with(
             17,
-            'this crash cannot be found in raw crash storage'
+            'crash cannot be found in raw crash storage'
         )
         assert finished_func.call_count == 1
 
@@ -157,7 +157,7 @@ class TestProcessorApp(object):
         pa.source.get_raw_crash.return_value = DotDict({'raw': 'crash'})
         pa.source.get_raw_dumps_as_files.return_value = {}
 
-        def mocked_save_raw_and_processed(*_):
+        def mocked_save_raw_and_processed(*args, **kwargs):
             exception = PolyStorageError()
             exception.exceptions.append(NameError('waldo'))
             raise exception
@@ -170,7 +170,7 @@ class TestProcessorApp(object):
         with pytest.raises(PolyStorageError):
             pa.transform('mycrashid')
 
-        config.logger.warning.assert_called_with(
+        config.logger.warning.assert_any_call(
             'Sentry DSN is not configured and an exception happened'
         )
 
