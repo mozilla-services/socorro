@@ -420,16 +420,13 @@ class TestDatesAndTimesRule(object):
             '50'
         )
         assert ret == "2012-05-08T23:26:33.454482+00:00"
-        # The warning message you get comes from a ValueError
-        # which is phrased differently in python 2.6 compared to 2.7.
-        # So we need to expect different things depend on python version.
         try:
             42[:1]
         except TypeError as err:
             type_error_value = str(err)
         expected = [
-            "WARNING: raw_crash[submitted_timestamp] contains unexpected "
-            "value: 17; %s" % type_error_value
+            'WARNING: raw_crash[submitted_timestamp] contains unexpected '
+            'value: 17; %s' % type_error_value
         ]
         assert processor_notes == expected
 
