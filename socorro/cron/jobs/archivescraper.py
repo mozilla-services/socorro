@@ -66,7 +66,6 @@ import json
 
 from configman import Namespace, class_converter
 import psycopg2
-import six
 from six.moves.urllib.parse import urljoin
 
 from socorro.cron.base import BaseCronApp
@@ -76,13 +75,10 @@ from socorro.lib.transaction import transaction_context
 # NOTE(willkg): We have to do this because lxml 4.2.5 has imports that kick up
 # warnings in Python 3. Once lxml puts out a new version with a fix, we can
 # stop doing this.
-if six.PY2:
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', category=ImportWarning)
     from pyquery import PyQuery as pq
-else:
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=ImportWarning)
-        from pyquery import PyQuery as pq
 
 
 # Substrings that indicate the thing is not a platform we want to traverse

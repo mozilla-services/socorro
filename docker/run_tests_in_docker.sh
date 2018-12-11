@@ -22,18 +22,8 @@ SOCORRO_GID=${SOCORRO_GID:-"10001"}
 
 # Use the same image we use for building docker images because it's cached.
 # Otherwise this doesn't make any difference.
-BASEIMAGENAME="python:2.7.14-slim"
-
-# Figure out which image to run tests in
-USEPYTHON="${USEPYTHON:-2}"
-echo "${USEPYTHON}"
-if [ "${USEPYTHON}" == "2" ]; then
-    echo "Using Python 2.7.14."
-    TESTIMAGE="local/socorro_app"
-else
-    echo "Using Python 3.6.5."
-    TESTIMAGE="local/socorro_python3"
-fi
+BASEIMAGENAME="python:3.6.5-slim"
+TESTIMAGE="local/socorro_app"
 
 # Start services in background (this is idempotent)
 echo "Starting services needed by tests in the background..."

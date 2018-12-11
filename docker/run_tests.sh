@@ -41,21 +41,16 @@ pushd webapp-django
 ${PYTHON} manage.py migrate
 popd
 
-if [ "${USEPYTHON:-2}" == "2" ]; then
-    # Run tests
-    "${PYTEST}"
+# Run tests
+"${PYTEST}"
 
-    # Collect static and then run py.test in the webapp
-    pushd webapp-django
-    "${WEBPACK_BINARY}" --mode=production --bail
-    ${PYTHON} manage.py collectstatic --noinput
-    "${PYTEST}"
+# Collect static and then run py.test in the webapp
+pushd webapp-django
+"${WEBPACK_BINARY}" --mode=production --bail
+${PYTHON} manage.py collectstatic --noinput
+"${PYTEST}"
 
-    echo ">>> jest (frontend)"
-    # Run Jest tests in webapp/staticfiles
-    "${JEST}" staticfiles
-    popd
-else
-    # Run the tests we know work in Python 3
-    ./docker/run_tests_python3.sh
-fi
+echo ">>> jest (frontend)"
+# Run Jest tests in webapp/staticfiles
+"${JEST}" staticfiles
+popd

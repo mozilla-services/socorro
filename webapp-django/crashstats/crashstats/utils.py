@@ -31,10 +31,6 @@ class DateTimeEncoder(json.JSONEncoder):
 
 def parse_isodate(ds):
     """Return a datetime object from a date string"""
-    if six.PY2 and isinstance(ds, six.text_type):
-        # isodate struggles to convert unicode strings with
-        # its parse_datetime() if the input string is a Python 2 unicode.
-        ds = ds.encode('ascii')
     return isodate.parse_datetime(ds)
 
 

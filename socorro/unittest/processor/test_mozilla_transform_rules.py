@@ -742,9 +742,7 @@ class TestOutOfMemoryBinaryRule(object):
 
         with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
             ret = json.dumps({'mysterious': ['awesome', 'memory']})
-            if six.PY3:
-                ret = ret.encode('utf-8')
-            mocked_gzip_open.return_value = six.BytesIO(ret)
+            mocked_gzip_open.return_value = six.BytesIO(ret.encode('utf-8'))
             rule = OutOfMemoryBinaryRule(config)
             # Stomp on the value to make it easier to test with
             rule.MAX_SIZE_UNCOMPRESSED = 1024
@@ -806,30 +804,14 @@ class TestOutOfMemoryBinaryRule(object):
         with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
             mocked_gzip_open.side_effect = IOError
             rule = OutOfMemoryBinaryRule(config)
+
             memory = rule._extract_memory_info('a_pathname', processor_meta.processor_notes)
-
-            assert memory['ERROR'] in [
-                # Python 2
-                'error in gzip for a_pathname: IOError()',
-                # Python 3
-                'error in gzip for a_pathname: OSError()',
-            ]
-
-            assert processor_meta.processor_notes in [
-                # Python 2
-                ['error in gzip for a_pathname: IOError()'],
-                # Python 3
-                ['error in gzip for a_pathname: OSError()']
-            ]
+            assert memory['ERROR'] == 'error in gzip for a_pathname: OSError()'
+            assert processor_meta.processor_notes == ['error in gzip for a_pathname: OSError()']
 
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert 'memory_report' not in processed_crash
-            assert processed_crash.memory_report_error in [
-                # Python 2
-                'error in gzip for a_pathname: IOError()',
-                # Python 3
-                'error in gzip for a_pathname: OSError()',
-            ]
+            assert processed_crash.memory_report_error == 'error in gzip for a_pathname: OSError()'
 
     def test_extract_memory_info_with_json_trouble(self):
         config = DotDict()
