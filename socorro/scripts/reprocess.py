@@ -9,8 +9,9 @@ import os
 import sys
 import time
 
+from more_iterutils import chunked
+
 from socorro.lib.requestslib import session_with_retries
-from socorro.lib.util import chunkify
 from socorro.scripts import WrappedTextHelpFormatter
 
 
@@ -85,7 +86,7 @@ def main(argv=None):
         len(crash_ids), args.sleep
     ))
 
-    groups = list(chunkify(crash_ids, CHUNK_SIZE))
+    groups = list(chunked(crash_ids, CHUNK_SIZE))
     for i, group in enumerate(groups):
         print('Processing group ending with %s ... (%s/%s)' % (group[-1], i + 1, len(groups)))
         resp = session.post(

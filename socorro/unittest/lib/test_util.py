@@ -6,21 +6,7 @@ import copy
 
 from configman.dotdict import DotDict
 
-from socorro.lib.util import chunkify, dotdict_to_dict
-
-
-def test_chunkify():
-    # chunking nothing yields nothing.
-    assert list(chunkify([], 1)) == []
-
-    # chunking list where len(list) < n
-    assert list(chunkify([1], 10)) == [(1,)]
-
-    # chunking a list where len(list) == n
-    assert list(chunkify([1, 2], 2)) == [(1, 2)]
-
-    # chunking list where len(list) > n
-    assert list(chunkify([1, 2, 3, 4, 5], 2)) == [(1, 2), (3, 4), (5,)]
+from socorro.lib.util import dotdict_to_dict
 
 
 class Testdotdict_to_dict(object):
