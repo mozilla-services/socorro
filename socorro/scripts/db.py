@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
 import os
-import sys
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -15,9 +12,7 @@ from six.moves.urllib.parse import urlparse
 from socorro.scripts import WrappedTextHelpFormatter
 
 
-DESCRIPTION = """
-Manages databases
-"""
+DESCRIPTION = 'Manages databases'
 
 
 def create_database():
@@ -72,7 +67,3 @@ def main(argv=None):
         return drop_database()
     elif args.cmd == 'create':
         return create_database()
-
-
-if __name__ == '__main__':
-    sys.exit(main())
