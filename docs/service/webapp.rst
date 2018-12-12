@@ -212,7 +212,7 @@ the minified and concatenated static assets you'd get in a production-like
 environment.
 
 If you want to run the web app in a more "prod-like manner", you want to run the
-webapp using ``uwsgi`` and with ``DEBUG=False``. Here's how you do that.
+webapp using ``gunicorn`` and with ``DEBUG=False``. Here's how you do that.
 
 First start a ``bash`` shell with service ports::
 
@@ -224,7 +224,7 @@ Then compile the static assets::
   app@socorro:/app/webapp-django$ ./manage.py collectstatic --noinput
   app@socorro:/app/webapp-django$ cd ..
 
-Now run the webapp with ``uwsgi`` and ``DEBUG=False``::
+Now run the webapp with ``gunicorn`` and ``DEBUG=False``::
 
   app@socorro:/app$ DEBUG=False bash docker/run_webapp.sh
 
