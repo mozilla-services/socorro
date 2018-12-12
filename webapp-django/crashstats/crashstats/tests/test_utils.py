@@ -1,24 +1,10 @@
 import copy
-import datetime
 import json
 
 from django.http import HttpResponse
 from django.utils.encoding import smart_text
 
 from crashstats.crashstats import utils
-
-
-def test_daterange():
-    fmt = '%Y-%m-%d'
-    start_date = datetime.datetime.strptime('2012-01-01', fmt)
-    end_date = datetime.datetime.strptime('2012-01-05', fmt)
-
-    assert list(utils.daterange(start_date, end_date, fmt)) == [
-        '2012-01-01',
-        '2012-01-02',
-        '2012-01-03',
-        '2012-01-04'
-    ]
 
 
 def test_enhance_frame():
