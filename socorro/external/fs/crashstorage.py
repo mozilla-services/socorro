@@ -18,7 +18,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping
 )
 from socorro.lib.datetimeutil import utc_now, JsonDTISOEncoder
-from socorro.lib.ooid import dateFromOoid, depthFromOoid
+from socorro.lib.ooid import date_from_ooid, depth_from_ooid
 
 
 @contextmanager
@@ -141,11 +141,11 @@ class FSPermanentStorage(CrashStorageBase):
     def _get_radix(crash_id):
         return [
             crash_id[i * 2:(i + 1) * 2]
-            for i in range(depthFromOoid(crash_id))
+            for i in range(depth_from_ooid(crash_id))
         ]
 
     def _get_base(self, crash_id):
-        date = dateFromOoid(crash_id)
+        date = date_from_ooid(crash_id)
         if not date:
             date = utc_now()
         date_formatted = "%4d%02d%02d" % (date.year, date.month, date.day)
