@@ -60,8 +60,6 @@ issues.
 
 """
 
-from __future__ import print_function
-
 import json
 
 from configman import Namespace, class_converter
