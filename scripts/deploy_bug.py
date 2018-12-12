@@ -15,8 +15,6 @@ Usage:
 Then copy and paste the bits it prints out.
 """
 
-from __future__ import print_function
-
 import sys
 
 import requests

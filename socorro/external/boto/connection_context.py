@@ -17,7 +17,7 @@ import markus
 import six
 
 from socorro.lib.converters import change_default
-from socorro.lib.ooid import dateFromOoid
+from socorro.lib.ooid import date_from_ooid
 
 
 class KeyNotFound(Exception):
@@ -102,7 +102,7 @@ class ConnectionContextBase(RequiredConfig):
 
     def _get_datestamp(self, crashid):
         """Retrieves datestamp from a crashid or raises an exception"""
-        datestamp = dateFromOoid(crashid)
+        datestamp = date_from_ooid(crashid)
         if datestamp is None:
             # We should never hit this situation unless the crashid is not valid
             raise CrashidMissingDatestamp('%s is missing datestamp' % crashid)

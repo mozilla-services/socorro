@@ -34,11 +34,6 @@ def parse_isodate(ds):
     return isodate.parse_datetime(ds)
 
 
-def daterange(start_date, end_date, format='%Y-%m-%d'):
-    for n in range((end_date - start_date).days):
-        yield (start_date + datetime.timedelta(n)).strftime(format)
-
-
 def json_view(f):
     @functools.wraps(f)
     def wrapper(request, *args, **kw):

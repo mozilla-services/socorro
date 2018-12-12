@@ -2,8 +2,6 @@
 Audit groups and removes inactive users.
 """
 
-from __future__ import print_function
-
 import datetime
 
 from django.contrib.auth.models import Group

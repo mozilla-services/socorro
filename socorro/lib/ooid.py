@@ -6,80 +6,33 @@
 OOID is "Our opaque ID"
 """
 
-import datetime as dt
+import datetime
 import re
-import uuid as uu
+import uuid
 
 from socorro.lib.datetimeutil import utc_now, UTC
 
-defaultDepth = 2
-oldHardDepth = 4
+
+DEFAULT_DEPTH = 2
 
 
-def create_new_ooid(timestamp=None, depth=None):
-    """Create a new Ooid for a given time, to be stored at a given depth timestamp: the year-month-day
-    is encoded in the ooid. If none, use current day depth: the expected storage depth is encoded in
-    the ooid. If non, use the defaultDepth returns a new opaque id string holding 24 random hex
-    digits and encoded date and depth info
+def create_new_ooid(timestamp=None, depth=DEFAULT_DEPTH):
+    """Create a new Ooid for a given time and depth
 
-    """
-    if not timestamp:
-        timestamp = utc_now().date()
-    if not depth:
-        depth = defaultDepth
-    assert depth <= 4 and depth >= 1
-    uuid = str(uu.uuid4())
-    return "%s%d%02d%02d%02d" % (
-        uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day
-    )
-
-
-def uuid_to_ooid(uuid, timestamp=None, depth=None):
-    """Create an ooid from a 32-hex-digit string in regular uuid format. uuid: must be uuid in expected
-    format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxx7777777 timestamp: the year-month-day is encoded in the
-    ooid. If none, use current day depth: the expected storage depth is encoded in the ooid. If non,
-    use the defaultDepth returns a new opaque id string holding the first 24 digits of the provided
-    uuid and encoded date and depth info
+    :arg datetime timestamp: the timestamp to encode; defaults to UTC now
+    :arg int depth: the depth to encode; defaults to 2
 
     """
     if not timestamp:
         timestamp = utc_now().date()
-    if not depth:
-        depth = defaultDepth
     assert depth <= 4 and depth >= 1
+    new_uuid = str(uuid.uuid4())
     return "%s%d%02d%02d%02d" % (
-        uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day
+        new_uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day
     )
 
 
-def dateAndDepthFromOoid(ooid):
-    """Extract the encoded date and expected storage depth from an ooid. ooid: The ooid from which to
-    extract the info
-
-    :returns: (datetime(yyyy,mm,dd),depth) if the ooid is in expected format else (None,None)
-
-    """
-    year = month = day = None
-    try:
-        day = int(ooid[-2:])
-    except (ValueError, TypeError):
-        return None, None
-    try:
-        month = int(ooid[-4:-2])
-    except (ValueError, TypeError):
-        return None, None
-    try:
-        year = 2000 + int(ooid[-6:-4])
-        depth = int(ooid[-7])
-        if not depth:
-            depth = oldHardDepth
-        return (dt.datetime(year, month, day, tzinfo=UTC), depth)
-    except (ValueError, TypeError, IndexError):
-        return None, None
-    return None, None
-
-
-def depthFromOoid(ooid):
+def depth_from_ooid(ooid):
     """Extract the encoded expected storage depth from an ooid.
 
     :arg str ooid: The ooid from which to extract the info
@@ -87,18 +40,29 @@ def depthFromOoid(ooid):
     :returns: expected depth if the ooid is in expected format else None
 
     """
-    return dateAndDepthFromOoid(ooid)[1]
+    try:
+        return int(ooid[-7])
+    except (ValueError, IndexError):
+        return None
 
 
-def dateFromOoid(ooid):
-    """Extract the encoded date from an ooid.
+def date_from_ooid(ooid):
+    """Extract the encoded date from an ooid
 
-    :arg str ooid: The ooid from which to extract the info
+    :arg str ooid: the ooid from which to extract the info
 
-    :returns: encoded date if the ooid is in expected format else None
+    :returns: date as a datetime or None
 
     """
-    return dateAndDepthFromOoid(ooid)[0]
+    try:
+        return datetime.datetime(
+            2000 + int(ooid[-6:-4]),
+            int(ooid[-4:-2]),
+            int(ooid[-2:]),
+            tzinfo=UTC
+        )
+    except (ValueError, TypeError, IndexError):
+        return None
 
 
 CRASH_ID_RE = re.compile(r"""

@@ -21,7 +21,7 @@ from socorro.lib.datetimeutil import (
     datetime_from_isodate_string,
 )
 from socorro.lib.dbutil import execute_query_fetchall
-from socorro.lib.ooid import dateFromOoid
+from socorro.lib.ooid import date_from_ooid
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
@@ -168,7 +168,7 @@ class DatesAndTimesRule(Rule):
 
         processed_crash.submitted_timestamp = raw_crash.get(
             'submitted_timestamp',
-            dateFromOoid(raw_crash.uuid)
+            date_from_ooid(raw_crash.uuid)
         )
         if isinstance(processed_crash.submitted_timestamp, six.string_types):
             processed_crash.submitted_timestamp = datetime_from_isodate_string(
