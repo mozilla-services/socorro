@@ -27,6 +27,12 @@ if [ "$1" == "--dev" ]; then
     cd /app/webapp-django/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
 
 else
+    echo "GUNICORN_WORKERS=${GUNICORN_WORKERS}"
+    echo "GUNICORN_WORKER_CONNECTIONS=${GUNICORN_WORKER_CONNECTIONS}"
+    echo "GUNICORN_WORKER_CLASS=${GUNICORN_WORKER_CLASS}"
+    echo "GUNICORN_MAX_REQUESTS=${GUNICORN_MAX_REQUESTS}"
+    echo "GUNICORN_MAX_REQUESTS_JITTER=${GUNICORN_MAX_REQUESTS_JITTER}"
+    echo "PORT=${PORT}"
     ${CMDPREFIX} gunicorn \
         --pythonpath /app/webapp-django/ \
         --workers="${GUNICORN_WORKERS}" \
