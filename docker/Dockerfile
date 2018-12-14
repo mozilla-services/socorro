@@ -37,7 +37,6 @@ ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONPATH /app
 
-ENV WEBPACK_BINARY /webapp-frontend-deps/node_modules/.bin/webpack
 ENV LESS_BINARY /webapp-frontend-deps/node_modules/.bin/lessc
 ENV UGLIFYJS_BINARY /webapp-frontend-deps/node_modules/.bin/uglifyjs
 ENV CSSMIN_BINARY /webapp-frontend-deps/node_modules/.bin/cssmin
@@ -46,9 +45,6 @@ ENV NODE_PATH /webapp-frontend-deps/node_modules/
 
 # Copy everything over
 COPY . /app/
-
-# Build webpack-defined frontend bundles
-RUN cd /app/webapp-django/ && $WEBPACK_BINARY --mode=production --bail
 
 # Run collectstatic in container which puts files in the default place for
 # static files

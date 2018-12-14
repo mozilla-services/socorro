@@ -1,7 +1,0 @@
-{
-    "presets": ["env", "react"],
-    "plugins": [
-        ["babel-plugin-webpack-alias"],
-        ["transform-class-properties"]
-    ]
-}

@@ -28,7 +28,6 @@ ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
 export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
 PYTHON="$(which python)"
-JEST="/webapp-frontend-deps/node_modules/.bin/jest"
 
 # Wait for postgres and elasticsearch services to be ready
 urlwait "${DATABASE_URL}" 10
@@ -46,11 +45,5 @@ popd
 
 # Collect static and then run py.test in the webapp
 pushd webapp-django
-"${WEBPACK_BINARY}" --mode=production --bail
 ${PYTHON} manage.py collectstatic --noinput
 "${PYTEST}"
-
-echo ">>> jest (frontend)"
-# Run Jest tests in webapp/staticfiles
-"${JEST}" staticfiles
-popd

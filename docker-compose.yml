@@ -67,14 +67,6 @@ services:
     volumes:
       - .:/app
 
-  # Webpack watcher
-  webpack:
-    image: local/socorro_app
-    working_dir: /app/webapp-django/
-    command: ["webpack"]
-    volumes:
-      - .:/app
-
   # OpenID Connect provider
   oidcprovider:
     build:
