@@ -48,8 +48,8 @@ class DependencySecurityCheckFailed(Exception):
 class DependencySecurityCheckCronApp(BaseCronApp):
     """Configuration values used by this app:
 
-    crontabber.class-DependencySecurityCheckCronApp.nsp_path
-        Path to the nsp binary for checking Node dependencies.
+    crontabber.class-DependencySecurityCheckCronApp.npm_path
+        Path to the npm binary for checking Node dependencies.
     crontabber.class-DependencySecurityCheckCronApp.safety_path
         Path to the PyUp Safety binary for checking Python dependencies.
     crontabber.class-DependencySecurityCheckCronApp.safety_api_key
@@ -70,8 +70,9 @@ class DependencySecurityCheckCronApp(BaseCronApp):
 
     required_config = Namespace()
     required_config.add_option(
-        'nsp_path',
-        doc='Path to the nsp binary',
+        'npm_path',
+        doc='Path to the npm binary',
+        default='/usr/bin/npm'
     )
     required_config.add_option(
         'safety_path',
@@ -103,7 +104,7 @@ class DependencySecurityCheckCronApp(BaseCronApp):
 
     def validate_options(self):
         # Validate file path options
-        for option in ('nsp_path', 'safety_path', 'package_json_path'):
+        for option in ('npm_path', 'safety_path', 'package_json_path'):
             value = self.config.get(option)
             if not value:
                 raise OptionError('Required option "%s" is empty' % option)
@@ -173,9 +174,9 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         """
         process = Popen(
             [
-                self.config.nsp_path,
-                'check',
-                '--reporter=json',
+                self.config.npm_path,
+                'audit',
+                '--json',
             ],
             stdin=PIPE,
             stdout=PIPE,
@@ -191,11 +192,11 @@ class DependencySecurityCheckCronApp(BaseCronApp):
                 return [
                     Vulnerability(
                         type='javascript',
-                        dependency=result['module'],
-                        installed_version=result['version'],
-                        affected_versions=result['vulnerable_versions'],
-                        description=result['advisory'],
-                    ) for result in results
+                        dependency=result[1]['module_name'],
+                        installed_version=result[1]['findings'][0]['version'],
+                        affected_versions=result[1]['vulnerable_versions'],
+                        description=result[1]['url'],
+                    ) for result in results['advisories'].items()
                 ]
             except (ValueError, KeyError) as err:
                 raise DependencySecurityCheckFailed('Could not parse nsp output', err, output)

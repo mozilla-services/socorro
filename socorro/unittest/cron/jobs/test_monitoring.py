@@ -16,7 +16,7 @@ from socorro.cron.jobs.monitoring import (
 @pytest.fixture
 def app_config(tmpdir):
     config = {}
-    for key in ('nsp_path', 'safety_path', 'package_json_path'):
+    for key in ('npm_path', 'safety_path', 'package_json_path'):
         path = tmpdir.join(key)
         path.write('fake file', ensure=True)
         config[key] = path.strpath
@@ -136,9 +136,9 @@ class TestDependencySecurityCheckCronApp(object):
 
         assert app.get_javascript_vulnerabilities() == []
         assert popen.call_args[0][0] == [
-            app_config['nsp_path'],
-            'check',
-            '--reporter=json',
+            app_config['npm_path'],
+            'audit',
+            '--json',
         ]
         assert popen.call_args[1]['cwd'] == os.path.dirname(app_config['package_json_path'])
 
@@ -157,65 +157,82 @@ class TestDependencySecurityCheckCronApp(object):
     def test_get_javascript_vulnerabilities_found(self, mock_popen, app_config):
         app = self.get_app(app_config)
 
-        # Adapated from nsp output for a jquery issue
-        output = json.dumps([
-            {
-                'id': 328,
-                'updated_at': '2017-04-20T04:19:42.040Z',
-                'created_at': '2017-03-20T21:50:28.000Z',
-                'publish_date': '2017-03-21T18:23:53.000Z',
-                'overview': 'This is an error',
-                'recommendation': 'Upgrade to v3.0.0 or greater.',
-                'cvss_vector': 'CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N',
-                'cvss_score': 7.2,
-                'module': 'mylibrary',
-                'version': '0.9.0',
-                'vulnerable_versions': '<1.0.0',
-                'patched_versions': '>=3.0.0',
-                'title': 'Cross-Site Scripting (XSS)',
-                'path': [
-                    'socorro-webapp-django@0.0.0',
-                    'jquery@2.1.0',
-                ],
-                'advisory': 'https://nodesecurity.io/advisories/328',
+        # Adapated from npm audit output for a jest issue
+        output = json.dumps({
+            "actions": [
+                # Skipping actions because we don't do anything with them.
+            ],
+            "advisories": {
+                "111": {
+                    "findings": [
+                        {
+                            "version": "1.0.0",
+                            "paths": [
+                                "foo>foo-cli>pants"
+                            ],
+                            "dev": True,
+                            "optional": False,
+                            "bundled": False
+                        }
+                    ],
+                    "id": 722,
+                    "created": "2018-11-05T17:04:20.221Z",
+                    "updated": "2018-11-05T17:04:20.221Z",
+                    "deleted": None,
+                    "title": "Prototype pollution",
+                    "found_by": {
+                        "link": "",
+                        "name": "jeff"
+                    },
+                    "reported_by": {
+                        "link": "",
+                        "name": "jeff"
+                    },
+                    "module_name": "pants",
+                    "cves": [
+                        "CVE-2018-42"
+                    ],
+                    "vulnerable_versions": "<=1.0.0",
+                    "patched_versions": ">=1.0.1",
+                    "overview": "Versions of `pants` before 1.0.0 have problems.",
+                    "recommendation": "Update to version 1.0.1 or later.",
+                    "references": "- [report](https://example.com/)",
+                    "access": "public",
+                    "severity": "low",
+                    "cwe": "CWE-42",
+                    "metadata": {
+                        "module_type": "",
+                        "exploitability": 2,
+                        "affected_components": "recursive leggings"
+                    },
+                    "url": "https://example.com/advisories/42"
+                }
             },
-            {
-                'id': 327,
-                'updated_at': '2017-04-20T04:19:42.040Z',
-                'created_at': '2017-03-20T21:50:28.000Z',
-                'publish_date': '2017-03-21T18:23:53.000Z',
-                'overview': 'This is also an error',
-                'recommendation': 'Upgrade to v3.0.0 or greater.',
-                'cvss_vector': 'CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N',
-                'cvss_score': 7.2,
-                'module': 'otherlib',
-                'version': '1.4.0',
-                'vulnerable_versions': '<2.0.0',
-                'patched_versions': '>=3.0.0',
-                'title': 'Cross-Site Scripting (XSS)',
-                'path': [
-                    'socorro-webapp-django@0.0.0',
-                    'jquery@2.1.0',
-                ],
-                'advisory': 'https://nodesecurity.io/advisories/327',
+            "muted": [],
+            "metadata": {
+                "vulnerabilities": {
+                    "info": 0,
+                    "low": 9,
+                    "moderate": 0,
+                    "high": 0,
+                    "critical": 0
+                },
+                "dependencies": 271,
+                "devDependencies": 29443,
+                "optionalDependencies": 550,
+                "totalDependencies": 29714
             },
-        ])
+            "runId": "6eaec258-cf71-43b7-95df-7ba256ecf1c2"
+        })
         mock_popen(1, output=output)
 
         assert set(app.get_javascript_vulnerabilities()) == set([
             Vulnerability(
                 type='javascript',
-                dependency='mylibrary',
-                installed_version='0.9.0',
-                affected_versions='<1.0.0',
-                description='https://nodesecurity.io/advisories/328',
-            ),
-            Vulnerability(
-                type='javascript',
-                dependency='otherlib',
-                installed_version='1.4.0',
-                affected_versions='<2.0.0',
-                description='https://nodesecurity.io/advisories/327',
+                dependency='pants',
+                installed_version='1.0.0',
+                affected_versions='<=1.0.0',
+                description='https://example.com/advisories/42',
             ),
         ])
 
@@ -228,7 +245,7 @@ class TestDependencySecurityCheckCronApp(object):
             app.get_javascript_vulnerabilities()
         assert err.value.args[0] == 'Could not parse nsp output'
 
-    @pytest.mark.parametrize('option', ('nsp_path', 'safety_path', 'package_json_path'))
+    @pytest.mark.parametrize('option', ('npm_path', 'safety_path', 'package_json_path'))
     def test_run_option_validation(self, option, tmpdir, app_config):
         # Error if the config option is missing
         del app_config[option]
