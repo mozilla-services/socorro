@@ -98,7 +98,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
     'waffle',
-    'pinax.eventlog',
     'django_jinja',
 )
 
