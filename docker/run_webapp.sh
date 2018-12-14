@@ -37,6 +37,9 @@ else
         --worker-class="${GUNICORN_WORKER_CLASS}" \
         --max-requests="${GUNICORN_MAX_REQUESTS}" \
         --max-requests-jitter="${GUNICORN_MAX_REQUESTS_JITTER}" \
+        --error-logfile=- \
+        --access-logfile=- \
+        --log-file=- \
         --bind 0.0.0.0:"${PORT}" \
         webapp-django.wsgi.socorro-crashstats:application
 fi
