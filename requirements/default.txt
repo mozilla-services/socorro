@@ -189,9 +189,6 @@ django-npm==1.0.0 \
 markus==1.2.0 \
     --hash=sha256:86bbeb16de1b1920d291c81a39b7a7c61c94b665cd8d10c6b69c994ce4fd5bcc \
     --hash=sha256:9bce7bd152578703a8e4aa5a765c7c0d94bcdd69f7bc5e42d29b893e3abf2e5a
-pinax-eventlog==2.0.3 \
-    --hash=sha256:a6018240147cc9e668ae4bbb732999d1860cdedb0fc986fc14cbb123c8ae6081 \
-    --hash=sha256:bc85175e65c859b9cbc7c418cafa56becc1b38cb09a2622c28109d2008163e6b
 safety==1.8.4 \
     --hash=sha256:399511524f47230d5867f1eb75548f9feefb7a2711a4985cb5be0e034f87040f \
     --hash=sha256:69b970918324865dcd7b92337e07152a0ea1ceecaf92f4d3b38529ee0ca83441
