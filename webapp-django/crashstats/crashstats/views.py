@@ -327,12 +327,6 @@ def about_throttling(request, default_context=None):
 
 
 @pass_default_context
-def new_report_index(request, crash_id, default_context=None):
-    context = default_context or {}
-    return render(request, 'crashstats/new_report_index.html', context)
-
-
-@pass_default_context
 def home(request, default_context=None):
     context = default_context or {}
     return render(request, 'crashstats/home.html', context)

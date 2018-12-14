@@ -26,9 +26,6 @@ crontabber)
 webapp)
     /app/docker/run_webapp.sh "$@"
     ;;
-webpack)
-    /app/docker/run_webpack.sh "$@"
-    ;;
 shell)
     if [ -z "$*" ]; then
         bash

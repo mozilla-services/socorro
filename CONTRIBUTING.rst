@@ -207,8 +207,6 @@ The tests in ``socorro/unittests/`` use `pytest <https://pytest.org/>`_.
 
 The tests in ``webapp-django/`` use `pytest <https://pytest.org/>`_.
 
-The tests in ``webapp-django/staticfiles`` use `Jest <https://jestjs.io/>`_.
-
 To run the tests, do::
 
   $ make test
@@ -254,19 +252,12 @@ Running a file of tests::
 
   app@socorro:/app/webapp-django$ ./manage.py test crashstats/home/tests/test_views.py
 
-Running the staticfiles Jest tests and watching for changes::
-
-  app@socorro:/app/webapp-django$ /webapp-frontend-deps/node_modules/.bin/jest staticfiles/ --watch
-
 
 Writing tests
 =============
 
 For webapp tests, put them in the ``tests/`` directory of the appropriate app in
 ``webapp-django/``.
-
-For webapp/staticfiles tests, put unit tests in the same folder as the component
-that they are testing
 
 For other tests, put them in ``socorro/unittest/``.
 
