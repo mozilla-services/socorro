@@ -7,16 +7,18 @@
 # Runs the webapp.
 #
 # Use the "--dev" argument to run the webapp in a docker container for
-# the purposes of local development.
+# local development.
 
 set -e
 
-BUFFER_SIZE=${BUFFER_SIZE:-"16384"}
 PORT=${PORT:-"8000"}
-NUM_WORKERS=${NUM_WORKERS:-"6"}
+GUNICORN_WORKERS=${GUNICORN_WORKERS:-"1"}
+GUNICORN_WORKER_CLASS=${GUNICORN_WORKER_CLASS:-"sync"}
+GUNICORN_MAX_REQUESTS=${GUNICORN_MAX_REQUESTS:-"10000"}
+GUNICORN_MAX_REQUESTS_JITTER=${GUNICORN_MAX_REQUESTS_JITTER:-"1000"}
+
 
 if [ "$1" == "--dev" ]; then
-    # Run with manage.py
     echo "******************************************************************"
     echo "Running webapp in local dev environment."
     echo "Connect with your browser using: http://localhost:8000/ "
@@ -24,13 +26,17 @@ if [ "$1" == "--dev" ]; then
     cd /app/webapp-django/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
 
 else
-    # Run uwsgi
-    ${CMDPREFIX} uwsgi --pythonpath /app/webapp-django/ \
-                 --master \
-                 --need-app \
-                 --wsgi webapp-django.wsgi.socorro-crashstats \
-                 --buffer-size "${BUFFER_SIZE}" \
-                 --enable-threads \
-                 --processes "${NUM_WORKERS}" \
-                 --http-socket 0.0.0.0:"${PORT}"
+    echo "GUNICORN_WORKERS=${GUNICORN_WORKERS}"
+    echo "GUNICORN_WORKER_CLASS=${GUNICORN_WORKER_CLASS}"
+    echo "GUNICORN_MAX_REQUESTS=${GUNICORN_MAX_REQUESTS}"
+    echo "GUNICORN_MAX_REQUESTS_JITTER=${GUNICORN_MAX_REQUESTS_JITTER}"
+    echo "PORT=${PORT}"
+    ${CMDPREFIX} gunicorn \
+        --pythonpath /app/webapp-django/ \
+        --workers="${GUNICORN_WORKERS}" \
+        --worker-class="${GUNICORN_WORKER_CLASS}" \
+        --max-requests="${GUNICORN_MAX_REQUESTS}" \
+        --max-requests-jitter="${GUNICORN_MAX_REQUESTS_JITTER}" \
+        --bind 0.0.0.0:"${PORT}" \
+        webapp-django.wsgi.socorro-crashstats:application
 fi
