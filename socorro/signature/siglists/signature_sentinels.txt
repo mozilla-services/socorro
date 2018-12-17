@@ -16,4 +16,5 @@ core::panicking::panic
 core::panicking::panic_bounds_check
 core::panicking::panic_fmt
 std::panicking::begin_panic
+std::panicking::begin_panic<T>
 std::panicking::begin_panic_fmt
