@@ -50,32 +50,33 @@ class OutputBase:
         """
         print('WARNING: %s' % line, file=sys.stderr)
 
-    def data(self, crash_id, old_sig, new_sig, notes):
+    def data(self, crash_id, old_sig, result, verbose):
         """Outputs a data point
 
         :arg str crash_id: the crash id for the signature generated
-
         :arg str old_sig: the old signature retrieved in the processed crash
-
-        :arg str new_sig: the new generated signature
-
-        :arg list notes: any processor notes
+        :arg Result result: the signature result
+        :arg boolean verbose: whether or not to be verbose
 
         """
         pass
 
 
 class TextOutput(OutputBase):
-    def data(self, crash_id, old_sig, new_sig, notes):
+    def data(self, crash_id, old_sig, result, verbose):
         print('Crash id: %s' % crash_id)
         print('Original: %s' % old_sig)
-        print('New:      %s' % new_sig)
-        print('Same?:    %s' % (old_sig == new_sig))
+        print('New:      %s' % result.signature)
+        print('Same?:    %s' % (old_sig == result.signature))
 
-        if notes:
-            print('Notes:    (%d)' % len(notes))
-            for note in notes:
+        if result.notes:
+            print('Notes:    (%d)' % len(result.notes))
+            for note in result.notes:
                 print('          %s' % note)
+        if verbose and result.debug_log:
+            print('Debug:    (%d)' % len(result.debug_log))
+            for item in result.debug_log:
+                print('          %s' % item)
 
 
 class CSVOutput(OutputBase):
@@ -87,8 +88,10 @@ class CSVOutput(OutputBase):
     def __exit__(self, exc_type, exc_value, traceback):
         self.out = None
 
-    def data(self, crash_id, old_sig, new_sig, notes):
-        self.out.writerow([crash_id, old_sig, new_sig, str(old_sig == new_sig), notes])
+    def data(self, crash_id, old_sig, result, verbose):
+        self.out.writerow(
+            [crash_id, old_sig, result.signature, str(old_sig == result.signature), result.notes]
+        )
 
 
 def fetch(endpoint, crash_id, api_token=None):
@@ -136,7 +139,7 @@ def main(argv=None):
 
     api_token = os.environ.get('SOCORRO_API_TOKEN', '')
 
-    generator = SignatureGenerator(debug=args.verbose)
+    generator = SignatureGenerator()
     if args.crashids:
         crashids_iterable = args.crashids
     elif not sys.stdin.isatty():
@@ -200,7 +203,7 @@ def main(argv=None):
             old_signature = processed_crash['signature']
             crash_data = convert_to_crash_data(raw_crash, processed_crash)
 
-            ret = generator.generate(crash_data)
+            result = generator.generate(crash_data)
 
-            if not args.different or old_signature != ret['signature']:
-                out.data(crash_id, old_signature, ret['signature'], ret['notes'])
+            if not args.different or old_signature != result.signature:
+                out.data(crash_id, old_signature, result, args.verbose)

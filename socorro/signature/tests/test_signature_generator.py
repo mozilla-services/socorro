@@ -25,13 +25,16 @@ class TestSignatureGenerator:
         # SignatureGenerator and the rules in the default pipeline don't fall over.
         expected = {
             'notes': [
-                'CSignatureTool: No signature could be created because we do not know '
-                'which thread crashed'
+                'SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed'  # noqa
             ],
-            'signature': 'EMPTY: no crashing thread identified'
+            'signature': 'EMPTY: no crashing thread identified',
+            'debug_log': [
+                'SignatureGenerationRule: "" -> "EMPTY: no crashing thread identified"',
+                'SigFixWhitespace: "EMPTY: no crashing thread identified" -> "EMPTY: no crashing thread identified"'  # noqa
+            ]
         }
 
-        assert ret == expected
+        assert ret.as_dict() == expected
 
     def test_failing_rule(self):
         class BadRule(object):
@@ -42,12 +45,12 @@ class TestSignatureGenerator:
 
         expected = {
             'notes': [
-                'Rule BadRule failed: \'BadRule\' object has no attribute \'predicate\''
+                'BadRule: Rule failed: \'BadRule\' object has no attribute \'predicate\''
             ],
             'signature': ''
         }
 
-        assert ret == expected
+        assert ret.as_dict() == expected
 
     def test_error_handler(self):
         exc_value = Exception('Cough')

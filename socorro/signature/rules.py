@@ -24,6 +24,9 @@ MAXIMUM_FRAMES_TO_CONSIDER = 40
 
 class Rule(object):
     """Base class for Signature generation rules"""
+    def __init__(self):
+        self.name = self.__class__.__name__
+
     def predicate(self, crash_data, result):
         """Whether or not to run this rule
 
@@ -139,7 +142,7 @@ class CSignatureTool(SignatureTool):
             )
 
         if self.signatures_with_line_numbers_re.match(function):
-            function = "%s:%s" % (function, line)
+            function = '{}:{}'.format(function, line)
 
         # Remove spaces before all stars, ampersands, and commas
         function = self.fixup_space.sub('', function)
@@ -194,7 +197,7 @@ class CSignatureTool(SignatureTool):
             )
 
         if self.signatures_with_line_numbers_re.match(function):
-            function = "%s:%s" % (function, line)
+            function = '{}:{}'.format(function, line)
 
         # Remove spaces before all stars, ampersands, and commas
         function = self.fixup_space.sub('', function)
@@ -253,14 +256,14 @@ class CSignatureTool(SignatureTool):
                 file = filename.rsplit('\\')[-1]
             else:
                 file = filename.rsplit('/')[-1]
-            return '%s#%s' % (file, line)
+            return '{}#{}'.format(file, line)
 
         # If there's an offset and no module/module_offset, use that
         if not module and not module_offset and offset:
-            return "@%s" % offset
+            return '@{}'.format(offset)
 
         # Return module/module_offset
-        return '%s@%s' % (module or '', module_offset)
+        return '{}@{}'.format(module or '', module_offset)
 
     def _do_generate(self, source_list, hang_type, crashed_thread, delimiter=' | '):
         """
@@ -328,7 +331,7 @@ class CSignatureTool(SignatureTool):
             else:
                 signature_notes.append(
                     "CSignatureTool: No proper signature could be created because no good data "
-                    "for the crashing thread (%s) was found" % crashed_thread
+                    "for the crashing thread ({}) was found".format(crashed_thread)
                 )
                 try:
                     signature = source_list[0]
@@ -482,8 +485,9 @@ class SignatureGenerationRule(Rule):
                 crash_data['java_stack_trace'],
                 delimiter=': '
             )
-            result['signature'] = signature
-            result['notes'].extend(signature_notes)
+            result.set_signature(self.name, signature)
+            for note in signature_notes:
+                result.info(self.name, note)
             return True
 
         try:
@@ -507,7 +511,7 @@ class SignatureGenerationRule(Rule):
                 signature_list = []
 
         except (KeyError, IndexError) as exc:
-            signature_notes.append('No crashing frames found because of %s' % exc)
+            signature_notes.append('No crashing frames found because of {}'.format(exc))
             signature_list = []
 
         signature, signature_notes = self.c_signature_tool.generate(
@@ -517,10 +521,11 @@ class SignatureGenerationRule(Rule):
         )
 
         if signature_list:
-            result['proto_signature'] = ' | '.join(signature_list)
+            result.extra['proto_signature'] = ' | '.join(signature_list)
         if signature:
-            result['signature'] = signature
-        result['notes'].extend(signature_notes)
+            result.set_signature(self.name, signature)
+        for note in signature_notes:
+            result.info(self.name, note)
 
         return True
 
@@ -543,7 +548,7 @@ class OOMSignature(Rule):
         if crash_data.get('oom_allocation_size'):
             return True
 
-        signature = result['signature']
+        signature = result.signature
         if not signature:
             return False
 
@@ -557,13 +562,13 @@ class OOMSignature(Rule):
         try:
             size = int(crash_data.get('oom_allocation_size'))
         except (TypeError, AttributeError, KeyError):
-            result['signature'] = 'OOM | unknown | ' + result['signature']
+            result.set_signature(self.name, 'OOM | unknown | {}'.format(result.signature))
             return True
 
         if size <= 262144:  # 256K
-            result['signature'] = 'OOM | small'
+            result.set_signature(self.name, 'OOM | small')
         else:
-            result['signature'] = 'OOM | large | ' + result['signature']
+            result.set_signature(self.name, 'OOM | large | {}'.format(result.signature))
         return True
 
 
@@ -573,7 +578,6 @@ class AbortSignature(Rule):
     See bug #803779.
 
     """
-
     def predicate(self, crash_data, result):
         return bool(crash_data.get('abort_message'))
 
@@ -584,7 +588,7 @@ class AbortSignature(Rule):
             # This is an abort message that contains no interesting
             # information. We just want to put the "Abort" marker in the
             # signature.
-            result['signature'] = 'Abort | ' + result['signature']
+            result.set_signature(self.name, 'Abort | {}'.format(result.signature))
             return True
 
         if '###!!! ABORT:' in abort_message:
@@ -613,7 +617,9 @@ class AbortSignature(Rule):
         if len(abort_message) > 80:
             abort_message = abort_message[:77] + '...'
 
-        result['signature'] = 'Abort | %s | %s' % (abort_message, result['signature'])
+        result.set_signature(
+            self.name, 'Abort | {} | {}'.format(abort_message, result.signature)
+        )
         return True
 
 
@@ -627,15 +633,14 @@ class SigFixWhitespace(Rule):
     * reduce consecutive spaces to a single space
 
     """
-
     WHITESPACE_RE = re.compile(r'\s')
     CONSECUTIVE_WHITESPACE_RE = re.compile(r'\s\s+')
 
     def predicate(self, crash_data, result):
-        return isinstance(result.get('signature'), six.string_types)
+        return isinstance(result.signature, six.string_types)
 
     def action(self, crash_data, result):
-        sig = result['signature']
+        sig = result.signature
 
         # Trim leading and trailing whitespace
         sig = sig.strip()
@@ -646,20 +651,19 @@ class SigFixWhitespace(Rule):
         # Reduce consecutive spaces to a single space
         sig = self.CONSECUTIVE_WHITESPACE_RE.sub(' ', sig)
 
-        result['signature'] = sig
+        result.set_signature(self.name, sig)
         return True
 
 
 class SigTruncate(Rule):
     """Truncates signatures down to SIGNATURE_MAX_LENGTH characters."""
-
     def predicate(self, crash_data, result):
-        return len(result['signature']) > SIGNATURE_MAX_LENGTH
+        return len(result.signature) > SIGNATURE_MAX_LENGTH
 
     def action(self, crash_data, result):
         max_length = SIGNATURE_MAX_LENGTH - 3
-        result['signature'] = "%s..." % result['signature'][:max_length]
-        result['notes'].append('SigTrunc: signature truncated due to length')
+        result.set_signature(self.name, '{}...'.format(result.signature[:max_length]))
+        result.info(self.name, 'SigTrunc: signature truncated due to length')
         return True
 
 
@@ -668,23 +672,21 @@ class StackwalkerErrorSignatureRule(Rule):
 
     def predicate(self, crash_data, result):
         return bool(
-            result['signature'].startswith('EMPTY') and
+            result.signature.startswith('EMPTY') and
             crash_data.get('mdsw_status_string')
         )
 
     def action(self, crash_data, result):
-        result['signature'] = "%s; %s" % (
-            result['signature'],
-            crash_data['mdsw_status_string']
+        result.set_signature(
+            self.name, '{}; {}'.format(result.signature, crash_data['mdsw_status_string'])
         )
         return True
 
 
 class SignatureRunWatchDog(SignatureGenerationRule):
     """Prepends "shutdownhang" to signature for shutdown hang crashes."""
-
     def predicate(self, crash_data, result):
-        return 'RunWatchdog' in result['signature']
+        return 'RunWatchdog' in result.signature
 
     def _get_crashing_thread(self, crash_data):
         # Always use thread 0 in this case, because that's the thread that
@@ -698,15 +700,12 @@ class SignatureRunWatchDog(SignatureGenerationRule):
         # thread is, we don't care about it and only want to know what was
         # happening in thread 0 when it got stuck.
         ret = super(SignatureRunWatchDog, self).action(crash_data, result)
-        result['signature'] = (
-            "shutdownhang | %s" % result['signature']
-        )
+        result.set_signature(self.name, 'shutdownhang | {}'.format(result.signature))
         return ret
 
 
 class SignatureShutdownTimeout(Rule):
     """Replaces signature with async_shutdown_timeout message."""
-
     def predicate(self, crash_data, result):
         return bool(crash_data.get('async_shutdown_timeout'))
 
@@ -730,30 +729,30 @@ class SignatureShutdownTimeout(Rule):
                 parts.append("(none)")
         except (ValueError, KeyError) as exc:
             parts.append("UNKNOWN")
-            result['notes'].append('Error parsing AsyncShutdownTimeout: {}'.format(exc))
+            result.info(self.name, 'Error parsing AsyncShutdownTimeout: %s', exc)
 
         new_sig = ' | '.join(parts)
-        result['notes'].append(
-            'Signature replaced with a Shutdown Timeout signature, '
-            'was: "{}"'.format(result['signature'])
+        result.info(
+            self.name,
+            'Signature replaced with a Shutdown Timeout signature, was: "%s"',
+            result.signature
         )
-        result['signature'] = new_sig
-
+        result.set_signature(self.name, new_sig)
         return True
 
 
 class SignatureJitCategory(Rule):
     """Replaces signature with JIT classification."""
-
     def predicate(self, crash_data, result):
         return bool(crash_data.get('jit_category'))
 
     def action(self, crash_data, result):
-        result['notes'].append(
-            'Signature replaced with a JIT Crash Category, '
-            'was: "{}"'.format(result['signature'])
+        result.info(
+            self.name,
+            'Signature replaced with a JIT Crash Category, was: "%s"',
+            result.signature
         )
-        result['signature'] = "jit | {}".format(crash_data['jit_category'])
+        result.set_signature(self.name, 'jit | {}'.format(crash_data['jit_category']))
         return True
 
 
@@ -770,12 +769,12 @@ class SignatureIPCChannelError(Rule):
             new_sig = 'IPCError-content | {}'
         new_sig = new_sig.format(crash_data['ipc_channel_error'][:100])
 
-        result['notes'].append(
-            'Signature replaced with an IPC Channel Error, '
-            'was: "{}"'.format(result['signature'])
+        result.info(
+            self.name,
+            'Signature replaced with an IPC Channel Error, was: "%s"',
+            result.signature
         )
-        result['signature'] = new_sig
-
+        result.set_signature(self.name, new_sig)
         return True
 
 
@@ -786,9 +785,11 @@ class SignatureIPCMessageName(Rule):
         return bool(crash_data.get('ipc_message_name'))
 
     def action(self, crash_data, result):
-        result['signature'] = '{} | IPC_Message_Name={}'.format(
-            result['signature'],
-            crash_data['ipc_message_name']
+        result.set_signature(
+            self.name,
+            '{} | IPC_Message_Name={}'.format(
+                result.signature, crash_data['ipc_message_name']
+            )
         )
         return True
 
@@ -807,11 +808,12 @@ class SignatureParentIDNotEqualsChildID(Rule):
         return crash_data.get('moz_crash_reason') == value
 
     def action(self, crash_data, result):
-        result['notes'].append(
-            'Signature replaced with MOZ_RELEASE_ASSERT, was: "%s"' % result['signature']
+        result.info(
+            self.name,
+            'Signature replaced with MOZ_RELEASE_ASSERT, was: "%s"',
+            result.signature
         )
 
         # The MozCrashReason lists the assertion that failed, so we put "!=" in the signature
-        result['signature'] = 'parentBuildID != childBuildID'
-
+        result.set_signature(self.name, 'parentBuildID != childBuildID')
         return True
