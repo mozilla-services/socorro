@@ -33,7 +33,7 @@ If you're interested in helping out and taking a bug to work on, you
 need to do the following first:
 
 1. `Set up a working local development environment
-   <https://socorro.readthedocs.io/en/latest/gettingstarted.html>`_.
+   <https://socorro.readthedocs.io/en/latest/localdevenvironment.html>`_.
 
 2. Read through the `overview of Socorro
    <https://socorro.readthedocs.io/en/latest/overview.html>`_.
