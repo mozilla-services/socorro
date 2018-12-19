@@ -22,6 +22,10 @@ SIGNATURE_MAX_LENGTH = 255
 MAXIMUM_FRAMES_TO_CONSIDER = 40
 
 
+def join_ignore_empty(delimiter, list_of_strings):
+    return delimiter.join(x for x in list_of_strings if x)
+
+
 class Rule(object):
     """Base class for Signature generation rules"""
     def __init__(self):
@@ -68,14 +72,14 @@ class SignatureTool(object):
         self.quit_check_callback = quit_check_callback
 
     def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=' | '):
-        signature, signature_notes = self._do_generate(
+        signature, notes, debug_notes = self._do_generate(
             source_list,
             hang_type,
             crashed_thread,
             delimiter
         )
 
-        return signature, signature_notes
+        return signature, notes, debug_notes
 
     def _do_generate(self, source_list, hang_type, crashed_thread, delimiter):
         raise NotImplementedError
@@ -273,7 +277,8 @@ class CSignatureTool(SignatureTool):
           - irrelevant: Append this element only after seeing a prefix frame
         The signature is a ' | ' separated string of frame names.
         """
-        signature_notes = []
+        notes = []
+        debug_notes = []
 
         # shorten source_list to the first signatureSentinel
         sentinel_locations = []
@@ -287,7 +292,11 @@ class CSignatureTool(SignatureTool):
             except ValueError:
                 pass
         if sentinel_locations:
-            source_list = source_list[min(sentinel_locations):]
+            min_index = min(sentinel_locations)
+            debug_notes.append(
+                'sentinel; starting at "{}" index {}'.format(source_list[min_index], min_index)
+            )
+            source_list = source_list[min_index:]
 
         # Get all the relevant frame signatures. Note that these function signatures
         # have already been normalized at this point.
@@ -295,6 +304,7 @@ class CSignatureTool(SignatureTool):
         for a_signature in source_list:
             # If the signature matches the irrelevant signatures regex, skip to the next frame.
             if self.irrelevant_signature_re.match(a_signature):
+                debug_notes.append('irrelevant; ignoring: "{}"'.format(a_signature))
                 continue
 
             # If the signature matches the trim dll signatures regex, rewrite it to remove all but
@@ -312,10 +322,14 @@ class CSignatureTool(SignatureTool):
             # If the signature does not match the prefix signatures regex, then it is the last
             # one we add to the list.
             if not self.prefix_signature_re.match(a_signature):
+                debug_notes.append('not a prefix; stop iterating at: "{}"'.format(a_signature))
                 break
 
         # Add a special marker for hang crash reports.
         if hang_type:
+            debug_notes.append(
+                'hang_type {}: prepending {}'.format(hang_type, self.hang_prefixes[hang_type])
+            )
             new_signature_list.insert(0, self.hang_prefixes[hang_type])
 
         signature = delimiter.join(new_signature_list)
@@ -323,13 +337,13 @@ class CSignatureTool(SignatureTool):
         # Handle empty signatures to explain why we failed generating them.
         if signature == '' or signature is None:
             if crashed_thread is None:
-                signature_notes.append(
+                notes.append(
                     "CSignatureTool: No signature could be created because we do not know which "
                     "thread crashed"
                 )
                 signature = "EMPTY: no crashing thread identified"
             else:
-                signature_notes.append(
+                notes.append(
                     "CSignatureTool: No proper signature could be created because no good data "
                     "for the crashing thread ({}) was found".format(crashed_thread)
                 )
@@ -338,7 +352,7 @@ class CSignatureTool(SignatureTool):
                 except IndexError:
                     signature = "EMPTY: no frame data available"
 
-        return signature, signature_notes
+        return signature, notes, debug_notes
 
 
 class JavaSignatureTool(SignatureTool):
@@ -351,47 +365,47 @@ class JavaSignatureTool(SignatureTool):
     java_line_number_killer = re.compile(r'\.java\:\d+\)$')
     java_hex_addr_killer = re.compile(r'@[0-9a-f]{8}')
 
-    @staticmethod
-    def join_ignore_empty(delimiter, list_of_strings):
-        return delimiter.join(x for x in list_of_strings if x)
-
     def _do_generate(self, source, hang_type_unused=0, crashed_thread_unused=None, delimiter=': '):
-        signature_notes = []
-        try:
-            source_list = [x.strip() for x in source.splitlines()]
-        except AttributeError:
-            signature_notes.append('JavaSignatureTool: stack trace not in expected format')
+        if not isinstance(source, str):
             return (
-                "EMPTY: Java stack trace not in expected format",
-                signature_notes
+                'EMPTY: Java stack trace not in expected format',
+                ['JavaSignatureTool: stack trace not in expected format'],
+                []
             )
+
+        source_list = [x.strip() for x in source.splitlines()]
+        if not source_list:
+            return (
+                'EMPTY: Java stack trace not in expected format',
+                ['JavaSignatureTool: stack trace not in expected format'],
+                []
+            )
+
+        notes = []
+        debug_notes = []
 
         try:
             java_exception_class, description = source_list[0].split(':', 1)
             java_exception_class = java_exception_class.strip()
-            # relace all hex addresses in the description by the string <addr>
-            description = self.java_hex_addr_killer.sub(
-                r'@<addr>',
-                description
-            ).strip()
+
+            description = self.java_hex_addr_killer.sub('@<addr>', description)
+            description = description.strip()
+
         except ValueError:
+            # It throws a ValueError if the first line doesn't have a ":"
             java_exception_class = source_list[0]
             description = ''
-            signature_notes.append(
+            notes.append(
                 'JavaSignatureTool: stack trace line 1 is not in the expected format'
             )
 
         try:
-            java_method = re.sub(
-                self.java_line_number_killer,
-                '.java)',
-                source_list[1]
-            )
-            if not java_method:
-                signature_notes.append('JavaSignatureTool: stack trace line 2 is empty')
+            java_method = self.java_line_number_killer.sub('.java)', source_list[1])
         except IndexError:
-            signature_notes.append('JavaSignatureTool: stack trace line 2 is missing')
             java_method = ''
+
+        if not java_method:
+            notes.append('JavaSignatureTool: stack trace line 2 is missing')
 
         # An error in an earlier version of this code resulted in the colon
         # being left out of the division between the description and the
@@ -403,29 +417,27 @@ class JavaSignatureTool(SignatureTool):
             # at which time the colon placement error is to be corrected
             # just use the following line as the replacement for this entire
             # if/else block
-            signature = self.join_ignore_empty(
+            signature = join_ignore_empty(
                 delimiter,
                 (java_exception_class, description, java_method)
             )
         else:
-            description_java_method_phrase = self.join_ignore_empty(
+            description_java_method_phrase = join_ignore_empty(
                 ' ',
                 (description, java_method)
             )
-            signature = self.join_ignore_empty(
+            signature = join_ignore_empty(
                 delimiter,
                 (java_exception_class, description_java_method_phrase)
             )
 
         if len(signature) > self.DESCRIPTION_MAX_LENGTH:
-            signature = delimiter.join(
-                (java_exception_class, java_method)
-            )
-            signature_notes.append(
+            signature = delimiter.join((java_exception_class, java_method))
+            notes.append(
                 'JavaSignatureTool: dropped Java exception description due to length'
             )
 
-        return signature, signature_notes
+        return signature, notes, debug_notes
 
 
 class SignatureGenerationRule(Rule):
@@ -481,15 +493,19 @@ class SignatureGenerationRule(Rule):
     def action(self, crash_data, result):
         # If this is a Java crash, then generate a Java signature
         if crash_data.get('java_stack_trace'):
-            signature, signature_notes = self.java_signature_tool.generate(
+            result.debug(self.name, 'Using JavaSignatureTool')
+            signature, notes, debug_notes = self.java_signature_tool.generate(
                 crash_data['java_stack_trace'],
                 delimiter=': '
             )
-            result.set_signature(self.name, signature)
-            for note in signature_notes:
+            for note in notes:
                 result.info(self.name, note)
+            for note in debug_notes:
+                result.debug(self.name, note)
+            result.set_signature(self.name, signature)
             return True
 
+        result.debug(self.name, 'Using CSignatureTool')
         try:
             # First, we need to figure out which thread to look at. If it's a
             # chrome hang (1), then use thread 0. Otherwise, use the crashing
@@ -511,10 +527,10 @@ class SignatureGenerationRule(Rule):
                 signature_list = []
 
         except (KeyError, IndexError) as exc:
-            signature_notes.append('No crashing frames found because of {}'.format(exc))
+            result.note('No crashing frames found because of %s', exc)
             signature_list = []
 
-        signature, signature_notes = self.c_signature_tool.generate(
+        signature, notes, debug_notes = self.c_signature_tool.generate(
             signature_list,
             crash_data.get('hang_type'),
             crash_data.get('crashing_thread')
@@ -522,10 +538,12 @@ class SignatureGenerationRule(Rule):
 
         if signature_list:
             result.extra['proto_signature'] = ' | '.join(signature_list)
+        for note in notes:
+            result.info(self.name, note)
+        for note in debug_notes:
+            result.debug(self.name, note)
         if signature:
             result.set_signature(self.name, signature)
-        for note in signature_notes:
-            result.info(self.name, note)
 
         return True
 

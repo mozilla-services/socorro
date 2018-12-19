@@ -46,7 +46,7 @@ class Result:
         self.extra = {}
 
     def set_signature(self, rule, signature):
-        self.debug(rule, '"%s" -> "%s"', self.signature, signature)
+        self.debug(rule, 'change: "%s" -> "%s"', self.signature, signature)
         self.signature = signature
 
     def info(self, rule, msg, *args):

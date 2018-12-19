@@ -237,30 +237,30 @@ class TestCSignatureTool:
         """test_generate_1: simple"""
         s = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghijklmnopqrstuvwxyz')
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == 'd | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == 'd | e | f | g'
 
     def test_generate_2(self):
         """test_generate_2: hang"""
         s = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghijklmnopqrstuvwxyz')
-        sig, notes = s.generate(a, hang_type=-1)
+        sig, notes, debug_notes = s.generate(a, hang_type=-1)
         assert sig == 'hang | d | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        sig, notes = s.generate(a, hang_type=-1)
+        sig, notes, debug_notes = s.generate(a, hang_type=-1)
         assert sig == 'hang | d | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        sig, notes = s.generate(a, hang_type=0)
+        sig, notes, debug_notes = s.generate(a, hang_type=0)
         assert sig == 'd | e | f | g'
 
         a = list('abcdaeafagahijklmnopqrstuvwxyz')
-        sig, notes = s.generate(a, hang_type=1)
+        sig, notes, debug_notes = s.generate(a, hang_type=1)
         assert sig == 'chromehang | d | e | f | g'
 
     def test_generate_2a(self):
@@ -278,7 +278,7 @@ class TestCSignatureTool:
             'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | '
             'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg'
         )
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == expected
         expected = (
             'hang | '
@@ -287,7 +287,7 @@ class TestCSignatureTool:
             'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | '
             'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg'
         )
-        sig, notes = s.generate(a, hang_type=-1)
+        sig, notes, debug_notes = s.generate(a, hang_type=-1)
         assert sig == expected
 
     def test_generate_3(self):
@@ -295,14 +295,14 @@ class TestCSignatureTool:
         s = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel'
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == 'sentinel'
 
         s = self.setup_config_c_sig_tool(
             ['a', 'b', 'c', 'sentinel'],
             ['d', 'e', 'f']
         )
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == 'f | e | d | i'
 
     def test_generate_4(self):
@@ -310,14 +310,14 @@ class TestCSignatureTool:
         s = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == 'd | e | f | g'
 
         s = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
         a[22] = 'ff'
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == 'sentinel2'
 
         s = self.setup_config_c_sig_tool(
@@ -327,7 +327,7 @@ class TestCSignatureTool:
         a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
         a[22] = 'ff'
-        sig, notes = s.generate(a)
+        sig, notes, debug_notes = s.generate(a)
         assert sig == 'f | e | d | i'
 
     def test_generate_with_merged_dll(self):
@@ -343,7 +343,7 @@ class TestCSignatureTool:
             'foo32.dll@0x42',
             'g',
         )
-        sig, notes = sig_tool.generate(source_list)
+        sig, notes, debug_notes = sig_tool.generate(source_list)
         assert sig == 'd | foo32.dll | g'
 
         source_list = (
@@ -351,7 +351,7 @@ class TestCSignatureTool:
             'foo32.dll@0x231423',
             'g',
         )
-        sig, notes = sig_tool.generate(source_list)
+        sig, notes, debug_notes = sig_tool.generate(source_list)
         assert sig == 'foo32.dll | g'
 
 
@@ -359,7 +359,7 @@ class TestJavaSignatureTool:
     def test_bad_stack(self):
         j = rules.JavaSignatureTool()
         java_stack_trace = 17
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         assert sig == "EMPTY: Java stack trace not in expected format"
         assert notes == ['JavaSignatureTool: stack trace not in expected format']
 
@@ -369,7 +369,7 @@ class TestJavaSignatureTool:
             'SomeJavaException: totally made up  \n'
             'at org.mozilla.lars.myInvention(larsFile.java:666)'
         )
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up at org.mozilla.lars.myInvention(larsFile.java)'
         assert sig == e
         assert notes == []
@@ -380,7 +380,7 @@ class TestJavaSignatureTool:
             'SomeJavaException: totally made up  \n'
             'at org.mozilla.lars.myInvention(larsFile.java)'
         )
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up at org.mozilla.lars.myInvention(larsFile.java)'
         assert sig == e
         assert notes == []
@@ -391,7 +391,7 @@ class TestJavaSignatureTool:
             '   SomeJavaException: %s \nat org.mozilla.lars.myInvention(larsFile.java)' %
             ('t' * 1000)
         )
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         expected = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         assert sig == expected
         expected = ['JavaSignatureTool: dropped Java exception description due to length']
@@ -403,7 +403,7 @@ class TestJavaSignatureTool:
             '   SomeJavaException: %s  \nat org.mozilla.lars.myInvention(larsFile.java:1234)' %
             ('t' * 1000)
         )
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         expected = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         assert sig == expected
         expected = ['JavaSignatureTool: dropped Java exception description due to length']
@@ -415,7 +415,7 @@ class TestJavaSignatureTool:
             '   SomeJavaException\n'
             'at org.mozilla.lars.myInvention(larsFile.java:1234)'
         )
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
         assert sig == e
         e = ['JavaSignatureTool: stack trace line 1 is not in the expected format']
@@ -424,7 +424,7 @@ class TestJavaSignatureTool:
     def test_frame_with_line_ending_but_missing_second_line(self):
         j = rules.JavaSignatureTool()
         java_stack_trace = 'SomeJavaException: totally made up  \n'
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
         assert sig == e
         e = ['JavaSignatureTool: stack trace line 2 is missing']
@@ -433,7 +433,7 @@ class TestJavaSignatureTool:
     def test_frame_missing_second_line(self):
         j = rules.JavaSignatureTool()
         java_stack_trace = 'SomeJavaException: totally made up  '
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = 'SomeJavaException: totally made up'
         assert sig == e
         e = ['JavaSignatureTool: stack trace line 2 is missing']
@@ -446,7 +446,7 @@ class TestJavaSignatureTool:
             'at org.mozilla.lars.myInvention('
             'foolarsFile.java:1234)'
         )
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         expected = (
             'SomeJavaException: totally made up at org.mozilla.lars.myInvention(foolarsFile.java)'
         )
@@ -457,10 +457,11 @@ class TestJavaSignatureTool:
         # with the literal ``<addr>``, however in this case, the hex address is
         # not in the expected location and should therefore be left alone
         j = rules.JavaSignatureTool()
-        java_stack_trace = ('SomeJavaException: totally made up  \n'
-                            'at org.mozilla.lars.myInvention('
-                            'larsFile.java:@abef1234)')
-        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        java_stack_trace = (
+            'SomeJavaException: totally made up  \n'
+            'at org.mozilla.lars.myInvention(larsFile.java:@abef1234)'
+        )
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=' ')
         e = ('SomeJavaException totally made up '
              'at org.mozilla.lars.myInvention('
              'larsFile.java:@abef1234)')
@@ -488,7 +489,7 @@ java.lang.IllegalArgumentException: Given view not a child of android.widget.Abs
 \tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
 \tat dalvik.system.NativeStart.main(Native Method)""".lstrip()
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = (
             'java.lang.IllegalArgumentException: '
             'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
@@ -518,7 +519,7 @@ android.view.WindowManager$BadTokenException: Unable to add window -- token andr
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:625)
 \tat dalvik.system.NativeStart.main(Native Method)
 """.lstrip()  # noqa
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('android.view.WindowManager$BadTokenException: '
              'Unable to add window -- token android.os.BinderProxy@<addr> '
              'is not valid; is your activity running? '
@@ -555,7 +556,7 @@ java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.G
 \tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:665)
 \tat dalvik.system.NativeStart.main(Native Method)
 """.lstrip()  # noqa
-        sig, notes = j.generate(java_stack_trace, delimiter=': ')
+        sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=': ')
         e = (
             'java.lang.IllegalArgumentException: '
             'Receiver not registered: '
