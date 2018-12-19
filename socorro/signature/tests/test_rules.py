@@ -1301,20 +1301,6 @@ class TestAbortSignature:
 
 
 class TestSigFixWhitespace:
-    def test_predicate_no_match(self):
-        rule = rules.SigFixWhitespace()
-        result = generator.Result()
-        assert rule.predicate({}, result) is True
-
-        result.signature = 42
-        assert rule.predicate({}, result) is False
-
-    def test_predicate(self):
-        rule = rules.SigFixWhitespace()
-        result = generator.Result()
-        result.signature = 'fooo::baar'
-        assert rule.predicate({}, result) is True
-
     @pytest.mark.parametrize('signature, expected', [
         # Leading and trailing whitespace are removed
         ('all   good', 'all good'),

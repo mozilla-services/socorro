@@ -7,7 +7,6 @@ import json
 import re
 
 from glom import glom
-import six
 
 from . import siglists_utils
 from .utils import (
@@ -322,8 +321,10 @@ class CSignatureTool(SignatureTool):
             # If the signature does not match the prefix signatures regex, then it is the last
             # one we add to the list.
             if not self.prefix_signature_re.match(a_signature):
-                debug_notes.append('not a prefix; stop iterating at: "{}"'.format(a_signature))
+                debug_notes.append('not a prefix; stop: "{}"'.format(a_signature))
                 break
+
+            debug_notes.append('prefix; continue iterating: "{}"'.format(a_signature))
 
         # Add a special marker for hang crash reports.
         if hang_type:
@@ -401,11 +402,11 @@ class JavaSignatureTool(SignatureTool):
 
         try:
             java_method = self.java_line_number_killer.sub('.java)', source_list[1])
+            if not java_method:
+                notes.append('JavaSignatureTool: stack trace line 2 is empty')
         except IndexError:
-            java_method = ''
-
-        if not java_method:
             notes.append('JavaSignatureTool: stack trace line 2 is missing')
+            java_method = ''
 
         # An error in an earlier version of this code resulted in the colon
         # being left out of the division between the description and the
@@ -654,14 +655,11 @@ class SigFixWhitespace(Rule):
     WHITESPACE_RE = re.compile(r'\s')
     CONSECUTIVE_WHITESPACE_RE = re.compile(r'\s\s+')
 
-    def predicate(self, crash_data, result):
-        return isinstance(result.signature, six.string_types)
-
     def action(self, crash_data, result):
-        sig = result.signature
+        original_sig = result.signature
 
         # Trim leading and trailing whitespace
-        sig = sig.strip()
+        sig = original_sig.strip()
 
         # Convert all non-space whitespace characters into spaces
         sig = self.WHITESPACE_RE.sub(' ', sig)
@@ -669,7 +667,8 @@ class SigFixWhitespace(Rule):
         # Reduce consecutive spaces to a single space
         sig = self.CONSECUTIVE_WHITESPACE_RE.sub(' ', sig)
 
-        result.set_signature(self.name, sig)
+        if sig != original_sig:
+            result.set_signature(self.name, sig)
         return True
 
 

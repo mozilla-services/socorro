@@ -59,18 +59,6 @@ class Result:
             msg = msg % args
         self.debug_log.append('%s: %s' % (rule, msg))
 
-    def as_dict(self):
-        ret = {
-            'signature': self.signature,
-        }
-        if self.notes:
-            ret['notes'] = self.notes
-        if self.extra:
-            ret['extra'] = self.extra
-        if self.debug_log:
-            ret['debug_log'] = self.debug_log
-        return ret
-
 
 class SignatureGenerator:
     def __init__(self, pipeline=None, error_handler=None):
