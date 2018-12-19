@@ -1640,8 +1640,7 @@ class TestSignatureGeneratorRule:
         assert processed_crash['signature'] == 'EMPTY: no crashing thread identified'
         assert 'proto_signature' not in processed_crash
         assert processor_meta['processor_notes'] == [
-            'CSignatureTool: No signature could be created because we do not know '
-            'which thread crashed'
+            'SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed'  # noqa
         ]
 
     @patch('socorro.lib.raven_client.raven')
@@ -1678,7 +1677,7 @@ class TestSignatureGeneratorRule:
         assert processed_crash['signature'] == ''
         assert 'proto_signature' not in processed_crash
         assert processor_meta['processor_notes'] == [
-            'Rule BadRule failed: Cough'
+            'BadRule: Rule failed: Cough'
         ]
 
         # Make sure the client was instantiated with the sentry_dsn

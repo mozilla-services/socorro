@@ -38,47 +38,55 @@ DEFAULT_PIPELINE = [
 ]
 
 
+class Result:
+    def __init__(self):
+        self.signature = ''
+        self.notes = []
+        self.debug_log = []
+        self.extra = {}
+
+    def set_signature(self, rule, signature):
+        self.debug(rule, 'change: "%s" -> "%s"', self.signature, signature)
+        self.signature = signature
+
+    def info(self, rule, msg, *args):
+        if args:
+            msg = msg % args
+        self.notes.append('%s: %s' % (rule, msg))
+
+    def debug(self, rule, msg, *args):
+        if args:
+            msg = msg % args
+        self.debug_log.append('%s: %s' % (rule, msg))
+
+
 class SignatureGenerator:
-    def __init__(self, pipeline=None, error_handler=None, debug=False):
+    def __init__(self, pipeline=None, error_handler=None):
         """
         :arg pipeline: list of rules to use for signature generation
         :arg error_handler: error handling function with signature
             ``fun(signature_data, exc_info, extra)``
-        :arg debug: whether or not to be in debug mode which shows verbose
-            output about what happend
 
         """
         self.pipeline = pipeline or list(DEFAULT_PIPELINE)
         self.error_handler = error_handler
-        self.debug = debug
 
     def generate(self, signature_data):
         """Takes data and returns a signature
 
         :arg dict signature_data: data to use to generate a signature
 
-        :returns: dict containing ``signature`` and ``notes`` keys representing the
-            signature and processor notes
+        :returns: ``Result`` instance
 
         """
-        # NOTE(willkg): Rules mutate the result structure in-place
-        result = {
-            'signature': '',
-            'notes': []
-        }
+        result = Result()
 
         for rule in self.pipeline:
             rule_name = rule.__class__.__name__
 
             try:
                 if rule.predicate(signature_data, result):
-                    old_sig = result['signature']
                     rule.action(signature_data, result)
-
-                    if self.debug:
-                        result['notes'].append(
-                            '%s: %s -> %s' % (rule_name, old_sig, result['signature'])
-                        )
 
             except Exception as exc:
                 if self.error_handler:
@@ -87,7 +95,6 @@ class SignatureGenerator:
                         exc_info=sys.exc_info(),
                         extra={'rule': rule_name}
                     )
-
-                result['notes'].append('Rule %s failed: %s' % (rule_name, exc))
+                result.info(rule_name, 'Rule failed: %s', exc)
 
         return result

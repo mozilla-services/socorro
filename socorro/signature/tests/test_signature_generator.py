@@ -23,15 +23,10 @@ class TestSignatureGenerator:
         # NOTE(willkg): This is what the current pipeline yields. If any of those parts change, this
         # might change, too. The point of this test is that we can pass in empty dicts and the
         # SignatureGenerator and the rules in the default pipeline don't fall over.
-        expected = {
-            'notes': [
-                'CSignatureTool: No signature could be created because we do not know '
-                'which thread crashed'
-            ],
-            'signature': 'EMPTY: no crashing thread identified'
-        }
-
-        assert ret == expected
+        assert ret.signature == 'EMPTY: no crashing thread identified'
+        assert ret.notes == [
+            'SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed'  # noqa
+        ]
 
     def test_failing_rule(self):
         class BadRule(object):
@@ -40,14 +35,10 @@ class TestSignatureGenerator:
         generator_obj = generator.SignatureGenerator(pipeline=[BadRule()])
         ret = generator_obj.generate({})
 
-        expected = {
-            'notes': [
-                'Rule BadRule failed: \'BadRule\' object has no attribute \'predicate\''
-            ],
-            'signature': ''
-        }
-
-        assert ret == expected
+        assert ret.signature == ''
+        assert ret.notes == [
+            'BadRule: Rule failed: \'BadRule\' object has no attribute \'predicate\''
+        ]
 
     def test_error_handler(self):
         exc_value = Exception('Cough')

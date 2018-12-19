@@ -833,7 +833,7 @@ class SignatureGeneratorRule(Rule):
         # Generate a crash signature and capture the signature and notes
         crash_data = convert_to_crash_data(raw_crash, processed_crash)
         ret = self.generator.generate(crash_data)
-        processed_crash['signature'] = ret['signature']
-        if 'proto_signature' in ret:
-            processed_crash['proto_signature'] = ret['proto_signature']
-        processor_meta['processor_notes'].extend(ret['notes'])
+        processed_crash['signature'] = ret.signature
+        processor_meta['processor_notes'].extend(ret.notes)
+        # NOTE(willkg): this picks up proto_signature
+        processed_crash.update(ret.extra)
