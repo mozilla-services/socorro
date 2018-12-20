@@ -31,10 +31,10 @@
     "jssha": "2.3.1",
     "metrics-graphics": "2.14.0",
     "moment": "2.22.1",
+    "package.json": "^2.0.1",
     "photon-colors": "3.0.1",
     "prop-types": "^15.6.2",
     "qs": "6.5.1",
-    "tablesorter": "2.30.3",
-    "underscore": "1.9.0"
+    "tablesorter": "2.30.3"
   }
 }
