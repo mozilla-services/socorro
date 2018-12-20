@@ -110,9 +110,6 @@ class CSignatureTool(SignatureTool):
         self.signatures_with_line_numbers_re = re.compile(
             '|'.join(siglists_utils.SIGNATURES_WITH_LINE_NUMBERS_RE)
         )
-        self.trim_dll_signature_re = re.compile(
-            '|'.join(siglists_utils.TRIM_DLL_SIGNATURE_RE)
-        )
         self.signature_sentinels = siglists_utils.SIGNATURE_SENTINELS
 
         self.collapse_arguments = True
@@ -306,13 +303,11 @@ class CSignatureTool(SignatureTool):
                 debug_notes.append('irrelevant; ignoring: "{}"'.format(a_signature))
                 continue
 
-            # If the signature matches the trim dll signatures regex, rewrite it to remove all but
-            # the module name.
-            if self.trim_dll_signature_re.match(a_signature):
+            # If the frame signature is a dll, remove the @xxxxx part.
+            if '.dll' in a_signature.lower():
                 a_signature = a_signature.split('@')[0]
 
-                # If this trimmed DLL signature is the same as the previous frame's, we do not want
-                # to add it.
+                # If this trimmed DLL signature is the same as the previous frame's, skip it.
                 if new_signature_list and a_signature == new_signature_list[-1]:
                     continue
 

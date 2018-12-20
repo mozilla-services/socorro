@@ -1104,7 +1104,7 @@ class TestSignatureGeneration:
 
         # the call to be tested
         assert sgr.action(crash_data, result) is True
-        assert result.signature == 'user2.dll@0x20869'
+        assert result.signature == 'user2.dll'
         expected = '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
         assert result.extra['proto_signature'] == expected
         assert result.notes == []
