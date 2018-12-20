@@ -8,6 +8,7 @@
 @0x[0-9a-fA-F]{2,}
 @0x[1-9a-fA-F]
 __aeabi_fcmpgt
+alloc::alloc::handle_alloc_error
 ashmem
 __assert_rtn
 app_process@0x
