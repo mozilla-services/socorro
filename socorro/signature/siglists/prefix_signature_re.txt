@@ -254,6 +254,13 @@ zzz_AsmCodeRange_
 mozilla::ipc::MessageChannel::~MessageChannel
 mozilla::MakeUnique<.*>
 
+# DLLs which show up in signatures if we don't have symbols.
+
+kernel32\.dll
+ntdll\.dll
+rpcrt4\.dll
+user32\.dll
+
 # List of DLLs to add. At some point, should be replaced by one generic rule
 # for all DLLs.
 
