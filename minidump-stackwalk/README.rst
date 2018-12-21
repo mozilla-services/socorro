@@ -49,7 +49,7 @@ Building
 ========
 
 The stackwalker binaries get built in the local development environment and live
-in the processor image in ``/stackwalk``.
+in the app image in ``/stackwalk``.
 
 If you want to build them outside of Docker, you can use these two build
 scripts:
@@ -59,8 +59,16 @@ scripts:
   This will build breakpad from source and place the resulting bits in
   ``./build/breakpad``.
 
-  If you're building breakpad to
-
 * ``scripts/build-stackwalker.sh``
 
   This will build stackwalker.
+
+
+Building with Taskcluster
+=========================
+
+The ``build-stackwalker.sh`` script will download a pre-built breakpad
+client binary if possible.
+
+To update this binary, you should use the ``scripts/breakpad-taskcluster.sh``
+script. Follow the directions in the header.
