@@ -35,6 +35,15 @@ cd ..
 export PATH
 PATH=$(pwd)/depot_tools:$PATH
 
+# depot_tools only work in Python 2 and it uses "/usr/bin/env python", so
+# we take advantage of depot_tools being first in the PATH and create a
+# symlink to the happy Python if "python" is Python 3.
+PYV=$(python -c "import sys; print(sys.version_info[0]);")
+if [ "${PYV}" == "3" ]; then
+  echo "'/usr/bin/env python' is Python 3, so making symlink to python2"
+  ln -s /usr/bin/python2 $(pwd)/depot_tools/python
+fi
+
 # Checkout and build Breakpad
 echo "PREFIX: ${PREFIX:=$(pwd)/build/breakpad}"
 if [ ! -d "breakpad" ]; then
