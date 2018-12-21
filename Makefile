@@ -45,7 +45,7 @@ default:
 .PHONY: clean
 clean:
 	-rm .docker-build*
-	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz
+	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz depot_tools
 	-rm -rf .cache
 	cd minidump-stackwalk && make clean
 
