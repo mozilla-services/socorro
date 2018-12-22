@@ -12,8 +12,6 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import os
-import sys
 import sphinx_rtd_theme
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -50,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Socorro'
-copyright = '2013-2017 Mozilla Foundation'
+copyright = '2013-2018 Mozilla Foundation'
 author = 'Socorro team'
 
 # The version info for the project you're documenting, acts as replacement for
