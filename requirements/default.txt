@@ -207,9 +207,9 @@ six==1.12.0 \
 mozilla-django-oidc==1.1.2 \
     --hash=sha256:0da273be7753c3775f8893bc228acf4d1dfffdc58c073a0df044917796ad5e0d \
     --hash=sha256:efd9df9d8d3b58f84cdedf548387afa31146facaac11945e53f67314f57244af
-glom==18.3.1 \
-    --hash=sha256:3af9d29c72c8e972f823f3274f1c3200dcea366462fd90ecec49ca1fb36ab3ea \
-    --hash=sha256:db2842c1d222d8fa1320c43a6264afb56faa872cedb6ad34ab036cf3705f2a83
+glom==18.4.0 \
+    --hash=sha256:d94d2a506dbbb65a884e973839d944c4c60b7d0727d2ddfbca33f3bf8461596d \
+    --hash=sha256:44cc4fad3a4cee7ff988e9a111fec9866bed483f738d49da749c2775049ed165
 more-itertools==4.3.0 \
     --hash=sha256:c187a73da93e7a8acc0001572aebc7e3c69daf7bf6881a2cea10650bd4420092 \
     --hash=sha256:c476b5d3a34e12d40130bc2f935028b5f636df8f372dc2c1c01dc19681b2039e \
