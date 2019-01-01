@@ -210,10 +210,10 @@ mozilla-django-oidc==1.1.2 \
 glom==18.4.0 \
     --hash=sha256:d94d2a506dbbb65a884e973839d944c4c60b7d0727d2ddfbca33f3bf8461596d \
     --hash=sha256:44cc4fad3a4cee7ff988e9a111fec9866bed483f738d49da749c2775049ed165
-more-itertools==4.3.0 \
-    --hash=sha256:c187a73da93e7a8acc0001572aebc7e3c69daf7bf6881a2cea10650bd4420092 \
-    --hash=sha256:c476b5d3a34e12d40130bc2f935028b5f636df8f372dc2c1c01dc19681b2039e \
-    --hash=sha256:fcbfeaea0be121980e15bc97b3817b5202ca73d0eae185b4550cbfce2a3ebb3d
+more-itertools==5.0.0 \
+    --hash=sha256:c0a5785b1109a6bd7fac76d6837fd1feca158e54e521ccd2ae8bfe393cc9d4fc \
+    --hash=sha256:fe7a7cae1ccb57d33952113ff4fa1bc5f879963600ed74918f1236e212ee50b9 \
+    --hash=sha256:38a936c0a6d98a38bcc2d03fdaaedaba9f412879461dd2ceff8d37564d6522e4
 gunicorn==19.9.0 \
     --hash=sha256:aa8e0b40b4157b36a5df5e599f45c9c76d6af43845ba3b3b0efe2c70473c2471 \
     --hash=sha256:fa2662097c66f920f53f70621c6c58ca4a3c4d3434205e608e121b5b3b71f4f3
