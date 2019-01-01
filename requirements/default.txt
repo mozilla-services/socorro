@@ -198,9 +198,9 @@ awscli==1.16.81 \
 flake8-isort==2.6.0 \
     --hash=sha256:76d7dd6aec2762c608b442abebb0aaedb72fc75f9a075241a89e4784d8a39900 \
     --hash=sha256:3c107c405dd6e3dbdcccb2f84549d76d58a07120cd997a0560fab8b84c305f2a
-moto==1.3.5 \
-    --hash=sha256:c4c6f7ae1f6ce6ccce790adcc806db2f3127424da310dbe7f682ec4a0fa80df3 \
-    --hash=sha256:52426f2567e51ba73fdc7c7d617236b7e7918dca2421caabe13e5290942b53d8
+moto==1.3.7 \
+    --hash=sha256:4df37936ff8d6a4b8229aab347a7b412cd2ca4823ff47bd1362ddfbc6c5e4ecf \
+    --hash=sha256:129de2e04cb250d9f8b2c722ec152ed1b5426ef179b4ebb03e9ec36e6eb3fcc5
 six==1.11.0 \
     --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9
