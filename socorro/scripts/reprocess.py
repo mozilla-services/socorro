@@ -7,7 +7,7 @@ import os
 import sys
 import time
 
-from more_iterutils import chunked
+from more_itertools import chunked
 
 from socorro.lib.requestslib import session_with_retries
 from socorro.scripts import WrappedTextHelpFormatter
