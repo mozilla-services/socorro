@@ -336,7 +336,7 @@ class TestViews(BaseTestViews):
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch:search_results')
-        limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
+        limit = int(re.findall(r'(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
         params = {'product': 'WaterWolf'}
         # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
         for i in range(limit * 2):
