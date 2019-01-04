@@ -10,9 +10,9 @@ import six
 from six.moves.urllib.parse import urlencode
 
 from django.core.cache import cache
-from django.core.urlresolvers import reverse
 from django.template import engines
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_str
 

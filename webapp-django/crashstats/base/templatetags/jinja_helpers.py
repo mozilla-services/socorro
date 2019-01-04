@@ -4,7 +4,7 @@ import six
 from six.moves.urllib.parse import urlencode, parse_qs
 
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from crashstats.base.utils import urlencode_obj
 

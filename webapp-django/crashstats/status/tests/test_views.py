@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.encoding import smart_text
 
 from crashstats.crashstats.tests.test_views import BaseTestViews

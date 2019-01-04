@@ -100,11 +100,11 @@ class EventHandler(ProcessEvent):
 
 
 def from_string_to_parse_size(size_as_string):
-    '''
-    Parse a size argument of the form \d+[kMG] that represents a size in
+    """
+    Parse a size argument of the form \\d+[kMG] that represents a size in
     bytes, with the suffixes representing kilobytes, megabytes or gigabytes
     respectively.
-    '''
+    """
     suffixes = {
         'k': 1024,
         'M': 1024 ** 2,

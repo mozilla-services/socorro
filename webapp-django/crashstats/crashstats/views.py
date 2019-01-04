@@ -6,8 +6,8 @@ from django import http
 from django.conf import settings
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
-from django.core.urlresolvers import reverse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.http import urlquote
 
 from csp.decorators import csp_update

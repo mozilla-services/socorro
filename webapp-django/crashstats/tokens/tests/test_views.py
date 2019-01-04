@@ -1,8 +1,8 @@
 import pyquery
 
-from django.core.urlresolvers import reverse
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User, Permission, Group
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 from django.utils.encoding import smart_text
 
 from crashstats.crashstats.tests.test_views import BaseTestViews

@@ -8,10 +8,10 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
-from django.core.urlresolvers import reverse
 # explicit import because django.forms has an __all__
 from django.forms.forms import DeclarativeFieldsMetaclass
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from ratelimit.decorators import ratelimit

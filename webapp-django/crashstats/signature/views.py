@@ -3,8 +3,8 @@ import math
 
 from django import http
 from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.shortcuts import render
+from django.urls import reverse
 
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError

@@ -54,7 +54,7 @@ class UserDataRule(Rule):
         processed_crash.url = raw_crash.get('URL', None)
         processed_crash.user_comments = raw_crash.get('Comments', None)
         processed_crash.email = raw_crash.get('Email', None)
-        #processed_crash.user_id = raw_crash.get('UserID', '')
+        # processed_crash.user_id = raw_crash.get('UserID', '')
         processed_crash.user_id = ''
 
 

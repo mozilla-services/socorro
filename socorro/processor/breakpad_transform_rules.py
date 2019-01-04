@@ -407,6 +407,6 @@ class JitCrashCategorizeRule(ExternalProcessRule):
             return ''
         try:
             return result.strip()
-        except AttributeError as x:
+        except AttributeError:
             # there's no strip method
             return result
