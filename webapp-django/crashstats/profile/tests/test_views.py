@@ -1,6 +1,6 @@
 import pyquery
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.encoding import smart_text
 
 from crashstats.crashstats.signals import PERMISSIONS

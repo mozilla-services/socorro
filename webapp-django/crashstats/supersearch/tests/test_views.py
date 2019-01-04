@@ -4,10 +4,9 @@ import re
 import mock
 import pyquery
 from six.moves.urllib.parse import quote
-from waffle.models import Switch
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.encoding import smart_text
 
 from crashstats.crashstats.models import BugAssociation
@@ -28,36 +27,6 @@ class TestViews(BaseTestViews):
     def tearDown(self):
         self.mock_gvfp.stop()
         super(TestViews, self).tearDown()
-
-    def test_search_waffle_switch(self):
-        url_custom = reverse('supersearch:search_custom')
-        url_query = reverse('supersearch:search_query')
-
-        response = self.client.get(url_custom)
-        # By default, it's available, but it redirects because
-        # you're not signed in.
-        assert response.status_code == 302
-        response = self.client.get(url_query)
-        assert response.status_code == 302
-
-        # disable it
-        switch = Switch.objects.create(
-            name='supersearch-custom-query-disabled',
-            active=True
-        )
-
-        response = self.client.get(url_custom)
-        assert response.status_code == 404
-        response = self.client.get(url_query)
-        assert response.status_code == 404
-
-        # leave it but disable the disabling switch
-        switch.active = False
-        switch.save()
-        response = self.client.get(url_custom)
-        assert response.status_code == 302
-        response = self.client.get(url_query)
-        assert response.status_code == 302
 
     def test_search(self):
         self._login()

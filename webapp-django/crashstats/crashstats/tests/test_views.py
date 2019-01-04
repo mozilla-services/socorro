@@ -10,7 +10,7 @@ import pyquery
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.cache import cache
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.encoding import smart_text
 from django.test.client import RequestFactory
 from django.test.utils import override_settings

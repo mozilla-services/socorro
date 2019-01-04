@@ -3,13 +3,13 @@ import functools
 import markus
 from six.moves.urllib.parse import urlparse
 
-from django.http import HttpResponseBadRequest, Http404
-from django.shortcuts import redirect
-from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import (
     REDIRECT_FIELD_NAME,
     user_passes_test,
 )
+from django.http import HttpResponseBadRequest, Http404
+from django.shortcuts import redirect
+from django.urls import reverse
 
 from crashstats.crashstats import utils
 

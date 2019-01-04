@@ -1,6 +1,6 @@
 import mock
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from crashstats.sources.views import ALLOWED_SOURCE_HOSTS
 from crashstats.crashstats.tests.test_models import Response

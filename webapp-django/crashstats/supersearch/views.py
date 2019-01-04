@@ -6,13 +6,12 @@ import math
 from django import http
 from django.conf import settings
 from django.contrib.auth.decorators import permission_required
-from django.core.urlresolvers import reverse
 from django.shortcuts import render
-from django.views.decorators.http import require_POST
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from ratelimit.decorators import ratelimit
-from waffle.decorators import waffle_switch
 
 from crashstats.api.views import has_permissions
 from crashstats.base.utils import render_exception, urlencode_obj
@@ -283,7 +282,6 @@ def search_fields(request):
     return form.get_fields_list(exclude=exclude)
 
 
-@waffle_switch('!supersearch-custom-query-disabled')
 @permission_required('crashstats.run_custom_queries')
 @pass_default_context
 def search_custom(request, default_context=None):
@@ -326,7 +324,6 @@ def search_custom(request, default_context=None):
     return render(request, 'supersearch/search_custom.html', context)
 
 
-@waffle_switch('!supersearch-custom-query-disabled')
 @permission_required('crashstats.run_custom_queries')
 @require_POST
 @utils.json_view

@@ -1,5 +1,5 @@
 from django.test.client import RequestFactory
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from crashstats.base.templatetags.jinja_helpers import (
     change_query_string,
