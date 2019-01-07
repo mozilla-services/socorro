@@ -154,7 +154,7 @@ services:
   # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake S3
   localstack-s3:
-    image: localstack/localstack:0.7.4
+    image: localstack/localstack:0.8.10
     environment:
       - SERVICES=s3:5000
       - DEFAULT_REGION=us-west-2
