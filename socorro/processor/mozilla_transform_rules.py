@@ -324,7 +324,7 @@ class OutOfMemoryBinaryRule(Rule):
                 return error_out(error_message)
 
             memory_info = json.loads(memory_info_as_string)
-        except IOError as x:
+        except (EOFError, IOError) as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
         except ValueError as x:
