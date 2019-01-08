@@ -12,6 +12,7 @@ Abort
 .*alloc_impl
 alloc::oom::default_oom_handler
 alloc::oom::oom
+alloc::raw_vec::capacity_overflow
 _alloca_probe
 __android_log_assert
 arena_
