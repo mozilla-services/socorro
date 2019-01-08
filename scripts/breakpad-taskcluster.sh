@@ -37,7 +37,7 @@ payload:
     - '-c'
     - >-
       curl
-      "https://raw.githubusercontent.com/${SOCORRO_FORK:=mozilla/socorro}/${SOCORRO_BRANCH:=master}/scripts/breakpad-taskcluster.sh"
+      "https://raw.githubusercontent.com/${SOCORRO_FORK:=mozilla-services/socorro}/${SOCORRO_BRANCH:=master}/scripts/breakpad-taskcluster.sh"
       | bash
   artifacts:
     public/breakpad.tar.gz:
