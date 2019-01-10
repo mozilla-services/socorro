@@ -70,5 +70,42 @@ Building with Taskcluster
 The ``build-stackwalker.sh`` script will download a pre-built breakpad
 client binary if possible.
 
-To update this binary, you should use the ``scripts/breakpad-taskcluster.sh``
-script. Follow the directions in the header.
+To update this binary, copy the following task definition into the
+`TaskCluster task creation tool`_:
+
+.. code:: yaml
+
+   created: '2017-04-11T14:17:56.960Z'
+   deadline: '2017-04-11T15:17:56.960Z'
+   provisionerId: aws-provisioner-v1
+   workerType: gecko-misc
+   retries: 0
+   expires: '2020-01-01T00:00:00.000Z'
+   routes:
+     - index.project.socorro.breakpad.v1.builds.linux64.latest
+   scopes:
+     - 'queue:route:index.project.socorro.breakpad.v1.builds.linux64.latest'
+   payload:
+     image: 'mozilla/socorro_app:latest'
+     command:
+       - shell
+       - /app/scripts/build-breakpad.sh
+     artifacts:
+       public/breakpad.tar.gz:
+         type: file
+         path: /app/breakpad.tar.gz
+     maxRunTime: 7200
+   metadata:
+     name: Build Breakpad
+     description: Build Breakpad for Socorro consumption
+     owner: ted@mielczarek.org
+     source: 'http://tools.taskcluster.net/task-creator/'
+
+This task will update a Taskcluster index if it succeeds, such that the
+most recent tarball can be fetched from:
+https://index.taskcluster.net/v1/task/project.socorro.breakpad.v1.builds.linux64.latest/artifacts/public/breakpad.tar.gz
+
+You must be a member of the ``socorro`` project in Taskcluster for this
+task to work properly.
+
+.. _TaskCluster task creation tool: https://tools.taskcluster.net/task-creator/
