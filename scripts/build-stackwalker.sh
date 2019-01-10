@@ -17,9 +17,7 @@ SRCDIR="${SRCDIR:-$(pwd)}"
 
 cd "${SRCDIR}"
 
-# FIXME(osmose): breaking this so the image builds
-# if [ "$(uname -sm)" == "Linux x86_64" ]; then
-if [ "$(uname -sm)" == "Linux x8664" ]; then
+if [ "$(uname -sm)" == "Linux x86_64" ]; then
   # Fetch pre-built, known version of breakpad from taskcluster
   wget -N --quiet 'https://index.taskcluster.net/v1/task/project.socorro.breakpad.v1.builds.linux64.latest/artifacts/public/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
