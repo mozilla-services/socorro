@@ -50,9 +50,12 @@ COPY . /app/
 # static files
 RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
 
+# app should own everything under /app in the container
+RUN chown -R app.app /app
+
 USER app
 
-# Build tmp directories for minidump stackwalker--owned by app
+# Build tmp directories for minidump stackwalker
 RUN mkdir -p /tmp/symbols/cache
 RUN mkdir -p /tmp/symbols/tmp
 
