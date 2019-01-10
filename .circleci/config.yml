@@ -88,6 +88,12 @@ jobs:
               echo "${DOCKER_PASSWORD}" | docker login -u="${DOCKER_USERNAME}" --password-stdin
               retry docker tag "local/socorro_app:latest" "mozilla/socorro_app:${DOCKER_TAG}"
               retry docker push "mozilla/socorro_app:${DOCKER_TAG}"
+
+              # push `latest` on master only
+              if [ "${CIRCLE_BRANCH}" == "master" ] then
+                retry docker tag "local/socorro_app:latest" "mozilla/socorro_app:latest"
+                retry docker push "mozilla/socorro_app:latest"
+              fi
             fi
 
 workflows:
