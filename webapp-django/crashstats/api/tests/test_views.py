@@ -57,14 +57,14 @@ class TestDocumentationViews(BaseTestViews):
 class TestViews(BaseTestViews):
     def setUp(self):
         super(TestViews, self).setUp()
-        self._middleware_classes = settings.MIDDLEWARE_CLASSES
-        settings.MIDDLEWARE_CLASSES += (
+        self._middleware = settings.MIDDLEWARE
+        settings.MIDDLEWARE += (
             'crashstats.crashstats.middleware.SetRemoteAddrFromRealIP',
         )
 
     def tearDown(self):
         super(TestViews, self).tearDown()
-        settings.MIDDLEWARE_CLASSES = self._middleware_classes
+        settings.MIDDLEWARE = self._middleware
 
     def test_invalid_url(self):
         url = reverse('api:model_wrapper', args=('BlaBLabla',))
