@@ -22,28 +22,6 @@ alternatives:
 * hosted/on-premise: `Backtrace <https://backtrace.io/>`_
 
 
-May 3rd, 2017 Update
---------------------
-
-For the last year or so, we've been removing code and making changes that
-aren't backwards compatible. A couple of weeks ago, we (Mozilla) extracted the
-collector out of Socorro into a separate repository. Because of that, we're
-going to start removing code.
-
-If you rely on that collector, the last good release is `270
-<https://github.com/mozilla-services/socorro/releases/tag/270>`_.
-
-You can get it with something like this::
-
-    git clone https://github.com/mozilla-services/socorro
-    git checkout 270
-
-
- Or get the tarball::
-
-    wget https://github.com/mozilla-services/socorro/archive/270.tar.gz
-
-
 Installation
 ============
 
