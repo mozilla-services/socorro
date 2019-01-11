@@ -24,7 +24,7 @@ class TokenManager(models.Manager):
 
 
 class Token(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     key = models.CharField(max_length=32, default=make_key)
     expires = models.DateTimeField(default=get_future)
     permissions = models.ManyToManyField(Permission)

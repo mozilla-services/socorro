@@ -2,26 +2,8 @@ import six
 
 from django import forms
 
-from crashstats.crashstats import form_fields
-
 
 class _BaseForm(object):
-    def __init__(self, *args, **kwargs):
-        super(_BaseForm, self).__init__(*args, **kwargs)
-        for field in self.fields:
-            if isinstance(self.fields[field], forms.DateTimeField):
-                attributes = dict(self.fields[field].__dict__)
-                attributes.pop('creation_counter')
-                self.fields[field] = form_fields.CarefulDateTimeField(
-                    **attributes
-                )
-            elif isinstance(self.fields[field], forms.DateField):
-                attributes = dict(self.fields[field].__dict__)
-                attributes.pop('creation_counter')
-                self.fields[field] = form_fields.CarefulDateField(
-                    **attributes
-                )
-
     def clean(self):
         cleaned_data = super(_BaseForm, self).clean()
         for field in cleaned_data:

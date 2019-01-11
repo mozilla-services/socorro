@@ -1,33 +1,5 @@
-import datetime
-
 from django import forms
 from django.conf import settings
-
-
-class CarefulFieldBase(object):
-    """Because Django's forms.fields.DateTimeField class is not careful
-    enough when it uses datetime.datetime.strptime() to try to convert
-    we improve that by using our own.
-
-    We need this till
-    https://github.com/django/django/commit/\
-      3174b5f2f5bb0b0a6b775a1a50464b6bf2a4b067
-    is included in the next release.
-    """
-
-    def strptime(self, value, format):
-        try:
-            return datetime.datetime.strptime(value, format)
-        except TypeError as e:
-            raise ValueError(e)
-
-
-class CarefulDateTimeField(CarefulFieldBase, forms.DateTimeField):
-    pass
-
-
-class CarefulDateField(CarefulFieldBase, forms.DateField):
-    pass
 
 
 class SignatureField(forms.CharField):
