@@ -99,7 +99,7 @@ def main(argv):
     print()
     print('It consists of the following:')
     print()
-    print('(current tag: %s - %s)' % (current_tag, deployed_sha[:7]))
+    print('(current tag: %s - `%s`)' % (current_tag, deployed_sha[:7]))
 
     # Print the commits out skipping merge commits
     for commit in commits:
@@ -122,10 +122,10 @@ def main(argv):
         else:
             who = who.get('login', '?')
 
-        print('%s: %s (%s)' % (sha, summary, who))
+        print('`%s`: %s (%s)' % (sha, summary, who))
 
     head_sha = commits[-1]['sha'][:7]
-    print('(next tag: %s - %s)' % (next_tag, head_sha))
+    print('(next tag: %s - `%s`)' % (next_tag, head_sha))
     print()
 
     # Any additional things to note
