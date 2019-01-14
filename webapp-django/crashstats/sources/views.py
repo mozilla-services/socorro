@@ -57,5 +57,18 @@ def highlight_url(request):
     else:
         lexer = get_lexer_for_filename(filename)
 
-    formatter = HtmlFormatter(full=True, title=parsed.path, linenos='table', lineanchors='L')
+    lines = []
+    if request.GET.get('line'):
+        try:
+            lines = [int(request.GET.get('line'))]
+        except ValueError:
+            pass
+
+    formatter = HtmlFormatter(
+        full=True,
+        title=parsed.path,
+        linenos='table',
+        lineanchors='L',
+        hl_lines=lines,
+    )
     return http.HttpResponse(highlight(resp.text, lexer, formatter), content_type='text/html')
