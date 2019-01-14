@@ -664,6 +664,7 @@ CSP_STYLE_SRC = (
 CSP_IMG_SRC = (
     "'self'",
     'https://www.google-analytics.com',
+    'https://secure.gravatar.com',
     'data:',  # what jquery.tablesorter.js's CSS uses
 )
 CSP_CONNECT_SRC = (

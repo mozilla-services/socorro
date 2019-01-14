@@ -30,6 +30,46 @@
             <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
             <input type="submit" class="hidden">
         </form>
+
+        <div class="user-info">
+            {% if request.user and request.user.is_active %}
+                <button class="user-info-button">
+                    <img class="gravatar" src="{{ gravatar_url(request.user.email, size=64) }}">
+                    <span class="user-email">{{ request.user.email }}</span>
+                    <img class="menu-icon" src="{{ static('img/menu.svg') }}" >
+                </button>
+                <ul class="user-info-menu">
+                    <li>
+                        <a href="{{ url('profile:profile') }}"
+                          title="You are signed in as {{ request.user.email }}"
+                        >
+                            Your Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('tokens:home') }}">API Tokens</a>
+                    </li>
+                    {% if request.user.is_staff %}
+                    <li>
+                        <a href="{{ url('admin:index') }}">Admin</a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <form class="logout-form" action="{{ url('oidc_logout') }}" method="POST">
+                            {% csrf_token %}
+                            <button class="sign-out-button" type="submit">Sign out</button>
+                        </form>
+                    </li>
+                </ul>
+            {% else %}
+                <a
+                    class="sign-in-link"
+                    href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}"
+                >
+                    Sign in
+                </a>
+            {% endif %}
+        </div>
     </div>
 
     <h1>Product Navigation</h1>
@@ -106,9 +146,15 @@
         </ul>
     {% endblock %}
 
-        <div class="search">
+        <div class="nav-links">
+            <a href="{{ url('documentation:home') }}">Documentation</a>
+            |
             <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
                 Super Search
+            </a>
+            |
+            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro">
+                File a bug
             </a>
         </div>
     </div>
@@ -133,34 +179,6 @@
     <div id="footer" class="page-footer">
         {% include "footer_nav.html" %}
 
-        <div class="login">
-            <ul>
-                <li>
-                {% if request.user and request.user.is_active %}
-                    <span>{{ request.user.email }}</span>
-                    |
-                    <a href="{{ url('profile:profile') }}"
-                      title="You are signed in as {{ request.user.email }}"
-                    >
-                        Your Profile
-                    </a>
-                    |
-                    <a href="{{ url('tokens:home') }}">API Tokens</a>
-                    {% if request.user.is_staff %}
-                    |
-                    <a href="{{ url('admin:index') }}">Admin</a>
-                    {% endif %}
-                    |
-                    <form class="logout-form" action="{{ url('oidc_logout') }}" method="POST">
-                        {% csrf_token %}
-                        <button class="sign-out-button" type="submit">Sign out</button>
-                    </form>
-                {% else %}
-                    <a href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Sign in</a>
-                {% endif %}
-                </li>
-            </ul>
-        </div>
         <br class="clear" />
     </div>
     {% block site_js %}

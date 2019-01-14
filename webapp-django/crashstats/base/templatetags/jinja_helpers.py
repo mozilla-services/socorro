@@ -1,6 +1,7 @@
 from django_jinja import library
 import jinja2
 import six
+from libgravatar import Gravatar
 from six.moves.urllib.parse import urlencode, parse_qs
 
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -123,3 +124,8 @@ def filter_featured_versions(product_versions):
 @library.global_function
 def filter_not_featured_versions(product_versions):
     return [pv for pv in product_versions if not pv['is_featured']]
+
+
+@library.global_function
+def gravatar_url(email, **kwargs):
+    return Gravatar(email).get_image(use_ssl=True, **kwargs)
