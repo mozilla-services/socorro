@@ -206,10 +206,6 @@ class ESCrashStorage(CrashStorageBase):
         reference_value_from='resource.elasticsearch',
     )
 
-    # This cache reduces attempts to create indices, thus lowering overhead
-    # each time a document is indexed.
-    indices_cache = set()
-
     # These regex will catch field names from Elasticsearch exceptions. They
     # have been tested with Elasticsearch 1.4.
     field_name_string_error_re = re.compile(r'field=\"([\w\-.]+)\"')
@@ -325,9 +321,8 @@ class ESCrashStorage(CrashStorageBase):
         crash_id = crash_document['crash_id']
 
         # Attempt to create the index; it's OK if it already exists.
-        if es_index not in self.indices_cache:
-            index_creator = self.config.index_creator_class(config=self.config)
-            index_creator.create_socorro_index(es_index)
+        index_creator = self.config.index_creator_class(config=self.config)
+        index_creator.create_socorro_index(es_index)
 
         # Submit the crash for indexing.
         # Don't retry more than 5 times. That is to avoid infinite loops in
