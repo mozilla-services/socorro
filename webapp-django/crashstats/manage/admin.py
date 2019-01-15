@@ -1,6 +1,4 @@
-import datetime
 import hashlib
-import json
 
 from collections import OrderedDict
 import requests
@@ -17,7 +15,6 @@ from crashstats.manage import forms
 from crashstats.manage import utils
 from crashstats.manage.decorators import superuser_required
 from crashstats.supersearch.models import SuperSearchMissingFields
-from socorro.lib.requestslib import session_with_retries
 
 
 @superuser_required
