@@ -2005,43 +2005,6 @@ FIELDS = {
             'type': 'date'
         }
     },
-    'distributor': {
-        'data_validation_type': 'enum',
-        'default_value': None,
-        'description': '',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'distributor',
-        'is_exposed': False,
-        'is_mandatory': False,
-        'is_returned': False,
-        'name': 'distributor',
-        'namespace': 'processed_crash',
-        'permissions_needed': [],
-        'query_type': 'enum',
-        'storage_mapping': {
-            'type': 'string'
-        }
-    },
-    'distributor_version': {
-        'data_validation_type': 'enum',
-        'default_value': None,
-        'description': '',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'distributor_version',
-        'is_exposed': False,
-        'is_mandatory': False,
-        'is_returned': False,
-        'name': 'distributor_version',
-        'namespace': 'processed_crash',
-        'permissions_needed': [],
-        'query_type': 'enum',
-        'storage_mapping': {
-            'analyzer': 'keyword',
-            'type': 'string'
-        }
-    },
     'dom_ipc_enabled': {
         'data_validation_type': 'str',
         'default_value': None,
