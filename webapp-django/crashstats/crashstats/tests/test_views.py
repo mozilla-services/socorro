@@ -39,7 +39,6 @@ _SAMPLE_UNREDACTED = {
     'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
     'flash_version': '[blank]',
     'hangid': None,
-    'distributor_version': None,
     'truncated': True,
     'process_type': None,
     'id': 383569625,

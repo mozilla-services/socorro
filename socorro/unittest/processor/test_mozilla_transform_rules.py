@@ -171,8 +171,6 @@ class TestProductRule(object):
         assert processed_crash.product == "Firefox"
         assert processed_crash.version == "12.0"
         assert processed_crash.productid == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-        assert processed_crash.distributor == "Mozilla"
-        assert processed_crash.distributor_version == "12.0"
         assert processed_crash.release_channel == "release"
         assert processed_crash.build == "20120420145725"
 
@@ -196,8 +194,6 @@ class TestProductRule(object):
         assert processed_crash.product == "Firefox"
         assert processed_crash.version == ""
         assert processed_crash.productid == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-        assert processed_crash.distributor is None
-        assert processed_crash.distributor_version is None
         assert processed_crash.release_channel == ""
         assert processed_crash.build == "20120420145725"
 

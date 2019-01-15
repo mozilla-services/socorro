@@ -647,8 +647,6 @@ class ProcessedCrash(SocorroMiddleware):
         'crashedThread',
         'crash_time',
         'date_processed',
-        'distributor',
-        'distributor_version',
         'dump',
         'flash_version',
         'hangid',

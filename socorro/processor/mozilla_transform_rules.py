@@ -38,11 +38,6 @@ class ProductRule(Rule):
         processed_crash.product = raw_crash.get('ProductName', '')
         processed_crash.version = raw_crash.get('Version', '')
         processed_crash.productid = raw_crash.get('ProductID', '')
-        processed_crash.distributor = raw_crash.get('Distributor', None)
-        processed_crash.distributor_version = raw_crash.get(
-            'Distributor_version',
-            None
-        )
         processed_crash.release_channel = raw_crash.get('ReleaseChannel', '')
         # redundant, but I want to exactly match old processors.
         processed_crash.ReleaseChannel = raw_crash.get('ReleaseChannel', '')

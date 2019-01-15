@@ -48,8 +48,6 @@ a_processed_crash = {
     'cpu_name': 'arm',
     'crashedThread': 8,
     'date_processed': '2012-04-08 10:56:41.558922',
-    'distributor': None,
-    'distributor_version': None,
     'dump': '...',
     'email': 'bogus@bogus.com',
     'flash_version': '[blank]',
@@ -767,7 +765,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             # in them. If we changed a_processed_crash and a_raw_crash, then
             # these numbers will change.
             assert mm.has_record('histogram', stat='processor.es.raw_crash_size', value=27)
-            assert mm.has_record('histogram', stat='processor.es.processed_crash_size', value=1788)
+            assert mm.has_record('histogram', stat='processor.es.processed_crash_size', value=1738)
 
     def test_index_data_capture(self):
         """Verify we capture index data in ES crashstorage"""
