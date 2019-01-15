@@ -1,0 +1,25 @@
+created: '2017-04-11T14:17:56.960Z'
+deadline: '2017-04-11T15:17:56.960Z'
+provisionerId: aws-provisioner-v1
+workerType: github-worker
+retries: 0
+expires: '2020-01-01T00:00:00.000Z'
+routes:
+  - index.project.socorro.breakpad.v1.builds.linux64.latest
+scopes:
+  - 'queue:route:index.project.socorro.breakpad.v1.builds.linux64.latest'
+payload:
+  image: 'mozilla/socorro_app:latest'
+  command:
+    - shell
+    - /app/scripts/build-breakpad.sh
+  artifacts:
+    public/breakpad.tar.gz:
+      type: file
+      path: /app/breakpad.tar.gz
+  maxRunTime: 7200
+metadata:
+  name: Build Breakpad
+  description: Build Breakpad client for Socorro consumption
+  owner: willkg@mozilla.com
+  source: 'http://tools.taskcluster.net/task-creator/'
