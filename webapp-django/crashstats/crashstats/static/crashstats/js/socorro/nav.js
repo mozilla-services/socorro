@@ -33,4 +33,17 @@ $(document).ready(function() {
   $('.version-nav').on('change', 'select', function() {
     window.location = getURL();
   });
+
+  $('.user-info-button').on('click', function() {
+    $(this)
+      .siblings('.user-info-menu')
+      .toggle();
+  });
+
+  $(document).on('click', function(event) {
+    var userInfo = $('.user-info');
+    if (!userInfo.is(event.target) && !userInfo.has(event.target).length) {
+      $('.user-info-menu').hide();
+    }
+  });
 });

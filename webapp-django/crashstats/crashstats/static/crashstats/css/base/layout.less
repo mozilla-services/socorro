@@ -41,38 +41,42 @@ body {
     min-height: 64px;
     height: 64px;
     background-color: @primary-dark;
-    a {
-        display: flex;
-        height: 100%;
-        align-items: center;
-        padding-left: 1em;
+    display: flex;
+    align-items: center;
 
-        &,
-        &:link {
-            text-decoration: none;
+    & > * {
+        margin: 0 .5em;
+
+        &:first-child {
+            margin-left: 0;
+        }
+        &:last-child {
+            margin-right: 0;
         }
     }
 
     .title {
+        flex: 1;
         border: none;
         color: @white;
         display: block;
         text-decoration: none;
         font-size: 2em;
         font-weight: 200;
+        height: 100%;
         letter-spacing: 0.03em;
+        padding-left: .5em;
+        line-height: 64px;
     }
 
-    form {
+    #simple_search {
+        flex: 0 0 auto;
         label {
             color: @white;
         }
         input {
-            position: absolute;
             background: @white url("@{image-path}/2.0/search.png") no-repeat 5px center;
             border: none;
-            right: 1rem;
-            top: 20px;
             width: 212px;
             padding: 3px 4px 4px 28px;
             font-size: 12px;
@@ -81,6 +85,80 @@ body {
         }
         input:-moz-placeholder {
             color: @light-grey;
+        }
+    }
+
+    .user-info {
+        flex: 0 0 auto;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+
+        .sign-in-link {
+            color: @off-white;
+            padding: 0 1em;
+        }
+
+        .user-info-button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            height: 100%;
+            position: relative;
+            padding: 0 1em;
+
+            .gravatar {
+                border-radius: 50%;
+                margin-right: .5em;
+                width: 32px;
+                height: 32px;
+            }
+
+            .user-email {
+                margin-right: .5em;
+            }
+
+            &:hover {
+                background: @primary;
+            }
+
+            &:active {
+                background: @primary-medium;
+            }
+        }
+
+        .user-info-menu {
+            .shadow(0px, 1px, 4px, 0, @grey);
+
+            display: none;
+            position: absolute;
+            right: .5em;
+            top: 100%;
+            background: @white;
+            border: 1px solid @grey;
+            padding: .5em;
+            min-width: 100px;
+            z-index: 1;
+
+            a {
+                font-size: 12px;
+
+                &:link,
+                &:hover,
+                &:active,
+                &:visited {
+                    color: @base-link-color;
+                    text-decoration: none;
+                }
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
         }
     }
 }
