@@ -13,6 +13,12 @@ export
 SOCORRO_UID ?= 10001
 SOCORRO_GID ?= 10001
 
+# Set this in the environment to force --no-cache docker builds.
+DOCKER_BUILD_OPTS :=
+ifeq (1, ${NOCACHE})
+DOCKER_BUILD_OPTS := --no-cache
+endif
+
 DC := $(shell which docker-compose)
 
 
@@ -69,7 +75,7 @@ my.env:
 
 .PHONY: build
 build: my.env
-	${DC} build --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} app
+	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} app
 	${DC} build oidcprovider
 	touch .docker-build
 
