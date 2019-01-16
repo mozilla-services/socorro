@@ -1,4 +1,8 @@
 .git
+build/
+breakpad/
+breakpad.tar.gz
+depot_tools/
 **/*.swp
 **/*.pyc
 __pycache__

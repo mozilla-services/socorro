@@ -1,4 +1,4 @@
-FROM python:3.6.7-slim-jessie
+FROM python:3.6.7-slim-jessie as socorro_image_base
 
 # Set up user and group
 ARG groupid=10001
@@ -12,11 +12,22 @@ RUN groupadd --gid $groupid app && \
 COPY ./docker/set_up_ubuntu.sh /tmp/
 RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
 
-# Install breakpad and stackwalk bits
-COPY ./scripts/build-breakpad.sh /tmp/scripts/
-COPY ./scripts/build-stackwalker.sh /tmp/scripts/
-COPY ./minidump-stackwalk/ /tmp/minidump-stackwalk/
-RUN STACKWALKDIR=/stackwalk SRCDIR=/tmp /tmp/scripts/build-stackwalker.sh
+
+FROM socorro_image_base as socorro_breakpad
+WORKDIR /mdsw/
+
+# Build breakpad client and stackwalker binaries
+COPY ./scripts/build-breakpad.sh /mdsw/scripts/
+COPY ./scripts/build-stackwalker.sh /mdsw/scripts/
+COPY ./minidump-stackwalk/ /mdsw/minidump-stackwalk/
+RUN STACKWALKDIR=/stackwalk SRCDIR=/mdsw /mdsw/scripts/build-stackwalker.sh
+
+
+FROM socorro_image_base
+WORKDIR /app/
+
+# Copy stackwalk bits
+COPY --from=socorro_breakpad /stackwalk/* /stackwalk/
 
 # Install frontend JS deps
 COPY ./webapp-django/package.json /webapp-frontend-deps/package.json
