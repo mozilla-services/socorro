@@ -642,8 +642,9 @@ class ProcessedCrash(SocorroMiddleware):
         'build',
         'client_crash_date',
         'completeddatetime',
+        'cpu_arch',  # NOTE(willkg): Added in January 2019--this replaces cpu_name
         'cpu_info',
-        'cpu_name',
+        'cpu_name',  # NOTE(willkg): Deprecated January 2019--remove this in July 2019
         'crashedThread',
         'crash_time',
         'date_processed',

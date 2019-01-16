@@ -79,7 +79,7 @@ def graphics_report(request):
             'build_id',
             'platform',
             'platform_version',
-            'cpu_name',
+            'cpu_arch',
             'cpu_info',
             'address',
             'uptime',
@@ -135,8 +135,8 @@ def graphics_report(request):
         """
         value = row.get(alias.get(key, key))
         if key == 'cpu_info':
-            value = '{cpu_name} | {cpu_info}'.format(
-                cpu_name=row.get('cpu_name', ''),
+            value = '{cpu_arch} | {cpu_info}'.format(
+                cpu_arch=row.get('cpu_arch', ''),
                 cpu_info=row.get('cpu_info', ''),
             )
         if value is None:

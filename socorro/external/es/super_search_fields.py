@@ -1765,10 +1765,12 @@ FIELDS = {
         'default_value': None,
         'description': (
             'The build architecture. Usually one of: "x86", "amd64" (a.k.a. x86-64), "arm", '
-            '"arm64".\n\nDuplicate of cpu_name, with a better name.'
+            '"arm64".'
         ),
         'form_field_choices': [],
         'has_full_version': False,
+        # NOTE(willkg): this uses "cpu_name" to search on, but that's deprecated;
+        # switch to "cpu_arch" after July 2019
         'in_database_name': 'cpu_name',
         'is_exposed': True,
         'is_mandatory': False,
@@ -1846,25 +1848,6 @@ FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': None
-    },
-    'cpu_name': {
-        'data_validation_type': 'enum',
-        'default_value': None,
-        'description': 'Architecture of the processor. Deprecated, use cpu_arch instead.',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'cpu_name',
-        'is_exposed': True,
-        'is_mandatory': False,
-        'is_returned': True,
-        'name': 'cpu_name',
-        'namespace': 'processed_crash',
-        'permissions_needed': [],
-        'query_type': 'enum',
-        'storage_mapping': {
-            'analyzer': 'keyword',
-            'type': 'string'
-        }
     },
     'cpu_usage_flash_process1': {
         'data_validation_type': 'int',
@@ -3305,22 +3288,6 @@ FIELDS = {
             'index': 'analyzed',
             'type': 'string'
         }
-    },
-    'number_of_processors': {
-        'data_validation_type': 'int',
-        'default_value': None,
-        'description': 'Alias to `cpu_count`. Deprecated.',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'cpu_count',
-        'is_exposed': True,
-        'is_mandatory': False,
-        'is_returned': True,
-        'name': 'number_of_processors',
-        'namespace': 'processed_crash.json_dump.system_info',
-        'permissions_needed': [],
-        'query_type': 'number',
-        'storage_mapping': None
     },
     'oom_allocation_size': {
         'data_validation_type': 'int',

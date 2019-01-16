@@ -219,11 +219,11 @@
                 </tr>
             </thead>
             <tbody>
-                {% for cpu_name in query.facets.cpu_name %}
+                {% for cpu_arch in query.facets.cpu_arch %}
                 <tr>
-                    <td>{{ cpu_name.term }}</td>
-                    <td>{{ cpu_name.count }}</td>
-                    <td>{{ (100.0 * cpu_name.count / query.total) | round(1) }}%</td>
+                    <td>{{ cpu_arch.term }}</td>
+                    <td>{{ cpu_arch.count }}</td>
+                    <td>{{ (100.0 * cpu_arch.count / query.total) | round(1) }}%</td>
                 </tr>
                 {% endfor %}
             </tbody>
