@@ -393,9 +393,9 @@ def _describe_model(model_name, model):
     elif model.post:
         methods.append('POST')
 
-    docstring = model.__doc__
-    if docstring:
-        docstring = dedent_left(docstring.rstrip(), 4)
+    help_text = model.HELP_TEXT
+    if help_text:
+        help_text = dedent_left(help_text.rstrip(), 4)
 
     required_permissions = []
     if model_inst.API_REQUIRED_PERMISSIONS:
@@ -412,7 +412,7 @@ def _describe_model(model_name, model):
         'parameters': params,
         'defaults': getattr(model, 'defaults', {}),
         'methods': methods,
-        'docstring': docstring,
+        'help_text': help_text,
         'required_permissions': required_permissions,
         'deprecation_warning': getattr(model, 'deprecation_warning', None),
     }

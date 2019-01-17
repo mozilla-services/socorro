@@ -62,9 +62,8 @@
             <pre class="deprecation-warning">{{ endpoint.deprecation_warning }}</pre>
             {% endif %}
 
-            {% if endpoint.docstring %}
-            <p class="docstring">Documentation notes</p>
-            <pre class="docstring">{{ endpoint.docstring }}</pre>
+            {% if endpoint.help_text %}
+            <p class="helptext">{{ endpoint.help_text }}</p>
             {% endif %}
 
             {% if endpoint.parameters %}
@@ -91,7 +90,10 @@
                             {{ describe_friendly_type(parameter['type']) }}
                         </td>
                         <td class="fixed">
-                            <code>{{ endpoint['defaults'].get(parameter['name'], '') }}</code>
+                            {% set default_val = endpoint['defaults'].get(parameter['name'], '') %}
+                            {% if default_val %}
+                            <code>{{ default_val }}</code>
+                            {% endif %}
                         </td>
                         <td>
                             {{ make_test_input(parameter, endpoint['defaults']) }}
