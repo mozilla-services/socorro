@@ -899,6 +899,11 @@ class SignaturesByBugs(SocorroMiddleware):
     def get(self, *args, **kwargs):
         params = self.parse_parameters(kwargs)
 
+        # Make sure bug_ids is a list of numbers and if not, raise
+        # and error
+        if not all([bug_id.isdigit() for bug_id in params['bug_ids']]):
+            raise BadArgumentError('bug_ids')
+
         hits = list(
             BugAssociation.objects
             .filter(bug_id__in=params['bug_ids'])
