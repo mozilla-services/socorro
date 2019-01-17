@@ -1353,7 +1353,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
 
         assert response.status_code == 404
-        assert 'Crash Not Found' in smart_text(response.content)
+        assert 'Crash Report Not Found' in smart_text(response.content)
 
     def test_report_index_processed_crash_not_found(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
