@@ -139,11 +139,15 @@ def has_permissions(user, permissions):
 
 
 def is_valid_model_class(model):
-    return (
-        issubclass(model, models.SocorroMiddleware) and
-        model is not models.SocorroMiddleware and
-        model is not supersearch_models.ESSocorroMiddleware
-    )
+    try:
+        return (
+            issubclass(model, models.SocorroMiddleware) and
+            model is not models.SocorroMiddleware and
+            model is not supersearch_models.ESSocorroMiddleware
+        )
+    except TypeError:
+        # issubclass throws a TypeError if the model is not a class.
+        return False
 
 
 @csrf_exempt
