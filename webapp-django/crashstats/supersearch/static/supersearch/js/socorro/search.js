@@ -236,6 +236,14 @@ $(function() {
     // Add dates from the date filters.
     params.date = DateFilters.getDates();
 
+    // Add facets
+    var facets = facetsInput.select2('data');
+    if (facets) {
+      params._facets = facets.map(function(x) {
+        return x.id;
+      });
+    }
+
     return params;
   }
 
