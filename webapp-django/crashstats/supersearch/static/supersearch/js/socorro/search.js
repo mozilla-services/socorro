@@ -239,7 +239,9 @@ $(function() {
     // Add facets
     var facets = facetsInput.select2('data');
     if (facets) {
-      params._facets = facets.map(function(x) { return x.id; });
+      params._facets = facets.map(function(x) {
+        return x.id;
+      });
     }
 
     return params;
