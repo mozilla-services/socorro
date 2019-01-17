@@ -9,6 +9,10 @@ from crashstats.supersearch.models import SuperSearch
 
 
 class NewSignatures(models.SocorroMiddleware):
+    HELP_TEXT = """
+    API for retrieving new signatures for a given product and version in
+    the specified time range.
+    """
 
     API_WHITELIST = None
 

@@ -77,13 +77,15 @@ def get_api_whitelist(include_all_fields=False):
 
 
 class ESSocorroMiddleware(models.SocorroMiddleware):
-
     implementation_config_namespace = 'elasticsearch'
 
 
 class SuperSearch(ESSocorroMiddleware):
-
     implementation = supersearch.SuperSearch
+
+    HELP_TEXT = """
+    API for searching and faceting on crash reports.
+    """
 
     API_WHITELIST = get_api_whitelist()
 
@@ -189,6 +191,10 @@ class SuperSearch(ESSocorroMiddleware):
 
 
 class SuperSearchUnredacted(SuperSearch):
+    HELP_TEXT = """
+    API for searching and faceting on crash reports. Requires
+    permissions depending on which fields are being queried.
+    """
 
     API_WHITELIST = get_api_whitelist(include_all_fields=True)
 
@@ -225,11 +231,14 @@ class SuperSearchUnredacted(SuperSearch):
 
 
 class SuperSearchFields(ESSocorroMiddleware):
-
     # Read it in once as a class attribute since it'll never change unless the
     # Python code changes and if that happens you will have reloaded the
     # Python process.
     _fields = SuperSearchFieldsWithoutConfig().get()
+
+    HELP_TEXT = """
+    API for getting the list of super search fields.
+    """
 
     API_WHITELIST = None
 
@@ -238,7 +247,6 @@ class SuperSearchFields(ESSocorroMiddleware):
 
 
 class SuperSearchMissingFields(ESSocorroMiddleware):
-
     implementation = super_search_fields.SuperSearchMissingFields
 
     # This service's data doesn't change a lot over time, it's fine to cache
