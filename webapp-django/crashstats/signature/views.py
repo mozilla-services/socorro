@@ -394,8 +394,7 @@ def signature_correlations(request, params):
 
 @pass_validated_params
 def signature_summary(request, params):
-    '''Return a list of specific aggregations. '''
-
+    """Return a list of specific aggregations"""
     context = {}
 
     params['signature'] = '=' + params['signature'][0]
@@ -408,7 +407,7 @@ def signature_summary(request, params):
     params['_results_number'] = 0
     params['_facets'] = [
         'platform_pretty_version',
-        'cpu_name',
+        'cpu_arch',
         'process_type',
         'flash_version',
     ]

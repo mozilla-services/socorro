@@ -102,7 +102,7 @@ def make_query_string(**kwargs):
 
 
 @library.global_function
-def is_dangerous_cpu(cpu_name, cpu_info):
+def is_dangerous_cpu(cpu_arch, cpu_info):
     if not cpu_info:
         return False
 
@@ -111,8 +111,8 @@ def is_dangerous_cpu(cpu_name, cpu_info):
     return (
         cpu_info.startswith('AuthenticAMD family 20 model 1') or
         cpu_info.startswith('AuthenticAMD family 20 model 2') or
-        (cpu_name == 'amd64' and cpu_info.startswith('family 20 model 1')) or
-        (cpu_name == 'amd64' and cpu_info.startswith('family 20 model 2'))
+        (cpu_arch == 'amd64' and cpu_info.startswith('family 20 model 1')) or
+        (cpu_arch == 'amd64' and cpu_info.startswith('family 20 model 2'))
     )
 
 

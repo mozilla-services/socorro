@@ -195,7 +195,8 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
         'keywords': 'crash',
         'product': bug_product,
         'op_sys': op_sys,
-        'rep_platform': report['cpu_name'],
+        # NOTE(willkg): cpu_name is deprecated; switch to just cpu_arch in July 2019
+        'rep_platform': report.get('cpu_arch', report['cpu_name']),
         'cf_crash_signature': '[@ {}]'.format(smart_str(report['signature'])),
         'short_desc': 'Crash in {}'.format(smart_str(report['signature'])),
         'comment': comment,

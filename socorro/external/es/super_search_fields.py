@@ -222,7 +222,7 @@ class SuperSearchFields(ElasticsearchBase):
 
             add_field_to_properties(properties, namespaces, field)
 
-        return {
+        mapping = {
             self.config.elasticsearch.elasticsearch_doctype: {
                 '_all': {
                     'enabled': False,
@@ -233,6 +233,7 @@ class SuperSearchFields(ElasticsearchBase):
                 'properties': properties,
             }
         }
+        return mapping
 
     def test_mapping(self, mapping):
         """Verify that a mapping is correct
@@ -1760,15 +1761,39 @@ FIELDS = {
             'type': 'short'
         }
     },
+    # NOTE(willkg): We need to populate the processed_crash.cpu_arch field in ES
+    # documents so we can stop using the processed_crash.cpu_name value for
+    # the "cpu_arch" field; remove in July 2019
+    'dump_cpu_arch': {
+        'data_validation_type': 'enum',
+        'default_value': None,
+        'description': '',
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'cpu_arch',
+        'is_exposed': False,
+        'is_mandatory': False,
+        'is_returned': False,
+        'name': 'dump_cpu_arch',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'query_type': 'enum',
+        'storage_mapping': {
+            'analyzer': 'keyword',
+            'type': 'string'
+        }
+    },
     'cpu_arch': {
         'data_validation_type': 'enum',
         'default_value': None,
         'description': (
             'The build architecture. Usually one of: "x86", "amd64" (a.k.a. x86-64), "arm", '
-            '"arm64".\n\nDuplicate of cpu_name, with a better name.'
+            '"arm64".'
         ),
         'form_field_choices': [],
         'has_full_version': False,
+        # NOTE(willkg): this uses "cpu_name" to search on, but that's deprecated;
+        # switch to "cpu_arch" after July 2019
         'in_database_name': 'cpu_name',
         'is_exposed': True,
         'is_mandatory': False,
@@ -1778,6 +1803,7 @@ FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
+            'analyzer': 'keyword',
             'type': 'string'
         }
     },
@@ -1846,25 +1872,6 @@ FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': None
-    },
-    'cpu_name': {
-        'data_validation_type': 'enum',
-        'default_value': None,
-        'description': 'Architecture of the processor. Deprecated, use cpu_arch instead.',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'cpu_name',
-        'is_exposed': True,
-        'is_mandatory': False,
-        'is_returned': True,
-        'name': 'cpu_name',
-        'namespace': 'processed_crash',
-        'permissions_needed': [],
-        'query_type': 'enum',
-        'storage_mapping': {
-            'analyzer': 'keyword',
-            'type': 'string'
-        }
     },
     'cpu_usage_flash_process1': {
         'data_validation_type': 'int',
@@ -2045,38 +2052,6 @@ FIELDS = {
             'index': 'not_analyzed',
             'type': 'string'
         }
-    },
-    'dump_cpu_arch': {
-        'data_validation_type': 'enum',
-        'default_value': None,
-        'description': 'Architecture of the CPU.',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'cpu_arch',
-        'is_exposed': False,
-        'is_mandatory': False,
-        'is_returned': False,
-        'name': 'dump_cpu_arch',
-        'namespace': 'processed_crash.json_dump.system_info',
-        'permissions_needed': [],
-        'query_type': 'enum',
-        'storage_mapping': None
-    },
-    'dump_cpu_info': {
-        'data_validation_type': 'enum',
-        'default_value': None,
-        'description': 'Extended name of the CPU.',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'cpu_info',
-        'is_exposed': False,
-        'is_mandatory': False,
-        'is_returned': False,
-        'name': 'dump_cpu_info',
-        'namespace': 'processed_crash.json_dump.system_info',
-        'permissions_needed': [],
-        'query_type': 'enum',
-        'storage_mapping': None
     },
     'e10s_cohort': {
         'data_validation_type': 'enum',
@@ -3305,22 +3280,6 @@ FIELDS = {
             'index': 'analyzed',
             'type': 'string'
         }
-    },
-    'number_of_processors': {
-        'data_validation_type': 'int',
-        'default_value': None,
-        'description': 'Alias to `cpu_count`. Deprecated.',
-        'form_field_choices': [],
-        'has_full_version': False,
-        'in_database_name': 'cpu_count',
-        'is_exposed': True,
-        'is_mandatory': False,
-        'is_returned': True,
-        'name': 'number_of_processors',
-        'namespace': 'processed_crash.json_dump.system_info',
-        'permissions_needed': [],
-        'query_type': 'number',
-        'storage_mapping': None
     },
     'oom_allocation_size': {
         'data_validation_type': 'int',

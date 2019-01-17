@@ -553,7 +553,7 @@ class TestViews(BaseTestViews):
                             "term": "Windows 7"
                         }
                     ],
-                    "cpu_name": [
+                    "cpu_arch": [
                         {
                             "count": 4,
                             "term": "x86"
