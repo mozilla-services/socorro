@@ -12,18 +12,24 @@ from socorro.lib import (
     MissingArgumentError,
     ResourceNotFound,
 )
-from socorro.external.es.base import ElasticsearchBase
+from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.supersearch import BAD_INDEX_REGEX
 from socorro.lib import datetimeutil, external_common
 
 
-class Query(ElasticsearchBase):
-    '''Implement the /query service with ElasticSearch. '''
+class Query(object):
+    """Implement the /query service with ElasticSearch"""
 
     filters = [
         ('query', None, 'json'),
         ('indices', None, ['list', 'str']),
     ]
+
+    def __init__(self, config):
+        self.config = config
+        self.es_context = self.config.elasticsearch.elasticsearch_class(
+            self.config.elasticsearch
+        )
 
     def get_connection(self):
         with self.es_context(
@@ -32,7 +38,7 @@ class Query(ElasticsearchBase):
             return conn
 
     def get(self, **kwargs):
-        '''Return the result of a custom query. '''
+        """Return the result of a custom query"""
         params = external_common.parse_arguments(self.filters, kwargs)
 
         if not params.query:
@@ -45,7 +51,8 @@ class Query(ElasticsearchBase):
             today = datetimeutil.utc_now()
             last_week = today - datetime.timedelta(days=7)
 
-            indices = self.generate_list_of_indexes(last_week, today)
+            index_template = self.config.elasticsearch.elasticsearch_index
+            indices = generate_list_of_indexes(last_week, today, index_template)
         elif len(params.indices) == 1 and params.indices[0] == 'ALL':
             # If we want all indices, just do nothing.
             pass

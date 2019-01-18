@@ -61,8 +61,7 @@ class IndexCreator(RequiredConfig):
         )
 
     def get_index_client(self):
-        """Maintained for interoperability purposes elsewhere in the codebase.
-        """
+        """Returns an Elasticsearch IndexClient"""
         return self.es_context.indices_client()
 
     def get_socorro_index_settings(self, mappings):
@@ -97,7 +96,7 @@ class IndexCreator(RequiredConfig):
         execution of this function, nothing will happen.
         """
         try:
-            client = self.es_context.indices_client()
+            client = self.get_index_client()
             client.create(
                 index=es_index,
                 body=es_settings,
