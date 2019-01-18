@@ -394,51 +394,19 @@ class TestBugzillaSubmitURL(object):
 
 class TestReplaceBugzillaLinks(object):
     def test_simple(self):
-        text = 'foo https://bugzilla.mozilla.org/show_bug.cgi?id=1129515 bar'
+        text = 'a bug #1129515 b'
         res = replace_bugzilla_links(text)
         expected = (
-            'foo <a href="https://bugzilla.mozilla.org/show_bug.cgi?id='
-            '1129515">Bug 1129515</a> bar'
+            'a <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1129515">bug #1129515</a> b'
         )
         assert res == expected
 
-    def test_url_http(self):
-        text = 'hey http://bugzilla.mozilla.org/show_bug.cgi?id=1129515#c5 ho'
+    def test_several_bugs(self):
+        text = 'abc bug #43 def bug #40878 bug #7845'
         res = replace_bugzilla_links(text)
-        expected = (
-            'hey <a href="http://bugzilla.mozilla.org/show_bug.cgi?id='
-            '1129515#c5">Bug 1129515</a> ho'
-        )
-        assert res == expected
-
-    def test_url_with_hash(self):
-        text = 'hey https://bugzilla.mozilla.org/show_bug.cgi?id=1129515#c5 ho'
-        res = replace_bugzilla_links(text)
-        expected = (
-            'hey <a href="https://bugzilla.mozilla.org/show_bug.cgi?id='
-            '1129515#c5">Bug 1129515</a> ho'
-        )
-        assert res == expected
-
-    def test_several_urls(self):
-        text = '''hey, I https://bugzilla.mozilla.org/show_bug.cgi?id=43 met
-        you and this is
-        https://bugzilla.mozilla.org/show_bug.cgi?id=40878 but here's my
-        https://bugzilla.mozilla.org/show_bug.cgi?id=7845 so call me maybe
-        '''
-        res = replace_bugzilla_links(text)
-        assert 'Bug 43' in res
-        assert 'Bug 40878' in res
-        assert 'Bug 7845' in res
-
-    def test_several_with_unsafe_html(self):
-        text = '''malicious <script></script> tag
-        for https://bugzilla.mozilla.org/show_bug.cgi?id=43
-        '''
-        res = replace_bugzilla_links(text)
-        assert '</script>' not in res
-        assert 'Bug 43' in res
-        assert '</a>' in res
+        assert 'https://bugzilla.mozilla.org/show_bug.cgi?id=43' in res
+        assert 'https://bugzilla.mozilla.org/show_bug.cgi?id=40878' in res
+        assert 'https://bugzilla.mozilla.org/show_bug.cgi?id=7845' in res
 
 
 class TesDigitGroupSeparator(object):
