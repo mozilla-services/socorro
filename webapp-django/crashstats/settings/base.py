@@ -229,7 +229,6 @@ LOGGING = {
 # Some products have a different name in bugzilla and Socorro.
 BUG_PRODUCT_MAP = {
     'FennecAndroid': 'Firefox for Android',
-    'B2G': 'Firefox OS',
 }
 
 # Link to source if possible
