@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from configman import Namespace, class_converter
 
 from socorro.app.socorro_app import App
+from socorro.external.es.base import generate_list_of_indexes
 
 
 FAIL = 1
@@ -44,16 +45,15 @@ class CreateRecentESIndicesApp(App):
         index_creator = self.config.index_creator_class(self.config)
         index_name_template = self.config.elasticsearch.elasticsearch_index
 
+        # Figure out dates
         today = date.today()
-        current_monday = today - timedelta(days=today.weekday())
+        from_date = today - timedelta(weeks=self.config.weeks_to_create_past)
+        to_date = today + timedelta(weeks=self.config.weeks_to_create_future)
 
-        past = self.config.weeks_to_create_past * -1
-        future = self.config.weeks_to_create_future
-
-        for week_diff in range(past, future):
-            week_monday = current_monday + timedelta(weeks=week_diff)
-            index = week_monday.strftime(index_name_template)
-            index_creator.create_socorro_index(index)
+        # Create indexes
+        index_names = generate_list_of_indexes(from_date, to_date, index_name_template)
+        for index_name in index_names:
+            index_creator.create_socorro_index(index_name)
 
         return SUCCESS
 

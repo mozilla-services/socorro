@@ -6,7 +6,7 @@ import datetime
 
 import elasticsearch
 
-from socorro.external.es.base import ElasticsearchBase
+from socorro.external.es.base import generate_list_of_indexes
 from socorro.lib import datetimeutil, BadArgumentError
 
 
@@ -108,13 +108,22 @@ def add_doc_values(value):
             add_doc_values(field)
 
 
-class SuperSearchFields(ElasticsearchBase):
-
+class SuperSearchFields(object):
     # Defining some filters that need to be considered as lists.
     filters = [
         ('form_field_choices', None, ['list', 'str']),
         ('permissions_needed', None, ['list', 'str']),
     ]
+
+    def __init__(self, config):
+        self.config = config
+        self.es_context = self.config.elasticsearch.elasticsearch_class(
+            self.config.elasticsearch
+        )
+
+    def get_connection(self):
+        with self.es_context() as conn:
+            return conn
 
     def get_fields(self):
         """Return all the fields from our super_search_fields.json file."""
@@ -137,7 +146,8 @@ class SuperSearchFields(ElasticsearchBase):
         """
         now = datetimeutil.utc_now()
         two_weeks_ago = now - datetime.timedelta(weeks=2)
-        indices = self.generate_list_of_indexes(two_weeks_ago, now)
+        index_template = self.config.elasticsearch.elasticsearch_index
+        indices = generate_list_of_indexes(two_weeks_ago, now, index_template)
 
         es_connection = self.get_connection()
         index_client = elasticsearch.client.IndicesClient(es_connection)
@@ -268,7 +278,8 @@ class SuperSearchFields(ElasticsearchBase):
 
             now = datetimeutil.utc_now()
             last_week = now - datetime.timedelta(days=7)
-            current_indices = self.generate_list_of_indexes(last_week, now)
+            index_template = self.config.elasticsearch.elasticsearch_index
+            current_indices = generate_list_of_indexes(last_week, now, index_template)
 
             crashes_sample = es_connection.search(
                 index=current_indices,
