@@ -161,7 +161,7 @@
 
     {% for status in status_messages %}
     <div class="status-message severity-{{ status.severity }}">
-        {{ status.message | replace_bugzilla_links }}
+        {{ status.message | escape | replace_bugzilla_links }}
         <small>({{ status.created_at | time_tag }})</small>
     </div>
     {% endfor %}

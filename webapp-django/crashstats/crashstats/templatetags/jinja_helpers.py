@@ -241,19 +241,25 @@ def bugzilla_thread_frames(thread):
     return frames
 
 
+BUG_RE = re.compile(r'(bug #?(\d+))')
+
+
 @library.filter
 def replace_bugzilla_links(text):
-    """Returns a text with any bugzilla URL replaced with a link to that URL
-    with a nice 'Bug XXX' text. """
-    bugzilla_finder = re.compile(
-        r'(https?://bugzilla.mozilla.org/show_bug.cgi\?id=([0-9]*)[a-zA-Z0-9#&=]*)'
-    )
+    """Replaces "bug #xxx" with a link to bugzilla
 
-    # Sanitize the text first, before adding some HTML into it.
-    text = text.replace('</', '<\\/')
+    Note, run this after escape::
 
+        {{ data | escape | replace_bugzilla_links }}
+
+    """
+    # Convert text from Markup/str to a str so it doesn't escape the substituted
+    # text, then return as a Markup because it's safe
     return jinja2.Markup(
-        bugzilla_finder.sub(r'<a href="\1">Bug \2</a>', text)
+        BUG_RE.sub(
+            r'<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=\2">\1</a>',
+            str(text)
+        )
     )
 
 

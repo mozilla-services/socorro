@@ -6,14 +6,17 @@ from crashstats.status.models import StatusMessage
 
 
 class TestViews(BaseTestViews):
-
-    def test_status_message(self):
-        # Use any URL really.
-        url = reverse('documentation:supersearch_home')
+    def test_no_messages(self):
+        # Use any URL that has a view that uses the base template that
+        # shows status messages
+        url = reverse('crashstats:home')
 
         response = self.client.get(url)
         assert response.status_code == 200
         assert '#status-message' not in smart_text(response.content)
+
+    def test_status_message(self):
+        url = reverse('crashstats:home')
 
         status = StatusMessage.objects.create(
             message='an incident is ongoing',
@@ -33,3 +36,30 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
         assert status.message not in smart_text(response.content)
+
+    def test_bug_ids(self):
+        url = reverse('crashstats:home')
+
+        StatusMessage.objects.create(
+            message='an incident is ongoing; bug #500 has more info',
+            severity='critical',
+        )
+
+        response = self.client.get(url)
+        assert response.status_code == 200
+        print(smart_text(response.content))
+        bug_html = '<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=500">bug #500</a>'
+        assert bug_html in smart_text(response.content)
+
+    def test_html_is_escaped(self):
+        url = reverse('crashstats:home')
+
+        StatusMessage.objects.create(
+            message='<script>bad stuff&</script>',
+            severity='critical',
+        )
+
+        response = self.client.get(url)
+        assert response.status_code == 200
+        escaped_text = '&lt;script&gt;bad stuff&amp;&lt;/script&gt;'
+        assert escaped_text in smart_text(response.content)
