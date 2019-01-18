@@ -83,6 +83,8 @@ RtlSleepConditionVariableCS
 RtlSleepConditionVariableSRW
 _sigtramp
 __sigtramp
+schedule_class_load
+SkyLight
 SleepConditionVariableCS
 SleepConditionVariableSRW
 std::_Atomic_fetch_add_4
