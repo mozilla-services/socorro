@@ -46,6 +46,7 @@ free_impl
 GCGraphBuilder::NoteXPCOMChild
 gfxPlatform::Init
 getanswer
+gkrust_shared::oom_hook::hook
 HandleInvalidParameter
 HeapFree
 huge_dalloc
