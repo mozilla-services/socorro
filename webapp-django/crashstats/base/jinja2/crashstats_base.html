@@ -149,12 +149,12 @@
         <div class="nav-links">
             <a href="{{ url('documentation:home') }}">Documentation</a>
             |
-            <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
-                Super Search
-            </a>
-            |
             <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro">
                 File a bug
+            </a>
+            |
+            <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
+                Super Search
             </a>
         </div>
     </div>
