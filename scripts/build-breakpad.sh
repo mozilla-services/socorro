@@ -15,7 +15,7 @@ set -v -e -x
 
 # Build the revision used in the snapshot unless otherwise specified.
 # Update this if you update the snapshot!
-: BREAKPAD_REV         "${BREAKPAD_REV:=b988fa74ec18de6214b18f723e48331d9a7802ae}"
+: BREAKPAD_REV         "${BREAKPAD_REV:=44384d80b32a5bb361c2ec3bee667f7ccee566d7}"
 
 export MAKEFLAGS
 MAKEFLAGS=-j$(getconf _NPROCESSORS_ONLN)
