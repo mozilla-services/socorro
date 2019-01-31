@@ -39,6 +39,15 @@
     "model": "crashstats.product",
     "pk": 5,
     "fields": {
+      "product_name": "Fenix",
+      "sort": 5,
+      "is_active": true
+    }
+  },
+  {
+    "model": "crashstats.product",
+    "pk": 6,
+    "fields": {
       "product_name": "GeckoViewExample",
       "sort": 11,
       "is_active": true
@@ -46,7 +55,7 @@
   },
   {
     "model": "crashstats.product",
-    "pk": 6,
+    "pk": 7,
     "fields": {
       "product_name": "ReferenceBrowser",
       "sort": 12,
@@ -55,7 +64,7 @@
   },
   {
     "model": "crashstats.product",
-    "pk": 7,
+    "pk": 8,
     "fields": {
       "product_name": "Thunderbird",
       "sort": 80,
@@ -64,7 +73,7 @@
   },
   {
     "model": "crashstats.product",
-    "pk": 8,
+    "pk": 9,
     "fields": {
       "product_name": "SeaMonkey",
       "sort": 90,
@@ -73,7 +82,7 @@
   },
   {
     "model": "crashstats.product",
-    "pk": 9,
+    "pk": 10,
     "fields": {
       "product_name": "Fennec",
       "sort": 100,
