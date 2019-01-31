@@ -906,6 +906,96 @@ class TestViews(BaseTestViews):
         assert 'Thread 1' in smart_text(response.content)
         assert 'Thread 2' in smart_text(response.content)
 
+    def test_report_index_crashing_thread_table(self):
+        json_dump = {
+            'crash_info': {
+                'crashing_thread': 0,
+            },
+            'status': 'OK',
+            'threads': [
+                {
+                    'frame_count': 0,
+                    'frames': [
+                        {
+                            "frame": 0,
+                            "file": "hg:hg.mozilla.org/000",
+                            "function": "js::something",
+                            "function_offset": "0x00",
+                            "line": 1000,
+                            "module": "xul.dll",
+                            "module_offset": "0x000000",
+                            "offset": "0x00000000",
+                            "registers": {
+                                "eax": "0x00000001",
+                                "ebp": "0x00000002",
+                                "ebx": "0x00000003",
+                                "ecx": "0x00000004",
+                                "edi": "0x00000005",
+                                "edx": "0x00000006",
+                                "efl": "0x00000007",
+                                "eip": "0x00000008",
+                                "esi": "0x00000009",
+                                "esp": "0x0000000a"
+                            },
+                            "trust": "context"
+                        },
+                        {
+                            "frame": 1,
+                            "file": "hg:hg.mozilla.org/bbb",
+                            "function": "js::somethingelse",
+                            "function_offset": "0xbb",
+                            "line": 1001,
+                            "module": "xul.dll",
+                            "module_offset": "0xbbbbbb",
+                            "offset": "0xbbbbbbbb",
+                            "trust": "frame_pointer"
+                        },
+                        {
+                            "file": "hg:hg.mozilla.org/ccc",
+                            "frame": 2,
+                            "function": "js::thirdthing",
+                            "function_offset": "0xcc",
+                            "line": 1002,
+                            "module": "xul.dll",
+                            "module_offset": "0xcccccc",
+                            "offset": "0xcccccccc",
+                            "trust": "frame_pointer"
+                        },
+                    ]
+                },
+            ],
+            'modules': [],
+        }
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                crash['signature'] = 'shutdownhang | foo::bar()'
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # Make sure the "trust" parts show up in the page
+        assert 'context' in smart_text(response.content)
+        assert 'frame_pointer' in smart_text(response.content)
+
     def test_report_index_with_telemetry_environment(self):
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
