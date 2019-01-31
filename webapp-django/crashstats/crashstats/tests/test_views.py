@@ -156,7 +156,7 @@ SAMPLE_SIGNATURE_SUMMARY = {
 }
 
 
-class RobotsTestViews(object):
+class TestRobotsTxt(object):
     def test_robots_txt(self, settings, client):
         settings.ENGAGE_ROBOTS = True
         url = '/robots.txt'
@@ -175,7 +175,7 @@ class RobotsTestViews(object):
         assert 'Disallow: /' in smart_text(response.content)
 
 
-class FaviconTestViews(object):
+class TestFavicon(object):
     def test_favicon(self, client):
         response = client.get('/favicon.ico')
         assert response.status_code == 200
@@ -187,17 +187,8 @@ class FaviconTestViews(object):
         assert response['Content-Type'] in expected
 
 
-class TestViews(BaseTestViews):
-    def test_contribute_json(self):
-        response = self.client.get('/contribute.json')
-        assert response.status_code == 200
-        # Should be valid JSON, but it's a streaming content because
-        # it comes from django.views.static.serve
-        data = ''.join([smart_text(part) for part in response.streaming_content])
-        assert json.loads(data)
-        assert response['Content-Type'] == 'application/json'
-
-    def test_handler500(self):
+class Test500(object):
+    def test_html(self):
         root_urlconf = __import__(
             settings.ROOT_URLCONF,
             globals(),
@@ -227,7 +218,7 @@ class TestViews(BaseTestViews):
             assert 'Internal Server Error' in smart_text(response.content)
             assert 'id="products_select"' not in smart_text(response.content)
 
-    def test_handler500_json(self):
+    def test_json(self):
         root_urlconf = __import__(
             settings.ROOT_URLCONF,
             globals(),
@@ -256,15 +247,17 @@ class TestViews(BaseTestViews):
             assert result['path'] == '/'
             assert result['query_string'] is None
 
-    def test_handler404(self):
-        response = self.client.get('/fillbert/mcpicklepants')
+
+class Test404(object):
+    def test_handler404(self, client):
+        response = client.get('/fillbert/mcpicklepants')
         assert response.status_code == 404
         assert 'The requested page could not be found.' in smart_text(response.content)
 
-    def test_handler404_json(self):
+    def test_handler404_json(self, client):
         # Just need any view that has the json_view decorator on it.
         url = reverse('api:model_wrapper', args=('Unknown',))
-        response = self.client.get(url, {'foo': 'bar'})
+        response = client.get(url, {'foo': 'bar'})
         assert response.status_code == 404
         assert response['Content-Type'] == 'application/json'
         result = json.loads(response.content)
@@ -272,6 +265,19 @@ class TestViews(BaseTestViews):
         assert result['path'] == url
         assert result['query_string'] == 'foo=bar'
 
+
+class TestContributeJson(object):
+    def test_view(self, client):
+        response = client.get('/contribute.json')
+        assert response.status_code == 200
+        # Should be valid JSON, but it's a streaming content because
+        # it comes from django.views.static.serve
+        data = ''.join([smart_text(part) for part in response.streaming_content])
+        assert json.loads(data)
+        assert response['Content-Type'] == 'application/json'
+
+
+class TestViews(BaseTestViews):
     @mock.patch('requests.Session')
     def test_buginfo(self, rsession):
         url = reverse('crashstats:buginfo')
@@ -1565,6 +1571,8 @@ class TestViews(BaseTestViews):
         assert response['Content-Type'] == 'application/octet-stream'
         assert 'binary stuff' in smart_text(response.content)
 
+
+class TestLogin(BaseTestViews):
     def test_login_required(self):
         url = reverse('exploitability:report')
         response = self.client.get(url)
@@ -1589,13 +1597,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         assert 'Login Required' not in smart_text(response.content)
         assert 'Insufficient Privileges' in smart_text(response.content)
-
-    def test_about_throttling(self):
-        # the old url used to NOT have a trailing slash
-        response = self.client.get('/about/throttling', follow=False)
-        assert response.status_code == 301
-        expected = reverse('crashstats:about_throttling')
-        assert response.url == expected
 
 
 class TestDockerflow(object):
