@@ -211,9 +211,11 @@ class SearchBase(object):
                     except ValueError:
                         raise BadArgumentError(
                             param.name,
-                            msg='Bad value for parameter %s:'
-                            ' "%s" is not a valid %s' %
-                            (param.name, value, param.data_type)
+                            msg=(
+                                'Bad value for parameter %s: not a valid %s' % (
+                                    param.name, param.data_type
+                                )
+                            )
                         )
 
                     if param.name not in parameters:
