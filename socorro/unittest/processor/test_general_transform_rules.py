@@ -5,10 +5,12 @@
 import copy
 
 from configman.dotdict import DotDict
+import pytest
 
 from socorro.processor.general_transform_rules import (
-    IdentifierRule,
     CPUInfoRule,
+    DeNullRule,
+    IdentifierRule,
     OSInfoRule,
 )
 from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
@@ -97,6 +99,61 @@ canonical_processed_crash = DotDict({
         },
     }
 })
+
+
+class TestDeNullRule(object):
+    @pytest.mark.parametrize('data, expected', [
+        # no nulls--just making sure things are good
+        ('abc', 'abc'),
+        (b'abc', b'abc'),
+        (123, 123),
+
+        # has nulls
+        ('abc\u0000', 'abc'),
+        ('abc\0', 'abc'),
+        ('ab\0c\0', 'abc'),
+        (b'abc\0', b'abc'),
+        (b'a\0bc\0', b'abc'),
+    ])
+    def test_de_null(self, data, expected):
+        config = get_basic_config()
+        rule = DeNullRule(config)
+        assert rule.de_null(data) == expected
+
+    def test_rule_with_dict(self):
+        raw_crash = {
+            'key1': 'val1',
+            b'\0key2': b'val2\0',
+            '\0key3': '\0val3'
+        }
+
+        config = get_basic_config()
+        rule = DeNullRule(config)
+        rule.act(raw_crash, {}, {}, get_basic_processor_meta())
+
+        assert raw_crash == {
+            'key1': 'val1',
+            b'key2': b'val2',
+            'key3': 'val3'
+        }
+
+    def test_rule_with_dotdict(self):
+        # NOTE(willkg): DotDict doesn't like bytes keys
+        raw_crash = DotDict({
+            'key1': 'val1',
+            '\0key2': b'val2\0',
+            '\0key3': '\0val3'
+        })
+
+        config = get_basic_config()
+        rule = DeNullRule(config)
+        rule.act(raw_crash, {}, {}, get_basic_processor_meta())
+
+        assert raw_crash == DotDict({
+            'key1': 'val1',
+            'key2': b'val2',
+            'key3': 'val3'
+        })
 
 
 class TestIdentifierRule(object):
