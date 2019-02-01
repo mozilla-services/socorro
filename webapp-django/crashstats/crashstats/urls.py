@@ -66,26 +66,6 @@ urlpatterns = [
             permanent=True
         )),
 
-    # redirect deceased Report List URL to Signature report
-    url(r'^report/list$',
-        RedirectView.as_view(
-            pattern_name='signature:signature_report',
-            query_string=True,
-            permanent=True
-        )),
-
-    # redirect deceased Daily Crashes URL to Mission Control
-    url(r'^daily$',
-        RedirectView.as_view(
-            url="https://missioncontrol.telemetry.mozilla.org/#/",
-            permanent=True
-        )),
-    url(r'^crashes-per-day/$',
-        RedirectView.as_view(
-            url="https://missioncontrol.telemetry.mozilla.org/#/",
-            permanent=True
-        )),
-
     # Redirect old independant pages to the unified Profile page.
     url(r'^your-crashes/$',
         RedirectView.as_view(
