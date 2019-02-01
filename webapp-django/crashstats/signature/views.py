@@ -35,6 +35,7 @@ DEFAULT_COLUMNS = (
     'reason',
     'address',
     'install_time',
+    'startup_crash',
 )
 
 DEFAULT_SORT = (
