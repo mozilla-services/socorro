@@ -270,7 +270,7 @@ class TestExternalProcessRule(object):
         config.command_line = (
             'timeout -s KILL 30 {command_pathname} '
             '{dump_file_pathname} '
-            '{processor_symbols_pathname_list} 2>/dev/null'
+            '{processor_symbols_pathname_list}'
         )
         config.command_pathname = 'bogus_command'
         config.processor_symbols_pathname_list = (
@@ -320,12 +320,13 @@ class TestExternalProcessRule(object):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         mocked_subprocess_module.Popen.assert_called_with(
-            'timeout -s KILL 30 bogus_command a_fake_dump.dump '
-            '/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/'
-            'symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/'
-            'symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os'
-            ' 2>/dev/null',
-            shell=True,
+            [
+                'timeout', '-s', 'KILL', '30',
+                'bogus_command',
+                'a_fake_dump.dump',
+                '/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os'  # noqa
+            ],
+            stderr=mocked_subprocess_module.DEVNULL,
             stdout=mocked_subprocess_module.PIPE
         )
 

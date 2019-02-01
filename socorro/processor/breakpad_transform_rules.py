@@ -2,6 +2,7 @@ from collections import Mapping
 from contextlib import contextmanager, closing
 import json
 import os
+import shlex
 import subprocess
 import threading
 import tempfile
@@ -72,7 +73,7 @@ class ExternalProcessRule(Rule):
     required_config.add_option(
         'command_line',
         doc='template for the command to invoke the external program; uses Python format syntax',
-        default='timeout -s KILL 30 {command_pathname} 2>/dev/null',
+        default='timeout -s KILL 30 {command_pathname}',
     )
     required_config.add_option(
         'command_pathname',
@@ -109,10 +110,15 @@ class ExternalProcessRule(Rule):
         return {}
 
     def _execute_external_process(self, command_line, processor_meta):
+        # Tokenize the command line into args
+        command_line_args = shlex.split(command_line, comments=False, posix=True)
+
+        # Execute the command line sending stderr (debug logging) to devnull and
+        # capturing stdout (JSON blob of output)
         subprocess_handle = subprocess.Popen(
-            command_line,
-            shell=True,
-            stdout=subprocess.PIPE
+            command_line_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
         with closing(subprocess_handle.stdout):
             external_command_output = self._interpret_external_command_output(
@@ -189,7 +195,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         '--symbols-cache {symbol_cache_path} '
         '--symbols-tmp {symbol_tmp_path} '
         '{dump_file_pathname} '
-        '2> /dev/null'
     )
     required_config.command_pathname = change_default(
         ExternalProcessRule,
@@ -354,7 +359,6 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         'command_line',
         'timeout -s KILL 30 {command_pathname} '
         '{dump_file_pathname} '
-        '2>/dev/null'
     )
     required_config.command_pathname = change_default(
         ExternalProcessRule,
