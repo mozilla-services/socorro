@@ -8,9 +8,9 @@ from django.core.cache import cache
 from django.conf import settings
 from django.utils import dateparse
 
-from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
+from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.lib import BadArgumentError
 
 

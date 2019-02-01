@@ -11,7 +11,7 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.contenttypes.models import ContentType
 
-from crashstats.base.tests.testbase import DjangoTestCase
+from crashstats.crashstats.tests.testbase import DjangoTestCase
 from crashstats.tokens import models
 from crashstats.tokens.middleware import APIAuthenticationMiddleware
 

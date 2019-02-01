@@ -349,3 +349,85 @@ def test_json_view_custom_status(rf):
     assert isinstance(response, HttpResponse)
     assert json.loads(response.content) == {'one': 'One'}
     assert response.status_code == 403
+
+
+class TestRenderException(object):
+    def test_basic(self):
+        html = utils.render_exception('hi!')
+        assert html == '<ul><li>hi!</li></ul>'
+
+    def test_escaped(self):
+        html = utils.render_exception('<hi>')
+        assert html == '<ul><li>&lt;hi&gt;</li></ul>'
+
+    def test_to_string(self):
+        try:
+            raise NameError('<hack>')
+        except NameError as exc:
+            html = utils.render_exception(exc)
+        assert html == '<ul><li>&lt;hack&gt;</li></ul>'
+
+
+class TestUtils(object):
+    def test_SignatureStats(self):
+        signature = {
+            'count': 2,
+            'term': 'EMPTY: no crashing thread identified; ERROR_NO_MINIDUMP_HEADER',
+            'facets': {
+                'histogram_uptime': [{
+                    'count': 2,
+                    'term': 0
+                }],
+                'startup_crash': [{
+                    'count': 2,
+                    'term': 'F'
+                }],
+                'cardinality_install_time': {
+                    'value': 1
+                },
+                'is_garbage_collecting': [],
+                'process_type': [],
+                'platform': [{
+                    'count': 2,
+                    'term': ''
+                }],
+                'hang_type': [{
+                    'count': 2,
+                    'term': 0
+                }]
+            }
+        }
+        platforms = [
+            {'short_name': 'win', 'name': 'Windows'},
+            {'short_name': 'mac', 'name': 'Mac OS X'},
+            {'short_name': 'lin', 'name': 'Linux'},
+            {'short_name': 'unknown', 'name': 'Unknown'}
+        ]
+        signature_stats = utils.SignatureStats(
+            signature=signature,
+            rank=1,
+            num_total_crashes=2,
+            platforms=platforms,
+            previous_signature=None,
+        )
+
+        assert signature_stats.rank == 1
+        assert (
+            signature_stats.signature_term ==
+            'EMPTY: no crashing thread identified; ERROR_NO_MINIDUMP_HEADER'
+        )
+        assert signature_stats.percent_of_total_crashes == 100.0
+        assert signature_stats.num_crashes == 2
+        assert (
+            signature_stats.num_crashes_per_platform ==
+            {'mac_count': 0, 'lin_count': 0, 'win_count': 0}
+        )
+        assert signature_stats.num_crashes_in_garbage_collection == 0
+        assert signature_stats.num_installs == 1
+        assert signature_stats.num_crashes == 2
+        assert signature_stats.num_startup_crashes == 0
+        assert signature_stats.is_startup_crash == 0
+        assert signature_stats.is_potential_startup_crash == 0
+        assert signature_stats.is_startup_window_crash is True
+        assert signature_stats.is_hang_crash is False
+        assert signature_stats.is_plugin_crash is False

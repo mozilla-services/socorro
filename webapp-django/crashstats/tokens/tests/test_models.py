@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User, Permission, Group
 from django.conf import settings
 
-from crashstats.base.tests.testbase import DjangoTestCase
+from crashstats.crashstats.tests.testbase import DjangoTestCase
 from crashstats.tokens import models
 
 

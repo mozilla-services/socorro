@@ -73,10 +73,7 @@ INSTALLED_APPS = (
     'django.contrib.admin.apps.SimpleAdminConfig',
     'mozilla_django_oidc',
 
-    # Application base, containing global templates.
-    'crashstats.base',
-
-    # Other Socorro apps.
+    # Socorro apps
     'crashstats.crashstats',
     'crashstats.api',
     'crashstats.authentication',
@@ -146,7 +143,7 @@ _CONTEXT_PROCESSORS = (
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
     'django.template.context_processors.request',
-    'crashstats.base.context_processors.settings',
+    'crashstats.crashstats.context_processors.settings',
     'crashstats.status.context_processors.status_message',
 )
 
@@ -431,7 +428,7 @@ STATICFILES_FINDERS = (
     'npm.finders.NpmFinder',
     'pipeline.finders.PipelineFinder',
     # Make sure this comes last!
-    'crashstats.base.finders.LeftoverPipelineFinder',
+    'crashstats.crashstats.finders.LeftoverPipelineFinder',
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'

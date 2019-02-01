@@ -7,13 +7,13 @@ from django.views.generic.base import RedirectView
 from django.views.static import serve
 
 from crashstats.manage import admin_site
-from crashstats.base.monkeypatches import patch
+from crashstats.crashstats.monkeypatches import patch
 
 
 patch()
 
-handler500 = 'crashstats.base.views.handler500'
-handler404 = 'crashstats.base.views.handler404'
+handler500 = 'crashstats.crashstats.views.handler500'
+handler404 = 'crashstats.crashstats.views.handler404'
 
 
 urlpatterns = [
@@ -21,7 +21,7 @@ urlpatterns = [
         'document_root': os.path.join(settings.ROOT, '..'),
     }),
     url(r'^(?P<path>favicon\.ico)$', serve, {
-        'document_root': os.path.join(settings.ROOT, 'crashstats', 'base', 'static', 'img'),
+        'document_root': os.path.join(settings.ROOT, 'crashstats', 'crashstats', 'static', 'img'),
     }),
     url(r'', include('crashstats.crashstats.urls', namespace='crashstats')),
     url(r'', include('crashstats.supersearch.urls', namespace='supersearch')),
