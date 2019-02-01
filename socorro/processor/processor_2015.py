@@ -30,6 +30,7 @@ from socorro.processor.breakpad_transform_rules import (
 
 from socorro.processor.general_transform_rules import (
     CPUInfoRule,
+    DeNullRule,
     IdentifierRule,
     OSInfoRule,
 )
@@ -63,6 +64,8 @@ from socorro.processor.mozilla_transform_rules import (
 )
 
 DEFAULT_RULES = [
+    # fix the raw crash removing null characters
+    DeNullRule,
     # rules to change the internals of the raw crash
     ProductRewrite,
     ESRVersionRewrite,
