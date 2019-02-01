@@ -9,10 +9,10 @@ from django.urls import reverse
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
-from crashstats.base.utils import SignatureStats, render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
+from crashstats.crashstats.utils import SignatureStats, render_exception, urlencode_obj
 from crashstats.supersearch.utils import get_date_boundaries
 
 from crashstats.supersearch.models import (

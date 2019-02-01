@@ -10,12 +10,12 @@ from six import text_type
 
 from session_csrf import anonymous_csrf
 
-from crashstats.base.utils import get_comparison_signatures, SignatureStats
 from crashstats.crashstats import models
 from crashstats.crashstats.decorators import (
     check_days_parameter,
     pass_default_context,
 )
+from crashstats.crashstats.utils import get_comparison_signatures, SignatureStats
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.utils import get_date_boundaries
 from crashstats.topcrashers.forms import TopCrashersForm
