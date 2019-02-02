@@ -38,8 +38,26 @@ def digitgroupseparator(number):
 
 
 @library.filter
-def timestamp_to_date(timestamp, format='%Y-%m-%d %H:%M:%S'):
-    """ Python datetime to a time tag with JS Date.parse-parseable format. """
+def buildid_to_date(buildid, fmt='%Y-%m-%d'):
+    """Returns the date portion of the build id"""
+    try:
+        dt = datetime.datetime.strptime(buildid[0:8], '%Y%m%d')
+    except (TypeError, ValueError):
+        return ''
+
+    return jinja2.Markup(
+        '<time datetime="{}" class="jstime" data-format="{}">{}</time>'
+        .format(
+            dt.isoformat(),
+            fmt,
+            dt.strftime(fmt)
+        )
+    )
+
+
+@library.filter
+def timestamp_to_date(timestamp, fmt='%Y-%m-%d %H:%M:%S'):
+    """Python datetime to a time tag with JS Date.parse-parseable format"""
     try:
         timestamp = float(timestamp)
     except (TypeError, ValueError):
@@ -58,8 +76,8 @@ def timestamp_to_date(timestamp, format='%Y-%m-%d %H:%M:%S'):
         '<time datetime="{}" class="jstime" data-format="{}">{}</time>'
         .format(
             dt.isoformat(),
-            format,
-            dt.strftime(format)
+            fmt,
+            dt.strftime(fmt)
         )
     )
 
