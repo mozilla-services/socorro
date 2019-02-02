@@ -42,6 +42,16 @@ DEFAULT_SORT = (
     '-date',
 )
 
+# These products are supported by correlations. Looking at the signature report
+# and filtering on other products will not show the correlations tab.
+#
+# NOTE(willkg): To add support for another product, you have to add a url
+# to crashstats/static/crashstats/js/socorro/correlations.js getDataURL.
+CORRELATIONS_PRODUCTS = [
+    'Firefox',
+    'FennecAndroid'
+]
+
 
 def pass_validated_params(view):
     @functools.wraps(view)
@@ -98,6 +108,8 @@ def signature_report(request, params, default_context=None):
 
     context['channels'] = ','.join(settings.CHANNELS).split(',')
     context['channel'] = settings.CHANNEL
+
+    context['correlations_products'] = CORRELATIONS_PRODUCTS
 
     # Compute dates to show them to the user.
     start_date, end_date = get_date_boundaries(params)

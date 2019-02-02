@@ -23,22 +23,18 @@ SignatureReport.CorrelationsTab.prototype = SignatureReport.inherit(SignatureRep
 SignatureReport.CorrelationsTab.prototype.loadControls = function() {
   var self = this;
 
-  var channels = $('#mainbody').data('channels');
-
   // Create a select box for the product.
+  var correlationsProducts = $('#mainbody').data('correlations-products');
   this.productSelect = $('<select>', { class: 'products-list', id: 'correlations-products-list' });
-  this.productSelect.append($('<option>', { value: 'Firefox', text: 'Firefox' }));
-  this.productSelect.append($('<option>', { value: 'FennecAndroid', text: 'FennecAndroid' }));
+  correlationsProducts.forEach(function(product) {
+    self.productSelect.append($('<option>', { value: product, text: product }));
+  });
 
   // Create a select box for the channel.
+  var channels = $('#mainbody').data('channels');
   this.channelSelect = $('<select>', { class: 'channels-list', id: 'correlations-channels-list' });
   channels.forEach(function(channel) {
-    self.channelSelect.append(
-      $('<option>', {
-        value: channel,
-        text: channel,
-      })
-    );
+    self.channelSelect.append($('<option>', { value: channel, text: channel }));
   });
 
   // Append the controls.
