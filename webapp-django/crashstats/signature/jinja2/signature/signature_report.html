@@ -29,6 +29,7 @@
     data-fields="{{ fields | to_json }}"
     data-columns="{{ columns | to_json }}"
     data-sort="{{ sort | join(',') }}"
+    data-correlations-products="{{ correlations_products | to_json }}"
 >
     <div class="page-heading">
         <h2>Signature report for <em>{{ signature }}</em></h2>
@@ -70,13 +71,15 @@
             <li><a href="#graphs" class="graphs" data-tab-name="graphs">Graphs</a></li>
             <li><a href="#bugzilla" class="bugzilla" data-tab-name="bugzilla">Bugzilla</a></li>
             <li><a href="#comments" class="comments" data-tab-name="comments">Comments</a></li>
-            <li><a href="#correlations" class="correlations" data-tab-name="correlations">Correlations</a></li>
+            {% if product in correlations_products %}
+                <li><a href="#correlations" class="correlations" data-tab-name="correlations">Correlations</a></li>
+            {% endif %}
         </ul>
     </nav>
 
     <!-- Loading panel.
-        Shows a loading bar, is displayed by default when the page is
-        loading initial data.
+         Shows a loading bar, is displayed by default when the page is
+         loading initial data.
     -->
     <section class="panel tab-panel" id="loading-panel">
         <header class="title">
