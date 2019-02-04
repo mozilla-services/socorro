@@ -541,7 +541,7 @@ class SocorroMiddleware(SocorroCommon):
             value = kwargs.get(name)
 
             # 0 is a perfectly fine value, it should not be considered "falsy".
-            if not value and value is not 0 and value is not False:
+            if not value and value != 0 and value is not False:
                 if param['required']:
                     raise RequiredParameterError(name)
                 continue
