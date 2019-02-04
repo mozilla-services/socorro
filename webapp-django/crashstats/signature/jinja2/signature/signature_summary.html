@@ -5,317 +5,313 @@
                                                      browser_crash_icon %}
 
 {% if signature_stats %}
-<div class="panel tab-inner-panel crash-type-indicators-panel
-            {% if signature_stats.is_startup_related_crash %} startup-crash-warning {% endif %}">
+  <div class="panel tab-inner-panel crash-type-indicators-panel {% if signature_stats.is_startup_related_crash %} startup-crash-warning {% endif %}">
     {% if signature_stats.is_startup_crash %}
-    <div class="crash-type-indicator-container">
+      <div class="crash-type-indicator-container">
         {{ startup_crash_icon() }}
         Startup Crash, all crashes happened during startup
-    </div>
+      </div>
     {% endif %}
 
     {% if signature_stats.is_potential_startup_crash %}
-    <div class="crash-type-indicator-container">
-        {{ potential_startup_crash_icon(
-            num_startup_crashes=signature_stats.num_startup_crashes,
-            num_crashes=signature_stats.num_crashes,
-        ) }}
+      <div class="crash-type-indicator-container">
+        {{ potential_startup_crash_icon(num_startup_crashes=signature_stats.num_startup_crashes, num_crashes=signature_stats.num_crashes) }}
         Potential Startup Crash, {{ signature_stats.num_startup_crashes }}
         out of {{ signature_stats.num_crashes }} crashes happened during startup
-    </div>
+      </div>
     {% endif %}
 
     {% if signature_stats.is_startup_window_crash %}
-    <div class="crash-type-indicator-container">
+      <div class="crash-type-indicator-container">
         {{ potential_startup_window_crash_icon() }}
         Potential Startup Crash, more than half of the crashes happened during the first minute after launch
-    </div>
+      </div>
     {% endif %}
 
     {% if signature_stats.is_hang_crash %}
-    <div class="crash-type-indicator-container">
+      <div class="crash-type-indicator-container">
         {{ hang_crash_icon() }}
         Hanged Crash
-    </div>
+      </div>
     {% endif %}
 
     {% if signature_stats.is_plugin_crash %}
-    <div class="crash-type-indicator-container">
+      <div class="crash-type-indicator-container">
         {{ plugin_crash_icon() }}
         Plugin Crash
-    </div>
+      </div>
     {% else %}
-    <div class="crash-type-indicator-container">
-        {{ browser_crash_icon() }}
-        Browser Crash
-    </div>
+      <div class="crash-type-indicator-container">
+          {{ browser_crash_icon() }}
+          Browser Crash
+      </div>
     {% endif %}
-</div>
+  </div>
 {% endif %}
 
 <div class="panel tab-inner-panel" id="panel-platform">
-    <header class="title" title="Toggle visibility">
-        <h2>Operating System</h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Operating System</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for platform in query.facets.platform_pretty_version %}
-                <tr>
-                    <td>{{ platform.term }}</td>
-                    <td>{{ platform.count }}</td>
-                    <td>{{ (100.0 * platform.count / query.total) | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Operating System</h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Operating System</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for platform in query.facets.platform_pretty_version %}
+          <tr>
+            <td>{{ platform.term }}</td>
+            <td>{{ platform.count }}</td>
+            <td>{{ (100.0 * platform.count / query.total) | round(1) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel tab-inner-panel" id="panel-product">
-    <header class="title" title="Toggle visibility">
-        <h2>Product <sup>*</sup></h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Product</th>
-                    <th class="header">Version</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                    <th class="header">Installations</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for product in query.facets.product %}
-                {% for version in product.facets.version %}
-                <tr>
-                    <td>{{ product.term }}</td>
-                    <td>{{ version.term }}</td>
-                    <td>{{ version.count }}</td>
-                    <td>{{ (100.0 * version.count / product_version_total) | round(1) }}%</td>
-                    <td>{{ version.facets.cardinality_install_time.value }}</td>
-                </tr>
-                {% endfor %}
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Product <sup>*</sup></h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Product</th>
+          <th class="header">Version</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+          <th class="header">Installations</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in query.facets.product %}
+          {% for version in product.facets.version %}
+            <tr>
+              <td>{{ product.term }}</td>
+              <td>{{ version.term }}</td>
+              <td>{{ version.count }}</td>
+              <td>{{ (100.0 * version.count / product_version_total) | round(1) }}%</td>
+              <td>{{ version.facets.cardinality_install_time.value }}</td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel tab-inner-panel" id="panel-process-type">
-    <header class="title" title="Toggle visibility">
-        <h2>Process Type</h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Process Type</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for process_type in query.facets.process_type %}
-                <tr>
-                    <td>{{ process_type.term }}</td>
-                    <td>{{ process_type.count }}</td>
-                    <td>{{ (100.0 * process_type.count / query.total) | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Process Type</h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Process Type</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for process_type in query.facets.process_type %}
+          <tr>
+            <td>{{ process_type.term }}</td>
+            <td>{{ process_type.count }}</td>
+            <td>{{ (100.0 * process_type.count / query.total) | round(1) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel tab-inner-panel" id="panel-device">
-    <header class="title" title="Toggle visibility">
-        <h2>Mobile Devices</h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Manufacturer</th>
-                    <th class="header">Model</th>
-                    <th class="header">
-                        <a href="https://en.wikipedia.org/wiki/Android_%28operating_system%29#Platform_usage">
-                            API Level
-                        </a>
-                    </th>
-                    <th class="header">CPU ABI</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for device in query.facets.android_cpu_abi %}
-                <tr>
-                    <td>{{ device.manufacturer }}</td>
-                    <td>{{ device.model }}</td>
-                    <td>{{ device.version }}</td>
-                    <td>{{ device.cpu_abi }}</td>
-                    <td>{{ device.count }}</td>
-                    <td>{{ (100.0 * device.count / query.total) | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Mobile Devices</h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Manufacturer</th>
+          <th class="header">Model</th>
+          <th class="header">
+            <a href="https://en.wikipedia.org/wiki/Android_%28operating_system%29#Platform_usage">
+              API Level
+            </a>
+          </th>
+          <th class="header">CPU ABI</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for device in query.facets.android_cpu_abi %}
+          <tr>
+            <td>{{ device.manufacturer }}</td>
+            <td>{{ device.model }}</td>
+            <td>{{ device.version }}</td>
+            <td>{{ device.cpu_abi }}</td>
+            <td>{{ device.count }}</td>
+            <td>{{ (100.0 * device.count / query.total) | round(1) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel tab-inner-panel" id="panel-uptime">
-    <header class="title" title="Toggle visibility">
-        <h2>Uptime Range</h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Uptime Range</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for uptime in query.facets.histogram_uptime %}
-                <tr>
-                    <td>{{ uptime.term }}</td>
-                    <td>{{ uptime.count }}</td>
-                    <td>{{ (100.0 * uptime.count / query.total) | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Uptime Range</h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Uptime Range</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for uptime in query.facets.histogram_uptime %}
+          <tr>
+            <td>{{ uptime.term }}</td>
+            <td>{{ uptime.count }}</td>
+            <td>{{ (100.0 * uptime.count / query.total) | round(1) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel tab-inner-panel" id="panel-cpu-name">
-    <header class="title" title="Toggle visibility">
-        <h2>Architecture</h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Architecture</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cpu_arch in query.facets.cpu_arch %}
-                <tr>
-                    <td>{{ cpu_arch.term }}</td>
-                    <td>{{ cpu_arch.count }}</td>
-                    <td>{{ (100.0 * cpu_arch.count / query.total) | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Architecture</h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Architecture</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cpu_arch in query.facets.cpu_arch %}
+          <tr>
+            <td>{{ cpu_arch.term }}</td>
+            <td>{{ cpu_arch.count }}</td>
+            <td>{{ (100.0 * cpu_arch.count / query.total) | round(1) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel tab-inner-panel" id="panel-flash-version">
-    <header class="title" title="Toggle visibility">
-        <h2>Flash&trade; Version</h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Flash&trade; Version</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for flash_version in query.facets.flash_version %}
-                <tr>
-                    <td>{{ flash_version.term }}</td>
-                    <td>{{ flash_version.count }}</td>
-                    <td>{{ (100.0 * flash_version.count / query.total) | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Flash&trade; Version</h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Flash&trade; Version</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for flash_version in query.facets.flash_version %}
+          <tr>
+            <td>{{ flash_version.term }}</td>
+            <td>{{ flash_version.count }}</td>
+            <td>{{ (100.0 * flash_version.count / query.total) | round(1) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel tab-inner-panel" id="panel-adapter">
-    <header class="title" title="Toggle visibility">
-        <h2>Graphics Adapter</h2>
-        <div class="options show">show</div>
-    </header>
-    <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Vendor</th>
-                    <th class="header">Adapter</th>
-                    <th class="header">Count</th>
-                    <th class="header">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for adapter in query.facets.adapter_vendor_id %}
-                <tr>
-                    <td>{{ adapter.vendor }}</td>
-                    <td>{{ adapter.adapter }}</td>
-                    <td>{{ adapter.count }}</td>
-                    <td>{{ (100.0 * adapter.count / query.total) | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <header class="title" title="Toggle visibility">
+    <h2>Graphics Adapter</h2>
+    <div class="options show">show</div>
+  </header>
+  <div class="content">
+    <table class="tablesorter data-table">
+      <thead>
+        <tr>
+          <th class="header">Vendor</th>
+          <th class="header">Adapter</th>
+          <th class="header">Count</th>
+          <th class="header">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for adapter in query.facets.adapter_vendor_id %}
+          <tr>
+            <td>{{ adapter.vendor }}</td>
+            <td>{{ adapter.adapter }}</td>
+            <td>{{ adapter.count }}</td>
+            <td>{{ (100.0 * adapter.count / query.total) | round(1) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% if query.facets.histogram_date %}
-<div class="panel tab-inner-panel" id="panel-exploitability">
+  <div class="panel tab-inner-panel" id="panel-exploitability">
     <header class="title" title="Toggle visibility">
-        <h2>Exploitability</h2>
-        <div class="options show">show</div>
+      <h2>Exploitability</h2>
+      <div class="options show">show</div>
     </header>
     <div class="content">
-        <table class="tablesorter data-table">
-            <thead>
-                <tr>
-                    <th class="header">Report Date</th>
-                    <th class="header">None</th>
-                    <th class="header">Low</th>
-                    <th class="header">Medium</th>
-                    <th class="header">High</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for day in query.facets.histogram_date %}
-                <tr>
-                    <td>{{ day.term[:10] }}</td>
-                    <td>{{ day.exploitability.none }}</td>
-                    <td>{{ day.exploitability.low }}</td>
-                    <td>{{ day.exploitability.medium }}</td>
-                    <td>{{ day.exploitability.high }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+      <table class="tablesorter data-table">
+        <thead>
+          <tr>
+            <th class="header">Report Date</th>
+            <th class="header">None</th>
+            <th class="header">Low</th>
+            <th class="header">Medium</th>
+            <th class="header">High</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for day in query.facets.histogram_date %}
+            <tr>
+              <td>{{ day.term[:10] }}</td>
+              <td>{{ day.exploitability.none }}</td>
+              <td>{{ day.exploitability.low }}</td>
+              <td>{{ day.exploitability.medium }}</td>
+              <td>{{ day.exploitability.high }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-</div>
+  </div>
 {% endif %}
