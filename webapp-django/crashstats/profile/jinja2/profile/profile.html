@@ -3,114 +3,101 @@
 {% block page_title %}Your Profile{% endblock %}
 
 {% block site_css %}
-    {{ super() }}
-    {% stylesheet 'profile' %}
+  {{ super() }}
+  {% stylesheet 'profile' %}
 {% endblock %}
 
 {% block content %}
-
-<div id="mainbody">
-
+  <div id="mainbody">
     <div class="page-heading">
-        <h2>Your Profile</h2>
+      <h2>Your Profile</h2>
     </div>
 
     <div class="panel">
-        <div class="body">
-            <ul class="links left">
-                <li>
-                    <a href="{{ url('tokens:home') }}">API Tokens</a>
-                </li>
-            </ul>
-            <ul class="links right">
-                <li>
-                    {{ request.user.email }}
-                </li>
-            </ul>
-        </div>
+      <div class="body">
+        <ul class="links left">
+          <li><a href="{{ url('tokens:home') }}">API Tokens</a></li>
+        </ul>
+        <ul class="links right">
+          <li>{{ request.user.email }}</li>
+        </ul>
+      </div>
     </div>
 
     <div class="panel page-section">
-        <div class="title">
-            <h2>Your Crash Reports</h2>
-        </div>
-        <div class="body">
-            {% if crashes_list %}
+      <div class="title">
+        <h2>Your Crash Reports</h2>
+      </div>
+      <div class="body">
+        {% if crashes_list %}
+          <p>
+            Here is a list of the crash reports we have received from you,
+            and processed, in the last 4 weeks:
+          </p>
 
-            <p>
-                Here is a list of the crash reports we have received from you,
-                and processed, in the last 4 weeks:
-            </p>
-
-            <table class="crashes_list data-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Crash ID</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for crash in crashes_list %}
-                    <tr>
-                        <td>{{ crash.date | time_tag }}</td>
-                        <td>
-                            <a href="{{ url('crashstats:report_index', crash.crash_id) }}">
-                                {{ crash.crash_id }}
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            {% else %}
-
-            <p>
-                It seems we have received or processed <b>no crash report
-                from you in the last 4 weeks</b>. It's either good news,
-                or you do not provide your email address when you send us
-                crash reports.
-            </p>
-
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="panel page-section">
-        <div class="title">
-            <h2>Your Permissions</h2>
-        </div>
-        <div class="body">
-        {% if request.user.is_superuser %}
-            <p>
-                You are a <b>superuser</b> with access to everything.
-            </p>
-        {% else %}
-        <table class="data-table">
+          <table class="crashes_list data-table">
             <thead>
-                <tr>
-                    <th>Permission</th>
-                    <th>You</th>
-                </tr>
+              <tr>
+                <th>Date</th>
+                <th>Crash ID</th>
+              </tr>
             </thead>
             <tbody>
-                {% for permission in permissions %}
+              {% for crash in crashes_list %}
                 <tr>
-                    <td>{{ permission.name }}</td>
-                    <td>
-                    {% if request.user.has_perm('crashstats.' + permission.codename) %}
-                        Yes!
-                    {% else %}
-                        No
-                    {% endif %}
+                  <td>{{ crash.date | time_tag }}</td>
+                  <td>
+                    <a href="{{ url('crashstats:report_index', crash.crash_id) }}">{{ crash.crash_id }}</a>
+                  </td>
                 </tr>
-                  {% endfor %}
+              {% endfor %}
             </tbody>
-        </table>
+          </table>
+        {% else %}
+          <p>
+            It seems we have received or processed <b>no crash report
+            from you in the last 4 weeks</b>. It's either good news,
+            or you do not provide your email address when you send us
+            crash reports.
+          </p>
         {% endif %}
-        </div>
+      </div>
     </div>
 
-</div>
-
+    <div class="panel page-section">
+      <div class="title">
+        <h2>Your Permissions</h2>
+      </div>
+      <div class="body">
+        {% if request.user.is_superuser %}
+          <p>
+            You are a <b>superuser</b> with access to everything.
+          </p>
+        {% else %}
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th>You</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for permission in permissions %}
+                <tr>
+                  <td>{{ permission.name }}</td>
+                  <td>
+                    {% if request.user.has_perm('crashstats.' + permission.codename) %}
+                      Yes!
+                    {% else %}
+                      No
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 {% endblock %}

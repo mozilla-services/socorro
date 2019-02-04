@@ -4,127 +4,124 @@
 {% block page_title %}Search - Mozilla Crash Reports{% endblock %}
 
 {% block site_css %}
-    {{ super() }}
-    {% stylesheet 'select2' %}
-    {% stylesheet 'jquery_ui' %}
-    {% stylesheet 'tablesorter' %}
-    {% stylesheet 'search' %}
-    {% stylesheet 'bugzilla' %}
+  {{ super() }}
+  {% stylesheet 'select2' %}
+  {% stylesheet 'jquery_ui' %}
+  {% stylesheet 'tablesorter' %}
+  {% stylesheet 'search' %}
+  {% stylesheet 'bugzilla' %}
 {% endblock %}
 
 {% block content %}
-<div id="mainbody"
-    data-columns="{{ possible_columns | to_json }}"
-    data-facets="{{ possible_facets | to_json }}"
-    >
+  <div id="mainbody"
+       data-columns="{{ possible_columns | to_json }}"
+       data-facets="{{ possible_facets | to_json }}"
+  >
     <div class="page-heading">
-        <h2>Super Search</h2>
+      <h2>Super Search</h2>
 
-        <nav>
-            {% if request.user.has_perm('crashstats.run_custom_queries') %}
-            <ul class="options">
-                <li><a href="{{ url('supersearch:search') }}" class="selected">Search by fields</a></li>
-                <li><a href="{{ url('supersearch:search_custom') }}">Custom query</a></li>
-            </ul>
-            {% endif %}
-            <div id="sumo-link">
-                <a href="https://developer.mozilla.org/en-US/docs/A_guide_to_searching_crash_reports"
-                   title="MDN documentation on searching crash reports"
-                   rel="noopener"
-                >A guide to searching crash reports</a>
-            </div>
-        </nav>
+      <nav>
+        {% if request.user.has_perm('crashstats.run_custom_queries') %}
+          <ul class="options">
+            <li><a href="{{ url('supersearch:search') }}" class="selected">Search by fields</a></li>
+            <li><a href="{{ url('supersearch:search_custom') }}">Custom query</a></li>
+          </ul>
+        {% endif %}
+        <div id="sumo-link">
+          <a href="https://developer.mozilla.org/en-US/docs/A_guide_to_searching_crash_reports"
+             title="MDN documentation on searching crash reports"
+             rel="noopener"
+          >A guide to searching crash reports</a>
+        </div>
+      </nav>
     </div>
 
     <section id="search-form">
-        <div class="loader"></div>
+      <div class="loader"></div>
 
-        <form method="get" action="{{ url('supersearch:search') }}"
+      <form method="get" action="{{ url('supersearch:search') }}"
             data-fields-url="{{ url('supersearch:search_fields') }}?{{ make_query_string(exclude='date') }}"
             data-results-url="{{ url('supersearch:search_results') }}"
             data-custom-url="{{ url('supersearch:search_custom') }}"
             data-public-api-url="{{ url('api:model_wrapper', 'SuperSearch') }}"
-        >
-            <div class="form-controls">
-                {% if request.user.has_perm('crashstats.run_custom_queries') %}
-                <button class="customize">Customize</button>
-                {% endif %}
-                <button class="new-line">New line</button>
-                <button type="submit" id="search-button">Search</button>
+      >
+        <div class="form-controls">
+          {% if request.user.has_perm('crashstats.run_custom_queries') %}
+            <button class="customize">Customize</button>
+          {% endif %}
+          <button class="new-line">New line</button>
+          <button type="submit" id="search-button">Search</button>
+        </div>
+
+        {{ date_filters(dates.from, dates.to) }}
+
+        <!-- Simplified search UI -->
+        <fieldset id="simple-search">
+          {% for field, field_data, examples in simple_search_data %}
+            <div>
+              <label for="simple-{{ field }}">{{ field | replace('_', ' ') | capitalize }}</label>
+              <input name="{{ field }}" id="simple-{{ field }}"
+                     class="simple-search-input"
+                     type="text"
+                     placeholder="{{ ', '.join(examples) }}..."
+                     data-choices="{{ field_data | to_json }}"
+              />
             </div>
+          {% endfor %}
+        </fieldset>
 
-            {{ date_filters(dates.from, dates.to) }}
+        <!-- Advanced search UI -->
+        <div id="advanced-search">
+          <fieldset id="search-params-fieldset"></fieldset>
+        </div>
 
-            <!-- Simplified search UI -->
-            <fieldset id="simple-search">
-                {% for field, field_data, examples in simple_search_data %}
-                <div>
-                    <label for="simple-{{ field }}">
-                        {{ field | replace('_', ' ') | capitalize }}
-                    </label>
-                    <input name="{{ field }}" id="simple-{{ field }}"
-                        class="simple-search-input"
-                        type="text"
-                        placeholder="{{ ', '.join(examples) }}..."
-                        data-choices="{{ field_data | to_json }}"
-                    />
-                </div>
-                {% endfor %}
-            </fieldset>
+        <fieldset class="options">
+          <h4>More options... <span class="show">click to show</span><span class="hide">click to hide</span></h4>
+          <div>
+            <p>
+              <label for="_facets">Facet on:</label>
+              <input type="text" name="_facets" id="_facets" value="{{ facets | join(', ') }}">
+            </p>
+            <p>
+              <label for="_columns_fake">Show columns:</label>
+              <input type="text" name="_columns_fake" id="_columns_fake" value="{{ columns | join(', ') }}">
+              <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
+            </p>
+            <p>
+              <label for="_sort">Sort by:</label>
+              <input type="text" name="_sort" id="_sort" value="{{ sort | join(', ') }}">
+            </p>
 
-
-            <!-- Advanced search UI -->
-            <div id="advanced-search">
-                <fieldset id="search-params-fieldset"></fieldset>
+            <div class="public-api-url">
+              Public API URL: (<a href="{{ url('documentation:supersearch_home') }}">Super Search API Documentation</a>)
+              <input type="text" name="_public_api_url">
             </div>
-
-            <fieldset class="options">
-                <h4>More options... <span class="show">click to show</span><span class="hide">click to hide</span></h4>
-                <div>
-                    <p>
-                        <label for="_facets">Facet on:</label>
-                        <input type="text" name="_facets" id="_facets" value="{{ facets | join(', ') }}">
-                    </p>
-                    <p>
-                        <label for="_columns_fake">Show columns:</label>
-                        <input type="text" name="_columns_fake" id="_columns_fake" value="{{ columns | join(', ') }}">
-                        <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
-                    </p>
-                    <p>
-                        <label for="_sort">Sort by:</label>
-                        <input type="text" name="_sort" id="_sort" value="{{ sort | join(', ') }}">
-                    </p>
-
-                    <div class="public-api-url">
-                        Public API URL: (<a href="{{ url('documentation:supersearch_home') }}">Super Search API Documentation</a>)
-                        <input type="text" name="_public_api_url">
-                    </div>
-                </div>
-            </fieldset>
-        </form>
+          </div>
+        </fieldset>
+      </form>
     </section>
 
     <div class="panel">
-        <div class="title">
-            <h2>Search results</h2>
-        </div>
+      <div class="title">
+        <h2>Search results</h2>
+      </div>
 
-        <div class="body" id="search_results">
-            <p>Run a search to get some results. </p>
-        </div>
+      <div class="body" id="search_results">
+        <p>Run a search to get some results. </p>
+      </div>
     </div>
-</div>
+  </div>
 {% endblock %}
 
 {% block site_js %}
-    {{ super() }}
+  {{ super() }}
 
-    {% javascript 'select2' %}
-    {% javascript 'jquery_ui' %}
-    {% javascript 'tablesorter' %}
-    {% javascript 'dynamic_form' %}
-    {% javascript 'socorro_utils' %}
-    {% javascript 'bugzilla' %}
-    {% javascript 'date_filters' %}
-    {% javascript 'search' %}
+  {% javascript 'select2' %}
+  {% javascript 'jquery_ui' %}
+  {% javascript 'tablesorter' %}
+  {% javascript 'dynamic_form' %}
+  {% javascript 'socorro_utils' %}
+  {% javascript 'bugzilla' %}
+  {% javascript 'date_filters' %}
+  {% javascript 'search' %}
 {% endblock %}

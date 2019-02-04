@@ -1,51 +1,47 @@
 {% from "macros/pagination.html" import pagination %}
 
 {% if query.total > 0 %}
-
-<div>
+  <div>
     {{ pagination(query, current_url, current_page) }}
     <table id="reports-list" class="tablesorter data-table">
-        <thead>
-            <tr>
-                <th scope="col" class="crash-id">Crash ID</th>
-                {% for column in columns %}
-                <th scope="col" class="sort-header {% if column in sort %}headerSortDown{% elif '-{}'.format(column) in sort %}headerSortUp{% endif %}" data-field-name="{{ column }}">{{ column | replace('_', ' ') | capitalize }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for crash in query.hits %}
-            <tr>
-                <td>
-                    <a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link crash-id">{{ crash.uuid }}</a>
-                    {% if crash.cpu_info %}
-                        {% if is_dangerous_cpu(crash.cpu_arch, crash.cpu_info) %}
-                            <span class="label" title="Possible AMD CPU bug related crash report">AMD</span>
-                        {% endif %}
-                    {% endif %}
-                </td>
-                {% for column in columns %}
-                <td>
-                    {% if crash[column] %}
-                        {% if column == 'date' %}
-                            {{ crash[column] | human_readable_iso_date }}
-                        {% elif column == 'install_time' %}
-                            {{ crash[column] | timestamp_to_date }}
-                        {% else %}
-                            {{ crash[column] }}
-                        {% endif %}
-                    {% endif %}
-                </td>
-                {% endfor %}
-            </tr>
+      <thead>
+        <tr>
+          <th scope="col" class="crash-id">Crash ID</th>
+          {% for column in columns %}
+            <th scope="col" class="sort-header {% if column in sort %}headerSortDown{% elif '-{}'.format(column) in sort %}headerSortUp{% endif %}" data-field-name="{{ column }}">{{ column | replace('_', ' ') | capitalize }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for crash in query.hits %}
+          <tr>
+            <td>
+              <a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link crash-id">{{ crash.uuid }}</a>
+              {% if crash.cpu_info %}
+                {% if is_dangerous_cpu(crash.cpu_arch, crash.cpu_info) %}
+                  <span class="label" title="Possible AMD CPU bug related crash report">AMD</span>
+                {% endif %}
+              {% endif %}
+            </td>
+            {% for column in columns %}
+              <td>
+                {% if crash[column] %}
+                  {% if column == 'date' %}
+                    {{ crash[column] | human_readable_iso_date }}
+                  {% elif column == 'install_time' %}
+                    {{ crash[column] | timestamp_to_date }}
+                  {% else %}
+                    {{ crash[column] }}
+                  {% endif %}
+                {% endif %}
+              </td>
             {% endfor %}
-        </tbody>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
     {{ pagination(query, current_url, current_page) }}
-</div>
-
+  </div>
 {% else %}
-
-<p>No results were found.</p>
-
+  <p>No results were found.</p>
 {% endif %}

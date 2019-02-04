@@ -1,141 +1,136 @@
 {% from "macros/pagination.html" import pagination %}
 
 {% if query.total > 0 %}
-
-<ul id="search_results-nav">
+  <ul id="search_results-nav">
     <li><a href="#crash-reports"><span>Crash Reports</span></a></li>
     {% for facet in query.facets %}
-    <li><a href="#facet-{{ facet }}"><span>{{ facet | replace('_', ' ') | capitalize }} facet</span></a></li>
+      <li><a href="#facet-{{ facet }}"><span>{{ facet | replace('_', ' ') | capitalize }} facet</span></a></li>
     {% endfor %}
-</ul>
+  </ul>
 
-<div id="crash-reports">
+  <div id="crash-reports">
     {{ pagination(query, current_url, current_page, '#crash-reports') }}
     <table id="reports-list" class="tablesorter data-table">
-        <caption>Crash Reports</caption>
-        <thead>
-            <tr>
-                <th scope="col" class="crash-id">Crash ID</th>
-                {% for column in columns %}
-                <th scope="col" class="sort-header {% if column in sort %}headerSortDown{% elif '-{}'.format(column) in sort %}headerSortUp{% endif %}" data-field-name="{{ column }}">{{ column | replace('_', ' ') | capitalize }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for crash in query.hits %}
-            <tr>
-                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="crash-id">{{ crash.uuid }}</a></td>
-                {% for column in columns %}
-                <td>
-                    {% if crash[column] %}
-                        {% if column == 'date' %}
-                            {{ crash[column] | human_readable_iso_date }}
-                        {% elif column == 'signature' %}
-                        <a
-                            href="{{ url('signature:signature_report') }}{{ change_query_string(
-                                _no_base=True,
-                                signature=crash.signature,
-                                page=None,
-                                _columns=None,
-                                _facets=None
-                            ) }}"
-                            title="Click to leave this search and go to this signature report"
-                        >
-                            {{ crash[column] }}
-                        </a>
-                        &nbsp;
-                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
-                            Add term
-                        </a>
-                        {% elif is_list(crash[column]) %}
-                            {% for val in crash[column] %}
-                            <a href="{{ current_url }}&amp;{{ column }}=%3D{{ val | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ val }}" title="Add this term to the search form">
-                                {{ val }}
-                            </a>
-                            {% endfor %}
-                        {% elif column == 'install_time' %}
-                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
-                            {{ crash[column] | timestamp_to_date }}
-                        </a>
-                        {% else %}
-                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
-                            {{ crash[column] }}
-                        </a>
-                        {% endif %}
-                    {% endif %}
-
-                </td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {{ pagination(query, current_url, current_page, '#crash-reports') }}
-</div>
-
-{% for facet in query.facets %}
-<div id="facet-{{ facet }}" class="ui-tabs-hide">
-    <table id="facets-list-{{ facet }}" class="tablesorter data-table facet">
-        <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
-        <thead>
-            <tr>
-                <th class="column-narrow" scope="col">Rank</th>
-                <th class="facet-term" scope="col">{{ facet | replace('_', ' ') | capitalize }}</th>
-                <th class="column-narrow" scope="col">Count</th>
-                <th class="column-narrow" scope="col">%</th>
-                {% if facet == 'signature' %}
-                <th scope="col">Bugs</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for hit in query.facets[facet] %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>
-                    {% if facet != 'signature' %}
-                    <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">{{ hit.term }}</a>
-                    {% else %}
-                    <a
-                        href="{{ url('signature:signature_report') }}{{ change_query_string(
-                            _no_base=True,
-                            signature=hit.term,
-                            page=None,
-                            _columns=None,
-                            _facets=None
-                        ) }}"
-                        title="Click to leave this search and go to this signature report"
+      <caption>Crash Reports</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="crash-id">Crash ID</th>
+          {% for column in columns %}
+            <th scope="col" class="sort-header {% if column in sort %}headerSortDown{% elif '-{}'.format(column) in sort %}headerSortUp{% endif %}" data-field-name="{{ column }}">{{ column | replace('_', ' ') | capitalize }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for crash in query.hits %}
+          <tr>
+            <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="crash-id">{{ crash.uuid }}</a></td>
+            {% for column in columns %}
+              <td>
+                {% if crash[column] %}
+                  {% if column == 'date' %}
+                    {{ crash[column] | human_readable_iso_date }}
+                  {% elif column == 'signature' %}
+                    <a href="{{ url('signature:signature_report') }}{{ change_query_string(
+                       _no_base=True,
+                       signature=crash.signature,
+                       page=None,
+                       _columns=None,
+                       _facets=None
+                       ) }}"
+                       title="Click to leave this search and go to this signature report"
                     >
-                        {{ hit.term }}
+                      {{ crash[column] }}
                     </a>
                     &nbsp;
-                    <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">Add term</a>
-                    {% endif %}
-                </td>
-                <td>{{ hit.count }}</td>
-                <td>{{ '%.2f' | format(100.0 * hit.count / query.total) }} %</td>
-                {% if facet == 'signature' %}
-                <td>
-                    {% for bug in hit.bugs %}
-                    {{ show_bug_link(bug) }}
+                    <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                      Add term
+                    </a>
+                  {% elif is_list(crash[column]) %}
+                    {% for val in crash[column] %}
+                      <a href="{{ current_url }}&amp;{{ column }}=%3D{{ val | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ val }}" title="Add this term to the search form">
+                        {{ val }}
+                      </a>
                     {% endfor %}
-                    <div class="bug_ids_expanded_list">
-                        <h3>Bugs for <code>{{ hit.term }}</code></h3>
-                        <ul class="bug_ids_expanded full_bug_ids popup">
-                            {% for bug in hit.bugs %}
-                            <li>{{ show_bug_link(bug) }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </td>
+                  {% elif column == 'install_time' %}
+                    <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                      {{ crash[column] | timestamp_to_date }}
+                    </a>
+                  {% else %}
+                    <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                      {{ crash[column] }}
+                    </a>
+                  {% endif %}
                 {% endif %}
-            </tr>
+              </td>
             {% endfor %}
-        </tbody>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
-</div>
-{% endfor %}
+    {{ pagination(query, current_url, current_page, '#crash-reports') }}
+  </div>
 
+  {% for facet in query.facets %}
+    <div id="facet-{{ facet }}" class="ui-tabs-hide">
+      <table id="facets-list-{{ facet }}" class="tablesorter data-table facet">
+        <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
+        <thead>
+          <tr>
+            <th class="column-narrow" scope="col">Rank</th>
+            <th class="facet-term" scope="col">{{ facet | replace('_', ' ') | capitalize }}</th>
+            <th class="column-narrow" scope="col">Count</th>
+            <th class="column-narrow" scope="col">%</th>
+            {% if facet == 'signature' %}
+              <th scope="col">Bugs</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for hit in query.facets[facet] %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                {% if facet != 'signature' %}
+                  <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">{{ hit.term }}</a>
+                {% else %}
+                  <a href="{{ url('signature:signature_report') }}{{ change_query_string(
+                     _no_base=True,
+                     signature=hit.term,
+                     page=None,
+                     _columns=None,
+                     _facets=None
+                     ) }}"
+                     title="Click to leave this search and go to this signature report"
+                  >
+                    {{ hit.term }}
+                  </a>
+                  &nbsp;
+                  <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">Add term</a>
+                {% endif %}
+              </td>
+              <td>{{ hit.count }}</td>
+              <td>{{ '%.2f' | format(100.0 * hit.count / query.total) }} %</td>
+              {% if facet == 'signature' %}
+                <td>
+                  {% for bug in hit.bugs %}
+                    {{ show_bug_link(bug) }}
+                  {% endfor %}
+                  <div class="bug_ids_expanded_list">
+                    <h3>Bugs for <code>{{ hit.term }}</code></h3>
+                    <ul class="bug_ids_expanded full_bug_ids popup">
+                      {% for bug in hit.bugs %}
+                        <li>{{ show_bug_link(bug) }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
 {% else %}
-<p class="no-data">No results were found.</p>
+  <p class="no-data">No results were found.</p>
 {% endif %}

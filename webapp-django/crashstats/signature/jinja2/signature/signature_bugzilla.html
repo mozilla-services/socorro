@@ -1,42 +1,42 @@
 <div>
-    <div class="panel">
-        <header class="title">
-            <h2>Bugs for <code>{{ signature }}</code></h2>
-        </header>
+  <div class="panel">
+    <header class="title">
+      <h2>Bugs for <code>{{ signature }}</code></h2>
+    </header>
 
-        {% if bugs | count == 0 %}
-        <div class="body">
-            <p>There are no bugs associated with this signature.</p>
-        </div>
-        {% else %}
-        <div class="body bug_ids_expanded_list">
-            <ul class="bug_ids_expanded full_bug_ids full">
-            {% for bug in bugs %}
+    {% if bugs | count == 0 %}
+      <div class="body">
+        <p>There are no bugs associated with this signature.</p>
+      </div>
+    {% else %}
+      <div class="body bug_ids_expanded_list">
+        <ul class="bug_ids_expanded full_bug_ids full">
+          {% for bug in bugs %}
             {% if bug.signature == signature %}
-                <li>{{ show_bug_link(bug.bug_id) }}</li>
+              <li>{{ show_bug_link(bug.bug_id) }}</li>
             {% endif %}
-            {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-    </div>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
 
-    {% if bugs | count > 1 %}
+  {% if bugs | count > 1 %}
     <div class="panel">
-        <header class="title">
-            <h2>Related Crash Signatures:</h2>
-        </header>
+      <header class="title">
+        <h2>Related Crash Signatures:</h2>
+      </header>
 
-        {% for bug in bugs %}
+      {% for bug in bugs %}
         {% if bug.signature != signature %}
-        <div class="body bug_ids_expanded_list">
+          <div class="body bug_ids_expanded_list">
             <p>Bugs for <code>{{ bug.signature }}</code></p>
             <ul class="bug_ids_expanded full_bug_ids full">
-                <li>{{ show_bug_link(bug.bug_id) }}</li>
+              <li>{{ show_bug_link(bug.bug_id) }}</li>
             </ul>
-        </div>
+          </div>
         {% endif %}
-        {% endfor %}
+      {% endfor %}
     </div>
-    {% endif %}
+  {% endif %}
 </div>

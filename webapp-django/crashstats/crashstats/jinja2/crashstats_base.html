@@ -1,191 +1,165 @@
 {% from "macros/pagination.html" import pagination %}
 <!DOCTYPE html>
 <html lang="en-US" class="production" data-google-analytics-id="{{ settings.GOOGLE_ANALYTICS_ID }}">
-    <head>
-        <meta charset="UTF-8" />
-        <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
 
-        {% block site_css %}
-            {% stylesheet 'crashstats_base' %}
-        {% endblock %}
+    {% block site_css %}
+      {% stylesheet 'crashstats_base' %}
+    {% endblock %}
 
-        {% if settings.GOOGLE_ANALYTICS_ID %}
-            {#
-                Use the preload technique which gives a performance boost for
-                modern browsers.
-                See https://developers.google.com/analytics/devguides/collection/analyticsjs/#alternative_async_tracking_snippet
-            #}
-            {% javascript 'google_analytics' %}
-            <script async src="https://www.google-analytics.com/analytics.js"></script>
-        {% endif %}
+    {% if settings.GOOGLE_ANALYTICS_ID %}
+      {# Use the preload technique which gives a performance boost for
+         modern browsers.
+         See https://developers.google.com/analytics/devguides/collection/analyticsjs/#alternative_async_tracking_snippet
+      #}
+      {% javascript 'google_analytics' %}
+      <script async src="https://www.google-analytics.com/analytics.js"></script>
+    {% endif %}
+  </head>
 
-    </head>
-
-    <body>
+  <body>
     <div class="page-header">
-        {% include "header_title.html" %}
+      {% include "header_title.html" %}
 
-        <form id="simple_search" method="get" action="{{ url('crashstats:quick_search') }}">
-            <label for="q" class="visually-hidden">Search</label>
-            <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
-            <input type="submit" class="hidden">
-        </form>
+      <form id="simple_search" method="get" action="{{ url('crashstats:quick_search') }}">
+        <label for="q" class="visually-hidden">Search</label>
+        <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
+        <input type="submit" class="hidden">
+      </form>
 
-        <div class="user-info">
-            {% if request.user and request.user.is_active %}
-                <button class="user-info-button">
-                    <img class="gravatar" src="{{ gravatar_url(request.user.email, size=64) }}">
-                    <span class="user-email">{{ request.user.email }}</span>
-                    <img class="menu-icon" src="{{ static('img/menu.svg') }}" >
-                </button>
-                <ul class="user-info-menu">
-                    <li>
-                        <a href="{{ url('profile:profile') }}"
-                          title="You are signed in as {{ request.user.email }}"
-                        >
-                            Your Profile
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url('tokens:home') }}">API Tokens</a>
-                    </li>
-                    {% if request.user.is_staff %}
-                    <li>
-                        <a href="{{ url('admin:index') }}">Admin</a>
-                    </li>
-                    {% endif %}
-                    <li>
-                        <form class="logout-form" action="{{ url('oidc_logout') }}" method="POST">
-                            {% csrf_token %}
-                            <button class="sign-out-button" type="submit">Sign out</button>
-                        </form>
-                    </li>
-                </ul>
-            {% else %}
-                <a
-                    class="sign-in-link"
-                    href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}"
-                >
-                    Sign in
-                </a>
+      <div class="user-info">
+        {% if request.user and request.user.is_active %}
+          <button class="user-info-button">
+            <img class="gravatar" src="{{ gravatar_url(request.user.email, size=64) }}">
+            <span class="user-email">{{ request.user.email }}</span>
+            <img class="menu-icon" src="{{ static('img/menu.svg') }}" >
+          </button>
+          <ul class="user-info-menu">
+            <li>
+              <a href="{{ url('profile:profile') }}" title="You are signed in as {{ request.user.email }}">Your Profile</a>
+            </li>
+            <li>
+              <a href="{{ url('tokens:home') }}">API Tokens</a>
+            </li>
+            {% if request.user.is_staff %}
+              <li>
+                <a href="{{ url('admin:index') }}">Admin</a>
+              </li>
             {% endif %}
-        </div>
+            <li>
+              <form class="logout-form" action="{{ url('oidc_logout') }}" method="POST">
+                {% csrf_token %}
+                <button class="sign-out-button" type="submit">Sign out</button>
+              </form>
+            </li>
+          </ul>
+        {% else %}
+          <a class="sign-in-link" href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Sign in</a>
+        {% endif %}
+      </div>
     </div>
 
     <h1>Product Navigation</h1>
 
     <div class="version-nav">
-        <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
-        <input type="hidden" id="url_site" name="url_site" value="/" />
+      <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
+      <input type="hidden" id="url_site" name="url_site" value="/" />
 
-    {% block product_nav_filter %}
+      {% block product_nav_filter %}
         <span class="quick-nav-title">Quick Navigation</span>
         <ul class="filter">
-            <li>
-                <label for="products_select" class="visually-hidden">Select Product</label>
-                <select id="products_select">
-                {% for product_name in products %}
-                    <option value="{{ product_name }}" {% if product_name == product %}selected{% endif %}>{{ product_name }}</option>
-                {% endfor %}
-                </select>
-            </li>
-            <li class="version_select">
-                <label for="product_version_select" class="visually-hidden">Select Version:</label>
-                <select id="product_version_select" >
-                    <optgroup label="Active">
-                        <option value="Current Versions">Current Versions</option>
-                    {% set pvs = filter_featured_versions(active_versions[product]) %}
-                    {% if pvs %}
-                    {% for pv in pvs %}
-                        <option
-                            value="{{ pv.version }}"
-                            {% if pv.version == version %}selected{% endif %}
-                        >{{ pv.version }}</option>
-                    {% endfor %}
-                    {% endif %}
-                    </optgroup>
+          <li>
+            <label for="products_select" class="visually-hidden">Select Product</label>
+            <select id="products_select">
+              {% for product_name in products %}
+                <option value="{{ product_name }}" {% if product_name == product %}selected{% endif %}>{{ product_name }}</option>
+              {% endfor %}
+            </select>
+          </li>
+          <li class="version_select">
+            <label for="product_version_select" class="visually-hidden">Select Version:</label>
+            <select id="product_version_select" >
+              <optgroup label="Active">
+                <option value="Current Versions">Current Versions</option>
+                {% set pvs = filter_featured_versions(active_versions[product]) %}
+                {% if pvs %}
+                  {% for pv in pvs %}
+                    <option value="{{ pv.version }}" {% if pv.version == version %}selected{% endif %}>{{ pv.version }}</option>
+                  {% endfor %}
+                {% endif %}
+              </optgroup>
 
-                    {% set pvs = filter_not_featured_versions(active_versions[product]) %}
-                    {% if pvs %}
-                    <optgroup label="All versions">
-                    {% for pv in pvs %}
-                        <option
-                            value="{{ pv.version }}"
-                            {% if pv.version == version %}selected{% endif %}
-                        >{{ pv.version }}</option>
-                    {% endfor %}
-                    </optgroup>
-                    {% endif %}
-                </select>
-            </li>
-            <li>
-                <label for="report_select" class="visually-hidden">Report:</label>
-                <select id="report_select">
-                    <option
-                        value="products"
-                        data-url-product="{{ url('crashstats:product_home', '__PRODUCT__') }}"
-                        data-url-version="{{ url('crashstats:product_home', '__PRODUCT__') }}?version=__VERSION__"
-                        {% if report == 'products' %}selected{% endif %}
-                    >Overview</option>
-                    <option
-                        value="topcrasher"
-                        data-url-product="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__"
-                        data-url-version="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__&amp;version=__VERSION__"
-                        {% if report == 'topcrasher' %}selected{% endif %}
-                    >Top Crashers</option>
-                    {% if request.user.has_perm('crashstats.view_exploitability') %}
-                    <option
-                        value="exploitable"
+              {% set pvs = filter_not_featured_versions(active_versions[product]) %}
+              {% if pvs %}
+                <optgroup label="All versions">
+                  {% for pv in pvs %}
+                    <option value="{{ pv.version }}" {% if pv.version == version %}selected{% endif %}>{{ pv.version }}</option>
+                  {% endfor %}
+                </optgroup>
+              {% endif %}
+            </select>
+          </li>
+          <li>
+            <label for="report_select" class="visually-hidden">Report:</label>
+            <select id="report_select">
+              <option value="products"
+                      data-url-product="{{ url('crashstats:product_home', '__PRODUCT__') }}"
+                      data-url-version="{{ url('crashstats:product_home', '__PRODUCT__') }}?version=__VERSION__"
+                      {% if report == 'products' %}selected{% endif %}
+                      >Overview</option>
+              <option value="topcrasher"
+                      data-url-product="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__"
+                      data-url-version="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__&amp;version=__VERSION__"
+                      {% if report == 'topcrasher' %}selected{% endif %}
+                      >Top Crashers</option>
+              {% if request.user.has_perm('crashstats.view_exploitability') %}
+                <option value="exploitable"
                         data-url-product="{{ url('exploitability:report') }}?product=__PRODUCT__"
                         data-url-version="{{ url('exploitability:report') }}?product=__PRODUCT__&amp;version=__VERSION__"
                         {% if report == 'exploitable' %}selected{% endif %}
-                    >Exploitable Crashes</option>
-                    {% endif %}
-                </select>
-            </li>
+                        >Exploitable Crashes</option>
+              {% endif %}
+            </select>
+          </li>
         </ul>
-    {% endblock %}
+      {% endblock %}
 
-        <div class="nav-links">
-            <a href="{{ url('documentation:home') }}">Documentation</a>
-            |
-            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro">
-                File a bug
-            </a>
-            |
-            <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
-                Super Search
-            </a>
-        </div>
+      <div class="nav-links">
+        <a href="{{ url('documentation:home') }}">Documentation</a>
+        |
+        <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro">File a bug</a>
+        |
+        <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">Super Search</a>
+      </div>
     </div>
 
     {% for status in status_messages %}
-    <div class="status-message severity-{{ status.severity }}">
+      <div class="status-message severity-{{ status.severity }}">
         {{ status.message | escape | replace_bugzilla_links }}
         <small>({{ status.created_at | time_tag }})</small>
-    </div>
+      </div>
     {% endfor %}
 
     {% if messages %}
-        {% for message in messages %}
-          <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
-            {{ message }}
-          </div>
-        {% endfor %}
+      {% for message in messages %}
+        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
     {% endif %}
 
     {% block content %}{% endblock %}
 
     <div id="footer" class="page-footer">
-        {% include "footer_nav.html" %}
+      {% include "footer_nav.html" %}
 
-        <br class="clear" />
+      <br class="clear" />
     </div>
+
     {% block site_js %}
-
-    {% javascript 'crashstats_base' %}
-
+      {% javascript 'crashstats_base' %}
     {% endblock %}
-
   </body>
 </html>

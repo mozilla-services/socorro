@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <meta charset="utf-8">
     <title>Things to monitor</title>
-</head>
+  </head>
 
-<body>
+  <body>
     <ul>
-        <li><a href="{{ url('monitoring:crontabber_status') }}">Crontabber Status</a></li>
-        <li><a href="{{ url('monitoring:healthcheck') }}">Healthcheck</a></li>
-        <li><a href="{{ url('monitoring:healthcheck') }}?elb=true">Healthcheck (for ELB)</a></li>
+      <li><a href="{{ url('monitoring:crontabber_status') }}">Crontabber Status</a></li>
+      <li><a href="{{ url('monitoring:healthcheck') }}">Healthcheck</a></li>
+      <li><a href="{{ url('monitoring:healthcheck') }}?elb=true">Healthcheck (for ELB)</a></li>
     </ul>
-</body>
-
+  </body>
 </html>
