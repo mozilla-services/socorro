@@ -6,7 +6,9 @@
 # repo. If you need to override a setting locally, use .env or environment
 # variables.
 
+import logging
 import os
+import socket
 
 from decouple import config, Csv
 import dj_database_url
@@ -195,16 +197,52 @@ ANON_ALWAYS = True
 
 LOGGING_LEVEL = config('LOGGING_LEVEL', 'INFO')
 
+host_id = socket.gethostname()
+
+
+class AddHostID(logging.Filter):
+    def filter(self, record):
+        record.host_id = host_id
+        return True
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'add_hostid': {
+            '()': AddHostID
+        },
+    },
     'handlers': {
         'console': {
             'level': LOGGING_LEVEL,
             'class': 'logging.StreamHandler',
+            'formatter': 'socorroapp',
+        },
+        'mozlog': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'mozlog',
+            'filters': ['add_hostid']
         },
     },
-    'loggers': {
+    'formatters': {
+        'socorroapp': {
+            'format': '%(asctime)s %(levelname)s - %(name)s - %(message)s',
+        },
+        'mozlog': {
+            '()': 'dockerflow.logging.JsonLogFormatter',
+            'logger_name': 'socorro'
+        },
+    },
+}
+
+if LOCAL_DEV_ENV:
+    # In a local development environment, we don't want to see mozlog
+    # format at all, but we do want to see markus things and py.warnings.
+    # So set the logging up that way.
+    LOGGING['loggers'] = {
         'django': {
             'handlers': ['console'],
             'level': LOGGING_LEVEL,
@@ -224,7 +262,21 @@ LOGGING = {
             'level': LOGGING_LEVEL,
         }
     }
-}
+else:
+    # In a server environment, we want to use mozlog format.
+    LOGGING['loggers'] = {
+        'django': {
+            'handlers': ['mozlog'],
+            'level': LOGGING_LEVEL,
+        },
+        'django.request': {
+            'handlers': ['mozlog'],
+        },
+        'crashstats': {
+            'handlers': ['mozlog'],
+            'level': LOGGING_LEVEL,
+        }
+    }
 
 # Some products have a different name in bugzilla and Socorro.
 BUG_PRODUCT_MAP = {

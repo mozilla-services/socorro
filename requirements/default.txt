@@ -213,3 +213,6 @@ gunicorn==19.9.0 \
 libgravatar==0.2.3 \
     --hash=sha256:3da09feed1abbb903463a4c6c3de80fdbf83490fbeee2ff55d39a3a80878318f \
     --hash=sha256:672116492aa483c957069ee2b3d130780fef2f5d49b2a3f8e16561bb2aa1c0db
+dockerflow==2018.4.0 \
+    --hash=sha256:2ea52a904abfda3430ff4f1effc164863b30d2b69f7ecbf92dd672860b0ec423 \
+    --hash=sha256:388d02c557968e6957140f7b82f669eac70adf5f570bc7705aa749d220a2e535
