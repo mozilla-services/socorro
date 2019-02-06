@@ -170,7 +170,7 @@ class TestBugzillaSubmitURL(object):
         assert qs['format'] == ['__default__']
         assert qs['product'] == ['Plugin']
         assert qs['rep_platform'] == ['x86']
-        assert qs['short_desc'] == ['Crash in $&#;deadbeef']
+        assert qs['short_desc'] == ['Crash in [@ $&#;deadbeef]']
         assert qs['keywords'] == ['crash']
         assert qs['op_sys'] == ['Windows']
         assert qs['bug_severity'] == ['critical']
@@ -254,7 +254,7 @@ class TestBugzillaSubmitURL(object):
         )
         url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         # Most important that it should work
-        assert 'Crash+in+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing' in url
+        assert 'Crash+in+%5B%40+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing%29%5D' in url
 
     def test_comment(self):
         report = self._create_report()
