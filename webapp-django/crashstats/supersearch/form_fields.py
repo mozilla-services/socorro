@@ -79,6 +79,7 @@ class MultipleValueField(forms.MultipleChoiceField):
 
     In the end, it's like a CharField that can take a list of values. It is
     used as the default field for supersearch.
+
     """
 
     def validate(self, value):
@@ -86,8 +87,9 @@ class MultipleValueField(forms.MultipleChoiceField):
 
 
 class MultiplePrefixedValueField(PrefixedField):
-    """Special field that uses a SelectMultiple widget to deal with multiple
-    values. """
+    """Special field that uses SelectMultiple widget to deal with multiple values
+
+    """
     def __init__(self, *args, **kwargs):
         kwargs['widget'] = forms.SelectMultiple
         super(MultiplePrefixedValueField, self).__init__(*args, **kwargs)
@@ -172,12 +174,12 @@ class StringField(MultipleValueField):
     """A CharField with a different name, to be considered as a string
     by the dynamic_form.js library. This basically enables string operators
     on that field ("contains", "starts with"... ).
+
     """
     pass
 
 
 class BooleanField(forms.CharField):
-
     truthy_strings = ('__true__', 'true', 't', '1', 'y', 'yes')
 
     def to_python(self, value):

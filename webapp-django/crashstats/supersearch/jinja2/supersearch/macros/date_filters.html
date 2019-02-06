@@ -2,11 +2,37 @@
   <fieldset class="date-filters">
     <div>
       <label for="date_from">From</label>
-      {{ datetime_picker('date_from', start_date) }}
+      {% set start_date_value = start_date.strftime('%Y-%m-%dT%H:%M:%SZ') %}
+      <span class="datetime-picker date_from"
+            data-wrap="true"
+            data-enable-time="true"
+            data-utc="true"
+            data-time_24hr="true"
+            data-alt-input="true"
+            data-date-format="Y-m-d\\TH:i:S\\Z"
+            data-alt-format="F j, Y - H:i"
+            date-default-date="{{ start_date_value }}"
+      >
+        <input type="date" name="date_from" value="{{ start_date_value }}" data-input>
+        <a data-toggle><i class="icon-calendar"></i></a>
+      </span>
     </div>
     <div>
       <label for="date_to">To</label>
-      {{ datetime_picker('date_to', end_date) }}
+      {% set end_date_value = end_date.strftime('%Y-%m-%dT%H:%M:%SZ') %}
+      <span class="datetime-picker date_to"
+            data-wrap="true"
+            data-enable-time="true"
+            data-utc="true"
+            data-time_24hr="true"
+            data-alt-input="true"
+            data-date-format="Y-m-d\\TH:i:S\\Z"
+            data-alt-format="F j, Y - H:i"
+            date-default-date="{{ end_date_value }}"
+      >
+        <input type="date" name="date_to" value="{{ end_date_value }}" data-input>
+        <a data-toggle><i class="icon-calendar"></i></a>
+      </span>
     </div>
   </fieldset>
 
