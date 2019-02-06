@@ -42,11 +42,6 @@
         > div {
             width: 24%;
 
-            input,
-            .datetime-picker {
-                width: 100%;
-            }
-
             label {
                 display: block;
                 font-weight: bold;
@@ -62,40 +57,6 @@
 
         > div {
             width: 48.66%;
-        }
-
-        .datetime-picker {
-            display: flex;
-            cursor: pointer;
-
-            /* Picked from select2 styles */
-            height: auto !important;
-            height: 1%;
-            margin: 0;
-            border: 1px solid #aaa;
-            overflow: hidden;
-            position: relative;
-            background-color: @white;
-            background-image: linear-gradient(top, @white 1%, @white 15%);
-
-            input {
-                border: none;
-                background: none;
-                flex-grow: 10;
-                padding: 6px 5px;
-                line-height: 16px;
-                color: @dark-grey;
-            }
-
-            a {
-                background-color: @tan;
-                border-left: 1px solid @grey;
-                padding: 6px 5px 0 5px;
-
-                .icon-calendar::before {
-                    content: url("@{image-path}/3rdparty/silk/calendar.png");
-                }
-            }
         }
     }
 

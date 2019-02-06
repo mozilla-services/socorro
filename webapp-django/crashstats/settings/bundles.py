@@ -25,10 +25,6 @@ NPM_FILE_PATTERNS = {
         'themes/base/datepicker.css',
         'themes/base/tabs.css',
     ],
-    'flatpickr': [
-        'dist/themes/dark.css',
-        'dist/flatpickr.min.js',
-    ],
     'Select2': [
         'select2.css',
         'select2.js',
@@ -85,7 +81,6 @@ NPM_FILE_PATTERNS = {
 PIPELINE_CSS = {
     'search': {
         'source_filenames': (
-            'flatpickr/dist/themes/dark.css',
             'supersearch/css/search.less',
         ),
         'output_filename': 'css/search.min.css',
@@ -212,7 +207,6 @@ PIPELINE_CSS = {
 PIPELINE_JS = {
     'date_filters': {
         'source_filenames': (
-            'flatpickr/dist/flatpickr.min.js',
             'supersearch/js/socorro/date_filters.js',
         ),
         'output_filename': 'js/date-filters.min.js',

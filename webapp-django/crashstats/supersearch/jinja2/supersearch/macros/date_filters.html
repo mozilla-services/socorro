@@ -1,12 +1,17 @@
 {% macro date_filters(start_date, end_date) %}
+  {# NOTE(willkg): This assumes start_date and end_date are in UTC #}
   <fieldset class="date-filters">
-    <div>
+    <div class="date-from">
       <label for="date_from">From</label>
-      {{ datetime_picker('date_from', start_date) }}
+      <input type="date" name="date_date_from" value="{{ start_date.strftime('%Y-%m-%d') }}">
+      <input type="time" name="date_time_from" value="{{ start_date.strftime('%H:%M') }}">
+      UTC
     </div>
-    <div>
+    <div class="date-to">
       <label for="date_to">To</label>
-      {{ datetime_picker('date_to', end_date) }}
+      <input type="date" name="date_date_to" value="{{ end_date.strftime('%Y-%m-%d') }}">
+      <input type="time" name="date_time_to" value="{{ end_date.strftime('%H:%M') }}">
+      UTC
     </div>
   </fieldset>
 
@@ -18,6 +23,7 @@
     <a href="#" data-range="2w">14 days</a> -
     <a href="#" data-range="1M">1 month</a> -
     <a href="#" data-range="3M">3 months</a> -
-    <a href="#" data-range="6M">6 months</a>
+    <a href="#" data-range="6M">6 months</a> |
+    <a href="#" data-range="dayends">day ends</a>
   </p>
 {%- endmacro %}

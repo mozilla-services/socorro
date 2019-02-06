@@ -27,10 +27,6 @@ class BaseForm(_BaseForm, forms.Form):
     pass
 
 
-class Html5DateInput(forms.DateInput):
-    input_type = 'date'
-
-
 class BugInfoForm(BaseForm):
     bug_ids = forms.CharField(required=True)
 
