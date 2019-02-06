@@ -114,7 +114,7 @@
                   <th scope="row">Date Processed</th>
                   <td>
                     {% if report.date_processed %}
-                      {{ report.date_processed | human_readable_iso_date }}
+                      {{ report.date_processed | human_readable_iso_date }} UTC
                     {% endif %}
                   </td>
                 </tr>
