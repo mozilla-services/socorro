@@ -1,5 +1,5 @@
 {% macro date_filters(start_date, end_date) %}
-  {# NOTE(willkg): the start_date and end_date here are probably not in UTC #}
+  {# NOTE(willkg): This assumes start_date and end_date are in UTC #}
   <fieldset class="date-filters">
     <div class="date-from">
       <label for="date_from">From</label>
