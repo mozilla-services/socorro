@@ -190,10 +190,12 @@ def show_bug_link(bug_id):
 @library.global_function
 def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
+
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
     # `.startswith(...)` things we do don't raise an AttributeError.
     op_sys = report.get('os_pretty_version') or report['os_name'] or ''
+
     # At the time of writing, these pretty versions of the OS name
     # don't perfectly fit with the drop-down choices that Bugzilla
     # has in its OS drop-down. So we have to make some adjustments.
@@ -222,7 +224,7 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
         # NOTE(willkg): cpu_name is deprecated; switch to just cpu_arch in July 2019
         'rep_platform': report.get('cpu_arch', report['cpu_name']),
         'cf_crash_signature': '[@ {}]'.format(smart_str(report['signature'])),
-        'short_desc': 'Crash in {}'.format(smart_str(report['signature'])),
+        'short_desc': 'Crash in [@ {}]'.format(smart_str(report['signature'])),
         'comment': comment,
     }
 
