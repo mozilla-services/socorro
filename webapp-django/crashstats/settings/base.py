@@ -221,7 +221,7 @@ LOGGING = {
             'formatter': 'socorroapp',
         },
         'mozlog': {
-            'level': 'DEBUG',
+            'level': LOGGING_LEVEL,
             'class': 'logging.StreamHandler',
             'formatter': 'mozlog',
             'filters': ['add_hostid']
@@ -247,15 +247,21 @@ if LOCAL_DEV_ENV:
             'handlers': ['console'],
             'level': LOGGING_LEVEL,
         },
+        'django.server': {
+            'handlers': ['console'],
+            'level': LOGGING_LEVEL,
+        },
         'django.request': {
             'handlers': ['console'],
+            'level': LOGGING_LEVEL,
         },
         'py.warnings': {
             'handlers': ['console'],
+            'level': LOGGING_LEVEL,
         },
         'markus': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': LOGGING_LEVEL,
         },
         'crashstats': {
             'handlers': ['console'],
@@ -269,8 +275,9 @@ else:
             'handlers': ['mozlog'],
             'level': LOGGING_LEVEL,
         },
-        'django.request': {
+        'django.server': {
             'handlers': ['mozlog'],
+            'level': LOGGING_LEVEL,
         },
         'crashstats': {
             'handlers': ['mozlog'],
