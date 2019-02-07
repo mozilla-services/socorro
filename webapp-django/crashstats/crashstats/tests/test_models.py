@@ -272,14 +272,103 @@ class TestSignatureFirstDate(DjangoTestCase):
         ]
 
 
-class TestModels(DjangoTestCase):
-
+class TestVersionString(DjangoTestCase):
     def setUp(self):
-        super(TestModels, self).setUp()
+        super(TestVersionString, self).setUp()
+        cache.clear()
+
+    def test_bad_args_raise_error(self):
+        api = models.VersionString()
+        with pytest.raises(models.RequiredParameterError):
+            api.get()
+
+        with pytest.raises(models.RequiredParameterError):
+            api.get(product='Firefox', channel='beta')
+
+    def test_beta(self):
+        models.ProductVersion.objects.create(
+            product_name='Firefox',
+            release_channel='beta',
+            build_id='20161129164126',
+            version_string='51.0b5',
+            major_version=51,
+        )
+
+        api = models.VersionString()
+        resp = api.get(product='Firefox', channel='beta', build_id='20161129164126')
+        assert resp == {
+            'hits': [
+                {'version_string': '51.0b5'}
+            ],
+            'total': 1
+        }
+
+    def test_release_rc(self):
+        """If the channel is beta, but there aren't versions with 'b' in them,
+        then these are release candidates for a final release, so return an rc one.
+
+        """
+        models.ProductVersion.objects.create(
+            product_name='Firefox',
+            release_channel='beta',
+            build_id='20161104212021',
+            version_string='50.0rc2',
+            major_version=50,
+        )
+
+        api = models.VersionString()
+        resp = api.get(product='Firefox', channel='beta', build_id='20161104212021')
+        assert resp == {
+            'hits': [
+                {'version_string': '50.0rc2'}
+            ],
+            'total': 1
+        }
+
+    def test_beta_and_rc(self):
+        """If there are multiple version strings for a given (product, channel,
+        build_id), and they have 'b' in them, then we want the non-rc one.
+
+        """
+        models.ProductVersion.objects.create(
+            product_name='Firefox',
+            release_channel='beta',
+            build_id='20160920155715',
+            version_string='50.0b1rc2',
+            major_version=50,
+        )
+        models.ProductVersion.objects.create(
+            product_name='Firefox',
+            release_channel='beta',
+            build_id='20160920155715',
+            version_string='50.0b1rc1',
+            major_version=50,
+        )
+        models.ProductVersion.objects.create(
+            product_name='Firefox',
+            release_channel='beta',
+            build_id='20160920155715',
+            version_string='50.0b1',
+            major_version=50,
+        )
+
+        api = models.VersionString()
+        resp = api.get(product='Firefox', channel='beta', build_id='20160920155715')
+        assert resp == {
+            'hits': [
+                {'version_string': '50.0b1'}
+            ],
+            'total': 1
+        }
+
+
+class TestMiddlewareModels(DjangoTestCase):
+    def setUp(self):
+        super(TestMiddlewareModels, self).setUp()
         cache.clear()
 
     def tearDown(self):
-        super(TestModels, self).tearDown()
+        super(TestMiddlewareModels, self).tearDown()
 
     @mock.patch('requests.Session')
     def test_bugzilla_api(self, rsession):
@@ -450,7 +539,6 @@ class TestModels(DjangoTestCase):
             api.get(crash_id='821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh')
 
     def test_raw_crash_raw_data(self):
-
         model = models.RawCrash
         api = model()
 
