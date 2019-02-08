@@ -19,5 +19,8 @@ ${DC} run app shell ./socorro-cmd crontabber --reset-job=archivescraper
 ${DC} run app shell ./socorro-cmd crontabber --job=archivescraper \
     --crontabber.class-ArchiveScraperCronApp.verbose
 
+# Insert data that's no longer on archive.mozilla.org
+${DC} run app shell python ./scripts/insert_missing_versions.py
+
 # Create ES indexes for the next few weeks
 ${DC} run app shell ./socorro-cmd create_recent_indices
