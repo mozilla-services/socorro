@@ -20,8 +20,8 @@ from socorro.lib.datetimeutil import (
     UTC,
     datetime_from_isodate_string,
 )
-from socorro.lib.dbutil import execute_query_fetchall
 from socorro.lib.ooid import date_from_ooid
+from socorro.lib.requestslib import session_with_retries
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
@@ -577,9 +577,9 @@ class BetaVersionRule(Rule):
         self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
         self.metrics = markus.get_metrics('processor.betaversionrule')
 
-        # NOTE(willkg): These config values come from Processor2015 instance and are
-        # used for lookup in product_versions
-        self.conn_context = config.database_class(config)
+        # For looking up version strings
+        self.version_string_api = config.version_string_api
+        self.session = session_with_retries()
 
     def _get_real_version(self, product, channel, build_id):
         """Return real version number from crashstats_productversion table
@@ -604,37 +604,16 @@ class BetaVersionRule(Rule):
             self.metrics.incr('cache', tags=['result:hit'])
             return self.cache[key]
 
-        sql = """
-            SELECT version_string
-            FROM crashstats_productversion
-            WHERE product_name = %(product)s
-                AND release_channel = %(channel)s
-                AND build_id = %(build_id)s
-        """
-        params = {
+        resp = self.session.get(self.version_string_api, params={
             'product': product,
             'channel': channel,
             'build_id': build_id
-        }
+        })
 
-        with self.conn_context() as conn:
-            versions = execute_query_fetchall(conn, sql, params)
-
-        if versions:
-            # Flatten version results from a list of tuples to a list of versions
-            versions = [version[0] for version in versions]
-
-            if versions:
-                if 'b' in versions[0]:
-                    # If we're looking at betas which have a "b" in the versions,
-                    # then ignore "rc" versions because they didn't get released
-                    versions = [version for version in versions if 'rc' not in version]
-
-                else:
-                    # If we're looking at non-betas, then only return "rc"
-                    # versions because this crash report is in the beta channel
-                    # and not the release channel
-                    versions = [version for version in versions if 'rc' in version]
+        if resp.status_code != 200:
+            versions = []
+        else:
+            versions = resp.json()['hits']
 
         if not versions:
             # We didn't get an answer which could mean that this is a weird
@@ -648,7 +627,7 @@ class BetaVersionRule(Rule):
         # If we got an answer we should keep it around for a while because it's
         # a real answer and it's not going to change so use the long ttl plus
         # a fudge factor.
-        real_version = versions[0]
+        real_version = versions[0]['version_string']
         self.metrics.incr('lookup', tags=['result:success'])
         self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL)
         return real_version

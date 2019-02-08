@@ -14,7 +14,7 @@ from configman import (
     Namespace,
     RequiredConfig,
 )
-from configman.converters import str_to_list, str_to_python_object
+from configman.converters import str_to_list
 from configman.dotdict import DotDict
 
 from socorro.lib import raven_client
@@ -110,13 +110,6 @@ class Processor2015(RequiredConfig):
 
     required_config = Namespace('transform_rules')
     required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.ConnectionContext',
-        from_string_converter=str_to_python_object,
-        reference_value_from='resource.postgresql',
-    )
-    required_config.add_option(
         'dump_field',
         doc='the default name of a dump',
         default='upload_file_minidump',
@@ -189,6 +182,11 @@ class Processor2015(RequiredConfig):
         'temporary_file_system_storage_path',
         doc='a path where temporary files may be written',
         default=tempfile.gettempdir(),
+    )
+    required_config.add_option(
+        'version_string_api',
+        doc='url for the version string api endpoint in the webapp',
+        default='https://crash-stats.mozilla.com/api/VersionString'
     )
 
     def __init__(self, config, rules=None, quit_check_callback=None):

@@ -4,13 +4,12 @@
 
 import copy
 import json
-import os
 
 from configman.dotdict import DotDict
 from mock import call, Mock, patch
+import requests_mock
 import six
 
-from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.revision_data import get_version
 from socorro.lib.util import dotdict_to_dict
@@ -1242,49 +1241,16 @@ class TestTopMostFilesRule(object):
 
 
 class TestBetaVersionRule(object):
+    API_URL = 'http://example.com/api/VersionString'
+
     def get_config(self):
         config = get_basic_config()
-        config.database_port = os.environ['database_port']
-        config.database_hostname = os.environ['database_hostname']
-        config.database_name = os.environ['database_name']
-        config.database_username = os.environ['database_username']
-        config.database_password = os.environ['database_password']
-        config.database_class = ConnectionContext
+        config.version_string_api = self.API_URL
         return config
 
-    def insert_product_version(self, conn, product, channel, build_id, version_string):
-        cursor = conn.cursor()
-        sql = """
-        INSERT INTO crashstats_productversion
-            (product_name, release_channel, major_version, release_version,
-            version_string, build_id, archive_url)
-        VALUES
-            (%(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
-            %(version_string)s, %(build_id)s, %(archive_url)s)
-        """
-        params = {
-            'product_name': product,
-            'release_channel': channel,
-            'build_id': build_id,
-            'major_version': int(version_string.split('.')[0]),
-            'release_version': version_string.split('.')[0],
-            'version_string': version_string,
-            'archive_url': 'test',
-        }
-        cursor.execute(sql, params)
-        conn.commit()
-
-    def test_beta_channel_known_version(self, db_conn):
+    def test_beta_channel_known_version(self):
         # Beta channel with known version gets converted correctly
         config = self.get_config()
-
-        self.insert_product_version(
-            conn=db_conn,
-            product='Firefox',
-            channel='beta',
-            build_id='20001001101010',
-            version_string='3.0b1'
-        )
 
         raw_crash = {}
         raw_dumps = {}
@@ -1297,7 +1263,15 @@ class TestBetaVersionRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = BetaVersionRule(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with requests_mock.Mocker() as req_mock:
+            req_mock.get(
+                self.API_URL + '?product=Firefox&channel=beta&build_id=20001001101010',
+                json={
+                    'hits': [{'version_string': '3.0b1'}],
+                    'total': 1
+                }
+            )
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '3.0b1'
         assert processor_meta.processor_notes == []
 
@@ -1315,7 +1289,9 @@ class TestBetaVersionRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = BetaVersionRule(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with requests_mock.Mocker():
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
         assert processed_crash['version'] == '2.0'
         assert len(processor_meta.processor_notes) == 0
 
@@ -1333,7 +1309,9 @@ class TestBetaVersionRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = BetaVersionRule(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with requests_mock.Mocker():
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
         assert processed_crash['version'] == '5.0a1'
         assert processor_meta.processor_notes == []
 
@@ -1351,7 +1329,18 @@ class TestBetaVersionRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = BetaVersionRule(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with requests_mock.Mocker() as req_mock:
+            # NOTE(willkg): Is it possible to validate the buildid and
+            # reject it without doing an HTTP round-trip?
+            req_mock.get(
+                self.API_URL + '?product=Firefox&channel=beta&build_id=2",381,,"',
+                json={
+                    'hits': [],
+                    'total': 0
+                }
+            )
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
         assert processed_crash['version'] == '5.0b0'
         assert processor_meta.processor_notes == [
             'release channel is beta but no version data was found - '
@@ -1372,7 +1361,16 @@ class TestBetaVersionRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = BetaVersionRule(config)
-        rule.action(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with requests_mock.Mocker() as req_mock:
+            req_mock.get(
+                self.API_URL + '?product=Firefox&channel=beta&build_id=220000101101011',
+                json={
+                    'hits': [],
+                    'total': 0
+                }
+            )
+            rule.action(raw_crash, raw_dumps, processed_crash, processor_meta)
+
         assert processed_crash['version'] == '3.0.1b0'
         assert processor_meta.processor_notes == [
             'release channel is beta but no version data was found - '
@@ -1381,14 +1379,6 @@ class TestBetaVersionRule(object):
 
     def test_aurora_channel(self, db_conn):
         """Test aurora channel lookup"""
-        self.insert_product_version(
-            conn=db_conn,
-            product='Firefox',
-            channel='aurora',
-            build_id='20001001101010',
-            version_string='3.0b1'
-        )
-
         config = self.get_config()
         raw_crash = {}
         raw_dumps = {}
@@ -1401,7 +1391,15 @@ class TestBetaVersionRule(object):
         processor_meta = get_basic_processor_meta()
 
         rule = BetaVersionRule(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        with requests_mock.Mocker() as req_mock:
+            req_mock.get(
+                self.API_URL + '?product=Firefox&channel=aurora&build_id=20001001101010',
+                json={
+                    'hits': [{'version_string': '3.0b1'}],
+                    'total': 0
+                }
+            )
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash['version'] == '3.0b1'
         assert processor_meta.processor_notes == []
 
