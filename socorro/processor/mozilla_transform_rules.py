@@ -604,6 +604,8 @@ class BetaVersionRule(Rule):
             self.metrics.incr('cache', tags=['result:hit'])
             return self.cache[key]
 
+        self.metrics.incr('cache', tags=['result:miss'])
+
         resp = self.session.get(self.version_string_api, params={
             'product': product,
             'channel': channel,
