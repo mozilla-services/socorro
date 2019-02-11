@@ -60,7 +60,6 @@ from socorro.processor.mozilla_transform_rules import (
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
-    Winsock_LSPRule,
 )
 
 DEFAULT_RULES = [
@@ -84,7 +83,6 @@ DEFAULT_RULES = [
     OutOfMemoryBinaryRule,
     JavaProcessRule,
     MozCrashReasonRule,
-    Winsock_LSPRule,
     # post processing of the processed crash
     CrashingThreadRule,
     CPUInfoRule,
