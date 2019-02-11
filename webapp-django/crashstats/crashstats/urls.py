@@ -22,12 +22,6 @@ urlpatterns = [
         views.robots_txt,
         name='robots_txt'),
 
-    # DEPRECATED(willkg): This endpoint should be deprecated in
-    # favor of the dockerflow /__version__ one
-    url(r'^status/json/$',
-        views.status_json,
-        name='status_json'),
-
     url(r'^report/index/(?P<crash_id>[\w-]+)$',
         views.report_index,
         name='report_index'),
@@ -57,12 +51,7 @@ urlpatterns = [
         views.home,
         name='home'),
 
-    # Dockerflow endpoints
-    url(r'__version__',
-        views.dockerflow_version,
-        name='dockerflow_version'),
-
-    # redirect deceased Advanced Search URL to Super Search
+    # Redirect deceased Advanced Search URL to Super Search
     url(r'^query/$',
         RedirectView.as_view(
             url='/search/',
