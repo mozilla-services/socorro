@@ -4,7 +4,6 @@
 
 import datetime
 import json
-import os
 
 from django import http
 from django.conf import settings
@@ -240,28 +239,6 @@ def report_index(request, crash_id, default_context=None):
         ]
 
     return render(request, 'crashstats/report_index.html', context)
-
-
-def status_json(request):
-    """This is deprecated and should not be used.
-    Use the /api/Status/ endpoint instead.
-    """
-    if settings.DEBUG:
-        raise Exception(
-            'This view is deprecated and should not be accessed. '
-            'The only reason it\'s kept is for legacy reasons.'
-        )
-    return redirect(reverse('api:model_wrapper', args=('Status',)))
-
-
-def dockerflow_version(requst):
-    path = os.path.join(settings.SOCORRO_ROOT, 'version.json')
-    if os.path.exists(path):
-        with open(path, 'r') as fp:
-            data = fp.read()
-    else:
-        data = '{}'
-    return http.HttpResponse(data, content_type='application/json')
 
 
 @pass_default_context

@@ -1693,34 +1693,6 @@ class TestLogin(BaseTestViews):
         assert 'Insufficient Privileges' in smart_text(response.content)
 
 
-class TestDockerflow(object):
-    def test_version_no_file(self, client, settings, tmpdir):
-        """Test with no version.json file"""
-        # The tmpdir definitely doesn't have a version.json in it, so we use
-        # that
-        settings.SOCORRO_ROOT = str(tmpdir)
-
-        resp = client.get(reverse('crashstats:dockerflow_version'))
-        assert resp.status_code == 200
-        assert resp['Content-Type'] == 'application/json'
-        assert smart_text(resp.content) == '{}'
-
-    def test_version_with_file(self, client, settings, tmpdir):
-        """Test with a version.json file"""
-        text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
-
-        # Create the version.json file in the tmpdir
-        version_json = tmpdir.join('version.json')
-        version_json.write(text)
-
-        settings.SOCORRO_ROOT = str(tmpdir)
-
-        resp = client.get(reverse('crashstats:dockerflow_version'))
-        assert resp.status_code == 200
-        assert resp['Content-Type'] == 'application/json'
-        assert smart_text(resp.content) == text
-
-
 class TestProductHomeViews(BaseTestViews):
     def test_product_home(self):
         self.set_product_versions(['20.0', '19.1', '19.0', '18.0'])

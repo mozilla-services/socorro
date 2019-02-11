@@ -30,10 +30,10 @@ urlpatterns = [
     url(r'', include('crashstats.crashstats.urls', namespace='crashstats')),
     url(r'', include('crashstats.supersearch.urls', namespace='supersearch')),
     url(r'', include('crashstats.exploitability.urls', namespace='exploitability')),
+    url(r'', include('crashstats.monitoring.urls', namespace='monitoring')),
     url(r'^signature/', include('crashstats.signature.urls', namespace='signature')),
     url(r'^topcrashers/', include('crashstats.topcrashers.urls', namespace='topcrashers')),
     url(r'^sources/', include('crashstats.sources.urls', namespace='sources')),
-    url(r'^monitoring/', include('crashstats.monitoring.urls', namespace='monitoring')),
     url(r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     url(r'^api/', include('crashstats.api.urls', namespace='api')),
     # redirect all symbols/ requests to Tecken

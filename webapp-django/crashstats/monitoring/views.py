@@ -3,14 +3,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import os
 
 import elasticsearch
 
-from django.shortcuts import render
+from django import http
 from django.conf import settings
-from django.utils import timezone
 from django.contrib.auth.models import Permission
 from django.core.cache import cache
+from django.shortcuts import render
+from django.utils import timezone
 
 from crashstats.crashstats import utils
 from crashstats.cron.models import Job as CronJob
@@ -58,33 +60,65 @@ def crontabber_status(request):
     return context
 
 
+def dockerflow_version(requst):
+    """Dockerflow __version__ endpoint.
+
+    Returns contents of /app/version.json or {}.
+
+    """
+    path = os.path.join(settings.SOCORRO_ROOT, 'version.json')
+    if os.path.exists(path):
+        with open(path, 'r') as fp:
+            data = fp.read()
+    else:
+        data = '{}'
+    return http.HttpResponse(data, content_type='application/json')
+
+
+@utils.json_view
+def dockerflow_heartbeat(request):
+    """Dockerflow endpoint that checks backing services for connectivity.
+
+    Returns HTTP 200 if everything is ok or HTTP 500 on error.
+
+    """
+    # Perform some really basic DB queries.
+    # There will always be permissions created
+    assert Permission.objects.all().count() > 0
+
+    # We should also be able to set and get a cache value
+    cache_key = '__healthcheck__'
+    cache.set(cache_key, 1, 10)
+    assert cache.get(cache_key)
+    cache.delete(cache_key)
+
+    # Do a really basic Elasticsearch query
+    es_settings = (
+        settings.SOCORRO_IMPLEMENTATIONS_CONFIG
+        ['resource']['elasticsearch']
+    )
+    es = elasticsearch.Elasticsearch(
+        hosts=es_settings['elasticsearch_urls']
+    )
+    es.info()  # will raise an error if there's a problem with the cluster
+
+    # Check SuperSearch paginated results
+    assert_supersearch_no_errors()
+    return {'ok': True}
+
+
+@utils.json_view
+def dockerflow_lbheartbeat(request):
+    """Dockerflow endpoint for load balancer checks."""
+    return {'ok': True}
+
+
 @utils.json_view
 def healthcheck(request):
+    """Deprecated healthcheck endpoint."""
     if not request.GET.get('elb') in ('1', 'true'):
-        # Perform some really basic DB queries.
-        # There will always be permissions created
-        assert Permission.objects.all().count() > 0
-
-        # We should also be able to set and get a cache value
-        cache_key = '__healthcheck__'
-        cache.set(cache_key, 1, 10)
-        assert cache.get(cache_key)
-        cache.delete(cache_key)
-
-        # Do a really basic Elasticsearch query
-        es_settings = (
-            settings.SOCORRO_IMPLEMENTATIONS_CONFIG
-            ['resource']['elasticsearch']
-        )
-        es = elasticsearch.Elasticsearch(
-            hosts=es_settings['elasticsearch_urls']
-        )
-        es.info()  # will raise an error if there's a problem with the cluster
-
-        # Check SuperSearch paginated results
-        assert_supersearch_no_errors()
-
-    return {'ok': True}
+        return dockerflow_heartbeat(request)
+    return dockerflow_lbheartbeat(request)
 
 
 def assert_supersearch_no_errors():

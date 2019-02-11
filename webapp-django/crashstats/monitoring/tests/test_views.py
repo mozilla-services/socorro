@@ -110,20 +110,21 @@ class TestCrontabberStatusViews(BaseTestViews):
 
 
 class TestHealthcheckViews(BaseTestViews):
-    def test_healthcheck_elb(self):
-        url = reverse('monitoring:healthcheck')
+    def test_dockerflow_lbheartbeat(self):
+        # Verify __lbheartbeat__ works
+        url = reverse('monitoring:dockerflow_lbheartbeat')
         response = self.client.get(url, {'elb': 'true'})
         assert response.status_code == 200
         assert json.loads(response.content)['ok'] is True
 
-        # This time, ignoring the results, make sure that running
-        # this does not cause any DB queries.
-        self.assertNumQueries(
-            0,
-            self.client.get,
-            url,
-            {'elb': 'true'}
-        )
+        # Verify it doesn't run ay db queries
+        self.assertNumQueries(0, self.client.get, url)
+
+        # Verify deprecated endpoint works
+        url = reverse('monitoring:healthcheck')
+        response = self.client.get(url, {'elb': 'true'})
+        assert response.status_code == 200
+        assert json.loads(response.content)['ok'] is True
 
     @mock.patch('requests.get')
     @mock.patch('crashstats.monitoring.views.elasticsearch')
@@ -151,11 +152,19 @@ class TestHealthcheckViews(BaseTestViews):
 
         rget.side_effect = mocked_requests_get
 
+        # Verify the __heartbeat__ endpoint
+        url = reverse('monitoring:dockerflow_heartbeat')
+        response = self.client.get(url)
+        assert response.status_code == 200
+        assert json.loads(response.content)['ok'] is True
+        assert len(searches) == 1
+
+        # Verify the deprecated healthcheck endpoint
+        searches = []
         url = reverse('monitoring:healthcheck')
         response = self.client.get(url)
         assert response.status_code == 200
         assert json.loads(response.content)['ok'] is True
-
         assert len(searches) == 1
 
     def test_assert_supersearch_errors(self):
@@ -180,3 +189,31 @@ class TestHealthcheckViews(BaseTestViews):
             assert_supersearch_no_errors()
 
         assert len(searches) == 1
+
+
+class TestDockerflow(object):
+    def test_version_no_file(self, client, settings, tmpdir):
+        """Test with no version.json file"""
+        # The tmpdir definitely doesn't have a version.json in it, so we use
+        # that
+        settings.SOCORRO_ROOT = str(tmpdir)
+
+        resp = client.get(reverse('monitoring:dockerflow_version'))
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'application/json'
+        assert smart_text(resp.content) == '{}'
+
+    def test_version_with_file(self, client, settings, tmpdir):
+        """Test with a version.json file"""
+        text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
+
+        # Create the version.json file in the tmpdir
+        version_json = tmpdir.join('version.json')
+        version_json.write(text)
+
+        settings.SOCORRO_ROOT = str(tmpdir)
+
+        resp = client.get(reverse('monitoring:dockerflow_version'))
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'application/json'
+        assert smart_text(resp.content) == text
