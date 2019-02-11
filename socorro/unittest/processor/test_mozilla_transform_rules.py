@@ -34,7 +34,6 @@ from socorro.processor.mozilla_transform_rules import (
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
-    Winsock_LSPRule,
 )
 from socorro.signature.generator import SignatureGenerator
 from socorro.unittest import WHATEVER
@@ -1108,44 +1107,6 @@ class TestFlashVersionRule(object):
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
-
-
-class TestWinsock_LSPRule(object):
-    def test_everything_we_hoped_for(self):
-        config = get_basic_config()
-
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.Winsock_LSP = 'really long string'
-        expected_raw_crash = copy.deepcopy(raw_crash)
-        raw_dumps = {}
-        processed_crash = copy.deepcopy(canonical_processed_crash)
-        processor_meta = get_basic_processor_meta()
-
-        rule = Winsock_LSPRule(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        assert processed_crash.Winsock_LSP == 'really long string'
-
-        # raw_crash should be unchanged
-        assert raw_crash == expected_raw_crash
-
-    def test_missing_key(self):
-        config = get_basic_config()
-
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash.Winsock_LSP
-        expected_raw_crash = copy.deepcopy(raw_crash)
-        raw_dumps = {}
-        processed_crash = copy.deepcopy(canonical_processed_crash)
-        processor_meta = get_basic_processor_meta()
-
-        rule = Winsock_LSPRule(config)
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        assert processed_crash.Winsock_LSP is None
-
-        # raw_crash should be unchanged
-        assert raw_crash == expected_raw_crash
 
 
 class TestTopMostFilesRule(object):

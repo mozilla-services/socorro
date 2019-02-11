@@ -513,11 +513,6 @@ class FlashVersionRule(Rule):
             processed_crash.flash_version = '[blank]'
 
 
-class Winsock_LSPRule(Rule):
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
-
-
 class TopMostFilesRule(Rule):
     """Origninating from Bug 519703, the topmost_filenames was specified as
     singular, there would be only one.  The original programmer, in the
