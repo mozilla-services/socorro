@@ -369,19 +369,22 @@ def get_versions_for_product(product='Firefox', use_cache=True):
     now = timezone.now()
 
     # Find versions for specified product in crash reports reported in the last
-    # 6 months
+    # 6 months and use a big _facets_size so that it picks up versions that
+    # have just been released that don't have many crash reports, yet
     params = {
         'product': product,
         '_results_number': 0,
         '_facets': 'version',
-        '_facets_size': 100,
+        '_facets_size': 1000,
         'date': [
             '>=' + (now - datetime.timedelta(days=VERSIONS_WINDOW_DAYS)).isoformat(),
             '<' + now.isoformat()
         ]
     }
 
-    ret = api.get(**params)
+    # Since we're caching the results of the search plus additional work done,
+    # we don't need to cache the fetch
+    ret = api.get(**params, dont_cache=True)
     if 'facets' not in ret or 'version' not in ret['facets']:
         return []
 
@@ -401,7 +404,7 @@ def get_versions_for_product(product='Firefox', use_cache=True):
 
     if use_cache:
         # Cache value for an hour plus a fudge factor in seconds
-        cache.set(key, versions, (60 * 60) + random.randint(60, 120))
+        cache.set(key, versions, timeout=(60 * 60) + random.randint(60, 120))
 
     return versions
 
