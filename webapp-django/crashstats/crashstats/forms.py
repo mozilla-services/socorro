@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import six
 
 from django import forms
@@ -21,10 +25,6 @@ class BaseModelForm(_BaseForm, forms.ModelForm):
 
 class BaseForm(_BaseForm, forms.Form):
     pass
-
-
-class Html5DateInput(forms.DateInput):
-    input_type = 'date'
 
 
 class BugInfoForm(BaseForm):

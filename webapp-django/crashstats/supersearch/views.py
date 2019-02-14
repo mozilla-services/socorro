@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from collections import defaultdict
 import datetime
 import json
@@ -14,8 +18,8 @@ from django.views.decorators.http import require_POST
 from ratelimit.decorators import ratelimit
 
 from crashstats.api.views import has_permissions
-from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.crashstats import models, utils
+from crashstats.crashstats.utils import render_exception, urlencode_obj
 from crashstats.crashstats.views import pass_default_context
 from crashstats.supersearch import forms
 from crashstats.supersearch.models import Query, SuperSearchFields, SuperSearchUnredacted

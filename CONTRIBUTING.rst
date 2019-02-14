@@ -69,10 +69,16 @@ To run the linter, do::
 If you hit issues, use ``# noqa``.
 
 
+HTML conventions
+================
+
+2-space indentation.
+
+
 Javascript code conventions
 ===========================
 
-4-space indentation.
+2-space indentation.
 
 If in doubt, see https://github.com/mozilla-services/socorro/blob/master/.editorconfig
 

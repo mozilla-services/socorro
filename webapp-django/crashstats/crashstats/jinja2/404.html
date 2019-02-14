@@ -1,0 +1,23 @@
+{% extends "error.html" %}
+
+{% block page_title %}Page Not Found{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+  <div class="page-heading">
+    <h2>Page Not Found</h2>
+  </div>
+  <div class="panel">
+    <div class="title">
+      <h2>The requested page could not be found.</h2>
+    </div>
+    <div class="body">
+      <p>
+        If you followed a dead link on the website, please file an
+        <a class="bugzilla-link" href="https://bugzilla.mozilla.org/enter_bug.cgi?{{ make_query_string(product='Socorro', component='Webapp') }}">issue in Bugzilla</a>
+        describing what happened, and please include the URL for this page.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

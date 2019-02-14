@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en-US" class="production">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block page_title %}Error{% endblock %}</title>
+    {% block site_css %}
+      {% stylesheet 'crashstats_base' %}
+    {% endblock %}
+  </head>
+  <body>
+    <div class="page-header">
+      {% include "header_title.html" %}
+    </div>
+    {% block content %}{% endblock %}
+    <div id="footer" class="page-footer">
+      {% include "footer_nav.html" %}
+    </div>
+    {% block site_js %}
+    {% javascript 'error' %}
+    {% endblock %}
+  </body>
+</html>

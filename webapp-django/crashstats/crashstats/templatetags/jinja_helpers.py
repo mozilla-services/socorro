@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import datetime
 import json
 import re
@@ -6,9 +10,11 @@ from django_jinja import library
 import humanfriendly
 import isodate
 import jinja2
+from libgravatar import Gravatar
 import six
-from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import urlencode, parse_qs
 
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.template import engines
 from django.template.loader import render_to_string
@@ -16,7 +22,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_str
 
-from crashstats.crashstats.utils import parse_isodate
+from crashstats.crashstats.utils import parse_isodate, urlencode_obj
 
 
 @library.global_function
@@ -36,8 +42,26 @@ def digitgroupseparator(number):
 
 
 @library.filter
-def timestamp_to_date(timestamp, format='%Y-%m-%d %H:%M:%S'):
-    """ Python datetime to a time tag with JS Date.parse-parseable format. """
+def buildid_to_date(buildid, fmt='%Y-%m-%d'):
+    """Returns the date portion of the build id"""
+    try:
+        dt = datetime.datetime.strptime(buildid[0:8], '%Y%m%d')
+    except (TypeError, ValueError):
+        return ''
+
+    return jinja2.Markup(
+        '<time datetime="{}" class="jstime" data-format="{}">{}</time>'
+        .format(
+            dt.isoformat(),
+            fmt,
+            dt.strftime(fmt)
+        )
+    )
+
+
+@library.filter
+def timestamp_to_date(timestamp, fmt='%Y-%m-%d %H:%M:%S'):
+    """Python datetime to a time tag with JS Date.parse-parseable format"""
     try:
         timestamp = float(timestamp)
     except (TypeError, ValueError):
@@ -56,8 +80,8 @@ def timestamp_to_date(timestamp, format='%Y-%m-%d %H:%M:%S'):
         '<time datetime="{}" class="jstime" data-format="{}">{}</time>'
         .format(
             dt.isoformat(),
-            format,
-            dt.strftime(format)
+            fmt,
+            dt.strftime(fmt)
         )
     )
 
@@ -74,39 +98,6 @@ def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
             dt.isoformat(),
             future and 'in' or 'ago',
             dt.strftime(format)
-        )
-    )
-
-
-@library.global_function
-def datetime_picker(input_name, default_value):
-    """Return a datetime picker HTML element to be powered by a JS library.
-    """
-    return jinja2.Markup(
-        """
-        <span
-            class="datetime-picker {input_name}"
-            data-wrap="true"
-            data-enable-time="true"
-            data-utc="true"
-            data-time_24hr="true"
-            data-alt-input="true"
-            data-date-format="Y-m-d\\TH:i:S\\Z"
-            data-alt-format="F j, Y - H:i"
-            date-default-date="{default_value}"
-        >
-            <input
-                type="date"
-                name="{input_name}"
-                value="{default_value}"
-                data-input
-            ><a data-toggle><i class="icon-calendar"></i></a>
-        </span>
-        """.format(
-            input_name=input_name,
-            # We need special formatting here because that's the only timezone
-            # format the JS library will correctly parse.
-            default_value=default_value.strftime('%Y-%m-%dT%H:%M:%SZ'),
         )
     )
 
@@ -166,10 +157,12 @@ def show_bug_link(bug_id):
 @library.global_function
 def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
+
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
     # `.startswith(...)` things we do don't raise an AttributeError.
     op_sys = report.get('os_pretty_version') or report['os_name'] or ''
+
     # At the time of writing, these pretty versions of the OS name
     # don't perfectly fit with the drop-down choices that Bugzilla
     # has in its OS drop-down. So we have to make some adjustments.
@@ -198,7 +191,7 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
         # NOTE(willkg): cpu_name is deprecated; switch to just cpu_arch in July 2019
         'rep_platform': report.get('cpu_arch', report['cpu_name']),
         'cf_crash_signature': '[@ {}]'.format(smart_str(report['signature'])),
-        'short_desc': 'Crash in {}'.format(smart_str(report['signature'])),
+        'short_desc': 'Crash in [@ {}]'.format(smart_str(report['signature'])),
         'comment': comment,
     }
 
@@ -360,3 +353,124 @@ def show_filesize(bytes, unit='bytes'):
 @library.global_function
 def booleanish_to_boolean(value):
     return str(value).lower() in ('1', 'true', 'yes')
+
+
+@library.global_function
+def url(viewname, *args, **kwargs):
+    """Makes it possible to construct URLs from templates.
+
+    Because this function is used by taking user input, (e.g. query
+    string values), we have to sanitize the values.
+    """
+    def clean_argument(s):
+        if isinstance(s, six.string_types):
+            # First remove all proper control characters like '\n',
+            # '\r' or '\t'.
+            s = ''.join(c for c in s if ord(c) >= 32)
+            # Then, if any '\' left (it might have started as '\\nn')
+            # remove those too.
+            while '\\' in s:
+                s = s.replace('\\', '')
+            return s
+        return s
+
+    args = [clean_argument(x) for x in args]
+    kwargs = dict((x, clean_argument(y)) for x, y in kwargs.items())
+
+    return reverse(viewname, args=args, kwargs=kwargs)
+
+
+@library.global_function
+def static(path):
+    return staticfiles_storage.url(path)
+
+
+@library.global_function
+@jinja2.contextfunction
+def change_query_string(context, **kwargs):
+    """
+    Template function for modifying the current URL by parameters.
+    You use it like this in a template:
+
+        <a href={{ change_query_string(foo='bar') }}>
+
+    And it takes the current request's URL (and query string) and modifies it
+    just by the parameters you pass in. So if the current URL is
+    `/page/?day=1` the output of this will become:
+
+        <a href=/page?day=1&foo=bar>
+
+    You can also pass lists like this:
+
+        <a href={{ change_query_string(thing=['bar','foo']) }}>
+
+    And you get this output:
+
+        <a href=/page?day=1&thing=bar&thing=foo>
+
+    And if you want to remove a parameter you can explicitely pass it `None`.
+    Like this for example:
+
+        <a href={{ change_query_string(day=None) }}>
+
+    And you get this output:
+
+        <a href=/page>
+
+    """
+    if kwargs.get('_no_base'):
+        kwargs.pop('_no_base')
+        base = ''
+    else:
+        base = context['request'].META['PATH_INFO']
+    qs = parse_qs(context['request'].META['QUERY_STRING'])
+    for key, value in kwargs.items():
+        if value is None:
+            # delete the parameter
+            if key in qs:
+                del qs[key]
+        else:
+            # change it
+            qs[key] = value
+    new_qs = urlencode(qs, True)
+
+    # We don't like + as the encoding character for spaces. %20 is better.
+    new_qs = new_qs.replace('+', '%20')
+    if new_qs:
+        return '%s?%s' % (base, new_qs)
+    return base
+
+
+@library.global_function
+def make_query_string(**kwargs):
+    return urlencode_obj(kwargs)
+
+
+@library.global_function
+def is_dangerous_cpu(cpu_arch, cpu_info):
+    if not cpu_info:
+        return False
+
+    # These models are known to cause lots of crashes, we want to mark them
+    # for ease of find by users.
+    return (
+        cpu_info.startswith('AuthenticAMD family 20 model 1') or
+        cpu_info.startswith('AuthenticAMD family 20 model 2') or
+        (cpu_arch == 'amd64' and cpu_info.startswith('family 20 model 1')) or
+        (cpu_arch == 'amd64' and cpu_info.startswith('family 20 model 2'))
+    )
+
+
+@library.global_function
+def filter_featured_versions(product_versions):
+    return [pv for pv in product_versions if pv['is_featured']]
+
+
+@library.global_function
+def filter_not_featured_versions(product_versions):
+    return [pv for pv in product_versions if not pv['is_featured']]
+
+
+@library.global_function
+def gravatar_url(email, **kwargs):
+    return Gravatar(email).get_image(use_ssl=True, **kwargs)

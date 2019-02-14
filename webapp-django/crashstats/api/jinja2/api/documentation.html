@@ -14,144 +14,149 @@
 
 {% block main_content %}
 <div class="panel">
-    <div class="body">
-        <p class="tokens-callout">
-            You current have <a href="{{ url('tokens:home') }}">{{ count_tokens }} active API Token{{ count_tokens|pluralize }}</a>.
-        </p>
-        <p>
-            These API endpoints are publicly available. The parameters to some endpoints are non-trivial as some might require deeper understanding of the Soccoro backend.
-        </p>
-        <p>
-            <b>Note:</b> The API does depend on <a href="{{ url('profile:profile') }}">your permissions</a> and if you include an <a href="{{ url('tokens:home') }}">API Token</a> with your requests.
-            <br> Some endpoints' accessibility depend entirely on your permissions and use of API Tokens.
-        </p>
-    </div>
+  <div class="body">
+    <p class="tokens-callout">
+      You currently have
+      <a href="{{ url('tokens:home') }}">{{ count_tokens }} active API Token {{ count_tokens|pluralize }}</a>.
+    </p>
+    <p>
+      These API endpoints are publicly available. The parameters to some
+      endpoints are non-trivial as some might require deeper understanding of
+      the Soccoro backend.
+    </p>
+    <p>
+      <b>Note:</b> The API does depend on
+      <a href="{{ url('profile:profile') }}">your permissions</a> and if you
+      include an <a href="{{ url('tokens:home') }}">API Token</a> with your
+      requests.
+      <br>
+      Some endpoints' accessibility depend entirely on your permissions and
+      use of API Tokens.
+    </p>
+  </div>
 </div>
 
 <div class="panel">
-    <div class="title"><h2>Contents</h2></div>
-    <div class="body">
-        <ul>
-            {% for endpoint in endpoints %}
-            <li><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a>{% if endpoint.deprecation_warning %} (DEPRECATED){% endif %}</li>
-            {% endfor %}
-        </ul>
-    </div>
+  <div class="title"><h2>Contents</h2></div>
+  <div class="body">
+    <ul>
+      {% for endpoint in endpoints %}
+        <li><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a>{% if endpoint.deprecation_warning %} (DEPRECATED){% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 
 {% for endpoint in endpoints %}
 <div class="panel" id="{{ endpoint.name }}">
-    <div class="title">
-        <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
-        {% if endpoint.required_permissions %}
-        <p class="required-permission">
-            Only available if used with an <b>API Token</b> associated with {% for permission in endpoint.required_permissions %}
-            <b>{{ permission }}</b> {% if not loop.last %} and {% endif %} {% endfor %} permission.
+  <div class="title">
+    <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
+    {% if endpoint.required_permissions %}
+      <p class="required-permission">
+        Only available if used with an <b>API Token</b> associated with {% for permission in endpoint.required_permissions %}
+        <b>{{ permission }}</b> {% if not loop.last %} and {% endif %} {% endfor %} permission.
+      </p>
+    {% endif %}
+  </div>
+  <div class="body">
+    <form class="testdrive" data-methods="{{ endpoint.methods | to_json }}" {% if endpoint.methods == ['GET'] %}data-no-csrf{% endif %}>
+      <p class="url">
+        <b>{{ ' | '.join(endpoint.methods) }}</b>
+        <code>{{ base_url }}{{ endpoint.url }}</code>
+      </p>
+
+      {% if endpoint.deprecation_warning %}
+        <p class="deprecation-warning">Deprecation Warning</p>
+        <pre class="deprecation-warning">{{ endpoint.deprecation_warning }}</pre>
+      {% endif %}
+
+      {% if endpoint.help_text %}
+        <p class="helptext">{{ endpoint.help_text }}</p>
+      {% endif %}
+
+      {% if endpoint.parameters %}
+        <table class="data-table vertical">
+          <thead>
+            <tr>
+              <th class="fixed" scope="col">Parameter key</th>
+              <th class="fixed" scope="col">Required?</th>
+              <th class="fixed" scope="col">Type</th>
+              <th class="fixed" scope="col">Default</th>
+              <th>Test drive</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for parameter in endpoint.parameters %}
+              <tr>
+                <td class="fixed">
+                  <b>{{ parameter.name }}</b>
+                </td>
+                <td class="fixed">
+                  {% if parameter.required %}Required {% else %}Optional {% endif %}
+                </td>
+                <td class="fixed">
+                  {{ describe_friendly_type(parameter['type']) }}
+                </td>
+                <td class="fixed">
+                  {% set default_val = endpoint['defaults'].get(parameter['name'], '') %}
+                  {% if default_val %}
+                    <code>{{ default_val }}</code>
+                  {% endif %}
+                </td>
+                <td>
+                  {{ make_test_input(parameter, endpoint['defaults']) }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>
+          <em>Takes no parameters</em>
         </p>
-        {% endif %}
-    </div>
-    <div class="body">
-        <form class="testdrive" data-methods="{{ endpoint.methods | to_json }}" {% if endpoint.methods == ['GET'] %}data-no-csrf{% endif %}>
-            <p class="url">
-                <b>{{ ' | '.join(endpoint.methods) }}</b>
-                <code>{{ base_url }}{{ endpoint.url }}</code>
-            </p>
+      {% endif %}
 
-            {% if endpoint.deprecation_warning %}
-            <p class="deprecation-warning">Deprecation Warning</p>
-            <pre class="deprecation-warning">{{ endpoint.deprecation_warning }}</pre>
-            {% endif %}
+      <!-- for starting a test drive -->
+      <div class="run-test">
+        <button type="submit">Run Test Drive!</button>
+        <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Loading..." class="loading-ajax">
+        <button type="button" class="close">&times; Close</button>
+      </div>
 
-            {% if endpoint.help_text %}
-            <p class="helptext">{{ endpoint.help_text }}</p>
-            {% endif %}
-
-            {% if endpoint.parameters %}
-            <table class="data-table vertical">
-                <thead>
-                    <tr>
-                        <th class="fixed" scope="col">Parameter key</th>
-                        <th class="fixed" scope="col">Required?</th>
-                        <th class="fixed" scope="col">Type</th>
-                        <th class="fixed" scope="col">Default</th>
-                        <th>Test drive</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for parameter in endpoint.parameters %}
-                    <tr>
-                        <td class="fixed">
-                            <b>{{ parameter.name }}</b>
-                        </td>
-                        <td class="fixed">
-                            {% if parameter.required %}Required {% else %}Optional {% endif %}
-                        </td>
-                        <td class="fixed">
-                            {{ describe_friendly_type(parameter['type']) }}
-                        </td>
-                        <td class="fixed">
-                            {% set default_val = endpoint['defaults'].get(parameter['name'], '') %}
-                            {% if default_val %}
-                            <code>{{ default_val }}</code>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {{ make_test_input(parameter, endpoint['defaults']) }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p>
-                <em>Takes no parameters</em>
-            </p>
-            {% endif %}
-
-            <!-- for starting a test drive -->
-            <div class="run-test">
-                <button type="submit">Run Test Drive!</button>
-                <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Loading..." class="loading-ajax">
-                <button type="button" class="close">&times; Close</button>
-            </div>
-
-            <div class="test-drive">
-                <p class="status-error">
-                    An error happened on the server when trying this URL.
-                </p>
-                <p class="used-url">
-                    <b>Using</b>
-                    <br>
-                    <a href="">
-                        <code></code>
-                    </a>
-                </p>
-                <p class="used-data">
-                    <b>Data</b>
-                    <br>
-                    <code></code>
-                </p>
-                <p class="status">
-                    Status
-                    <code></code>
-                </p>
-                <p>
-                    <b>Output:</b>
-                </p>
-                <pre></pre>
-                <span class="binary-response-warning">
-                    Looks like this is binary output!
-                    <a href="#" class="show">See it anyway?</a>
-                    <a href="#" class="open">Download the content?</a>
-                </span>
-                <p class="response-size">
-                    <b>Size:</b>
-                    <code></code>
-                </p>
-
-            </div>
-        </form>
-    </div>
+      <div class="test-drive">
+        <p class="status-error">
+          An error happened on the server when trying this URL.
+        </p>
+        <p class="used-url">
+          <b>Using</b>
+          <br>
+          <a href=""><code></code></a>
+        </p>
+        <p class="used-data">
+          <b>Data</b>
+          <br>
+          <code></code>
+        </p>
+        <p class="status">
+          Status
+          <code></code>
+        </p>
+        <p>
+          <b>Output:</b>
+        </p>
+        <pre></pre>
+        <span class="binary-response-warning">
+          Looks like this is binary output!
+          <a href="#" class="show">See it anyway?</a>
+          <a href="#" class="open">Download the content?</a>
+        </span>
+        <p class="response-size">
+          <b>Size:</b>
+          <code></code>
+        </p>
+      </div>
+    </form>
+  </div>
 </div>
 {% endfor %}
 {% endblock %}

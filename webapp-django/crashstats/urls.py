@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 
 from django.conf import settings
@@ -7,13 +11,13 @@ from django.views.generic.base import RedirectView
 from django.views.static import serve
 
 from crashstats.manage import admin_site
-from crashstats.base.monkeypatches import patch
+from crashstats.crashstats.monkeypatches import patch
 
 
 patch()
 
-handler500 = 'crashstats.base.views.handler500'
-handler404 = 'crashstats.base.views.handler404'
+handler500 = 'crashstats.crashstats.views.handler500'
+handler404 = 'crashstats.crashstats.views.handler404'
 
 
 urlpatterns = [
@@ -21,16 +25,15 @@ urlpatterns = [
         'document_root': os.path.join(settings.ROOT, '..'),
     }),
     url(r'^(?P<path>favicon\.ico)$', serve, {
-        'document_root': os.path.join(settings.ROOT, 'crashstats', 'base', 'static', 'img'),
+        'document_root': os.path.join(settings.ROOT, 'crashstats', 'crashstats', 'static', 'img'),
     }),
     url(r'', include('crashstats.crashstats.urls', namespace='crashstats')),
     url(r'', include('crashstats.supersearch.urls', namespace='supersearch')),
     url(r'', include('crashstats.exploitability.urls', namespace='exploitability')),
-    url(r'', include('crashstats.graphics.urls', namespace='graphics')),
+    url(r'', include('crashstats.monitoring.urls', namespace='monitoring')),
     url(r'^signature/', include('crashstats.signature.urls', namespace='signature')),
     url(r'^topcrashers/', include('crashstats.topcrashers.urls', namespace='topcrashers')),
     url(r'^sources/', include('crashstats.sources.urls', namespace='sources')),
-    url(r'^monitoring/', include('crashstats.monitoring.urls', namespace='monitoring')),
     url(r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     url(r'^api/', include('crashstats.api.urls', namespace='api')),
     # redirect all symbols/ requests to Tecken

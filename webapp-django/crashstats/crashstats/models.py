@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """
 Remember! Every new model you introduce here automatically gets exposed
 in the public API in the `api` app.
@@ -541,7 +545,7 @@ class SocorroMiddleware(SocorroCommon):
             value = kwargs.get(name)
 
             # 0 is a perfectly fine value, it should not be considered "falsy".
-            if not value and value is not 0 and value is not False:
+            if not value and value != 0 and value is not False:
                 if param['required']:
                     raise RequiredParameterError(name)
                 continue
@@ -1002,6 +1006,66 @@ class SignatureFirstDate(SocorroMiddleware):
         return {
             'hits': hits,
             'total': len(hits)
+        }
+
+
+class VersionString(SocorroMiddleware):
+    # NOTE(willkg): This is implemented with a Django model.
+
+    # Set to a short cache time because it's just a db lookup. Making it non-0
+    # is to prevent the stampeding herd on this endpoint alone when exposed in
+    # the API.
+    cache_seconds = 2 * 60  # 2 minutes only
+
+    required_params = (
+        'product',
+        'channel',
+        'build_id',
+    )
+
+    HELP_TEXT = """
+    API used by Socorro processor for looking up beta and rc version strings
+    for (product, channel, build_id) combination.
+    """
+
+    API_WHITELIST = {
+        'hits': (
+            'version_string',
+        )
+    }
+
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
+
+        versions = list(
+            ProductVersion.objects
+            .filter(
+                product_name=params['product'],
+                release_channel=params['channel'].lower(),
+                build_id=params['build_id'],
+            )
+            .values_list('version_string', flat=True)
+        )
+
+        if versions:
+            if params['channel'].lower() in ('aurora', 'beta'):
+                if 'b' in versions[0]:
+                    # If we're looking at betas which have a "b" in the
+                    # versions, then ignore "rc" versions because they didn't
+                    # get released
+                    versions = [version for version in versions if 'rc' not in version]
+
+                else:
+                    # If we're looking at non-betas, then only return "rc"
+                    # versions because this crash report is in the beta channel
+                    # and not the release channel
+                    versions = [version for version in versions if 'rc' in version]
+
+        versions = [{'version_string': vers} for vers in versions]
+
+        return {
+            'hits': versions,
+            'total': len(versions)
         }
 
 

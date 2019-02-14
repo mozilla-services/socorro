@@ -1,64 +1,60 @@
 {% extends "crashstats_base.html" %}
 {% block page_title %}Search - Mozilla Crash Reports{% endblock %}
 
-
 {% block content %}
-<div id="mainbody"
-    class="custom-search"
-    data-elasticsearch-indices="{{ elasticsearch_indices | to_json }}"
->
+  <div id="mainbody"
+       class="custom-search"
+       data-elasticsearch-indices="{{ elasticsearch_indices | to_json }}"
+  >
     <div class="page-heading">
-        <h2>Super Search</h2>
-
-        <nav>
-            <ul class="options">
-                <li><a href="{{ url('supersearch:search') }}">Search by fields</a></li>
-                <li><a href="{{ url('supersearch:search_custom') }}" class="selected">Custom query</a></li>
-            </ul>
-        </nav>
+      <h2>Super Search</h2>
+      <nav>
+        <ul class="options">
+          <li><a href="{{ url('supersearch:search') }}">Search by fields</a></li>
+          <li><a href="{{ url('supersearch:search_custom') }}" class="selected">Custom query</a></li>
+        </ul>
+      </nav>
     </div>
 
     <section id="search-form">
-        <form method="post" action=""
+      <form method="post" action=""
             data-results-url="{{ url('supersearch:search_query') }}"
-        >
-            {% csrf_token %}
-            <div class="form-controls">
-                <button type="submit" id="search-button">Search</button>
-            </div>
-
-            <div id="editor">{% if query %}{{ query }}{% endif %}</div>
-
-            <fieldset class="options">
-                <p>elasticsearch indices to query. Schema is socorroYYYYWW. Use <kbd>ALL</kbd> to query all existing indices (not recommended).</p>
-                <input type="text" id="search_indices" name="search_indices" value="{{ indices }}">
-            </fieldset>
-        </form>
+      >
+        {% csrf_token %}
+        <div class="form-controls">
+          <button type="submit" id="search-button">Search</button>
+        </div>
+        <div id="editor">{% if query %}{{ query }}{% endif %}</div>
+        <fieldset class="options">
+          <p>
+            Elasticsearch indices to query. Schema is socorroYYYYWW. Use
+            <kbd>ALL</kbd> to query all existing indices (not recommended).
+          </p>
+          <input type="text" id="search_indices" name="search_indices" value="{{ indices }}">
+        </fieldset>
+      </form>
     </section>
 
     <div class="panel">
-        <div class="title">
-            <h2>Search results</h2>
-        </div>
-
-        <div class="body" id="search_results">
-            <p>Run a search to get some results. </p>
-        </div>
+      <div class="title">
+        <h2>Search results</h2>
+      </div>
+      <div class="body" id="search_results">
+        <p>Run a search to get some results. </p>
+      </div>
     </div>
-</div>
+  </div>
 {% endblock %}
-
 
 {% block site_css %}
-    {{ super() }}
-    {% stylesheet 'select2' %}
-    {% stylesheet 'search' %}
+  {{ super() }}
+  {% stylesheet 'select2' %}
+  {% stylesheet 'search' %}
 {% endblock %}
 
-
 {% block site_js %}
-    {{ super() }}
+  {{ super() }}
 
-    {% javascript 'select2' %}
-    {% javascript 'search_custom' %}
+  {% javascript 'select2' %}
+  {% javascript 'search_custom' %}
 {% endblock %}

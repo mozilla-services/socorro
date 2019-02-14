@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import functools
 import math
 
@@ -9,10 +13,10 @@ from django.urls import reverse
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
-from crashstats.base.utils import SignatureStats, render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
+from crashstats.crashstats.utils import SignatureStats, render_exception, urlencode_obj
 from crashstats.supersearch.utils import get_date_boundaries
 
 from crashstats.supersearch.models import (
@@ -35,11 +39,22 @@ DEFAULT_COLUMNS = (
     'reason',
     'address',
     'install_time',
+    'startup_crash',
 )
 
 DEFAULT_SORT = (
     '-date',
 )
+
+# These products are supported by correlations. Looking at the signature report
+# and filtering on other products will not show the correlations tab.
+#
+# NOTE(willkg): To add support for another product, you have to add a url
+# to crashstats/static/crashstats/js/socorro/correlations.js getDataURL.
+CORRELATIONS_PRODUCTS = [
+    'Firefox',
+    'FennecAndroid'
+]
 
 
 def pass_validated_params(view):
@@ -97,6 +112,8 @@ def signature_report(request, params, default_context=None):
 
     context['channels'] = ','.join(settings.CHANNELS).split(',')
     context['channel'] = settings.CHANNEL
+
+    context['correlations_products'] = CORRELATIONS_PRODUCTS
 
     # Compute dates to show them to the user.
     start_date, end_date = get_date_boundaries(params)

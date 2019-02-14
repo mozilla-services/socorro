@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import six
 
 
@@ -20,10 +24,6 @@ NPM_FILE_PATTERNS = {
         'themes/base/sortable.css',
         'themes/base/datepicker.css',
         'themes/base/tabs.css',
-    ],
-    'flatpickr': [
-        'dist/themes/dark.css',
-        'dist/flatpickr.min.js',
     ],
     'Select2': [
         'select2.css',
@@ -81,7 +81,6 @@ NPM_FILE_PATTERNS = {
 PIPELINE_CSS = {
     'search': {
         'source_filenames': (
-            'flatpickr/dist/themes/dark.css',
             'supersearch/css/search.less',
         ),
         'output_filename': 'css/search.min.css',
@@ -208,7 +207,6 @@ PIPELINE_CSS = {
 PIPELINE_JS = {
     'date_filters': {
         'source_filenames': (
-            'flatpickr/dist/flatpickr.min.js',
             'supersearch/js/socorro/date_filters.js',
         ),
         'output_filename': 'js/date-filters.min.js',

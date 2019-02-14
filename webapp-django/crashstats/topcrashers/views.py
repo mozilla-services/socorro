@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import datetime
 from collections import defaultdict
 
@@ -10,12 +14,12 @@ from six import text_type
 
 from session_csrf import anonymous_csrf
 
-from crashstats.base.utils import get_comparison_signatures, SignatureStats
 from crashstats.crashstats import models
 from crashstats.crashstats.decorators import (
     check_days_parameter,
     pass_default_context,
 )
+from crashstats.crashstats.utils import get_comparison_signatures, SignatureStats
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.utils import get_date_boundaries
 from crashstats.topcrashers.forms import TopCrashersForm

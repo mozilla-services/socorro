@@ -20,6 +20,7 @@ import logging.handlers
 import functools
 import signal
 import os
+import socket
 import sys
 import threading
 
@@ -249,38 +250,80 @@ def setup_logger(config, local_unused, args_unused):
     logging_root_level = config.logging.root_level
     logging_format = config.logging.format_string
 
+    # FIXME(willkg): we should check config for a friendly host name and
+    # degrade to socket.gethostname()
+    host_id = socket.gethostname()
+
+    class AddHostID(logging.Filter):
+        def filter(self, record):
+            record.host_id = host_id
+            return True
+
     logging_config = {
         'version': 1,
         'disable_existing_loggers': False,
+        'filters': {
+            'add_hostid': {
+                '()': AddHostID
+            },
+        },
         'formatters': {
             'socorroapp': {
                 'format': logging_format
-            }
+            },
+            'mozlog': {
+                '()': 'dockerflow.logging.JsonLogFormatter',
+                'logger_name': 'socorro'
+            },
         },
         'handlers': {
             'console': {
                 'class': 'logging.StreamHandler',
                 'formatter': 'socorroapp',
             },
+            'mozlog': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'mozlog',
+                'filters': ['add_hostid']
+            },
         },
-        'loggers': {
+    }
+
+    if os.environ.get('LOCAL_DEV_ENV') == 'True':
+        # In a local development environment, we don't want to see mozlog
+        # format at all, but we do want to see markus things and py.warnings.
+        # So set the logging up that way.
+        logging_config['loggers'] = {
             'py.warnings': {
                 'handlers': ['console'],
-            },
-            'socorro': {
-                'handlers': ['console'],
-                'level': logging_level,
             },
             'markus': {
                 'handlers': ['console'],
                 'level': logging.INFO,
             },
+            'socorro': {
+                'handlers': ['console'],
+                'level': logging_level,
+            },
             app_name: {
                 'handlers': ['console'],
                 'level': logging_level,
             },
-        },
-    }
+        }
+
+    else:
+        # In a server environment, we want to use mozlog format.
+        logging_config['loggers'] = {
+            'socorro': {
+                'handlers': ['mozlog'],
+                'level': logging_level,
+            },
+            app_name: {
+                'handlers': ['mozlog'],
+                'level': logging_level,
+            },
+        }
 
     # If the user is setting the root level to something below or equal to
     # logging level, then we want to stop propagating some loggers. This only

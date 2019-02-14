@@ -1,8 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 # This is your project's main settings file that can be committed to your
 # repo. If you need to override a setting locally, use .env or environment
 # variables.
 
+import logging
 import os
+import socket
 
 from decouple import config, Csv
 import dj_database_url
@@ -73,17 +79,13 @@ INSTALLED_APPS = (
     'django.contrib.admin.apps.SimpleAdminConfig',
     'mozilla_django_oidc',
 
-    # Application base, containing global templates.
-    'crashstats.base',
-
-    # Other Socorro apps.
+    # Socorro apps
     'crashstats.crashstats',
     'crashstats.api',
     'crashstats.authentication',
     'crashstats.cron',
     'crashstats.documentation',
     'crashstats.exploitability',
-    'crashstats.graphics',
     'crashstats.manage',
     'crashstats.monitoring',
     'crashstats.profile',
@@ -147,7 +149,7 @@ _CONTEXT_PROCESSORS = (
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
     'django.template.context_processors.request',
-    'crashstats.base.context_processors.settings',
+    'crashstats.crashstats.context_processors.settings',
     'crashstats.status.context_processors.status_message',
 )
 
@@ -195,36 +197,93 @@ ANON_ALWAYS = True
 
 LOGGING_LEVEL = config('LOGGING_LEVEL', 'INFO')
 
+host_id = socket.gethostname()
+
+
+class AddHostID(logging.Filter):
+    def filter(self, record):
+        record.host_id = host_id
+        return True
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'add_hostid': {
+            '()': AddHostID
+        },
+    },
     'handlers': {
         'console': {
             'level': LOGGING_LEVEL,
             'class': 'logging.StreamHandler',
+            'formatter': 'socorroapp',
+        },
+        'mozlog': {
+            'level': LOGGING_LEVEL,
+            'class': 'logging.StreamHandler',
+            'formatter': 'mozlog',
+            'filters': ['add_hostid']
         },
     },
-    'loggers': {
+    'formatters': {
+        'socorroapp': {
+            'format': '%(asctime)s %(levelname)s - %(name)s - %(message)s',
+        },
+        'mozlog': {
+            '()': 'dockerflow.logging.JsonLogFormatter',
+            'logger_name': 'socorro'
+        },
+    },
+}
+
+if LOCAL_DEV_ENV:
+    # In a local development environment, we don't want to see mozlog
+    # format at all, but we do want to see markus things and py.warnings.
+    # So set the logging up that way.
+    LOGGING['loggers'] = {
         'django': {
+            'handlers': ['console'],
+            'level': LOGGING_LEVEL,
+        },
+        'django.server': {
             'handlers': ['console'],
             'level': LOGGING_LEVEL,
         },
         'django.request': {
             'handlers': ['console'],
+            'level': LOGGING_LEVEL,
         },
         'py.warnings': {
             'handlers': ['console'],
+            'level': LOGGING_LEVEL,
         },
         'markus': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': LOGGING_LEVEL,
         },
         'crashstats': {
             'handlers': ['console'],
             'level': LOGGING_LEVEL,
         }
     }
-}
+else:
+    # In a server environment, we want to use mozlog format.
+    LOGGING['loggers'] = {
+        'django': {
+            'handlers': ['mozlog'],
+            'level': LOGGING_LEVEL,
+        },
+        'django.server': {
+            'handlers': ['mozlog'],
+            'level': LOGGING_LEVEL,
+        },
+        'crashstats': {
+            'handlers': ['mozlog'],
+            'level': LOGGING_LEVEL,
+        }
+    }
 
 # Some products have a different name in bugzilla and Socorro.
 BUG_PRODUCT_MAP = {
@@ -326,6 +385,9 @@ ENGAGE_ROBOTS = False
 
 # Base URL for when we use the Bugzilla API
 BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'
+
+# Base URL for Buildhub
+BUILDHUB_BASE_URL = 'https://mozilla-services.github.io/buildhub/'
 
 # The index schema used in our elasticsearch databases, used in the
 # Super Search Custom Query page.
@@ -432,7 +494,7 @@ STATICFILES_FINDERS = (
     'npm.finders.NpmFinder',
     'pipeline.finders.PipelineFinder',
     # Make sure this comes last!
-    'crashstats.base.finders.LeftoverPipelineFinder',
+    'crashstats.crashstats.finders.LeftoverPipelineFinder',
 )
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'

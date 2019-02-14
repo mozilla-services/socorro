@@ -3,33 +3,30 @@ $(function() {
    * Interface to deal with the date filters in the Search form.
    *
    * Initializes the fields to have a nice date picker UI, then exposes:
-   *  - get(key = enum['to', 'from']) -> Date object
-   *  - set(key = enum['to', 'from'], value = Date object) -> void
+   *  - getDate(key = enum['to', 'from']) -> Date object
+   *  - setDate(key = enum['to', 'from'], value = Date object) -> void
    *  - setDates(dates = Array of strings) -> void
    *  - getDates() -> Array of strings
    */
   window.DateFilters = (function() {
     var filters = {
-      from: $('.datetime-picker.date_from').flatpickr({
-        onChange: function(dateObjs) {
-          removeSelectedShortcut();
-          filters.to.set('minDate', dateObjs[0]);
-        },
-      }),
-      to: $('.datetime-picker.date_to').flatpickr({
-        onChange: function(dateObjs) {
-          removeSelectedShortcut();
-          filters.from.set('maxDate', dateObjs[0]);
-        },
-      }),
+      fromDate: $('.date-filters > div.date-from > input[type="date"]'),
+      fromTime: $('.date-filters > div.date-from > input[type="time"]'),
+      toDate: $('.date-filters > div.date-to > input[type="date"]'),
+      toTime: $('.date-filters > div.date-to > input[type="time"]'),
     };
 
     function setDate(key, value) {
-      filters[key].setDate(value, true);
+      value = moment(value).utc();
+      filters[key + 'Date'].val(value.format('YYYY-MM-DD'));
+      filters[key + 'Time'].val(value.format('HH:mm'));
     }
 
     function getDate(key) {
-      return moment(filters[key].input.value)
+      // Take the date and time values and mush them together into a string for
+      // easier conversion
+      var d = filters[key + 'Date'].val() + 'T' + filters[key + 'Time'].val() + 'Z';
+      return moment(d)
         .utc()
         .toDate();
     }
@@ -38,22 +35,42 @@ $(function() {
       $('.date-shortcuts a').removeClass('selected');
     }
 
-    // Limit filters based on the other filter's value.
-    filters.to.set('minDate', getDate('from'));
-    filters.from.set('maxDate', getDate('to'));
-
     // Enable the date filters range shortcuts.
     $('.date-shortcuts').on('click', 'a', function(e) {
       e.preventDefault();
       var thisElt = $(this);
 
       var range = thisElt.data('range');
+      var toDate, fromDate;
+
+      if (range === 'dayends') {
+        // "dayends" takes the dates and moves the "from" date to the beginning
+        // of the day and the "to" date to the end of the day
+        fromDate = getDate('from');
+        fromDate.setUTCHours(0);
+        fromDate.setUTCMinutes(0);
+        fromDate.setUTCSeconds(0);
+        setDate('from', fromDate);
+
+        toDate = getDate('to');
+        toDate.setUTCHours(23);
+        toDate.setUTCMinutes(59);
+        toDate.setUTCSeconds(59);
+        setDate('to', toDate);
+
+        return;
+      }
+
       var value = parseInt(range.slice(0, -1));
       var unit = range.slice(-1);
-      var toDate = moment()
+
+      // Start with "now" which is a Javascript Date object in the local
+      // timezone, convert to utc, and then converts to a Date.
+      var now = new Date();
+      toDate = moment(now)
         .utc()
         .toDate();
-      var fromDate = moment()
+      fromDate = moment(now)
         .utc()
         .subtract(value, unit)
         .toDate();
@@ -61,9 +78,8 @@ $(function() {
       setDate('to', toDate);
       setDate('from', fromDate);
 
-      // The selected shortcut will be de-selected by the change trigger
-      // on the date filters. We thus re-select the correct one after
-      // everything else is done.
+      // Update the selected shortcut
+      removeSelectedShortcut();
       thisElt.addClass('selected');
     });
 

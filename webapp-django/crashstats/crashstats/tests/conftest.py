@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import copy
 import json
 
@@ -9,9 +13,9 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 
-from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats.models import Product
 from crashstats.crashstats.signals import PERMISSIONS
+from crashstats.crashstats.tests.testbase import DjangoTestCase
 from crashstats.supersearch.models import SuperSearchFields
 from socorro.external.es.super_search_fields import FIELDS
 

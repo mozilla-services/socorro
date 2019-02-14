@@ -1,6 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import datetime
 import json
-import os
 
 from django import http
 from django.conf import settings
@@ -238,28 +241,6 @@ def report_index(request, crash_id, default_context=None):
     return render(request, 'crashstats/report_index.html', context)
 
 
-def status_json(request):
-    """This is deprecated and should not be used.
-    Use the /api/Status/ endpoint instead.
-    """
-    if settings.DEBUG:
-        raise Exception(
-            'This view is deprecated and should not be accessed. '
-            'The only reason it\'s kept is for legacy reasons.'
-        )
-    return redirect(reverse('api:model_wrapper', args=('Status',)))
-
-
-def dockerflow_version(requst):
-    path = os.path.join(settings.SOCORRO_ROOT, 'version.json')
-    if os.path.exists(path):
-        with open(path, 'r') as fp:
-            data = fp.read()
-    else:
-        data = '{}'
-    return http.HttpResponse(data, content_type='application/json')
-
-
 @pass_default_context
 def login(request, default_context=None):
     context = default_context or {}
@@ -368,3 +349,31 @@ def product_home(request, product, default_context=None):
         context['versions'] = []
 
     return render(request, 'crashstats/product_home.html', context)
+
+
+def handler500(request, template_name='500.html'):
+    if getattr(request, '_json_view', False):
+        # Every view with the `utils.json_view` decorator sets,
+        # on the request object, that it wants to eventually return
+        # a JSON output. Let's re-use that fact here.
+        return http.JsonResponse({
+            'error': 'Internal Server Error',
+            'path': request.path,
+            'query_string': request.META.get('QUERY_STRING'),
+        }, status=500)
+    context = {}
+    return render(request, '500.html', context, status=500)
+
+
+def handler404(request, exception, template_name='404.html'):
+    if getattr(request, '_json_view', False):
+        # Every view with the `utils.json_view` decorator sets,
+        # on the request object, that it wants to eventually return
+        # a JSON output. Let's re-use that fact here.
+        return http.JsonResponse({
+            'error': 'Page not found',
+            'path': request.path,
+            'query_string': request.META.get('QUERY_STRING'),
+        }, status=404)
+    context = {}
+    return render(request, '404.html', context, status=404)

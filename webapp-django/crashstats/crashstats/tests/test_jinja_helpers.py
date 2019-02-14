@@ -1,20 +1,29 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import datetime
 import time
 
 from six.moves.urllib.parse import quote_plus, parse_qs, urlparse
 
 from django.core.cache import cache
+from django.test.client import RequestFactory
+from django.urls import reverse
 from django.utils.safestring import SafeText
 
 from crashstats.crashstats.templatetags.jinja_helpers import (
     bugzilla_submit_url,
+    change_query_string,
     digitgroupseparator,
+    is_dangerous_cpu,
     replace_bugzilla_links,
     show_bug_link,
     show_duration,
     show_filesize,
     time_tag,
     timestamp_to_date,
+    url,
 )
 
 
@@ -161,7 +170,7 @@ class TestBugzillaSubmitURL(object):
         assert qs['format'] == ['__default__']
         assert qs['product'] == ['Plugin']
         assert qs['rep_platform'] == ['x86']
-        assert qs['short_desc'] == ['Crash in $&#;deadbeef']
+        assert qs['short_desc'] == ['Crash in [@ $&#;deadbeef]']
         assert qs['keywords'] == ['crash']
         assert qs['op_sys'] == ['Windows']
         assert qs['bug_severity'] == ['critical']
@@ -245,7 +254,7 @@ class TestBugzillaSubmitURL(object):
         )
         url = bugzilla_submit_url(report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, 'Core')
         # Most important that it should work
-        assert 'Crash+in+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing' in url
+        assert 'Crash+in+%5B%40+YouTube%E2%84%A2+No+Buffer+%28Stop+Auto-playing%29%5D' in url
 
     def test_comment(self):
         report = self._create_report()
@@ -498,3 +507,94 @@ class TestHumanizers(object):
 
         html = show_filesize('junk')
         assert html == 'junk'
+
+
+class TestChangeURL(object):
+    def test_root_url_no_query_string(self):
+        context = {}
+        context['request'] = RequestFactory().get('/')
+        result = change_query_string(context)
+        assert result == '/'
+
+    def test_with_path_no_query_string(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/')
+        result = change_query_string(context)
+        assert result == '/page/'
+
+    def test_with_query_string(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/?foo=bar&bar=baz')
+        result = change_query_string(context)
+        assert result == '/page/?foo=bar&bar=baz'
+
+    def test_add_query_string(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/')
+        result = change_query_string(context, foo='bar')
+        assert result == '/page/?foo=bar'
+
+    def test_change_query_string(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/?foo=bar')
+        result = change_query_string(context, foo='else')
+        assert result == '/page/?foo=else'
+
+    def test_remove_query_string(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/?foo=bar')
+        result = change_query_string(context, foo=None)
+        assert result == '/page/'
+
+    def test_remove_leave_some(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/?foo=bar&other=thing')
+        result = change_query_string(context, foo=None)
+        assert result == '/page/?other=thing'
+
+    def test_change_query_without_base(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/?foo=bar')
+        result = change_query_string(context, foo='else', _no_base=True)
+        assert result == '?foo=else'
+
+
+class TestURL(object):
+    def test_basic(self):
+        output = url('crashstats:login')
+        assert output == reverse('crashstats:login')
+
+        # now with a arg
+        output = url('crashstats:product_home', 'Firefox')
+        assert output == reverse('crashstats:product_home', args=('Firefox',))
+
+        # now with a kwarg
+        output = url('crashstats:product_home', product='Waterfox')
+        assert output == reverse('crashstats:product_home', args=('Waterfox',))
+
+    def test_arg_cleanup(self):
+        output = url('crashstats:product_home', 'Firefox\n')
+        assert output == reverse('crashstats:product_home', args=('Firefox',))
+
+        output = url('crashstats:product_home', product='\tWaterfox')
+        assert output == reverse('crashstats:product_home', args=('Waterfox',))
+
+        # this is something we've seen in the "wild"
+        output = url('crashstats:product_home', u'Winterfox\\\\nn')
+        assert output == reverse('crashstats:product_home', args=('Winterfoxnn',))
+
+        # check that it works if left as a byte string too
+        output = url('crashstats:product_home', 'Winterfox\\\\nn')
+        assert output == reverse('crashstats:product_home', args=('Winterfoxnn',))
+
+
+class TestIsDangerousCPU(object):
+    def test_false(self):
+        assert is_dangerous_cpu(None, None) is False
+        assert is_dangerous_cpu(None, 'family 20 model 1') is False
+
+    def test_true(self):
+        assert is_dangerous_cpu(None, 'AuthenticAMD family 20 model 1') is True
+        assert is_dangerous_cpu(None, 'AuthenticAMD family 20 model 2') is True
+        assert is_dangerous_cpu('amd64', 'family 20 model 1') is True
+        assert is_dangerous_cpu('amd64', 'family 20 model 2') is True

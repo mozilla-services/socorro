@@ -1,10 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import datetime
 
 from django.utils import timezone
 from django.contrib.auth.models import User, Permission, Group
 from django.conf import settings
 
-from crashstats.base.tests.testbase import DjangoTestCase
+from crashstats.crashstats.tests.testbase import DjangoTestCase
 from crashstats.tokens import models
 
 

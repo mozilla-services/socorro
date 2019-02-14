@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import copy
 import json
 import re
@@ -156,7 +160,7 @@ SAMPLE_SIGNATURE_SUMMARY = {
 }
 
 
-class RobotsTestViews(object):
+class TestRobotsTxt(object):
     def test_robots_txt(self, settings, client):
         settings.ENGAGE_ROBOTS = True
         url = '/robots.txt'
@@ -175,7 +179,7 @@ class RobotsTestViews(object):
         assert 'Disallow: /' in smart_text(response.content)
 
 
-class FaviconTestViews(object):
+class TestFavicon(object):
     def test_favicon(self, client):
         response = client.get('/favicon.ico')
         assert response.status_code == 200
@@ -187,17 +191,8 @@ class FaviconTestViews(object):
         assert response['Content-Type'] in expected
 
 
-class TestViews(BaseTestViews):
-    def test_contribute_json(self):
-        response = self.client.get('/contribute.json')
-        assert response.status_code == 200
-        # Should be valid JSON, but it's a streaming content because
-        # it comes from django.views.static.serve
-        data = ''.join([smart_text(part) for part in response.streaming_content])
-        assert json.loads(data)
-        assert response['Content-Type'] == 'application/json'
-
-    def test_handler500(self):
+class Test500(object):
+    def test_html(self):
         root_urlconf = __import__(
             settings.ROOT_URLCONF,
             globals(),
@@ -227,7 +222,7 @@ class TestViews(BaseTestViews):
             assert 'Internal Server Error' in smart_text(response.content)
             assert 'id="products_select"' not in smart_text(response.content)
 
-    def test_handler500_json(self):
+    def test_json(self):
         root_urlconf = __import__(
             settings.ROOT_URLCONF,
             globals(),
@@ -256,15 +251,17 @@ class TestViews(BaseTestViews):
             assert result['path'] == '/'
             assert result['query_string'] is None
 
-    def test_handler404(self):
-        response = self.client.get('/fillbert/mcpicklepants')
+
+class Test404(object):
+    def test_handler404(self, client):
+        response = client.get('/fillbert/mcpicklepants')
         assert response.status_code == 404
         assert 'The requested page could not be found.' in smart_text(response.content)
 
-    def test_handler404_json(self):
+    def test_handler404_json(self, client):
         # Just need any view that has the json_view decorator on it.
         url = reverse('api:model_wrapper', args=('Unknown',))
-        response = self.client.get(url, {'foo': 'bar'})
+        response = client.get(url, {'foo': 'bar'})
         assert response.status_code == 404
         assert response['Content-Type'] == 'application/json'
         result = json.loads(response.content)
@@ -272,6 +269,19 @@ class TestViews(BaseTestViews):
         assert result['path'] == url
         assert result['query_string'] == 'foo=bar'
 
+
+class TestContributeJson(object):
+    def test_view(self, client):
+        response = client.get('/contribute.json')
+        assert response.status_code == 200
+        # Should be valid JSON, but it's a streaming content because
+        # it comes from django.views.static.serve
+        data = ''.join([smart_text(part) for part in response.streaming_content])
+        assert json.loads(data)
+        assert response['Content-Type'] == 'application/json'
+
+
+class TestViews(BaseTestViews):
     @mock.patch('requests.Session')
     def test_buginfo(self, rsession):
         url = reverse('crashstats:buginfo')
@@ -899,6 +909,96 @@ class TestViews(BaseTestViews):
         assert 'Thread 0' in smart_text(response.content)
         assert 'Thread 1' in smart_text(response.content)
         assert 'Thread 2' in smart_text(response.content)
+
+    def test_report_index_crashing_thread_table(self):
+        json_dump = {
+            'crash_info': {
+                'crashing_thread': 0,
+            },
+            'status': 'OK',
+            'threads': [
+                {
+                    'frame_count': 0,
+                    'frames': [
+                        {
+                            "frame": 0,
+                            "file": "hg:hg.mozilla.org/000",
+                            "function": "js::something",
+                            "function_offset": "0x00",
+                            "line": 1000,
+                            "module": "xul.dll",
+                            "module_offset": "0x000000",
+                            "offset": "0x00000000",
+                            "registers": {
+                                "eax": "0x00000001",
+                                "ebp": "0x00000002",
+                                "ebx": "0x00000003",
+                                "ecx": "0x00000004",
+                                "edi": "0x00000005",
+                                "edx": "0x00000006",
+                                "efl": "0x00000007",
+                                "eip": "0x00000008",
+                                "esi": "0x00000009",
+                                "esp": "0x0000000a"
+                            },
+                            "trust": "context"
+                        },
+                        {
+                            "frame": 1,
+                            "file": "hg:hg.mozilla.org/bbb",
+                            "function": "js::somethingelse",
+                            "function_offset": "0xbb",
+                            "line": 1001,
+                            "module": "xul.dll",
+                            "module_offset": "0xbbbbbb",
+                            "offset": "0xbbbbbbbb",
+                            "trust": "frame_pointer"
+                        },
+                        {
+                            "file": "hg:hg.mozilla.org/ccc",
+                            "frame": 2,
+                            "function": "js::thirdthing",
+                            "function_offset": "0xcc",
+                            "line": 1002,
+                            "module": "xul.dll",
+                            "module_offset": "0xcccccc",
+                            "offset": "0xcccccccc",
+                            "trust": "frame_pointer"
+                        },
+                    ]
+                },
+            ],
+            'modules': [],
+        }
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                crash['signature'] = 'shutdownhang | foo::bar()'
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # Make sure the "trust" parts show up in the page
+        assert 'context' in smart_text(response.content)
+        assert 'frame_pointer' in smart_text(response.content)
 
     def test_report_index_with_telemetry_environment(self):
         def mocked_raw_crash_get(**params):
@@ -1565,6 +1665,8 @@ class TestViews(BaseTestViews):
         assert response['Content-Type'] == 'application/octet-stream'
         assert 'binary stuff' in smart_text(response.content)
 
+
+class TestLogin(BaseTestViews):
     def test_login_required(self):
         url = reverse('exploitability:report')
         response = self.client.get(url)
@@ -1589,41 +1691,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         assert 'Login Required' not in smart_text(response.content)
         assert 'Insufficient Privileges' in smart_text(response.content)
-
-    def test_about_throttling(self):
-        # the old url used to NOT have a trailing slash
-        response = self.client.get('/about/throttling', follow=False)
-        assert response.status_code == 301
-        expected = reverse('crashstats:about_throttling')
-        assert response.url == expected
-
-
-class TestDockerflow(object):
-    def test_version_no_file(self, client, settings, tmpdir):
-        """Test with no version.json file"""
-        # The tmpdir definitely doesn't have a version.json in it, so we use
-        # that
-        settings.SOCORRO_ROOT = str(tmpdir)
-
-        resp = client.get(reverse('crashstats:dockerflow_version'))
-        assert resp.status_code == 200
-        assert resp['Content-Type'] == 'application/json'
-        assert smart_text(resp.content) == '{}'
-
-    def test_version_with_file(self, client, settings, tmpdir):
-        """Test with a version.json file"""
-        text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
-
-        # Create the version.json file in the tmpdir
-        version_json = tmpdir.join('version.json')
-        version_json.write(text)
-
-        settings.SOCORRO_ROOT = str(tmpdir)
-
-        resp = client.get(reverse('crashstats:dockerflow_version'))
-        assert resp.status_code == 200
-        assert resp['Content-Type'] == 'application/json'
-        assert smart_text(resp.content) == text
 
 
 class TestProductHomeViews(BaseTestViews):

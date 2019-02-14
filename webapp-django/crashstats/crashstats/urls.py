@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from django.conf import settings
 from django.conf.urls import url
 from django.views.generic import RedirectView
@@ -17,12 +21,6 @@ urlpatterns = [
     url(r'^robots\.txt$',
         views.robots_txt,
         name='robots_txt'),
-
-    # DEPRECATED(willkg): This endpoint should be deprecated in
-    # favor of the dockerflow /__version__ one
-    url(r'^status/json/$',
-        views.status_json,
-        name='status_json'),
 
     url(r'^report/index/(?P<crash_id>[\w-]+)$',
         views.report_index,
@@ -53,36 +51,11 @@ urlpatterns = [
         views.home,
         name='home'),
 
-    # Dockerflow endpoints
-    url(r'__version__',
-        views.dockerflow_version,
-        name='dockerflow_version'),
-
-    # redirect deceased Advanced Search URL to Super Search
+    # Redirect deceased Advanced Search URL to Super Search
     url(r'^query/$',
         RedirectView.as_view(
             url='/search/',
             query_string=True,
-            permanent=True
-        )),
-
-    # redirect deceased Report List URL to Signature report
-    url(r'^report/list$',
-        RedirectView.as_view(
-            pattern_name='signature:signature_report',
-            query_string=True,
-            permanent=True
-        )),
-
-    # redirect deceased Daily Crashes URL to Mission Control
-    url(r'^daily$',
-        RedirectView.as_view(
-            url="https://missioncontrol.telemetry.mozilla.org/#/",
-            permanent=True
-        )),
-    url(r'^crashes-per-day/$',
-        RedirectView.as_view(
-            url="https://missioncontrol.telemetry.mozilla.org/#/",
             permanent=True
         )),
 

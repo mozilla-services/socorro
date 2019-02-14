@@ -6,238 +6,234 @@
 
 {% extends "crashstats_base.html" %}
 {% block site_css %}
-    {{ super() }}
+  {{ super() }}
 
-    {% stylesheet 'tablesorter' %}
-    {% stylesheet 'topcrashers' %}
-    {% stylesheet 'bugzilla' %}
+  {% stylesheet 'tablesorter' %}
+  {% stylesheet 'topcrashers' %}
+  {% stylesheet 'bugzilla' %}
 {% endblock %}
 
 {% block site_js %}
-    {{ super() }}
-    {% javascript 'tablesorter' %}
-    {% javascript 'bugzilla' %}
-    {% javascript 'topcrashers' %}
+  {{ super() }}
+  {% javascript 'tablesorter' %}
+  {% javascript 'bugzilla' %}
+  {% javascript 'topcrashers' %}
 {% endblock %}
 
 {% block page_title %}
-Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
+  Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
 {% endblock %}
 
 {% block content %}
-    <div id="mainbody">
-        <div class="page-heading">
-            <h2>
-                Top Crashers for <span id="current-product">{{ product }}</span>
-                <span id="current-version">{{ ', '.join(query.versions) }}</span>
-            </h2>
+  <div id="mainbody">
+    <div class="page-heading">
+      <h2>
+        Top Crashers for <span id="current-product">{{ product }}</span>
+        <span id="current-version">{{ ', '.join(query.versions) }}</span>
+      </h2>
+    </div>
+
+    <div class="panel">
+      <div class="body">
+
+        {% if total_crashing_signatures %}
+          <div>
+            Top {{ total_crashing_signatures }} Crashing Signatures.
+            {{ query.start_date | time_tag }} through
+            {{ query.end_date | time_tag }}.
+            <p>
+              The report covers <span class="percentage">{{ number_of_crashes }} ({{ total_percentage | round(2) }}%)</span> of all {{ total_number_of_crashes }} crashes during this period.
+            </p>
+          </div>
+        {% endif %}
+
+        <div class="tc-filters-block">
+          <ul class="tc-filter">
+            <li class="tc-selector-heading">Report Date:</li>
+            <li>
+              <a href="{{ change_query_string(_tcbs_mode=None) }}"
+                 {% if query.mode == 'realtime' %} class="selected"{% endif %}
+              >Most Recent</a>
+            </li>
+            <li>
+              <a href="{{ change_query_string(_tcbs_mode='byday') }}"
+                 {% if query.mode == 'byday' %} class="selected"{% endif %}
+              >By Day</a>
+            </li>
+          </ul>
+          <ul class="tc-filter">
+            <li class="tc-selector-heading">Range Type:</li>
+            <li>
+              <a href="{{ change_query_string(_range_type=None) }}"
+                 {% if query.range_type == 'report' %} class="selected"{% endif %}
+              >By Report Date</a>
+            </li>
+            <li>
+              <a href="{{ change_query_string(_range_type='build') }}"
+                 {% if query.range_type == 'build' %} class="selected"{% endif %}
+              >By Build Date</a>
+            </li>
+          </ul>
         </div>
 
-        <div class="panel">
-        <div class="body">
+        <ul class="tc-duration-type tc-filter">
+          <li class="tc-selector-heading">Type:</li>
+          {% for c, label in process_type_values %}
+            <li>
+              <a href="{{ change_query_string(process_type=c) }}" {% if crash_type == c %} class="selected" {% endif %}>
+                {{ label }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+        <ul class="tc-duration-days tc-filter">
+          <li class="tc-selector-heading">Days:</li>
+          {% for day in possible_days %}
+            <li><a href="{{ change_query_string(days=day) }}" {% if days == day %} class="selected" {% endif %}>{{ day }}</a></li>
+          {% endfor %}
+        </ul>
+        <ul class="tc-per-platform tc-filter">
+          <li class="tc-selector-heading">OS:</li>
+          <li><a href="{{ change_query_string(platform=None) }}" {% if not os_name %} class="selected" {% endif %}>All</a></li>
+          {% for os in platform_values %}
+            <li><a href="{{ change_query_string(platform=os) }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
+          {% endfor %}
+        </ul>
+        <ul class="tc-result-count tc-filter">
+          <li class="tc-selector-heading">Result Count:</li>
+          {% for res_count in result_counts %}
+            <li><a href="{{ change_query_string(_facets_size=res_count) }}" {% if result_count == res_count %} class="selected" {% endif %}>{{ res_count }}</a></li>
+          {% endfor %}
+        </ul>
 
-            {% if total_crashing_signatures %}
-            <div>
-                Top {{ total_crashing_signatures }} Crashing Signatures.
-                {{ query.start_date | time_tag }} through
-                {{ query.end_date | time_tag }}.
-                <p>The report covers <span class="percentage">{{ number_of_crashes }} ({{ total_percentage | round(2) }}%)</span> of all {{ total_number_of_crashes }} crashes during this period. </p>
-            </div>
-            {% endif %}
-
-            <div class="tc-filters-block">
-                <ul class="tc-filter">
-                    <li class="tc-selector-heading">Report Date:</li>
-                    <li>
-                        <a
-                            href="{{ change_query_string(_tcbs_mode=None) }}"
-                            {% if query.mode == 'realtime' %} class="selected"{% endif %}
-                        >Most Recent</a>
-                    </li>
-                    <li>
-                        <a
-                            href="{{ change_query_string(_tcbs_mode='byday') }}"
-                            {% if query.mode == 'byday' %} class="selected"{% endif %}
-                        >By Day</a>
-                    </li>
-                </ul>
-                <ul class="tc-filter">
-                    <li class="tc-selector-heading">Range Type:</li>
-                    <li>
-                        <a
-                            href="{{ change_query_string(_range_type=None) }}"
-                            {% if query.range_type == 'report' %} class="selected"{% endif %}
-                        >By Report Date</a>
-                    </li>
-                    <li>
-                        <a
-                            href="{{ change_query_string(_range_type='build') }}"
-                            {% if query.range_type == 'build' %} class="selected"{% endif %}
-                        >By Build Date</a>
-                    </li>
-                </ul>
-            </div>
-
-            <ul class="tc-duration-type tc-filter">
-                <li class="tc-selector-heading">Type:</li>
-                {% for c, label in process_type_values %}
-                <li>
-                    <a href="{{ change_query_string(process_type=c) }}" {% if crash_type == c %} class="selected" {% endif %} >
-                        {{ label }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-            <ul class="tc-duration-days tc-filter">
-                <li class="tc-selector-heading">Days:</li>
-                {% for day in possible_days %}
-                <li><a href="{{ change_query_string(days=day) }}" {% if days == day %} class="selected" {% endif %}>{{ day }}</a></li>
-                {% endfor %}
-            </ul>
-            <ul class="tc-per-platform tc-filter">
-                <li class="tc-selector-heading">OS:</li>
-                <li><a href="{{ change_query_string(platform=None) }}" {% if not os_name %} class="selected" {% endif %}>All</a></li>
-                {% for os in platform_values %}
-                <li><a href="{{ change_query_string(platform=os) }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
-                {% endfor %}
-            </ul>
-            <ul class="tc-result-count tc-filter">
-                <li class="tc-selector-heading">Result Count:</li>
-                {% for res_count in result_counts %}
-                <li><a href="{{ change_query_string(_facets_size=res_count) }}" {% if result_count == res_count %} class="selected" {% endif %}>{{ res_count }}</a></li>
-                {% endfor %}
-            </ul>
-
-            {% if total_crashing_signatures %}
-            <table id="{% if not os_name %}signature-list{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
-                <thead>
-                    <tr>
-                        <th scope="col">Rank</th>
-                        <th title="The percentage of crashes against overall crash volume" scope="col">%</th>
-                        <th title="The change in percentage since the {{ query.start_date }} report" scope="col">Diff</th>
-                        <th scope="col">Signature</th>
-                        {% if not os_name %}
-                        <th title="Crashes across platforms" scope="col">Count</th>
-                        <th title="Number of crashes on Windows" scope="col">Win</th>
-                        <th title="Number of crashes on Mac OS" scope="col">Mac</th>
-                        <th title="Number of crashes on Linux" scope="col">Lin</th>
-                        {% else %}
-                        <th title="Number of crashes on {{ os_name }}" scope="col">{{ os_name }}</th>
-                        {% endif %}
-                        <th title="Number of distinct install times (approximation)" scope="col">Installs</th>
-                        <th title="Number of crashes happening during garbage collection" scope="col">Is GC</th>
-                        <th title="First appearance date of the signature" scope="col">First Appearance</th>
-                        <th class="bugzilla_numbers" scope="col">Bugzilla IDs</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for topcrashers_stats_item in topcrashers_stats %}
-                    <tr>
-                        <td class="rank">
-                            {{ topcrashers_stats_item.rank }}
-                            {% if topcrashers_stats_item.rank_diff != 'new'
-                               and topcrashers_stats_item.rank_diff >= 5
-                               or topcrashers_stats_item.rank_diff <= -5 %}
-                            <span {% if topcrashers_stats_item.rank_diff > 1 %} class="moving-up" {% elif topcrashers_stats_item.rank_diff < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ query.start_date }} report">{{ topcrashers_stats_item.rank_diff }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ topcrashers_stats_item.percent_of_total_crashes | round(2) }}%</td>
-                        {% if topcrashers_stats_item.percent_of_total_crashes_diff == 'new' %}
-                        <td title="This is a new signature">new</td>
-                        {% else %}
-                        <td title="A change of {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}% from {{ topcrashers_stats_item.previous_percent_of_total_crashes | round(2) }}%">
-                            {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}%
-                        </td>
-                        {% endif %}
-                        <td class="signature-column">
-                            <a class="signature"
-                                href="{{ url('signature:signature_report') }}?{{ make_query_string(
+        {% if total_crashing_signatures %}
+          <table id="{% if not os_name %}signature-list{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th title="The percentage of crashes against overall crash volume" scope="col">%</th>
+                <th title="The change in percentage since the {{ query.start_date }} report" scope="col">Diff</th>
+                <th scope="col">Signature</th>
+                {% if not os_name %}
+                  <th title="Crashes across platforms" scope="col">Count</th>
+                  <th title="Number of crashes on Windows" scope="col">Win</th>
+                  <th title="Number of crashes on Mac OS" scope="col">Mac</th>
+                  <th title="Number of crashes on Linux" scope="col">Lin</th>
+                {% else %}
+                  <th title="Number of crashes on {{ os_name }}" scope="col">{{ os_name }}</th>
+                {% endif %}
+                <th title="Number of distinct install times (approximation)" scope="col">Installs</th>
+                <th title="Number of crashes happening during garbage collection" scope="col">Is GC</th>
+                <th title="First appearance date of the signature" scope="col">First Appearance</th>
+                <th class="bugzilla_numbers" scope="col">Bugzilla IDs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for topcrashers_stats_item in topcrashers_stats %}
+                <tr>
+                  <td class="rank">
+                    {{ topcrashers_stats_item.rank }}
+                    {% if topcrashers_stats_item.rank_diff != 'new'
+                       and topcrashers_stats_item.rank_diff >= 5
+                       or topcrashers_stats_item.rank_diff <= -5 %}
+                      <span {% if topcrashers_stats_item.rank_diff > 1 %} class="moving-up" {% elif topcrashers_stats_item.rank_diff < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ query.start_date }} report">{{ topcrashers_stats_item.rank_diff }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ topcrashers_stats_item.percent_of_total_crashes | round(2) }}%</td>
+                  {% if topcrashers_stats_item.percent_of_total_crashes_diff == 'new' %}
+                    <td title="This is a new signature">new</td>
+                  {% else %}
+                    <td title="A change of {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}% from {{ topcrashers_stats_item.previous_percent_of_total_crashes | round(2) }}%">
+                      {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}%
+                    </td>
+                  {% endif %}
+                  <td class="signature-column">
+                    <a class="signature"
+                       href="{{ url('signature:signature_report') }}?{{ make_query_string(
                                     product=product,
                                     signature=topcrashers_stats_item.signature_term,
                                     version=version,
                                     date=['<' + query.end_date.isoformat(), '>=' + query.start_date.isoformat()],
-                                ) }}" title="{{ topcrashers_stats_item.signature_term }}"
-                            >
-                                {{ topcrashers_stats_item.signature_term }}
-                            </a>
-                            <div class="sig-history-container hide">
-                                <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ topcrashers_stats_item.signature_term }}" />
-                            </div>
-                            <div class="signature-icons">
-                                {% if topcrashers_stats_item.is_startup_crash %}
-                                {{ startup_crash_icon() }}
-                                {% endif %}
+                       ) }}"
+                       title="{{ topcrashers_stats_item.signature_term }}"
+                    >
+                      {{ topcrashers_stats_item.signature_term }}
+                    </a>
+                    <div class="sig-history-container hide">
+                      <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ topcrashers_stats_item.signature_term }}" />
+                    </div>
+                    <div class="signature-icons">
+                      {% if topcrashers_stats_item.is_startup_crash %}
+                        {{ startup_crash_icon() }}
+                      {% endif %}
 
-                                {% if topcrashers_stats_item.is_potential_startup_crash %}
-                                {{ potential_startup_crash_icon(
-                                    num_startup_crashes=topcrashers_stats_item.num_startup_crashes,
-                                    num_crashes=topcrashers_stats_item.num_crashes,
-                                ) }}
-                                {% endif %}
+                      {% if topcrashers_stats_item.is_potential_startup_crash %}
+                        {{ potential_startup_crash_icon(num_startup_crashes=topcrashers_stats_item.num_startup_crashes, num_crashes=topcrashers_stats_item.num_crashes) }}
+                      {% endif %}
 
-                                {% if topcrashers_stats_item.is_startup_window_crash %}
-                                {{ potential_startup_window_crash_icon() }}
-                                {% endif %}
+                      {% if topcrashers_stats_item.is_startup_window_crash %}
+                        {{ potential_startup_window_crash_icon() }}
+                      {% endif %}
 
-                                {% if topcrashers_stats_item.is_hang_crash %}
-                                {{ hang_crash_icon() }}
-                                {% endif %}
+                      {% if topcrashers_stats_item.is_hang_crash %}
+                        {{ hang_crash_icon() }}
+                      {% endif %}
 
-                                {% if topcrashers_stats_item.is_plugin_crash %}
-                                {{ plugin_crash_icon() }}
-                                {% else %}
-                                {{ browser_crash_icon() }}
-                                {% endif %}
-                            </div>
-                        </td>
-                        {% if not os_name %}
-                        <td>{{ topcrashers_stats_item.num_crashes }}</td>
-                        <td>{{ topcrashers_stats_item.num_crashes_per_platform.win_count }}</td>
-                        <td>{{ topcrashers_stats_item.num_crashes_per_platform.mac_count }}</td>
-                        <td>{{ topcrashers_stats_item.num_crashes_per_platform.lin_count }}</td>
-                        {% elif os_name == 'Windows' %}
-                        <td>{{ topcrashers_stats_item.win_count }}</td>
-                        {% elif os_name == 'Linux' %}
-                        <td>{{ topcrashers_stats_item.lin_count }}</td>
-                        {% elif os_name == 'Mac OS X' %}
-                        <td>{{ topcrashers_stats_item.mac_count }}</td>
-                        {% endif %}
-                        <td>{{ topcrashers_stats_item.num_installs }}</td>
-                        <td>{{ topcrashers_stats_item.num_crashes_in_garbage_collection }}</td>
-                        {% if topcrashers_stats_item.first_report %}
-                        <td title="This crash signature first appeared at {{ topcrashers_stats_item.first_report }}" >
-                            <time datetime="{{ topcrashers_stats_item.first_report }}">
-                                {{ topcrashers_stats_item.first_report.date() }}
-                            </time>
-                        </td>
-                        {% else %}
-                        <td title="No known first appearance date">-</td>
-                        {% endif %}
-                        <td class="bug_ids_more">
-                            {% for bug in topcrashers_stats_item.bugs %}
-                            {{ show_bug_link(bug) }}
-                            {% endfor %}
-                                <div class="bug_ids_expanded_list">
-                                <h3>Bugs for <code>{{ topcrashers_stats_item.signature_term }}</code></h3>
-                                <ul class="bug_ids_expanded full_bug_ids popup">
-                                    {% for bug in topcrashers_stats_item.bugs %}
-                                    <li>{{ show_bug_link(bug) }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p class="no-results">
-                No crashing signatures found for the period
-                {{ query.start_date | time_tag }} to
-                {{ query.end_date | time_tag }}.
-            </p>
-            {% endif %}
-        </div>
-        </div>
+                      {% if topcrashers_stats_item.is_plugin_crash %}
+                        {{ plugin_crash_icon() }}
+                      {% else %}
+                        {{ browser_crash_icon() }}
+                      {% endif %}
+                    </div>
+                  </td>
+                  {% if not os_name %}
+                    <td>{{ topcrashers_stats_item.num_crashes }}</td>
+                    <td>{{ topcrashers_stats_item.num_crashes_per_platform.win_count }}</td>
+                    <td>{{ topcrashers_stats_item.num_crashes_per_platform.mac_count }}</td>
+                    <td>{{ topcrashers_stats_item.num_crashes_per_platform.lin_count }}</td>
+                  {% elif os_name == 'Windows' %}
+                    <td>{{ topcrashers_stats_item.win_count }}</td>
+                  {% elif os_name == 'Linux' %}
+                    <td>{{ topcrashers_stats_item.lin_count }}</td>
+                  {% elif os_name == 'Mac OS X' %}
+                    <td>{{ topcrashers_stats_item.mac_count }}</td>
+                  {% endif %}
+                  <td>{{ topcrashers_stats_item.num_installs }}</td>
+                  <td>{{ topcrashers_stats_item.num_crashes_in_garbage_collection }}</td>
+                  {% if topcrashers_stats_item.first_report %}
+                    <td title="This crash signature first appeared at {{ topcrashers_stats_item.first_report }}" >
+                      <time datetime="{{ topcrashers_stats_item.first_report }}">
+                        {{ topcrashers_stats_item.first_report.date() }}
+                      </time>
+                    </td>
+                  {% else %}
+                    <td title="No known first appearance date">-</td>
+                  {% endif %}
+                  <td class="bug_ids_more">
+                    {% for bug in topcrashers_stats_item.bugs %}
+                      {{ show_bug_link(bug) }}
+                    {% endfor %}
+                    <div class="bug_ids_expanded_list">
+                      <h3>Bugs for <code>{{ topcrashers_stats_item.signature_term }}</code></h3>
+                      <ul class="bug_ids_expanded full_bug_ids popup">
+                        {% for bug in topcrashers_stats_item.bugs %}
+                          <li>{{ show_bug_link(bug) }}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="no-results">
+            No crashing signatures found for the period
+            {{ query.start_date | time_tag }} to
+            {{ query.end_date | time_tag }}.
+          </p>
+        {% endif %}
+      </div>
     </div>
+  </div>
 {% endblock %}

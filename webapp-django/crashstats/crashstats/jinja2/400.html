@@ -1,0 +1,40 @@
+{% extends "error.html" %}
+
+{% block page_title %}Bad Request{% endblock %}
+
+{% block site_css %}
+{{ super() }}
+<style type="text/css">
+ul.errorlist li {
+  list-style: unset;
+  margin-left: 30px;
+}
+.body p {
+  color: red;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+  <div class="page-heading">
+    <h2>Bad Request</h2>
+  </div>
+  <div class="panel">
+    <div class="title">
+      <h2>The request's parameters could not be understood.</h2>
+    </div>
+    <div class="body">
+      {% if 'ul class="errorlist"' in error %}
+        {{ error | safe }}
+      {% else %}
+        <p>
+          Error Message:
+        </p>
+        <pre>{{ error }}
+        </pre>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
