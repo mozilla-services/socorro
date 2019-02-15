@@ -20,7 +20,7 @@ cd "${SRCDIR}"
 # Build breakpad from source; takes about 2 minutes
 PREFIX="${SRCDIR}/breakpad/" SKIP_TAR=1 "${SRCDIR}/scripts/build-breakpad.sh"
 
-# Copy breakpad bits into stackwalk/
+# Copy breakpad bits into stackwalk/ to compile minidump-stackwalker
 rm -rf stackwalk || true
 cp -r "${SRCDIR}/breakpad" "${SRCDIR}/stackwalk"
 
@@ -34,5 +34,7 @@ if [ ! -d "${STACKWALKDIR}" ];
 then
   mkdir "${STACKWALKDIR}"
 fi
+cd "${SRCDIR}/breakpad/bin/"
+cp * "${STACKWALKDIR}"
 cd "${SRCDIR}/minidump-stackwalk/"
 cp stackwalker jit-crash-categorize dumplookup "${STACKWALKDIR}"
