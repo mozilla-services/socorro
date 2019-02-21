@@ -17,8 +17,6 @@ all the Socorro Apps derive.
 import logging
 import logging.config
 import logging.handlers
-import functools
-import signal
 import os
 import socket
 import sys
@@ -35,22 +33,6 @@ from configman import (
 from configman.converters import py_obj_to_str, str_to_python_object, str_to_list
 import markus
 from socorro.lib.revision_data import get_revision_data
-
-
-# for use with SIGHUP for apps that run as daemons
-restart = True
-
-
-def respond_to_SIGHUP(signal_number, frame, logger=None):
-    """raise the KeyboardInterrupt which will cause the app to effectively
-    shutdown, closing all it resources.  Then, because it sets 'restart' to
-    True, the app will reread all the configuration information, rebuild all
-    of its structures and resources and start running again"""
-    global restart
-    restart = True
-    if logger:
-        logger.info('detected SIGHUP')
-    raise KeyboardInterrupt
 
 
 def cls_to_pypath(cls):
@@ -150,20 +132,6 @@ class App(RequiredConfig):
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):
-        global restart
-        restart = True
-        while restart:
-            # the SIGHUP handler will change that back to True if it wants
-            # the app to restart and run again.
-            restart = False
-            app_exit_code = cls._do_run(
-                config_path=config_path,
-                values_source_list=values_source_list
-            )
-        return app_exit_code
-
-    @classmethod
-    def _do_run(cls, config_path=None, values_source_list=None):
         # NOTE(willkg): This is a classmethod, so we need a different logger.
         mylogger = logging.getLogger(__name__ + '.' + cls.__name__)
         if config_path is None:
@@ -242,12 +210,6 @@ class App(RequiredConfig):
             )
 
             config_manager.log_config(mylogger)
-            respond_to_SIGHUP_with_logging = functools.partial(
-                respond_to_SIGHUP,
-                logger=mylogger
-            )
-            # install the signal handler with logging
-            signal.signal(signal.SIGHUP, respond_to_SIGHUP_with_logging)
 
             # we finally know what app to actually run, instantiate it
             app_to_run = cls(config)
