@@ -6,6 +6,7 @@
 import datetime
 import inspect
 import json
+import logging
 import re
 import sys
 import time
@@ -689,6 +690,7 @@ class CronTabberApp(App, RequiredConfig):
     def __init__(self, config):
         super(CronTabberApp, self).__init__(config)
         self.database_class = self.config.crontabber.database_class(config.crontabber)
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def main(self):
         if self.config.get('list-jobs'):
@@ -713,10 +715,10 @@ class CronTabberApp(App, RequiredConfig):
             try:
                 self.run_all()
             except RowLevelLockError:
-                self.config.logger.debug('Next job to work on is already ongoing')
+                self.logger.debug('Next job to work on is already ongoing')
                 return 2
             except OngoingJobError:
-                self.config.logger.debug('Next job to work on is already ongoing')
+                self.logger.debug('Next job to work on is already ongoing')
                 return 3
         return 0
 
@@ -831,7 +833,7 @@ class CronTabberApp(App, RequiredConfig):
             app_name = job_class.app_name
             job_name = job_class.__module__ + '.' + job_class.__name__
             job_config = self.config.crontabber['class-%s' % class_name]
-            self.config.logger.info('Marking %s (%s) for success...', app_name, job_name)
+            self.logger.info('Marking %s (%s) for success...', app_name, job_name)
             self._log_run(
                 job_class,
                 seconds=0,
@@ -856,10 +858,10 @@ class CronTabberApp(App, RequiredConfig):
                 description == job_class.__module__ + '.' + job_class.__name__
             ):
                 if job_class.app_name in self.job_state_database:
-                    self.config.logger.info('App reset')
+                    self.logger.info('App reset')
                     self.job_state_database.pop(job_class.app_name)
                 else:
-                    self.config.logger.warning('App already reset')
+                    self.logger.warning('App already reset')
                 return
         raise JobNotFoundError(description)
 
@@ -890,17 +892,17 @@ class CronTabberApp(App, RequiredConfig):
         time_ = config.time
         if not force:
             if not self.time_to_run(job_class, time_):
-                self.config.logger.debug("skipping %r because it's not time to run", job_class)
+                self.logger.debug("skipping %r because it's not time to run", job_class)
                 return
             ok, dependency_error = self.check_dependencies(job_class)
             if not ok:
-                self.config.logger.debug(
+                self.logger.debug(
                     "skipping %r dependencies aren't met [%s]",
                     job_class, dependency_error
                 )
                 return
 
-        self.config.logger.debug('about to run %r', job_class)
+        self.logger.debug('about to run %r', job_class)
         app_name = job_class.app_name
         info = self.job_state_database.get(app_name)
 
@@ -913,7 +915,7 @@ class CronTabberApp(App, RequiredConfig):
             t0 = time.time()
             for last_success in self._run_job(job_class, config, info):
                 t1 = time.time()
-                self.config.logger.debug('successfully ran %r on %s', job_class, last_success)
+                self.logger.debug('successfully ran %r on %s', job_class, last_success)
                 self._remember_success(job_class, last_success, t1 - t0)
                 # _run_job() returns a generator, so we don't know how
                 # many times this will loop. Anyway, we need to reset the
@@ -931,9 +933,9 @@ class CronTabberApp(App, RequiredConfig):
             if self.config.sentry and self.config.sentry.dsn:
                 client = raven_client.get_client(self.config.sentry.dsn)
                 identifier = client.get_ident(client.captureException())
-                self.config.logger.info('Error captured in Sentry. Reference: %s' % identifier)
+                self.logger.info('Error captured in Sentry. Reference: %s' % identifier)
 
-            self.config.logger.debug(
+            self.logger.debug(
                 'error when running %r on %s', job_class, last_success, exc_info=True
             )
             self._remember_failure(
@@ -1087,7 +1089,7 @@ class CronTabberApp(App, RequiredConfig):
                 if age_hours < self.config.crontabber.max_ongoing_age_hours:
                     raise OngoingJobError(info['ongoing'])
                 else:
-                    self.config.logger.debug(
+                    self.logger.debug(
                         '{} has been ongoing for {:2} hours. Ignore it and running the app anyway.'
                         .format(app_name, age_hours)
                     )
@@ -1184,7 +1186,7 @@ class CronTabberApp(App, RequiredConfig):
                 JobDescriptionError,
                 FrequencyDefinitionError,
                 TimeDefinitionError):
-            config.logger.critical('Failed to config test a job', exc_info=True)
+            self.logger.critical('Failed to config test a job', exc_info=True)
             return False
 
     def sentrytest(self):
@@ -1194,7 +1196,7 @@ class CronTabberApp(App, RequiredConfig):
 
         client = raven_client.get_client(self.config.sentry.dsn)
         identifier = client.captureMessage('Sentry test sent from crontabber')
-        self.config.logger.info('Sentry successful identifier: %s', identifier)
+        self.logger.info('Sentry successful identifier: %s', identifier)
         return True
 
     def audit_ghosts(self):

@@ -26,14 +26,18 @@ and production of the processed crash data.  The save phase is the union of
 sending new crash records to Postgres; sending the processed crash to HBase;
 the the submission of the crash_id to Elastic Search."""
 
-import signal
 from functools import partial
+import logging
+import signal
 
 from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.lib.task_manager import respond_to_SIGTERM
 from socorro.app.socorro_app import App
+
+
+logger = logging.getLogger(__name__)
 
 
 class FetchTransformSaveApp(App):
@@ -230,7 +234,7 @@ class FetchTransformSaveApp(App):
                 # we're running all in the same thread, a failure here could
                 # derail the the whole processor. Best just log the problem
                 # so that we can continue.
-                self.config.logger.error(
+                logger.error(
                     'Error completing job %s: %s',
                     crash_id,
                     x,
@@ -245,7 +249,7 @@ class FetchTransformSaveApp(App):
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
         except Exception as x:
-            self.config.logger.error(
+            logger.error(
                 "reading raw_crash: %s",
                 str(x),
                 exc_info=True
@@ -254,7 +258,7 @@ class FetchTransformSaveApp(App):
         try:
             dumps = self.source.get_raw_dumps(crash_id)
         except Exception as x:
-            self.config.logger.error(
+            logger.error(
                 "reading dump: %s",
                 str(x),
                 exc_info=True
@@ -262,9 +266,9 @@ class FetchTransformSaveApp(App):
             dumps = {}
         try:
             self.destination.save_raw_crash(raw_crash, dumps, crash_id)
-            self.config.logger.info('saved - %s', crash_id)
+            logger.info('saved - %s', crash_id)
         except Exception as x:
-            self.config.logger.error(
+            logger.error(
                 "writing raw: %s",
                 str(x),
                 exc_info=True
@@ -273,7 +277,7 @@ class FetchTransformSaveApp(App):
             try:
                 self.source.remove(crash_id)
             except Exception as x:
-                self.config.logger.error(
+                logger.error(
                     "removing raw: %s",
                     str(x),
                     exc_info=True
@@ -295,7 +299,7 @@ class FetchTransformSaveApp(App):
                 quit_check_callback=self.quit_check
             )
         except Exception:
-            self.config.logger.critical(
+            logger.critical(
                 'Error in creating crash source',
                 exc_info=True
             )
@@ -307,7 +311,7 @@ class FetchTransformSaveApp(App):
                 quit_check_callback=self.quit_check
             )
         except Exception:
-            self.config.logger.critical(
+            logger.critical(
                 'Error in creating crash destination',
                 exc_info=True
             )
@@ -316,7 +320,7 @@ class FetchTransformSaveApp(App):
     def _setup_task_manager(self):
         """instantiate the threaded task manager to run the producer/consumer
         queue that is the heart of the processor."""
-        self.config.logger.info('installing signal handers')
+        logger.info('installing signal handers')
         # set up the signal handler for dealing with SIGTERM. the target should
         # be this app instance so the signal handler can reach in and set the
         # quit flag to be True.  See the 'respond_to_SIGTERM' method for the
@@ -356,7 +360,7 @@ class FetchTransformSaveApp(App):
         self._setup_source_and_destination()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self.close()
-        self.config.logger.info('done.')
+        logger.info('done.')
 
 
 class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):

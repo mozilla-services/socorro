@@ -8,7 +8,7 @@ import json
 
 from configman.dotdict import DotDict
 from markus.testing import MetricsMock
-from mock import Mock, patch
+from mock import patch
 
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule2015,
@@ -504,7 +504,6 @@ class TestBreakpadTransformRule2015(object):
 class TestJitCrashCategorizeRule(object):
     def get_basic_config(self):
         config = DotDict()
-        config.logger = Mock()
         config.dump_field = 'upload_file_minidump'
         config.command_line = JitCrashCategorizeRule.required_config.command_line.default
         config.result_key = 'classifications.jit.category'

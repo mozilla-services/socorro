@@ -63,8 +63,6 @@ class TestProcessorApp(object):
         mocked_companion_process = mock.Mock()
         config.companion_process.companion_class = mock.Mock(return_value=mocked_companion_process)
 
-        config.logger = mock.MagicMock()
-
         config.sentry = mock.MagicMock()
         config.sentry.dsn = sentry_dsn
 
@@ -150,7 +148,9 @@ class TestProcessorApp(object):
         )
         assert finished_func.call_count == 1
 
-    def test_transform_polystorage_error_without_raven_configured(self):
+    def test_transform_polystorage_error_without_raven_configured(self, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
@@ -162,20 +162,22 @@ class TestProcessorApp(object):
             exception.exceptions.append(NameError('waldo'))
             raise exception
 
-        pa.destination.save_raw_and_processed.side_effect = (
-            mocked_save_raw_and_processed
-        )
+        pa.destination.save_raw_and_processed.side_effect = mocked_save_raw_and_processed
+
         # The important thing is that this is the exception that
         # is raised and not something from the raven error handling.
         with pytest.raises(PolyStorageError):
             pa.transform('mycrashid')
 
-        config.logger.warning.assert_any_call(
-            'Sentry DSN is not configured and an exception happened'
-        )
+        logging_msgs = [rec.message for rec in caplogpp.records]
+        assert 'Sentry DSN is not configured and an exception happened' in logging_msgs
 
     @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_polystorage_error_with_raven_configured_successful(self, mock_raven):
+    def test_transform_polystorage_error_with_raven_configured_successful(
+        self, mock_raven, caplogpp
+    ):
+        caplogpp.set_level('DEBUG')
+
         # Mock everything
         raven_mock_client = mock.MagicMock()
         raven_mock_client.captureException.return_value = 'someidentifier'
@@ -205,12 +207,13 @@ class TestProcessorApp(object):
         )
 
         # Assert that the logger logged the appropriate thing
-        config.logger.info.assert_called_with(
-            'Error captured in Sentry! Reference: someidentifier'
-        )
+        logging_msgs = [rec.message for rec in caplogpp.records]
+        assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
     @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_save_error_with_raven_configured_successful(self, mock_raven):
+    def test_transform_save_error_with_raven_configured_successful(self, mock_raven, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         raven_mock_client = mock.MagicMock()
         raven_mock_client.captureException.return_value = 'someidentifier'
         mock_raven.Client.return_value = raven_mock_client
@@ -237,12 +240,13 @@ class TestProcessorApp(object):
         )
 
         # Assert that the logger logged the appropriate thing
-        config.logger.info.assert_called_with(
-            'Error captured in Sentry! Reference: someidentifier'
-        )
+        logging_msgs = [rec.message for rec in caplogpp.records]
+        assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
     @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_get_error_with_raven_configured_successful(self, mock_raven):
+    def test_transform_get_error_with_raven_configured_successful(self, mock_raven, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         raven_mock_client = mock.MagicMock()
         raven_mock_client.captureException.return_value = 'someidentifier'
         mock_raven.Client.return_value = raven_mock_client
@@ -267,12 +271,13 @@ class TestProcessorApp(object):
         )
 
         # Assert that the logger logged the appropriate thing
-        config.logger.info.assert_called_with(
-            'Error captured in Sentry! Reference: someidentifier'
-        )
+        logging_msgs = [rec.message for rec in caplogpp.records]
+        assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
     @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_polystorage_error_with_raven_configured_failing(self, mock_raven):
+    def test_transform_polystorage_error_with_raven_configured_failing(self, mock_raven, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         raven_mock_client = mock.MagicMock()
 
         # Mock this to throw an error if it's called because it shouldn't get called
@@ -300,11 +305,17 @@ class TestProcessorApp(object):
 
         # Assert calls to logger--one set for each of the errors in
         # PolyStorageError
-        assert (
-            config.logger.error.call_args_list == [
-                mock.call('Unable to report error with Raven', exc_info=True),
-                mock.call('Exception occurred', exc_info=first_exc_info),
-                mock.call('Unable to report error with Raven', exc_info=True),
-                mock.call('Exception occurred', exc_info=second_exc_info)
-            ]
-        )
+        expected = [
+            ('Unable to report error with Raven', WHATEVER),
+            ('Sentry DSN is not configured and an exception happened', None),
+            ('Exception occurred', first_exc_info),
+            ('error in processing or saving crash mycrashid', None),
+
+            ('Unable to report error with Raven', WHATEVER),
+            ('Sentry DSN is not configured and an exception happened', None),
+            ('Exception occurred', second_exc_info),
+            ('error in processing or saving crash mycrashid', None)
+        ]
+        actual = [(rec.message, rec.exc_info) for rec in caplogpp.records]
+
+        assert actual == expected

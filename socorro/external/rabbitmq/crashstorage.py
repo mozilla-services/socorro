@@ -81,14 +81,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 raw_crash.legacy_processing == 0
             )
         except KeyError:
-            self.config.logger.debug(
+            self.logger.debug(
                 'RabbitMQCrashStorage legacy_processing key absent in crash '
                 '%s', crash_id
             )
             return
 
         if this_crash_should_be_queued:
-            self.config.logger.debug('RabbitMQCrashStorage saving crash %s', crash_id)
+            self.logger.debug('RabbitMQCrashStorage saving crash %s', crash_id)
             retry(
                 self.rabbitmq,
                 self.quit_check,
@@ -97,7 +97,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
             )
             return True
         else:
-            self.config.logger.debug(
+            self.logger.debug(
                 'RabbitMQCrashStorage not saving crash %s, legacy processing '
                 'flag is %s', crash_id, raw_crash.legacy_processing
             )
@@ -166,7 +166,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
         to let the caller know to skip on to the next crash."""
         if crash_id in self.acknowledgement_token_cache:
             # reject this crash - it's already being processsed
-            self.config.logger.info('duplicate job: %s is already in progress', crash_id)
+            self.logger.info('duplicate job: %s is already in progress', crash_id)
             # ack this
             retry(
                 self.rabbitmq,
@@ -200,14 +200,14 @@ class RabbitMQCrashStorage(CrashStorageBase):
                     )
                     del self.acknowledgement_token_cache[crash_id_to_be_acknowledged]
                 except KeyError:
-                    self.config.logger.warning(
+                    self.logger.warning(
                         'RabbitMQCrashStorage tried to acknowledge crash %s'
                         ', which was not in the cache',
                         crash_id_to_be_acknowledged,
                         exc_info=True
                     )
                 except Exception:
-                    self.config.logger.error(
+                    self.logger.error(
                         'RabbitMQCrashStorage unexpected failure on %s',
                         crash_id_to_be_acknowledged,
                         exc_info=True
@@ -218,7 +218,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
 
     def _ack_crash(self, connection, crash_id, acknowledgement_token):
         connection.channel.basic_ack(delivery_tag=acknowledgement_token.delivery_tag)
-        self.config.logger.debug(
+        self.logger.debug(
             'RabbitMQCrashStorage acking %s with delivery_tag %s',
             crash_id,
             acknowledgement_token.delivery_tag

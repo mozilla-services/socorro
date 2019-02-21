@@ -5,7 +5,6 @@
 import os
 import json
 
-import mock
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
 from socorro.unittest.processor import create_basic_fake_processor
 
@@ -22,8 +21,6 @@ def get_example_file_data(filename):
 class TestMemoryReportExtraction(object):
     def get_config(self):
         fake_processor = create_basic_fake_processor()
-        # FIXME(willkg): we should switch logging testing to use pytest's caplog
-        fake_processor.config.logger = mock.MagicMock()
         return fake_processor.config
 
     def test_predicate_success(self):
@@ -132,7 +129,9 @@ class TestMemoryReportExtraction(object):
         }
         assert processed_crash['memory_measures'] == expected_res
 
-    def test_action_failure_bad_kind(self):
+    def test_action_failure_bad_kind(self, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         config = self.get_config()
         rule = MemoryReportExtraction(config)
 
@@ -145,12 +144,15 @@ class TestMemoryReportExtraction(object):
 
         assert 'memory_measures' not in processed_crash
 
-        config.logger.info.assert_called_with(
+        msgs = [rec.message for rec in caplogpp.records]
+        assert msgs[0] == (
             'Unable to extract measurements from memory report: '
             'bad kind for an explicit/ report: explicit/foo, 2'
         )
 
-    def test_action_failure_bad_units(self):
+    def test_action_failure_bad_units(self, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         config = self.get_config()
         rule = MemoryReportExtraction(config)
 
@@ -163,12 +165,15 @@ class TestMemoryReportExtraction(object):
 
         assert 'memory_measures' not in processed_crash
 
-        config.logger.info.assert_called_with(
+        msgs = [rec.message for rec in caplogpp.records]
+        assert msgs[0] == (
             'Unable to extract measurements from memory report: '
             'bad units for an explicit/ report: explicit/foo, 1'
         )
 
-    def test_action_failure_bad_pid(self):
+    def test_action_failure_bad_pid(self, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         config = self.get_config()
         rule = MemoryReportExtraction(config)
 
@@ -181,12 +186,15 @@ class TestMemoryReportExtraction(object):
 
         assert 'memory_measures' not in processed_crash
 
-        config.logger.info.assert_called_with(
+        msgs = [rec.message for rec in caplogpp.records]
+        assert msgs[0] == (
             'Unable to extract measurements from memory report: '
             'no measurements found for pid 12345'
         )
 
-    def test_action_failure_key_error(self):
+    def test_action_failure_key_error(self, caplogpp):
+        caplogpp.set_level('DEBUG')
+
         config = self.get_config()
         rule = MemoryReportExtraction(config)
 
@@ -199,7 +207,8 @@ class TestMemoryReportExtraction(object):
 
         assert 'memory_measures' not in processed_crash
 
-        config.logger.info.assert_called_with(
+        msgs = [rec.message for rec in caplogpp.records]
+        assert msgs[0] == (
             'Unable to extract measurements from memory report: '
             "key 'process' is missing from a report"
         )

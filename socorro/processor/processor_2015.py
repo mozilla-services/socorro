@@ -7,6 +7,7 @@ crash.  In this latest version, all transformations have been reimplemented
 as sets of loadable rules.  The rules are applied one at a time, each doing
 some small part of the transformation process."""
 
+import logging
 import os
 import tempfile
 
@@ -190,6 +191,7 @@ class Processor2015(RequiredConfig):
     def __init__(self, config, rules=None, quit_check_callback=None):
         super(Processor2015, self).__init__()
         self.config = config
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         # the quit checks are components of a system of callbacks used
         # primarily by the TaskManager system.  This is the system that
         # controls the execution model.  If the ThreadedTaskManager is in use,
@@ -259,7 +261,7 @@ class Processor2015(RequiredConfig):
         # the processor to be responsive to requests to shut down.
         self.quit_check()
 
-        start_time = self.config.logger.info('starting transform for crash: %s', crash_id)
+        start_time = self.logger.info('starting transform for crash: %s', crash_id)
         processor_meta_data.started_timestamp = start_time
 
         # Apply rules; if a rule fails, capture the error and continue onward
@@ -272,7 +274,7 @@ class Processor2015(RequiredConfig):
                 # processor notes
                 raven_client.capture_error(
                     sentry_dsn=self.sentry_dsn,
-                    logger=self.config.logger,
+                    logger=self.logger,
                     extra={'crash_id': crash_id}
                 )
                 # NOTE(willkg): notes are public, so we can't put exception
@@ -297,7 +299,7 @@ class Processor2015(RequiredConfig):
         # For backwards compatibility
         processed_crash.completeddatetime = completed_datetime
 
-        self.config.logger.info(
+        self.logger.info(
             "finishing %s transform for crash: %s",
             'successful' if processed_crash.success else 'failed',
             crash_id
@@ -305,9 +307,9 @@ class Processor2015(RequiredConfig):
         return processed_crash
 
     def reject_raw_crash(self, crash_id, reason):
-        self.config.logger.warning('%s rejected: %s', crash_id, reason)
+        self.logger.warning('%s rejected: %s', crash_id, reason)
 
     def close(self):
-        self.config.logger.debug('closing rules')
+        self.logger.debug('closing rules')
         for rule in self.rules:
             rule.close()

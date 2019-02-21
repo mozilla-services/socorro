@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
+
 from configman import RequiredConfig
 import markus
 
@@ -20,6 +22,7 @@ class Rule(RequiredConfig):
     def __init__(self, config=None, quit_check_callback=None):
         self.config = config
         self.quit_check_callback = quit_check_callback
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, processor_meta_data):
         """Determines whether to run the action for this crash

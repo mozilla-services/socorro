@@ -29,10 +29,9 @@ def transaction_context(connection_context):
 
       Rolls the transaction back.
 
-    * ``config.logger.exception``
+    * ``logger``
 
-      ``config`` is a configman ``DotDict`` that has a logger that implements
-      ``exception``.
+      Python logger.
 
     :arg connection_context: the connection context to use
 
@@ -51,7 +50,7 @@ def transaction_context(connection_context):
                 # NOTE(willkg): This exception is effectively getting
                 # swallowed. We're assuming it's a red herring for whatever
                 # threw the original exception. In Python 3, we can chain them.
-                conn.config.logger.exception('cannot rollback')
+                conn.logger.exception('cannot rollback')
             six.reraise(*excinfo)
 
 

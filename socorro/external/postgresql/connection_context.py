@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import contextlib
+import logging
 import os
 import socket
 
@@ -77,6 +78,7 @@ class ConnectionContext(RequiredConfig):
         """
         super(ConnectionContext, self).__init__()
         self.config = config
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         if local_config is None:
             local_config = config
         if local_config['database_port'] is None:
@@ -105,7 +107,7 @@ class ConnectionContext(RequiredConfig):
         try:
             yield conn
         finally:
-            # self.config.logger.debug('connection closed')
+            # self.logger.debug('connection closed')
             self.close_connection(conn)
 
     def close_connection(self, connection, force=False):

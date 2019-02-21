@@ -7,8 +7,9 @@ producer/consumer system.  A single iterator thread pushes jobs into an
 internal queue while a flock of consumer/worker threads do the jobs.  A job
 consists of a function and the data applied to the function."""
 
-import time
+import logging
 import threading
+import time
 
 from configman import Namespace
 from configman.converters import class_converter
@@ -73,11 +74,7 @@ class ThreadedTaskManager(TaskManager):
                                   Ex:  (('a', 17), {'x': 23})
             task_func - a function that will accept the args and kwargs yielded
                         by the job_source_iterator"""
-        super(ThreadedTaskManager, self).__init__(
-            config,
-            job_source_iterator,
-            task_func
-        )
+        super().__init__(config, job_source_iterator, task_func)
         self.thread_list = []  # the thread object storage
         self.number_of_threads = config.number_of_threads
         self.task_queue = queue.Queue(config.maximum_queue_size)
@@ -218,7 +215,7 @@ class ThreadedTaskManager(TaskManager):
         try:
             # May never exhaust
             for job_params in self._get_iterator():
-                self.config.logger.debug('received %r', job_params)
+                self.logger.debug('received %r', job_params)
                 if job_params is None:
                     if self.config.quit_on_empty_queue:
                         self.wait_for_empty_queue(
@@ -309,6 +306,7 @@ class TaskThread(threading.Thread):
         super(TaskThread, self).__init__()
         self.task_queue = task_queue
         self.config = config
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def _get_name(self):
         return threading.currentThread().getName()
@@ -326,7 +324,7 @@ class TaskThread(threading.Thread):
                 if function is None:
                     # this allows us to watch the threads die and identify
                     # threads that may be hanging or deadlocked
-                    self.config.logger.info('quits')
+                    self.logger.info('quits')
                     break
                 if quit_request_detected:
                     continue
@@ -338,12 +336,11 @@ class TaskThread(threading.Thread):
                         kwargs = {}
                     function(*args, **kwargs)  # execute the task
                 except Exception:
-                    self.config.logger.error("Error in processing a job",
-                                             exc_info=True)
+                    self.logger.error("Error in processing a job", exc_info=True)
                 except KeyboardInterrupt:  # TODO: can probably go away
-                    self.config.logger.info('quit request detected')
+                    self.logger.info('quit request detected')
                     quit_request_detected = True
                     # Only needed if signal handler is not registered
                     # thread.interrupt_main()
         except Exception:
-            self.config.logger.critical("Failure in task_queue", exc_info=True)
+            self.logger.critical("Failure in task_queue", exc_info=True)

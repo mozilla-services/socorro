@@ -649,7 +649,7 @@ class BetaVersionRule(Rule):
                 processed_crash['version'] = real_version
                 return
 
-            self.config.logger.info(
+            self.logger.info(
                 'betaversionrule: failed lookup %s %s %s %s',
                 processed_crash.get('uuid'),
                 product,
@@ -797,7 +797,7 @@ class SignatureGeneratorRule(Rule):
         """Captures errors from signature generation"""
         extra['uuid'] = crash_data.get('uuid', None)
         raven_client.capture_error(
-            self.sentry_dsn, self.config.logger, exc_info=exc_info, extra=extra
+            self.sentry_dsn, self.logger, exc_info=exc_info, extra=extra
         )
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):

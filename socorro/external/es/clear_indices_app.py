@@ -33,7 +33,7 @@ class ClearESIndicesApp(App):
         cleaner = self.config.elasticsearch_cleaner_class(self.config)
         deleted_indices = cleaner.delete_indices()
         for index in deleted_indices:
-            self.config.logger.info('Deleted elasticsearch index %s' % (index,))
+            self.logger.info('Deleted elasticsearch index %s' % (index,))
         return SUCCESS
 
 

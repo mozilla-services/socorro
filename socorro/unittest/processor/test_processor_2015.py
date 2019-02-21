@@ -26,7 +26,6 @@ class TestProcessor2015(object):
             values_source_list=[],
         )
         config = cm.get_config()
-        config.logger = Mock()
         config.database_class = Mock()
         config.sentry = Mock()
         config.processor_name = 'dwight'

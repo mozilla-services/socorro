@@ -133,7 +133,7 @@ class BugzillaCronApp(BaseCronApp):
 
     def update_bug_data(self, bug_id, signature_set):
         with transaction_context(self.database) as connection:
-            self.config.logger.debug('bug %s: %s', bug_id, signature_set)
+            self.logger.debug('bug %s: %s', bug_id, signature_set)
 
             # If there's no associated signatures, delete everything for this bug id
             if not signature_set:
@@ -157,7 +157,7 @@ class BugzillaCronApp(BaseCronApp):
                         WHERE signature = %s and bug_id = %s
                         """
                         execute_no_results(connection, sql, (signature, bug_id))
-                        self.config.logger.info('association removed: %s - "%s"', bug_id, signature)
+                        self.logger.info('association removed: %s - "%s"', bug_id, signature)
 
             except SQLDidNotReturnSingleRow:
                 signatures_db = []
@@ -169,7 +169,7 @@ class BugzillaCronApp(BaseCronApp):
                     VALUES (%s, %s)
                     """
                     execute_no_results(connection, sql, (signature, bug_id))
-                    self.config.logger.info('association added: %s - "%s"', bug_id, signature)
+                    self.logger.info('association added: %s - "%s"', bug_id, signature)
 
     def _iterator(self, from_date):
         # Fetch all the bugs that have been created or had the crash_signature

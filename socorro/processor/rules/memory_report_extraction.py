@@ -41,12 +41,10 @@ class MemoryReportExtraction(Rule):
         try:
             measures = self._get_memory_measures(memory_report, pid)
         except ValueError as e:
-            self.config.logger.info(
-                'Unable to extract measurements from memory report: {}'.format(e)
-            )
+            self.logger.info('Unable to extract measurements from memory report: {}'.format(e))
             return
         except KeyError as e:
-            self.config.logger.info(
+            self.logger.info(
                 'Unable to extract measurements from memory report: '
                 'key {} is missing from a report'.format(e)
             )

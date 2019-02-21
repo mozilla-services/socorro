@@ -281,7 +281,7 @@ class ESCrashStorage(CrashStorageBase):
         except Exception:
             # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
             # later.
-            self.config.logger.exception('something went wrong when capturing raw_crash_size')
+            self.logger.exception('something went wrong when capturing raw_crash_size')
 
         try:
             self.metrics.histogram(
@@ -291,7 +291,7 @@ class ESCrashStorage(CrashStorageBase):
         except Exception:
             # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
             # later.
-            self.config.logger.exception('something went wrong when capturing processed_crash_size')
+            self.logger.exception('something went wrong when capturing processed_crash_size')
 
     def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
         try:
@@ -357,7 +357,7 @@ class ESCrashStorage(CrashStorageBase):
                 if not field_name:
                     # We are unable to parse which field to remove, we cannot
                     # try to fix the document. Let it raise.
-                    self.config.logger.critical(
+                    self.logger.critical(
                         'Submission to Elasticsearch failed for %s (%s)',
                         crash_id,
                         e,
@@ -391,7 +391,7 @@ class ESCrashStorage(CrashStorageBase):
                     crash_document['removed_fields'] = field_name
 
             except elasticsearch.exceptions.ElasticsearchException as exc:
-                self.config.logger.critical(
+                self.logger.critical(
                     'Submission to Elasticsearch failed for %s (%s)',
                     crash_id,
                     exc,

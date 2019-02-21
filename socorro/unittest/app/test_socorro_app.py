@@ -7,21 +7,17 @@ from configman import (
     command_line,
     ConfigFileFutureProxy,
 )
-from configman.dotdict import DotDict, configman_keys
+from configman.dotdict import DotDict
 import mock
 import pytest
 
-from socorro.app.socorro_app import (
-    App,
-    SocorroApp,
-    setup_logger,
-)
+from socorro.app.socorro_app import App
 
 
-class TestSocorroApp(object):
+class TestApp(object):
     def test_instantiation(self):
         config = DotDict()
-        sa = SocorroApp(config)
+        sa = App(config)
 
         with pytest.raises(NotImplementedError):
             sa.main()
@@ -29,7 +25,7 @@ class TestSocorroApp(object):
             sa._do_run()
 
     def test_run(self):
-        class SomeOtherApp(SocorroApp):
+        class SomeOtherApp(App):
             @classmethod
             def _do_run(klass, config_path=None, values_source_list=None):
                 klass.config_path = config_path
@@ -41,7 +37,7 @@ class TestSocorroApp(object):
         assert x == 17
 
     def test_run_with_alternate_config_path(self):
-        class SomeOtherApp(SocorroApp):
+        class SomeOtherApp(App):
             @classmethod
             def _do_run(klass, config_path=None, values_source_list=None):
                 klass.values_source_list = values_source_list
@@ -54,8 +50,9 @@ class TestSocorroApp(object):
         assert x == 17
         assert SomeOtherApp.config_path == 'my/other/path'
 
-    def test_run_with_alternate_values_source_list(self):
-        class SomeOtherApp(SocorroApp):
+    @mock.patch('socorro.app.socorro_app.setup_logging')
+    def test_run_with_alternate_values_source_list(self, setup_logging):
+        class SomeOtherApp(App):
             @classmethod
             def _do_run(klass, config_path=None, values_source_list=None):
                 klass.values_source_list = values_source_list
@@ -70,11 +67,12 @@ class TestSocorroApp(object):
         assert SomeOtherApp.config_path == 'my/other/path'
         assert SomeOtherApp.values_source_list == []
 
-    def test_do_run(self):
+    @mock.patch('socorro.app.socorro_app.setup_logging')
+    def test_do_run(self, setup_logging):
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
             with mock.patch('socorro.app.socorro_app.signal'):
-                class SomeOtherApp(SocorroApp):
+                class SomeOtherApp(App):
                     app_name = 'SomeOtherApp'
                     app_verision = '1.2.3'
                     app_description = 'a silly app'
@@ -98,11 +96,12 @@ class TestSocorroApp(object):
                 assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
                 assert result == 17
 
-    def test_do_run_with_alternate_class_path(self):
+    @mock.patch('socorro.app.socorro_app.setup_logging')
+    def test_do_run_with_alternate_class_path(self, setup_logging):
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
             with mock.patch('socorro.app.socorro_app.signal'):
-                class SomeOtherApp(SocorroApp):
+                class SomeOtherApp(App):
                     app_name = 'SomeOtherApp'
                     app_verision = '1.2.3'
                     app_description = 'a silly app'
@@ -127,11 +126,12 @@ class TestSocorroApp(object):
                 assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
                 assert result == 17
 
-    def test_do_run_with_alternate_values_source_list(self):
+    @mock.patch('socorro.app.socorro_app.setup_logging')
+    def test_do_run_with_alternate_values_source_list(self, setup_logging):
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
             with mock.patch('socorro.app.socorro_app.signal'):
-                class SomeOtherApp(SocorroApp):
+                class SomeOtherApp(App):
                     app_name = 'SomeOtherApp'
                     app_verision = '1.2.3'
                     app_description = 'a silly app'
@@ -157,81 +157,3 @@ class TestSocorroApp(object):
                 assert kwargs['values_source_list'][0] == {"a": 1}
                 assert kwargs['values_source_list'][1] == {"b": 2}
                 assert result == 17
-
-
-class AppWithMetrics(App):
-    def main(self):
-        self.config.metrics.incr('increment_key')
-        self.config.metrics.gauge('gauge_key', value=10)
-        self.config.metrics.timing('timing_key', value=100)
-        self.config.metrics.histogram('histogram_key', value=1000)
-
-
-class TestSocorroAppMetrics(object):
-    def test_metrics(self, metricsmock):
-        """Verify LoggingMetrics work"""
-        with metricsmock as mm:
-            AppWithMetrics.run(values_source_list=[configman_keys({})])
-
-            assert mm.has_record('incr', stat='increment_key', value=1)
-            assert mm.has_record('gauge', stat='gauge_key', value=10)
-            assert mm.has_record('timing', stat='timing_key', value=100)
-            assert mm.has_record('histogram', stat='histogram_key', value=1000)
-
-
-def test_setup_logger():
-    """Verify setup_logger with level and root_level variations"""
-    with mock.patch('socorro.app.socorro_app.logging.config.dictConfig') as dict_config_mock:
-        # Defaults for level and root_level
-        cfg = DotDict({
-            'application': {
-                'app_name': 'app'
-            },
-            'logging': {
-                'level': 20,
-                'root_level': 40,
-                'format_string': 'foo'
-            }
-        })
-        setup_logger(cfg, None, None)
-        logging_config = dict_config_mock.call_args[0][0]
-
-        assert 'root' not in logging_config
-        assert 'propagate' not in logging_config['loggers']['socorro']
-        assert 'propagate' not in logging_config['loggers']['app']
-
-        # level == root_level
-        cfg = DotDict({
-            'application': {
-                'app_name': 'app'
-            },
-            'logging': {
-                'level': 20,
-                'root_level': 20,
-                'format_string': 'foo'
-            }
-        })
-        setup_logger(cfg, None, None)
-        logging_config = dict_config_mock.call_args[0][0]
-
-        assert 'root' in logging_config
-        assert logging_config['loggers']['socorro']['propagate'] == 0
-        assert logging_config['loggers']['app']['propagate'] == 0
-
-        # level < root_level
-        cfg = DotDict({
-            'application': {
-                'app_name': 'app'
-            },
-            'logging': {
-                'level': 20,
-                'root_level': 10,
-                'format_string': 'foo'
-            }
-        })
-        setup_logger(cfg, None, None)
-        logging_config = dict_config_mock.call_args[0][0]
-
-        assert 'root' in logging_config
-        assert logging_config['loggers']['socorro']['propagate'] == 0
-        assert logging_config['loggers']['app']['propagate'] == 0

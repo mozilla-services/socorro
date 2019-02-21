@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
+
 from socorro.lib import external_common, MissingArgumentError, BadArgumentError, ooid
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
@@ -28,6 +30,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
         # leaf point we want to NOT return a DotDict but just a plain
         # python dict.
         self.config.json_object_hook = dict
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid. """
@@ -62,7 +65,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             else:
                 return get(params.uuid)
         except CrashIDNotFound as cidnf:
-            self.config.logger.error('%s not found: %s' % (params.datatype, cidnf))
+            self.logger.error('%s not found: %s' % (params.datatype, cidnf))
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message
             # contains information about buckets and prefix keys.
@@ -93,7 +96,7 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
         try:
             return self.get_unredacted_processed(params.uuid)
         except CrashIDNotFound as cidnf:
-            self.config.logger.error('telemetry crash not found: %s' % cidnf)
+            self.logger.error('telemetry crash not found: %s' % cidnf)
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message contains
             # information about buckets and prefix keys. Re-wrap it here so the

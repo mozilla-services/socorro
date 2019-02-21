@@ -2,10 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
-
 from configman.dotdict import DotDict as DotDict
-from mock import Mock
 
 from socorro.signature.rules import CSignatureTool
 
@@ -20,19 +17,16 @@ c_signature_tool = CSignatureTool(csig_config)
 
 
 def create_basic_fake_processor():
-    """Creates fake processor configuration"""
+    """Create fake processor configuration."""
     fake_processor = DotDict()
     fake_processor.c_signature_tool = c_signature_tool
     fake_processor.config = DotDict()
-    fake_processor.config.logger = logging.getLogger(__name__)
     fake_processor.processor_notes = []
     return fake_processor
 
 
 def get_basic_config():
-    config = DotDict()
-    config.logger = Mock()
-    return config
+    return DotDict()
 
 
 def get_basic_processor_meta():

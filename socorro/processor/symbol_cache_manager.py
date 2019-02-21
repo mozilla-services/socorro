@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from collections import OrderedDict
+import logging
 import os
 import sys
 import tempfile
@@ -50,7 +51,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('D')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.config.logger.debug('D  %s', event.pathname)
+                self.monitor.debug('D  %s', event.pathname)
             self.monitor._remove_cached(event.pathname)
 
     def process_IN_CREATE(self, event):
@@ -59,7 +60,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('C')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.config.logger.debug('C  %s', event.pathname)
+                self.monitor.debug('C  %s', event.pathname)
             self.monitor._update_cache(event.pathname)
 
     def process_IN_MOVED_FROM(self, event):
@@ -68,7 +69,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('M')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.config.logger.debug('M> %s', event.pathname)
+                self.monitor.debug('M> %s', event.pathname)
             self.monitor._remove_cached(event.pathname)
 
     def process_IN_MOVED_TO(self, event):
@@ -77,7 +78,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('M')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.config.logger.debug('M< %s', event.pathname)
+                self.monitor.logger.debug('M< %s', event.pathname)
             self.monitor._update_cache(event.pathname)
 
     def process_IN_OPEN(self, event):
@@ -86,7 +87,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('O')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.config.logger.debug('O  %s', event.pathname)
+                self.monitor.logger.debug('O  %s', event.pathname)
             self.monitor._update_cache(event.pathname)
 
     def process_IN_MODIFY(self, event):
@@ -95,7 +96,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('M')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.config.logger.debug('M  %s', event.pathname)
+                self.monitor.logger.debug('M  %s', event.pathname)
             self.monitor._update_cache(event.pathname, update_size=True)
 
 
@@ -148,6 +149,7 @@ class SymbolLRUCacheManager(RequiredConfig):
         """constructor for a registration object that runs an LRU cache
        cleaner"""
         self.config = config
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
         self.directory = os.path.abspath(config.symbol_cache_path)
         self.max_size = config.symbol_cache_size
@@ -199,9 +201,7 @@ class SymbolLRUCacheManager(RequiredConfig):
             try:
                 size = os.stat(path).st_size
             except OSError:
-                self.config.logger.warning(
-                    'file was not found while cleaning cache: %s', path
-                )
+                self.logger.warning('file was not found while cleaning cache: %s', path)
                 return
 
             self.total_size += size
@@ -213,7 +213,7 @@ class SymbolLRUCacheManager(RequiredConfig):
                 os.unlink(rm_path)
                 self._rm_empty_dirs(rm_path)
                 if self.verbosity >= 2:
-                    self.config.logger.debug('RM %s', rm_path)
+                    self.logger.debug('RM %s', rm_path)
         self._lru[path] = size
 
     def _remove_cached(self, path):
