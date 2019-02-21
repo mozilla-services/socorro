@@ -66,7 +66,7 @@ class UploadTelemetrySchema(App):
             bucket = connection_context._get_bucket(connection, self.config.telemetry.bucket_name)
         except S3ResponseError:
             # If there's no bucket--fail out here
-            self.config.logger.error(
+            self.logger.error(
                 'Failure: The %s S3 bucket must be created first.',
                 self.config.telemetry.bucket_name
             )
@@ -77,7 +77,7 @@ class UploadTelemetrySchema(App):
             key = bucket.new_key(self.config.telemetry.json_filename)
         key.set_contents_from_string(CRASH_REPORT_JSON_SCHEMA_AS_STRING)
 
-        self.config.logger.info('Success: Schema uploaded!')
+        self.logger.info('Success: Schema uploaded!')
         return 0
 
 

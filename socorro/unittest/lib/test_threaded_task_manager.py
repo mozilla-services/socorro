@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
 import time
 
 from configman.dotdict import DotDict
@@ -16,18 +15,13 @@ from socorro.lib.threaded_task_manager import (
 
 
 class TestThreadedTaskManager(object):
-    def setup_method(self, method):
-        self.logger = logging.getLogger(__name__)
-
     def test_constuctor1(self):
         config = DotDict()
-        config.logger = self.logger
         config.number_of_threads = 1
         config.maximum_queue_size = 1
         ttm = ThreadedTaskManager(config)
         try:
             assert ttm.config == config
-            assert ttm.logger == self.logger
             assert ttm.task_func == default_task_func
             assert not ttm.quit
         finally:
@@ -36,7 +30,6 @@ class TestThreadedTaskManager(object):
 
     def test_start1(self):
         config = DotDict()
-        config.logger = self.logger
         config.number_of_threads = 1
         config.maximum_queue_size = 1
         ttm = ThreadedTaskManager(config)
@@ -54,7 +47,6 @@ class TestThreadedTaskManager(object):
 
     def test_doing_work_with_one_worker(self):
         config = DotDict()
-        config.logger = self.logger
         config.number_of_threads = 1
         config.maximum_queue_size = 1
         my_list = []
@@ -62,9 +54,7 @@ class TestThreadedTaskManager(object):
         def insert_into_list(anItem):
             my_list.append(anItem)
 
-        ttm = ThreadedTaskManager(config,
-                                  task_func=insert_into_list
-                                  )
+        ttm = ThreadedTaskManager(config, task_func=insert_into_list)
         try:
             ttm.start()
             time.sleep(0.2)
@@ -78,7 +68,6 @@ class TestThreadedTaskManager(object):
 
     def test_doing_work_with_two_workers_and_generator(self):
         config = DotDict()
-        config.logger = self.logger
         config.number_of_threads = 2
         config.maximum_queue_size = 2
         my_list = []
@@ -86,11 +75,11 @@ class TestThreadedTaskManager(object):
         def insert_into_list(anItem):
             my_list.append(anItem)
 
-        ttm = ThreadedTaskManager(config,
-                                  task_func=insert_into_list,
-                                  job_source_iterator=(((x,), {}) for x in
-                                                       range(10))
-                                  )
+        ttm = ThreadedTaskManager(
+            config,
+            task_func=insert_into_list,
+            job_source_iterator=(((x,), {}) for x in range(10))
+        )
         try:
             ttm.start()
             time.sleep(0.2)
@@ -113,7 +102,6 @@ class TestThreadedTaskManager(object):
             my_list.append(anItem)
 
         config = DotDict()
-        config.logger = self.logger
         config.number_of_threads = 2
         config.maximum_queue_size = 2
         config.job_source_iterator = new_iter
@@ -152,7 +140,6 @@ class TestThreadedTaskManager(object):
             my_list.append(anItem)
 
         config = DotDict()
-        config.logger = self.logger
         config.number_of_threads = 1
         config.maximum_queue_size = 1
         config.job_source_iterator = new_iter
@@ -171,7 +158,6 @@ class TestThreadedTaskManager(object):
 
     def test_blocking_start_with_quit_on_empty(self):
         config = DotDict()
-        config.logger = self.logger
         config.number_of_threads = 2
         config.maximum_queue_size = 2
         config.quit_on_empty_queue = True
@@ -181,10 +167,7 @@ class TestThreadedTaskManager(object):
         def task_func(index):
             calls.append(index)
 
-        tm = ThreadedTaskManager(
-            config,
-            task_func=task_func
-        )
+        tm = ThreadedTaskManager(config, task_func=task_func)
 
         waiting_func = Mock()
 

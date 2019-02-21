@@ -168,7 +168,7 @@ class ArchiveScraperCronApp(BaseCronApp):
         }
 
         if self.config.verbose:
-            self.config.logger.info('INSERTING: %s' % list(sorted(params.items())))
+            self.logger.info('INSERTING: %s' % list(sorted(params.items())))
 
         with transaction_context(self.database) as conn:
             cursor = conn.cursor()
@@ -189,7 +189,7 @@ class ArchiveScraperCronApp(BaseCronApp):
                 # If it's an IntegrityError, we already have it and everything is fine
                 pass
             except psycopg2.Error:
-                self.config.logger.exception('failed to insert')
+                self.logger.exception('failed to insert')
 
     def get_links(self, content):
         """Retrieves valid links on the page
@@ -224,12 +224,12 @@ class ArchiveScraperCronApp(BaseCronApp):
         """
         url = urljoin(self.config.base_url, url_path)
         if self.config.verbose:
-            self.config.logger.info('downloading: %s', url)
+            self.logger.info('downloading: %s', url)
         resp = self.session.get(url)
         if resp.status_code != 200:
             if self.config.verbose:
                 # Most of these are 404s because we guessed a url wrong which is fine
-                self.config.logger.warning('Bad status: %s: %s', url, resp.status_code)
+                self.logger.warning('Bad status: %s: %s', url, resp.status_code)
             return ''
 
         return resp.content
@@ -306,9 +306,7 @@ class ArchiveScraperCronApp(BaseCronApp):
         # greater than (major_version - 4) and esr builds
         if major_version:
             major_version_minus_4 = major_version - 4
-            self.config.logger.info(
-                'Skipping anything before %s and not esr', major_version_minus_4
-            )
+            self.logger.info('Skipping anything before %s and not esr', major_version_minus_4)
             version_links = [
                 link for link in version_links
                 if (
@@ -345,7 +343,7 @@ class ArchiveScraperCronApp(BaseCronApp):
                 # platforms that ahve them
                 json_links = self.get_json_links(build_link['path'])
                 if not json_links:
-                    self.config.logger.warning(
+                    self.logger.warning(
                         'could not find json files in: %s', build_link['path']
                     )
                     continue
@@ -451,4 +449,4 @@ class ArchiveScraperCronApp(BaseCronApp):
             archive_directory='mobile'
         )
 
-        self.config.logger.info('Inserted %s builds.', self.successful_inserts)
+        self.logger.info('Inserted %s builds.', self.successful_inserts)

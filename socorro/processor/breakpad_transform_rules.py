@@ -105,7 +105,7 @@ class ExternalProcessRule(Rule):
         try:
             return json.loads(data)
         except Exception as x:
-            self.config.logger.error(
+            self.logger.error(
                 '%s non-json output: "%s"' % (self.config.command_pathname, data[:100])
             )
             processor_meta.processor_notes.append(
@@ -281,12 +281,12 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         if return_code == 124:
             msg = 'MDSW terminated with SIGKILL due to timeout'
             processor_meta.processor_notes.append(msg)
-            self.config.logger.warning(msg)
+            self.logger.warning(msg)
 
         elif return_code != 0 or not stackwalker_data.success:
             msg = 'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
             processor_meta.processor_notes.append(msg)
-            self.config.logger.warning(msg)
+            self.logger.warning(msg)
 
         return stackwalker_data, return_code
 

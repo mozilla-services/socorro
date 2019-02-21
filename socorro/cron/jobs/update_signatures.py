@@ -101,7 +101,7 @@ class UpdateSignaturesCronApp(BaseCronApp):
         all_fields = SuperSearchFields(config=self.config).get()
         api = SuperSearch(config=self.config)
         start_datetime = end_datetime - datetime.timedelta(minutes=self.config.period)
-        self.config.logger.info('Looking at %s to %s', start_datetime, end_datetime)
+        self.logger.info('Looking at %s to %s', start_datetime, end_datetime)
 
         params = {
             'date': [
@@ -162,7 +162,7 @@ class UpdateSignaturesCronApp(BaseCronApp):
         # Save signature data to the db
         for item in signature_data:
             if self.config.dry_run:
-                self.config.logger.info(
+                self.logger.info(
                     'Inserting/updating signature (%s, %s, %s)',
                     item['signature'],
                     item['date'],
@@ -175,4 +175,4 @@ class UpdateSignaturesCronApp(BaseCronApp):
                     report_build=item['build_id'],
                 )
 
-        self.config.logger.info('Inserted/updated %d signatures.', len(signature_data))
+        self.logger.info('Inserted/updated %d signatures.', len(signature_data))

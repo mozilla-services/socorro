@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import logging
 
 import elasticsearch
 
@@ -117,6 +118,7 @@ class SuperSearchFields(object):
 
     def __init__(self, config):
         self.config = config
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         self.es_context = self.config.elasticsearch.elasticsearch_class(
             self.config.elasticsearch
         )
@@ -185,7 +187,7 @@ class SuperSearchFields(object):
                 all_existing_fields.update(parse_mapping(properties, None))
             except elasticsearch.exceptions.NotFoundError as e:
                 # If an index does not exist, this should not fail
-                self.config.logger.warning(
+                self.logger.warning(
                     'Missing index in elasticsearch while running '
                     'SuperSearchFields.get_missing_fields, error is: %s',
                     str(e)

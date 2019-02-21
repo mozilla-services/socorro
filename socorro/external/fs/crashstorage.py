@@ -265,11 +265,11 @@ class FSPermanentStorage(CrashStorageBase):
             try:
                 os.unlink(cand)
             except OSError:
-                self.config.logger.error("could not delete: %s", cand, exc_info=True)
+                self.logger.error("could not delete: %s", cand, exc_info=True)
 
         # If the directory is empty, clean it up
         if len(os.listdir(parent_dir)) == 0:
             try:
                 os.rmdir(parent_dir)
             except OSError:
-                self.config.logger.error("could not delete: %s", parent_dir, exc_info=True)
+                self.logger.error("could not delete: %s", parent_dir, exc_info=True)

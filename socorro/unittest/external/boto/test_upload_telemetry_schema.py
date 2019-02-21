@@ -10,25 +10,23 @@ from socorro.unittest.external.boto import get_config
 
 class TestUploadTelemetrySchema:
     @mock_s3_deprecated
-    def test_bucket_not_found(self):
+    def test_bucket_not_found(self, caplogpp):
         # If the bucket isn't found, the script should tell the user and return
         # a non-zero exit code
         config = get_config(UploadTelemetrySchema)
         app = UploadTelemetrySchema(config)
 
         assert app.main() == 1
-        app.config.logger.error.assert_called_once_with(
-            'Failure: The %s S3 bucket must be created first.',
-            'crashstats'
-        )
+        recs = [rec.message for rec in caplogpp.records]
+        assert 'Failure: The crashstats S3 bucket must be created first.' in recs
 
     @mock_s3_deprecated
-    def test_upload_worked(self, boto_helper):
+    def test_upload_worked(self, boto_helper, caplogpp):
+        caplogpp.set_level('DEBUG')
         boto_helper.get_or_create_bucket('crashstats')
         config = get_config(UploadTelemetrySchema)
         app = UploadTelemetrySchema(config)
 
         assert app.main() == 0
-        app.config.logger.info.assert_called_once_with(
-            'Success: Schema uploaded!'
-        )
+        recs = [rec.message for rec in caplogpp.records]
+        assert 'Success: Schema uploaded!' in recs

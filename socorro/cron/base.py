@@ -5,6 +5,7 @@
 import collections
 import datetime
 import functools
+import logging
 import re
 
 from configman import Namespace, RequiredConfig
@@ -156,6 +157,7 @@ class BaseCronApp(RequiredConfig):
     def __init__(self, config, job_information):
         self.config = config
         self.job_information = job_information
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def main(self, function=None, once=True):
         if not function:
@@ -187,7 +189,7 @@ class BaseCronApp(RequiredConfig):
         # case 3: either it has never run successfully or it was previously run
         #   before the 'first_run' key was added (legacy).
         if not last_success:
-            self.config.logger.warning(
+            self.logger.warning(
                 'No previous last_success information available'
             )
             # just run it for the time 'now'

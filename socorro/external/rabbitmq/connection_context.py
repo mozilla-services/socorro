@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import socket
 import contextlib
+import logging
 import pika
+import socket
 
 from configman import Namespace, RequiredConfig
 
@@ -141,14 +142,13 @@ class ConnectionContext(RequiredConfig):
         """Initialize the parts needed to start making RabbitMQ connections
 
         parameters:
-            config - the complete config for the app.  If a real app, this
-                     would be where a logger or other resources could be
-                     found.
+            config - the complete config for the app.
             local_config - this is the namespace within the complete config
                            where the actual RabbitMQ parameters are found
         """
         super(ConnectionContext, self).__init__()
         self.config = config
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         if local_config is None:
             local_config = config
         self.local_config = local_config
@@ -258,7 +258,7 @@ class ConnectionContextPooled(ConnectionContext):
             name = self.config.executor_identity()
         if name in self.pool:
             return self.pool[name]
-        self.config.logger.debug('creating new RMQ connection: %s', name)
+        self.logger.debug('creating new RMQ connection: %s', name)
         self.pool[name] = super(ConnectionContextPooled, self).connection(name)
         return self.pool[name]
 
@@ -272,7 +272,7 @@ class ConnectionContextPooled(ConnectionContext):
             try:
                 super(ConnectionContextPooled, self).close_connection(connection, force)
             except self.operational_exceptions:
-                self.config.logger.error('RabbitMQPooled - failed closing')
+                self.logger.error('RabbitMQPooled - failed closing')
             for name, conn in list(self.pool.items()):
                 if conn is connection:
                     break
@@ -280,10 +280,10 @@ class ConnectionContextPooled(ConnectionContext):
 
     def close(self):
         """Close all pooled connections"""
-        self.config.logger.debug('RabbitMQPooled - shutting down connection pool')
+        self.logger.debug('RabbitMQPooled - shutting down connection pool')
         for name, connection in list(self.pool.items()):
             self.close_connection(connection, force=True)
-            self.config.logger.debug('RabbitMQPooled - channel %s closed', name)
+            self.logger.debug('RabbitMQPooled - channel %s closed', name)
 
     def force_reconnect(self, name=None):
         """Force reconnect"""

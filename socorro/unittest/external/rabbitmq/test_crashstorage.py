@@ -13,7 +13,6 @@ class TestCrashStorage(object):
     def _setup_config(self):
         config = DotDict()
         config.backoff_delays = (0, 0, 0)
-        config.logger = Mock()
         config.rabbitmq_class = MagicMock()
         config.routing_key = 'socorro.normal'
         config.filter_on_legacy_processing = True
@@ -149,19 +148,21 @@ class TestCrashStorage(object):
 
         connection.channel.basic_ack.assert_called_once_with(delivery_tag=1)
 
-    def test_ack_crash_fails_gracefully(self):
+    def test_ack_crash_fails_gracefully(self, caplogpp):
+        caplogpp.set_level('WARNING')
+
         config = self._setup_config()
-        config.logger = Mock()
         crash_store = RabbitMQCrashStorage(config)
         crash_store.acknowledgment_queue.put('b2')
         crash_store._consume_acknowledgement_queue()
 
-        config.logger.warning.assert_called_once_with(
-            'RabbitMQCrashStorage tried to acknowledge crash %s'
-            ', which was not in the cache',
-            'b2',
-            exc_info=True
+        recs = [(rec.message, rec.exc_info) for rec in caplogpp.records]
+        assert (
+            recs[0][0] == (
+                'RabbitMQCrashStorage tried to acknowledge crash b2, which was not in the cache'
+            )
         )
+        assert recs[0][1] is not None
 
     def test_ack_crash(self):
         config = self._setup_config()

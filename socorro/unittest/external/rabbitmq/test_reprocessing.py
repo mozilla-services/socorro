@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from configman.dotdict import DotDict
-from mock import Mock, MagicMock
+from mock import MagicMock
 
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.rabbitmq.crashstorage import ReprocessingOneRabbitMQCrashStore
@@ -15,7 +15,6 @@ class TestReprocessing(object):
         config = DotDict()
         self.transaction_executor = MagicMock()
         config.transaction_executor_class = self.transaction_executor
-        config.logger = Mock()
         config.rabbitmq_class = ConnectionContext
         config.routing_key = 'socorro.reprocessing'
         config.filter_on_legacy_processing = True

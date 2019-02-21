@@ -26,8 +26,8 @@ and production of the processed crash data.  The save phase is the union of
 sending new crash records to Postgres; sending the processed crash to HBase;
 the the submission of the crash_id to Elastic Search."""
 
-import signal
 from functools import partial
+import signal
 
 from configman import Namespace
 from configman.converters import class_converter
@@ -82,7 +82,7 @@ class FetchTransformSaveApp(App):
     )
 
     def __init__(self, config):
-        super(FetchTransformSaveApp, self).__init__(config)
+        super().__init__(config)
         self.waiting_func = None
         # select the iterator type based on the "number_of_submissions" config
         self.source_iterator = {
@@ -230,12 +230,7 @@ class FetchTransformSaveApp(App):
                 # we're running all in the same thread, a failure here could
                 # derail the the whole processor. Best just log the problem
                 # so that we can continue.
-                self.config.logger.error(
-                    'Error completing job %s: %s',
-                    crash_id,
-                    x,
-                    exc_info=True
-                )
+                self.logger.error('Error completing job %s: %s', crash_id, x, exc_info=True)
 
     def _transform(self, crash_id):
         """this default transform function only transfers raw data from the
@@ -245,39 +240,23 @@ class FetchTransformSaveApp(App):
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
         except Exception as x:
-            self.config.logger.error(
-                "reading raw_crash: %s",
-                str(x),
-                exc_info=True
-            )
+            self.logger.error("reading raw_crash: %s", str(x), exc_info=True)
             raw_crash = {}
         try:
             dumps = self.source.get_raw_dumps(crash_id)
         except Exception as x:
-            self.config.logger.error(
-                "reading dump: %s",
-                str(x),
-                exc_info=True
-            )
+            self.logger.error("reading dump: %s", str(x), exc_info=True)
             dumps = {}
         try:
             self.destination.save_raw_crash(raw_crash, dumps, crash_id)
-            self.config.logger.info('saved - %s', crash_id)
+            self.logger.info('saved - %s', crash_id)
         except Exception as x:
-            self.config.logger.error(
-                "writing raw: %s",
-                str(x),
-                exc_info=True
-            )
+            self.logger.error("writing raw: %s", str(x), exc_info=True)
         else:
             try:
                 self.source.remove(crash_id)
             except Exception as x:
-                self.config.logger.error(
-                    "removing raw: %s",
-                    str(x),
-                    exc_info=True
-                )
+                self.logger.error("removing raw: %s", str(x), exc_info=True)
 
     def quit_check(self):
         self.task_manager.quit_check()
@@ -295,10 +274,7 @@ class FetchTransformSaveApp(App):
                 quit_check_callback=self.quit_check
             )
         except Exception:
-            self.config.logger.critical(
-                'Error in creating crash source',
-                exc_info=True
-            )
+            self.logger.critical('Error in creating crash source', exc_info=True)
             raise
         try:
             self.destination = self.config.destination.crashstorage_class(
@@ -307,16 +283,13 @@ class FetchTransformSaveApp(App):
                 quit_check_callback=self.quit_check
             )
         except Exception:
-            self.config.logger.critical(
-                'Error in creating crash destination',
-                exc_info=True
-            )
+            self.logger.critical('Error in creating crash destination', exc_info=True)
             raise
 
     def _setup_task_manager(self):
         """instantiate the threaded task manager to run the producer/consumer
         queue that is the heart of the processor."""
-        self.config.logger.info('installing signal handers')
+        self.logger.info('installing signal handers')
         # set up the signal handler for dealing with SIGTERM. the target should
         # be this app instance so the signal handler can reach in and set the
         # quit flag to be True.  See the 'respond_to_SIGTERM' method for the
@@ -356,7 +329,7 @@ class FetchTransformSaveApp(App):
         self._setup_source_and_destination()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self.close()
-        self.config.logger.info('done.')
+        self.logger.info('done.')
 
 
 class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):

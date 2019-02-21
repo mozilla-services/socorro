@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import json
+import logging
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
@@ -56,6 +57,7 @@ class IndexCreator(RequiredConfig):
     def __init__(self, config):
         super(IndexCreator, self).__init__()
         self.config = config
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         self.es_context = self.config.elasticsearch.elasticsearch_class(
             config=self.config.elasticsearch
         )
@@ -101,10 +103,10 @@ class IndexCreator(RequiredConfig):
                 index=es_index,
                 body=es_settings,
             )
-            self.config.logger.info('Created new elasticsearch index: %s', es_index)
+            self.logger.info('Created new elasticsearch index: %s', es_index)
         except elasticsearch.exceptions.RequestError as e:
             # If this index already exists, swallow the error.
             # NOTE! This is NOT how the error looks like in ES 2.x
             if 'IndexAlreadyExistsException' not in str(e):
                 raise
-            self.config.logger.info('Index exists: %s', es_index)
+            self.logger.info('Index exists: %s', es_index)

@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
 import os
 
 from markus.testing import MetricsMock
@@ -63,3 +64,18 @@ def db_conn():
     for table_name in tables:
         cursor.execute('TRUNCATE %s CASCADE' % table_name)
     conn.commit()
+
+
+@pytest.yield_fixture
+def caplogpp(caplog):
+    """Fix logger propagation values, return caplog fixture, and unfix when done."""
+    changed_loggers = []
+    for logger in logging.Logger.manager.loggerDict.values():
+        if getattr(logger, 'propagate', True) is False:
+            logger.propagate = True
+            changed_loggers.append(logger)
+
+    yield caplog
+
+    for logger in changed_loggers:
+        logger.propagate = False

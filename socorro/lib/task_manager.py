@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import time
-import threading
+import logging
 import os
+import threading
+import time
 
 from configman import RequiredConfig, Namespace
 
@@ -45,7 +46,7 @@ def respond_to_SIGTERM(signal_number, frame, target=None):
                  that is a derivative of the TaskManager class below.
     """
     if target:
-        target.config.logger.info('detected SIGTERM')
+        target.logger.info('detected SIGTERM')
         # by setting the quit flag to true, any calls to the 'quit_check'
         # method that is so liberally passed around in this framework will
         # result in raising the quit exception.  The current quit exception
@@ -88,7 +89,7 @@ class TaskManager(RequiredConfig):
         super(TaskManager, self).__init__()
         self.config = config
         self._pid = os.getpid()
-        self.logger = config.logger
+        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         self.job_param_source_iter = job_source_iterator
         self.task_func = task_func
         self.quit = False
@@ -153,7 +154,7 @@ class TaskManager(RequiredConfig):
         try:
             # May never exhaust
             for job_params in self._get_iterator():
-                self.config.logger.debug('received %r', job_params)
+                self.logger.debug('received %r', job_params)
                 self.quit_check()
                 if job_params is None:
                     if self.config.quit_on_empty_queue:
@@ -172,8 +173,7 @@ class TaskManager(RequiredConfig):
                 try:
                     self.task_func(*args, **kwargs)
                 except Exception:
-                    self.config.logger.error("Error in processing a job",
-                                             exc_info=True)
+                    self.logger.error("Error in processing a job", exc_info=True)
         except KeyboardInterrupt:
             self.logger.debug('queuingThread gets quit request')
         finally:

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -184,7 +184,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
         raven_client.capture_error(
             sentry_dsn,
-            self.config.logger,
+            self.logger,
             exc_info,
             extra={'crash_id': crash_id}
         )
@@ -209,7 +209,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         except Exception as x:
             # We don't know what this error is, so we should capture it
             self._capture_error(crash_id, sys.exc_info())
-            self.config.logger.warning('error loading crash %s', crash_id, exc_info=True)
+            self.logger.warning('error loading crash %s', crash_id, exc_info=True)
             self.processor.reject_raw_crash(crash_id, 'error in loading: %s' % x)
             return
 
@@ -236,7 +236,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             # the raw_crash or not.
 
             self.destination.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
-            self.config.logger.info('saved - %s', crash_id)
+            self.logger.info('saved - %s', crash_id)
         except Exception:
             # Capture the exception so we don't lose it as we do other things
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -250,10 +250,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
             for exc_info_item in exc_info:
                 self._capture_error(crash_id, exc_info_item)
-                self.config.logger.warning(
-                    'error in processing or saving crash %s',
-                    crash_id
-                )
+                self.logger.warning('error in processing or saving crash %s', crash_id)
 
             # Re-raise the original exception with the correct traceback
             six.reraise(exc_type, exc_value, exc_tb)
@@ -265,7 +262,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                     try:
                         os.unlink(a_dump_pathname)
                     except OSError as x:
-                        self.config.logger.info('deletion of dump failed: %s', x)
+                        self.logger.info('deletion of dump failed: %s', x)
 
     def _setup_source_and_destination(self):
         """Instantiates classes necessary for processing"""

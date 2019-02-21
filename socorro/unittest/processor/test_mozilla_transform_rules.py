@@ -727,7 +727,6 @@ class TestMozCrashReasonRule(object):
 class TestOutOfMemoryBinaryRule(object):
     def test_extract_memory_info(self):
         config = DotDict()
-        config.logger = Mock()
 
         processor_meta = get_basic_processor_meta()
 
@@ -743,7 +742,6 @@ class TestOutOfMemoryBinaryRule(object):
 
     def test_extract_memory_info_too_big(self):
         config = DotDict()
-        config.logger = Mock()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
@@ -784,7 +782,6 @@ class TestOutOfMemoryBinaryRule(object):
     def test_extract_memory_info_with_trouble(self):
         config = DotDict()
         config.max_size_uncompressed = 1024
-        config.logger = Mock()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
@@ -807,7 +804,6 @@ class TestOutOfMemoryBinaryRule(object):
     def test_extract_memory_info_with_json_trouble(self):
         config = DotDict()
         config.max_size_uncompressed = 1024
-        config.logger = Mock()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.JavaStackTrace = "this is a Java Stack trace"
