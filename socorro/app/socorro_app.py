@@ -132,13 +132,6 @@ class App(RequiredConfig):
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):
-        return cls._do_run(
-            config_path=config_path,
-            values_source_list=values_source_list
-        )
-
-    @classmethod
-    def _do_run(cls, config_path=None, values_source_list=None):
         # NOTE(willkg): This is a classmethod, so we need a different logger.
         mylogger = logging.getLogger(__name__ + '.' + cls.__name__)
         if config_path is None:
