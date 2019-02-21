@@ -71,89 +71,89 @@ class TestApp(object):
     def test_do_run(self, setup_logging):
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal'):
-                class SomeOtherApp(App):
-                    app_name = 'SomeOtherApp'
-                    app_verision = '1.2.3'
-                    app_description = 'a silly app'
 
-                    def main(self):
-                        expected = cm.return_value.context.return_value.__enter__.return_value
-                        assert self.config is expected
-                        return 17
+            class SomeOtherApp(App):
+                app_name = 'SomeOtherApp'
+                app_verision = '1.2.3'
+                app_description = 'a silly app'
 
-                result = SomeOtherApp.run()
-                args = cm.call_args_list
-                args, kwargs = args[0]
-                assert isinstance(args[0], Namespace)
-                assert isinstance(kwargs['values_source_list'], list)
-                assert kwargs['app_name'] == SomeOtherApp.app_name
-                assert kwargs['app_version'] == SomeOtherApp.app_version
-                assert kwargs['app_description'] == SomeOtherApp.app_description
-                assert kwargs['config_pathname'] == './config'
-                assert kwargs['values_source_list'][-1] == command_line
-                assert isinstance(kwargs['values_source_list'][-2], DotDict)
-                assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
-                assert result == 17
+                def main(self):
+                    expected = cm.return_value.context.return_value.__enter__.return_value
+                    assert self.config is expected
+                    return 17
+
+            result = SomeOtherApp.run()
+            args = cm.call_args_list
+            args, kwargs = args[0]
+            assert isinstance(args[0], Namespace)
+            assert isinstance(kwargs['values_source_list'], list)
+            assert kwargs['app_name'] == SomeOtherApp.app_name
+            assert kwargs['app_version'] == SomeOtherApp.app_version
+            assert kwargs['app_description'] == SomeOtherApp.app_description
+            assert kwargs['config_pathname'] == './config'
+            assert kwargs['values_source_list'][-1] == command_line
+            assert isinstance(kwargs['values_source_list'][-2], DotDict)
+            assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
+            assert result == 17
 
     @mock.patch('socorro.app.socorro_app.setup_logging')
     def test_do_run_with_alternate_class_path(self, setup_logging):
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal'):
-                class SomeOtherApp(App):
-                    app_name = 'SomeOtherApp'
-                    app_verision = '1.2.3'
-                    app_description = 'a silly app'
 
-                    def main(self):
-                        expected = cm.return_value.context.return_value.__enter__.return_value
-                        assert self.config is expected
-                        return 17
+            class SomeOtherApp(App):
+                app_name = 'SomeOtherApp'
+                app_verision = '1.2.3'
+                app_description = 'a silly app'
 
-                result = SomeOtherApp.run('my/other/path')
+                def main(self):
+                    expected = cm.return_value.context.return_value.__enter__.return_value
+                    assert self.config is expected
+                    return 17
 
-                args = cm.call_args_list
-                args, kwargs = args[0]
-                assert isinstance(args[0], Namespace)
-                assert isinstance(kwargs['values_source_list'], list)
-                assert kwargs['app_name'] == SomeOtherApp.app_name
-                assert kwargs['app_version'] == SomeOtherApp.app_version
-                assert kwargs['app_description'] == SomeOtherApp.app_description
-                assert kwargs['config_pathname'] == 'my/other/path'
-                assert kwargs['values_source_list'][-1] == command_line
-                assert isinstance(kwargs['values_source_list'][-2], DotDict)
-                assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
-                assert result == 17
+            result = SomeOtherApp.run('my/other/path')
+
+            args = cm.call_args_list
+            args, kwargs = args[0]
+            assert isinstance(args[0], Namespace)
+            assert isinstance(kwargs['values_source_list'], list)
+            assert kwargs['app_name'] == SomeOtherApp.app_name
+            assert kwargs['app_version'] == SomeOtherApp.app_version
+            assert kwargs['app_description'] == SomeOtherApp.app_description
+            assert kwargs['config_pathname'] == 'my/other/path'
+            assert kwargs['values_source_list'][-1] == command_line
+            assert isinstance(kwargs['values_source_list'][-2], DotDict)
+            assert kwargs['values_source_list'][-3] is ConfigFileFutureProxy
+            assert result == 17
 
     @mock.patch('socorro.app.socorro_app.setup_logging')
     def test_do_run_with_alternate_values_source_list(self, setup_logging):
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal'):
-                class SomeOtherApp(App):
-                    app_name = 'SomeOtherApp'
-                    app_verision = '1.2.3'
-                    app_description = 'a silly app'
 
-                    def main(self):
-                        expected = cm.return_value.context.return_value.__enter__.return_value
-                        assert self.config is expected
-                        return 17
+            class SomeOtherApp(App):
+                app_name = 'SomeOtherApp'
+                app_verision = '1.2.3'
+                app_description = 'a silly app'
 
-                result = SomeOtherApp.run(
-                    config_path='my/other/path',
-                    values_source_list=[{"a": 1}, {"b": 2}]
-                )
+                def main(self):
+                    expected = cm.return_value.context.return_value.__enter__.return_value
+                    assert self.config is expected
+                    return 17
 
-                args = cm.call_args_list
-                args, kwargs = args[0]
-                assert isinstance(args[0], Namespace)
-                assert kwargs['app_name'] == SomeOtherApp.app_name
-                assert kwargs['app_version'] == SomeOtherApp.app_version
-                assert kwargs['app_description'] == SomeOtherApp.app_description
-                assert kwargs['config_pathname'] == 'my/other/path'
-                assert isinstance(kwargs['values_source_list'], list)
-                assert kwargs['values_source_list'][0] == {"a": 1}
-                assert kwargs['values_source_list'][1] == {"b": 2}
-                assert result == 17
+            result = SomeOtherApp.run(
+                config_path='my/other/path',
+                values_source_list=[{"a": 1}, {"b": 2}]
+            )
+
+            args = cm.call_args_list
+            args, kwargs = args[0]
+            assert isinstance(args[0], Namespace)
+            assert kwargs['app_name'] == SomeOtherApp.app_name
+            assert kwargs['app_version'] == SomeOtherApp.app_version
+            assert kwargs['app_description'] == SomeOtherApp.app_description
+            assert kwargs['config_pathname'] == 'my/other/path'
+            assert isinstance(kwargs['values_source_list'], list)
+            assert kwargs['values_source_list'][0] == {"a": 1}
+            assert kwargs['values_source_list'][1] == {"b": 2}
+            assert result == 17

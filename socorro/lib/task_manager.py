@@ -36,14 +36,16 @@ def respond_to_SIGTERM(signal_number, frame, target=None):
     This function is used in registering a signal handler from the signal
     module.  It should be registered for any signal for which the desired
     behavior is to kill the application:
+
         signal.signal(signal.SIGTERM, respondToSIGTERM)
-        signal.signal(signal.SIGHUP, respondToSIGTERM)
 
     parameters:
+
         signal_number - unused in this function but required by the api.
         frame - unused in this function but required by the api.
         target - an instance of a class that has a member called 'task_manager'
                  that is a derivative of the TaskManager class below.
+
     """
     if target:
         target.logger.info('detected SIGTERM')
