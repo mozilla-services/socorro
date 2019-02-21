@@ -6,7 +6,6 @@
 import datetime
 import inspect
 import json
-import logging
 import re
 import sys
 import time
@@ -688,9 +687,8 @@ class CronTabberApp(App, RequiredConfig):
     )
 
     def __init__(self, config):
-        super(CronTabberApp, self).__init__(config)
+        super().__init__(config)
         self.database_class = self.config.crontabber.database_class(config.crontabber)
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def main(self):
         if self.config.get('list-jobs'):

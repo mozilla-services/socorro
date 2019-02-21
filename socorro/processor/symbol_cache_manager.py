@@ -51,7 +51,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('D')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.debug('D  %s', event.pathname)
+                self.monitor.logger.debug('D  %s', event.pathname)
             self.monitor._remove_cached(event.pathname)
 
     def process_IN_CREATE(self, event):
@@ -60,7 +60,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('C')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.debug('C  %s', event.pathname)
+                self.monitor.logger.debug('C  %s', event.pathname)
             self.monitor._update_cache(event.pathname)
 
     def process_IN_MOVED_FROM(self, event):
@@ -69,7 +69,7 @@ class EventHandler(ProcessEvent):
                 sys.stdout.write('M')
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.debug('M> %s', event.pathname)
+                self.monitor.logger.debug('M> %s', event.pathname)
             self.monitor._remove_cached(event.pathname)
 
     def process_IN_MOVED_TO(self, event):

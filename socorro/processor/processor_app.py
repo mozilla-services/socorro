@@ -6,7 +6,6 @@
 """the processor_app converts raw_crashes into processed_crashes"""
 
 import collections
-import logging
 import os
 import sys
 
@@ -170,10 +169,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         default='',
         reference_value_from='secrets.sentry',
     )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def _capture_error(self, crash_id, exc_info):
         """Capture an error in sentry if able

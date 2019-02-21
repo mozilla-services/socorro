@@ -40,8 +40,6 @@ from socorro.lib.revision_data import get_revision_data
 # for use with SIGHUP for apps that run as daemons
 restart = True
 
-logger = logging.getLogger(__name__)
-
 
 def respond_to_SIGHUP(signal_number, frame, logger=None):
     """raise the KeyboardInterrupt which will cause the app to effectively
@@ -55,14 +53,14 @@ def respond_to_SIGHUP(signal_number, frame, logger=None):
     raise KeyboardInterrupt
 
 
-def klass_to_pypath(klass):
+def cls_to_pypath(cls):
     """when a class is defined within the module that is being executed as
     main, the module name will be specified as '__main__' even though the
     module actually had its own real name.  This ends up being very confusing
     to Configman as it tries to refer to a class by its proper module name.
     This function will convert a class into its properly qualified actual
     pathname."""
-    if klass.__module__ == '__main__':
+    if cls.__module__ == '__main__':
         module_path = (
             sys.modules['__main__']
             .__file__[:-3]
@@ -76,10 +74,10 @@ def klass_to_pypath(klass):
                 )
                 break
         if module_name == '':
-            return py_obj_to_str(klass)
+            return py_obj_to_str(cls)
     else:
-        module_name = klass.__module__
-    return "%s.%s" % (module_name, klass.__name__)
+        module_name = cls.__module__
+    return "%s.%s" % (module_name, cls.__name__)
 
 
 class App(RequiredConfig):
@@ -151,21 +149,23 @@ class App(RequiredConfig):
         )
 
     @classmethod
-    def run(klass, config_path=None, values_source_list=None):
+    def run(cls, config_path=None, values_source_list=None):
         global restart
         restart = True
         while restart:
             # the SIGHUP handler will change that back to True if it wants
             # the app to restart and run again.
             restart = False
-            app_exit_code = klass._do_run(
+            app_exit_code = cls._do_run(
                 config_path=config_path,
                 values_source_list=values_source_list
             )
         return app_exit_code
 
     @classmethod
-    def _do_run(klass, config_path=None, values_source_list=None):
+    def _do_run(cls, config_path=None, values_source_list=None):
+        # NOTE(willkg): This is a classmethod, so we need a different logger.
+        mylogger = logging.getLogger(__name__ + '.' + cls.__name__)
         if config_path is None:
             config_path = os.environ.get(
                 'DEFAULT_SOCORRO_CONFIG_PATH',
@@ -183,10 +183,10 @@ class App(RequiredConfig):
             ]
 
         # Pull base set of defaults from the config module if it is specified
-        if klass.config_defaults is not None:
-            values_source_list.insert(0, klass.config_defaults)
+        if cls.config_defaults is not None:
+            values_source_list.insert(0, cls.config_defaults)
 
-        config_definition = klass.get_required_config()
+        config_definition = cls.get_required_config()
         if 'application' not in config_definition:
             # FIXME(mkelly): We used to have a SocorroWelcomeApp that defined an
             # "application" option. We no longer have that. This section should
@@ -198,7 +198,7 @@ class App(RequiredConfig):
                 doc=(
                     'the fully qualified classname of the app to run'
                 ),
-                default=klass_to_pypath(klass),
+                default=cls_to_pypath(cls),
                 # the following setting means this option will NOT be
                 # commented out when configman generates a config file
                 likely_to_be_changed=True,
@@ -208,9 +208,9 @@ class App(RequiredConfig):
 
         config_manager = ConfigurationManager(
             config_definition,
-            app_name=klass.app_name,
-            app_version=klass.app_version,
-            app_description=klass.app_description,
+            app_name=cls.app_name,
+            app_version=cls.app_version,
+            app_description=cls.app_description,
             values_source_list=values_source_list,
             options_banned_from_help=[],
             config_pathname=config_path
@@ -234,28 +234,23 @@ class App(RequiredConfig):
             # Log revision information
             revision_data = get_revision_data()
             revision_items = sorted(revision_data.items())
-            logger.info(
+            mylogger.info(
                 'version.json: {%s}',
                 ', '.join(
                     ['%r: %r' % (key, val) for key, val in revision_items]
                 )
             )
 
-            try:
-                config_manager.log_config(logger)
-                respond_to_SIGHUP_with_logging = functools.partial(
-                    respond_to_SIGHUP,
-                    logger=logger
-                )
-                # install the signal handler with logging
-                signal.signal(signal.SIGHUP, respond_to_SIGHUP_with_logging)
-            except KeyError:
-                # config apparently doesn't have 'logger'
-                # install the signal handler without logging
-                signal.signal(signal.SIGHUP, respond_to_SIGHUP)
+            config_manager.log_config(mylogger)
+            respond_to_SIGHUP_with_logging = functools.partial(
+                respond_to_SIGHUP,
+                logger=mylogger
+            )
+            # install the signal handler with logging
+            signal.signal(signal.SIGHUP, respond_to_SIGHUP_with_logging)
 
             # we finally know what app to actually run, instantiate it
-            app_to_run = klass(config)
+            app_to_run = cls(config)
             app_to_run.config_manager = config_manager
             # whew, finally run the app that we wanted
 

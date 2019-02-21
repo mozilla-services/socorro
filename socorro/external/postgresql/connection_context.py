@@ -107,7 +107,6 @@ class ConnectionContext(RequiredConfig):
         try:
             yield conn
         finally:
-            # self.logger.debug('connection closed')
             self.close_connection(conn)
 
     def close_connection(self, connection, force=False):
