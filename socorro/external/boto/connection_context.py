@@ -16,7 +16,6 @@ from configman.converters import str_to_boolean
 import markus
 import six
 
-from socorro.lib.converters import change_default
 from socorro.lib.ooid import date_from_ooid
 
 
@@ -284,10 +283,13 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
         default='us-west-2',
         reference_value_from='resource.boto',
     )
-    required_config.calling_format = change_default(
-        S3ConnectionContext,
+    required_config.add_option(
         'calling_format',
-        'boto.s3.connection.OrdinaryCallingFormat'
+        doc="fully qualified python path to the boto calling format function",
+        default='boto.s3.connection.OrdinaryCallingFormat',
+        from_string_converter=class_converter,
+        reference_value_from='resource.boto',
+        likely_to_be_changed=True,
     )
 
     def __init__(self, config, quit_check_callback=None):

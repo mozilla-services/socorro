@@ -19,12 +19,10 @@ from configman.converters import str_to_list
 from configman.dotdict import DotDict
 
 from socorro.lib import raven_client
-from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import utc_now
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
-    ExternalProcessRule,  # imported to override config, not instantiated
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
@@ -113,12 +111,12 @@ class Processor2015(RequiredConfig):
         doc='the default name of a dump',
         default='upload_file_minidump',
     )
-    required_config.command_pathname = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'command_pathname',
+        doc='the full pathname to the external program to run (quote path with embedded spaces)',
         # NOTE(willkg): This is the path for the RPM-based Socorro deploy. When
         # we switch to Docker, we should change this.
-        '/data/socorro/stackwalk/bin/stackwalker',
+        default='/data/socorro/stackwalk/bin/stackwalker',
     )
     required_config.add_option(
         'result_key',
@@ -143,10 +141,10 @@ class Processor2015(RequiredConfig):
         from_string_converter=str_to_list,
         likely_to_be_changed=True
     )
-    required_config.command_line = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'command_line',
-        (
+        doc='template for the command to invoke the external program; uses Python format syntax',
+        default=(
             'timeout -s KILL {kill_timeout} {command_pathname} '
             '--raw-json {raw_crash_pathname} '
             '{symbols_urls} '

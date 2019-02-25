@@ -15,7 +15,6 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
-from socorro.lib.converters import change_default
 from socorro.lib.transaction import retry
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
@@ -24,7 +23,7 @@ class BotoCrashStorage(CrashStorageBase):
     """Saves and loads crash data to S3"""
     required_config = Namespace()
     required_config.add_option(
-        "resource_class",
+        'resource_class',
         default='socorro.external.boto.connection_context.ConnectionContextBase',
         doc='fully qualified dotted Python classname to handle Boto connections',
         from_string_converter=class_converter,
@@ -194,10 +193,12 @@ class BotoCrashStorage(CrashStorageBase):
 
 class BotoS3CrashStorage(BotoCrashStorage):
     required_config = Namespace()
-    required_config.resource_class = change_default(
-        BotoCrashStorage,
+    required_config.add_option(
         'resource_class',
-        'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
+        default='socorro.external.boto.connection_context.RegionalS3ConnectionContext',
+        doc='fully qualified dotted Python classname to handle Boto connections',
+        from_string_converter=class_converter,
+        reference_value_from='resource.boto'
     )
 
 
@@ -210,10 +211,12 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     """
 
     required_config = Namespace()
-    required_config.resource_class = change_default(
-        BotoCrashStorage,
+    required_config.add_option(
         'resource_class',
-        'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
+        default='socorro.external.boto.connection_context.RegionalS3ConnectionContext',
+        doc='fully qualified dotted Python classname to handle Boto connections',
+        from_string_converter=class_converter,
+        reference_value_from='resource.boto'
     )
     required_config.elasticsearch = Namespace()
     required_config.elasticsearch.add_option(
