@@ -6,8 +6,13 @@ import contextlib
 import logging
 import pika
 import socket
+import threading
 
 from configman import Namespace, RequiredConfig
+
+
+def executor_identity():
+    return threading.currentThread().getName()
 
 
 class Connection(object):
@@ -255,7 +260,7 @@ class ConnectionContextPooled(ConnectionContext):
             name - a name as a string
         """
         if not name:
-            name = self.config.executor_identity()
+            name = executor_identity()
         if name in self.pool:
             return self.pool[name]
         self.logger.debug('creating new RMQ connection: %s', name)
@@ -288,6 +293,6 @@ class ConnectionContextPooled(ConnectionContext):
     def force_reconnect(self, name=None):
         """Force reconnect"""
         if name is None:
-            name = self.config.executor_identity()
+            name = executor_identity()
         if name in self.pool:
             del self.pool[name]

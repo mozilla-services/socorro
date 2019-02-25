@@ -20,7 +20,6 @@ import logging.handlers
 import os
 import socket
 import sys
-import threading
 
 from configman import (
     ConfigurationManager,
@@ -194,10 +193,6 @@ class App(RequiredConfig):
         with config_manager.context() as config:
             setup_logging(config)
             setup_metrics(config)
-
-            config.executor_identity = (
-                lambda: threading.currentThread().getName()
-            )
 
             # Log revision information
             revision_data = get_revision_data()
