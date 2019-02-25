@@ -12,7 +12,6 @@ import threading
 import time
 
 from configman import Namespace
-from configman.converters import class_converter
 from six.moves import queue
 
 from socorro.lib.task_manager import (
@@ -249,39 +248,6 @@ class ThreadedTaskManager(TaskManager):
             # Moving the setting of the flag to this location allows the
             # workers to finish and then the app shuts down.
             self.quit = True
-
-
-class ThreadedTaskManagerWithConfigSetup(ThreadedTaskManager):
-    """Given an iterator over a sequence of job parameters and a function,
-    this class will execute the the function in a set of threads.
-
-    Rather than accepting the job_source_iterator and task function as
-    constructor arguments, this class gets those values from configuration.
-    """
-    required_config = Namespace()
-    required_config = Namespace()
-    required_config.add_option(
-        'job_source_iterator',
-        default=default_iterator,
-        doc='an iterator or callable that will '
-        'return an iterator',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        'task_func',
-        default=default_task_func,
-        doc='a callable that accomplishes a task',
-        from_string_converter=class_converter
-    )
-
-    def __init__(self, config):
-        """Create the ThreadedTaskManager with config options rather than
-        functions passed into the constructor."""
-        super().__init__(
-            config=config,
-            job_source_iterator=config.job_source_iterator,
-            task_func=config.task_func
-        )
 
 
 class TaskThread(threading.Thread):
