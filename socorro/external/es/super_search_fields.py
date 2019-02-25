@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import logging
 
 import elasticsearch
 
@@ -109,23 +108,8 @@ def add_doc_values(value):
             add_doc_values(field)
 
 
-class SuperSearchFields(object):
-    # Defining some filters that need to be considered as lists.
-    filters = [
-        ('form_field_choices', None, ['list', 'str']),
-        ('permissions_needed', None, ['list', 'str']),
-    ]
-
-    def __init__(self, config):
-        self.config = config
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
-        self.es_context = self.config.elasticsearch.elasticsearch_class(
-            self.config.elasticsearch
-        )
-
-    def get_connection(self):
-        with self.es_context() as conn:
-            return conn
+class SuperSearchFieldsData(object):
+    """Data class for super search fields."""
 
     def get_fields(self):
         """Return all the fields from our super_search_fields.json file."""
@@ -134,6 +118,24 @@ class SuperSearchFields(object):
     # Alias ``get`` as ``get_fields`` so this can be used in the API well and
     # can be conveniently subclassed by ``SuperSearchMissingFields``.
     get = get_fields
+
+
+class SuperSearchFields(SuperSearchFieldsData):
+    # Defining some filters that need to be considered as lists.
+    filters = [
+        ('form_field_choices', None, ['list', 'str']),
+        ('permissions_needed', None, ['list', 'str']),
+    ]
+
+    def __init__(self, config):
+        self.config = config
+        self.es_context = self.config.elasticsearch.elasticsearch_class(
+            self.config.elasticsearch
+        )
+
+    def get_connection(self):
+        with self.es_context() as conn:
+            return conn
 
     def get_missing_fields(self):
         """Return fields missing from our FIELDS list
@@ -187,7 +189,7 @@ class SuperSearchFields(object):
                 all_existing_fields.update(parse_mapping(properties, None))
             except elasticsearch.exceptions.NotFoundError as e:
                 # If an index does not exist, this should not fail
-                self.logger.warning(
+                self.config.logger.warning(
                     'Missing index in elasticsearch while running '
                     'SuperSearchFields.get_missing_fields, error is: %s',
                     str(e)
@@ -315,7 +317,7 @@ class SuperSearchMissingFields(SuperSearchFields):
     """Model that returns fields missing from super search fields"""
 
     def get(self):
-        return super().get_missing_fields()
+        return super(SuperSearchMissingFields, self).get_missing_fields()
 
 
 # Tree of super search fields

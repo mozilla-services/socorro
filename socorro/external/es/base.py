@@ -46,8 +46,7 @@ class ElasticsearchConfig(RequiredConfig):
     required_config.elasticsearch.add_option(
         'elasticsearch_timeout_extended',
         default=120,
-        doc='the time in seconds before a query to elasticsearch fails in '
-            'restricted sections',
+        doc='time in seconds before a query to elasticsearch fails in restricted sections',
         reference_value_from='resource.elasticsearch',
     )
     required_config.elasticsearch.add_option(
