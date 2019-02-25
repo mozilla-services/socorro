@@ -35,7 +35,7 @@ class SearchForm(forms.Form):
     """Handle the data populating the search form"""
 
     def __init__(self, all_fields, products, product_versions, platforms, user, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.all_fields = all_fields.copy()
 

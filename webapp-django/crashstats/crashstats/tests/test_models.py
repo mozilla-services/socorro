@@ -20,11 +20,8 @@ from socorro.lib import BadArgumentError
 
 class TestGraphicsDevices(DjangoTestCase):
     def setUp(self):
-        super(TestGraphicsDevices, self).setUp()
+        super().setUp()
         cache.clear()
-
-    def tearDown(self):
-        super(TestGraphicsDevices, self).tearDown()
 
     def test_get_pairs(self):
         """Test get_pairs() works correctly
@@ -76,7 +73,7 @@ class TestGraphicsDevices(DjangoTestCase):
 
 class TestBugs(DjangoTestCase):
     def setUp(self):
-        super(TestBugs, self).setUp()
+        super().setUp()
         cache.clear()
 
     def test_get_one(self):
@@ -159,7 +156,7 @@ class TestBugs(DjangoTestCase):
 
 class TestSignaturesByBugs(DjangoTestCase):
     def setUp(self):
-        super(TestSignaturesByBugs, self).setUp()
+        super().setUp()
         cache.clear()
 
     def test_get_one(self):
@@ -211,7 +208,7 @@ class TestSignaturesByBugs(DjangoTestCase):
 
 class TestSignatureFirstDate(DjangoTestCase):
     def setUp(self):
-        super(TestSignatureFirstDate, self).setUp()
+        super().setUp()
         cache.clear()
 
     def test_get_one(self):
@@ -274,7 +271,7 @@ class TestSignatureFirstDate(DjangoTestCase):
 
 class TestVersionString(DjangoTestCase):
     def setUp(self):
-        super(TestVersionString, self).setUp()
+        super().setUp()
         cache.clear()
 
     def test_bad_args_raise_error(self):
@@ -364,11 +361,8 @@ class TestVersionString(DjangoTestCase):
 
 class TestMiddlewareModels(DjangoTestCase):
     def setUp(self):
-        super(TestMiddlewareModels, self).setUp()
+        super().setUp()
         cache.clear()
-
-    def tearDown(self):
-        super(TestMiddlewareModels, self).tearDown()
 
     @mock.patch('requests.Session')
     def test_bugzilla_api(self, rsession):

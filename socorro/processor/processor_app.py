@@ -266,7 +266,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
     def _setup_source_and_destination(self):
         """Instantiates classes necessary for processing"""
-        super(ProcessorApp, self)._setup_source_and_destination()
+        super()._setup_source_and_destination()
         if self.config.companion_process.companion_class:
             self.companion_process = self.config.companion_process.companion_class(
                 self.config.companion_process,
@@ -288,7 +288,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
     def close(self):
         """Cleans up the processor on shutdown"""
-        super(ProcessorApp, self).close()
+        super().close()
         try:
             self.companion_process.close()
         except AttributeError:

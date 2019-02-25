@@ -25,4 +25,4 @@ class SuperSearchResponse(Response):
                 if key in columns
             )
 
-        super(SuperSearchResponse, self).__init__(content, status_code)
+        super().__init__(content, status_code)

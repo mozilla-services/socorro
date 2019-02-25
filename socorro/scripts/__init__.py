@@ -21,12 +21,10 @@ class WrappedTextHelpFormatter(argparse.HelpFormatter):
             if part.startswith('* '):
                 subparts = part.split('\n')
                 for j, subpart in enumerate(subparts):
-                    subparts[j] = super(WrappedTextHelpFormatter, self)._fill_text(
-                        subpart, width, indent
-                    )
+                    subparts[j] = super()._fill_text(subpart, width, indent)
                 parts[i] = '\n'.join(subparts)
             else:
-                parts[i] = super(WrappedTextHelpFormatter, self)._fill_text(part, width, indent)
+                parts[i] = super()._fill_text(part, width, indent)
 
         return '\n\n'.join(parts)
 
@@ -67,7 +65,7 @@ class FlagAction(argparse.Action):
         if sorted(yes_options) != sorted(no_options):
             raise ValueError('There should be one --no option for every option value.')
 
-        super(FlagAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string.startswith('--no'):

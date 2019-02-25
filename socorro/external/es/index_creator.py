@@ -55,7 +55,7 @@ class IndexCreator(RequiredConfig):
     )
 
     def __init__(self, config):
-        super(IndexCreator, self).__init__()
+        super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         self.es_context = self.config.elasticsearch.elasticsearch_class(

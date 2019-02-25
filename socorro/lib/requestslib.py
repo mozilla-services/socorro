@@ -24,12 +24,12 @@ class HTTPAdapterWithTimeout(HTTPAdapter):
     """
     def __init__(self, *args, **kwargs):
         self._default_timeout = kwargs.pop('default_timeout', 5.0)
-        super(HTTPAdapterWithTimeout, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def send(self, *args, **kwargs):
         # If there's a timeout, use that. Otherwise, use the default.
         kwargs['timeout'] = kwargs.get('timeout') or self._default_timeout
-        return super(HTTPAdapterWithTimeout, self).send(*args, **kwargs)
+        return super().send(*args, **kwargs)
 
 
 def session_with_retries(total_retries=5, backoff_factor=0.2,

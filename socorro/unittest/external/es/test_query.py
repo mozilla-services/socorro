@@ -27,7 +27,7 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 class IntegrationTestQuery(ElasticsearchTestCase):
     """Test Query with an elasticsearch database containing fake data"""
     def setup_method(self, method):
-        super(IntegrationTestQuery, self).setup_method(method)
+        super().setup_method(method)
         self.api = Query(config=self.config)
 
     def test_get(self):

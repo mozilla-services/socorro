@@ -76,7 +76,7 @@ class ConnectionContext(RequiredConfig):
                            where the actual database parameters are found
 
         """
-        super(ConnectionContext, self).__init__()
+        super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         if local_config is None:

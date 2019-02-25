@@ -21,7 +21,7 @@ DUMB_SIGNATURE = 'hang | mozilla::wow::such_signature(smth*)'
 
 class TestViews(BaseTestViews):
     def setUp(self):
-        super(TestViews, self).setUp()
+        super().setUp()
         # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
         # supersearch mocking
         self.mock_gvfp = mock.patch('crashstats.crashstats.utils.get_versions_for_product')
@@ -30,7 +30,7 @@ class TestViews(BaseTestViews):
 
     def tearDown(self):
         self.mock_gvfp.stop()
-        super(TestViews, self).tearDown()
+        super().tearDown()
 
     def test_signature_report(self):
         url = reverse('signature:signature_report')

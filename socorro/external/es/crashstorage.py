@@ -57,7 +57,7 @@ class RawCrashRedactor(Redactor):
     through configuration. That list is hard-coded in the __init__ function.
     """
     def __init__(self, config):
-        super(RawCrashRedactor, self).__init__(config)
+        super().__init__(config)
 
         # Overwrite the list of fields to redact away.
         self.forbidden_keys = [
@@ -212,11 +212,7 @@ class ESCrashStorage(CrashStorageBase):
     field_name_number_error_re = re.compile(r'\[failed to parse \[([\w\-.]+)]]')
 
     def __init__(self, config, namespace='', quit_check_callback=None):
-        super(ESCrashStorage, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
+        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
 
         self.es_context = self.config.elasticsearch.elasticsearch_class(
             config=self.config.elasticsearch
@@ -427,7 +423,7 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
     )
 
     def __init__(self, config, *args, **kwargs):
-        super(ESCrashStorageRedactedSave, self).__init__(config, *args, **kwargs)
+        super().__init__(config, *args, **kwargs)
         self.redactor = config.es_redactor.redactor_class(config.es_redactor)
         self.raw_crash_redactor = config.raw_crash_es_redactor.redactor_class(
             config.raw_crash_es_redactor
@@ -442,12 +438,7 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         self.redactor.redact(processed_crash)
         self.raw_crash_redactor.redact(raw_crash)
 
-        super(ESCrashStorageRedactedSave, self).save_raw_and_processed(
-            raw_crash,
-            dumps,
-            processed_crash,
-            crash_id
-        )
+        super().save_raw_and_processed(raw_crash, dumps, processed_crash, crash_id)
 
 
 class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
@@ -495,9 +486,4 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         }
         processed_crash['json_dump'] = redacted_json_dump
 
-        super(ESCrashStorageRedactedJsonDump, self).save_raw_and_processed(
-            raw_crash,
-            dumps,
-            processed_crash,
-            crash_id
-        )
+        super().save_raw_and_processed(raw_crash, dumps, processed_crash, crash_id)

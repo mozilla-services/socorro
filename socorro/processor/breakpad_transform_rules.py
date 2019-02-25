@@ -98,7 +98,7 @@ class ExternalProcessRule(Rule):
     )
 
     def __init__(self, config):
-        super(ExternalProcessRule, self).__init__(config)
+        super().__init__(config)
 
     def _interpret_external_command_output(self, fp, processor_meta):
         data = fp.read()
@@ -235,7 +235,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
     )
 
     def __init__(self, *args, **kwargs):
-        super(BreakpadStackwalkerRule2015, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.metrics = markus.get_metrics('processor.breakpadstackwalkerrule')
 
     @contextmanager
@@ -252,10 +252,10 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
             os.unlink(file_pathname)
 
     def _execute_external_process(self, command_line, processor_meta):
-        stackwalker_output, return_code = super(
-            BreakpadStackwalkerRule2015,
-            self
-        )._execute_external_process(command_line, processor_meta)
+        stackwalker_output, return_code = (
+            super()
+            ._execute_external_process(command_line, processor_meta)
+        )
 
         if not isinstance(stackwalker_output, Mapping):
             processor_meta.processor_notes.append(

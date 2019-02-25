@@ -60,14 +60,14 @@ class TestDocumentationViews(BaseTestViews):
 
 class TestViews(BaseTestViews):
     def setUp(self):
-        super(TestViews, self).setUp()
+        super().setUp()
         self._middleware = settings.MIDDLEWARE
         settings.MIDDLEWARE += (
             'crashstats.crashstats.middleware.SetRemoteAddrFromRealIP',
         )
 
     def tearDown(self):
-        super(TestViews, self).tearDown()
+        super().tearDown()
         settings.MIDDLEWARE = self._middleware
 
     def test_invalid_url(self):

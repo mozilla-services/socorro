@@ -57,7 +57,7 @@ class UpdateSignaturesCronApp(BaseCronApp):
     )
 
     def __init__(self, *args, **kwargs):
-        super(UpdateSignaturesCronApp, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.database = self.config.database_class(self.config)
 
     def update_crashstats_signature(self, signature, report_date, report_build):

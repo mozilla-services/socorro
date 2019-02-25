@@ -124,7 +124,7 @@ class ArchiveScraperCronApp(BaseCronApp):
     )
 
     def __init__(self, *args, **kwargs):
-        super(ArchiveScraperCronApp, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.database = self.config.database_class(self.config)
 
         # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds,

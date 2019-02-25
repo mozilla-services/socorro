@@ -54,10 +54,10 @@ class PrefixedField(object):
         if isinstance(value, string_types):
             self.operator, value = split_on_operator(value)
 
-        return super(PrefixedField, self).to_python(value)
+        return super().to_python(value)
 
     def clean(self, *args, **kwargs):
-        cleaned_value = super(PrefixedField, self).clean(*args, **kwargs)
+        cleaned_value = super().clean(*args, **kwargs)
 
         self.prefixed_value = self.value_to_string(cleaned_value)
         if self.operator is not None and self.prefixed_value is not None:
@@ -92,7 +92,7 @@ class MultiplePrefixedValueField(PrefixedField):
     """
     def __init__(self, *args, **kwargs):
         kwargs['widget'] = forms.SelectMultiple
-        super(MultiplePrefixedValueField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def clean(self, values, *args, **kwargs):
         cleaned_values = []
@@ -101,18 +101,10 @@ class MultiplePrefixedValueField(PrefixedField):
 
         if values is None:
             # call the mother classe's clean to do other verifications
-            return super(MultiplePrefixedValueField, self).clean(
-                values,
-                *args,
-                **kwargs
-            )
+            return super().clean(values, *args, **kwargs)
 
         for value in values:
-            cleaned_value = super(MultiplePrefixedValueField, self).clean(
-                value,
-                *args,
-                **kwargs
-            )
+            cleaned_value = super().clean(value, *args, **kwargs)
             if cleaned_value is not None:
                 cleaned_values.append(cleaned_value)
                 prefixed_values.append(self.prefixed_value)
@@ -161,7 +153,7 @@ class IsoDateTimeField(forms.DateTimeField):
                 # let the super method deal with that
                 pass
 
-        return super(IsoDateTimeField, self).to_python(value)
+        return super().to_python(value)
 
 
 class DateTimeField(MultiplePrefixedValueField, IsoDateTimeField):

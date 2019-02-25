@@ -24,7 +24,7 @@ from socorro.unittest.external.es.base import (
 class IntegrationTestSuperSearch(ElasticsearchTestCase):
     """Test SuperSearch with an elasticsearch database containing fake data"""
     def setup_method(self, method):
-        super(IntegrationTestSuperSearch, self).setup_method(method)
+        super().setup_method(method)
 
         self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()

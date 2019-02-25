@@ -24,7 +24,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
     """
 
     def __init__(self, *args, **kwargs):
-        super(SimplifiedCrashData, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Forcibly set this to override the default in the base
         # crash storage class for boto. We're confident that at this
         # leaf point we want to NOT return a DotDict but just a plain
@@ -77,7 +77,7 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
     """Fetches data from TelemetryBotoS3CrashStorage"""
 
     def __init__(self, *args, **kwargs):
-        super(TelemetryCrashData, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Forcibly set this to override the default in the base crash storage
         # class for boto. We're confident that at this leaf point we want to
         # NOT return a DotDict but just a plain python dict.

@@ -49,11 +49,7 @@ class BotoCrashStorage(CrashStorageBase):
     )
 
     def __init__(self, config, namespace='', quit_check_callback=None):
-        super(BotoCrashStorage, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
+        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
         self.connection_source = config.resource_class(config)
 
     @staticmethod
@@ -228,7 +224,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     )
 
     def __init__(self, config, *args, **kwargs):
-        super(TelemetryBotoS3CrashStorage, self).__init__(config, *args, **kwargs)
+        super().__init__(config, *args, **kwargs)
         self._all_fields = SuperSearchFields(config=self.config).get()
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):

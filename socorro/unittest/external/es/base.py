@@ -67,7 +67,7 @@ class SuperSearchWithFields(SuperSearch):
 
     def get(self, **kwargs):
         kwargs['_fields'] = copy.deepcopy(FIELDS)
-        return super(SuperSearchWithFields, self).get(**kwargs)
+        return super().get(**kwargs)
 
 
 class TestCaseWithConfig(object):
@@ -112,7 +112,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
     """Base class for Elastic Search related unit tests"""
 
     def setup_method(self, method):
-        super(ElasticsearchTestCase, self).setup_method(method)
+        super().setup_method(method)
         self.config = self.get_base_config()
         es_context = self.config.elasticsearch.elasticsearch_class(config=self.config.elasticsearch)
 
@@ -130,7 +130,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         # Clear the test indices.
         self.index_client.delete(self.config.elasticsearch.elasticsearch_index)
 
-        super(ElasticsearchTestCase, self).teardown_method(method)
+        super().teardown_method(method)
 
     def health_check(self):
         self.connection.cluster.health(wait_for_status='yellow', request_timeout=5)
@@ -144,7 +144,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         if extra_values:
             values_source.update(extra_values)
 
-        return super(ElasticsearchTestCase, self).get_tuned_config(sources, values_source)
+        return super().get_tuned_config(sources, values_source)
 
     def get_base_config(self, es_index=None):
         extra_values = None

@@ -57,11 +57,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
     )
 
     def __init__(self, config, namespace='', quit_check_callback=None):
-        super(RabbitMQCrashStorage, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
+        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
 
         # Note: this may continue to grow if we aren't acking certain UUIDs.
         # We should find a way to time out UUIDs after a certain time.

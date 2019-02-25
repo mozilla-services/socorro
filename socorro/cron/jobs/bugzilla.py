@@ -105,7 +105,7 @@ class BugzillaCronApp(BaseCronApp):
     )
 
     def __init__(self, *args, **kwargs):
-        super(BugzillaCronApp, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.database = self.config.database_class(self.config)
 
     def run(self):

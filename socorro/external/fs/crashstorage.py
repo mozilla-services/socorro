@@ -110,7 +110,7 @@ class FSPermanentStorage(CrashStorageBase):
     )
 
     def __init__(self, *args, **kwargs):
-        super(FSPermanentStorage, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         try:
             with using_umask(self.config.umask):
                 os.makedirs(self.config.fs_root)

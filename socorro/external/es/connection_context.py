@@ -48,7 +48,7 @@ class ConnectionContext(RequiredConfig):
     )
 
     def __init__(self, config):
-        super(ConnectionContext, self).__init__()
+        super().__init__()
         self.config = config
 
     def connection(self, name=None, timeout=None):
