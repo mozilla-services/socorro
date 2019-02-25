@@ -257,7 +257,7 @@ class S3ConnectionContext(ConnectionContextBase):
     )
 
     def __init__(self, config, quit_check_callback=None):
-        super(S3ConnectionContext, self).__init__(config)
+        super().__init__(config)
         self._connect_to_endpoint = boto.connect_s3
         self._calling_format = config.calling_format
 
@@ -291,7 +291,7 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
     )
 
     def __init__(self, config, quit_check_callback=None):
-        super(RegionalS3ConnectionContext, self).__init__(config)
+        super().__init__(config)
         self._region = config.region
         self._connect_to_endpoint = boto.s3.connect_to_region
 

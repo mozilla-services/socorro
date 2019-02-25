@@ -26,7 +26,7 @@ for module in (crashstats.crashstats.models, crashstats.supersearch.models):
 
 class DjangoTestCase(django.test.TestCase):
     def setUp(self):
-        super(DjangoTestCase, self).setUp()
+        super().setUp()
 
         # These are all the classes who have an implementation
         # (e.g. a class that belongs to socorro.external.something.something)
@@ -46,14 +46,9 @@ class DjangoTestCase(django.test.TestCase):
     def tearDown(self):
         for klass in classes_with_implementation:
             klass.implementation = self._mockeries[klass]
-        super(DjangoTestCase, self).tearDown()
+        super().tearDown()
 
-    def _login(
-        self,
-        email='test@example.com',
-        username='test',
-        password='secret',
-    ):
+    def _login(self, email='test@example.com', username='test', password='secret'):
         User.objects.create_user(username, email, password)
         assert self.client.login(username=username, password=password)
         # Do this so that the last_login gets set and saved

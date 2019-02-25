@@ -63,7 +63,7 @@ class ProductVersionsMixin(object):
 
     """
     def setUp(self):
-        super(ProductVersionsMixin, self).setUp()
+        super().setUp()
         cache.clear()
 
         # Create products
@@ -78,7 +78,7 @@ class ProductVersionsMixin(object):
 
     def tearDown(self):
         self.mock_gvfp_patcher.stop()
-        super(ProductVersionsMixin, self).tearDown()
+        super().tearDown()
 
     def set_product_versions(self, versions):
         self.mock_gvfp.return_value = versions
@@ -86,7 +86,7 @@ class ProductVersionsMixin(object):
 
 class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
     def setUp(self):
-        super(BaseTestViews, self).setUp()
+        super().setUp()
 
         # Tests assume and require a non-persistent cache backend
         assert 'LocMemCache' in settings.CACHES['default']['BACKEND']
@@ -108,7 +108,7 @@ class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
 
     def tearDown(self):
         cache.clear()
-        super(BaseTestViews, self).tearDown()
+        super().tearDown()
 
     def _add_permission(self, user, codename, group_name='Hackers'):
         group = self._create_group_with_permission(codename)

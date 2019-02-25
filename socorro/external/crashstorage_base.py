@@ -350,7 +350,7 @@ class PolyStorageError(Exception, collections.MutableSequence):
 
     """
     def __init__(self, *args):
-        super(PolyStorageError, self).__init__(*args)
+        super().__init__(*args)
         self.exceptions = []  # the collection
 
     def gather_current_exception(self):
@@ -486,7 +486,7 @@ class PolyCrashStorage(CrashStorageBase):
             self.stores - instances of the subordinate crash stores
 
         """
-        super(PolyCrashStorage, self).__init__(config, namespace, quit_check_callback)
+        super().__init__(config, namespace, quit_check_callback)
         self.storage_namespaces = config.storage_namespaces
         self.stores = DotDict()
         for storage_namespace in self.storage_namespaces:
@@ -594,11 +594,7 @@ class BenchmarkingCrashStorage(CrashStorageBase):
     )
 
     def __init__(self, config, namespace='', quit_check_callback=None):
-        super(BenchmarkingCrashStorage, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
+        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
         self.wrapped_crashstore = config.wrapped_crashstore(
             config,
             namespace=namespace,
@@ -720,11 +716,7 @@ class MetricsBenchmarkingWrapper(MetricsEnabledBase):
     )
 
     def __init__(self, config, namespace='', quit_check_callback=None):
-        super(MetricsBenchmarkingWrapper, self).__init__(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
-        )
+        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
         self.wrapped_object = config.wrapped_object_class(
             config,
             namespace=namespace,

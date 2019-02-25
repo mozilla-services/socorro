@@ -108,7 +108,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
 class SearchBaseWithFields(SearchBase):
     def get_parameters(self, **kwargs):
         kwargs['_fields'] = SUPERSEARCH_FIELDS_MOCKED_RESULTS
-        return super(SearchBaseWithFields, self).get_parameters(**kwargs)
+        return super().get_parameters(**kwargs)
 
 
 def _get_config_manager():

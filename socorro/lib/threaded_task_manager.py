@@ -287,10 +287,11 @@ class ThreadedTaskManagerWithConfigSetup(ThreadedTaskManager):
     def __init__(self, config):
         """Create the ThreadedTaskManager with config options rather than
         functions passed into the constructor."""
-        super(ThreadedTaskManagerWithConfigSetup, self).__init__(
+        super().__init__(
             config=config,
             job_source_iterator=config.job_source_iterator,
-            task_func=config.task_func)
+            task_func=config.task_func
+        )
 
 
 class TaskThread(threading.Thread):
@@ -303,7 +304,7 @@ class TaskThread(threading.Thread):
             config - the configuration from configman
             task_queue - a reference to the queue from which to fetch jobs
         """
-        super(TaskThread, self).__init__()
+        super().__init__()
         self.task_queue = task_queue
         self.config = config
         self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)

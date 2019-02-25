@@ -21,10 +21,7 @@ from crashstats.supersearch.models import (
 
 class SiteAdminTestViews(BaseTestViews):
     def _login(self, is_superuser=True):
-        user = super(SiteAdminTestViews, self)._login(
-            username='lonnen',
-            email='lonnen@example.com',
-        )
+        user = super()._login(username='lonnen', email='lonnen@example.com')
         user.is_superuser = is_superuser
         user.is_staff = is_superuser
         user.save()

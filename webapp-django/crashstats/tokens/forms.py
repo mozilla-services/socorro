@@ -15,7 +15,7 @@ class GenerateTokenForm(BaseModelForm):
 
     def __init__(self, *args, **kwargs):
         possible_permissions = kwargs.pop('possible_permissions')
-        super(GenerateTokenForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if possible_permissions:
             self.fields['permissions'].choices = [

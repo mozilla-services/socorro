@@ -191,7 +191,7 @@ class SuperSearch(ESSocorroMiddleware):
         # SuperSearch requires that the list of fields be passed to it.
         kwargs['_fields'] = self.all_fields
 
-        return super(SuperSearch, self).get(**kwargs)
+        return super().get(**kwargs)
 
 
 class SuperSearchUnredacted(SuperSearch):

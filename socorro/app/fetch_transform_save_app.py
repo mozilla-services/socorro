@@ -212,11 +212,7 @@ class FetchTransformSaveApp(App):
         can detect and reject them here"""
         return False
 
-    def transform(
-        self,
-        crash_id,
-        finished_func=(lambda: None),
-    ):
+    def transform(self, crash_id, finished_func=(lambda: None)):
         try:
             self._transform(crash_id)
         finally:
@@ -299,12 +295,11 @@ class FetchTransformSaveApp(App):
             target=self
         )
         signal.signal(signal.SIGTERM, respond_to_SIGTERM_with_logging)
-        self.task_manager = \
-            self.config.producer_consumer.producer_consumer_class(
-                self.config.producer_consumer,
-                job_source_iterator=self.source_iterator,
-                task_func=self.transform
-            )
+        self.task_manager = self.config.producer_consumer.producer_consumer_class(
+            self.config.producer_consumer,
+            job_source_iterator=self.source_iterator,
+            task_func=self.transform
+        )
         self.config.executor_identity = self.task_manager.executor_identity
 
     def close(self):
@@ -355,22 +350,20 @@ class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
     def _setup_source_and_destination(self):
         """use the base class to setup the source and destinations but add to
         that setup the instantiation of the "new_crash_source" """
-        super(FetchTransformSaveWithSeparateNewCrashSourceApp, self) \
-            ._setup_source_and_destination()
+        super()._setup_source_and_destination()
         if self.config.new_crash_source.new_crash_source_class:
-            self.new_crash_source = \
-                self.config.new_crash_source.new_crash_source_class(
-                    self.config.new_crash_source,
-                    name=self.app_instance_name,
-                    quit_check_callback=self.quit_check
-                )
+            self.new_crash_source = self.config.new_crash_source.new_crash_source_class(
+                self.config.new_crash_source,
+                name=self.app_instance_name,
+                quit_check_callback=self.quit_check
+            )
         else:
             # the configuration failed to provide a "new_crash_source", fall
             # back to tying the "new_crash_source" to the "source".
             self.new_crash_source = self.source
 
     def close(self):
-        super(FetchTransformSaveWithSeparateNewCrashSourceApp, self).close()
+        super().close()
         if self.source != self.new_crash_source:
             try:
                 self.new_crash_source.close()

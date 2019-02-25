@@ -16,7 +16,7 @@ class TestFetchTransformSaveApp(object):
     def test_bogus_source_iter_and_worker(self):
         class TestFTSAppClass(FetchTransformSaveApp):
             def __init__(self, config):
-                super(TestFTSAppClass, self).__init__(config)
+                super().__init__(config)
                 self.the_list = []
 
             def _setup_source_and_destination(self):

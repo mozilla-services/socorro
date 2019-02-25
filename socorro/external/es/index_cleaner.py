@@ -34,7 +34,7 @@ class IndexCleaner(RequiredConfig):
     )
 
     def __init__(self, config):
-        super(IndexCleaner, self).__init__()
+        super().__init__()
         self.config = config
 
     def delete_indices(self, predicate=None):

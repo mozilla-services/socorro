@@ -862,7 +862,7 @@ class RawCrash(SocorroMiddleware):
             # legacy
             format_ = kwargs['format'] = 'raw'
         expect_dict = format_ != 'raw'
-        result = super(RawCrash, self).get(**kwargs)
+        result = super().get(**kwargs)
         # This 'result', will either be a binary blob or a python dict.
         # Unless kwargs['format']==raw, this has to be a python dict.
         if expect_dict and not isinstance(result, dict):

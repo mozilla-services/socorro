@@ -88,7 +88,7 @@ class TaskManager(RequiredConfig):
                                   Ex:  (('a', 17), {'x': 23})
             task_func - a function that will accept the args and kwargs yielded
                         by the job_source_iterator"""
-        super(TaskManager, self).__init__()
+        super().__init__()
         self.config = config
         self._pid = os.getpid()
         self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)

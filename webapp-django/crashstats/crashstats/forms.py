@@ -9,7 +9,7 @@ from django import forms
 
 class _BaseForm(object):
     def clean(self):
-        cleaned_data = super(_BaseForm, self).clean()
+        cleaned_data = super().clean()
         for field in cleaned_data:
             if isinstance(cleaned_data[field], six.string_types):
                 cleaned_data[field] = (

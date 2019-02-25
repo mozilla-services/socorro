@@ -315,7 +315,7 @@ class SuperSearchMissingFields(SuperSearchFields):
     """Model that returns fields missing from super search fields"""
 
     def get(self):
-        return super(SuperSearchMissingFields, self).get_missing_fields()
+        return super().get_missing_fields()
 
 
 # Tree of super search fields

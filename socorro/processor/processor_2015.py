@@ -189,7 +189,7 @@ class Processor2015(RequiredConfig):
     )
 
     def __init__(self, config, rules=None, quit_check_callback=None):
-        super(Processor2015, self).__init__()
+        super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         # the quit checks are components of a system of callbacks used

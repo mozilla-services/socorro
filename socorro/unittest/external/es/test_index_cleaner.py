@@ -18,7 +18,7 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 class IntegrationTestIndexCleaner(ElasticsearchTestCase):
     def __init__(self, *args, **kwargs):
-        super(IntegrationTestIndexCleaner, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.config = self.get_tuned_config(IndexCleaner, {
             'resource.elasticsearch.elasticsearch_index': 'test_socorro%Y%W',
@@ -26,7 +26,7 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         })
 
     def setup_method(self, method):
-        super(IntegrationTestIndexCleaner, self).setup_method(method)
+        super().setup_method(method)
         self.indices = []
 
     def create_index(self, index):

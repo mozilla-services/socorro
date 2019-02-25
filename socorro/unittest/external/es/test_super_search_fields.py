@@ -28,7 +28,7 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
     """Test SuperSearchFields with an elasticsearch database containing fake data"""
     def setup_method(self, method):
-        super(IntegrationTestSuperSearchFields, self).setup_method(method)
+        super().setup_method(method)
         self.api = SuperSearchFields(config=self.config)
         self.api.get_fields = lambda: copy.deepcopy(FIELDS)
 

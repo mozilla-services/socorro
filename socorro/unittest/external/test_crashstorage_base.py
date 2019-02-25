@@ -27,7 +27,7 @@ class A(CrashStorageBase):
     required_config.add_option('y', default=2)
 
     def __init__(self, config, namespace='', quit_check_callback=None):
-        super(A, self).__init__(config, namespace, quit_check_callback)
+        super().__init__(config, namespace, quit_check_callback)
         self.raw_crash_count = 0
 
     def save_raw_crash(self, raw_crash, dump):

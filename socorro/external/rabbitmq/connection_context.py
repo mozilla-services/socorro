@@ -146,7 +146,7 @@ class ConnectionContext(RequiredConfig):
             local_config - this is the namespace within the complete config
                            where the actual RabbitMQ parameters are found
         """
-        super(ConnectionContext, self).__init__()
+        super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         if local_config is None:
@@ -240,7 +240,7 @@ class ConnectionContextPooled(ConnectionContext):
     connections.
     """
     def __init__(self, config, local_config=None):
-        super(ConnectionContextPooled, self).__init__(config, local_config)
+        super().__init__(config, local_config)
         self.pool = {}
 
     def connection(self, name=None):
@@ -259,7 +259,7 @@ class ConnectionContextPooled(ConnectionContext):
         if name in self.pool:
             return self.pool[name]
         self.logger.debug('creating new RMQ connection: %s', name)
-        self.pool[name] = super(ConnectionContextPooled, self).connection(name)
+        self.pool[name] = super().connection(name)
         return self.pool[name]
 
     def close_connection(self, connection, force=False):
@@ -270,7 +270,7 @@ class ConnectionContextPooled(ConnectionContext):
         """
         if force:
             try:
-                super(ConnectionContextPooled, self).close_connection(connection, force)
+                super().close_connection(connection, force)
             except self.operational_exceptions:
                 self.logger.error('RabbitMQPooled - failed closing')
             for name, conn in list(self.pool.items()):

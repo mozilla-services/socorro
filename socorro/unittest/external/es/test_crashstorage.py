@@ -180,7 +180,7 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
     """
 
     def setup_method(self, method):
-        super(IntegrationTestESCrashStorage, self).setup_method(method)
+        super().setup_method(method)
         self.config = self.get_tuned_config(ESCrashStorage)
 
         # Helpers for interacting with ES outside of the context of a
@@ -199,7 +199,7 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
             # It's fine it's fine; 404 means the test didn't create any
             # indices, therefore they can't be deleted.
             pass
-        super(IntegrationTestESCrashStorage, self).teardown_method(method)
+        super().teardown_method(method)
 
     def test_index_crash(self):
         """Test indexing a crash document"""
@@ -252,7 +252,7 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
 class TestESCrashStorage(ElasticsearchTestCase):
     """These tests are self-contained and use Mock where necessary"""
     def setup_method(self, method):
-        super(TestESCrashStorage, self).setup_method(method)
+        super().setup_method(method)
         self.config = self.get_tuned_config(ESCrashStorage)
 
     def test_get_index_for_crash_static_name(self):

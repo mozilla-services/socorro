@@ -568,7 +568,7 @@ class BetaVersionRule(Rule):
     SUPPORTED_PRODUCTS = ['firefox', 'fennec', 'fennecandroid']
 
     def __init__(self, config):
-        super(BetaVersionRule, self).__init__(config)
+        super().__init__(config)
         self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
         self.metrics = markus.get_metrics('processor.betaversionrule')
 
@@ -747,7 +747,7 @@ class ThemePrettyNameRule(Rule):
     """
 
     def __init__(self, config):
-        super(ThemePrettyNameRule, self).__init__(config)
+        super().__init__(config)
         self.conversions = {
             "{972ce4c6-7e08-4474-a285-3208198ce6fd}":
                 "{972ce4c6-7e08-4474-a285-3208198ce6fd} "
@@ -785,7 +785,7 @@ class SignatureGeneratorRule(Rule):
     """Generates a Socorro crash signature"""
 
     def __init__(self, config):
-        super(SignatureGeneratorRule, self).__init__(config)
+        super().__init__(config)
         try:
             sentry_dsn = self.config.sentry.dsn
         except (AttributeError, KeyError):

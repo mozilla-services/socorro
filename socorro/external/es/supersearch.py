@@ -33,7 +33,7 @@ class SuperSearch(SearchBase):
             self.config.elasticsearch
         )
 
-        super(SuperSearch, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_connection(self):
         with self.es_context() as conn:
