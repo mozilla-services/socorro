@@ -9,7 +9,6 @@ from mock import Mock
 
 from socorro.lib.threaded_task_manager import (
     ThreadedTaskManager,
-    ThreadedTaskManagerWithConfigSetup,
     default_task_func,
 )
 
@@ -91,70 +90,9 @@ class TestThreadedTaskManager(object):
             ttm.wait_for_completion()
             raise
 
-    def test_doing_work_with_two_workers_and_config_setup(self):
-        def new_iter():
-            for x in range(5):
-                yield ((x,), {})
-
-        my_list = []
-
-        def insert_into_list(anItem):
-            my_list.append(anItem)
-
-        config = DotDict()
-        config.number_of_threads = 2
-        config.maximum_queue_size = 2
-        config.job_source_iterator = new_iter
-        config.task_func = insert_into_list
-        ttm = ThreadedTaskManagerWithConfigSetup(config)
-        try:
-            ttm.start()
-            time.sleep(0.2)
-            assert len(ttm.thread_list) == 2
-            assert len(my_list) == 5
-            assert sorted(my_list) == list(range(5))
-        except Exception:
-            # we got threads to join
-            ttm.wait_for_completion()
-            raise
-
     # failure tests
 
     count = 0
-
-    def test_task_raises_unexpected_exception(self):
-        global count
-        count = 0
-
-        def new_iter():
-            for x in range(10):
-                yield (x,)
-
-        my_list = []
-
-        def insert_into_list(anItem):
-            global count
-            count += 1
-            if count == 4:
-                raise Exception('Unexpected')
-            my_list.append(anItem)
-
-        config = DotDict()
-        config.number_of_threads = 1
-        config.maximum_queue_size = 1
-        config.job_source_iterator = new_iter
-        config.task_func = insert_into_list
-        ttm = ThreadedTaskManagerWithConfigSetup(config)
-        try:
-            ttm.start()
-            time.sleep(0.2)
-            assert len(ttm.thread_list) == 1
-            assert sorted(my_list) == [0, 1, 2, 4, 5, 6, 7, 8, 9]
-            assert len(my_list) == 9
-        except Exception:
-            # we got threads to join
-            ttm.wait_for_completion()
-            raise
 
     def test_blocking_start_with_quit_on_empty(self):
         config = DotDict()
