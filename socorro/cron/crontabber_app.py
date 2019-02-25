@@ -18,11 +18,7 @@ from psycopg2 import OperationalError, IntegrityError
 import six
 
 from socorro.app.socorro_app import App
-from socorro.cron.base import (
-    convert_frequency,
-    FrequencyDefinitionError,
-    reorder_dag
-)
+from socorro.cron.base import convert_frequency
 from socorro.lib import raven_client
 from socorro.lib.datetimeutil import utc_now, timesince
 from socorro.lib.dbutil import (
@@ -105,11 +101,9 @@ def jobs_converter(path_or_jobs):
     else:
         input_str = path_or_jobs
 
+    # At this point, we have a big string of jobs
     from_string_converter = classes_in_namespaces_converter_with_compression(
-        reference_namespace=Namespace(),
-        list_splitter_fn=line_splitter,
-        class_extractor=pipe_splitter,
-        extra_extractor=get_extra_as_options
+        reference_namespace=Namespace()
     )
     return from_string_converter(input_str)
 
@@ -393,24 +387,54 @@ class JobStateDatabase(RequiredConfig):
             )
 
 
-def _default_list_splitter(class_list_str):
-    return [x.strip() for x in class_list_str.split(',')]
+def line_splitter(text):
+    return [x.strip() for x in re.split('\n|,|;', text.strip())
+            if x.strip() and not x.strip().startswith('#')]
 
 
-def _default_class_extractor(list_element):
-    return list_element
+def pipe_splitter(text):
+    return text.split('|', 1)[0]
 
 
-def _default_extra_extractor(list_element):
-    raise NotImplementedError()
+def get_extra_as_options(input_str):
+    if '|' not in input_str:
+        raise JobDescriptionError('No frequency and/or time defined')
+    metadata = input_str.split('|')[1:]
+    if len(metadata) == 1:
+        if ':' in metadata[0]:
+            frequency = '1d'
+            time_ = metadata[0]
+        else:
+            frequency = metadata[0]
+            time_ = None
+    else:
+        frequency, time_ = metadata
+
+    n = Namespace()
+    n.add_option(
+        'frequency',
+        doc='frequency',
+        default=frequency,
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+    n.add_option(
+        'time',
+        doc='time',
+        default=time_,
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+    return n
 
 
 def classes_in_namespaces_converter_with_compression(
-        reference_namespace={},
-        template_for_namespace="class-%(name)s",
-        list_splitter_fn=_default_list_splitter,
-        class_extractor=_default_class_extractor,
-        extra_extractor=_default_extra_extractor):
+    reference_namespace={},
+    template_for_namespace="class-%(name)s",
+    list_splitter_fn=line_splitter,
+    class_extractor=pipe_splitter,
+    extra_extractor=get_extra_as_options
+):
     """
     parameters:
         template_for_namespace - a template for the names of the namespaces
@@ -506,38 +530,6 @@ def classes_in_namespaces_converter_with_compression(
     return class_list_converter
 
 
-def get_extra_as_options(input_str):
-    if '|' not in input_str:
-        raise JobDescriptionError('No frequency and/or time defined')
-    metadata = input_str.split('|')[1:]
-    if len(metadata) == 1:
-        if ':' in metadata[0]:
-            frequency = '1d'
-            time_ = metadata[0]
-        else:
-            frequency = metadata[0]
-            time_ = None
-    else:
-        frequency, time_ = metadata
-
-    n = Namespace()
-    n.add_option(
-        'frequency',
-        doc='frequency',
-        default=frequency,
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True
-    )
-    n.add_option(
-        'time',
-        doc='time',
-        default=time_,
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True
-    )
-    return n
-
-
 def check_time(value):
     """check that it's a value like 03:45 or 1:1"""
     try:
@@ -550,15 +542,6 @@ def check_time(value):
             raise ValueError
     except ValueError:
         raise TimeDefinitionError("Invalid definition of time %r" % value)
-
-
-def line_splitter(text):
-    return [x.strip() for x in re.split('\n|,|;', text.strip())
-            if x.strip() and not x.strip().startswith('#')]
-
-
-def pipe_splitter(text):
-    return text.split('|', 1)[0]
 
 
 class CronTabberApp(App, RequiredConfig):
@@ -657,23 +640,9 @@ class CronTabberApp(App, RequiredConfig):
         exclude_from_dump_conf=True,
     )
     required_config.add_option(
-        name='configtest',
-        default=False,
-        doc='Check that all configured jobs are OK',
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True,
-    )
-    required_config.add_option(
         name='sentrytest',
         default=False,
         doc='Send a sample raven exception',
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True,
-    )
-    required_config.add_option(
-        name='audit-ghosts',
-        default=False,
-        doc='Checks if there jobs in the database that is not configured.',
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
@@ -719,18 +688,6 @@ class CronTabberApp(App, RequiredConfig):
                 self.logger.debug('Next job to work on is already ongoing')
                 return 3
         return 0
-
-    @staticmethod
-    def _reorder_class_list(class_list):
-        # class_list looks something like this:
-        # [('FooBarJob', <class 'FooBarJob'>),
-        #  ('BarJob', <class 'BarJob'>),
-        #  ('FooJob', <class 'FooJob'>)]
-        return reorder_dag(
-            class_list,
-            depends_getter=lambda x: getattr(x[1], 'depends_on', None),
-            name_getter=lambda x: x[1].app_name
-        )
 
     @property
     def job_state_database(self):
@@ -804,7 +761,6 @@ class CronTabberApp(App, RequiredConfig):
 
         """
         class_list = self.config.crontabber.jobs.class_list
-        class_list = self._reorder_class_list(class_list)
 
         if job_list_string.lower() == 'all':
             return class_list
@@ -849,7 +805,6 @@ class CronTabberApp(App, RequiredConfig):
         if means that next time we run, this job will start over from scratch.
         """
         class_list = self.config.crontabber.jobs.class_list
-        class_list = self._reorder_class_list(class_list)
         for class_name, job_class in class_list:
             if (
                 job_class.app_name == description or
@@ -865,7 +820,6 @@ class CronTabberApp(App, RequiredConfig):
 
     def run_all(self):
         class_list = self.config.crontabber.jobs.class_list
-        class_list = self._reorder_class_list(class_list)
         for class_name, job_class in class_list:
             class_config = self.config.crontabber['class-%s' % class_name]
             self._run_one(job_class, class_config)
@@ -874,7 +828,6 @@ class CronTabberApp(App, RequiredConfig):
         # the description in this case is either the app_name or the full
         # module/class reference
         class_list = self.config.crontabber.jobs.class_list
-        class_list = self._reorder_class_list(class_list)
         for class_name, job_class in class_list:
             if (
                 job_class.app_name == description or
@@ -891,13 +844,6 @@ class CronTabberApp(App, RequiredConfig):
         if not force:
             if not self.time_to_run(job_class, time_):
                 self.logger.debug("skipping %r because it's not time to run", job_class)
-                return
-            ok, dependency_error = self.check_dependencies(job_class)
-            if not ok:
-                self.logger.debug(
-                    "skipping %r dependencies aren't met [%s]",
-                    job_class, dependency_error
-                )
                 return
 
         self.logger.debug('about to run %r', job_class)
@@ -1007,29 +953,6 @@ class CronTabberApp(App, RequiredConfig):
             )
             metrics.gauge('job_failure_runtime', value=duration, tags=['job:%s' % app_name])
 
-    def check_dependencies(self, class_):
-        try:
-            depends_on = class_.depends_on
-        except AttributeError:
-            # that's perfectly fine
-            return True, None
-        if isinstance(depends_on, six.string_types):
-            depends_on = [depends_on]
-        for dependency in depends_on:
-            try:
-                job_info = self.job_state_database[dependency]
-            except KeyError:
-                # the job this one depends on hasn't been run yet!
-                return False, "%r hasn't been run yet" % dependency
-            if job_info.get('last_error'):
-                # errored last time it ran
-                return False, "%r errored last time it ran" % dependency
-            if job_info['next_run'] < utc_now():
-                # the dependency hasn't recently run
-                return False, "%r hasn't recently run" % dependency
-        # no reason not to stop this class
-        return True, None
-
     def time_to_run(self, class_, time_):
         """return true if it's time to run the job.
         This is true if there is no previous information about its last run
@@ -1093,11 +1016,6 @@ class CronTabberApp(App, RequiredConfig):
                     )
             info['ongoing'] = utc_now()
         else:
-            depends_on = getattr(class_, 'depends_on', [])
-            if isinstance(depends_on, six.string_types):
-                depends_on = [depends_on]
-            elif not isinstance(depends_on, list):
-                depends_on = list(depends_on)
             info = {
                 'next_run': None,
                 'first_run': None,
@@ -1105,7 +1023,7 @@ class CronTabberApp(App, RequiredConfig):
                 'last_success': None,
                 'last_error': {},
                 'error_count': 0,
-                'depends_on': depends_on,
+                'depends_on': [],
                 'ongoing': utc_now(),
             }
         self.job_state_database[app_name] = info
@@ -1114,12 +1032,7 @@ class CronTabberApp(App, RequiredConfig):
         assert inspect.isclass(class_)
         app_name = class_.app_name
         info = self.job_state_database.get(app_name, {})
-        depends_on = getattr(class_, 'depends_on', [])
-        if isinstance(depends_on, six.string_types):
-            depends_on = [depends_on]
-        elif not isinstance(depends_on, list):
-            depends_on = list(depends_on)
-        info['depends_on'] = depends_on
+        info['depends_on'] = []
         if not info.get('first_run'):
             info['first_run'] = now
         info['last_run'] = now
@@ -1156,37 +1069,6 @@ class CronTabberApp(App, RequiredConfig):
 
         self.job_state_database[app_name] = info
 
-    def configtest(self):
-        """return true if all configured jobs are configured OK"""
-        # similar to run_all() but don't actually run them
-        failed = 0
-
-        class_list = self.config.crontabber.jobs.class_list
-        class_list = self._reorder_class_list(class_list)
-        for class_name, __ in class_list:
-            class_config = self.config.crontabber['class-%s' % class_name]
-            if not self._configtest_one(class_config):
-                failed += 1
-        return not failed
-
-    def _configtest_one(self, config):
-        try:
-            seconds = convert_frequency(config.frequency)
-            time_ = config.time
-            if time_:
-                check_time(time_)
-                # if less than 1 day, it doesn't make sense to specify hour
-                if seconds < 60 * 60 * 24:
-                    raise FrequencyDefinitionError(config.time)
-            return True
-
-        except (JobNotFoundError,
-                JobDescriptionError,
-                FrequencyDefinitionError,
-                TimeDefinitionError):
-            self.logger.critical('Failed to config test a job', exc_info=True)
-            return False
-
     def sentrytest(self):
         """return true if we managed to send a sample raven exception"""
         if not (self.config.sentry and self.config.sentry.dsn):
@@ -1196,27 +1078,6 @@ class CronTabberApp(App, RequiredConfig):
         identifier = client.captureMessage('Sentry test sent from crontabber')
         self.logger.info('Sentry successful identifier: %s', identifier)
         return True
-
-    def audit_ghosts(self):
-        """compare the list of configured jobs with the jobs in the state"""
-        print_header = True
-        for app_name in self._get_ghosts():
-            if print_header:
-                print_header = False
-                print(
-                    "Found the following in the state database but not "
-                    "available as a configured job:"
-                )
-            print("\t%s" % app_name)
-
-    def _get_ghosts(self):
-        class_list = self.config.crontabber.jobs.class_list
-        class_list = self._reorder_class_list(class_list)
-        configured_app_names = []
-        for __, job_class in class_list:
-            configured_app_names.append(job_class.app_name)
-        state_app_names = self.job_state_database.keys()
-        return set(state_app_names) - set(configured_app_names)
 
 
 # NOTE(willkg): Times are in UTC.
