@@ -90,6 +90,8 @@ memmove
 _platform_memmove\$VARIANT\$
 __platform_memmove\$VARIANT\$
 memset
+MessageLoop::PostTask_Helper
+MessageLoop::PostTask
 mozalloc_abort
 mozalloc_handle_oom
 moz_free
