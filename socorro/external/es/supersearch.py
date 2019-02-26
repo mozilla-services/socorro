@@ -2,15 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
+from collections import defaultdict
 import sys
 import re
-from collections import defaultdict
 
+from configman import class_converter, Namespace, RequiredConfig
 from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
 import six
 
+from socorro.external.es.base import generate_list_of_indexes
 from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
@@ -25,46 +26,27 @@ ELASTICSEARCH_PARSE_EXCEPTION_REGEX = re.compile(
 )
 
 
-class SuperSearch(SearchBase):
+class SuperSearch(RequiredConfig, SearchBase):
+    required_config = Namespace()
+    required_config.add_option(
+        'elasticsearch_class',
+        doc='a class that implements the ES connection object',
+        default='socorro.external.es.connection_context.ConnectionContext',
+        from_string_converter=class_converter
+    )
 
-    def __init__(self, *args, **kwargs):
-        self.config = kwargs.get('config')
-        self.es_context = self.config.elasticsearch.elasticsearch_class(
-            self.config.elasticsearch
-        )
+    def __init__(self, config):
+        """Create a SuperSearch instance.
 
-        super().__init__(*args, **kwargs)
+        :arg context: an Elasticsearch ConnectionContext instance
+
+        """
+        self.config = config
+        self.context = self.config.elasticsearch_class(self.config)
 
     def get_connection(self):
-        with self.es_context() as conn:
+        with self.context() as conn:
             return conn
-
-    def get_list_of_indices(self, from_date, to_date, es_index=None):
-        """Return the list of indices to query to access all the crash reports
-        that were processed between from_date and to_date.
-
-        The naming pattern for indices in elasticsearch is configurable, it is
-        possible to have an index per day, per week, per month...
-
-        Parameters:
-        * from_date datetime object
-        * to_date datetime object
-        """
-        if es_index is None:
-            es_index = self.config.elasticsearch.elasticsearch_index
-
-        indices = []
-        current_date = from_date
-        while current_date <= to_date:
-            index = current_date.strftime(es_index)
-
-            # Make sure no index is twice in the list
-            # (for weekly or monthly indices for example)
-            if index not in indices:
-                indices.append(index)
-            current_date += datetime.timedelta(days=1)
-
-        return indices
 
     def get_indices(self, dates):
         """Return the list of indices to use for given dates. """
@@ -76,7 +58,7 @@ class SuperSearch(SearchBase):
             if '<' in date.operator:
                 end_date = date.value
 
-        return self.get_list_of_indices(start_date, end_date)
+        return generate_list_of_indexes(start_date, end_date, self.context.get_index_template())
 
     def get_full_field_name(self, field_data):
         if not field_data['namespace']:
@@ -120,10 +102,7 @@ class SuperSearch(SearchBase):
         try:
             field_ = self.all_fields[value]
         except KeyError:
-            raise BadArgumentError(
-                value,
-                msg='Unknown field "%s"' % value
-            )
+            raise BadArgumentError(value, msg='Unknown field "%s"' % value)
 
         if not field_['is_returned']:
             # Returning this field is not allowed.
@@ -202,7 +181,7 @@ class SuperSearch(SearchBase):
         search = Search(
             using=self.get_connection(),
             index=indices,
-            doc_type=self.config.elasticsearch.elasticsearch_doctype,
+            doc_type=self.context.get_doctype(),
         )
 
         # Create filters.
@@ -244,9 +223,7 @@ class SuperSearch(SearchBase):
                         # when there is plenty of data yields a 11MB JSON
                         # file.
                         if facets_size > 10000:
-                            raise BadArgumentError(
-                                '_facets_size greater than 10,000'
-                            )
+                            raise BadArgumentError('_facets_size greater than 10,000')
 
                     for f in self.histogram_fields:
                         if param.name == '_histogram_interval.%s' % f:
@@ -338,9 +315,7 @@ class SuperSearch(SearchBase):
                         name = '%s.full' % name
 
                     q_args = {}
-                    q_args[name] = (
-                        operator_wildcards[param.operator] % param.value
-                    )
+                    q_args[name] = operator_wildcards[param.operator] % param.value
                     query = Q('wildcard', **q_args)
                     args = query.to_dict()
 
@@ -490,9 +465,7 @@ class SuperSearch(SearchBase):
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
                 try:
-                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(
-                        exception.error
-                    )[-1]
+                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(exception.error)[-1]
                     # Loop over the original parameters to try to figure
                     # out which *key* had the bad input.
                     for key, value in kwargs.items():
@@ -573,9 +546,7 @@ class SuperSearch(SearchBase):
         for f in self.histogram_fields:
             key = '_histogram.%s' % f
             if params.get(key):
-                histogram_bucket = self._get_histogram_agg(
-                    f, histogram_intervals
-                )
+                histogram_bucket = self._get_histogram_agg(f, histogram_intervals)
 
                 for param in params[key]:
                     self._add_second_level_aggs(
@@ -611,9 +582,7 @@ class SuperSearch(SearchBase):
             size=facets_size,
         )
 
-    def _add_second_level_aggs(
-        self, param, recipient, facets_size, histogram_intervals
-    ):
+    def _add_second_level_aggs(self, param, recipient, facets_size, histogram_intervals):
         for field in param.value:
             if not field:
                 continue
@@ -624,9 +593,7 @@ class SuperSearch(SearchBase):
                     continue
 
                 bucket_name = 'histogram_%s' % field_name
-                bucket = self._get_histogram_agg(
-                    field_name, histogram_intervals
-                )
+                bucket = self._get_histogram_agg(field_name, histogram_intervals)
 
             elif field.startswith('_cardinality'):
                 field_name = field[len('_cardinality.'):]
@@ -638,7 +605,4 @@ class SuperSearch(SearchBase):
                 bucket_name = field
                 bucket = self._get_fields_agg(field, facets_size)
 
-            recipient.bucket(
-                bucket_name,
-                bucket
-            )
+            recipient.bucket(bucket_name, bucket)

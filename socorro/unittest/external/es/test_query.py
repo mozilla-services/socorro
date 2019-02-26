@@ -13,6 +13,7 @@ from socorro.lib import (
     MissingArgumentError,
     ResourceNotFound,
 )
+from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.query import Query
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import ElasticsearchTestCase
@@ -24,11 +25,13 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-class IntegrationTestQuery(ElasticsearchTestCase):
-    """Test Query with an elasticsearch database containing fake data"""
+class TestIntegrationQuery(ElasticsearchTestCase):
+    """Test Query with an elasticsearch database containing fake data."""
+
     def setup_method(self, method):
         super().setup_method(method)
-        self.api = Query(config=self.config)
+        config = self.get_base_config(cls=Query)
+        self.api = Query(config=config)
 
     def test_get(self):
         self.index_crash({'product': 'WaterWolf'})
@@ -100,8 +103,8 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         )
         mocked_connection.search.assert_called_with(
             body='{"query": {}}',
-            index=[self.api.config.elasticsearch.elasticsearch_index],
-            doc_type=self.api.config.elasticsearch.elasticsearch_doctype
+            index=[self.es_context.get_index_template()],
+            doc_type=self.es_context.get_doctype()
         )
 
         # Test all indices.
@@ -121,17 +124,17 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         mocked_connection.search.assert_called_with(
             body='{"query": {}}',
             index=['socorro_201801', 'socorro_200047', 'not_an_index'],
-            doc_type=self.api.config.elasticsearch.elasticsearch_doctype
+            doc_type=self.es_context.get_doctype()
         )
 
         # Test default indices with an index schema based on dates.
         index_schema = 'socorro_%Y%W'
-        config = self.get_base_config(es_index=index_schema)
+        config = self.get_base_config(cls=Query, es_index=index_schema)
         api = Query(config=config)
 
         now = datetimeutil.utc_now()
         last_week = now - datetime.timedelta(days=7)
-        indices = api.generate_list_of_indexes(last_week, now)
+        indices = generate_list_of_indexes(last_week, now, api.context.get_index_template())
 
         api.get(
             query={'query': {}}
@@ -139,5 +142,5 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         mocked_connection.search.assert_called_with(
             body='{"query": {}}',
             index=indices,
-            doc_type=api.config.elasticsearch.elasticsearch_doctype
+            doc_type=api.context.get_doctype()
         )

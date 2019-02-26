@@ -12,7 +12,7 @@ from socorro.lib.datetimeutil import utc_now
 
 
 class IndexCleaner(RequiredConfig):
-    """Delete elasticsearch indices from our databases."""
+    """Delete Elasticsearch indices from our databases."""
 
     required_config = Namespace()
     required_config.add_option(

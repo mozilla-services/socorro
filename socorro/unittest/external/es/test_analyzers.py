@@ -15,12 +15,13 @@ from socorro.unittest.external.es.base import (
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-class IntegrationTestAnalyzers(ElasticsearchTestCase):
+class TestIntegrationAnalyzers(ElasticsearchTestCase):
     """Test the custom analyzers we create in our indices"""
     def setup_method(self, method):
         super().setup_method(method)
 
-        self.api = SuperSearchWithFields(config=self.config)
+        config = self.get_base_config(cls=SuperSearchWithFields)
+        self.api = SuperSearchWithFields(config=config)
         self.now = datetimeutil.utc_now()
 
     def test_semicolon_keywords(self):

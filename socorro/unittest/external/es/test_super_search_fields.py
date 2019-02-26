@@ -12,7 +12,7 @@ from socorro.external.es.super_search_fields import (
     FIELDS,
     is_doc_values_friendly,
     add_doc_values,
-    SuperSearchFields,
+    SuperSearchFieldsModel,
 )
 from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import ElasticsearchTestCase
@@ -25,11 +25,13 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
+class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
     """Test SuperSearchFields with an elasticsearch database containing fake data"""
     def setup_method(self, method):
         super().setup_method(method)
-        self.api = SuperSearchFields(config=self.config)
+
+        config = self.get_base_config(cls=SuperSearchFieldsModel)
+        self.api = SuperSearchFieldsModel(config=config)
         self.api.get_fields = lambda: copy.deepcopy(FIELDS)
 
     def test_get_fields(self):
@@ -37,12 +39,15 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         assert results == FIELDS
 
     def test_get_missing_fields(self):
-        config = self.get_base_config(es_index='socorro_integration_test_%W')
+        config = self.get_base_config(
+            cls=SuperSearchFieldsModel, es_index='socorro_integration_test_%W'
+        )
+        api = SuperSearchFieldsModel(config=config)
 
         fake_mappings = [
             {
                 'mappings': {
-                    config.elasticsearch.elasticsearch_doctype: {
+                    config.elasticsearch_doctype: {
                         'properties': {
                             # Add a bunch of unknown fields.
                             'field_z': {
@@ -90,7 +95,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             },
             {
                 'mappings': {
-                    config.elasticsearch.elasticsearch_doctype: {
+                    api.context.get_doctype(): {
                         'properties': {
                             'namespace1': {
                                 'type': 'object',
@@ -119,13 +124,13 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             # that it swallows the subsequent error.
             for i in range(2):
                 date = now - datetime.timedelta(weeks=i)
-                index = date.strftime(config.elasticsearch.elasticsearch_index)
+                index = date.strftime(api.context.get_index_template())
                 mapping = fake_mappings[i % len(fake_mappings)]
 
-                self.index_creator.create_index(index, mapping)
+                api.context.create_index(index, mapping)
                 indices.append(index)
 
-            api = SuperSearchFields(config=config)
+            api = SuperSearchFieldsModel(config=config)
             missing_fields = api.get_missing_fields()
             expected = [
                 'field_z',
@@ -144,7 +149,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
 
     def test_get_mapping(self):
         mapping = self.api.get_mapping()
-        doctype = self.config.elasticsearch.elasticsearch_doctype
+        doctype = self.es_context.get_doctype()
 
         assert doctype in mapping
         properties = mapping[doctype]['properties']

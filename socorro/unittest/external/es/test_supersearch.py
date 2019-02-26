@@ -21,12 +21,14 @@ from socorro.unittest.external.es.base import (
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-class IntegrationTestSuperSearch(ElasticsearchTestCase):
-    """Test SuperSearch with an elasticsearch database containing fake data"""
+class TestIntegrationSuperSearch(ElasticsearchTestCase):
+    """Test SuperSearch with an elasticsearch database containing fake data."""
+
     def setup_method(self, method):
         super().setup_method(method)
 
-        self.api = SuperSearchWithFields(config=self.config)
+        config = self.get_base_config(cls=SuperSearchWithFields)
+        self.api = SuperSearchWithFields(config=config)
         self.now = datetimeutil.utc_now()
 
         # Wait until the cluster is yellow before proceeding.
@@ -45,7 +47,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get_indices(dates)
         assert res == ['socorro_integration_test_reports']
 
-        config = self.get_base_config(es_index='socorro_%Y%W')
+        config = self.get_base_config(cls=SuperSearchWithFields, es_index='socorro_%Y%W')
         api = SuperSearchWithFields(config=config)
 
         dates = [
@@ -1683,7 +1685,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         self.index_crash({
             'signature': 'js::break_your_browser',
             'product': 'WaterWolf',
-            'cpu_name': 'intel',
+            'cpu_arch': 'intel',
             'os_name': 'Windows NT',
             'date_processed': self.now,
         })
@@ -1698,24 +1700,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         assert 'signature' in res['hits'][0]
         assert 'platform' in res['hits'][0]
         assert 'date' not in res['hits'][0]
-
-        # Test a synonyme field returns the correct name.
-        kwargs = {
-            '_columns': ['cpu_arch']
-        }
-        res = self.api.get(**kwargs)
-
-        assert 'cpu_arch' in res['hits'][0]
-        assert 'cpu_name' not in res['hits'][0]
-
-        # Test with 2 synonyme fields.
-        kwargs = {
-            '_columns': ['cpu_name', 'cpu_arch']
-        }
-        res = self.api.get(**kwargs)
-
-        assert 'cpu_name' in res['hits'][0]
-        assert 'cpu_arch' in res['hits'][0]
 
         # Test errors
         with pytest.raises(BadArgumentError):
@@ -1757,7 +1741,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             assert '4.0b' in hit['version']
 
     def test_get_against_nonexistent_index(self):
-        config = self.get_base_config(es_index='socorro_test_reports_%W')
+        config = self.get_base_config(cls=SuperSearchWithFields, es_index='socorro_test_reports_%W')
         api = SuperSearchWithFields(config=config)
         params = {
             'date': ['>2000-01-01T00:00:00', '<2000-01-10T00:00:00']
@@ -1799,109 +1783,109 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(_results_number=1001)
 
-    @requests_mock.Mocker(real_http=True)
-    def test_get_with_failing_shards(self, mock_requests):
-        # Test with one failing shard.
-        es_results = {
-            'hits': {
-                'hits': [],
-                'total': 0,
-                'max_score': None,
-            },
-            'timed_out': False,
-            'took': 194,
-            '_shards': {
-                'successful': 9,
-                'failed': 1,
-                'total': 10,
-                'failures': [
-                    {
-                        'status': 500,
-                        'index': 'fake_index',
-                        'reason': 'foo bar gone bad',
-                        'shard': 3,
-                    }
-                ]
-            },
-        }
-
-        mock_requests.get(
-            '{url}/{index}/crash_reports/_search'.format(
-                url=self.get_url(),
-                index=self.config.elasticsearch.elasticsearch_index
-            ),
-            text=json.dumps(es_results)
-        )
-
-        res = self.api.get()
-        assert 'errors' in res
-
-        errors_exp = [
-            {
-                'type': 'shards',
-                'index': 'fake_index',
-                'shards_count': 1,
+    def test_get_with_failing_shards(self):
+        with requests_mock.Mocker(real_http=True) as mock_requests:
+            # Test with one failing shard.
+            es_results = {
+                'hits': {
+                    'hits': [],
+                    'total': 0,
+                    'max_score': None,
+                },
+                'timed_out': False,
+                'took': 194,
+                '_shards': {
+                    'successful': 9,
+                    'failed': 1,
+                    'total': 10,
+                    'failures': [
+                        {
+                            'status': 500,
+                            'index': 'fake_index',
+                            'reason': 'foo bar gone bad',
+                            'shard': 3,
+                        }
+                    ]
+                },
             }
-        ]
-        assert res['errors'] == errors_exp
 
-        # Test with several failures.
-        es_results = {
-            'hits': {
-                'hits': [],
-                'total': 0,
-                'max_score': None,
-            },
-            'timed_out': False,
-            'took': 194,
-            '_shards': {
-                'successful': 9,
-                'failed': 3,
-                'total': 10,
-                'failures': [
-                    {
-                        'status': 500,
-                        'index': 'fake_index',
-                        'reason': 'foo bar gone bad',
-                        'shard': 2,
-                    },
-                    {
-                        'status': 500,
-                        'index': 'fake_index',
-                        'reason': 'foo bar gone bad',
-                        'shard': 3,
-                    },
-                    {
-                        'status': 500,
-                        'index': 'other_index',
-                        'reason': 'foo bar gone bad',
-                        'shard': 1,
-                    },
-                ]
-            },
-        }
+            mock_requests.get(
+                '{url}/{index}/crash_reports/_search'.format(
+                    url=self.get_url(),
+                    index=self.es_context.get_index_template()
+                ),
+                text=json.dumps(es_results)
+            )
 
-        mock_requests.get(
-            '{url}/{index}/crash_reports/_search'.format(
-                url=self.get_url(),
-                index=self.config.elasticsearch.elasticsearch_index
-            ),
-            text=json.dumps(es_results)
-        )
+            res = self.api.get()
+            assert 'errors' in res
 
-        res = self.api.get()
-        assert 'errors' in res
+            errors_exp = [
+                {
+                    'type': 'shards',
+                    'index': 'fake_index',
+                    'shards_count': 1,
+                }
+            ]
+            assert res['errors'] == errors_exp
 
-        errors_exp = [
-            {
-                'type': 'shards',
-                'index': 'fake_index',
-                'shards_count': 2,
-            },
-            {
-                'type': 'shards',
-                'index': 'other_index',
-                'shards_count': 1,
-            },
-        ]
-        assert res['errors'] == errors_exp
+            # Test with several failures.
+            es_results = {
+                'hits': {
+                    'hits': [],
+                    'total': 0,
+                    'max_score': None,
+                },
+                'timed_out': False,
+                'took': 194,
+                '_shards': {
+                    'successful': 9,
+                    'failed': 3,
+                    'total': 10,
+                    'failures': [
+                        {
+                            'status': 500,
+                            'index': 'fake_index',
+                            'reason': 'foo bar gone bad',
+                            'shard': 2,
+                        },
+                        {
+                            'status': 500,
+                            'index': 'fake_index',
+                            'reason': 'foo bar gone bad',
+                            'shard': 3,
+                        },
+                        {
+                            'status': 500,
+                            'index': 'other_index',
+                            'reason': 'foo bar gone bad',
+                            'shard': 1,
+                        },
+                    ]
+                },
+            }
+
+            mock_requests.get(
+                '{url}/{index}/crash_reports/_search'.format(
+                    url=self.get_url(),
+                    index=self.es_context.get_index_template()
+                ),
+                text=json.dumps(es_results)
+            )
+
+            res = self.api.get()
+            assert 'errors' in res
+
+            errors_exp = [
+                {
+                    'type': 'shards',
+                    'index': 'fake_index',
+                    'shards_count': 2,
+                },
+                {
+                    'type': 'shards',
+                    'index': 'other_index',
+                    'shards_count': 1,
+                },
+            ]
+            assert res['errors'] == errors_exp

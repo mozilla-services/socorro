@@ -235,7 +235,7 @@ class SuperSearchFields(ESSocorroMiddleware):
 
 
 class SuperSearchMissingFields(ESSocorroMiddleware):
-    implementation = super_search_fields.SuperSearchMissingFields
+    implementation = super_search_fields.SuperSearchMissingFieldsModel
 
     # This service's data doesn't change a lot over time, it's fine to cache
     # it for a long time.

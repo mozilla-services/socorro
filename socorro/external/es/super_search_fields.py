@@ -3,11 +3,21 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import logging
 
+from configman import class_converter, Namespace, RequiredConfig
 import elasticsearch
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.lib import datetimeutil, BadArgumentError
+
+
+logger = logging.getLogger(__name__)
+
+
+# The number of crash reports to test against when attempting to validate a new
+# Elasticsearch mapping.
+MAPPING_TEST_CRASH_NUMBER = 100
 
 
 def add_field_to_properties(properties, namespaces, field):
@@ -109,7 +119,11 @@ def add_doc_values(value):
 
 
 class SuperSearchFieldsData(object):
-    """Data class for super search fields."""
+    """Data class for super search fields.
+
+    This just holds the FIELDS and some accessors to get them.
+
+    """
 
     def get_fields(self):
         """Return all the fields from our super_search_fields.json file."""
@@ -121,20 +135,11 @@ class SuperSearchFieldsData(object):
 
 
 class SuperSearchFields(SuperSearchFieldsData):
-    # Defining some filters that need to be considered as lists.
-    filters = [
-        ('form_field_choices', None, ['list', 'str']),
-        ('permissions_needed', None, ['list', 'str']),
-    ]
-
-    def __init__(self, config):
-        self.config = config
-        self.es_context = self.config.elasticsearch.elasticsearch_class(
-            self.config.elasticsearch
-        )
+    def __init__(self, context):
+        self.context = context
 
     def get_connection(self):
-        with self.es_context() as conn:
+        with self.context() as conn:
             return conn
 
     def get_missing_fields(self):
@@ -150,12 +155,12 @@ class SuperSearchFields(SuperSearchFieldsData):
         """
         now = datetimeutil.utc_now()
         two_weeks_ago = now - datetime.timedelta(weeks=2)
-        index_template = self.config.elasticsearch.elasticsearch_index
+        index_template = self.context.get_index_template()
         indices = generate_list_of_indexes(two_weeks_ago, now, index_template)
 
         es_connection = self.get_connection()
         index_client = elasticsearch.client.IndicesClient(es_connection)
-        doctype = self.config.elasticsearch.elasticsearch_doctype
+        doctype = self.context.get_doctype()
 
         def parse_mapping(mapping, namespace):
             """Return a set of all fields in a mapping. Parse the mapping
@@ -189,7 +194,7 @@ class SuperSearchFields(SuperSearchFieldsData):
                 all_existing_fields.update(parse_mapping(properties, None))
             except elasticsearch.exceptions.NotFoundError as e:
                 # If an index does not exist, this should not fail
-                self.config.logger.warning(
+                logger.warning(
                     'Missing index in elasticsearch while running '
                     'SuperSearchFields.get_missing_fields, error is: %s',
                     str(e)
@@ -237,7 +242,7 @@ class SuperSearchFields(SuperSearchFieldsData):
             add_field_to_properties(properties, namespaces, field)
 
         mapping = {
-            self.config.elasticsearch.elasticsearch_doctype: {
+            self.context.get_doctype(): {
                 '_all': {
                     'enabled': False,
                 },
@@ -271,31 +276,28 @@ class SuperSearchFields(SuperSearchFieldsData):
 
         es_connection = self.get_connection()
 
-        index_creator = self.config.index_creator_class(
-            self.config
-        )
         try:
-            index_creator.create_index(
+            self.context.create_index(
                 temp_index,
-                index_creator.get_socorro_index_settings(mapping),
+                self.context.get_socorro_index_settings(mapping),
             )
 
             now = datetimeutil.utc_now()
             last_week = now - datetime.timedelta(days=7)
-            index_template = self.config.elasticsearch.elasticsearch_index
+            index_template = self.context.get_index_template()
             current_indices = generate_list_of_indexes(last_week, now, index_template)
 
             crashes_sample = es_connection.search(
                 index=current_indices,
-                doc_type=self.config.elasticsearch.elasticsearch_doctype,
-                size=self.config.elasticsearch.mapping_test_crash_number,
+                doc_type=self.context.get_doctype(),
+                size=MAPPING_TEST_CRASH_NUMBER
             )
             crashes = [x['_source'] for x in crashes_sample['hits']['hits']]
 
             for crash in crashes:
                 es_connection.index(
                     index=temp_index,
-                    doc_type=self.config.elasticsearch.elasticsearch_doctype,
+                    doc_type=self.context.get_doctype(),
                     body=crash,
                 )
         except elasticsearch.exceptions.ElasticsearchException as e:
@@ -306,18 +308,42 @@ class SuperSearchFields(SuperSearchFieldsData):
             )
         finally:
             try:
-                index_creator.get_index_client().delete(temp_index)
+                self.context.indices_client().delete(temp_index)
             except elasticsearch.exceptions.NotFoundError:
                 # If the index does not exist (if the index creation failed
                 # for example), we don't need to do anything.
                 pass
 
 
-class SuperSearchMissingFields(SuperSearchFields):
-    """Model that returns fields missing from super search fields"""
+class SuperSearchFieldsModel(RequiredConfig, SuperSearchFields):
+    """Model for accessing super search fields."""
+
+    # Defining some filters that need to be considered as lists.
+    filters = [
+        ('form_field_choices', None, ['list', 'str']),
+        ('permissions_needed', None, ['list', 'str']),
+    ]
+
+    required_config = Namespace()
+    required_config.add_option(
+        'elasticsearch_class',
+        doc='a class that implements the ES connection object',
+        default='socorro.external.es.connection_context.ConnectionContext',
+        from_string_converter=class_converter
+    )
+
+    def __init__(self, config):
+        # NOTE(willkg): This doesn't call the super().__init__ but instead
+        # sets everything up itself.
+        self.config = config
+        self.context = self.config.elasticsearch_class(self.config)
+
+
+class SuperSearchMissingFieldsModel(SuperSearchFieldsModel):
+    """Model that returns fields missing from super search fields."""
 
     def get(self):
-        return super(SuperSearchMissingFields, self).get_missing_fields()
+        return super().get_missing_fields()
 
 
 # Tree of super search fields

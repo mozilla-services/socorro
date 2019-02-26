@@ -16,23 +16,19 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-class IntegrationTestIndexCleaner(ElasticsearchTestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+class TestIntegrationIndexCleaner(ElasticsearchTestCase):
+    def setup_method(self, method):
+        super().setup_method(method)
         self.config = self.get_tuned_config(IndexCleaner, {
             'resource.elasticsearch.elasticsearch_index': 'test_socorro%Y%W',
             'resource.elasticsearch.elasticsearch_index_regex': '^test_socorro[0-9]{6}$',
         })
-
-    def setup_method(self, method):
-        super().setup_method(method)
         self.indices = []
 
-    def create_index(self, index):
-        self.index_creator.create_index(index, {})
-        self.indices.append(index)
-        assert self.index_client.exists(index)
+    def create_index(self, index_name):
+        self.es_context.create_index(index_name, {})
+        self.indices.append(index_name)
+        assert self.index_client.exists(index_name)
 
     def teardown_method(self, method):
         """Remove any indices that may have been created during tests.
@@ -60,9 +56,7 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
         )
 
         # Create a recent aliased index.
-        last_week_index = self.get_index_for_date(
-            utc_now() - datetime.timedelta(weeks=1)
-        )
+        last_week_index = self.get_index_for_date(utc_now() - datetime.timedelta(weeks=1))
         self.create_index('test_socorro_some_aliased_index')
         self.index_client.put_alias(
             index='test_socorro_some_aliased_index',
@@ -92,7 +86,7 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
     def test_delete_old_indices_other_indices_are_not_deleted(self):
         """Verify that non-week-based indices are not removed"""
         # Create a temporary index.
-        self.index_creator.create_index('socorro_test_temp', {})
+        self.es_context.create_index('socorro_test_temp', {})
 
         api = IndexCleaner(self.config)
         api.delete_old_indices()

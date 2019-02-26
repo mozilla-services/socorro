@@ -54,6 +54,14 @@ OPERATORS_MAP = {
 }
 
 
+# Default date range for searches in days
+DEFAULT_DATE_RANGE = 7
+
+
+# Maximum date range for searches in days
+MAXIMUM_DATE_RANGE = 365
+
+
 # Query types of field that we can build histograms on.
 HISTOGRAM_QUERY_TYPES = (
     'date',
@@ -102,10 +110,6 @@ class SearchBase(object):
         SearchFilter('_return_query', data_type='bool', default=False),
         SearchFilter('_sort', default=''),
     )
-
-    def __init__(self, *args, **kwargs):
-        self.context = kwargs.get('config')
-        self.config = self.context
 
     def build_filters(self, fields):
         self.filters = []
@@ -253,12 +257,8 @@ class SearchBase(object):
         sure there is exactly one lower bound value and one greater bound
         value.
         """
-        default_date_range = datetime.timedelta(
-            days=self.config.search_default_date_range
-        )
-        maximum_date_range = datetime.timedelta(
-            days=self.config.search_maximum_date_range
-        )
+        default_date_range = datetime.timedelta(days=DEFAULT_DATE_RANGE)
+        maximum_date_range = datetime.timedelta(days=MAXIMUM_DATE_RANGE)
 
         if not parameters.get('date'):
             now = datetimeutil.utc_now()
@@ -320,8 +320,7 @@ class SearchBase(object):
             if delta > maximum_date_range:
                 raise BadArgumentError(
                     'date',
-                    msg='Date range is bigger than %s days' %
-                    self.config.search_maximum_date_range
+                    msg='Date range is bigger than %s days' % MAXIMUM_DATE_RANGE
                 )
 
             parameters['date'].append(lower_than)

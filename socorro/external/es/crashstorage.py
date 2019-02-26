@@ -190,13 +190,6 @@ class ESCrashStorage(CrashStorageBase):
     """This sends raw and processed crash reports to Elasticsearch."""
 
     required_config = Namespace()
-    required_config.add_option(
-        'index_creator_class',
-        doc='a class that can create Elasticsearch indices',
-        default='socorro.external.es.index_creator.IndexCreator',
-        from_string_converter=class_converter
-    )
-
     required_config.elasticsearch = Namespace()
     required_config.elasticsearch.add_option(
         'elasticsearch_class',
@@ -311,13 +304,12 @@ class ESCrashStorage(CrashStorageBase):
 
     def _submit_crash_to_elasticsearch(self, crash_document):
         """Submit a crash report to elasticsearch"""
-        es_index = self.get_index_for_crash(crash_document['processed_crash']['date_processed'])
+        index_name = self.get_index_for_crash(crash_document['processed_crash']['date_processed'])
         es_doctype = self.config.elasticsearch.elasticsearch_doctype
         crash_id = crash_document['crash_id']
 
         # Attempt to create the index; it's OK if it already exists.
-        index_creator = self.config.index_creator_class(config=self.config)
-        index_creator.create_socorro_index(es_index)
+        self.es_context.create_socorro_index(index_name)
 
         # Submit the crash for indexing.
         # Don't retry more than 5 times. That is to avoid infinite loops in
@@ -325,7 +317,7 @@ class ESCrashStorage(CrashStorageBase):
         for attempt in range(5):
             try:
                 with self.es_context() as conn:
-                    return self._index_crash(conn, es_index, es_doctype, crash_document, crash_id)
+                    return self._index_crash(conn, index_name, es_doctype, crash_document, crash_id)
 
             except elasticsearch.exceptions.ConnectionError:
                 # If this is a connection error, sleep a second and then try again

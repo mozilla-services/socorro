@@ -10,19 +10,14 @@ import uuid
 
 from configman import ConfigurationManager, environment
 from elasticsearch.helpers import bulk
-import mock
 import pytest
 
-from socorro.external.es.base import ElasticsearchConfig
-from socorro.external.es.index_creator import IndexCreator
+from socorro.external.es.connection_context import ConnectionContext
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import FIELDS
 
 
 DEFAULT_VALUES = {
-    'elasticsearch.elasticsearch_class': (
-        'socorro.external.es.connection_context.ConnectionContext'
-    ),
     'resource.elasticsearch.elasticsearch_index': (
         'socorro_integration_test_reports'
     ),
@@ -82,17 +77,12 @@ class TestCaseWithConfig(object):
         if not isinstance(sources, (list, tuple)):
             sources = [sources]
 
-        mock_logging = mock.Mock()
-        mock_metrics = mock.Mock()
-
         config_definitions = []
         for source in sources:
             conf = source.get_required_config()
-            conf.add_option('logger', default=mock_logging)
-            conf.add_option('metrics', default=mock_metrics)
             config_definitions.append(conf)
 
-        values_source = {'logger': mock_logging, 'metrics': mock_metrics}
+        values_source = {}
         if extra_values:
             values_source.update(extra_values)
 
@@ -114,22 +104,18 @@ class ElasticsearchTestCase(TestCaseWithConfig):
     def setup_method(self, method):
         super().setup_method(method)
         self.config = self.get_base_config()
-        es_context = self.config.elasticsearch.elasticsearch_class(config=self.config.elasticsearch)
+        self.es_context = ConnectionContext(self.config)
 
-        creator_config = self.get_tuned_config(IndexCreator)
+        self.index_client = self.es_context.indices_client()
 
-        self.index_creator = IndexCreator(creator_config)
-        self.index_client = self.index_creator.get_index_client()
-
-        with es_context() as conn:
+        with self.es_context() as conn:
             self.connection = conn
 
-        self.index_creator.create_socorro_index(self.config.elasticsearch.elasticsearch_index)
+        self.es_context.create_socorro_index(self.es_context.get_index_template())
 
     def teardown_method(self, method):
         # Clear the test indices.
-        self.index_client.delete(self.config.elasticsearch.elasticsearch_index)
-
+        self.index_client.delete(self.es_context.get_index_template())
         super().teardown_method(method)
 
     def health_check(self):
@@ -137,7 +123,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
 
     def get_url(self):
         """Returns the first url in the elasticsearch_urls list"""
-        return self.config.elasticsearch.elasticsearch_urls[0]
+        return self.config.elasticsearch_urls[0]
 
     def get_tuned_config(self, sources, extra_values=None):
         values_source = DEFAULT_VALUES.copy()
@@ -146,14 +132,14 @@ class ElasticsearchTestCase(TestCaseWithConfig):
 
         return super().get_tuned_config(sources, values_source)
 
-    def get_base_config(self, es_index=None):
+    def get_base_config(self, cls=ConnectionContext, es_index=None):
         extra_values = None
         if es_index:
             extra_values = {
                 'resource.elasticsearch.elasticsearch_index': es_index
             }
 
-        return self.get_tuned_config(ElasticsearchConfig, extra_values=extra_values)
+        return self.get_tuned_config(cls, extra_values=extra_values)
 
     def index_crash(self, processed_crash=None, raw_crash=None, crash_id=None):
         if crash_id is None:
@@ -167,9 +153,10 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             'processed_crash': processed_crash,
             'raw_crash': raw_crash,
         }
+        index_name = self.es_context.get_index_template()
         res = self.connection.index(
-            index=self.config.elasticsearch.elasticsearch_index,
-            doc_type=self.config.elasticsearch.elasticsearch_doctype,
+            index=index_name,
+            doc_type=self.es_context.get_doctype(),
             id=crash_id,
             body=doc,
         )
@@ -195,8 +182,8 @@ class ElasticsearchTestCase(TestCaseWithConfig):
                 'raw_crash': raw_crash,
             }
             action = {
-                '_index': self.config.elasticsearch.elasticsearch_index,
-                '_type': self.config.elasticsearch.elasticsearch_doctype,
+                '_index': self.es_context.get_index_template(),
+                '_type': self.es_context.get_doctype(),
                 '_id': crash_id,
                 '_source': doc,
             }
@@ -206,4 +193,4 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         self.refresh_index()
 
     def refresh_index(self, es_index=None):
-        self.index_client.refresh(index=es_index or self.config.elasticsearch.elasticsearch_index)
+        self.index_client.refresh(index=es_index or self.es_context.get_index_template())
