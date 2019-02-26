@@ -18,12 +18,6 @@ class TestTaskManager(object):
         assert tm.task_func == default_task_func
         assert tm.quit is False
 
-    def test_executor_identity(self):
-        config = DotDict()
-        tm = TaskManager(config, job_source_iterator=range(1))
-        tm._pid = 666
-        assert tm.executor_identity() == '666-MainThread'
-
     def test_get_iterator(self):
         config = DotDict()
         config.quit_on_empty_queue = False

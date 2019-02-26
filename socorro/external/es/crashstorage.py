@@ -14,7 +14,6 @@ import six
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
 from socorro.external.es.super_search_fields import FIELDS
-from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
 
 
@@ -405,13 +404,16 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         default='socorro.external.crashstorage_base.Redactor',
         from_string_converter=class_converter,
     )
-    required_config.es_redactor.forbidden_keys = change_default(
-        Redactor,
-        "forbidden_keys",
-        "json_dump, "
-        "upload_file_minidump_flash1.json_dump, "
-        "upload_file_minidump_flash2.json_dump, "
-        "upload_file_minidump_browser.json_dump"
+    required_config.add_option(
+        name='forbidden_keys',
+        doc='a list of keys not allowed in a redacted processed crash',
+        default=(
+            "json_dump, "
+            "upload_file_minidump_flash1.json_dump, "
+            "upload_file_minidump_flash2.json_dump, "
+            "upload_file_minidump_browser.json_dump"
+        ),
+        reference_value_from='resource.redactor',
     )
 
     required_config.namespace('raw_crash_es_redactor')
@@ -465,15 +467,16 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         default='socorro.external.crashstorage_base.Redactor',
         from_string_converter=class_converter,
     )
-    required_config.es_redactor.forbidden_keys = change_default(
-        Redactor,
-        "forbidden_keys",
-        (
+    required_config.add_option(
+        name='forbidden_keys',
+        doc='a list of keys not allowed in a redacted processed crash',
+        default=(
             "memory_report, "
             "upload_file_minidump_flash1.json_dump, "
             "upload_file_minidump_flash2.json_dump, "
             "upload_file_minidump_browser.json_dump"
-        )
+        ),
+        reference_value_from='resource.redactor',
     )
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):

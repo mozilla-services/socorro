@@ -4,16 +4,12 @@
 
 
 from configman import Namespace
+from configman.converters import class_converter
 from configman.dotdict import DotDict
 import pika
 from six.moves.queue import Queue, Empty
 
 from socorro.external.crashstorage_base import CrashStorageBase
-from socorro.external.rabbitmq.connection_context import (
-    ConnectionContext,
-    ConnectionContextPooled
-)
-from socorro.lib.converters import change_default
 from socorro.lib.transaction import retry
 
 
@@ -39,8 +35,9 @@ class RabbitMQCrashStorage(CrashStorageBase):
         'rabbitmq_class',
         # we choose a pooled connection because we need thread safe connection
         # behaviors
-        default=ConnectionContextPooled,
+        default='socorro.external.rabbitmq.connection_context.ConnectionContextPooled',
         doc='the class responsible for connecting to RabbitMQ',
+        from_string_converter=class_converter,
         reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
@@ -223,29 +220,28 @@ class RabbitMQCrashStorage(CrashStorageBase):
 
 class ReprocessingRabbitMQCrashStore(RabbitMQCrashStorage):
     required_config = Namespace()
-    required_config.routing_key = change_default(
-        RabbitMQCrashStorage,
+    required_config.add_option(
         'routing_key',
-        'socorro.reprocessing'
+        default='socorro.reprocessing',
+        doc='the name of the queue to recieve crashes',
+        reference_value_from='resource.rabbitmq',
     )
-    required_config.filter_on_legacy_processing = change_default(
-        RabbitMQCrashStorage,
+    required_config.add_option(
         'filter_on_legacy_processing',
-        False
+        default=False,
+        doc='toggle for using or ignoring the throttling flag',
+        reference_value_from='resource.rabbitmq',
     )
 
 
 class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
     required_config = Namespace()
-    required_config.rabbitmq_class = change_default(
-        RabbitMQCrashStorage,
+    required_config.add_option(
         'rabbitmq_class',
-        ConnectionContext,
-    )
-    required_config.routing_key = change_default(
-        RabbitMQCrashStorage,
-        'routing_key',
-        'socorro.reprocessing'
+        default='socorro.external.rabbitmq.connection_context.ConnectionContext',
+        doc='the class responsible for connecting to RabbitMQ',
+        from_string_converter=class_converter,
+        reference_value_from='resource.rabbitmq',
     )
 
     def reprocess(self, crash_ids):
@@ -264,10 +260,12 @@ class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
 
 class PriorityjobRabbitMQCrashStore(RabbitMQCrashStorage):
     required_config = Namespace()
-    required_config.rabbitmq_class = change_default(
-        RabbitMQCrashStorage,
+    required_config.add_option(
         'rabbitmq_class',
-        ConnectionContext,
+        default='socorro.external.rabbitmq.connection_context.ConnectionContext',
+        doc='the class responsible for connecting to RabbitMQ',
+        from_string_converter=class_converter,
+        reference_value_from='resource.rabbitmq',
     )
     required_config.add_option(
         'routing_key',

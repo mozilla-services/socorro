@@ -4,7 +4,6 @@
 
 import logging
 import os
-import threading
 import time
 
 from configman import RequiredConfig, Namespace
@@ -181,13 +180,3 @@ class TaskManager(RequiredConfig):
         finally:
             self.quit = True
             self.logger.debug("ThreadlessTaskManager dies quietly")
-
-    def executor_identity(self):
-        """this function is likely to be called via the configuration parameter
-        'executor_identity' at the root of the self.config attribute of the
-        application.  It is most frequently used in the Pooled
-        ConnectionContext classes to ensure that connections aren't shared
-        between threads, greenlets, or whatever the unit of execution is.
-        This is useful for maintaining transactional integrity on a resource
-        connection."""
-        return "%s-%s" % (self._pid, threading.currentThread().getName())

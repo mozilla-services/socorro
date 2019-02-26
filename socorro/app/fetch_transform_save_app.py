@@ -300,7 +300,6 @@ class FetchTransformSaveApp(App):
             job_source_iterator=self.source_iterator,
             task_func=self.transform
         )
-        self.config.executor_identity = self.task_manager.executor_identity
 
     def close(self):
         try:

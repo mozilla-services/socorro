@@ -16,7 +16,6 @@ from configman.converters import str_to_list
 from configman.dotdict import DotDict
 import markus
 
-from socorro.lib.converters import change_default
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 
@@ -190,22 +189,24 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         from_string_converter=str_to_list,
         likely_to_be_changed=True
     )
-    required_config.command_line = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'command_line',
-        'timeout -s KILL {kill_timeout} {command_pathname} '
-        '--raw-json {raw_crash_pathname} '
-        '{symbols_urls} '
-        '--symbols-cache {symbol_cache_path} '
-        '--symbols-tmp {symbol_tmp_path} '
-        '{dump_file_pathname} '
+        doc='template for the command to invoke the external program; uses Python format syntax',
+        default=(
+            'timeout -s KILL {kill_timeout} {command_pathname} '
+            '--raw-json {raw_crash_pathname} '
+            '{symbols_urls} '
+            '--symbols-cache {symbol_cache_path} '
+            '--symbols-tmp {symbol_tmp_path} '
+            '{dump_file_pathname} '
+        )
     )
-    required_config.command_pathname = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'command_pathname',
+        doc='the full pathname to the external program to run (quote path with embedded spaces)',
         # NOTE(willkg): This is the path for the RPM-based Socorro deploy. When
         # we switch to Docker, we should change this.
-        '/data/socorro/stackwalk/bin/stackwalker',
+        default='/data/socorro/stackwalk/bin/stackwalker',
     )
     required_config.add_option(
         'kill_timeout',
@@ -358,26 +359,25 @@ class JitCrashCategorizeRule(ExternalProcessRule):
     # uplifted versions in Processor2015. The rest of these config values have
     # no effect on anything and are just here.
     required_config = Namespace()
-    required_config.command_line = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'command_line',
-        'timeout -s KILL 30 {command_pathname} '
-        '{dump_file_pathname} '
+        doc='template for the command to invoke the external program; uses Python format syntax',
+        default='timeout -s KILL 30 {command_pathname} {dump_file_pathname} '
     )
-    required_config.command_pathname = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'command_pathname',
-        '/data/socorro/stackwalk/bin/jit-crash-categorize',
+        doc='the full pathname to the external program to run (quote path with embedded spaces)',
+        default='/data/socorro/stackwalk/bin/jit-crash-categorize',
     )
-    required_config.result_key = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'result_key',
-        'classifications.jit.category',
+        doc='where the external process result should be stored in the processed crash',
+        default='classifications.jit.category',
     )
-    required_config.return_code_key = change_default(
-        ExternalProcessRule,
+    required_config.add_option(
         'return_code_key',
-        'classifications.jit.category_return_code',
+        doc='where the external process return code should be stored in the processed crash',
+        default='classifications.jit.category_return_code',
     )
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):

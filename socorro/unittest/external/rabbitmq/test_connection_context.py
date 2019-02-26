@@ -15,6 +15,16 @@ from socorro.external.rabbitmq.connection_context import (
 )
 
 
+@pytest.fixture(autouse=True)
+def mock_executor_identity():
+    # This will mock the executor_identity in rabbitmq for all classes in
+    # this module.
+    with patch('socorro.external.rabbitmq.connection_context.executor_identity') as fake_identity:
+        fake_identity.return_value = 'MainThread'
+
+        yield
+
+
 class TestConnection(object):
     """Test PostgreSQLBase class. """
 
@@ -119,8 +129,6 @@ class TestConnectionContextPooled(object):
         config.priority_queue_name = 'wilma'
         config.reprocessing_queue_name = 'betty'
         config.rabbitmq_connection_wrapper_class = Connection
-
-        config.executor_identity = lambda: 'MainThread'
 
         return config
 
