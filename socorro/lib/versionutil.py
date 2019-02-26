@@ -8,8 +8,26 @@ class VersionParseError(Exception):
     pass
 
 
+def validate_version(version):
+    """Validate a version."""
+    if not (version and isinstance(version, str)):
+        return False
+
+    version = version.split('.')
+
+    # Versions should have at least two parts: X.Y
+    if len(version) < 2:
+        return False
+
+    # First part should consist of one or more ascii digits
+    if not (len(version[0]) > 0 and version[0].isdigit()):
+        return False
+
+    return True
+
+
 def generate_version_key(version):
-    """Serializes the version into a string that can sort with other versions
+    """Serialize version into a string that can sort with other versions.
 
     :arg str version: the version string; e.g. "62.0.3b15rc1"
 
@@ -22,6 +40,9 @@ def generate_version_key(version):
     '062000002b005001'
 
     """
+    if not validate_version(version):
+        raise VersionParseError('Version %s does not validate' % version)
+
     orig_version = version
     try:
         if 'rc' in version:
@@ -65,7 +86,5 @@ def generate_version_key(version):
 
     except (ValueError, IndexError, TypeError) as exc:
         raise VersionParseError(
-            'Version %s does not parse: %s' % (
-                repr(orig_version), str(exc)
-            )
+            'Version %s does not parse: %s' % (repr(orig_version), str(exc))
         )
