@@ -6,8 +6,24 @@ import pytest
 
 from socorro.lib.versionutil import (
     generate_version_key,
+    validate_version,
     VersionParseError
 )
+
+
+@pytest.mark.parametrize('version, expected', [
+    # Valid versions
+    ('67.01a', True),
+    ('65.0.1', True),
+    ('3.7a5pre', True),
+
+    # Invalid versions
+    ('', False),
+    ('67', False),
+    ('45_0_1', False)
+])
+def test_validate_version(version, expected):
+    assert validate_version(version) == expected
 
 
 @pytest.mark.parametrize('version, expected', [
