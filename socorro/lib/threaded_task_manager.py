@@ -8,11 +8,11 @@ internal queue while a flock of consumer/worker threads do the jobs.  A job
 consists of a function and the data applied to the function."""
 
 import logging
+import queue
 import threading
 import time
 
 from configman import Namespace
-from six.moves import queue
 
 from socorro.lib.task_manager import (
     default_task_func,
