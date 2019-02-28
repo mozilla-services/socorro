@@ -7,7 +7,7 @@ from configman import Namespace
 from configman.converters import class_converter
 from configman.dotdict import DotDict
 import pika
-from six.moves.queue import Queue, Empty
+from queue import Queue, Empty
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.lib.transaction import retry
