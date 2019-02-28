@@ -8,9 +8,8 @@ from configman import Namespace, class_converter
 
 from socorro.cron.base import BaseCronApp
 from socorro.cron.mixins import as_backfill_cron_app
-from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.supersearch import SuperSearch
-from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.external.es.super_search_fields import SuperSearchFieldsData
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.lib.dbutil import (
     execute_no_results,
@@ -48,7 +47,8 @@ class UpdateSignaturesCronApp(BaseCronApp):
     )
     required_config.add_option(
         'elasticsearch_class',
-        default=ElasticsearchConfig,
+        default='socorro.external.es.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
     )
     required_config.add_option(
         'dry_run',
@@ -59,6 +59,7 @@ class UpdateSignaturesCronApp(BaseCronApp):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.database = self.config.database_class(self.config)
+        self.es_context = self.config.elasticsearch_class(self.config)
 
     def update_crashstats_signature(self, signature, report_date, report_build):
         with transaction_context(self.database) as connection:
@@ -98,8 +99,8 @@ class UpdateSignaturesCronApp(BaseCronApp):
 
         # Do a super search and get the signature, buildid, and date processed for
         # every crash in the range
-        all_fields = SuperSearchFields(config=self.config).get()
-        api = SuperSearch(config=self.config)
+        all_fields = SuperSearchFieldsData().get()
+        api = SuperSearch(self.config)
         start_datetime = end_datetime - datetime.timedelta(minutes=self.config.period)
         self.logger.info('Looking at %s to %s', start_datetime, end_datetime)
 

@@ -14,7 +14,7 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.external.es.super_search_fields import SuperSearchFieldsData
 from socorro.lib.transaction import retry
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
@@ -218,17 +218,10 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         from_string_converter=class_converter,
         reference_value_from='resource.boto'
     )
-    required_config.elasticsearch = Namespace()
-    required_config.elasticsearch.add_option(
-        'elasticsearch_class',
-        default='socorro.external.es.connection_context.ConnectionContext',
-        from_string_converter=class_converter,
-        reference_value_from='resource.elasticsearch',
-    )
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self._all_fields = SuperSearchFields(config=self.config).get()
+        self._all_fields = SuperSearchFieldsData().get()
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
         crash_report = {}

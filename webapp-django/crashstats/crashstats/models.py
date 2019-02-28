@@ -23,7 +23,7 @@ from django.utils.encoding import iri_to_uri
 
 from socorro.app import socorro_app
 import socorro.external.boto.crash_data
-from socorro.external.es.base import ElasticsearchConfig
+from socorro.external.es.connection_context import ConnectionContext as ESConnectionContext
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
     PriorityjobRabbitMQCrashStore,
@@ -209,7 +209,7 @@ def config_from_configman():
     definition_source.namespace('elasticsearch')
     definition_source.elasticsearch.add_option(
         'elasticsearch_class',
-        default=ElasticsearchConfig,
+        default=ESConnectionContext,
     )
     definition_source.namespace('queuing')
     definition_source.queuing.add_option(

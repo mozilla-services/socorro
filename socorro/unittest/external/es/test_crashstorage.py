@@ -174,10 +174,8 @@ class TestIsValidKey(object):
         assert is_valid_key(key) is False
 
 
-class IntegrationTestESCrashStorage(ElasticsearchTestCase):
-    """These tests interact with Elasticsearch (or some other external
-    resource).
-    """
+class TestIntegrationESCrashStorage(ElasticsearchTestCase):
+    """These tests interact with Elasticsearch (or some other external resource)."""
 
     def setup_method(self, method):
         super().setup_method(method)
@@ -190,19 +188,8 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
         )
         self.index_client = elasticsearch.client.IndicesClient(self.es_client)
 
-    def teardown_method(self, method):
-        """Remove indices that may have been created by the test """
-        try:
-            self.index_client.delete(self.config.elasticsearch.elasticsearch_index)
-
-        except elasticsearch.exceptions.NotFoundError:
-            # It's fine it's fine; 404 means the test didn't create any
-            # indices, therefore they can't be deleted.
-            pass
-        super().teardown_method(method)
-
     def test_index_crash(self):
-        """Test indexing a crash document"""
+        """Test indexing a crash document."""
         es_storage = ESCrashStorage(config=self.config)
 
         es_storage.save_raw_and_processed(
@@ -215,7 +202,7 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
         # Ensure that the document was indexed by attempting to retreive it.
         assert (
             self.es_client.get(
-                index=self.config.elasticsearch.elasticsearch_index,
+                index=es_storage.es_context.get_index_template(),
                 id=a_processed_crash['uuid']
             )
         )
@@ -275,8 +262,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # we need to specify it now.
         modified_config = self.get_tuned_config(
             ESCrashStorage,
-            {'resource.elasticsearch.elasticsearch_index':
-                'socorro_integration_test_reports%Y%m%d'}
+            {'resource.elasticsearch.elasticsearch_index': 'socorro_integration_test_reports%Y%m%d'}
         )
         es_storage = ESCrashStorage(config=modified_config)
 

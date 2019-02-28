@@ -4,7 +4,6 @@
 
 import datetime
 
-from configman import ConfigurationManager, Namespace
 import pytest
 
 from socorro.lib import BadArgumentError, datetimeutil
@@ -111,29 +110,9 @@ class SearchBaseWithFields(SearchBase):
         return super().get_parameters(**kwargs)
 
 
-def _get_config_manager():
-    required_config = Namespace()
-
-    required_config.search_default_date_range = 7
-    required_config.search_maximum_date_range = 365
-
-    config_manager = ConfigurationManager(
-        [required_config],
-        app_name='testapp',
-        app_version='1.0',
-        app_description='app description',
-        argv_source=[]
-    )
-
-    return config_manager
-
-
 class TestSearchBase(object):
     def test_get_parameters(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         args = {
             'signature': 'mysig',
@@ -179,10 +158,7 @@ class TestSearchBase(object):
         assert params['build_id'][1].value == 20150101000000
 
     def test_get_parameters_with_not(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         args = {
             'signature': '!~mysig',
@@ -205,20 +181,14 @@ class TestSearchBase(object):
         assert params['user_comments'][0].operator_not
 
     def test_get_parameters_date_no_operator(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         # the date parameter must always have a prefix operator
         with pytest.raises(BadArgumentError):
             search.get_parameters(date='2016-01-01')
 
     def test_get_parameters_date_defaults(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         now = datetimeutil.utc_now()
 
@@ -269,19 +239,13 @@ class TestSearchBase(object):
         assert params['date'][1].value.date() == pasttime.date()
 
     def test_get_parameters_date_max_range(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         with pytest.raises(BadArgumentError):
             search.get_parameters(date='>1999-01-01')
 
     def test_process_type_parameter_correction(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         args = {
             'process_type': 'browser'
@@ -304,10 +268,7 @@ class TestSearchBase(object):
         assert params['process_type'][0].operator_not is False
 
     def test_hang_type_parameter_correction(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         args = {
             'hang_type': 'hang'
@@ -326,10 +287,7 @@ class TestSearchBase(object):
         assert params['hang_type'][0].value == [0]
 
     def test_version_parameter_correction(self):
-        with _get_config_manager().context() as config:
-            search = SearchBaseWithFields(
-                config=config,
-            )
+        search = SearchBaseWithFields()
 
         args = {
             'version': ['38.0b']
