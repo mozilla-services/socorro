@@ -111,9 +111,9 @@ pyhs2==0.6.0 \
 Django==2.1.7 \
     --hash=sha256:275bec66fd2588dd517ada59b8bfb23d4a9abc5a362349139ddda3c7ff6f5ade \
     --hash=sha256:939652e9d34d7d53d74d5d8ef82a19e5f8bb2de75618f7e5360691b6e9667963
-flake8==3.7.4 \
-    --hash=sha256:09b9bb539920776da542e67a570a5df96ff933c9a08b62cfae920bcc789e4383 \
-    --hash=sha256:e0f8cd519cfc0072c0ee31add5def09d2b3ef6040b34dc426445c3af9b02163c
+flake8==3.7.7 \
+    --hash=sha256:859996073f341f2670741b51ec1e67a01da142831aa1fdc6242dbf88dffbe661 \
+    --hash=sha256:a796a115208f5c03b18f332f7c11729812c8c3ded6c46319c59b53efd3819da8
 python-decouple==3.1 \
     --hash=sha256:1317df14b43efee4337a4aa02914bf004f010cd56d6c4bd894e6474ec8c4fe2d
 dj-database-url==0.5.0 \
