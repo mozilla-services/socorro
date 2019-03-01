@@ -177,9 +177,9 @@ Pygments==2.3.1 \
 whitenoise==4.1.2 \
     --hash=sha256:118ab3e5f815d380171b100b05b76de2a07612f422368a201a9ffdeefb2251c1 \
     --hash=sha256:42133ddd5229eeb6a0c9899496bdbe56c292394bf8666da77deeb27454c0456a
-pytest-django==3.4.7 \
-    --hash=sha256:3d489db7c9bd18d7c154347b1bdfb82cc6b1ec8539543508b199c77e5eb2caec \
-    --hash=sha256:87c31e53ad09ca4f061b82a9d71ad1e3e399c7a5ec9d28f7c3c38a9a9afbd027
+pytest-django==3.4.8 \
+    --hash=sha256:30d773f1768e8f214a3106f1090e00300ce6edfcac8c55fd13b675fe1cbd1c85 \
+    --hash=sha256:4d3283e774fe1d40630ee58bf34929b83875e4751b525eeb07a7506996eb42ee
 django-npm==1.0.0 \
     --hash=sha256:2e6bba65e728fa18b9db3c8dc0d4490b70cb7f43bacf60eb3654d7dcb6424272
 markus==1.2.0 \
