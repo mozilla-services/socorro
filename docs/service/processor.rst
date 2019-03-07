@@ -63,7 +63,7 @@ For example:
    $ make shell
    app@socorro:/app$ ./scripts/process_crashes.sh ed35821d-3af5-4fe9-bfa3-dc4dc0181128
 
-You can also use it with ``fecth_crashids``:
+You can also use it with ``fetch_crashids``:
 
 .. code-block:: shell
 
@@ -100,7 +100,7 @@ copy and pasted::
 
 You can get command help::
 
-  $ docker-compose run processor ./socorro-cmd fetch_crash_data --help
+  $ docker-compose run processor ./socorro-cmd fetch_crashids --help
 
 
 fetch_crash_data
