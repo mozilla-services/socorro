@@ -20,7 +20,7 @@ DATABASE="${DATASERVICE_DATABASE_NAME:-breakpad}"
 # Wait until postgres is listening
 urlwait "${DATABASE_URL}" 10
 
-# Create the database if it doesn't exist
+# Drop and create the database
 echo "Dropping and creating db..."
 ./socorro-cmd db drop || true
 ./socorro-cmd db create || true

@@ -50,6 +50,7 @@ def db_conn():
     tables = [
         'crashstats_bugassociation',
         'crashstats_productversion',
+        'crashstats_missingprocessedcrashes',
         'crashstats_signature',
         'cron_job',
         'cron_log',

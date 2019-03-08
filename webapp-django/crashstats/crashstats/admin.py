@@ -9,6 +9,7 @@ from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from crashstats.crashstats.models import (
     BugAssociation,
     GraphicsDevice,
+    MissingProcessedCrashes,
     Platform,
     Product,
     ProductVersion,
@@ -152,4 +153,12 @@ class SignatureAdmin(admin.ModelAdmin):
     ]
     search_fields = [
         'signature'
+    ]
+
+
+@admin.register(MissingProcessedCrashes)
+class MissingProcessedCrashesAdmin(admin.ModelAdmin):
+    list_display = [
+        'crash_id',
+        'created'
     ]

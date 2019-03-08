@@ -9,7 +9,6 @@ import json
 from collections import Sequence
 
 from configman import ConfigurationManager
-from mock import Mock
 import six
 
 from socorro.cron.crontabber_app import CronTabberApp

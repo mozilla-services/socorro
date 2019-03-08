@@ -1082,7 +1082,7 @@ class CronTabberApp(App, RequiredConfig):
 
 # NOTE(willkg): Times are in UTC.
 DEFAULT_JOBS = ','.join([
-    # DB partition table and ES maintenance
+    # Elasticsearch maintenance
     'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d|06:00',
 
     # Product/version maintenance
@@ -1093,5 +1093,8 @@ DEFAULT_JOBS = ','.join([
     'socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h',
 
     # Dependency checking
-    'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d',
+    'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d|05:00',
+
+    # Processed crash verification
+    'socorro.cron.jobs.verify_processed.VerifyProcessedCronApp|1d|04:00',
 ])

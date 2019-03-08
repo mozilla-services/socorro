@@ -175,7 +175,8 @@ class ProductVersion(models.Model):
 
 
 class Signature(models.Model):
-    """Bookkeeping table to keep track of when we first saw a signature"""
+    """Bookkeeping table to keep track of when we first saw a signature."""
+
     signature = models.TextField(
         unique=True,
         help_text='the crash report signature'
@@ -185,6 +186,20 @@ class Signature(models.Model):
     )
     first_date = models.DateTimeField(
         help_text='the first crash report date this signature was seen in'
+    )
+
+
+class MissingProcessedCrashes(models.Model):
+    """Bookkeeping table to ekep track of missing processed crashes."""
+
+    crash_id = models.CharField(
+        unique=True,
+        max_length=36,
+        help_text='crash id for missing processed crash'
+    )
+    created = models.DateTimeField(
+        auto_now_add=True,
+        help_text='date discovered it was missing'
     )
 
 
