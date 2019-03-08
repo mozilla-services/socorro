@@ -27,7 +27,7 @@ from crashstats.crashstats.tests.conftest import BaseTestViews
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.tokens.models import Token
 from socorro.lib.ooid import create_new_ooid
-from socorro.unittest.external.boto.conftest import BotoHelper
+from socorro.unittest.conftest import BotoHelper
 
 
 class TestDedentLeft(object):
