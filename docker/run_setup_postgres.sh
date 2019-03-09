@@ -22,8 +22,8 @@ urlwait "${DATABASE_URL}" 10
 
 # Create the database if it doesn't exist
 echo "Dropping and creating db..."
-python socorro/scripts/db.py drop || true
-python socorro/scripts/db.py create || true
+./socorro-cmd db drop || true
+./socorro-cmd db create || true
 
 # Run Django migrations
 echo "Setting up tables..."
