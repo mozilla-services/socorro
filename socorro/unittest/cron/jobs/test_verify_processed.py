@@ -160,7 +160,6 @@ class TestVerifyProcessedCronApp:
             missing = app.find_missing_multiprocessing(TODAY)
             assert missing == [crashid_2]
 
-    # FIXME(willkg): verify the db
     def test_handle_missing_none_missing(self, caplogpp, db_conn):
         caplogpp.set_level('DEBUG')
         with self.get_app() as app:
@@ -168,7 +167,6 @@ class TestVerifyProcessedCronApp:
             recs = [rec.message for rec in caplogpp.records]
             assert ('All crashes for %s were processed.' % TODAY) in recs
 
-    # FIXME(willkg): Verify the db
     def test_handle_missing_some_missing(self, caplogpp, db_conn):
         caplogpp.set_level('DEBUG')
         crash_ids = [
