@@ -33,7 +33,7 @@ class TestUpdateSignaturesCronApp(object):
 
     def fetch_crashstats_signature_data(self, conn):
         cursor = conn.cursor()
-        cursor.execute("SELECT signature, first_build, first_date from crashstats_signature")
+        cursor.execute('SELECT signature, first_build, first_date from crashstats_signature')
         results = cursor.fetchall()
         return [
             {

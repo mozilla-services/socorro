@@ -9,7 +9,6 @@ import json
 from collections import Sequence
 
 from configman import ConfigurationManager
-from mock import Mock
 import six
 
 from socorro.cron.crontabber_app import CronTabberApp
@@ -17,8 +16,6 @@ from socorro.cron.crontabber_app import CronTabberApp
 
 def get_config_manager(jobs=None, overrides=None):
     crontabber_config = CronTabberApp.get_required_config()
-    crontabber_config.add_option('logger', default=Mock())
-    crontabber_config.add_option('metrics', default=Mock())
 
     local_overrides = {}
     if jobs:

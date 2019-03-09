@@ -12,6 +12,7 @@ class TestJobsConverter(object):
         'DependencySecurityCheckCronApp',
         'ElasticsearchCleanupCronApp',
         'UpdateSignaturesCronApp',
+        'VerifyProcessedCronApp',
     ]
 
     def test_dotted_path(self):
