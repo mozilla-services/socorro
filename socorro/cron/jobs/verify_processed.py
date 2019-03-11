@@ -11,7 +11,9 @@ crash files.
 
 import datetime
 from functools import partial
+import logging
 import multiprocessing
+import sys
 
 from configman import Namespace, class_converter
 import markus
@@ -21,30 +23,41 @@ from psycopg2 import IntegrityError
 from socorro.cron.base import BaseCronApp
 from socorro.cron.mixins import as_backfill_cron_app
 from socorro.lib.dbutil import execute_no_results
+from socorro.lib.raven_client import capture_error
 from socorro.lib.transaction import transaction_context
 
 
 metrics = markus.get_metrics('crontabber.verifyprocessed')
 
 
-def check_crashids(entropy, boto_conn, bucket_name, date):
+def check_crashids(entropy, boto_conn, bucket_name, date, sentry_dsn):
     """Checks crash ids for a given entropy and date."""
-    bucket = boto_conn.get_bucket(bucket_name)
+    logger = logging.getLogger(__name__)
+    try:
+        bucket = boto_conn.get_bucket(bucket_name)
 
-    raw_crash_prefix_template = 'v2/raw_crash/%s/%s/'
-    processed_crash_template = 'v1/processed_crash/%s'
-    raw_crash_key_prefix = raw_crash_prefix_template % (entropy, date)
+        raw_crash_prefix_template = 'v2/raw_crash/%s/%s/'
+        processed_crash_template = 'v1/processed_crash/%s'
+        raw_crash_key_prefix = raw_crash_prefix_template % (entropy, date)
 
-    missing = []
-    for key_instance in bucket.list(raw_crash_key_prefix):
-        raw_crash_key = key_instance.key
-        crash_id = raw_crash_key.split('/')[-1]
+        missing = []
+        for key_instance in bucket.list(raw_crash_key_prefix):
+            raw_crash_key = key_instance.key
+            crash_id = raw_crash_key.split('/')[-1]
 
-        processed_crash_key = bucket.get_key(processed_crash_template % crash_id)
-        if processed_crash_key is None:
-            missing.append(crash_id)
+            processed_crash_key = bucket.get_key(processed_crash_template % crash_id)
+            if processed_crash_key is None:
+                missing.append(crash_id)
 
-    return missing
+        return missing
+    except Exception:
+        capture_error(
+            sentry_dsn=sentry_dsn,
+            logger=logger,
+            exc_info=sys.exc_info(),
+            extra={'entropy': entropy, 'date': date}
+        )
+        raise
 
 
 @as_backfill_cron_app
@@ -66,6 +79,11 @@ class VerifyProcessedCronApp(BaseCronApp):
         default='socorro.external.postgresql.connection_context.ConnectionContext',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
+    )
+    required_config.add_option(
+        'num_workers',
+        default=20,
+        doc='Number of concurrent workers to list raw_crashes.'
     )
     required_config.add_option(
         'date',
@@ -94,14 +112,14 @@ class VerifyProcessedCronApp(BaseCronApp):
         bucket_name = connection_source.config.bucket_name
         boto_conn = connection_source._connect()
 
-        num_workers = 5
-        chunksize = 1
+        num_workers = self.config.num_workers
 
         check_crashids_for_date = partial(
             check_crashids,
             boto_conn=boto_conn,
             bucket_name=bucket_name,
-            date=date
+            date=date,
+            sentry_dsn=self.config.sentry.dsn
         )
 
         pool = multiprocessing.Pool(num_workers)
@@ -109,7 +127,7 @@ class VerifyProcessedCronApp(BaseCronApp):
             pool.map(
                 check_crashids_for_date,
                 self.get_entropy(),
-                chunksize=chunksize
+                chunksize=1
             )
         )
         return list(missing)
