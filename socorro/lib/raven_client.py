@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import logging
 import sys
 
 import raven
@@ -13,7 +14,7 @@ def get_client(dsn):
     return raven.Client(dsn=dsn, release=get_version())
 
 
-def capture_error(sentry_dsn, logger, exc_info=None, extra=None):
+def capture_error(sentry_dsn, logger=None, exc_info=None, extra=None):
     """Capture an error in sentry if able
 
     :arg sentry_dsn: the sentry dsn (or None)
@@ -22,6 +23,8 @@ def capture_error(sentry_dsn, logger, exc_info=None, extra=None):
     :arg extra: any extra information to send along as a dict
 
     """
+    logger = logger or logging.getLogger(__name__)
+
     exc_info = exc_info or sys.exc_info()
 
     if sentry_dsn:
