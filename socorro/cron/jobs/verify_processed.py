@@ -81,6 +81,11 @@ class VerifyProcessedCronApp(BaseCronApp):
         reference_value_from='resource.postgresql'
     )
     required_config.add_option(
+        'num_workers',
+        default=20,
+        doc='Number of concurrent workers to list raw_crashes.'
+    )
+    required_config.add_option(
         'date',
         default='backfill',
         doc=(
@@ -107,8 +112,7 @@ class VerifyProcessedCronApp(BaseCronApp):
         bucket_name = connection_source.config.bucket_name
         boto_conn = connection_source._connect()
 
-        num_workers = 5
-        chunksize = 1
+        num_workers = self.config.num_workers
 
         check_crashids_for_date = partial(
             check_crashids,
@@ -123,7 +127,7 @@ class VerifyProcessedCronApp(BaseCronApp):
             pool.map(
                 check_crashids_for_date,
                 self.get_entropy(),
-                chunksize=chunksize
+                chunksize=1
             )
         )
         return list(missing)
