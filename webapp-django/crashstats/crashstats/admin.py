@@ -162,7 +162,9 @@ class MissingProcessedCrashesAdmin(admin.ModelAdmin):
     list_display = [
         'crash_id',
         'created',
-        'report_url_linked'
+        'collected_date',
+        'is_processed',
+        'report_url_linked',
     ]
 
     def report_url_linked(self, obj):

@@ -24,6 +24,7 @@ from django.utils.encoding import iri_to_uri
 
 from socorro.app import socorro_app
 import socorro.external.boto.crash_data
+from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.es.connection_context import ConnectionContext as ESConnectionContext
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
@@ -206,8 +207,21 @@ class MissingProcessedCrashes(models.Model):
         help_text='date discovered it was missing'
     )
 
+    def collected_date(self):
+        return '20' + self.crash_id[-6:]
+
     def report_url(self):
         return reverse('crashstats:report_index', args=(self.crash_id,))
+
+    def is_processed(self):
+        processed_api = ProcessedCrash()
+        try:
+            processed_api.get(crash_id=self.crash_id, dont_cache=True, refresh_cache=True)
+            return True
+        except CrashIDNotFound:
+            return False
+        except Exception as exc:
+            return str(exc)
 
 
 # Socorro x-middleware models
