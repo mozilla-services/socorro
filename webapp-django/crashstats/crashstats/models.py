@@ -19,6 +19,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from django.template.defaultfilters import slugify
+from django.urls import reverse
 from django.utils.encoding import iri_to_uri
 
 from socorro.app import socorro_app
@@ -192,6 +193,9 @@ class Signature(models.Model):
 class MissingProcessedCrashes(models.Model):
     """Bookkeeping table to ekep track of missing processed crashes."""
 
+    verbose_name = 'missing processed crashes'
+    verbose_name_plural = 'missing processed crashes'
+
     crash_id = models.CharField(
         unique=True,
         max_length=36,
@@ -201,6 +205,9 @@ class MissingProcessedCrashes(models.Model):
         auto_now_add=True,
         help_text='date discovered it was missing'
     )
+
+    def report_url(self):
+        return reverse('crashstats:report_index', args=(self.crash_id,))
 
 
 # Socorro x-middleware models
