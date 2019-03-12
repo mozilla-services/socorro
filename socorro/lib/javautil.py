@@ -80,7 +80,7 @@ def parse_java_stack_trace(text):
             # a tab.
             next_line = lines.peek(None)
             while next_line and not next_line.startswith('\tat '):
-                msg = msg + '\n' + lines.next()
+                msg = msg + '\n' + next(lines)
                 next_line = lines.peek(None)
 
             new_exc.exception_class = cls.strip()
