@@ -5,6 +5,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
+from django.utils.html import format_html
 
 from crashstats.crashstats.models import (
     BugAssociation,
@@ -160,5 +161,9 @@ class SignatureAdmin(admin.ModelAdmin):
 class MissingProcessedCrashesAdmin(admin.ModelAdmin):
     list_display = [
         'crash_id',
-        'created'
+        'created',
+        'report_url_linked'
     ]
+
+    def report_url_linked(self, obj):
+        return format_html('<a href="{}">{}</a>', obj.report_url(), obj.report_url())
