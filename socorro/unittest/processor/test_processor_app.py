@@ -21,6 +21,19 @@ def sequencer(*args):
     return foo
 
 
+class FakeCrashQueue(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def new_crashes(self):
+        return sequencer(
+            ((1,), {}),
+            2,  # ensure both forms acceptable
+            None,
+            ((3,), {})
+        )()
+
+
 class TestProcessorApp(object):
     def get_standard_config(self, sentry_dsn=None):
         config = DotDict()
@@ -42,22 +55,8 @@ class TestProcessorApp(object):
         mocked_processor.id = 'mocked_processor'
         config.processor.processor_class = mock.Mock(return_value=mocked_processor)
 
-        config.number_of_submissions = 'forever'
-        config.new_crash_source = DotDict()
-
-        class FakedNewCrashSource(object):
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def new_crashes(self):
-                return sequencer(
-                    ((1,), {}),
-                    2,  # ensure both forms acceptable
-                    None,
-                    ((3,), {})
-                )()
-
-        config.new_crash_source.new_crash_source_class = FakedNewCrashSource
+        config.queue = DotDict()
+        config.queue.crashqueue_class = FakeCrashQueue
 
         config.companion_process = DotDict()
         mocked_companion_process = mock.Mock()

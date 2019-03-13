@@ -144,7 +144,7 @@ class ConnectionContext(RequiredConfig):
     )
 
     def __init__(self, config, local_config=None):
-        """Initialize the parts needed to start making RabbitMQ connections
+        """Initialize the parts needed to start making RabbitMQ connections.
 
         parameters:
             config - the complete config for the app.
@@ -159,7 +159,7 @@ class ConnectionContext(RequiredConfig):
         self.local_config = local_config
 
     def connection(self, name=None):
-        """create a new RabbitMQ connection, set it up for our queues, then
+        """Create a new RabbitMQ connection, set it up for our queues, then
         return it wrapped with our connection class.
 
         parameters:
@@ -187,7 +187,7 @@ class ConnectionContext(RequiredConfig):
 
     @contextlib.contextmanager
     def __call__(self, name=None):
-        """returns a RabbitMQ connection wrapped in a contextmanager.
+        """Return a RabbitMQ connection wrapped in a contextmanager.
 
         The context manager will assure that the connection is closed but will
         not try to commit or rollback lingering transactions.
@@ -203,7 +203,7 @@ class ConnectionContext(RequiredConfig):
             self.close_connection(wrapped_rabbitmq_connection)
 
     def close_connection(self, connection, force=False):
-        """close the connection passed in.
+        """Close the connection passed in.
 
         This function exists to allow derived classes to override the closing
         behavior.
@@ -215,14 +215,16 @@ class ConnectionContext(RequiredConfig):
         connection.close()
 
     def close(self):
-        """close any pooled or cached connections.  Since this base class
-        object does no caching, there is no implementation required.  Derived
-        classes may implement it
+        """Close pooled or cached connections.
+
+        Since this base class object does no caching, there is no
+        implementation required. Derived classes may implement it.
+
         """
         pass
 
     def force_reconnect(self):
-        """Force reconnect
+        """Force reconnect.
 
         This is a no-op because connections get created and destroyed in the
         contextmanager.
@@ -244,12 +246,13 @@ class ConnectionContextPooled(ConnectionContext):
     by this functor.  This ensures thread safety for RabbitMQ's unsafe
     connections.
     """
+
     def __init__(self, config, local_config=None):
         super().__init__(config, local_config)
         self.pool = {}
 
     def connection(self, name=None):
-        """return a named connection.
+        """Return a named connection.
 
         This function will return a named connection by either finding one
         in its pool by the name or creating a new one.  If no name is given,
@@ -258,6 +261,7 @@ class ConnectionContextPooled(ConnectionContext):
 
         parameters:
             name - a name as a string
+
         """
         if not name:
             name = executor_identity()
@@ -268,7 +272,7 @@ class ConnectionContextPooled(ConnectionContext):
         return self.pool[name]
 
     def close_connection(self, connection, force=False):
-        """Closes a connection only if forced
+        """Close a connection if forced.
 
         This allows reuse of connections created in the contextmanager.
 
@@ -284,14 +288,14 @@ class ConnectionContextPooled(ConnectionContext):
             del self.pool[name]
 
     def close(self):
-        """Close all pooled connections"""
+        """Close all pooled connections."""
         self.logger.debug('RabbitMQPooled - shutting down connection pool')
         for name, connection in list(self.pool.items()):
             self.close_connection(connection, force=True)
             self.logger.debug('RabbitMQPooled - channel %s closed', name)
 
     def force_reconnect(self, name=None):
-        """Force reconnect"""
+        """Force reconnect."""
         if name is None:
             name = executor_identity()
         if name in self.pool:
