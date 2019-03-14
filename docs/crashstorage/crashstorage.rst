@@ -144,7 +144,7 @@ socorro.external.rabbitmq
   pool.
 
 
-**socorro.external.rabbitmq.crash_source**
+**socorro.external.rabbitmq.crashqueue**
 
 A pluggable Functor/generator for feeding new crashes to the processor,
 implemented as a wrapper around new_crashes().

@@ -82,22 +82,17 @@ class FetchTransformSaveApp(App):
     def __init__(self, config):
         super().__init__(config)
         self.waiting_func = None
-        self.source_iterator = self._infinite_iterator
-
-    def get_crashids(self):
-        """Return the queue iterator."""
-        return self.queue.new_crashes()
 
     def _basic_iterator(self):
         """Yield ``(*args, **kwargs)`` tuples of work."""
-        for x in self.get_crashids():
+        for x in self.queue.new_crashes():
             if x is None or isinstance(x, tuple):
                 yield x
             else:
                 yield ((x,), {})
         yield None
 
-    def _infinite_iterator(self):
+    def source_iterator(self):
         """Iterate infinitely yielding crash ids."""
         while True:
             for crash_id in self._basic_iterator():

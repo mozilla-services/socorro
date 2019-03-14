@@ -19,8 +19,6 @@ class RabbitMQCrashQueue(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         'rabbitmq_class',
-        # we choose a pooled connection because we need thread safe connection
-        # behaviors
         default='socorro.external.rabbitmq.connection_context.ConnectionContextPooled',
         doc='the class responsible for connecting to RabbitMQ',
         from_string_converter=class_converter,

@@ -20,12 +20,14 @@ class TestFetchTransformSaveApp(object):
                 self.the_list = []
 
             def _setup_source_and_destination(self):
+                self.queue = Mock()
+                def get_crashids():
+                    for x in range(5):
+                        yield ((x,), {})
+
+                self.queue.new_crashes = get_crashids
                 self.source = Mock()
                 self.destination = Mock()
-
-            def get_crashids(self):
-                for x in range(5):
-                    yield ((x,), {})
 
             def transform(self, anItem):
                 self.the_list.append(anItem)
@@ -53,9 +55,9 @@ class TestFetchTransformSaveApp(object):
 
     def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(FetchTransformSaveApp):
-            def _infinite_iterator(self):
+            def source_iterator(self):
                 # NOTE(willkg): This isn't in an infinite loop, so it ends
-                for x in self.source.new_crashes():
+                for x in self.queue.new_crashes():
                     yield ((x,), {})
 
         class FakeQueue(object):
