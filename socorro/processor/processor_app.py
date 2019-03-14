@@ -3,7 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""the processor_app converts raw_crashes into processed_crashes"""
+"""The processor app converts raw crashes into processed crashes."""
 
 import collections
 import os
@@ -14,15 +14,18 @@ from configman.converters import class_converter
 from configman.dotdict import DotDict
 import six
 
-from socorro.app.fetch_transform_save_app import FetchTransformSaveWithSeparateNewCrashSourceApp
+from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import raven_client
 from socorro.lib.util import dotdict_to_dict
 
 
-# Defined separately for readability
 CONFIG_DEFAULTS = {
     'always_ignore_mismatches': True,
+
+    'queue': {
+        'crashqueue_class': 'socorro.external.rabbitmq.crashqueue.RabbitMQCrashQueue',
+    },
 
     'source': {
         'benchmark_tag': 'BotoBenchmarkRead',
@@ -90,13 +93,6 @@ CONFIG_DEFAULTS = {
         'verbosity': 0,
     },
 
-    'new_crash_source': {
-        'crashstorage_class': 'socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage',
-        'new_crash_source_class': (
-            'socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource'
-        ),
-    },
-
     'producer_consumer': {
         'maximum_queue_size': 8,
         'number_of_threads': 4,
@@ -125,8 +121,9 @@ CONFIG_DEFAULTS = {
 }
 
 
-class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
-    """Configman app that generates processed_crashes from raw_crashes"""
+class ProcessorApp(FetchTransformSaveApp):
+    """Configman app that transforms raw crashes into processed crashes."""
+
     app_name = 'processor'
     app_version = '3.0'
     app_description = __doc__
@@ -134,14 +131,8 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
     required_config = Namespace()
 
-    # Configuration is broken into three namespaces: processor,
-    # new_crash_source, and companion_process
-
-    # processor namespace
-    #     This namespace is for config parameter having to do with the
-    #     implementation of the algorithm of converting raw crashes into
-    #     processed crashes. This algorithm can be swapped out for alternate
-    #     algorithms.
+    # The processor is the pipeline that transforms raw crashes into
+    # processed crashes.
     required_config.namespace('processor')
     required_config.processor.add_option(
         'processor_class',
@@ -150,9 +141,8 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         from_string_converter=class_converter
     )
 
-    # companion_process namespace
-    #     This namespace is for config parameters having to do with registering
-    #     a companion process that runs alongside processor.
+    # The companion_process runs alongside the processor and cleans up
+    # the symbol lru cache.
     required_config.namespace('companion_process')
     required_config.companion_process.add_option(
         'companion_class',
@@ -162,6 +152,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         from_string_converter=class_converter
     )
 
+    # Sentry handles reporting unhandled exceptions.
     required_config.namespace('sentry')
     required_config.sentry.add_option(
         'dsn',
@@ -171,7 +162,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     )
 
     def _capture_error(self, crash_id, exc_info):
-        """Capture an error in sentry if able
+        """Capture an error in sentry if able.
 
         :arg crash_id: a crash id
         :arg exc_info: the exc info as it comes from sys.exc_info()
@@ -190,7 +181,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     def _transform(self, crash_id):
-        """Transform a raw crash into a process crash
+        """Transform a raw crash into a process crash.
 
         The ``crash_id`` passed in is used as a key to fetch the raw crash data
         from the ``source``, the ``processor_class`` processes the crash and
@@ -265,7 +256,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                         self.logger.info('deletion of dump failed: %s', x)
 
     def _setup_source_and_destination(self):
-        """Instantiates classes necessary for processing"""
+        """Instantiate classes necessary for processing."""
         super()._setup_source_and_destination()
         if self.config.companion_process.companion_class:
             self.companion_process = self.config.companion_process.companion_class(
@@ -287,7 +278,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     def close(self):
-        """Cleans up the processor on shutdown"""
+        """Clean up the processor on shutdown."""
         super().close()
         try:
             self.companion_process.close()

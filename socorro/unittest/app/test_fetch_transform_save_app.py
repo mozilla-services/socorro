@@ -20,13 +20,15 @@ class TestFetchTransformSaveApp(object):
                 self.the_list = []
 
             def _setup_source_and_destination(self):
+                self.queue = Mock()
+
+                def get_crashids():
+                    for x in range(5):
+                        yield ((x,), {})
+
+                self.queue.new_crashes = get_crashids
                 self.source = Mock()
                 self.destination = Mock()
-                pass
-
-            def _create_iter(self):
-                for x in range(5):
-                    yield ((x,), {})
 
             def transform(self, anItem):
                 self.the_list.append(anItem)
@@ -35,14 +37,15 @@ class TestFetchTransformSaveApp(object):
             'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
-            'number_of_submissions': 'all',
+            'queue': DotDict({'crashqueue_class': None}),
             'source': DotDict({'crashstorage_class': None}),
             'destination': DotDict({'crashstorage_class': None}),
             'producer_consumer': DotDict({
                 'producer_consumer_class': TaskManager,
                 'logger': MagicMock(),
                 'number_of_threads': 1,
-                'maximum_queue_size': 1
+                'maximum_queue_size': 1,
+                'quit_on_empty_queue': True,
             })
         })
 
@@ -53,9 +56,20 @@ class TestFetchTransformSaveApp(object):
 
     def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(FetchTransformSaveApp):
-            def _basic_iterator(self):
-                for x in self.source.new_crashes():
+            def source_iterator(self):
+                # NOTE(willkg): This isn't in an infinite loop, so it ends
+                for x in self.queue.new_crashes():
                     yield ((x,), {})
+
+        class FakeQueue(object):
+            def __init__(self, config, namespace='', quit_check_callback=None):
+                pass
+
+            def new_crashes(self):
+                # NOTE(willkg): these are keys in the FakeStorageSource
+                crash_ids = ['1234', '1235', '1236', '1237']
+                for crash_id in crash_ids:
+                    yield crash_id
 
         class FakeStorageSource(object):
             def __init__(self, config, namespace='', quit_check_callback=None):
@@ -113,7 +127,7 @@ class TestFetchTransformSaveApp(object):
             'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
-            'number_of_submissions': 'all',
+            'queue': DotDict({'crashqueue_class': FakeQueue}),
             'source': DotDict({'crashstorage_class': FakeStorageSource}),
             'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
             'producer_consumer': DotDict({
@@ -137,11 +151,10 @@ class TestFetchTransformSaveApp(object):
         assert source.number_of_close_calls == 1
         assert destination.number_of_close_calls == 1
 
-    def test_source_iterator(self):
+    def test_queue_iterator(self):
         faked_finished_func = Mock()
 
-        class FakeStorageSource(object):
-
+        class FakeQueue(object):
             def __init__(self):
                 self.first = True
 
@@ -177,8 +190,8 @@ class TestFetchTransformSaveApp(object):
             'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
-            'number_of_submissions': 'forever',
-            'source': DotDict({'crashstorage_class': FakeStorageSource}),
+            'queue': DotDict({'crashqueue_class': FakeQueue}),
+            'source': DotDict({'crashstorage_class': None}),
             'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
             'producer_consumer': DotDict({
                 'producer_consumer_class': ThreadedTaskManager,
@@ -189,7 +202,8 @@ class TestFetchTransformSaveApp(object):
         })
 
         fts_app = FetchTransformSaveApp(config)
-        fts_app.source = FakeStorageSource()
+        fts_app.queue = FakeQueue()
+        fts_app.source = None
         fts_app.destination = FakeStorageDestination
         error_detected = False
         no_finished_function_counter = 0
@@ -228,7 +242,7 @@ class TestFetchTransformSaveApp(object):
             'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
-            'number_of_submissions': 'forever',
+            'queue': DotDict({'crashqueue_class': None}),
             'source': DotDict({'crashstorage_class': None}),
             'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
             'producer_consumer': DotDict({
@@ -284,7 +298,7 @@ class TestFetchTransformSaveApp(object):
             'logger': MagicMock(),
             'number_of_threads': 2,
             'maximum_queue_size': 2,
-            'number_of_submissions': 'forever',
+            'queue': DotDict({'crashqueue_class': None}),
             'source': DotDict({'crashstorage_class': FakeStorageSource}),
             'destination': DotDict({'crashstorage_class': None}),
             'producer_consumer': DotDict({
