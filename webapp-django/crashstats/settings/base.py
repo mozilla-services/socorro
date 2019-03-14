@@ -387,7 +387,7 @@ ENGAGE_ROBOTS = False
 BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'
 
 # Base URL for Buildhub
-BUILDHUB_BASE_URL = 'https://mozilla-services.github.io/buildhub/'
+BUILDHUB_BASE_URL = 'https://buildhub.moz.tools/'
 
 # The index schema used in our elasticsearch databases, used in the
 # Super Search Custom Query page.
