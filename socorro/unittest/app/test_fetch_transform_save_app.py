@@ -21,6 +21,7 @@ class TestFetchTransformSaveApp(object):
 
             def _setup_source_and_destination(self):
                 self.queue = Mock()
+
                 def get_crashids():
                     for x in range(5):
                         yield ((x,), {})
