@@ -216,3 +216,6 @@ libgravatar==0.2.3 \
 dockerflow==2018.4.0 \
     --hash=sha256:2ea52a904abfda3430ff4f1effc164863b30d2b69f7ecbf92dd672860b0ec423 \
     --hash=sha256:388d02c557968e6957140f7b82f669eac70adf5f570bc7705aa749d220a2e535
+google-cloud-pubsub==0.39.1 \
+    --hash=sha256:32dbaf9b8c16d4a14b7e1eca2805689f82f69f542a68bf1516b9c77a3ef54b73 \
+    --hash=sha256:4186386aec02752e982eeb1e399d76f1cf70eed56312934df04bfa68d8cfabf0

@@ -19,5 +19,8 @@ set -e
 # Delete all Elasticsearch indices
 /app/socorro-cmd clear_indices
 
+# Delete and re-create Pub/Sub topics and subscriptions
+/app/docker/run_setup_pubsub.sh
+
 # Initialize the crontabber bookkeeping for all configured jobs to success
 /app/socorro-cmd crontabber --mark-success=all
