@@ -27,7 +27,7 @@ TESTIMAGE="local/socorro_app"
 
 # Start services in background (this is idempotent)
 echo "Starting services needed by tests in the background..."
-${DC} up -d elasticsearch postgresql rabbitmq statsd
+${DC} up -d elasticsearch postgresql pubsub rabbitmq statsd
 
 # If we're running a shell, then we start up a test container with . mounted
 # to /app.
@@ -42,6 +42,7 @@ if [ "$1" == "--shell" ]; then
            --network socorro_default \
            --link socorro_elasticsearch_1 \
            --link socorro_postgresql_1 \
+           --link socorro_pubsub_1 \
            --link socorro_rabbitmq_1 \
            --link socorro_statsd_1 \
            --env-file ./docker/config/local_dev.env \
@@ -96,6 +97,7 @@ docker run \
        --network socorro_default \
        --link socorro_elasticsearch_1 \
        --link socorro_postgresql_1 \
+       --link socorro_pubsub_1 \
        --link socorro_rabbitmq_1 \
        --link socorro_statsd_1 \
        --env-file ./docker/config/local_dev.env \
