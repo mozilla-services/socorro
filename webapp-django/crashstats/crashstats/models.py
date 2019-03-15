@@ -26,10 +26,7 @@ from socorro.app import socorro_app
 import socorro.external.boto.crash_data
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.es.connection_context import ConnectionContext as ESConnectionContext
-from socorro.external.rabbitmq.crashstorage import (
-    ReprocessingOneRabbitMQCrashStore,
-    PriorityjobRabbitMQCrashStore,
-)
+from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 from socorro.lib import BadArgumentError
 from socorro.lib.requestslib import session_with_retries
 
@@ -247,15 +244,10 @@ def config_from_configman():
         'elasticsearch_class',
         default=ESConnectionContext,
     )
-    definition_source.namespace('queuing')
-    definition_source.queuing.add_option(
-        'rabbitmq_reprocessing_class',
-        default=ReprocessingOneRabbitMQCrashStore,
-    )
-    definition_source.namespace('priority')
-    definition_source.priority.add_option(
-        'rabbitmq_priority_class',
-        default=PriorityjobRabbitMQCrashStore,
+    definition_source.namespace('queue')
+    definition_source.add_option(
+        'crashqueue_class',
+        default=PubSubCrashQueue
     )
     definition_source.namespace('crashdata')
     definition_source.crashdata.add_option(
@@ -268,21 +260,12 @@ def config_from_configman():
         default=socorro.external.boto.crash_data.TelemetryCrashData,
     )
 
-    config = configuration(
+    return configuration(
         definition_source=definition_source,
         values_source_list=[
             settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
         ]
     )
-    # The ReprocessingOneRabbitMQCrashStore crash storage, needs to have
-    # a "logger" in the config object. To avoid having to use the
-    # logger set up by configman as an aggregate, we just use the
-    # same logger as we have here in the webapp.
-    config.queuing.logger = logger
-    config.priority.logger = logger
-    config.crashdata.logger = logger
-    config.telemetrydata.logger = logger
-    return config
 
 
 def get_api_whitelist(*args, **kwargs):
@@ -1166,24 +1149,20 @@ class BugzillaBugInfo(SocorroCommon):
 
 
 class Reprocessing(SocorroMiddleware):
-    """Return true if all supplied crash IDs
-    were sucessfully submitted onto the reprocessing queue.
-    """
+    """Submit crash ids to reprocessing queue."""
 
     HELP_TEXT = """
     API for queuing up crash reports for reprocessing. Requires the reprocess
     permission.
     """
 
+    implementation = PubSubCrashQueue
+
     API_REQUIRED_PERMISSIONS = (
         'crashstats.reprocess_crashes',
     )
 
     API_WHITELIST = None
-
-    implementation = ReprocessingOneRabbitMQCrashStore
-
-    implementation_config_namespace = 'queuing'
 
     required_params = (
         ('crash_ids', list),
@@ -1192,17 +1171,16 @@ class Reprocessing(SocorroMiddleware):
     get = None
 
     def post(self, **data):
-        return self.get_implementation().reprocess(**data)
+        crash_ids = data['crash_ids']
+        if not isinstance(crash_ids, (list, tuple)):
+            crash_ids = [crash_ids]
+        return self.get_implementation().publish(queue='reprocessing', crash_ids=crash_ids)
 
 
-class Priorityjob(SocorroMiddleware):
-    """Return true if all supplied crash IDs
-    were sucessfully submitted onto the priority queue.
-    """
+class PriorityJob(SocorroMiddleware):
+    """Submit crash ids to priority queue."""
 
-    implementation = PriorityjobRabbitMQCrashStore
-
-    implementation_config_namespace = 'priority'
+    implementation = PubSubCrashQueue
 
     required_params = (
         ('crash_ids', list),
@@ -1210,8 +1188,11 @@ class Priorityjob(SocorroMiddleware):
 
     get = None
 
-    def post(self, **kwargs):
-        return self.get_implementation().process(**kwargs)
+    def post(self, **data):
+        crash_ids = data['crash_ids']
+        if not isinstance(crash_ids, (list, tuple)):
+            crash_ids = [crash_ids]
+        return self.get_implementation().publish(queue='priority', crash_ids=crash_ids)
 
 
 class NoOpMiddleware(SocorroMiddleware):

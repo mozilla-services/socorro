@@ -384,7 +384,7 @@ CRASH_ID_PREFIX = 'bp-'
 ENGAGE_ROBOTS = False
 
 # Base URL for when we use the Bugzilla API
-BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'
+BZAPI_BASE_URL = config('BZAPI_BASE_URL', 'https://bugzilla.mozilla.org/rest')
 
 # Base URL for Buildhub
 BUILDHUB_BASE_URL = 'https://buildhub.moz.tools/'
@@ -657,6 +657,21 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'calling_format': config(
                 'resource.boto.calling_format', 'boto.s3.connection.OrdinaryCallingFormat'
             ),
+        },
+        'pubsub': {
+            'project_id': config('resource.pubsub.project_id', None),
+            'standard_topic_name': config('resource.pubsub.standard_topic_name', None),
+            'standard_subscription_name': config(
+                'resource.pubsub.standard_subscription_name', None
+            ),
+            'priority_topic_name': config('resource.pubsub.priority_topic_name', None),
+            'priority_subscription_name': config(
+                'resource.pubsub.priority_subscription_name', None
+            ),
+            'reprocessing_topic_name': config('resource.pubsub.reprocessing_topic_name', None),
+            'reprocessing_subscription_name': config(
+                'resource.pubsub.reprocessing_subscription_name', None
+            )
         }
     },
     'telemetrydata': {

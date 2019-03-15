@@ -16,6 +16,7 @@ from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.lib import BadArgumentError
+from socorro.unittest.external.pubsub import get_config_manager, PubSubHelper
 
 
 class TestGraphicsDevices(DjangoTestCase):
@@ -578,33 +579,33 @@ class TestMiddlewareModels(DjangoTestCase):
         assert info
 
     def test_Reprocessing(self):
-        api = models.Reprocessing()
+        # This test runs against the Pub/Sub emulator, so undo the mock to let
+        # that work.
+        self.undo_implementation_mock(models.Reprocessing)
 
-        def mocked_reprocess(crash_ids):
-            if crash_ids == 'some-crash-id':
-                return True
-            elif crash_ids == 'bad-crash-id':
-                return
-            raise NotImplementedError(crash_ids)
+        config_manager = get_config_manager()
+        with config_manager.context() as config:
+            pubsub_helper = PubSubHelper(config)
+            api = models.Reprocessing()
 
-        models.Reprocessing.implementation().reprocess = mocked_reprocess
-        assert api.post(crash_ids='some-crash-id')
-        # Note that it doesn't raise an error if
-        # the ReprocessingOneRabbitMQCrashStore choses NOT to queue it.
-        assert not api.post(crash_ids='bad-crash-id')
+            with pubsub_helper as helper:
+                api.post(crash_ids='some-crash-id')
 
-    def test_Priorityjob(self):
-        api = models.Priorityjob()
+                crash_ids = helper.get_crash_ids('reprocessing')
+                assert crash_ids == ['some-crash-id']
 
-        def mocked_process(crash_ids):
-            if crash_ids == 'some-crash-id':
-                return True
-            elif crash_ids == 'bad-crash-id':
-                return
-            raise NotImplementedError(crash_ids)
+    def test_PriorityJob(self):
+        # This test runs against the Pub/Sub emulator, so undo the mock to let
+        # that work.
+        self.undo_implementation_mock(models.PriorityJob)
 
-        models.Priorityjob.implementation().process = mocked_process
-        assert api.post(crash_ids='some-crash-id')
-        # Note that it doesn't raise an error if
-        # the PriorityjobRabbitMQCrashStore choses NOT to queue it.
-        assert not api.post(crash_ids='bad-crash-id')
+        config_manager = get_config_manager()
+        with config_manager.context() as config:
+            pubsub_helper = PubSubHelper(config)
+            api = models.PriorityJob()
+
+            with pubsub_helper as helper:
+                api.post(crash_ids='some-crash-id')
+
+                crash_ids = helper.get_crash_ids('priority')
+                assert crash_ids == ['some-crash-id']

@@ -1476,11 +1476,11 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        def mocked_priority_job_process(**params):
+        def mocked_publish(**params):
             assert params['crash_ids'] == [crash_id]
             return True
 
-        models.Priorityjob.implementation().process.side_effect = mocked_priority_job_process
+        models.PriorityJob.implementation().publish.side_effect = mocked_publish
 
         url = reverse('crashstats:report_index', args=[crash_id])
         response = self.client.get(url)

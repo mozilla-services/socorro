@@ -5,6 +5,7 @@
 import contextlib
 import json
 
+from django.core.cache import cache
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
 from django.urls import reverse
@@ -657,11 +658,12 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_Reprocessing(self):
-        def mocked_reprocess(crash_ids):
+        def mocked_publish(queue, crash_ids):
+            assert queue == 'reprocessing'
             assert crash_ids == ['xxxx']
             return True
 
-        Reprocessing.implementation().reprocess = mocked_reprocess
+        Reprocessing.implementation().publish = mocked_publish
 
         url = reverse('api:model_wrapper', args=('Reprocessing',))
         response = self.client.get(url)
@@ -676,15 +678,10 @@ class TestViews(BaseTestViews):
         user = User.objects.create(username='test')
         self._add_permission(user, 'reprocess_crashes')
 
-        perm = Permission.objects.get(
-            codename='reprocess_crashes'
-        )
+        perm = Permission.objects.get(codename='reprocess_crashes')
         # but make a token that only has the 'reprocess_crashes'
         # permission associated with it
-        token = Token.objects.create(
-            user=user,
-            notes="Only reprocessing"
-        )
+        token = Token.objects.create(user=user, notes="Only reprocessing")
         token.permissions.add(perm)
 
         response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
@@ -696,6 +693,9 @@ class TestViews(BaseTestViews):
 
 
 class TestCrashVerify(object):
+    def setup_method(self):
+        cache.clear()
+
     @contextlib.contextmanager
     def supersearch_returns_crashes(self, uuids):
         """Mock supersearch implementation to return result with specified crashes"""

@@ -97,10 +97,6 @@ class ReprocessingRabbitMQCrashStore(RabbitMQCrashStorage):
         doc='toggle for using or ignoring the throttling flag',
         reference_value_from='resource.rabbitmq',
     )
-
-
-class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
-    required_config = Namespace()
     required_config.add_option(
         'rabbitmq_class',
         default='socorro.external.rabbitmq.connection_context.ConnectionContext',
@@ -109,18 +105,17 @@ class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
         reference_value_from='resource.rabbitmq',
     )
 
-    def reprocess(self, crash_ids):
+    def process(self, crash_ids):
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
         success = bool(crash_ids)
         for crash_id in crash_ids:
-            if not self.save_raw_crash(
-                DotDict({'legacy_processing': 0}),
-                [],
-                crash_id
-            ):
+            if not self.save_raw_crash(DotDict({'legacy_processing': 0}), [], crash_id):
                 success = False
         return success
+
+    def publish(self, queue, crash_ids):
+        return self.process(crash_ids)
 
 
 class PriorityjobRabbitMQCrashStore(RabbitMQCrashStorage):
@@ -143,10 +138,9 @@ class PriorityjobRabbitMQCrashStore(RabbitMQCrashStorage):
             crash_ids = [crash_ids]
         success = bool(crash_ids)
         for crash_id in crash_ids:
-            if not self.save_raw_crash(
-                DotDict({'legacy_processing': 0}),
-                [],
-                crash_id
-            ):
+            if not self.save_raw_crash(DotDict({'legacy_processing': 0}), [], crash_id):
                 success = False
         return success
+
+    def publish(self, queue, crash_ids):
+        return self.process(crash_ids)

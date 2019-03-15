@@ -148,3 +148,16 @@ class PubSubCrashQueue(RequiredConfig):
 
     def __call__(self):
         return self.__iter__()
+
+    def publish(self, queue, crash_ids):
+        """Publish crash ids to specified queue."""
+        assert queue in ['standard', 'priority', 'reprocessing']
+
+        publisher = pubsub_v1.PublisherClient()
+        project_id = self.config.project_id
+        topic_name = self.config['%s_topic_name' % queue]
+        topic_path = publisher.topic_path(project_id, topic_name)
+
+        for crash_id in crash_ids:
+            future = publisher.publish(topic_path, data=crash_id.encode('utf-8'))
+            future.result()

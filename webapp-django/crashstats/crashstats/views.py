@@ -108,7 +108,7 @@ def report_index(request, crash_id, default_context=None):
         # ...if we haven't already done so.
         cache_key = 'priority_job:{}'.format(crash_id)
         if not cache.get(cache_key):
-            priority_api = models.Priorityjob()
+            priority_api = models.PriorityJob()
             priority_api.post(crash_ids=[crash_id])
             cache.set(cache_key, True, 60)
         return render(request, 'crashstats/report_index_pending.html', context)
