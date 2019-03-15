@@ -46,6 +46,7 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 
 # Add crash ids to queue
 ./socorro-cmd add_crashid_to_queue socorro.normal $@
+# ./socorro-cmd pubsub publish $@
 
 # Print urls to make it easier to look at them
 for crashid in "$@"

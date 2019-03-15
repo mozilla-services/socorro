@@ -14,7 +14,7 @@ from socorro.lib.transaction import retry
 
 
 class RabbitMQCrashQueue(RequiredConfig):
-    """Crash queue."""
+    """Crash queue that uses RabbitMQ."""
 
     required_config = Namespace()
     required_config.add_option(

@@ -31,7 +31,12 @@ PYTHON="$(which python)"
 
 # Wait for postgres and elasticsearch services to be ready
 urlwait "${DATABASE_URL}" 10
+urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
+
+# Clear Pub/Sub for tests
+./socorro-cmd pubsub delete
+./socorro-cmd pubsub create
 
 # Set up socorro_test db
 ./socorro-cmd db drop || true

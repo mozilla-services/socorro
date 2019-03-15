@@ -29,6 +29,7 @@ services:
       - localstack-s3
       - elasticsearch
       - rabbitmq
+      - pubsub
     command: ["processor"]
     volumes:
       - .:/app
@@ -59,6 +60,7 @@ services:
       - postgresql
       - elasticsearch
       - rabbitmq
+      - pubsub
       - memcached
       - oidcprovider
     command: ["webapp", "--dev"]
@@ -139,6 +141,18 @@ services:
       - RABBITMQ_DEFAULT_USER=rabbituser
       - RABBITMQ_DEFAULT_PASS=rabbitpwd
       - RABBITMQ_DEFAULT_VHOST=rabbitvhost
+
+  # Google Pub/Sub emulator
+  pubsub:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pubsub
+    environment:
+      # This should match docker/config/local_dev.env value
+      - PUBSUB_PROJECT_ID=local_dev_socorro
+      - PUBSUB_PORT=5010
+    ports:
+      - "5010:5010"
 
   # https://hub.docker.com/_/postgres/
   postgresql:

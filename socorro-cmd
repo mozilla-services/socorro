@@ -81,6 +81,7 @@ COMMANDS = [
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
             'db': 'socorro.scripts.db.main',
+            'pubsub': 'socorro.scripts.pubsub.main',
         }
     ),
     Group(

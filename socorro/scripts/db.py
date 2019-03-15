@@ -12,13 +12,13 @@ from six.moves.urllib.parse import urlparse
 from socorro.scripts import WrappedTextHelpFormatter
 
 
-DESCRIPTION = 'Manages databases'
+DESCRIPTION = 'Manages the database set by DSN'
+
+EPILOG = 'Required DSN to be set in the environment.'
 
 
-def create_database():
-    dsn = os.environ['DATABASE_URL']
-
-    parsed = urlparse(os.environ['DATABASE_URL'])
+def create_database(dsn):
+    parsed = urlparse(dsn)
     db_name = parsed.path[1:]
     adjusted_dsn = dsn[:-(len(db_name) + 1)]
 
@@ -33,10 +33,8 @@ def create_database():
         return 1
 
 
-def drop_database():
-    dsn = os.environ['DATABASE_URL']
-
-    parsed = urlparse(os.environ['DATABASE_URL'])
+def drop_database(dsn):
+    parsed = urlparse(dsn)
     db_name = parsed.path[1:]
     adjusted_dsn = dsn[:-(len(db_name) + 1)]
 
@@ -54,16 +52,25 @@ def drop_database():
 def main(argv=None):
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
-        description=DESCRIPTION.strip()
+        description=DESCRIPTION.strip(),
+        epilog=EPILOG.strip()
     )
     subparsers = parser.add_subparsers(dest='cmd')
     subparsers.required = True
-    subparsers.add_parser('drop', help='drop an existing database')
-    subparsers.add_parser('create', help='create an existing database')
+    subparsers.add_parser('drop', help='drop existing database')
+    subparsers.add_parser('create', help='create database')
 
     args = parser.parse_args()
 
+    try:
+        dsn = os.environ['DATABASE_URL']
+    except KeyError:
+        dsn = ''
+
+    if not dsn:
+        parser.error('DATABASE_URL is not set in environment')
+
     if args.cmd == 'drop':
-        return drop_database()
+        return drop_database(dsn)
     elif args.cmd == 'create':
-        return create_database()
+        return create_database(dsn)
