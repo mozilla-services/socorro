@@ -24,7 +24,7 @@ CONFIG_DEFAULTS = {
     'always_ignore_mismatches': True,
 
     'queue': {
-        'crashqueue_class': 'socorro.external.rabbitmq.crashqueue.RabbitMQCrashQueue',
+        'crashqueue_class': 'socorro.external.pubsub.crashqueue.PubSubCrashQueue',
     },
 
     'source': {
