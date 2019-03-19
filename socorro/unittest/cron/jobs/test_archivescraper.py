@@ -119,6 +119,8 @@ def config():
         jobs='socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
         overrides={
             'crontabber.class-ArchiveScraperCronApp.base_url': HOST + '/pub/',
+            # Use 1 worker which keeps it synchronous and single-process
+            'crontabber.class-ArchiveScraperCronApp.num_workers': 1,
         }
     )
     with config_manager.context() as config:
@@ -299,12 +301,12 @@ class TestArchiveScraperCronApp(object):
 
         # Scrape a first time with an empty db and assert that it inserted all
         # the versions we expected
-        archive_scraper.scrape_candidates('Firefox', 'firefox')
+        archive_scraper.scrape_and_insert_build_info('Firefox', 'firefox')
         data = self.fetch_data(db_conn)
         assert data == expected_data
 
         # Scrape it a second time and assert that the contents haven't
         # changed
-        archive_scraper.scrape_candidates('Firefox', 'firefox')
+        archive_scraper.scrape_and_insert_build_info('Firefox', 'firefox')
         data = self.fetch_data(db_conn)
         assert data == expected_data

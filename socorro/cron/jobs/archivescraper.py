@@ -60,9 +60,14 @@ issues.
 
 """
 
+import concurrent.futures
+import copy
+from functools import partial
 import json
+import logging
 
 from configman import Namespace, class_converter
+import more_itertools
 import psycopg2
 from six.moves.urllib.parse import urljoin
 
@@ -79,7 +84,7 @@ with warnings.catch_warnings():
     from pyquery import PyQuery as pq
 
 
-# Substrings that indicate the thing is not a platform we want to traverse
+# Substrings that indicate the directory is not a platform we want to traverse
 NON_PLATFORM_SUBSTRINGS = [
     'beetmover',
     'contrib',
@@ -94,107 +99,42 @@ NON_PLATFORM_SUBSTRINGS = [
 
 
 def key_for_build_link(link):
+    """Extract build number from build link."""
     # The path is something like "build10/". We want to pull out the
     # integer from that.
     path = link['path']
     return int(''.join([c for c in path if c.isdigit()]))
 
 
-class ArchiveScraperCronApp(BaseCronApp):
-    app_name = 'archivescraper'
-    app_description = 'scraper for archive.mozilla.org for release info'
-    app_version = '1.0'
+def get_session():
+    """Return a retryable requests session."""
+    # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds, then
+    # it has issues and we should try again some other time
+    return session_with_retries(default_timeout=5.0)
 
-    required_config = Namespace()
-    required_config.add_option(
-        'base_url',
-        default='https://archive.mozilla.org/pub/',
-        doc='base url to use for fetching builds'
-    )
-    required_config.add_option(
-        'verbose',
-        default=False,
-        doc='print verbose information about spidering'
-    )
-    required_config.add_option(
-        'database_class',
-        default='socorro.external.postgresql.connection_context.ConnectionContext',
-        from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
-    )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.database = self.config.database_class(self.config)
+logger = logging.getLogger(__name__)
 
-        # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds,
-        # then it has issues and we should try again some other time
-        self.session = session_with_retries(default_timeout=5.0)
-        self.successful_inserts = 0
 
-    def get_max_major_version(self, product_name):
-        """Retrieves the max major version for this product
+class Downloader:
+    """Downloader class.
 
-        :arg str product_name: the name of the product
+    NOTE(willkg): I broke this out because it needs to be serializable so it
+    works with concurrant.futures. configman isn't serializable. Once we stop
+    using configman, we can merge this again.
 
-        :returns: maximum major version as an int or None
+    """
 
-        """
-        with transaction_context(self.database) as conn:
-            cursor = conn.cursor()
-            sql = """
-            SELECT max(major_version)
-            FROM crashstats_productversion
-            WHERE product_name = %s
-            """
-            params = (product_name,)
-            cursor.execute(sql, params)
-            data = cursor.fetchall()
-            if data:
-                return data[0][0]
-
-        return None
-
-    def insert_build(self, product_name, release_channel, major_version, release_version,
-                     version_string, build_id, archive_url):
-        params = {
-            'product_name': product_name,
-            'release_channel': release_channel,
-            'major_version': major_version,
-            'release_version': release_version,
-            'version_string': version_string,
-            'build_id': build_id,
-            'archive_url': archive_url
-        }
-
-        if self.config.verbose:
-            self.logger.info('INSERTING: %s' % list(sorted(params.items())))
-
-        with transaction_context(self.database) as conn:
-            cursor = conn.cursor()
-            sql = """
-            INSERT INTO crashstats_productversion (
-                product_name, release_channel, major_version, release_version,
-                version_string, build_id, archive_url
-            )
-            VALUES (
-                %(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
-                %(version_string)s, %(build_id)s, %(archive_url)s
-            )
-            """
-            try:
-                cursor.execute(sql, params)
-                self.successful_inserts += 1
-            except psycopg2.IntegrityError:
-                # If it's an IntegrityError, we already have it and everything is fine
-                pass
-            except psycopg2.Error:
-                self.logger.exception('failed to insert')
+    def __init__(self, base_url, num_workers, verbose):
+        self.base_url = base_url
+        self.num_workers = num_workers
+        self.verbose = verbose
 
     def get_links(self, content):
-        """Retrieves valid links on the page
+        """Retrieve valid links on the page.
 
-        This skips links that are missing an href or text or are for "." or "..".
+        This ignores links that are missing an href or text or are for "." or
+        "..".
 
         :arg str content: the content of the page
 
@@ -212,7 +152,7 @@ class ArchiveScraperCronApp(BaseCronApp):
         ]
 
     def download(self, url_path):
-        """Retrieves contents for a page
+        """Retrieve contents for a page.
 
         This will log an error and return "" when it gets a non-200 status code. This
         allows scraping to continue and at least get something.
@@ -222,20 +162,20 @@ class ArchiveScraperCronApp(BaseCronApp):
         :returns: contents of the page or ""
 
         """
-        url = urljoin(self.config.base_url, url_path)
-        if self.config.verbose:
-            self.logger.info('downloading: %s', url)
-        resp = self.session.get(url)
+        url = urljoin(self.base_url, url_path)
+        if self.verbose:
+            logger.info('downloading: %s', url)
+        resp = get_session().get(url)
         if resp.status_code != 200:
-            if self.config.verbose:
+            if self.verbose:
                 # Most of these are 404s because we guessed a url wrong which is fine
-                self.logger.warning('Bad status: %s: %s', url, resp.status_code)
+                logger.warning('bad status: %s: %s', url, resp.status_code)
             return ''
 
         return resp.content
 
     def get_json_links(self, path):
-        """Traverses a directory of platforms and returns links to build info files
+        """Traverse directory of platforms and returns links to build info files.
 
         :arg str path: the path to start at
 
@@ -279,11 +219,9 @@ class ArchiveScraperCronApp(BaseCronApp):
 
         return all_json_links
 
-    def scrape_candidates(self, product_name, archive_directory):
-        """Scrape the candidates/ directory for beta, release candidate, and final releases"""
-
+    def scrape_candidates(self, product_name, archive_directory, major_version):
+        """Scrape the candidates/ directory for beta, release candidate, and final releases."""
         url_path = '/pub/%s/candidates/' % archive_directory
-        major_version = self.get_max_major_version(product_name)
 
         # First, let's look at /pub/PRODUCT/releases/ so we know what final
         # builds have been released
@@ -306,7 +244,7 @@ class ArchiveScraperCronApp(BaseCronApp):
         # greater than (major_version - 4) and esr builds
         if major_version:
             major_version_minus_4 = major_version - 4
-            self.logger.info('Skipping anything before %s and not esr', major_version_minus_4)
+            logger.info('Skipping anything before %s and not esr', major_version_minus_4)
             version_links = [
                 link for link in version_links
                 if (
@@ -316,137 +254,272 @@ class ArchiveScraperCronApp(BaseCronApp):
                 )
             ]
 
-        # For each version in the candidates/ directory, we traverse the tree finding
-        # the first build info file we can find
-        for link in version_links:
-            content = self.download(link['path'])
-            build_links = [
-                link for link in self.get_links(content)
-                if link['text'].startswith('build')
-            ]
+        scrape = partial(
+            self.scrape_candidate_version,
+            product_name=product_name,
+            final_releases=final_releases
+        )
 
-            #  /pub/PRODUCT/candidates/VERSION/...   # noqa
-            # 0/1  / 2     /3         /4
-            version_root = link['path'].split('/')[4]
-            version_root = version_root.replace('-candidates', '')
+        if self.num_workers == 1:
+            build_data = map(scrape, version_links)
 
-            # Was there a final release of this series? If so, then we can do
-            # final build versions
-            is_final_release = (version_root in final_releases)
+        else:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+                build_data = executor.map(scrape, version_links, timeout=300)
 
-            # Sort the builds by the build number so they're in numeric order because
-            # the last one is possibly a final build
-            build_links.sort(key=key_for_build_link)
+        # build_data is a list of lists so we flatten that
+        return list(more_itertools.flatten(build_data))
 
-            for i, build_link in enumerate(build_links):
-                # Get all the json files with build information in them for all the
-                # platforms that ahve them
-                json_links = self.get_json_links(build_link['path'])
-                if not json_links:
-                    self.logger.warning(
-                        'could not find json files in: %s', build_link['path']
-                    )
-                    continue
+    def scrape_candidate_version(self, link, product_name, final_releases):
+        """Traverse candidates/VERSION/ tree returning list of build info."""
+        content = self.download(link['path'])
+        build_links = [
+            link for link in self.get_links(content)
+            if link['text'].startswith('build')
+        ]
 
-                # Go through all the links we acquired by traversing all the platform
-                # directories
-                for json_link in json_links:
-                    json_file = self.download(json_link)
-                    data = json.loads(json_file)
+        #  /pub/PRODUCT/candidates/VERSION/...   # noqa
+        # 0/1  / 2     /3         /4
+        version_root = link['path'].split('/')[4]
+        version_root = version_root.replace('-candidates', '')
 
-                    if 'buildhub' in json_link:
-                        # We have a buildhub.json file to use, so we use that
-                        # structure
-                        data = {
-                            'product_name': product_name,
-                            'release_channel': data['target']['channel'],
-                            'major_version': int(data['target']['version'].split('.')[0]),
-                            'release_version': data['target']['version'],
-                            'build_id': data['build']['id'],
-                            'archive_url': urljoin(self.config.base_url, json_link)
-                        }
+        # Was there a final release of this series? If so, then we can do
+        # final build versions
+        is_final_release = (version_root in final_releases)
+
+        # Sort the builds by the build number so they're in numeric order because
+        # the last one is possibly a final build
+        build_links.sort(key=key_for_build_link)
+
+        build_data = []
+
+        for i, build_link in enumerate(build_links):
+            # Get all the json files with build information in them for all the
+            # platforms that have them
+            json_links = self.get_json_links(build_link['path'])
+            if not json_links:
+                logger.warning('could not find json files in: %s', build_link['path'])
+                continue
+
+            # Go through all the links we acquired by traversing all the platform
+            # directories
+            for json_link in json_links:
+                json_file = self.download(json_link)
+                data = json.loads(json_file)
+
+                if 'buildhub' in json_link:
+                    # We have a buildhub.json file to use, so we use that
+                    # structure
+                    data = {
+                        'product_name': product_name,
+                        'release_channel': data['target']['channel'],
+                        'major_version': int(data['target']['version'].split('.')[0]),
+                        'release_version': data['target']['version'],
+                        'build_id': data['build']['id'],
+                        'archive_url': urljoin(self.base_url, json_link)
+                    }
+
+                else:
+                    # We have the older build info file format, so we use that
+                    # structure
+                    data = {
+                        'product_name': product_name,
+                        'release_channel': data['moz_update_channel'],
+                        'major_version': int(data['moz_app_version'].split('.')[0]),
+                        'release_version': data['moz_app_version'],
+                        'build_id': data['buildid'],
+                        'archive_url': urljoin(self.base_url, json_link)
+                    }
+
+                # The build link text is something like "build1/" and we
+                # want just the number part, so we drop "build" and the "/"
+                rc_version_string = version_root + 'rc' + build_link['text'][5:-1]
+
+                # Whether or not this is the final build for a set of builds; for
+                # example for [build1, build2, build3] the last build is build3
+                # and if there was a release in the /pub/PRODUCT/releases/ directory
+                # then this is a final build
+                final_build = (
+                    (i + 1 == len(build_links)) and
+                    is_final_release
+                )
+
+                if final_build:
+                    if data['release_channel'] == 'release':
+                        # If this is a final build for a major release, then we want to
+                        # insert two entries--one for the last rc in the beta channel
+                        # and one for the final release in the release channel. This
+                        # makes it possible to look up version strings for beta and rc
+                        # builds in one request.
+
+                        # Insert the rc beta build
+                        data['release_channel'] = 'beta'
+                        data['version_string'] = rc_version_string
+                        build_data.append(data)
+
+                        # Insert the final release build
+                        second_data = copy.deepcopy(data)
+                        second_data['version_string'] = version_root
+                        second_data['release_channel'] = 'release'
+                        build_data.append(second_data)
 
                     else:
-                        # We have the older build info file format, so we use that
-                        # structure
-                        data = {
-                            'product_name': product_name,
-                            'release_channel': data['moz_update_channel'],
-                            'major_version': int(data['moz_app_version'].split('.')[0]),
-                            'release_version': data['moz_app_version'],
-                            'build_id': data['buildid'],
-                            'archive_url': urljoin(self.config.base_url, json_link)
-                        }
+                        # This is the final build for a beta release, so we insert both
+                        # an rc as well as a final as betas
+                        data['version_string'] = version_root
+                        build_data.append(data)
 
-                    # The build link text is something like "build1/" and we
-                    # want just the number part, so we drop "build" and the "/"
-                    rc_version_string = version_root + 'rc' + build_link['text'][5:-1]
+                        second_data = copy.deepcopy(data)
+                        second_data['version_string'] = rc_version_string
+                        build_data.append(second_data)
 
-                    # Whether or not this is the final build for a set of builds; for
-                    # example for [build1, build2, build3] the last build is build3
-                    # and if there was a release in the /pub/PRODUCT/releases/ directory
-                    # then this is a final build
-                    final_build = (
-                        (i + 1 == len(build_links)) and
-                        is_final_release
-                    )
-
-                    if final_build:
-                        if data['release_channel'] == 'release':
-                            # If this is a final build for a major release, then we want to
-                            # insert two entries--one for the last rc in the beta channel
-                            # and one for the final release in the release channel. This
-                            # makes it possible to look up version strings for beta and rc
-                            # builds in one request.
-
-                            # Insert the rc beta build
-                            data['release_channel'] = 'beta'
-                            data['version_string'] = rc_version_string
-                            self.insert_build(**data)
-
-                            # Insert the final release build
-                            data['version_string'] = version_root
-                            data['release_channel'] = 'release'
-                            self.insert_build(**data)
-
-                        else:
-                            # This is the final build for a beta release, so we insert both
-                            # an rc as well as a final as betas
-                            data['version_string'] = version_root
-                            self.insert_build(**data)
-
-                            data['version_string'] = rc_version_string
-                            self.insert_build(**data)
+                else:
+                    if data['release_channel'] == 'release':
+                        # This is a release channel build, but it's not a final build,
+                        # so insert it as an rc beta build
+                        data['version_string'] = rc_version_string
+                        data['release_channel'] = 'beta'
+                        build_data.append(data)
 
                     else:
-                        if data['release_channel'] == 'release':
-                            # This is a release channel build, but it's not a final build,
-                            # so insert it as an rc beta build
-                            data['version_string'] = rc_version_string
-                            data['release_channel'] = 'beta'
-                            self.insert_build(**data)
+                        # Insert the rc beta build
+                        data['version_string'] = rc_version_string
+                        build_data.append(data)
 
-                        else:
-                            # Insert the rc beta build
-                            data['version_string'] = rc_version_string
-                            self.insert_build(**data)
+        return build_data
+
+
+class ArchiveScraperCronApp(BaseCronApp):
+    app_name = 'archivescraper'
+    app_description = 'scraper for archive.mozilla.org for release info'
+    app_version = '1.0'
+
+    required_config = Namespace()
+    required_config.add_option(
+        'base_url',
+        default='https://archive.mozilla.org/pub/',
+        doc='base url to use for fetching builds'
+    )
+    required_config.add_option(
+        'verbose',
+        default=False,
+        doc='print verbose information about spidering'
+    )
+    required_config.add_option(
+        'num_workers',
+        default=20,
+        doc='number of concurrent workers for downloading; set to 1 for single process'
+    )
+    required_config.add_option(
+        'database_class',
+        default='socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.database = self.config.database_class(self.config)
+
+    def get_max_major_version(self, product_name):
+        """Retrieve the max major version for this product.
+
+        :arg str product_name: the name of the product
+
+        :returns: maximum major version as an int or None
+
+        """
+        with transaction_context(self.database) as conn:
+            cursor = conn.cursor()
+            sql = """
+            SELECT max(major_version)
+            FROM crashstats_productversion
+            WHERE product_name = %s
+            """
+            params = (product_name,)
+            cursor.execute(sql, params)
+            data = cursor.fetchall()
+            if data:
+                return data[0][0]
+
+        return None
+
+    def insert_build(self, product_name, release_channel, major_version, release_version,
+                     version_string, build_id, archive_url):
+        """Insert a new build into the crashstats_productversion table."""
+        params = {
+            'product_name': product_name,
+            'release_channel': release_channel,
+            'major_version': major_version,
+            'release_version': release_version,
+            'version_string': version_string,
+            'build_id': build_id,
+            'archive_url': archive_url
+        }
+
+        if self.config.verbose:
+            logger.info('INSERTING: %s' % list(sorted(params.items())))
+
+        with transaction_context(self.database) as conn:
+            cursor = conn.cursor()
+            sql = """
+            INSERT INTO crashstats_productversion (
+                product_name, release_channel, major_version, release_version,
+                version_string, build_id, archive_url
+            )
+            VALUES (
+                %(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
+                %(version_string)s, %(build_id)s, %(archive_url)s
+            )
+            """
+            try:
+                cursor.execute(sql, params)
+            except psycopg2.IntegrityError:
+                # If it's an IntegrityError, we already have it and everything is fine
+                pass
+            except psycopg2.Error:
+                logger.exception('failed to insert')
+
+    def scrape_and_insert_build_info(self, product_name, archive_directory):
+        """Scrape and insert build info for a specific product/directory."""
+        downloader = Downloader(
+            base_url=self.config.base_url,
+            num_workers=self.config.num_workers,
+            verbose=self.config.verbose,
+        )
+        major_version = self.get_max_major_version(product_name)
+        build_data = downloader.scrape_candidates(
+            product_name=product_name,
+            archive_directory=archive_directory,
+            major_version=major_version
+        )
+        num_builds = 0
+        for item in build_data:
+            num_builds += 1
+            self.insert_build(**item)
+        return num_builds
 
     def run(self):
+        """Run the crontabber job."""
+        num_builds = 0
+
         # Capture Firefox beta and release builds
-        self.scrape_candidates(
+        num_builds += self.scrape_and_insert_build_info(
             product_name='Firefox',
-            archive_directory='firefox'
+            archive_directory='firefox',
         )
+
         # Pick up DevEdition beta builds for which b1 and b2 are "Firefox builds"
-        self.scrape_candidates(
+        num_builds += self.scrape_and_insert_build_info(
             product_name='DevEdition',
-            archive_directory='devedition'
+            archive_directory='devedition',
         )
 
         # Capture Fennec beta and release builds
-        self.scrape_candidates(
+        num_builds += self.scrape_and_insert_build_info(
             product_name='Fennec',
-            archive_directory='mobile'
+            archive_directory='mobile',
         )
 
-        self.logger.info('Inserted %s builds.', self.successful_inserts)
+        logger.info('Inserted %s builds.', num_builds)
+        logger.info('Done!')
