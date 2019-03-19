@@ -18,20 +18,26 @@ TODAY = datetime.datetime.now().strftime('%Y%m%d')
 
 
 @pytest.fixture
-def mock_pool():
-    """Mock multiprocessing.Pool.map with non-multiprocessing map."""
+def mock_futures():
+    """Mock concurrent futures with non-multiprocessing map."""
     class Pool:
         def __init__(self, *args, **kwargs):
             pass
 
-        def map(self, fn, iterable, chunksize=1):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args, **kwargs):
+            pass
+
+        def map(self, fn, iterable, timeout=None):
             output = []
             for item in iterable:
                 output.append(fn(item))
             return output
 
-    with mock.patch('socorro.cron.jobs.verify_processed.multiprocessing') as mocked_mp:
-        mocked_mp.Pool.return_value = Pool()
+    with mock.patch('socorro.cron.jobs.verify_processed.concurrent.futures') as mocked_cf:
+        mocked_cf.ProcessPoolExecutor.return_value = Pool()
         yield
 
 
@@ -96,15 +102,15 @@ class TestVerifyProcessedCronApp:
             assert entropy[-1] == 'fff'
 
     @mock_s3_deprecated
-    def test_no_crashes(self, mock_pool, boto_helper):
+    def test_no_crashes(self, mock_futures, boto_helper):
         """Verify no crashes in bucket result in no missing crashes."""
         boto_helper.get_or_create_bucket('crashstats')
         with self.get_app() as app:
-            missing = app.find_missing_multiprocessing(TODAY)
+            missing = app.find_missing(TODAY)
             assert missing == []
 
     @mock_s3_deprecated
-    def test_no_missing_crashes(self, mock_pool, boto_helper):
+    def test_no_missing_crashes(self, mock_futures, boto_helper):
         """Verify raw crashes with processed crashes result in no missing crashes."""
         boto_helper.get_or_create_bucket('crashstats')
 
@@ -127,11 +133,11 @@ class TestVerifyProcessedCronApp:
             )
 
         with self.get_app() as app:
-            missing = app.find_missing_multiprocessing(TODAY)
+            missing = app.find_missing(TODAY)
             assert missing == []
 
     @mock_s3_deprecated
-    def test_missing_crashes(self, mock_pool, boto_helper):
+    def test_missing_crashes(self, mock_futures, boto_helper):
         """Verify it finds a missing crash."""
         boto_helper.get_or_create_bucket('crashstats')
 
@@ -157,7 +163,7 @@ class TestVerifyProcessedCronApp:
         )
 
         with self.get_app() as app:
-            missing = app.find_missing_multiprocessing(TODAY)
+            missing = app.find_missing(TODAY)
             assert missing == [crashid_2]
 
     def test_handle_missing_none_missing(self, caplogpp, db_conn):
