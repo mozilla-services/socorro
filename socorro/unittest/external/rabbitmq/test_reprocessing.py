@@ -6,7 +6,7 @@ from configman.dotdict import DotDict
 from mock import MagicMock
 
 from socorro.external.crashstorage_base import Redactor
-from socorro.external.rabbitmq.crashstorage import ReprocessingOneRabbitMQCrashStore
+from socorro.external.rabbitmq.crashstorage import ReprocessingRabbitMQCrashStore
 from socorro.external.rabbitmq.connection_context import ConnectionContext
 
 
@@ -24,18 +24,18 @@ class TestReprocessing(object):
 
     def test_post(self):
         config = self._setup_config()
-        reprocessing = ReprocessingOneRabbitMQCrashStore(config)
+        reprocessing = ReprocessingRabbitMQCrashStore(config)
 
         def mocked_save_raw_crash(raw_crash, dumps, crash_id):
             assert crash_id == 'some-crash-id'
             return True
 
         reprocessing.save_raw_crash = mocked_save_raw_crash
-        assert reprocessing.reprocess('some-crash-id')
+        assert reprocessing.process('some-crash-id')
 
     def test_post_multiple_one_fails(self):
         config = self._setup_config()
-        reprocessing = ReprocessingOneRabbitMQCrashStore(config)
+        reprocessing = ReprocessingRabbitMQCrashStore(config)
 
         def mocked_save_raw_crash(raw_crash, dumps, crash_id):
             if crash_id == 'crash-id-1':
@@ -45,4 +45,4 @@ class TestReprocessing(object):
             raise NotImplementedError(crash_id)
 
         reprocessing.save_raw_crash = mocked_save_raw_crash
-        assert not reprocessing.reprocess(['crash-id-1', 'crash-id-2'])
+        assert not reprocessing.process(['crash-id-1', 'crash-id-2'])

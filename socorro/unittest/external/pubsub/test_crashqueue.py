@@ -2,99 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
 import time
-
-from configman import ConfigurationManager
-from google.api_core.exceptions import AlreadyExists
-from google.cloud import pubsub_v1
 
 from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 from socorro.lib.ooid import create_new_ooid
-
-
-# Socorro uses three queues. Each is implemented as a Pub/Sub topic and subscription.
-QUEUES = ['standard', 'priority', 'reprocessing']
-
-# Pub/Sub acknowledgement deadline in seconds
-ACK_DEADLINE = 2
-
-
-class PubSubHelper:
-    """Helper class for setting up, tearing down, and publishing to Pub/Sub."""
-
-    def __init__(self, config):
-        # NOTE(willkg): This (lazily) uses the same config as PubSubCrashQueue.
-        self.config = config
-
-    def setup_topics(self):
-        publisher = pubsub_v1.PublisherClient()
-        subscriber = pubsub_v1.SubscriberClient()
-
-        project_id = self.config.project_id
-
-        for queue in QUEUES:
-            topic_name = self.config['%s_topic_name' % queue]
-            topic_path = publisher.topic_path(project_id, topic_name)
-
-            try:
-                publisher.create_topic(topic_path)
-            except AlreadyExists:
-                pass
-
-            subscription_name = self.config['%s_subscription_name' % queue]
-            subscription_path = subscriber.subscription_path(project_id, subscription_name)
-            try:
-                subscriber.create_subscription(
-                    name=subscription_path,
-                    topic=topic_path,
-                    ack_deadline_seconds=ACK_DEADLINE
-                )
-            except AlreadyExists:
-                pass
-
-    def teardown_topics(self):
-        publisher = pubsub_v1.PublisherClient()
-        subscriber = pubsub_v1.SubscriberClient()
-        project_id = self.config.project_id
-
-        for queue in QUEUES:
-            topic_name = self.config['%s_topic_name' % queue]
-            topic_path = publisher.topic_path(project_id, topic_name)
-
-            # Delete all subscriptions
-            for sub_path in publisher.list_topic_subscriptions(topic_path):
-                subscriber.delete_subscription(sub_path)
-
-            # Delete topic
-            publisher.delete_topic(topic_path)
-
-    def __enter__(self):
-        self.setup_topics()
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.teardown_topics()
-
-    def publish(self, queue_name, crash_id):
-        publisher = pubsub_v1.PublisherClient()
-        project_id = self.config.project_id
-
-        topic_name = self.config['%s_topic_name' % queue_name]
-        topic_path = publisher.topic_path(project_id, topic_name)
-
-        future = publisher.publish(topic_path, data=crash_id.encode('utf-8'))
-        future.result()
-
-
-def get_config_manager():
-    pubsub_config = PubSubCrashQueue.get_required_config()
-    return ConfigurationManager(
-        [pubsub_config],
-        app_name='test-pubsub',
-        app_description='',
-        argv_source=[]
-    )
+from socorro.unittest.external.pubsub import ACK_DEADLINE, get_config_manager, PubSubHelper
 
 
 class TestPubSubCrashQueue:

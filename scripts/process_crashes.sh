@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Pulls down crash data for specified crash ids, syncs to the S3 bucket, and
-# sends the crash ids to the rabbitmq queue.
+# sends the crash ids to the Pub/Sub queue.
 #
 # Usage:
 #
@@ -45,8 +45,7 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 ./scripts/socorro_aws_s3.sh ls --recursive s3://dev_bucket/
 
 # Add crash ids to queue
-./socorro-cmd add_crashid_to_queue socorro.normal $@
-# ./socorro-cmd pubsub publish $@
+./socorro-cmd pubsub publish $@
 
 # Print urls to make it easier to look at them
 for crashid in "$@"
