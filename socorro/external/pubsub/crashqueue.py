@@ -118,29 +118,30 @@ class PubSubCrashQueue(RequiredConfig):
         a priority queue.
 
         """
-        queues = [
+        sub_paths = [
             self.priority_path,
             self.standard_path,
             self.reprocessing_path,
             self.priority_path
         ]
 
-        for queue_path in queues:
+        for sub_path in sub_paths:
             response = self.subscriber.pull(
-                queue_path,
+                sub_path,
                 max_messages=1,
                 return_immediately=True
             )
             if response.received_messages:
                 for msg in response.received_messages:
                     crash_id = msg.message.data.decode('utf-8')
-                    logger.debug('got %s from %s', crash_id, queue_path)
+                    logger.debug('got %s from %s', crash_id, sub_path)
                     if crash_id == 'test':
-                        # Drop any test crash ids
+                        # Ack and drop any test crash ids
+                        self.ack_crash(sub_path, msg.ack_id)
                         continue
                     yield (
                         (crash_id,),
-                        {'finished_func': partial(self.ack_crash, queue_path, msg.ack_id)}
+                        {'finished_func': partial(self.ack_crash, sub_path, msg.ack_id)}
                     )
 
     def new_crashes(self):
