@@ -659,6 +659,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             ),
         },
         'pubsub': {
+            'service_account_file': config('resource.pubsub.service_account_file', None),
             'project_id': config('resource.pubsub.project_id', None),
             'standard_topic_name': config('resource.pubsub.standard_topic_name', None),
             'standard_subscription_name': config(
