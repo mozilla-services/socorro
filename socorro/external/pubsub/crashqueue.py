@@ -77,7 +77,7 @@ class PubSubCrashQueue(RequiredConfig):
         self.config = config
         self.quit_check_callback = quit_check_callback
 
-        if 'PUBSUB_EMULATOR_HOST' in os.environ:
+        if os.environ.get('PUBSUB_EMULATOR_HOST', ''):
             self.subscriber = pubsub_v1.SubscriberClient()
         else:
             self.subscriber = pubsub_v1.SubscriberClient.from_service_account_file(
