@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.contrib import admin
+from django.contrib import messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.utils.html import format_html
@@ -15,6 +16,9 @@ from crashstats.crashstats.models import (
     Product,
     ProductVersion,
     Signature,
+
+    # Middleware
+    PriorityJob
 )
 
 
@@ -157,6 +161,17 @@ class SignatureAdmin(admin.ModelAdmin):
     ]
 
 
+def process_crashes(modeladmin, request, queryset):
+    """Process selected missing processed crashes from admin page."""
+    priority_api = PriorityJob()
+    crash_ids = [obj.crash_id for obj in queryset]
+    priority_api.post(crash_ids=crash_ids)
+    messages.add_message(request, messages.INFO, 'Sent %s crashes for processing.' % len(crash_ids))
+
+
+process_crashes.short_description = 'Process crashes'
+
+
 @admin.register(MissingProcessedCrashes)
 class MissingProcessedCrashesAdmin(admin.ModelAdmin):
     list_display = [
@@ -166,6 +181,7 @@ class MissingProcessedCrashesAdmin(admin.ModelAdmin):
         'is_processed',
         'report_url_linked',
     ]
+    actions = [process_crashes]
 
     def report_url_linked(self, obj):
         return format_html('<a href="{}">{}</a>', obj.report_url(), obj.report_url())
