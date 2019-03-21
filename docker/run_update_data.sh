@@ -16,8 +16,7 @@ DC="$(which docker-compose)"
 
 # Fetch release data (verbosely)
 ${DC} run app shell ./socorro-cmd crontabber --reset-job=archivescraper
-${DC} run app shell ./socorro-cmd crontabber --job=archivescraper \
-    --crontabber.class-ArchiveScraperCronApp.verbose
+${DC} run app shell ./socorro-cmd crontabber --job=archivescraper
 
 # Insert data that's no longer on archive.mozilla.org
 ${DC} run app shell python ./scripts/insert_missing_versions.py
