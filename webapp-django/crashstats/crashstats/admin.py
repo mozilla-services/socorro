@@ -164,7 +164,7 @@ class SignatureAdmin(admin.ModelAdmin):
 def process_crashes(modeladmin, request, queryset):
     """Process selected missing processed crashes from admin page."""
     priority_api = PriorityJob()
-    crash_ids = list(queryset.values_list('crash_id', flatten=True))
+    crash_ids = list(queryset.values_list('crash_id', flat=True))
     priority_api.post(crash_ids=crash_ids)
     messages.add_message(request, messages.INFO, 'Sent %s crashes for processing.' % len(crash_ids))
 
