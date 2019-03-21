@@ -81,16 +81,16 @@ class PubSubCrashQueue(RequiredConfig):
             self.subscriber = pubsub_v1.SubscriberClient()
         else:
             self.subscriber = pubsub_v1.SubscriberClient.from_service_account_file(
-                config.service_account_file
+                self.config.service_account_file
             )
         self.standard_path = self.subscriber.subscription_path(
-            config.project_id, config.standard_subscription_name
+            self.config.project_id, self.config.standard_subscription_name
         )
         self.priority_path = self.subscriber.subscription_path(
-            config.project_id, config.priority_subscription_name
+            self.config.project_id, self.config.priority_subscription_name
         )
         self.reprocessing_path = self.subscriber.subscription_path(
-            config.project_id, config.reprocessing_subscription_name
+            self.config.project_id, self.config.reprocessing_subscription_name
         )
 
         # NOTE(willkg): This will fail if one of the subscription names don't
@@ -154,7 +154,12 @@ class PubSubCrashQueue(RequiredConfig):
         """Publish crash ids to specified queue."""
         assert queue in ['standard', 'priority', 'reprocessing']
 
-        publisher = pubsub_v1.PublisherClient()
+        if os.environ.get('PUBSUB_EMULATOR_HOST', ''):
+            publisher = pubsub_v1.PublisherClient()
+        else:
+            publisher = pubsub_v1.PublisherClient.from_service_account_file(
+                self.config.service_account_file
+            )
         project_id = self.config.project_id
         topic_name = self.config['%s_topic_name' % queue]
         topic_path = publisher.topic_path(project_id, topic_name)

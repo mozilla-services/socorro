@@ -6,6 +6,7 @@
 
 import argparse
 import os
+import sys
 
 from google.api_core.exceptions import AlreadyExists, NotFound
 from google.cloud import pubsub_v1
@@ -150,6 +151,8 @@ def publish_crashid(config, args):
 def main(argv=None):
     if not os.environ.get('PUBSUB_EMULATOR_HOST', ''):
         print('WARNING: You are running against the real GCP and not the emulator.')
+        print('This does not work with the real GCP.')
+        sys.exit(1)
 
     parser = argparse.ArgumentParser(
         formatter_class=WrappedTextHelpFormatter,
