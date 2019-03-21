@@ -113,10 +113,6 @@ class PubSubCrashQueue(RequiredConfig):
         ``finished_func`` as the only key in ``kwargs``. The caller should call
         ``finished_func`` when it's done processing the crash.
 
-        This does a single pass through the queues and pulls at most 10 from
-        each queue. It tries twice to pull from the priority queue since it's
-        a priority queue.
-
         """
         sub_paths = [
             self.priority_path,
@@ -125,24 +121,30 @@ class PubSubCrashQueue(RequiredConfig):
             self.priority_path
         ]
 
-        for sub_path in sub_paths:
-            response = self.subscriber.pull(
-                sub_path,
-                max_messages=1,
-                return_immediately=True
-            )
-            if response.received_messages:
-                for msg in response.received_messages:
-                    crash_id = msg.message.data.decode('utf-8')
-                    logger.debug('got %s from %s', crash_id, sub_path)
-                    if crash_id == 'test':
-                        # Ack and drop any test crash ids
-                        self.ack_crash(sub_path, msg.ack_id)
-                        continue
-                    yield (
-                        (crash_id,),
-                        {'finished_func': partial(self.ack_crash, sub_path, msg.ack_id)}
-                    )
+        while True:
+            msgs = 0
+            for sub_path in sub_paths:
+                response = self.subscriber.pull(
+                    sub_path,
+                    max_messages=1,
+                    return_immediately=True
+                )
+                if response.received_messages:
+                    msgs += 1
+                    for msg in response.received_messages:
+                        crash_id = msg.message.data.decode('utf-8')
+                        logger.debug('got %s from %s', crash_id, sub_path)
+                        if crash_id == 'test':
+                            # Ack and drop any test crash ids
+                            self.ack_crash(sub_path, msg.ack_id)
+                            continue
+                        yield (
+                            (crash_id,),
+                            {'finished_func': partial(self.ack_crash, sub_path, msg.ack_id)}
+                        )
+            if msgs == 0:
+                # There's nothing to process, so return
+                return
 
     def new_crashes(self):
         return self.__iter__()
