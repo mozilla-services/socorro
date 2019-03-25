@@ -10,6 +10,11 @@ from configman import Namespace, RequiredConfig
 from google.cloud import pubsub_v1
 
 
+# Maximum number of messages to pull from a Pub/Sub topic in a single pull
+# request
+PUBSUB_MAX_MESSAGES = 5
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -118,7 +123,6 @@ class PubSubCrashQueue(RequiredConfig):
             self.priority_path,
             self.standard_path,
             self.reprocessing_path,
-            self.priority_path
         ]
 
         while True:
@@ -126,7 +130,7 @@ class PubSubCrashQueue(RequiredConfig):
             for sub_path in sub_paths:
                 response = self.subscriber.pull(
                     sub_path,
-                    max_messages=1,
+                    max_messages=PUBSUB_MAX_MESSAGES,
                     return_immediately=True
                 )
                 if response.received_messages:
