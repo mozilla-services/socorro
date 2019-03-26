@@ -11,6 +11,7 @@ from django.utils.html import format_html
 from crashstats.crashstats.models import (
     BugAssociation,
     GraphicsDevice,
+    MissingProcessedCrash,
     MissingProcessedCrashes,
     Platform,
     Product,
@@ -174,6 +175,8 @@ process_crashes.short_description = 'Process crashes'
 
 @admin.register(MissingProcessedCrashes)
 class MissingProcessedCrashesAdmin(admin.ModelAdmin):
+    """DEPRECATED."""
+
     list_display = [
         'crash_id',
         'created',
@@ -182,6 +185,24 @@ class MissingProcessedCrashesAdmin(admin.ModelAdmin):
         'report_url_linked',
     ]
     actions = [process_crashes]
+
+    def report_url_linked(self, obj):
+        return format_html('<a href="{}">{}</a>', obj.report_url(), obj.report_url())
+
+
+@admin.register(MissingProcessedCrash)
+class MissingProcessedCrashAdmin(admin.ModelAdmin):
+    list_display = [
+        'crash_id',
+        'created',
+        'collected_date',
+        'is_processed',
+        'check_processed',
+        'report_url_linked',
+    ]
+    actions = [process_crashes]
+
+    list_filter = ['is_processed']
 
     def report_url_linked(self, obj):
         return format_html('<a href="{}">{}</a>', obj.report_url(), obj.report_url())

@@ -19,8 +19,12 @@ from psycopg2 import IntegrityError
 
 from socorro.cron.base import BaseCronApp
 from socorro.cron.mixins import as_backfill_cron_app
-from socorro.lib.dbutil import execute_no_results
+from socorro.lib.dbutil import execute_no_results, execute_query_fetchall
 from socorro.lib.transaction import transaction_context
+
+
+RAW_CRASH_PREFIX_TEMPLATE = 'v2/raw_crash/%s/%s/'
+PROCESSED_CRASH_TEMPLATE = 'v1/processed_crash/%s'
 
 
 metrics = markus.get_metrics('crontabber.verifyprocessed')
@@ -30,16 +34,14 @@ def check_crashids(entropy, boto_conn, bucket_name, date):
     """Checks crash ids for a given entropy and date."""
     bucket = boto_conn.get_bucket(bucket_name)
 
-    raw_crash_prefix_template = 'v2/raw_crash/%s/%s/'
-    processed_crash_template = 'v1/processed_crash/%s'
-    raw_crash_key_prefix = raw_crash_prefix_template % (entropy, date)
+    raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (entropy, date)
 
     missing = []
     for key_instance in bucket.list(raw_crash_key_prefix):
         raw_crash_key = key_instance.key
         crash_id = raw_crash_key.split('/')[-1]
 
-        processed_crash_key = bucket.get_key(processed_crash_template % crash_id)
+        processed_crash_key = bucket.get_key(PROCESSED_CRASH_TEMPLATE % crash_id)
         if processed_crash_key is None:
             missing.append(crash_id)
 
@@ -123,8 +125,8 @@ class VerifyProcessedCronApp(BaseCronApp):
 
                 with transaction_context(self.database) as conn:
                     sql = """
-                    INSERT INTO crashstats_missingprocessedcrashes (crash_id, created)
-                    VALUES (%s, current_timestamp)
+                    INSERT INTO crashstats_missingprocessedcrash (crash_id, is_processed, created)
+                    VALUES (%s, False, current_timestamp)
                     """
                     params = (crash_id,)
                     try:
@@ -135,8 +137,52 @@ class VerifyProcessedCronApp(BaseCronApp):
         else:
             self.logger.info('All crashes for %s were processed.', date)
 
+    def check_past_missing(self):
+        """Check the table for missing crashes and check to see if they exist."""
+        connection_source = self.crashstorage.connection_source
+        bucket_name = connection_source.config.bucket_name
+        boto_conn = connection_source._connect()
+
+        crash_ids = []
+
+        with transaction_context(self.database) as conn:
+            sql = """
+            SELECT crash_id
+            FROM crashstats_missingprocessedcrash
+            WHERE is_processed=False
+            """
+            params = ()
+            crash_ids = [item[0] for item in execute_query_fetchall(conn, sql, params)]
+
+        no_longer_missing = []
+
+        for crash_id in crash_ids:
+            bucket = boto_conn.get_bucket(bucket_name)
+            processed_crash_key = bucket.get_key(PROCESSED_CRASH_TEMPLATE % crash_id)
+            if processed_crash_key is not None:
+                no_longer_missing.append(crash_id)
+
+        if no_longer_missing:
+            with transaction_context(self.database) as conn:
+                sql = """
+                UPDATE crashstats_missingprocessedcrash
+                SET is_processed=True
+                WHERE crash_id IN %s
+                """
+                params = (tuple(no_longer_missing),)
+                execute_no_results(conn, sql, params)
+
+        self.logger.info(
+            'Updated %s missing crashes which have since been processed',
+            len(no_longer_missing)
+        )
+
     def run(self, end_datetime):
         """Run cron app."""
+
+        # Check and update existing missing before finding new missing things
+        self.check_past_missing()
+
         if self.config.date == 'backfill':
             # Change to previous day and convert to YYYYMMDD
             date = end_datetime - datetime.timedelta(days=1)

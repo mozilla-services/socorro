@@ -54,11 +54,12 @@ class TestVerifyProcessedCronApp:
     def fetch_crashids(self, conn):
         """Fetch crashids from db table."""
         cursor = conn.cursor()
-        cursor.execute("""
+        sql = """
         SELECT crash_id, created
-        FROM crashstats_missingprocessedcrashes
+        FROM crashstats_missingprocessedcrash
         ORDER BY crash_id
-        """)
+        """
+        cursor.execute(sql)
         results = cursor.fetchall()
         return [
             {
