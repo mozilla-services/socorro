@@ -188,8 +188,50 @@ class Signature(models.Model):
     )
 
 
+class MissingProcessedCrash(models.Model):
+    """Bookkeeping table to keep track of missing processed crashes."""
+
+    verbose_name = 'missing processed crash'
+    verbose_name_plural = 'missing processed crashes'
+
+    crash_id = models.CharField(
+        unique=True,
+        max_length=36,
+        help_text='crash id for missing processed crash'
+    )
+    is_processed = models.BooleanField(
+        default=False,
+        help_text='whether this crash was eventually processed'
+    )
+    created = models.DateTimeField(
+        auto_now_add=True,
+        help_text='date discovered it was missing'
+    )
+
+    def collected_date(self):
+        return '20' + self.crash_id[-6:]
+
+    def report_url(self):
+        return reverse('crashstats:report_index', args=(self.crash_id,))
+
+    def check_processed(self):
+        """Check whether this crash id was processed.
+
+        :returns: True, False, or a str of the exception.
+
+        """
+        processed_api = ProcessedCrash()
+        try:
+            processed_api.get(crash_id=self.crash_id, dont_cache=True, refresh_cache=True)
+            return True
+        except CrashIDNotFound:
+            return False
+        except Exception as exc:
+            return str(exc)
+
+
 class MissingProcessedCrashes(models.Model):
-    """Bookkeeping table to ekep track of missing processed crashes."""
+    """DEPRECATED."""
 
     verbose_name = 'missing processed crashes'
     verbose_name_plural = 'missing processed crashes'
