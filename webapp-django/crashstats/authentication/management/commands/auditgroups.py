@@ -12,6 +12,8 @@ from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from crashstats.authentication.models import PolicyException
+
 
 VALID_EMAIL_DOMAINS = ('mozilla.com', 'mozilla.org')
 
@@ -32,6 +34,16 @@ class Command(BaseCommand):
             help='persists recommended changes to db'
         )
 
+    def is_employee_or_exception(self, user):
+        # If this user has a policy exception, then they're allowed
+        if PolicyException.objects.filter(user=user).exists():
+            return True
+
+        if user.email.endswith(VALID_EMAIL_DOMAINS):
+            return True
+
+        return False
+
     def audit_hackers_group(self, persist=False):
         # Figure out the cutoff date for inactivity
         cutoff = timezone.now() - datetime.timedelta(days=365)
@@ -50,8 +62,10 @@ class Command(BaseCommand):
         for user in hackers_group.user_set.all():
             if not user.is_active:
                 users_to_remove.append((user, '!is_active'))
-            elif not user.email.endswith(VALID_EMAIL_DOMAINS):
-                users_to_remove.append((user, 'invalid email domain'))
+
+            elif not self.is_employee_or_exception(user):
+                users_to_remove.append((user, 'not employee or exception'))
+
             elif user.last_login and user.last_login < cutoff:
                 days = delta_days(user.last_login)
 
