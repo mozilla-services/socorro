@@ -35,6 +35,7 @@ PACKAGES_TO_INSTALL=(
     libcurl3-gnutls
     libcurl4-gnutls-dev
     wget
+    rsync
 
     # For nodejs and npm
     curl

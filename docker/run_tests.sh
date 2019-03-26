@@ -16,7 +16,7 @@
 # Failures should cause setup to fail
 set -v -e -x
 
-echo ">>> pytest"
+echo ">>> set up environment"
 # Set up environment variables
 
 # NOTE(willkg): This has to be "database_url" all lowercase because configman.
@@ -29,11 +29,13 @@ export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
 PYTHON="$(which python)"
 
+echo ">>> wait for services"
 # Wait for postgres and elasticsearch services to be ready
 urlwait "${DATABASE_URL}" 10
 urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
 
+echo ">>> build pubsub things and db things"
 # Clear Pub/Sub for tests
 ./socorro-cmd pubsub delete
 ./socorro-cmd pubsub create
