@@ -202,5 +202,7 @@ class MissingProcessedCrashAdmin(admin.ModelAdmin):
     ]
     actions = [process_crashes]
 
+    list_filter = ['is_processed']
+
     def report_url_linked(self, obj):
         return format_html('<a href="{}">{}</a>', obj.report_url(), obj.report_url())

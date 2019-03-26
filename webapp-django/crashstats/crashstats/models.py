@@ -140,7 +140,8 @@ class Product(models.Model):
 
 
 class ProductVersion(models.Model):
-    """Lookup table for product versions and build information"""
+    """Lookup table for product versions and build information."""
+
     product_name = models.CharField(
         max_length=50, blank=False, null=False,
         help_text='ProductName of product as it appears in crash reports'
@@ -191,9 +192,6 @@ class Signature(models.Model):
 class MissingProcessedCrash(models.Model):
     """Bookkeeping table to keep track of missing processed crashes."""
 
-    verbose_name = 'missing processed crash'
-    verbose_name_plural = 'missing processed crashes'
-
     crash_id = models.CharField(
         unique=True,
         max_length=36,
@@ -229,12 +227,13 @@ class MissingProcessedCrash(models.Model):
         except Exception as exc:
             return str(exc)
 
+    class Meta:
+        verbose_name = 'missing processed crash'
+        verbose_name_plural = 'missing processed crashes'
+
 
 class MissingProcessedCrashes(models.Model):
     """DEPRECATED."""
-
-    verbose_name = 'missing processed crashes'
-    verbose_name_plural = 'missing processed crashes'
 
     crash_id = models.CharField(
         unique=True,
@@ -261,6 +260,10 @@ class MissingProcessedCrashes(models.Model):
             return False
         except Exception as exc:
             return str(exc)
+
+    class Meta:
+        verbose_name = 'missing processed crashes (deprecated)'
+        verbose_name_plural = 'missing processed crashes (deprecated)'
 
 
 # Socorro x-middleware models
