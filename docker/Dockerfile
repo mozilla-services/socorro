@@ -1,4 +1,4 @@
-FROM python:3.6.7-slim-jessie as socorro_image_base
+FROM python:3.6.8-slim-stretch as socorro_image_base
 
 # Set up user and group
 ARG groupid=10001
