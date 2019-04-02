@@ -2,23 +2,17 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker:stable
+      - image: mozilla/cidockerbases:docker-latest
     working_directory: /
+
     steps:
       - run:
+          name: Host info
+          command: uname -v
+
+      - run:
           name: Install essential packages
-          command: |
-            apk update
-            apk add --update --no-cache \
-                    ca-certificates \
-                    build-base \
-                    bash \
-                    make \
-                    git \
-                    openssh \
-                    docker \
-                    py-pip
-            pip install docker-compose
+          command: apt-get install make
 
       - checkout:
           path: /socorro
@@ -41,10 +35,16 @@ jobs:
       - setup_remote_docker
 
       - run:
+          name: Get info
+          command: |
+            docker info
+            which docker-compose
+            docker-compose --version
+
+      - run:
           name: Build Docker images
           working_directory: /socorro
           command: |
-            docker info
             make build
 
       - run:
