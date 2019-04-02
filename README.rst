@@ -22,6 +22,14 @@ alternatives:
 * hosted/on-premise: `Backtrace <https://backtrace.io/>`_
 
 
+Code of Conduct
+===============
+
+This project and repository is governed by Mozilla's code of conduct and
+etiquette guidelines. For more details please see the `CODE_OF_CONDUCT.md file
+<https://github.com/mozilla-services/socorro/blob/master/CODE_OF_CONDUCT.md>`_.
+
+
 Installation
 ============
 
