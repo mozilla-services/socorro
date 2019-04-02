@@ -170,6 +170,11 @@ class PubSubCrashQueue(RequiredConfig):
         topic_name = self.config['%s_topic_name' % queue]
         topic_path = publisher.topic_path(project_id, topic_name)
 
+        # Queue up the batch
+        futures = []
         for crash_id in crash_ids:
-            future = publisher.publish(topic_path, data=crash_id.encode('utf-8'))
+            futures.append(publisher.publish(topic_path, data=crash_id.encode('utf-8')))
+
+        # Wait for everything in this group to get sent out
+        for future in futures:
             future.result()
