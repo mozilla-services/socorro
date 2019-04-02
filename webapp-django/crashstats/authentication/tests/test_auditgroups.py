@@ -10,10 +10,13 @@ from django.contrib.auth.models import Group, User
 from django.core.management import call_command
 from django.utils import timezone
 
+from crashstats.authentication.models import PolicyException
 from crashstats.tokens.models import Token
 
 
 class TestAuditGroupsCommand(object):
+    """Test auditgroups command."""
+
     def test_no_users(self, db):
         buffer = six.StringIO()
         call_command('auditgroups', stdout=buffer)
@@ -61,7 +64,23 @@ class TestAuditGroupsCommand(object):
         buffer = six.StringIO()
         call_command('auditgroups', persist=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
-        assert 'Removing: bob@example.com (invalid email domain)' in buffer.getvalue()
+        assert 'Removing: bob@example.com (not employee or exception)' in buffer.getvalue()
+
+    def test_user_with_policy_exception_is_not_removed(self, db):
+        hackers_group = Group.objects.get(name='Hackers')
+
+        bob = User.objects.create(username='bob', email='bob@example.com')
+        bob.last_login = timezone.now()
+        bob.groups.add(hackers_group)
+        bob.save()
+
+        policyexception = PolicyException.objects.create(user=bob, comment='friend')
+        policyexception.save()
+
+        buffer = six.StringIO()
+        call_command('auditgroups', persist=True, stdout=buffer)
+        assert [u.email for u in hackers_group.user_set.all()] == ['bob@example.com']
+        assert 'Removing:' not in buffer.getvalue()
 
     def test_old_user_with_active_api_tokens_is_not_removed(self, db):
         hackers_group = Group.objects.get(name='Hackers')
