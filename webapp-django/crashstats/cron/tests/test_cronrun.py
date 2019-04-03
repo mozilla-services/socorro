@@ -21,7 +21,7 @@ from crashstats.cron.models import Job
 from crashstats.cron.management.commands import cronrun
 
 
-class TestCron:
+class TestCronrun:
     def test_lock_job_works(self, db):
         cron_command = cronrun.Command()
         now = timezone.now()
