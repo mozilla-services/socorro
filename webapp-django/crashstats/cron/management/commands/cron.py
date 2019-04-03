@@ -116,8 +116,8 @@ def convert_time(value):
 def get_matching_job_specs(cmds):
     """Return list of matching job specs for this cmd.
 
-    :arg cmds: "all" returns list of all job_specs, cmds return single job_spec,
-        list of cmds returns list of job_specs
+    :arg cmds: ['all'] returns list of all job_specs, cmds (str) returns
+        a single job_spec, and list of cmds returns list of job_specs
 
     """
     if cmds == ['all']:
@@ -296,9 +296,9 @@ class Command(BaseCommand):
         return 0
 
     def cmd_run_one(self, description, force=False, job_args=None):
-        for job_spec in JOBS:
-            if job_spec['cmd'] == description:
-                return self._run_one(job_spec, force=force, job_args=job_args)
+        job_spec = get_matching_job_specs(description)
+        if job_spec:
+            return self._run_one(job_spec, force=force, job_args=job_args)
         raise JobNotFoundError(description)
 
     def _run_one(self, job_spec, force=False, job_args=None):
