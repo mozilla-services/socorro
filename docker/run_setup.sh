@@ -24,3 +24,4 @@ set -e
 
 # Initialize the crontabber bookkeeping for all configured jobs to success
 /app/socorro-cmd crontabber --mark-success=all
+/app/webapp-django/manage.py cronmarksuccess all

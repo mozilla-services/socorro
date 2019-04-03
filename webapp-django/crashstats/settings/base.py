@@ -692,6 +692,13 @@ CRONTABBER_STALE_MINUTES = config(
     default=60 * 2
 )
 
+# Maximum number of hours a job should be allowed to run before we
+# declare it a zombie
+CRONTABBER_MAX_ONGOING_AGE_HOURS = 2
+
+# Number of seconds before we retry a failed job
+CRONTABBER_ERROR_RETRY_TIME = 300
+
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
 # Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
