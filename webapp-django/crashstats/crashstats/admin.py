@@ -4,7 +4,6 @@
 
 from django.contrib import admin
 from django.contrib import messages
-from django.contrib.auth.admin import UserAdmin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.utils.html import format_html
 
@@ -21,19 +20,6 @@ from crashstats.crashstats.models import (
     # Middleware
     PriorityJob
 )
-
-
-# Fix the Django Admin User list display so it shows the columns we care about
-UserAdmin.list_display = [
-    'email',
-    'first_name',
-    'last_name',
-    'is_superuser',
-    'is_staff',
-    'is_active',
-    'date_joined',
-    'last_login'
-]
 
 
 ACTION_TO_NAME = {
