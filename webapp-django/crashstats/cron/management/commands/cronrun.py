@@ -58,14 +58,11 @@ class Command(BaseCommand):
     def handle(self, **options):
         """Execute cronrun command."""
         if options['job']:
-            job_args = {}
-            for arg in (options['job_arg'] or []):
-                if '=' in arg:
-                    key, val = arg.split('=', 1)
-                else:
-                    key, val = arg, True
-                job_args[key] = val
-            return self.cmd_run_one(options['job'], options['force'], job_args)
+            job_args = options.get('job_arg') or []
+            # Re-add the -- because they're optional arguments; note that this
+            # doesn't support positional arguments
+            cmd_args = ['--%s' % arg for arg in job_args]
+            return self.cmd_run_one(options['job'], options['force'], cmd_args)
         else:
             return self.cmd_run_all()
 
@@ -75,14 +72,22 @@ class Command(BaseCommand):
             self._run_one(job_spec)
         return 0
 
-    def cmd_run_one(self, description, force=False, job_args=None):
+    def cmd_run_one(self, description, force=False, cmd_args=None):
         job_spec = get_matching_job_specs(description)
         if job_spec:
-            return self._run_one(job_spec, force=force, job_args=job_args)
+            return self._run_one(job_spec, force=force, cmd_args=cmd_args)
         raise JobNotFoundError(description)
 
-    def _run_one(self, job_spec, force=False, job_args=None):
-        job_args = job_args or {}
+    def _run_one(self, job_spec, force=False, cmd_args=None):
+        """Run a single job.
+
+        :arg job_spec: job spec dict
+        :arg force: forces the job to run even if it's not time to run
+        :arg cmd_args: list of "--key=val" positional args as you would pass
+            them on a command line
+
+        """
+        cmd_args = cmd_args or []
         cmd = job_spec['cmd']
 
         # Make sure we have a job record before trying to run anything
@@ -90,7 +95,7 @@ class Command(BaseCommand):
 
         if force:
             # If we're forcing the job, just run it without the bookkeeping.
-            return self._run_job(job_spec, job_args)
+            return self._run_job(job_spec, *cmd_args)
 
         # Figure out whether this job should be run now
         seconds = convert_frequency(job_spec.get('frequency', DEFAULT_FREQUENCY))
@@ -107,6 +112,7 @@ class Command(BaseCommand):
         run_time = None
 
         try:
+            cmd_kwargs = {}
             with self.lock_job(job_spec['cmd']):
                 # Backfill jobs can have multiple run-times, so we iterate
                 # through all possible ones until either we get them all done
@@ -114,11 +120,11 @@ class Command(BaseCommand):
                 for run_time in get_run_times(job_spec, job.last_success):
                     # If "backfill" is in the spec, then we want to additionally
                     # pass in a run_time argument
-                    if job_spec.get('backfill', True):
-                        job_args['run_time'] = run_time
 
                     start_time = time.time()
-                    self._run_job(job_spec, job_args)
+                    if job_spec.get('backfill', True):
+                        cmd_kwargs['run_time'] = run_time
+                    self._run_job(job_spec, *cmd_args, **cmd_kwargs)
                     end_time = time.time()
 
                     logger.info('successfully ran %s on %s', cmd, run_time)
@@ -155,9 +161,9 @@ class Command(BaseCommand):
                     exc_type, exc_value, exc_tb
                 )
 
-    def _run_job(self, job_spec, job_args):
+    def _run_job(self, job_spec, *cmd_args, **cmd_kwargs):
         """Run job with specified args."""
-        return call_command(job_spec['cmd'], stdout=self.stdout, **job_args)
+        return call_command(job_spec['cmd'], *cmd_args, stdout=self.stdout, **cmd_kwargs)
 
     def _remember_success(self, cmd, success_date, duration):
         Log.objects.create(
