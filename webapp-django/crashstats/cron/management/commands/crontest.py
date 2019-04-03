@@ -2,12 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
-
 from django.core.management.base import BaseCommand
-
-
-logger = logging.getLogger('crashstats.crontest')
 
 
 class Command(BaseCommand):
@@ -30,4 +25,4 @@ class Command(BaseCommand):
             raise Exception('**Sputter**')
         if options['print']:
             self.stdout.write('To print: %r' % options['print'])
-        logger.info('This is a test.')
+        self.stdout.write('This is a test.')
