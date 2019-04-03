@@ -30,15 +30,13 @@ def test_convert_frequency_error():
         cron.convert_frequency('1t')
 
 
-@pytest.mark.parametrize('value', [
-    '00:00',
-    '12:00',
-    '23:59',
+@pytest.mark.parametrize('value, expected', [
+    ('00:00', (0, 0)),
+    ('12:00', (12, 0)),
+    ('23:59', (23, 59)),
 ])
-def test_check_time_good(value):
-    # check_time doesn't return anything, so we're just verifying
-    # that some things raise an error and others don't
-    cron.check_time(value)
+def test_convert_time(value, expected):
+    assert cron.convert_time(value) == expected
 
 
 @pytest.mark.parametrize('value', [
@@ -46,9 +44,9 @@ def test_check_time_good(value):
     '000:000',
     '23:69',
 ])
-def test_check_time_bad(value):
+def test_convert_time_bad(value):
     with pytest.raises(cron.TimeDefinitionError):
-        cron.check_time(value)
+        cron.convert_time(value)
 
 
 def test_time_to_run(db):

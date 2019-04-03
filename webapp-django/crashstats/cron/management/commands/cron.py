@@ -102,14 +102,15 @@ def convert_frequency(value):
 VALID_TIME_RE = re.compile(r'^\d\d:\d\d$')
 
 
-def check_time(value):
-    """Validate it's an appropriate time in HH:MM form."""
+def convert_time(value):
+    """Return (h, m) as tuple."""
     if not VALID_TIME_RE.match(value):
         raise TimeDefinitionError("Invalid definition of time %r" % value)
 
     hh, mm = value.split(':')
     if int(hh) > 23 or int(mm) > 59:
         raise TimeDefinitionError("Invalid definition of time %r" % value)
+    return (int(hh), int(mm))
 
 
 def get_matching_job_specs(cmds):
@@ -134,12 +135,8 @@ def time_to_run(job_spec, job):
     if job.next_run is None:
         if time_:
             # Only run if this hour and minute is < now
-            h, m = [int(x) for x in time_.split(':')]
-            if now.hour > h:
-                return True
-            elif now.hour == h and now.minute >= m:
-                return True
-            return False
+            hh, mm = convert_time(time_)
+            return (now.hour, now.minute) >= (hh, mm)
 
         else:
             return True
@@ -167,10 +164,10 @@ def get_run_times(job_spec, last_success):
     if job_spec.get('time'):
         # So, reset the hour/minute part to always match the
         # intention.
-        h, m = [int(x) for x in job_spec['time'].split(':')]
+        hh, mm = convert_time(job_spec['time'])
         when = when.replace(
-            hour=h,
-            minute=m,
+            hour=hh,
+            minute=mm,
             second=0,
             microsecond=0
         )
@@ -445,8 +442,8 @@ class Command(BaseCommand):
         else:
             next_run = now + datetime.timedelta(seconds=seconds)
             if time_:
-                h, m = [int(x) for x in time_.split(':')]
-                next_run = next_run.replace(hour=h, minute=m, second=0, microsecond=0)
+                hh, mm = convert_time(time_)
+                next_run = next_run.replace(hour=hh, minute=mm, second=0, microsecond=0)
         job.next_run = next_run
 
         if exc_type:
