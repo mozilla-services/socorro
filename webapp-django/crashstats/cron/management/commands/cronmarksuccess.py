@@ -33,7 +33,7 @@ class Command(BaseCommand):
                 next_run = next_run.replace(hour=hh, minute=mm, second=0, microsecond=0)
 
             job = Job.objects.get_or_create(app_name=cmd)[0]
-            job.first_run = now
+            job.first_run = job.first_run if job.first_run is not None else now
             job.last_success = now
             job.next_run = next_run
             job.save()
