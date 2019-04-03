@@ -8,7 +8,9 @@ Audit groups and removes inactive users.
 
 import datetime
 
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
+from django.contrib.admin.models import LogEntry, CHANGE
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -16,6 +18,19 @@ from crashstats.authentication.models import PolicyException
 
 
 VALID_EMAIL_DOMAINS = ('mozilla.com', 'mozilla.org')
+
+
+def get_or_create_auditgroups_user():
+    try:
+        return User.objects.get(username='auditgroups')
+    except User.DoesNotExist:
+        return User.objects.create_user(
+            username='auditgroups',
+            email='auditgroups@example.com',
+            first_name='SYSTEMUSER',
+            last_name='DONOTDELETE',
+            is_active=False,
+        )
 
 
 def delta_days(since_datetime):
@@ -83,11 +98,24 @@ class Command(BaseCommand):
                         )
                     )
 
+        auditgroups_user = get_or_create_auditgroups_user()
+
         # Log or remove the users that have been marked
         for user, reason in users_to_remove:
             self.stdout.write('Removing: %s (%s)' % (user.email, reason))
             if persist is True:
                 hackers_group.user_set.remove(user)
+
+                # Toss a LogEntry in so we can keep track of when people get
+                # de-granted and what did it
+                LogEntry.objects.log_action(
+                    user_id=auditgroups_user.id,
+                    content_type_id=ContentType.objects.get_for_model(User).pk,
+                    object_id=user.pk,
+                    object_repr=user.email,
+                    action_flag=CHANGE,
+                    change_message='Removed %s from hackers--%s.' % (user.email, reason)
+                )
 
         self.stdout.write('Total removed: %s' % len(users_to_remove))
 
