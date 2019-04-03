@@ -52,6 +52,10 @@ MAX_ONGOING = 60 * 60 * 2
 ERROR_RETRY_TIME = 60
 
 
+# Default frequency for jobs
+DEFAULT_FREQUENCY = '1d'
+
+
 class FrequencyDefinitionError(Exception):
     pass
 
@@ -171,7 +175,7 @@ def get_run_times(job_spec, last_success):
             second=0,
             microsecond=0
         )
-    seconds = convert_frequency(job_spec.get('frequency'))
+    seconds = convert_frequency(job_spec.get('frequency', DEFAULT_FREQUENCY))
     interval = datetime.timedelta(seconds=seconds)
     # Loop over each missed interval from the time of the last success,
     # forward by each interval until it reaches the time 'now'.
@@ -235,8 +239,7 @@ class Command(BaseCommand):
         for job_spec in JOBS:
             self.stdout.write(job_spec['cmd'])
             schedule = []
-            if job_spec.get('frequency'):
-                schedule.append('every ' + job_spec['frequency'])
+            schedule.append('every ' + job_spec.get('frequency', DEFAULT_FREQUENCY))
             if job_spec.get('time'):
                 schedule.append(job_spec['time'] + ' UTC')
             schedule = ' @ '.join(schedule)
@@ -313,7 +316,7 @@ class Command(BaseCommand):
             return self._run_job(job_spec, job_args)
 
         # Figure out whether this job should be run now
-        seconds = convert_frequency(job_spec.get('frequency'))
+        seconds = convert_frequency(job_spec.get('frequency', DEFAULT_FREQUENCY))
         if not time_to_run(job_spec, job):
             logger.info("skipping %s because it's not time to run", cmd)
             return
