@@ -5,7 +5,6 @@
 import contextlib
 import datetime
 import logging
-import re
 import sys
 import time
 import traceback
@@ -16,7 +15,22 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from crashstats.cron import (
+    JOBS,
+    MAX_ONGOING,
+    ERROR_RETRY_TIME,
+    DEFAULT_FREQUENCY,
+    JobNotFoundError,
+    OngoingJobError,
+)
 from crashstats.cron.models import Job, Log
+from crashstats.cron.utils import (
+    convert_frequency,
+    convert_time,
+    get_matching_job_specs,
+    get_run_times,
+    time_to_run,
+)
 
 
 logger = logging.getLogger('crashstats.crontabber')
@@ -24,205 +38,26 @@ logger = logging.getLogger('crashstats.crontabber')
 metrics = markus.get_metrics('crontabber')
 
 
-# NOTE(willkg): Times are in UTC. These are Django-based jobs. The other
-# crontabber handles the jobs that haven't been converted, yet.
-#
-# NOTE(willkg): You can't have the same job in here twice with two different
-# frequencies. If we ever need to do that, we'll need to stop using "cmd" as
-# the key in the db.
-3
-# cmd, frequency, time, backfill
-JOBS = [
-    {
-        # Test cron job
-        'cmd': 'crontest',
-        'frequency': '1d',
-    },
-]
-
-# Map of cmd -> job_spec
-JOBS_MAP = dict([(job_spec['cmd'], job_spec) for job_spec in JOBS])
-
-
-# The maximum time we let a job go for before we declare it a zombie (in seconds)
-MAX_ONGOING = 60 * 60 * 2
-
-
-# Error retry time (in seconds)
-ERROR_RETRY_TIME = 60
-
-
-# Default frequency for jobs
-DEFAULT_FREQUENCY = '1d'
-
-
-class FrequencyDefinitionError(Exception):
-    pass
-
-
-class JobNotFoundError(Exception):
-    pass
-
-
-class TimeDefinitionError(Exception):
-    pass
-
-
-class OngoingJobError(Exception):
-    """Error raised when a job is currently running."""
-
-    pass
-
-
-FREQUENCY_RE = re.compile(r'^(\d+)([^\d])$')
-
-
-def convert_frequency(value):
-    """return the number of seconds that a certain frequency string represents.
-    For example: `1d` means 1 day which means 60 * 60 * 24 seconds.
-    The recognized formats are:
-        10d  : 10 days
-        3m   : 3 minutes
-        12h  : 12 hours
-    """
-    match = FREQUENCY_RE.match(value)
-    if not match:
-        raise FrequencyDefinitionError(value)
-
-    number = int(match.group(1))
-    unit = match.group(2)
-
-    if unit == 'h':
-        number *= 60 * 60
-    elif unit == 'm':
-        number *= 60
-    elif unit == 'd':
-        number *= 60 * 60 * 24
-    elif unit:
-        raise FrequencyDefinitionError(value)
-    return number
-
-
-VALID_TIME_RE = re.compile(r'^\d\d:\d\d$')
-
-
-def convert_time(value):
-    """Return (h, m) as tuple."""
-    if not VALID_TIME_RE.match(value):
-        raise TimeDefinitionError("Invalid definition of time %r" % value)
-
-    hh, mm = value.split(':')
-    if int(hh) > 23 or int(mm) > 59:
-        raise TimeDefinitionError("Invalid definition of time %r" % value)
-    return (int(hh), int(mm))
-
-
-def get_matching_job_specs(cmds):
-    """Return list of matching job specs for this cmd.
-
-    :arg cmds: ['all'] returns list of all job_specs, cmds (str) returns
-        a single job_spec, and list of cmds returns list of job_specs
-
-    """
-    if cmds == ['all']:
-        return JOBS
-    if isinstance(cmds, str):
-        return JOBS_MAP.get(cmds)
-    return [JOBS_MAP[cmd] for cmd in cmds if cmd in JOBS_MAP]
-
-
-def time_to_run(job_spec, job):
-    """Determine whether it's time for this cmd to run."""
-    now = timezone.now()
-    time_ = job_spec.get('time')
-
-    if job.next_run is None:
-        if time_:
-            # Only run if this hour and minute is < now
-            hh, mm = convert_time(time_)
-            return (now.hour, now.minute) >= (hh, mm)
-
-        else:
-            return True
-
-    return job.next_run < now
-
-
-def get_run_times(job_spec, last_success):
-    """Return generator of run_times for this job."""
-    now = timezone.now()
-
-    # If this is not a backfill job, just run it
-    if not job_spec.get('backfill', False):
-        yield now
-        return
-
-    # If this is a backfill command that's never been run before, run it
-    if last_success is None:
-        yield now
-        return
-
-    # Figure out the backfill times and yield those; base it on the
-    # first_run datetime so the job doesn't drift
-    when = last_success
-    if job_spec.get('time'):
-        # So, reset the hour/minute part to always match the
-        # intention.
-        hh, mm = convert_time(job_spec['time'])
-        when = when.replace(
-            hour=hh,
-            minute=mm,
-            second=0,
-            microsecond=0
-        )
-    seconds = convert_frequency(job_spec.get('frequency', DEFAULT_FREQUENCY))
-    interval = datetime.timedelta(seconds=seconds)
-    # Loop over each missed interval from the time of the last success,
-    # forward by each interval until it reaches the time 'now'.
-    while (when + interval) <= now:
-        when += interval
-        yield when
-
-
 class Command(BaseCommand):
+    help = 'Run cron jobs.'
+
     def add_arguments(self, parser):
         parser.add_argument(
-            '--list-jobs', action='store_true',
-            help='List all jobs.'
-        )
-        parser.add_argument(
-            '--mark-success', type=str, default='',
-            help='Comma-delimited list of job names to mark successful or "all" for all.'
-        )
-        parser.add_argument(
-            '--reset-job', type=str, default='',
-            help='Comma-delimited list of job names to reset or "all" for all.'
-        )
-        parser.add_argument(
-            '--job', type=str, default='',
-            help='Job name for job you want to run.'
+            '--job',
+            help='Run a specific job.'
         )
         parser.add_argument(
             '--force', action='store_true',
             help='Force a job to run even if it is not time.'
         )
-
-        # This allows us to pass in sub command arguments through the cron
-        # command
         parser.add_argument(
             '--job-arg', action='append',
             help='Cron job command arguments in name=value format.'
         )
 
     def handle(self, **options):
-        """Execute crontabber command."""
-        if options['list_jobs']:
-            return self.cmd_list_jobs()
-        elif options['mark_success']:
-            return self.cmd_mark_success(options['mark_success'])
-        elif options['reset_job']:
-            return self.cmd_reset_job(options['reset_job'])
-        elif options['job']:
+        """Execute cronrun command."""
+        if options['job']:
             job_args = {}
             for arg in (options['job_arg'] or []):
                 if '=' in arg:
@@ -233,64 +68,6 @@ class Command(BaseCommand):
             return self.cmd_run_one(options['job'], options['force'], job_args)
         else:
             return self.cmd_run_all()
-
-    def cmd_list_jobs(self):
-        """Subcommand to list jobs and job state."""
-        for job_spec in JOBS:
-            self.stdout.write(job_spec['cmd'])
-            schedule = []
-            schedule.append('every ' + job_spec.get('frequency', DEFAULT_FREQUENCY))
-            if job_spec.get('time'):
-                schedule.append(job_spec['time'] + ' UTC')
-            schedule = ' @ '.join(schedule)
-            self.stdout.write('    schedule:     %s' % schedule)
-
-            try:
-                job = Job.objects.get(app_name=job_spec['cmd'])
-                self.stdout.write('    last run:     %s' % job.last_run)
-                self.stdout.write('    last_success: %s' % job.last_success)
-                self.stdout.write('    next run:     %s' % job.next_run)
-                if job.last_error:
-                    self.stdout.write('    ' + job.last_error)
-            except Job.DoesNotExist:
-                self.stdout.write('    Never run.')
-        return 0
-
-    def cmd_mark_success(self, cmds):
-        """Mark jobs as successful in crontabber bookkeeping."""
-        cmds = cmds.split(',')
-        job_specs = get_matching_job_specs(cmds)
-
-        now = timezone.now()
-        for job_spec in job_specs:
-            cmd = job_spec['cmd']
-            self.stdout.write('Marking %s for success at %s...' % (cmd, now))
-            self._log_run(
-                cmd,
-                seconds=0,
-                time_=job_spec.get('time'),
-                last_success=now,
-                now=now,
-                exc_type=None,
-                exc_value=None,
-                exc_tb=None
-            )
-        return 0
-
-    def cmd_reset_job(self, cmds):
-        """Reset jobs by removing all bookkeeping state."""
-        cmds = cmds.split(',')
-        job_specs = get_matching_job_specs(cmds)
-
-        for job_spec in job_specs:
-            cmd = job_spec['cmd']
-            try:
-                job = Job.objects.get(app_name=cmd)
-                job.delete()
-                self.stdout.write('Job %s is reset.' % cmd)
-            except Job.DoesNotExist:
-                self.stdout.write('Job %s already reset' % cmd)
-        return 0
 
     def cmd_run_all(self):
         logger.info('Running all jobs...')

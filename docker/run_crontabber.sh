@@ -16,7 +16,7 @@ do
     ./socorro-cmd crontabber || true
     # NOTE(willkg): We are in a period of time where there are multiple
     # crontabbers.
-    ./webapp-django/manage.py cron || true
+    ./webapp-django/manage.py cronrun || true
     echo "Sleep 5 minutes..."
     sleep 300
 done
