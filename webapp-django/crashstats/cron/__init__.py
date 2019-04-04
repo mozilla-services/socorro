@@ -16,6 +16,14 @@ JOBS = [
         'cmd': 'crontest',
         'frequency': '1d',
     },
+
+    {
+        # Audit hackers group
+        'cmd': 'auditgroups',
+        'cmd_args': ['--persist'],
+        'frequency': '7d',
+        'time': '05:00'
+    }
 ]
 
 # Map of cmd -> job_spec

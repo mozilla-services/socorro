@@ -5,6 +5,7 @@
 from django.contrib import admin
 from django.contrib import messages
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
+from django.contrib.auth.models import User
 from django.utils.html import format_html
 
 from crashstats.crashstats.models import (
@@ -35,8 +36,7 @@ class LogEntryAdmin(admin.ModelAdmin):
     list_display = [
         'action_time',
         'user_email',
-        'content_type',
-        'object_repr',
+        'get_edited_object',
         'action_name',
         'get_change_message'
     ]
@@ -46,6 +46,14 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     def action_name(self, obj):
         return ACTION_TO_NAME[obj.action_flag]
+
+    def obj_repr(self, obj):
+        edited_obj = obj.get_edited_object()
+
+        if isinstance(edited_obj, User):
+            # For user objects, return the email address as an identifier
+            return edited_obj.email
+        return edited_obj
 
     def has_add_permission(self, request):
         return False

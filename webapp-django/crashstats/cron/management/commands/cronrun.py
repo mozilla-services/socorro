@@ -66,10 +66,21 @@ class Command(BaseCommand):
         else:
             return self.cmd_run_all()
 
+    @contextlib.contextmanager
+    def stdout_to_logger(self, cmd):
+        class StdoutLogger:
+            def write(self, txt):
+                logger.info('%s: %s' % (cmd, txt.strip()))
+
+        stdout = self.stdout
+        self.stdout = StdoutLogger()
+        yield
+        self.stdout = stdout
+
     def cmd_run_all(self):
         logger.info('Running all jobs...')
         for job_spec in JOBS:
-            self._run_one(job_spec)
+            self._run_one(job_spec, cmd_args=job_spec.get('cmd_args', []))
         return 0
 
     def cmd_run_one(self, description, force=False, cmd_args=None):
@@ -122,7 +133,7 @@ class Command(BaseCommand):
                     # pass in a run_time argument
 
                     start_time = time.time()
-                    if job_spec.get('backfill', True):
+                    if job_spec.get('backfill', False):
                         cmd_kwargs['run_time'] = run_time
                     self._run_job(job_spec, *cmd_args, **cmd_kwargs)
                     end_time = time.time()
@@ -163,7 +174,8 @@ class Command(BaseCommand):
 
     def _run_job(self, job_spec, *cmd_args, **cmd_kwargs):
         """Run job with specified args."""
-        return call_command(job_spec['cmd'], *cmd_args, stdout=self.stdout, **cmd_kwargs)
+        with self.stdout_to_logger(job_spec['cmd']):
+            return call_command(job_spec['cmd'], *cmd_args, stdout=self.stdout, **cmd_kwargs)
 
     def _remember_success(self, cmd, success_date, duration):
         Log.objects.create(

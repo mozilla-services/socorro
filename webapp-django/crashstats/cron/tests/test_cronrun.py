@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-from io import StringIO
 from unittest import mock
 
 import freezegun
@@ -71,15 +70,17 @@ class TestCronrun:
         # Verify it's no longer locked
         assert Job.objects.filter(app_name='testjob', ongoing__isnull=True).get()
 
-    def test_run_one_pass_args(self, db):
+    def test_run_one_pass_args(self, db, caplog):
         """Verify --job=JOB works and that you can pass arguments."""
+        caplog.set_level('INFO')
         job_args = {
             'job': 'crontest',
             'job_arg': ['print="fun fun fun"']
         }
-        out = StringIO()
-        call_command('cronrun', stdout=out, **job_args)
-        assert '"fun fun fun"' in out.getvalue()
+
+        call_command('cronrun', **job_args)
+        recs = [rec.message for rec in caplog.records]
+        assert 'crontest: To print: \'"fun fun fun"\'' in recs
 
     def test_run_all(self, db):
         """Verify that running "cron" runs all the jobs."""
