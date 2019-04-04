@@ -57,7 +57,7 @@ def test_convert_time_bad(value):
 
 def test_time_to_run(db):
     now = timezone.now()
-    now.replace(
+    now = now.replace(
         hour=12,
         minute=30,
         second=0,
@@ -105,7 +105,7 @@ def test_get_run_times(db):
 
 def test_get_run_times_for_backfill_job(db):
     now = timezone.now()
-    now.replace(
+    now = now.replace(
         hour=12,
         minute=0,
         second=0,
