@@ -112,11 +112,6 @@ CONFIG_DEFAULTS = {
             'timeout': 2,
             'use_mapping_file': False,
         },
-
-        'rabbitmq': {
-            'filter_on_legacy_processing': True,
-            'routing_key': 'socorro.normal',
-        },
     },
 }
 

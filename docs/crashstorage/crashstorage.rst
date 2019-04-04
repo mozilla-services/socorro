@@ -115,36 +115,15 @@ socorro.external.postgresql
 
 * `ConnectionContext`: In Production.
 
-`psycopg2` implements all the "connection" semantics we need, so we do not
-implement the thin wrapper that ``socorro.external.rabbitmq`` has.
 
+socorro.external.pubsub
+=======================
 
-socorro.external.rabbitmq
-=========================
+**socorro.external.pubsub.crashqueue**
 
-**socorro.external.rabbitmq.crashstorage**
+Classes:
 
-* `RabbitMQCrashStorage`: In Production. Only is capable of storing the crash_id
-  of a raw_crash. It *could* implement storage of dumps etc, but it is not
-  suitable to actually store crashes at this time.
+* `PubSubCrashQueue`: Handles pulling crash ids from Pub/Sub subscriptions for
+  processing.
 
-
-**socorro.external.rabbitmq.connection_context**
-
-* `Connection`: In Production. A thin wrapper around `pika`. Also defines a
-  channel and our declared queues (`socorro.normal` and `socorro.priority`). For
-  commit/rollback, we just pass.
-
-* `ConnectionContext`: Our factory implemented as a functor that we never use,
-  but is a base class for our Pooled connections. If we use this directly, it
-  will fail because the connections will close before the processors have a
-  chance to have a look and ack.
-
-* `ConnectionContextPooled`: In production. This is implemented as a per-thread
-  pool.
-
-
-**socorro.external.rabbitmq.crashqueue**
-
-A pluggable Functor/generator for feeding new crashes to the processor,
-implemented as a wrapper around new_crashes().
+  Also handles publishing crash ids to Pub/Sub topics.
