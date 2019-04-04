@@ -31,15 +31,12 @@ How to request a change to signature generation
 To request a change to signature generation:
 
 `Write up a bug in the Socorro product
-<https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&short_desc=[skiplist]>`_
+<https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&short_desc=[siglist]>`_
 and please include the following:
 
 1. explanation of what the problem you want to solve is
-
 2. urls of examples of crashes that have the problem you're trying to solve
-
 3. expected signatures for those crashes
-
 
 We need this to make sure we can help you make the right changes.
 
@@ -83,9 +80,8 @@ How to review a signature generation changes
    We have a unit test that verifies there are no syntax errors in those files,
    but that (obviously) doesn't cover typos.
 
-3. Run the pull request changes through `signature generation using the command line
-   interface in your local dev environment
-   <https://socorro.readthedocs.io/en/latest/architecture/signaturegeneration.html#signature-generation-module>`_.
+3. Run the pull request changes through signature generation using the command line
+   interface in your local dev environment. See :ref:`signaturegeneration-chapter-module`.
 
 4. Verify with the author that the changes occur as intended.
 

@@ -45,14 +45,12 @@ Setup Quickstart
    Instructions for cloning are `on the Socorro page in GitHub
    <https://github.com/mozilla-services/socorro>`_.
 
-
 3. (*Optional/Advanced*) Set UID and GID for Docker container user.
 
    If you're on Linux or you want to set the UID/GID of the app user that
    runs in the Docker containers, run::
 
      $ make my.env
-
 
    Then edit the file and set the ``SOCORRO_UID`` and ``SOCORRO_GID``
    variables. These will get used when creating the app user in the base
@@ -61,13 +59,11 @@ Setup Quickstart
    If you ever want different values, change them in ``my.env`` and re-run
    ``make build``.
 
-
 4. Build Docker images for Socorro services.
 
    From the root of this repository, run::
 
      $ make build
-
 
    That will build the Docker images required for development: processor,
    webapp, and crontabber.
@@ -75,11 +71,13 @@ Setup Quickstart
    Each of these images covers a single Socorro component: processor, webapp,
    and crontabber.
 
+5. Initialize Postgres, Elasticsearch, S3, and Pub/Sub.
 
-5. Initialize Postgres and Elasticsearch data stores.
+   Then you need to set up services. To do that, run::
 
-   Then you need to set up the Postgres database and Elasticssearch. To do that,
-   run::
+     $ make runservices
+
+   This starts services containers. Then run::
 
      $ make setup
 
@@ -90,9 +88,12 @@ Setup Quickstart
    For Elasticsearch, it sets up Supersearch fields and the index for raw and
    processed crash data.
 
-   You can run ``make setup`` any time you want to wipe the Postgres
-   database and Elasticsearch to pick up changes to those storage systems or
-   reset your environment.
+   For S3, this creates the required buckets.
+
+   For Pub/Sub, this creates topics and subscriptions.
+
+   You can run ``make setup`` any time you want to re-initialize those
+   services and wipe any data.
 
 6. Populate data stores with required data.
 
@@ -114,6 +115,10 @@ At this point, you should have a basic functional Socorro development
 environment that has no crash data in it.
 
 .. Seealso::
+
+   **Make changes to signature generation!**
+       If you need to make changes to signature generation, see
+       :ref:`signaturegeneration-chapter`.
 
    **Run the processor and get some crash data!**
        If you need crash data, see :ref:`processor-chapter` for additional
