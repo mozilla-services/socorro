@@ -742,7 +742,7 @@ class CronTabberApp(App, RequiredConfig):
                     stream.write(' (in %s)\n' % timesince(_now, info['next_run']))
             else:
                 stream.write('none\n')
-            if info.get('last_error') not in (None, '{}'):
+            if info.get('last_error') not in (None, '{}', {}):
                 last_error = json.loads(info['last_error'])
                 stream.write('Error!!'.ljust(PAD) + ' (%s times)\n' % info['error_count'])
                 stream.write('Traceback (most recent call last):')

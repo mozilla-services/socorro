@@ -33,8 +33,7 @@ The crash ingestion pipeline that we have at Mozilla looks like this:
          rank=same;
 
          s3raw [shape=tab, label="S3 (Raw)", style=filled, fillcolor=gray];
-         pigeon [shape=cds, label="Pigeon"];
-         rabbitmq [shape=tab, label="RabbitMQ", style=filled, fillcolor=gray];
+         pubsub [shape=tab, label="PubSub", style=filled, fillcolor=gray];
       }
 
       processor [shape=rect, label="processor"];
@@ -57,13 +56,11 @@ The crash ingestion pipeline that we have at Mozilla looks like this:
       }
 
 
-      pigeon -> rabbitmq [label="crash id"];
-      s3raw -> pigeon [label="S3 CreateObject:Put"];
-
       client -> collector [label="HTTP"];
       collector -> s3raw [label="save raw"];
+      collector -> pubsub [label="publish"];
 
-      rabbitmq -> processor [label="crash id"];
+      pubsub -> processor [label="crash id"];
       s3raw -> processor [label="load raw"];
       postgres -> processor [label="betaversionrule"];
       processor -> { s3processed, elasticsearch, s3telemetry } [label="save processed"];
@@ -92,7 +89,7 @@ Important services in the diagram:
 
 * **Collector:** Collects incoming crash reports via HTTP POST. The collector
   we use is called `Antenna <https://antenna.readthedocs.io/>`_. It saves
-  crash data to AWS S3.
+  crash data to AWS S3 and publishes crash ids to Pub/Sub for processing.
 
 * **Processor:** Processes crashes and extracts data from minidumps, generates
   crash signatures, performs other analysis, and saves everything as a processed
@@ -131,18 +128,25 @@ crash report as a multipart/form-data payload via an HTTP POST to the collector.
 Collected by the Collector (Python, Falcon)
 -------------------------------------------
 
-The collector is the beginning of the crash ingestion pipeline. It accepts the
-incoming crash and does several things to it:
+The collector (codename Antenna) is the beginning of the crash ingestion
+pipeline.
 
-1. assigns it a unique crash id
-2. tags it with a time stamp
-3. figures out whether the pipeline should process this crash or not
+The collector handles the incoming crash reports and does the following:
 
-The collector returns the crash id to the crash reporter which records it on
-the user's machine.
+1. assigns the crash report a unique crash id
+2. adds a submitted time stamp to the crash report
+3. figures out whether Socorro should process this crash report or not
 
-The collector saves the crash data to Amazon S3 as a *raw crash* in a directory
-structure like this:
+If Socorro shouldn't process this crash report, then the crash report is
+rejected and the collector is done.
+
+If Socorro should process this crash report, then the collector will return the
+crash id to the crash reporter in the HTTP response. The crash reporter records
+the crash id on the user's machine. The user can see crash reports in
+``about:crashes``.
+
+The collector then saves the crash report data to Amazon S3 as a *raw crash* in
+a directory structure like this:
 
 .. code-block:: text
 
@@ -168,7 +172,7 @@ A crash id looks like this::
                                throttle result instruction
 
 
-The collector we currently use is called Antenna.
+The collector then publishes the crash id to Pub/Sub for processing.
 
 
 .. seealso::
@@ -186,44 +190,18 @@ The collector we currently use is called Antenna.
     :ref:`collector-chapter`
 
 
-Queued for processing by Pigeon (Python, AWS Lambda)
-----------------------------------------------------
-
-When the raw crash is saved to Amazon S3, Pigeon is invoked with an S3
-``ObjectCreated:Put`` event with the filename for the raw crash. The filename
-contains the crash id. Pigeon looks at the throttle result instruction character
-in the crash id to determine if the crash was deferred or accepted for
-processing.
-
-If the crash is not accepted for processing, then its story ends here. *[EXEUNT
-STAGE LEFT.]*
-
-If the crash is accepted for processing, Pigeon adds the crash id to the
-``socorro.normal`` processing queue in RabbitMQ.
-
-
-.. seealso::
-
-   **Code**
-     https://github.com/mozilla-services/socorro-pigeon
-
-   **Documentation**
-     https://github.com/mozilla-services/socorro-pigeon/blob/master/README.rst
-
-
 Processed by Processor (Python, Configman)
 ------------------------------------------
 
-The processor gets a crash id from the ``socorro.normal`` queue in RabbitMQ.
-It fetches the raw crash data and related minidumps from Amazon S3.
+The processor pulls crash ids from the Pub/Sub subscriptions. It fetches the raw
+crash report data and minidumps from Amazon S3.
 
-It passes all that information through the processing pipeline which consists of
-a series of rules that transform the crash into a processed crash.
+It processes the crash report with a pipeline of rules that transform the raw
+crash into a processed crash.
 
-One of the rules runs the minidump-stackwalker over the minidump to extract
-information about the process and symbolicates the symbols on the stack. It also
-determines some other things about the state of the process when Firefox
-crashed.
+One of the rules runs the minidump-stackwalk on the minidump to extract
+information about the process and stack. It symbolicates stack symbols. It
+determines some other things about the crash.
 
 Another rule generates a crash signature from the stack of the crashing thread.
 We use crash signatures to group crashes that have similar symptoms so that we
@@ -231,8 +209,8 @@ can more easily see trends and causes.
 
 There are other rules, too.
 
-After the crash gets through the processing pipeline, it's saved to several
-destinations in various forms:
+After the crash gets through the processing pipeline, the processed crash is
+saved to several places:
 
 1. Amazon S3
 2. Elasticsearch

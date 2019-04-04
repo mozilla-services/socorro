@@ -29,6 +29,6 @@
         "postgresql",
         "puppet",
         "python",
-        "rabbitmq"
+        "pubsub"
     ]
 }

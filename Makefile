@@ -32,7 +32,8 @@ default:
 	@echo "Socorro make rules:"
 	@echo ""
 	@echo "  build            - build docker containers"
-	@echo "  run              - docker-compose up the entire system for dev"
+	@echo "  run              - run processor and webapp"
+	@echo "  runservices      - run service containers (postgres, pubsub, etc)"
 	@echo "  stop             - stop all service containers"
 	@echo ""
 	@echo "  shell            - open a shell in the app container"
@@ -89,11 +90,11 @@ build-docs: my.env
 
 .PHONY: setup
 setup: my.env .docker-build
-	${DC} run --rm app shell bash -c /app/docker/run_setup.sh
+	${DC} run --rm app shell /app/docker/run_setup.sh
 
 .PHONY: updatedata
 updatedata: my.env
-	./docker/run_update_data.sh
+	${DC} run --rm app shell /app/docker/run_update_data.sh
 
 .PHONY: shell
 shell: my.env .docker-build
@@ -110,6 +111,10 @@ testshell: my.env .docker-build
 .PHONY: run
 run: my.env
 	${DC} up processor webapp
+
+.PHONY: runservices
+runservices: my.env
+	${DC} up -d statsd postgresql memcached localstack-s3 elasticsearch pubsub
 
 .PHONY: stop
 stop: my.env

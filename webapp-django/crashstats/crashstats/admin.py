@@ -5,13 +5,13 @@
 from django.contrib import admin
 from django.contrib import messages
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
+from django.contrib.auth.models import User
 from django.utils.html import format_html
 
 from crashstats.crashstats.models import (
     BugAssociation,
     GraphicsDevice,
     MissingProcessedCrash,
-    MissingProcessedCrashes,
     Platform,
     Product,
     ProductVersion,
@@ -36,8 +36,7 @@ class LogEntryAdmin(admin.ModelAdmin):
     list_display = [
         'action_time',
         'user_email',
-        'content_type',
-        'object_repr',
+        'get_edited_object',
         'action_name',
         'get_change_message'
     ]
@@ -47,6 +46,14 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     def action_name(self, obj):
         return ACTION_TO_NAME[obj.action_flag]
+
+    def obj_repr(self, obj):
+        edited_obj = obj.get_edited_object()
+
+        if isinstance(edited_obj, User):
+            # For user objects, return the email address as an identifier
+            return edited_obj.email
+        return edited_obj
 
     def has_add_permission(self, request):
         return False
@@ -157,23 +164,6 @@ def process_crashes(modeladmin, request, queryset):
 
 
 process_crashes.short_description = 'Process crashes'
-
-
-@admin.register(MissingProcessedCrashes)
-class MissingProcessedCrashesAdmin(admin.ModelAdmin):
-    """DEPRECATED."""
-
-    list_display = [
-        'crash_id',
-        'created',
-        'collected_date',
-        'is_processed',
-        'report_url_linked',
-    ]
-    actions = [process_crashes]
-
-    def report_url_linked(self, obj):
-        return format_html('<a href="{}">{}</a>', obj.report_url(), obj.report_url())
 
 
 @admin.register(MissingProcessedCrash)

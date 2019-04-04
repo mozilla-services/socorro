@@ -28,7 +28,6 @@ services:
       - statsd
       - localstack-s3
       - elasticsearch
-      - rabbitmq
       - pubsub
     command: ["processor"]
     volumes:
@@ -59,7 +58,6 @@ services:
       - localstack-s3
       - postgresql
       - elasticsearch
-      - rabbitmq
       - pubsub
       - memcached
       - oidcprovider
@@ -131,14 +129,6 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
-
-  # https://hub.docker.com/_/rabbitmq/
-  rabbitmq:
-    image: rabbitmq:3.6.9
-    environment:
-      - RABBITMQ_DEFAULT_USER=rabbituser
-      - RABBITMQ_DEFAULT_PASS=rabbitpwd
-      - RABBITMQ_DEFAULT_VHOST=rabbitvhost
 
   # Google Pub/Sub emulator
   pubsub:

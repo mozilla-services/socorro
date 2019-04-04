@@ -24,3 +24,6 @@ class PolicyException(models.Model):
         help_text='Explanation for this exception.'
     )
     created = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return 'PolicyException <%d, %s>' % (self.id, self.user.email)

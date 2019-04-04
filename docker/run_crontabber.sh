@@ -11,9 +11,12 @@ set -e
 # Run crontabber sleeping 5 minutes between runs
 while true
 do
-    # FIXME(willkg): We don't want crontabber to exit weird and then have that
+    # NOTE(willkg): We don't want crontabber to exit weird and then have that
     # kill the container, but this is a lousy thing to do.
     ./socorro-cmd crontabber || true
+    # NOTE(willkg): We are in a period of time where there are multiple
+    # crontabbers.
+    ./webapp-django/manage.py cronrun || true
     echo "Sleep 5 minutes..."
     sleep 300
 done
