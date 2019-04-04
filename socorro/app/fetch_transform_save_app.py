@@ -104,7 +104,7 @@ class FetchTransformSaveApp(App):
         finally:
             # no matter what causes this method to end, we need to make sure
             # that the finished_func gets called. If the new crash source is
-            # RabbitMQ, this is what removes the job from the queue.
+            # Pub/Sub, this is what removes the job from the queue.
             try:
                 finished_func()
             except Exception as x:

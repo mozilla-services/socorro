@@ -11,7 +11,7 @@
 #
 # * elasticsearch
 # * postgresql
-# * rabbitmq
+# * pubsub
 
 # Failures should cause setup to fail
 set -v -e -x

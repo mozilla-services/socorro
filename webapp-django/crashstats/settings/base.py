@@ -605,10 +605,6 @@ implementations_config = dj_database_url.parse(
 # Config for when the models pull directly from socorro.external classes.
 SOCORRO_IMPLEMENTATIONS_CONFIG = {
     'secrets': {
-        'rabbitmq': {
-            'rabbitmq_user': config('RABBITMQ_USER', ''),
-            'rabbitmq_password': config('RABBITMQ_PASSWORD', ''),
-        },
         'boto': {
             'secret_access_key': config(
                 'secrets.boto.secret_access_key',
@@ -632,11 +628,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             #     'ELASTICSEARCH_DOCTYPE',
             #     'crash_reports'
             # )
-        },
-        'rabbitmq': {
-            'host': config('RABBITMQ_HOST', 'localhost'),
-            'virtual_host': config('RABBITMQ_VIRTUAL_HOST', '/'),
-            'port': config('RABBITMQ_PORT', 5672),
         },
         'boto': {
             'access_key': config('resource.boto.access_key', None),

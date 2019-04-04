@@ -57,6 +57,7 @@ def main(argv=None):
 
     # Get git sha of source
     source_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+    source_sha = source_sha.decode('utf-8')
 
     print('Dest sha:   %s' % dest_sha)
     print('Source sha: %s' % source_sha)
@@ -67,7 +68,7 @@ def main(argv=None):
         # Generate log of old sha -> new sha
         if git_log:
             for line in git_log.splitlines():
-                print(line)
+                print(line.decode('utf-8'))
         else:
             print('No differences.')
             return 0
