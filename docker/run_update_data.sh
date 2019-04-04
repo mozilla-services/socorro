@@ -5,21 +5,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Updates product release and other data in the docker environment.
-#
-# Usage: docker/run_update_data.sh
+# This assumes that it is running in the webapp docker container.
 
 set -eo pipefail
 
-HOSTUSER=$(id -u):$(id -g)
-
-DC="$(which docker-compose)"
-
 # Fetch release data (verbosely)
-${DC} run app shell ./socorro-cmd crontabber --reset-job=archivescraper
-${DC} run app shell ./socorro-cmd crontabber --job=archivescraper
+./socorro-cmd crontabber --reset-job=archivescraper
+./socorro-cmd crontabber --job=archivescraper
 
 # Insert data that's no longer on archive.mozilla.org
-${DC} run app shell python ./scripts/insert_missing_versions.py
+./scripts/insert_missing_versions.py
 
 # Create ES indexes for the next few weeks
-${DC} run app shell ./socorro-cmd create_recent_indices
+./socorro-cmd create_recent_indices

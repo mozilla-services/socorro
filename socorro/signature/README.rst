@@ -1,3 +1,5 @@
+.. _signaturegeneration-chapter-module:
+
 Signature generation module
 ===========================
 
@@ -32,11 +34,11 @@ It can also take crash ids from stdin.
 
 Some examples:
 
-* pulling crash ids from the file ``crashids.txt``::
+* getting crash ids from the file ``crashids.txt``::
 
     $ cat crashids.txt | socorro-cmd signature
 
-* pulling crash ids from another script::
+* getting crash ids from another command::
 
     $ socorro-cmd fetch_crashids --num=10 | socorro-cmd signature
 
