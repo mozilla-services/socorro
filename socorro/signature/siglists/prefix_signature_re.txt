@@ -28,6 +28,7 @@ CleanupPerAppKey
 ConditionVariableFallback::wait\(.*\)
 core::option::expect_failed
 core::ptr::drop_in_place
+core::ptr::real_drop_in_place
 core::result::unwrap_failed<T>
 core::str::slice_error_fail
 CrashInJS
