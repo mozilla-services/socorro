@@ -4,7 +4,6 @@
 
 
 from glom import glom
-import six
 
 
 def int_or_none(data):
@@ -93,18 +92,11 @@ def drop_bad_characters(text):
     """Takes a text and drops all non-printable and non-ascii characters and
     also any whitespace characters that aren't space.
 
-    :arg str/unicode text: the text to fix
+    :arg str text: the text to fix
 
     :returns: text with all bad characters dropped
 
     """
-    if six.PY2:
-        if isinstance(text, str):
-            # Convert to unicode to handle encoded sequences
-            text = text.decode('unicode_escape')
-        # Convert to a Python 2 str and drop any non-ascii characters
-        text = text.encode('ascii', 'ignore')
-
     # Strip all non-ascii and non-printable characters
     text = ''.join([c for c in text if c in ALLOWED_CHARS])
     return text
