@@ -7,7 +7,6 @@ import importlib
 import mock
 from pkg_resources import resource_stream
 import pytest
-import six
 
 # NOTE(willkg): We do this so that we can extract signature generation into its
 # own namespace as an external library. This allows the tests to run if it's in
@@ -35,7 +34,9 @@ class TestSigLists:
 
             for line in content:
                 assert line
-                if isinstance(line, six.string_types):
+                # Some items can be tuples; for the str lines, make sure they
+                # don't start with a #
+                if isinstance(line, str):
                     assert not line.startswith('#')
 
     @mock.patch(base_module + '.siglists_utils.resource_stream')

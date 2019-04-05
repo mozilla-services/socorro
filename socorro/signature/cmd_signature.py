@@ -2,9 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# NOTE(willkg): Need to keep this until we drop Python 2.7 support in siggen
-from __future__ import print_function
-
 import argparse
 import csv
 import os

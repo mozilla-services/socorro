@@ -17,11 +17,7 @@ _SPECIAL_EXTENDED_VALUES = {
     'signature_sentinels': [
         (
             'mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
-            lambda x: (
-                'CrashReporter::CreatePairedMinidumps(void*, '
-                'unsigned long, nsAString_internal*, nsILocalFile**, '
-                'nsILocalFile**)'
-            ) in x
+            lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x  # noqa
         ),
     ],
 }
@@ -68,6 +64,4 @@ def _get_file_content(source):
 IRRELEVANT_SIGNATURE_RE = _get_file_content('irrelevant_signature_re')
 PREFIX_SIGNATURE_RE = _get_file_content('prefix_signature_re')
 SIGNATURE_SENTINELS = _get_file_content('signature_sentinels')
-SIGNATURES_WITH_LINE_NUMBERS_RE = _get_file_content(
-    'signatures_with_line_numbers_re'
-)
+SIGNATURES_WITH_LINE_NUMBERS_RE = _get_file_content('signatures_with_line_numbers_re')
