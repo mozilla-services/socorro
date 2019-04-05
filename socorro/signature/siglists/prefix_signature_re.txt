@@ -17,6 +17,7 @@ _alloca_probe
 __android_log_assert
 arena_
 BaseGetNamedObjectDirectory
+__clear_cache
 .*calloc
 cert_
 CERT_
