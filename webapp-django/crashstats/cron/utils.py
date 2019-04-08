@@ -127,3 +127,10 @@ def get_run_times(job_spec, last_success):
     while (when + interval) <= now:
         when += interval
         yield when
+
+
+def format_datetime(value):
+    """Return '' or '%Y-%m-%dT%H:%M' formatted datetime."""
+    if not value:
+        return ''
+    return value.strftime('%Y-%m-%dT%H:%M')

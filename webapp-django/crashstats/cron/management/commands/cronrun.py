@@ -27,6 +27,7 @@ from crashstats.cron.models import Job, Log
 from crashstats.cron.utils import (
     convert_frequency,
     convert_time,
+    format_datetime,
     get_matching_job_specs,
     get_run_times,
     time_to_run,
@@ -122,55 +123,63 @@ class Command(BaseCommand):
         start_time = None
         run_time = None
 
-        try:
-            cmd_kwargs = {}
-            with self.lock_job(job_spec['cmd']):
+        with self.lock_job(job_spec['cmd']):
+            try:
+                cmd_kwargs = {}
+                last_success = job.last_success
+
                 # Backfill jobs can have multiple run-times, so we iterate
                 # through all possible ones until either we get them all done
                 # or it dies
                 for run_time in get_run_times(job_spec, job.last_success):
-                    # If "backfill" is in the spec, then we want to additionally
-                    # pass in a run_time argument
+                    if job_spec.get('backfill', False):
+                        # If "backfill" is in the spec, then we want to pass in
+                        # run_time as an argument
+                        cmd_kwargs['run_time'] = format_datetime(run_time)
+
+                    if job_spec.get('last_success', False):
+                        # If "last_success" is in the spec, we want to pass in
+                        # the last_success as an argument
+                        cmd_kwargs['last_success'] = format_datetime(last_success)
 
                     start_time = time.time()
-                    if job_spec.get('backfill', False):
-                        cmd_kwargs['run_time'] = run_time
                     self._run_job(job_spec, *cmd_args, **cmd_kwargs)
                     end_time = time.time()
 
                     logger.info('successfully ran %s on %s', cmd, run_time)
-                    self._remember_success(cmd, run_time, end_time - start_time)
+                    last_success = run_time
+                    self._remember_success(cmd, last_success, end_time - start_time)
 
-        except OngoingJobError:
-            log_run = False
-            raise
+            except OngoingJobError:
+                log_run = False
+                raise
 
-        except Exception:
-            end_time = time.time()
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            single_line_tb = (
-                ''.join(traceback.format_exception(*sys.exc_info()))
-                .replace('\n', '\\n')
-            )
-            logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
-            self._remember_failure(
-                cmd,
-                end_time - start_time,
-                exc_type,
-                exc_value,
-                exc_tb
-            )
-
-        finally:
-            if log_run:
-                self._log_run(
-                    cmd,
-                    seconds,
-                    job_spec.get('time'),
-                    run_time,
-                    now,
-                    exc_type, exc_value, exc_tb
+            except Exception:
+                end_time = time.time()
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                single_line_tb = (
+                    ''.join(traceback.format_exception(*sys.exc_info()))
+                    .replace('\n', '\\n')
                 )
+                logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
+                self._remember_failure(
+                    cmd,
+                    end_time - start_time,
+                    exc_type,
+                    exc_value,
+                    exc_tb
+                )
+
+            finally:
+                if log_run:
+                    self._log_run(
+                        cmd,
+                        seconds,
+                        job_spec.get('time'),
+                        run_time,
+                        now,
+                        exc_type, exc_value, exc_tb
+                    )
 
     def _run_job(self, job_spec, *cmd_args, **cmd_kwargs):
         """Run job with specified args."""

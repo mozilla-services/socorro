@@ -48,7 +48,6 @@ def db_conn():
     conn = psycopg2.connect(dsn)
 
     tables = [
-        'crashstats_bugassociation',
         'crashstats_productversion',
         'crashstats_missingprocessedcrash',
         'crashstats_signature',
