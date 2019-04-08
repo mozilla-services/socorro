@@ -14,7 +14,7 @@ set -eo pipefail
 ./socorro-cmd crontabber --job=archivescraper
 
 # Insert data that's no longer on archive.mozilla.org
-./scripts/insert_missing_versions.py
+python ./scripts/insert_missing_versions.py
 
 # Create ES indexes for the next few weeks
 ./socorro-cmd create_recent_indices

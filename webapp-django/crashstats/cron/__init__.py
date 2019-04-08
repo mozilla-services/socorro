@@ -18,11 +18,18 @@ JOBS = [
     },
 
     {
-        # Audit hackers group
+        # Audit hackers group every week
         'cmd': 'auditgroups',
         'cmd_args': ['--persist'],
         'frequency': '7d',
-        'time': '05:00'
+        'time': '05:00',
+    },
+
+    {
+        # Update BugAssociations every hour
+        'cmd': 'bugassociations',
+        'frequency': '1h',
+        'last_success': True,
     }
 ]
 

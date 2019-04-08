@@ -19,8 +19,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'outputfile', type=str,
-            help='path to outputfile'
+            'outputfile', help='path to outputfile'
         )
 
     def handle(self, **options):
