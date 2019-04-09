@@ -459,6 +459,37 @@ STATSD_HOST = config('STATSD_HOST', 'localhost')
 STATSD_PORT = config('STATSD_PORT', 8125, cast=int)
 STATSD_PREFIX = config('STATSD_PREFIX', None)
 
+# set up markus backends for metrics
+if LOCAL_DEV_ENV:
+    MARKUS_BACKENDS = [
+        {
+            'class': 'markus.backends.logging.LoggingMetrics',
+        },
+        {
+            'class': 'markus.backends.statsd.StatsdMetrics',
+            'options': {
+                'statsd_host': STATSD_HOST,
+                'statsd_port': STATSD_PORT,
+                'statsd_prefix': STATSD_PREFIX,
+            }
+        }
+    ]
+else:
+    # Otherwise we're in a server environment and we use the datadog
+    # backend there
+    MARKUS_BACKENS = [
+        {
+            # Log metrics to Datadog
+            'class': 'markus.backends.datadog.DatadogMetrics',
+            'options': {
+                'statsd_host': STATSD_HOST,
+                'statsd_port': STATSD_PORT,
+                'statsd_namespace': STATSD_PREFIX,
+            }
+        }
+    ]
+
+
 CACHES = {
     'default': {
         'BACKEND': config(
