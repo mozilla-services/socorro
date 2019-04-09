@@ -34,11 +34,6 @@ COPY ./webapp-django/package.json /webapp-frontend-deps/package.json
 COPY ./webapp-django/package-lock.json /webapp-frontend-deps/package-lock.json
 RUN cd /webapp-frontend-deps/ && npm install
 
-# Install crontabber JS deps
-COPY ./crontabber/package.json /crontabber-deps/package.json
-COPY ./crontabber/package-lock.json /crontabber-deps/package-lock.json
-RUN cd /crontabber-deps/ && npm install
-
 # Install Socorro Python requirements
 COPY ./requirements /app/requirements
 RUN pip install -U 'pip>=8' && \

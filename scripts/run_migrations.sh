@@ -14,7 +14,7 @@ set -e
 if [ -n "${RAVEN_DSN}" ]; then
     echo "RAVEN_DSN defined--enabling sentry."
     export SENTRY_DSN=${RAVEN_DSN}
-    eval "$(/crontabber-deps/node_modules/.bin/sentry-cli bash-hook)"
+    eval "$(/webapp-frontend-deps/node_modules/.bin/sentry-cli bash-hook)"
 else
     echo "RAVEN_DSN not defined--not enabling sentry."
 fi
