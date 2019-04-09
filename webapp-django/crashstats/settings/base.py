@@ -477,7 +477,7 @@ if LOCAL_DEV_ENV:
 else:
     # Otherwise we're in a server environment and we use the datadog
     # backend there
-    MARKUS_BACKENS = [
+    MARKUS_BACKENDS = [
         {
             # Log metrics to Datadog
             'class': 'markus.backends.datadog.DatadogMetrics',
