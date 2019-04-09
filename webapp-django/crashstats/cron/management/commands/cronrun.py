@@ -11,6 +11,7 @@ import traceback
 
 import markus
 
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -32,6 +33,7 @@ from crashstats.cron.utils import (
     get_run_times,
     time_to_run,
 )
+from socorro.lib.raven_client import capture_error
 
 
 logger = logging.getLogger('crashstats.crontabber')
@@ -58,14 +60,18 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         """Execute cronrun command."""
-        if options['job']:
-            job_args = options.get('job_arg') or []
-            # Re-add the -- because they're optional arguments; note that this
-            # doesn't support positional arguments
-            cmd_args = ['--%s' % arg for arg in job_args]
-            return self.cmd_run_one(options['job'], options['force'], cmd_args)
-        else:
-            return self.cmd_run_all()
+        try:
+            if options['job']:
+                job_args = options.get('job_arg') or []
+                # Re-add the -- because they're optional arguments; note that this
+                # doesn't support positional arguments
+                cmd_args = ['--%s' % arg for arg in job_args]
+                return self.cmd_run_one(options['job'], options['force'], cmd_args)
+            else:
+                return self.cmd_run_all()
+        except Exception:
+            capture_error(settings.RAVEN_DSN)
+            raise
 
     @contextlib.contextmanager
     def stdout_to_logger(self, cmd):
@@ -161,6 +167,9 @@ class Command(BaseCommand):
                     ''.join(traceback.format_exception(*sys.exc_info()))
                     .replace('\n', '\\n')
                 )
+
+                # Send error to sentry, log it, and remember the failure
+                capture_error(settings.RAVEN_DSN)
                 logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
                 self._remember_failure(
                     cmd,
