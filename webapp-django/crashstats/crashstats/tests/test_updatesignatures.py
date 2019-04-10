@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
+import io
+from unittest import mock
 
-from socorro.cron.crontabber_app import CronTabberApp
-from socorro.unittest.cron.crontabber_tests_base import get_config_manager, load_structure
+from django.core.management import call_command
+
+from crashstats.crashstats.models import Signature
 
 
 class FakeModel(object):
@@ -25,39 +27,18 @@ class FakeModel(object):
         return step['response']
 
 
-class TestUpdateSignaturesCronApp(object):
-    def _setup_config_manager(self):
-        return get_config_manager(
-            jobs='socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h'
-        )
-
-    def fetch_crashstats_signature_data(self, conn):
-        cursor = conn.cursor()
-        cursor.execute('SELECT signature, first_build, first_date from crashstats_signature')
-        results = cursor.fetchall()
+class TestUpdateSignaturesCommand:
+    def fetch_crashstats_signature_data(self):
         return [
             {
-                'signature': str(result[0]),
-                'first_build': str(result[1]),
-                'first_date': str(result[2]),
-            }
-            for result in results
+                'signature': obj.signature,
+                'first_build': str(obj.first_build),
+                'first_date': str(obj.first_date),
+            } for obj in Signature.objects.order_by('signature', 'first_build', 'first_date')
         ]
 
-    def run_job_and_assert_success(self, db_conn):
-        # Run crontabber
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            crontabberapp = CronTabberApp(config)
-            crontabberapp.run_one('update-signatures')
-
-        # Assert the job ran correctly
-        crontabber_info = load_structure(db_conn)
-        assert crontabber_info['update-signatures']['last_error'] == {}
-        assert crontabber_info['update-signatures']['last_success']
-
-    @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
-    def test_no_crashes_to_process(self, mock_supersearch, db_conn):
+    @mock.patch('crashstats.crashstats.management.commands.updatesignatures.SuperSearch')
+    def test_no_crashes_to_process(self, mock_supersearch, db):
         supersearch = FakeModel()
         mock_supersearch.return_value = supersearch
 
@@ -69,19 +50,19 @@ class TestUpdateSignaturesCronApp(object):
             'facets': {}
         })
 
-        # Run crontabber
-        self.run_job_and_assert_success(db_conn)
+        out = io.StringIO()
+        call_command('updatesignatures', stdout=out)
 
         # Assert that nothing got inserted
-        assert self.fetch_crashstats_signature_data(db_conn) == []
+        assert self.fetch_crashstats_signature_data() == []
 
-    @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
-    def test_signature_insert_and_update(self, mock_supersearch, db_conn):
+    @mock.patch('crashstats.crashstats.management.commands.updatesignatures.SuperSearch')
+    def test_signature_insert_and_update(self, mock_supersearch, db):
         supersearch = FakeModel()
         mock_supersearch.return_value = supersearch
 
         # Verify there's nothing in the signatures table
-        data = self.fetch_crashstats_signature_data(db_conn)
+        data = self.fetch_crashstats_signature_data()
         assert len(data) == 0
 
         # Mock SuperSearch to return 1 crash
@@ -98,11 +79,11 @@ class TestUpdateSignaturesCronApp(object):
             'facets': {}
         })
 
-        # Run crontabber
-        self.run_job_and_assert_success(db_conn)
+        out = io.StringIO()
+        call_command('updatesignatures', stdout=out)
 
         # Signature was inserted
-        data = self.fetch_crashstats_signature_data(db_conn)
+        data = self.fetch_crashstats_signature_data()
         assert (
             data ==
             [
@@ -128,15 +109,12 @@ class TestUpdateSignaturesCronApp(object):
             'facets': {}
         })
 
-        # Truncate cron_job table so we can rerun this
-        db_conn.cursor().execute('TRUNCATE cron_job CASCADE;')
-        db_conn.commit()
-
-        # Run crontabber again
-        self.run_job_and_assert_success(db_conn)
+        # Run updatesignatures again
+        out = io.StringIO()
+        call_command('updatesignatures', stdout=out)
 
         # Signature was updated with correct data
-        data = self.fetch_crashstats_signature_data(db_conn)
+        data = self.fetch_crashstats_signature_data()
         assert (
             data ==
             [
@@ -148,9 +126,9 @@ class TestUpdateSignaturesCronApp(object):
             ]
         )
 
-    @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
-    def test_multiple_crash_processing(self, mock_supersearch, db_conn):
-        """Test processing multiple crashes with same signature"""
+    @mock.patch('crashstats.crashstats.management.commands.updatesignatures.SuperSearch')
+    def test_multiple_crash_processing(self, mock_supersearch, db):
+        """Test processing multiple crashes with same signature."""
         supersearch = FakeModel()
         mock_supersearch.return_value = supersearch
 
@@ -185,11 +163,11 @@ class TestUpdateSignaturesCronApp(object):
             'facets': {}
         })
 
-        # Run crontabber
-        self.run_job_and_assert_success(db_conn)
+        out = io.StringIO()
+        call_command('updatesignatures', stdout=out)
 
         # Two signatures got inserted
-        data = self.fetch_crashstats_signature_data(db_conn)
+        data = self.fetch_crashstats_signature_data()
         assert (
             sorted(data, key=lambda item: item['first_build']) ==
             [
@@ -206,9 +184,9 @@ class TestUpdateSignaturesCronApp(object):
             ]
         )
 
-    @mock.patch('socorro.cron.jobs.update_signatures.SuperSearch')
-    def test_crash_with_no_buildid(self, mock_supersearch, db_conn):
-        """Test crashes with no build id are ignored"""
+    @mock.patch('crashstats.crashstats.management.commands.updatesignatures.SuperSearch')
+    def test_crash_with_no_buildid(self, mock_supersearch, db):
+        """Test crashes with no build id are ignored."""
         supersearch = FakeModel()
         mock_supersearch.return_value = supersearch
 
@@ -226,9 +204,9 @@ class TestUpdateSignaturesCronApp(object):
             'facets': {}
         })
 
-        # Run crontabber
-        self.run_job_and_assert_success(db_conn)
+        out = io.StringIO()
+        call_command('updatesignatures', stdout=out)
 
         # The crash has no build id, so it gets ignored and nothing gets
         # inserted
-        assert self.fetch_crashstats_signature_data(db_conn) == []
+        assert self.fetch_crashstats_signature_data() == []

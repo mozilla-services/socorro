@@ -1088,9 +1088,6 @@ DEFAULT_JOBS = ','.join([
     # Product/version maintenance
     'socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
 
-    # Crash data analysis
-    'socorro.cron.jobs.update_signatures.UpdateSignaturesCronApp|1h',
-
     # Dependency checking
     'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d|05:00',
 

@@ -11,7 +11,7 @@ import pytest
 
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.lib.ooid import create_new_ooid
-from socorro.unittest.cron.crontabber_tests_base import get_config_manager, load_structure
+from socorro.unittest.cron.crontabber_tests_base import get_config_manager
 
 
 TODAY = datetime.datetime.now().strftime('%Y%m%d')
@@ -68,18 +68,6 @@ class TestVerifyProcessedCronApp:
             }
             for result in results
         ]
-
-    def run_job_and_assert_success(self, db_conn):
-        # Run crontabber
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            crontabberapp = CronTabberApp(config)
-            crontabberapp.run_one('update-signatures')
-
-        # Assert the job ran correctly
-        crontabber_info = load_structure(db_conn)
-        assert crontabber_info['update-signatures']['last_error'] == {}
-        assert crontabber_info['update-signatures']['last_success']
 
     @contextlib.contextmanager
     def get_app(self):

@@ -10,7 +10,6 @@ class TestJobsConverter(object):
         'ArchiveScraperCronApp',
         'DependencySecurityCheckCronApp',
         'ElasticsearchCleanupCronApp',
-        'UpdateSignaturesCronApp',
         'VerifyProcessedCronApp',
     ]
 

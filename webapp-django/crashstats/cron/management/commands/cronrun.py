@@ -36,9 +36,9 @@ from crashstats.cron.utils import (
 from socorro.lib.raven_client import capture_error
 
 
-logger = logging.getLogger('crashstats.crontabber')
+logger = logging.getLogger('crashstats.cron')
 
-metrics = markus.get_metrics('crontabber')
+metrics = markus.get_metrics('cron')
 
 
 class Command(BaseCommand):
@@ -118,7 +118,7 @@ class Command(BaseCommand):
         # Figure out whether this job should be run now
         seconds = convert_frequency(job_spec.get('frequency', DEFAULT_FREQUENCY))
         if not time_to_run(job_spec, job):
-            logger.info("skipping %s because it's not time to run", cmd)
+            logger.info("skipping %s: not time to run", cmd)
             return
 
         logger.info('about to run %s', cmd)
