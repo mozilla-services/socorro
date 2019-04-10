@@ -50,7 +50,6 @@ class Command(BaseCommand):
         report_date = string_to_datetime(report_date)
         try:
             sig = Signature.objects.get(signature=signature)
-            # FIXME(willkg): might have to make this an int and a datetime
             sig.first_build = min(report_build, sig.first_build)
             sig.first_date = min(report_date, sig.first_date)
         except Signature.DoesNotExist:
