@@ -69,18 +69,6 @@ class TestVerifyProcessedCronApp:
             for result in results
         ]
 
-    def run_job_and_assert_success(self, db_conn):
-        # Run crontabber
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            crontabberapp = CronTabberApp(config)
-            crontabberapp.run_one('update-signatures')
-
-        # Assert the job ran correctly
-        crontabber_info = load_structure(db_conn)
-        assert crontabber_info['update-signatures']['last_error'] == {}
-        assert crontabber_info['update-signatures']['last_success']
-
     @contextlib.contextmanager
     def get_app(self):
         config_manager = self._setup_config_manager()
