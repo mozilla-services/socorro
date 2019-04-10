@@ -174,6 +174,7 @@ class TestBugzillaSubmitURL(object):
         assert qs['keywords'] == ['crash']
         assert qs['op_sys'] == ['Windows']
         assert qs['bug_severity'] == ['critical']
+        assert qs['bug_type'] == ['defect']
 
     def test_truncate_short_desc(self):
         report = self._create_report(
