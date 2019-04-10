@@ -36,9 +36,9 @@ from crashstats.cron.utils import (
 from socorro.lib.raven_client import capture_error
 
 
-logger = logging.getLogger('crashstats.crontabber')
+logger = logging.getLogger('crashstats.cron')
 
-metrics = markus.get_metrics('crontabber')
+metrics = markus.get_metrics('cron')
 
 
 class Command(BaseCommand):
