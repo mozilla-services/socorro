@@ -11,7 +11,7 @@ import pytest
 
 from socorro.cron.crontabber_app import CronTabberApp
 from socorro.lib.ooid import create_new_ooid
-from socorro.unittest.cron.crontabber_tests_base import get_config_manager, load_structure
+from socorro.unittest.cron.crontabber_tests_base import get_config_manager
 
 
 TODAY = datetime.datetime.now().strftime('%Y%m%d')
