@@ -1088,9 +1088,6 @@ DEFAULT_JOBS = ','.join([
     # Product/version maintenance
     'socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
 
-    # Dependency checking
-    'socorro.cron.jobs.monitoring.DependencySecurityCheckCronApp|1d|05:00',
-
     # Processed crash verification
     'socorro.cron.jobs.verify_processed.VerifyProcessedCronApp|1d|04:00',
 ])

@@ -721,6 +721,11 @@ CRONTABBER_MAX_ONGOING_AGE_HOURS = 2
 # Number of seconds before we retry a failed job
 CRONTABBER_ERROR_RETRY_TIME = 300
 
+# Configuration for the depcheck command
+NPM_PATH = config('NPM_PATH', '/usr/bin/npm')
+SAFETY_PATH = config('SAFETY_PATH', '/usr/local/bin/safety')
+SAFETY_API_KEY = config('SAFETY_API_KEY', '')
+PACKAGE_JSON_PATH = config('PACKAGE_JSON_PATH', '/app/webapp-django/package.json')
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
 # Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.

@@ -2,16 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+"""
+Checks Python and JS dependencies for security updates.
+"""
+
 import json
 import os
 from collections import namedtuple
 from os.path import dirname
 from subprocess import PIPE, Popen
 
-from configman import Namespace
-from configman.config_exceptions import OptionError
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 
-from socorro.cron.base import BaseCronApp
 from socorro.lib import raven_client
 
 
@@ -45,55 +48,16 @@ class DependencySecurityCheckFailed(Exception):
     """
 
 
-class DependencySecurityCheckCronApp(BaseCronApp):
-    """Configuration values used by this app:
+class Command(BaseCommand):
+    help = 'Check dependencies for security updates'
 
-    crontabber.class-DependencySecurityCheckCronApp.npm_path
-        Path to the npm binary for checking Node dependencies.
-    crontabber.class-DependencySecurityCheckCronApp.safety_path
-        Path to the PyUp Safety binary for checking Python dependencies.
-    crontabber.class-DependencySecurityCheckCronApp.safety_api_key
-        Optional API key to pass to Safety.
-    crontabber.class-DependencySecurityCheckCronApp.package_json_path
-        Path to the package.json file to run nsp against.
-    secrets.sentry.dsn
-        If specified, vulnerabilities will be reported to Sentry instead
-        of logged to the console.
-
-    """
-    app_name = 'dependency-security-check'
-    app_description = (
-        'Runs third-party tools that check for known security vulnerabilites in Socorro\'s '
-        'dependencies.'
-    )
-    app_version = '0.1'
-
-    required_config = Namespace()
-    required_config.add_option(
-        'npm_path',
-        doc='Path to the npm binary',
-        default='/usr/bin/npm'
-    )
-    required_config.add_option(
-        'safety_path',
-        doc='Path to the PyUp safety binary',
-    )
-    required_config.add_option(
-        'safety_api_key',
-        doc='API key for Safety to use latest Pyup vulnerability database',
-    )
-    required_config.add_option(
-        'package_json_path',
-        doc='Path to the package.json file to run nsp against',
-    )
-
-    def run(self):
+    def handle(self, **options):
         self.validate_options()
 
         vulnerabilities = self.get_python_vulnerabilities() + self.get_javascript_vulnerabilities()
         if vulnerabilities:
             try:
-                dsn = self.config.sentry.dsn
+                dsn = settings.RAVEN_DSN
             except KeyError:
                 dsn = None
 
@@ -104,14 +68,16 @@ class DependencySecurityCheckCronApp(BaseCronApp):
 
     def validate_options(self):
         # Validate file path options
-        for option in ('npm_path', 'safety_path', 'package_json_path'):
-            value = self.config.get(option)
+        for option in ('NPM_PATH', 'SAFETY_PATH', 'PACKAGE_JSON_PATH'):
+            value = getattr(settings, option)
             if not value:
-                raise OptionError('Required option "%s" is empty' % option)
+                raise CommandError('Required option "%s" is empty' % option)
             elif not os.path.exists(value):
-                raise OptionError('Option "%s" points to a nonexistant file (%s)' % (option, value))
+                raise CommandError(
+                    'Option "%s" points to a nonexistant file (%s)' % (option, value)
+                )
             elif not os.path.isfile(value):
-                raise OptionError('Option "%s" does not point to a file (%s)' % (option, value))
+                raise CommandError('Option "%s" does not point to a file (%s)' % (option, value))
 
     def alert_sentry(self, dsn, vulnerabilities):
         client = raven_client.get_client(dsn)
@@ -124,21 +90,22 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         client.captureMessage('Dependency security check failed')
 
     def alert_log(self, vulnerabilities):
-        self.logger.error('Vulnerabilities found in dependencies!')
+        self.stdout.write('Vulnerabilities found in dependencies!')
         for vuln in vulnerabilities:
-            self.logger.error('%s: %s' % (vuln.key, vuln.summary))
+            self.stdout.write('%s: %s' % (vuln.key, vuln.summary))
 
     def get_python_vulnerabilities(self):
         """Check Python dependencies via Pyup's safety command.
 
         :returns list(Vulnerability):
         :raises DependencySecurityCheckFailed:
+
         """
         # Safety checks what's installed in the current virtualenv, so no need
         # for any paths.
-        cmd = [self.config.safety_path, 'check', '--json']
-        if self.config.get('safety_api_key'):
-            cmd += ['--key', self.config.safety_api_key]
+        cmd = [settings.SAFETY_PATH, 'check', '--json']
+        if getattr(settings, 'SAFETY_API_KEY', ''):
+            cmd += ['--key', settings.SAFETY_API_KEY]
 
         process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         output, error_output = process.communicate()
@@ -174,14 +141,14 @@ class DependencySecurityCheckCronApp(BaseCronApp):
         """
         process = Popen(
             [
-                self.config.npm_path,
+                settings.NPM_PATH,
                 'audit',
                 '--json',
             ],
             stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
-            cwd=dirname(self.config.package_json_path),
+            cwd=dirname(settings.PACKAGE_JSON_PATH),
         )
         output, error_output = process.communicate()
         if process.returncode == 0:
