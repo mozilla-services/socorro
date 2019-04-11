@@ -36,6 +36,12 @@ JOBS = [
         'frequency': '1h',
         'last_success': True,
         'backfill': True,
+    },
+    {
+        # Check dependencies for security updates every day at 5:00am
+        'cmd': 'depcheck',
+        'frequency': '1d',
+        'time': '05:00',
     }
 ]
 
