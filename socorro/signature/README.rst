@@ -56,30 +56,10 @@ For more argument help, see::
 library
 -------
 
-This code can sort of be used as a library. It's been decoupled from many of
-Socorro's bits, but still has some requirements. Roughtly, it requires:
+This code is also available as library that's updated periodically by
+Will.
 
-* requests
+If you're interested in using it, let us know.
 
-
-The main class is ``socorro.signature.SignatureGenerator``. It takes a pipeline
-of rules to use to generate signatures.
-
-Rough usage::
-
-    from socorro.signature import SignatureGenerator
-
-    generator = SignatureGenerator()
-
-    raw_crash = get_raw_crash_from_somewhere()
-    processed_crash = get_processed_crash_from_somewhere()
-
-    ret = generator.generate(raw_crash, processed_crash)
-    print(ret['signature'])
-
-
-.. Note::
-
-   If you're interested in using this library, write up a bug and let us know
-   the use case and we'll work with you to make it more library-friendly to meet
-   your needs.
+:PyPI: https://pypi.org/project/siggen/
+:GitHub: https://github.com/willkg/socorro-siggen/

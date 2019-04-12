@@ -21,92 +21,9 @@ https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro
 
 There are multiple components to choose. If in doubt use ``General``.
 
-
-Docker
-======
-
-Everything runs in a Docker container. Thus Socorro requires fewer things to get
-started and you're guaranteed to have the same setup as everyone else and it
-solves some other problems, too.
-
-If you're not familiar with `Docker <https://docs.docker.com/>`_ and
-`docker-compose <https://docs.docker.com/compose/overview/>`_, it's worth
-reading up on.
-
-
-Preparing to contribute changes to Socorro
-==========================================
-
-If you're interested in helping out and taking a bug to work on, you
-need to do the following first:
-
-1. `Set up a working local development environment
-   <https://socorro.readthedocs.io/en/latest/localdevenvironment.html>`_.
-
-2. Read through the `overview of Socorro
-   <https://socorro.readthedocs.io/en/latest/overview.html>`_.
-
-We can't assign bugs to you until you've done at least those two
-steps.
-
-If you need help, let us know by `asking on IRC or sending an email to the
-mailing list <https://socorro.readthedocs.io/en/latest/#project-info>`_.
-
-
-Python code conventions
-=======================
-
-All Python code files should have an MPL v2 header at the top::
-
-  # This Source Code Form is subject to the terms of the Mozilla Public
-  # License, v. 2.0. If a copy of the MPL was not distributed with this
-  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-
-Python code should follow PEP-8.
-
-Max line length is 100 characters.
-
-4-space indentation.
-
-To run the linter, do::
-
-  $ make lint
-
-
-If you hit issues, use ``# noqa``.
-
-
-HTML conventions
-================
-
-2-space indentation.
-
-
-Javascript code conventions
-===========================
-
-2-space indentation.
-
-If in doubt, see https://github.com/mozilla-services/socorro/blob/master/.editorconfig
-
-
-Git conventions
-===============
-
-First line is a summary of the commit. It should start with one of the following::
-
-  bug nnnnnnn: summary
-
-which will trigger the auto-closer to add a comment to the bug when this is merged
-into the master branch, or::
-
-  fix bug nnnnnnn: summary
-
-which will do that and also close the bug.
-
-After that, the commit should explain *why* the changes are being made and any
-notes that future readers should know for context or be aware of.
+If you want to do work for which there is no bug, it's best to write up a bug
+first. Maybe the ensuing conversation can save you the time and trouble
+of making changes!
 
 
 Pull requests
@@ -137,8 +54,89 @@ Style nits should be covered by linting as much as possible.
 Code reviews should review the changes in the context of the rest of the system.
 
 
+Preparing to contribute changes to Socorro
+==========================================
+
+If you're interested in helping out and taking a bug to work on, you
+need to do the following first:
+
+1. `Set up a working local development environment
+   <https://socorro.readthedocs.io/en/latest/localdevenvironment.html>`_.
+
+2. Read through the `overview of Socorro
+   <https://socorro.readthedocs.io/en/latest/overview.html>`_.
+
+We can't assign bugs to you until you've done at least those two
+steps.
+
+If you need help, let us know by `asking on IRC or sending an email to the
+mailing list <https://socorro.readthedocs.io/en/latest/#project-info>`_.
+
+
+Conventions
+===========
+
+Python code conventions
+-----------------------
+
+All Python code files should have an MPL v2 header at the top::
+
+  # This Source Code Form is subject to the terms of the Mozilla Public
+  # License, v. 2.0. If a copy of the MPL was not distributed with this
+  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+Python code should follow PEP-8.
+
+Max line length is 100 characters.
+
+4-space indentation.
+
+To run the linter, do::
+
+  $ make lint
+
+
+If you hit issues, use ``# noqa``.
+
+
+HTML conventions
+----------------
+
+2-space indentation.
+
+
+Javascript code conventions
+---------------------------
+
+2-space indentation.
+
+If in doubt, see https://github.com/mozilla-services/socorro/blob/master/.editorconfig
+
+
+Git conventions
+---------------
+
+First line is a summary of the commit. It should start with one of the following::
+
+  bug nnnnnnn: summary
+
+which will trigger the auto-closer to add a comment to the bug when this is merged
+into the master branch, or::
+
+  fix bug nnnnnnn: summary
+
+which will do that and also close the bug.
+
+After that, the commit should explain *why* the changes are being made and any
+notes that future readers should know for context or be aware of.
+
+
+Dependencies
+============
+
 Python Dependencies
-===================
+-------------------
 
 Python dependencies for all parts of Socorro are split between two files:
 
@@ -152,38 +150,40 @@ Dependencies in both files must be pinned and hashed. Use
 
 For example, to add ``foobar`` version 5::
 
-  hashin -r requirements/default.txt foobar==5
+  $ hashin -r requirements/default.txt foobar==5
 
 If ``foobar`` has any dependencies that would also be installed, you must add
 them to the constraints file::
 
-  hashin -r requirements/constraints.txt bazzbiff==4.0
+  $ hashin -r requirements/constraints.txt bazzbiff==4.0
 
 Then rebuild your docker environment::
 
-  make build
+  $ make build
 
 If there are problems, it'll tell you.
 
-.. note:: If you're unsure what dependencies to add to the constraints file,
-   the error from running ``make build`` should include a list of
-   dependencies that were missing, including their version numbers and hashes.
+.. Note::
+
+   If you're unsure what dependencies to add to the constraints file, the error
+   from running ``make build`` should include a list of dependencies that were
+   missing, including their version numbers and hashes.
 
 
 JavaScript Dependencies
-=======================
+-----------------------
 
 Frontend dependencies for the webapp are in ``webapp-django/package.json``. They
 must be pinned and included in
 `package-lock.json <https://docs.npmjs.com/files/package-locks>`_.
 
-You can add new dependencies using ``npm`` (you must use version 5 or higher):
+You can add new dependencies using ``npm`` (you must use version 5 or higher)::
 
-  npm install --save-exact foobar@1.0.0
+  $ npm install --save-exact foobar@1.0.0
 
 Then rebuild your docker environment::
 
-  make build
+  $ make build
 
 If there are problems, it'll tell you.
 
@@ -195,27 +195,16 @@ Documentation for Socorro is build with `Sphinx
 <http://www.sphinx-doc.org/en/stable/>`_ and is available on ReadTheDocs. API is
 automatically extracted from docstrings in the code.
 
-To build the docs, run this:
+To build the docs, run this::
 
-.. code-block:: shell
-
-    $ make docs
+  $ make docs
 
 
-Database migrations
-===================
-
-To create a Django migration, user your local development environment::
-
-    $ make shell
-    app@socorro:/app$ cd webapp-django
-    app@socorro:/app/webapp-django$ ./manage.py makemigrations
-
-Django migrations are stored in ``webapp-django/crashstats/<appname>/migrations/``.
-
+Testing
+=======
 
 Running tests
-=============
+-------------
 
 The tests in ``socorro/unittests/`` use `pytest <https://pytest.org/>`_.
 
@@ -268,24 +257,12 @@ Running a file of tests::
 
 
 Writing tests
-=============
+-------------
 
 For webapp tests, put them in the ``tests/`` directory of the appropriate app in
 ``webapp-django/``.
 
 For other tests, put them in ``socorro/unittest/``.
-
-
-Mock usage
-----------
-
-`Mock <http://www.voidspace.org.uk/python/mock/>`_ is a python library for mocks
-objects. This allows us to write isolated tests by simulating services beside
-using the real ones. Best examples is existing tests which admittedly do mocking
-different depending on the context.
-
-Tip! Try to mock in limited context so that individual tests don't affect other
-tests. Use context managers and instead of monkey patching imported modules.
 
 
 Repository structure

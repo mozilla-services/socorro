@@ -196,12 +196,6 @@ Run::
   $ make updatedata
 
 
-.. Note::
-
-   This can take 20-30 minutes to run in a clean database. After that, it'll
-   run faster since it'll only look at recent builds.
-
-
 .. _gettingstarted-chapter-configuration:
 
 Configuration
@@ -212,11 +206,16 @@ Configuration is pulled from three sources:
 1. Envronment variables
 2. ENV files located in ``/app/docker/config/``. See ``docker-compose.yml`` for
    which ENV files are used in which containers, and their precedence.
-3. The ``config_defaults`` attribute for each ``SocorroApp`` subclass.
+3. Defaults for crontabber are in ``socorro/cron/crontabber_app.py`` in
+   ``CronTabberApp.config_defaults``.
+
+   Defaults for the processor are in ``socorro/processor/processor_app.py``
+   in ``CONFIG_DEFAULTS``.
+
+   Defaults for the webapp are in ``webapp-django/crashstats/settings/``.
 
 The sources above are ordered by precedence, i.e. configuration values defined
-by environment variables will override values from ENV files or
-``config_defaults``.
+by environment variables will override values from ENV files or defaults.
 
 The following ENV files can be found in ``/app/docker/config/``:
 
