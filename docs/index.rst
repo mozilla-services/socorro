@@ -19,7 +19,7 @@ Mozilla's crash analysis tool is hosted at
 
 
 .. toctree::
-   :caption: Crash Stats service
+   :caption: Socorro/Crash Stats for users
    :numbered:
    :includehidden:
    :maxdepth: 1

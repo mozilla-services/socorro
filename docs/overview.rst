@@ -286,16 +286,16 @@ user was visiting when Firefox crashed.
 Housekeeping with Crontabber (Python, Crontabber, Configman)
 ------------------------------------------------------------
 
-Crontabber is a self-healing periodic task manager. We use it to run jobs that
+Crontabber is a self-healing scheduled task manager. We use it to run jobs that
 perform housekeeping functions in the crash ingestion pipeline like:
 
 1. updating product/version information
 2. updating regarding bugs associated with crash signatures
 3. updating "first time we saw this signature" type information
 
-Crontabber jobs that fail are re-run. You can see the state of Crontabber jobs
-on the `Crontabber State <https://crash-stats.mozilla.com/crontabber-state/>`_
-page.
+Crontabber jobs that fail are re-run. Some crontabber jobs are set up to
+backfill, so if they fail, they will eventually run for all the times they
+needed to.
 
 .. seealso::
 
