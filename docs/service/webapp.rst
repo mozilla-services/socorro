@@ -9,7 +9,7 @@ Running the webapp
 
 To run the webapp, do::
 
-  $ docker-compose up webapp webpack
+  $ docker-compose up webapp
 
 
 That will bring up all the services the webapp requires to run and start the
@@ -37,16 +37,6 @@ Then you can start and stop the webapp, adjust files, and debug.
    in a ``docker-compose.override.yml`` file.
 
    https://docs.docker.com/compose/extends/
-
-.. note::
-
-   The ``webpack`` service watches for changes to certain frontend files and
-   rebuilds bundles when they change. If you make changes to the Webpack
-   config, you must restart the service for the changes to take effect.
-
-   If the ``webpack`` service is not running, certain pages may not update when
-   you change the frontend files they rely on.
-
 
 
 Setting up authentication and a superuser
