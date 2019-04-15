@@ -864,6 +864,7 @@ class RawCrash(SocorroMiddleware):
         'TotalVirtualMemory',
         'upload_file_minidump_*',
         'useragent_locale',
+        'uuid',
         'Vendor',
         'version',
         'Version',
