@@ -45,7 +45,7 @@ fastzero_I
 _files_getaddrinfo
 .*free
 free_impl
-GCGraphBuilder::NoteXPCOMChild
+CCGraphBuilder::NoteXPCOMChild
 gfxPlatform::Init
 getanswer
 gkrust_shared::oom_hook::hook
