@@ -4,12 +4,6 @@
 Service: Processor
 ==================
 
-.. Note::
-
-   We're in the process of extracting the processor out of Socorro as a separate
-   project. There's no ETA for that work, yet.
-
-
 Running the processor
 =====================
 
