@@ -1,13 +1,61 @@
 [
     {
+        "model": "oidc_provider.responsetype",
+        "pk": 1,
+        "fields": {
+            "value": "code",
+            "description": "code (Authorization Code Flow)"
+        }
+    },
+    {
+        "model": "oidc_provider.responsetype",
+        "pk": 2,
+        "fields": {
+            "value": "id_token",
+            "description": "id_token (Implicit Flow)"
+        }
+    },
+    {
+        "model": "oidc_provider.responsetype",
+        "pk": 3,
+        "fields": {
+            "value": "id_token token",
+            "description": "id_token token (Implicit Flow)"
+        }
+    },
+    {
+        "model": "oidc_provider.responsetype",
+        "pk": 4,
+        "fields": {
+            "value": "code token",
+            "description": "code token (Hybrid Flow)"
+        }
+    },
+    {
+        "model": "oidc_provider.responsetype",
+        "pk": 5,
+        "fields": {
+            "value": "code id_token",
+            "description": "code id_token (Hybrid Flow)"
+        }
+    },
+    {
+        "model": "oidc_provider.responsetype",
+        "pk": 6,
+        "fields": {
+            "value": "code id_token token",
+            "description": "code id_token token (Hybrid Flow)"
+        }
+    },
+    {
         "model": "oidc_provider.client",
         "pk": 1,
         "fields": {
             "name": "testrpHS256",
+            "owner": null,
             "client_type": "confidential",
             "client_id": "1",
             "client_secret": "bd01adf93cfb",
-            "response_type": "code",
             "jwt_alg": "HS256",
             "date_created": "2017-11-10",
             "website_url": "",
@@ -17,7 +65,10 @@
             "reuse_consent": true,
             "require_consent": true,
             "_redirect_uris": "http://localhost:8000/oidc/callback/",
-            "_post_logout_redirect_uris": ""
+            "_post_logout_redirect_uris": "",
+            "response_types": [
+                1
+            ]
         }
     },
     {
@@ -25,10 +76,10 @@
         "pk": 2,
         "fields": {
             "name": "testrpRS256",
+            "owner": null,
             "client_type": "confidential",
             "client_id": "2",
             "client_secret": "a6b4dad2f215",
-            "response_type": "code",
             "jwt_alg": "RS256",
             "date_created": "2017-11-10",
             "website_url": "",
@@ -38,7 +89,17 @@
             "reuse_consent": true,
             "require_consent": true,
             "_redirect_uris": "http://localhost:8000/oidc/callback/",
-            "_post_logout_redirect_uris": ""
+            "_post_logout_redirect_uris": "",
+            "response_types": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "oidc_provider.rsakey",
+        "pk": 3,
+        "fields": {
+            "key": "-----BEGIN RSA PRIVATE KEY-----\nMIICXAIBAAKBgQDAAgiIdiJG7GSMKTRbnGjWpHp1ulJ43/iQjDywWh5MP3in2PK8\nPVI6ItxIFLV81nWZMymA7hjfP7adOlxKY6rI+fExn8cTimI3W/oX6mHrPXm52uj/\nwe839pxxkeD7cmWgaif9Sujuy5AHUuUM1BTlO55POHkmhWyYMKC2P29qgQIDAQAB\nAoGAUHdJri6b1M8yoA6Qk6frw7AwZfAMqf1qxOEQefN6aQfcf7MKntqwAA8l88tB\n96xEokxvo0mlAMJJvIB9tusn4dIHKpmQGacQWVd/KONxPkvyuGgQXX5KCusZTbg7\ni6YQM52RGbExVFWLdGYJRBvzyfRkWX0b4LiderPZUiD6J/UCQQDZIgnLqYyGw3Ro\nnNboWYyOtLhKMF59f/0aSMXLlWdsnFG8kVm/7tw6jcDBalELci/+ExL2JACGwDea\n8DpvWiEDAkEA4mCovWmMDiS8tQCeY5NDic1wMp51+Ya8RX47bvb5F+X7SSE9L87y\n6eU9zVBSY8F+9npkvrxoU9PlKbS3Lzz1KwJAZ5/8BsuS+lnbe3Wmhtr93rlW3mk5\nHzHu7BVg+GkEI+xygcjoiVYImpU+MdB4fzrutpYJzZie+7BOmU4exTfBWwJBAKj+\nN3mO/Xrhee41VAhJuzV4I7XmDXQFXS8TmRKxVCq/COQC6EZ0W2q4M3a964OEw18E\n54hr5gYOPRjxS378JpkCQDjKw2Vyw0S0M8O2hOGuNsUtlGApYKt2iA41jGUf7bvO\nWz/tQuEIXQMd4e9zxNxOzPJOtjR1gyPZyi/FvsgDJDU=\n-----END RSA PRIVATE KEY-----"
         }
     }
 ]
