@@ -134,18 +134,36 @@ def status(config, args):
                 print('             %s' % crash_id)
 
 
-def publish_crashid(config, args):
+def publish_crashid(config, queue, crashids):
     publisher = pubsub_v1.PublisherClient()
     project_id = config['resource.pubsub.project_id']
 
-    queue = args.queue
     topic_name = config['resource.pubsub.%s_topic_name' % queue]
     topic_path = publisher.topic_path(project_id, topic_name)
 
-    for crash_id in args.crashid:
+    for crash_id in crashids:
         future = publisher.publish(topic_path, data=crash_id.encode('utf-8'))
         future.result()
         print('Published: %s' % crash_id)
+    else:
+        print('No crash ids provided.')
+
+
+def list_from_arg_or_pipe(arg):
+    """Get values list from a positional argument or piped from stdin."""
+    if arg:
+        # The list was passed as an argument
+        items = arg
+    elif sys.stdin.isatty():
+        # There is no data being piped to the script, but instead it is an
+        # interactive TTY. Instead of blocking while waiting for input, return
+        # an empty list.
+        items = []
+    else:
+        # Data is being piped to this script. Remove trailing newlines from
+        # reading sys.stdin as line iterator.
+        items = [item.rstrip() for item in sys.stdin]
+    return items
 
 
 def main(argv=None):
@@ -166,7 +184,7 @@ def main(argv=None):
     subparsers.add_parser('status', help='Show status of everything.')
     publish_parser = subparsers.add_parser('publish', help='Publish a crash id to a topic.')
     publish_parser.add_argument('--queue', default='standard', help='Queue to publish to.')
-    publish_parser.add_argument('crashid', nargs='+', help='Crash id to publish.')
+    publish_parser.add_argument('crashid', nargs='*', help='Crash id(s) to publish.')
 
     args, remaining = parser.parse_known_args()
 
@@ -184,4 +202,8 @@ def main(argv=None):
     elif args.cmd == 'status':
         return status(config, args)
     elif args.cmd == 'publish':
-        return publish_crashid(config, args)
+        crashids = list_from_arg_or_pipe(args.crashid)
+        if crashids:
+            return publish_crashid(config, args.queue, crashids)
+        else:
+            publish_parser.print_help()
