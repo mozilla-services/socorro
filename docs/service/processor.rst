@@ -44,13 +44,47 @@ All helper scripts run in the shell in the container::
 
     $ make shell
 
+Some of the scripts require downloading production data from
+`crash-stats.mozilla.com <https://crash-stats.mozilla.com>`_, and it is
+useful to add an API token with higher permissions before entering the shell.
+
+
+.. _`API token`:
+
+Adding an API Token
+-------------------
+By default, the download scripts will fetch anonymized crash data, which does
+not include personally identifiable information (PII). This anonymized data can
+be used to test some workflows, but the the processor will not be able to
+analyze memory dumps or generate signatures.
+
+If you have access to memory dumps, you can fetch those with the crash data by
+using an API token with these permissions:
+
+* View Personal Identifiable Information
+* View Raw Dumps
+
+You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
+
+.. Note::
+
+   Make sure you treat any data you pull from production in accordance with our
+   data policies that you agreed to when granted access to it.
+
+Add the API token value to your ``my.env`` file::
+
+    SOCORRO_API_TOKEN=apitokenhere
+
+The API token is used by the download scripts (run inside ``$ make shell``),
+but not directly by the processor.
 
 process_crashes.sh
 ------------------
 
 You can use the ``scripts/process_crashes.sh`` script which will fetch crash
 data, sync it with the S3 bucket, and publish the crash ids to Pub/Sub
-for processing.
+for processing. If you have access to memory dumps and use a valid
+`API token`_, then memory dumps will be fetched for processing as well.
 
 It takes one or more crash ids as arguments.
 
@@ -111,7 +145,9 @@ fetch_crash_data
 ----------------
 
 This will fetch raw crash data from crash-stats.mozilla.com and save it in the
-appropriate directory structure rooted at outputdir.
+appropriate directory structure rooted at outputdir. If you have access to
+memory dumps and use a valid `API token`_, then memory dumps will be fetched
+for processing as well.
 
 Usage from host:
 
@@ -140,28 +176,6 @@ You can get command help:
 .. code-block:: shell
 
    app@socorro:/app$ ./socorro-cmd fetch_crash_data --help
-
-
-.. Note::
-
-   This script requires that you have a valid API token from the
-   crash-stats.mozilla.com environment that has the "View Raw Dumps" permission
-   in order to download personally identifiable information and dumps.
-
-   You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
-
-   Add the API token value to your ``my.env`` file::
-
-       SOCORRO_API_TOKEN=apitokenhere
-
-   If you don't have an API token, this will download some raw crash
-   information, but it will be redacted.
-
-
-.. Note::
-
-   Make sure you treat any data you pull from production in accordance with our
-   data policies that you agreed to when granted access to it.
 
 
 scripts/socorro_aws_s3.sh
@@ -233,6 +247,7 @@ Let's process crashes for Firefox from yesterday. We'd do this:
 
 .. code-block:: shell
 
+  # Set SOCORRO_API_TOKEN in my.env
   # Start bash in the socorro container
   $ make shell
 
