@@ -23,21 +23,6 @@ To ease debugging, you can run a shell in the container::
 Then you can start and stop the webapp, adjust files, and debug.
 
 
-.. Note::
-
-   The ``STATIC_ROOT`` is set to ``/tmp/crashstats-static/`` rather than
-   ``/app/webapp-django/static``. This alleviates permissions-related problems
-   because the process in the container runs as uid 10001 which is not the uid
-   of the user you're using on your host computer.
-
-   The problem this creates is that ``/tmp/crashstats-static/`` is ephemeral
-   and any changes there disappear when you stop the container.
-
-   If you want it persisted, you should mount that directory using ``volumes``
-   in a ``docker-compose.override.yml`` file.
-
-   https://docs.docker.com/compose/extends/
-
 
 Setting up authentication and a superuser
 =========================================
@@ -67,78 +52,72 @@ need to add the following entry to your ``/etc/hosts`` (or equivalent) file::
 This allows your host machine to properly handle the authentication provided by
 the `oidcprovider` docker container.
 
+When logging in with ``oidcprovider``, use the "Sign up" workflow to create a
+fake account:
 
-About Permissions, User and Groups
-==================================
+* Username: A non-email username
+* Email: Matches your Socorro account email
+* Password: Any password
+
+The OIDC user is stored in the ``oidcprovider`` docker container, and will need
+to be recreated on restart.
+
+
+Permissions, User and Groups
+============================
 
 Accessing certain parts of the webapp requires that the user is signed-in and
-also in a group that contains the required permissions.
+also in a group that contains the required permissions. Users, Groups, and
+Permissions are provided by Django, and the documentation for
+`User authentication in Django <https://docs.djangoproject.com/en/2.2/topics/auth/>`_
+is useful for understanding how it works.
 
-A permission consists of a code name, a verbose name and a content type (aka
-Django model) that it belongs to. For business logic specific permissions we use
-in Socorro to guard certain data that is not a Django model we use permissions
-that belong to a blank content type. These are the permissions that appear in
-the list when you visit the `Your Permissions
-<https://crash-stats.mozilla.com/permissions/>`_ page.
+In addition to the Django's auto-generated permissions, Socorro defines
+permissions that are used for buisness logic, such as controlling access to
+sensitive data. These are assigned to a small number of groups, and users are
+assigned to the groups to grant access. The Socorro permissions are listed
+(by verbose name) when you visit the
+`Your Permissions <https://crash-stats.mozilla.com/permissions/>`_ page.
 
+Maintainers can also be a *superusers*, which means they are implicitly granted
+all permissions, and *staff*, which means they can access the Django admin.
 
 Administering Users and Groups
-==============================
+------------------------------
+The Django admin can be used to assign a user to a group, in order to grant
+them additional access in the web app.
 
-To see the admin user interface, you need to be a superuser. This is not
-dependent on any permissions. Being a superuser means you have root-like access
-to everything. Any permission check against a superuser user will always return
-true.
+The admin can also be used to create new groups with associated permissions.
+However, since groups and permissions are stored in the database, additional
+work is needed to apply these changes to all environments.
 
-You can create groups freely in the Admin section and you can attach any
-permissions to the groups.
+Changing Groups and Permissions
+-------------------------------
+The Socorro groups and their permissions are defined in
+``webapp-django/crashstats/crashstats/signals.py``. These are applied to
+the database in a "post-migrate" signal handler when you run::
 
-You can not give a specific user a specific permission, or combination of
-permissions. Instead you have to solve this by creating, potentially multiple,
-groups and attach those accordingly to the user you want to affect.
+   make shell
+   webapp-django/manage,py migrate auth
 
+This is run on every deploy, and because it's idempotent, it can be run
+repeatedly without creating any duplicates.
 
-Extending permissions
-=====================
+.. Note::
 
-All current custom permissions we use are defined in the constants at the top of
-``webapp-django/crashstats/crashstats/management/__init__.py``. That file also
-defines some default groups.
+  Removing a permission for this file (assuming you know it's never
+  referenced anywhere else) will **not** delete it from the database. This will
+  require special database manipulation.
 
-This file is executed when you run:
+To add a new permission for something else, extend ``signal.py`` with a
+code name, verbose name, and any group assignments. Run ``./manage.py migrate``
+to apply it to the database and make the permission available in code.
 
-::
-
-   cd webapp-django
-   export SECRET_KEY="..."
-   ./manage.py migrate auth
-   ./manage.py migrate
-
-
-This is run on every deploy because it's idempotent it can be run repeatedly
-without creating any duplicates.
-
-Note: Removing a permission for this file (assuming you know it's never
-referenced anywhere else) will **not** delete it from the database. This will
-require special database manipulation.
-
-To add a new permission for something else, extend that above mentioned file as
-per how it's currently layed out. You'll need to come up with a code name and a
-verbose name. For example, a permission for being allowed to save searches could
-be:
-
-:code name:    save_search
-:verbose name: Save User Searches
-
-
-Then, once that's added to the file, run ``./manage.py migrate`` and it will be
-ready to depend on in the code.
-
-Here's how you might use this permission in a view::
+Here's how you would use a permission ``save_search`` in a view::
 
   def save_search(request):
       if not request.user.has_perm('crashstats.save_search'):
-	  return http.HttpResponseForbidden('Not allowed!')
+          return http.HttpResponseForbidden('Not allowed!')
 
 
 Note the added ``crashstats.`` prefix added to the code name when using the
@@ -153,46 +132,45 @@ Here's an example in a template::
   {% endif %}
 
 
-When you add a new permission here they will automatically appear on the `Your
-Permissions <https://crash-stats.mozilla.com/permissions/>`_ page.
+When you add a new permission via ``signal.py``, it will automatically appear
+on the `Your Permissions <https://crash-stats.mozilla.com/permissions/>`_ page
+for the users in that group.
 
 
-Troubleshooting
-===============
+Static Assets
+=============
+In the development environment, the ``STATIC_ROOT`` is set to
+``/tmp/crashstats-static/`` rather than ``/app/webapp-django/static``.
+The process in the container creates files with the uid 10001, and Linux users
+will have permissions-related problems if these are mounted on the host
+computer.
 
-If you have set up your webapp but you can't sign in, it could very well be
-because some configuration is wrong compared to how you're running the webapp.
+The problem this creates is that ``/tmp/crashstats-static/`` is ephemeral
+and any changes there disappear when you stop the container.
 
-If this is the problem go to ``http://localhost:8000/_debug_login``.
+If you are on macOS or Windows, then Docker uses a shared file system that
+creates files with your user ID. This makes it safe to persist static assets,
+at the cost of slower file system performance.
 
-This works for both production and development. If you're running in production
-you might not be using ``localhost:8000`` so all you need to remember is to go
-to ``/_debug_login`` on whichever domain you will use in production.
+If you want static assets to persist between container restarts, then you
+can override ``STATIC_ROOT`` in ``my.env`` to return it to the ``app`` folder::
 
-If web services are not starting up, ``/var/log/nginx/`` is a good place to
-look.
+    STATIC_ROOT=/app/static
 
-If you are not able to log in to the crash-stats UI, try hitting
-``http://crash-stats/_debug_login``
+Alternatively, you can mount ``/tmp/crashstats-static/`` using ``volumes``
+in a ``docker-compose.override.yml`` file:
 
-If you are having problems with crontabber jobs, this page shows you the
-state of the dependencies: ``http://crash-stats/crontabber-state/``
+.. code-block:: yaml
 
-If you're seeing "Internal Server Error", you can get Django to send you email
-with stack traces by adding this to
-``/data/socorro/webapp-django/crashstats/settings/base.py``:
+    version: "2"
+    services:
+      webapp:
+        volumes:
+          # Persist the static files folder
+          - ./static:/tmp/crashstats-static
 
-::
-
-  # Recipients of traceback emails and other notifications.
-  ADMINS = (
-      ('Your Name', 'your_email@domain.com'),
-  )
-  MANAGERS = ADMINS
-
-
-Running Web App in a Prod-like Way
-==================================
+Production-style Assets
+-----------------------
 
 When you run ``docker-compose up webapp`` in the local development environment,
 it starts the web app using Django's ``runserver`` command. ``DEBUG=True`` is
