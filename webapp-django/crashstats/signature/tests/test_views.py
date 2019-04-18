@@ -390,6 +390,13 @@ class TestViews(BaseTestViews):
         assert 'term_counts' in struct
         assert len(struct['term_counts']) == 1
 
+    def test_signature_comments_no_permission(self):
+        """Verify comments are not viewable without view_pii."""
+        url = reverse('signature:signature_comments')
+
+        response = self.client.get(url, {'signature': 'whatever'})
+        assert response.status_code == 403
+
     def test_signature_comments(self):
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -454,19 +461,24 @@ class TestViews(BaseTestViews):
 
         url = reverse('signature:signature_comments')
 
+        user = self._login()
+        user.groups.add(self._create_group_with_permission('view_pii'))
+        assert user.has_perm('crashstats.view_pii')
+
         # Test with no results.
-        response = self.client.get(url, {
-            'signature': DUMB_SIGNATURE,
-        })
+        response = self.client.get(
+            url,
+            {'signature': DUMB_SIGNATURE}
+        )
         assert response.status_code == 200
         assert 'Crash ID' not in smart_text(response.content)
         assert 'No comments were found' in smart_text(response.content)
 
         # Test with results.
-        response = self.client.get(url, {
-            'signature': DUMB_SIGNATURE,
-            'product': 'WaterWolf'
-        })
+        response = self.client.get(
+            url,
+            {'signature': DUMB_SIGNATURE, 'product': 'WaterWolf'}
+        )
         assert response.status_code == 200
         assert 'aaaaaaaaaaaaa1' in smart_text(response.content)
         assert 'Crash ID' in smart_text(response.content)
@@ -498,6 +510,10 @@ class TestViews(BaseTestViews):
             }
 
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+
+        user = self._login()
+        user.groups.add(self._create_group_with_permission('view_pii'))
+        assert user.has_perm('crashstats.view_pii')
 
         url = reverse('signature:signature_comments')
 

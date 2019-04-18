@@ -318,7 +318,10 @@ def signature_graphs(request, params, field):
 
 @pass_validated_params
 def signature_comments(request, params):
-    '''Return a list of non-empty comments. '''
+    """Return a list of non-empty comments."""
+    # Users can't see comments unless they have view_pii permissions.
+    if not request.user.has_perm('crashstats.view_pii'):
+        return http.HttpResponseForbidden()
 
     signature = params['signature'][0]
 
@@ -353,7 +356,7 @@ def signature_comments(request, params):
     params['_sort'] = '-date'
     params['_results_number'] = results_per_page
     params['_results_offset'] = context['results_offset']
-    params['_facets'] = []  # We don't need no facets.
+    params['_facets'] = []
 
     context['current_url'] = '%s?%s' % (
         reverse('signature:signature_report'),
