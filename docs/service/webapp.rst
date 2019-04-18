@@ -63,78 +63,27 @@ The OIDC user is stored in the ``oidcprovider`` docker container, and will need
 to be recreated on restart.
 
 
-Permissions, User and Groups
-============================
+Permissions
+===========
 
-Accessing certain parts of the webapp requires that the user is signed-in and
-also in a group that contains the required permissions. Users, Groups, and
-Permissions are provided by Django, and the documentation for
-`User authentication in Django <https://docs.djangoproject.com/en/2.2/topics/auth/>`_
-is useful for understanding how it works.
+The webapp uses Django's
+`groups and permissions <https://docs.djangoproject.com/en/2.2/topics/auth/>`_
+to define access groups for sensitive data such as Personally Identifiable
+Information (PII). There are three main classes of users:
 
-In addition to the Django's auto-generated permissions, Socorro defines
-permissions that are used for buisness logic, such as controlling access to
-sensitive data. These are assigned to a small number of groups, and users are
-assigned to the groups to grant access. The Socorro permissions are listed
-(by verbose name) when you visit the
+* Anonymous visitors and basic users do not have access to memory dumps or PII.
+* Users in the "Hackers" group can view memory dumps and PII.
+  `Memory Dump Access <https://crash-stats.mozilla.com/documentation/memory_dump_access/>`_
+  has the details for requesting access to this group.
+* Superusers maintain the site, set group membership in the Django admin, and
+  have full access.
+
+A logged-in user can view their detailed permissions on the
 `Your Permissions <https://crash-stats.mozilla.com/permissions/>`_ page.
 
-Maintainers can also be a *superusers*, which means they are implicitly granted
-all permissions, and *staff*, which means they can access the Django admin.
-
-Administering Users and Groups
-------------------------------
-The Django admin can be used to assign a user to a group, in order to grant
-them additional access in the web app.
-
-The admin can also be used to create new groups with associated permissions.
-However, since groups and permissions are stored in the database, additional
-work is needed to apply these changes to all environments.
-
-Changing Groups and Permissions
--------------------------------
-The Socorro groups and their permissions are defined in
+The groups and their permissions are defined in
 ``webapp-django/crashstats/crashstats/signals.py``. These are applied to
-the database in a "post-migrate" signal handler when you run::
-
-   make shell
-   webapp-django/manage,py migrate auth
-
-This is run on every deploy, and because it's idempotent, it can be run
-repeatedly without creating any duplicates.
-
-.. Note::
-
-  Removing a permission for this file (assuming you know it's never
-  referenced anywhere else) will **not** delete it from the database. This will
-  require special database manipulation.
-
-To add a new permission for something else, extend ``signal.py`` with a
-code name, verbose name, and any group assignments. Run ``./manage.py migrate``
-to apply it to the database and make the permission available in code.
-
-Here's how you would use a permission ``save_search`` in a view::
-
-  def save_search(request):
-      if not request.user.has_perm('crashstats.save_search'):
-          return http.HttpResponseForbidden('Not allowed!')
-
-
-Note the added ``crashstats.`` prefix added to the code name when using the
-``user.has_perm()`` function.
-
-Here's an example in a template::
-
-  {% if request.user.has_perm('crashstats.save_search') %}
-    <form action="{{ url('crashstats:save_search') }}" method="post">
-      <button>Save this search</button>
-    </form>
-  {% endif %}
-
-
-When you add a new permission via ``signal.py``, it will automatically appear
-on the `Your Permissions <https://crash-stats.mozilla.com/permissions/>`_ page
-for the users in that group.
+the database in a "post-migrate" signal handler.
 
 
 Static Assets
