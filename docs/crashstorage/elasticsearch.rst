@@ -60,19 +60,15 @@ processor app and looking at the ``resource.elasticsearch`` options like
 this::
 
   $ make shell
-  app@socorro:/app$ python ./socorro/processor/processor_app \
+  app@socorro:/app$ python ./socorro/processor/processor_app.py \
       --destination.crashstorage_class=socorro.external.es.crashstorage.ESCrashStorage \
       --help
 
 
-As of this writing, it looks like this::
+The ``resource.elasticsearch`` portion looks like this::
 
   --resource.elasticsearch.elasticsearch_class
     (default: socorro.external.es.connection_context.ConnectionContext)
-
-  --resource.elasticsearch.elasticsearch_connection_wrapper_class
-    a classname for the type of wrapper for ES connections
-    (default: socorro.external.es.connection_context.Connection)
 
   --resource.elasticsearch.elasticsearch_doctype
     the default doctype to use in elasticsearch
@@ -81,6 +77,10 @@ As of this writing, it looks like this::
   --resource.elasticsearch.elasticsearch_index
     an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
     (default: socorro%Y%W)
+
+  --resource.elasticsearch.elasticsearch_shards_per_index
+    number of shards to set in newly created indices. Elasticsearch default is 5.
+    (default: 10)
 
   --resource.elasticsearch.elasticsearch_timeout
     the time in seconds before a query to elasticsearch fails
