@@ -10,6 +10,7 @@ development environment.
 If you're interested in running Socorro in a server environment, then check out
 :ref:`deploying-socorro-chapter`.
 
+.. _setup-quickstart:
 
 Setup Quickstart
 ================
