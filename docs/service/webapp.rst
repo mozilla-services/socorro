@@ -150,7 +150,9 @@ and any changes there disappear when you stop the container.
 
 If you are on macOS or Windows, then Docker uses a shared file system that
 creates files with your user ID. This makes it safe to persist static assets,
-at the cost of slower file system performance.
+at the cost of slower file system performance. Linux users can manually set
+the uid and gid to match their account, for the same effect. See "Set UID and
+GID for Docker container user" in :ref:`setup-quickstart`.
 
 If you want static assets to persist between container restarts, then you
 can override ``STATIC_ROOT`` in ``my.env`` to return it to the ``app`` folder::
