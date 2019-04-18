@@ -78,9 +78,17 @@ SignatureReport.init = function() {
     var errorMsg;
 
     try {
-      errorDetails = $(jqXHR.responseText); // This might fail
-      errorTitle = 'Oops, an error occured';
-      errorMsg = 'Please fix the following issues: ';
+      if (jqXHR.status === 403) {
+        // Handle the HTTP 403 case explicitly
+        errorDetails = '';
+        errorTitle = 'Forbidden';
+        errorMsg = 'You do not have access to view this data.';
+      } else {
+        // It's some other problem
+        errorDetails = $(jqXHR.responseText); // This might fail
+        errorTitle = 'Oops, an error occured';
+        errorMsg = 'Please fix the following issues: ';
+      }
 
       errorContent.append($('<h3>', { text: errorTitle }));
       errorContent.append($('<p>', { text: errorMsg }));
