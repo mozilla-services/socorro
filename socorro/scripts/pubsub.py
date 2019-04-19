@@ -145,8 +145,6 @@ def publish_crashid(config, queue, crashids):
         future = publisher.publish(topic_path, data=crash_id.encode('utf-8'))
         future.result()
         print('Published: %s' % crash_id)
-    else:
-        print('No crash ids provided.')
 
 
 def list_from_arg_or_pipe(arg):
