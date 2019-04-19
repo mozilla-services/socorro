@@ -98,7 +98,7 @@ You can also use it with ``fetch_crashids``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | xargs scripts/process_crashes.sh
+   app@socorro:/app$ ./socorro-cmd fetch_crashids --num=1 | ./scripts/process_crashes.sh
 
 After running ``scripts/process_crashes.sh``, you will need to run the
 processor which will do the actual processing.
@@ -168,7 +168,7 @@ for Firefox:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crashids | socorro-cmd fetch_crash_data ./testdata
+   app@socorro:/app$ ./socorro-cmd fetch_crashids | ./socorro-cmd fetch_crash_data ./testdata
 
 
 You can get command help:
@@ -252,11 +252,11 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   $ make shell
 
   # Generate a file of crashids--one per line
-  app@socorro:/app$ socorro-cmd fetch_crashids > crashids.txt
+  app@socorro:/app$ ./socorro-cmd fetch_crashids > crashids.txt
 
   # Pull raw crash data from -prod for each crash id and put it in the
   # "crashdata" directory on the host
-  app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
+  app@socorro:/app$ cat crashids.txt | ./socorro-cmd fetch_crash_data ./crashdata
 
   # Create a dev_bucket in localstack-s3
   app@socorro:/app$ ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
@@ -265,7 +265,7 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
 
   # Add all the crash ids to the queue
-  app@socorro:/app$ cat crashids.txt | socorro-cmd pubsub publish
+  app@socorro:/app$ cat crashids.txt | ./socorro-cmd pubsub publish
 
   # Then exit the container
   app@socorro:/app$ exit

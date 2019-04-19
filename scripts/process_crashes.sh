@@ -13,7 +13,7 @@
 #
 # You can use it with fetch_crashids:
 #
-#    app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | xargs ./scripts/process_crashes.sh
+#    app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | ./scripts/process_crashes.sh
 #
 # Make sure to run the processor to do the actual processing.
 
@@ -30,8 +30,14 @@ function cleanup {
 trap cleanup EXIT
 
 if [[ $# -eq 0 ]]; then
-    echo "Usage: process_crashes.sh CRASHID [CRASHID ...]"
-    exit 1
+    if [ -t 0 ]; then
+        # If stdin is a terminal, then there's no input
+        echo "Usage: process_crashes.sh CRASHID [CRASHID ...]"
+        exit 1
+    fi
+
+    # stdin is not a terminal, so pull the args from there
+    set -- ${@:-$(</dev/stdin)}
 fi
 
 mkdir "${DATADIR}" || echo "${DATADIR} already exists."
