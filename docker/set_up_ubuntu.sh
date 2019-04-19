@@ -64,3 +64,6 @@ PS1="\${MYUSER}@socorro:\w\$ "
 # Add current directory to path.
 PATH=\${PATH}:.
 EOF
+
+# Remove this bashrc so it doesn't override the global one we created
+rm /home/app/.bashrc
