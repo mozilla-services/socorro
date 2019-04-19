@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import sys
 
 
 class WrappedTextHelpFormatter(argparse.HelpFormatter):
@@ -73,6 +74,66 @@ class FlagAction(argparse.Action):
         else:
             value = True
         setattr(namespace, self.dest, value)
+
+
+class FallbackToPipeAction(argparse.Action):
+    """Fallback to load strings piped from stdin
+
+    This action reads from stdin when the positional arguments were omitted. It
+    expects one value per line, and at least one value.
+
+    This does not work with named arguments, since the action is not called
+    when a named argument is omitted.
+
+    To use this as a fallback for positional arguments:
+    > parser.add_argument('name', nargs='*', action=FallbackToPipeAction)
+    """
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        """Initialize the FallbackToPipeAction.
+
+        :param option_strings: Names for non-positional arguments.
+        :param dest: The destination attribute on the parser
+        :param nargs: The number of arguments, must be '*' for zero or more
+        :param kwargs: Additional parameters for the parser argument
+        """
+        if option_strings:
+            raise ValueError("This action does not work with named arguments")
+        if nargs != '*':
+            raise ValueError("nargs should be '*'")
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        """Call the FallbackToPipeAction.
+
+        If the arguments were set on the command line, use them. Otherwise,
+        try reading from stdin (the pipe). If a pipe was not provided or was
+        empty, parser.error is called to print usage and exit early.
+
+        :param parser: The argument parser
+        :param namespace: The destination namespace
+        :param values: The parsed values, an empty list if omitted
+        :param option_string: The option name, or None for positional arguments
+        """
+
+        if not values:
+            if sys.stdin.isatty():
+                # There is no data being piped to the script, but instead it
+                # is an interactive TTY. Instead of blocking while waiting
+                # for input, exit on the missing parameter
+                parser.error(
+                    'argument "%s" was omitted and stdin is not a pipe.'
+                    % self.dest)
+            else:
+                # Data is being piped to this script. Remove trailing newlines
+                # from reading sys.stdin as line iterator.
+                type_func = self.type or str
+                values = [type_func(item.rstrip()) for item in sys.stdin]
+                if not values:
+                    parser.error(
+                        'argument "%s" was omitted and stdin was empty.'
+                        % self.dest)
+
+        setattr(namespace, self.dest, values)
 
 
 def get_envvar(key, default=None):

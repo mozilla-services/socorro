@@ -4,13 +4,12 @@
 
 import argparse
 import os
-import sys
 import time
 
 from more_itertools import chunked
 
 from socorro.lib.requestslib import session_with_retries
-from socorro.scripts import WrappedTextHelpFormatter
+from socorro.scripts import FallbackToPipeAction, WrappedTextHelpFormatter
 
 
 DESCRIPTION = """
@@ -46,7 +45,8 @@ def main(argv=None):
         default=SLEEP_DEFAULT
     )
     parser.add_argument('--host', help='host for system to reprocess in', default=DEFAULT_HOST)
-    parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
+    parser.add_argument('crashid', help='one or more crash ids to fetch data for',
+                        nargs='*', action=FallbackToPipeAction)
 
     if argv is None:
         args = parser.parse_args()
@@ -59,27 +59,10 @@ def main(argv=None):
         return 1
 
     url = args.host.rstrip('/') + '/api/Reprocessing/'
-
-    if args.crashid:
-        crash_ids = args.crashid
-    elif not sys.stdin.isatty():
-        # If a script is piping to this script, then isatty() returns False. If there is no script
-        # piping to this script, then isatty() returns True and if we do list(sys.stdin), it'll
-        # block waiting for input.
-        crash_ids = list(sys.stdin)
-    else:
-        crash_ids = []
-
-    # If there are no crashids, then print help and exit
-    if not crash_ids:
-        parser.print_help()
-        return 0
-
-    crash_ids = [item.strip() for item in crash_ids]
-
     print('Sending reprocessing requests to: %s' % url)
     session = session_with_retries()
 
+    crash_ids = args.crashid
     print('Reprocessing %s crashes sleeping %s seconds between groups...' % (
         len(crash_ids), args.sleep
     ))
