@@ -2,8 +2,8 @@
 minidump-stackwalker
 ====================
 
-This is the directory holding the stackwalker binaries that parse minidump
-files.
+This directory (`minidump-stackwalk/`) holds the stackwalker binaries that
+parse minidump files.
 
 
 Usage
