@@ -391,7 +391,7 @@ BUILDHUB_BASE_URL = 'https://buildhub.moz.tools/'
 
 # The index schema used in our elasticsearch databases, used in the
 # Super Search Custom Query page.
-ELASTICSEARCH_INDEX_SCHEMA = 'socorro%Y%W'
+ELASTICSEARCH_INDEX_SCHEMA = config('resource.elasticsearch.elasticsearch_index', 'socorro%Y%W')
 
 # Number of shards per index in our Elasticsearch database.
 ES_SHARDS_PER_INDEX = 10
@@ -654,11 +654,10 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
                 'http://localhost:9200',
                 cast=Csv()
             ),
-            # e.g. (deliberately commented out)
-            # 'elasticsearch_doctype': config(
-            #     'ELASTICSEARCH_DOCTYPE',
-            #     'crash_reports'
-            # )
+            'elasticsearch_index': ELASTICSEARCH_INDEX_SCHEMA,
+            'elasticsearch_index_regex': config(
+                'resource.elasticsearch.elasticsearch_index_regex', '^socorro[0-9]{6}$'
+            )
         },
         'boto': {
             'access_key': config('resource.boto.access_key', None),

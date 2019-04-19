@@ -47,7 +47,7 @@ class TestIntegrationAnalyzers(ElasticsearchTestCase):
                 'AppInitDLLs': '/path/to/dll;D:\\bar\\boo',
             }
         )
-        self.refresh_index()
+        self.es_context.refresh()
 
         res = self.api.get(
             app_init_dlls='/path/to/dll',

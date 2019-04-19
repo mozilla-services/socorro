@@ -81,7 +81,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
                 'write_combine_size': 9823012
             }
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         res = self.api.get(_columns=[
             'date', 'build_id', 'platform', 'signature', 'write_combine_size'
@@ -128,7 +128,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             'app_notes': 'processor that I used to run',
             'date_processed': self.now,
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         # A term that exists.
         res = self.api.get(
@@ -187,7 +187,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             'signature': 'foo(bar)',
             'date_processed': self.now,
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         # Test the "contains" operator.
         res = self.api.get(
@@ -331,7 +331,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             'build': 1999,
             'date_processed': self.now,
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         # Test the "has terms" operator.
         res = self.api.get(
@@ -428,7 +428,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
                 # Missing value should also be considered as "false".
             },
         )
-        self.refresh_index()
+        self.es_context.refresh()
 
         # Test the "has terms" operator.
         res = self.api.get(
@@ -482,7 +482,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             'product': 'EarthRacoon',
             'date_processed': self.now,
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         res = self.api.get(
             signature=['js', '~::'],
@@ -567,7 +567,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             'os_name': 'Linux',
             'date_processed': self.now,
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         res = self.api.get(_sort='product')
         assert res['total'] > 0
@@ -1689,7 +1689,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             'os_name': 'Windows NT',
             'date_processed': self.now,
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         # Test several facets
         kwargs = {
@@ -1727,7 +1727,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             'version': '5.0a1',
             'date_processed': self.now,
         })
-        self.refresh_index()
+        self.es_context.refresh()
 
         # Test several facets
         kwargs = {
