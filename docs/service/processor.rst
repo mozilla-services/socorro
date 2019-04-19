@@ -92,13 +92,13 @@ For example:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./scripts/process_crashes.sh ed35821d-3af5-4fe9-bfa3-dc4dc0181128
+   app@socorro:/app$ scripts/process_crashes.sh ed35821d-3af5-4fe9-bfa3-dc4dc0181128
 
 You can also use it with ``fetch_crashids``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crashids --num=1 | ./scripts/process_crashes.sh
+   app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | scripts/process_crashes.sh
 
 After running ``scripts/process_crashes.sh``, you will need to run the
 processor which will do the actual processing.
@@ -119,26 +119,26 @@ This pulls 100 crash ids from yesterday for Firefox product:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crashids
+   app@socorro:/app$ socorro-cmd fetch_crashids
 
 This pulls 5 crash ids from 2017-09-01:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crashids --num=5 --date=2017-09-01
+   app@socorro:/app$ socorro-cmd fetch_crashids --num=5 --date=2017-09-01
 
 This pulls 100 crash ids for criteria specified with a Super Search url that we
 copy and pasted:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crashids "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
+   app@socorro:/app$ socorro-cmd fetch_crashids "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
 
 You can get command help:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crashids --help
+   app@socorro:/app$ socorro-cmd fetch_crashids --help
 
 
 fetch_crash_data
@@ -153,14 +153,14 @@ Usage from host:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crash_data <outputdir> <crashid> [<crashid> ...]
+   app@socorro:/app$ socorro-cmd fetch_crash_data <outputdir> <crashid> [<crashid> ...]
 
 
 For example (assumes this crash exists):
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crash_data ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
+   app@socorro:/app$ socorro-cmd fetch_crash_data ./testdata 5c9cecba-75dc-435f-b9d0-289a50170818
 
 
 Use with ``fetch_crashids`` to fetch crash data from 100 crashes from yesterday
@@ -168,14 +168,14 @@ for Firefox:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crashids | ./socorro-cmd fetch_crash_data ./testdata
+   app@socorro:/app$ socorro-cmd fetch_crashids | socorro-cmd fetch_crash_data ./testdata
 
 
 You can get command help:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd fetch_crash_data --help
+   app@socorro:/app$ socorro-cmd fetch_crash_data --help
 
 
 scripts/socorro_aws_s3.sh
@@ -188,28 +188,28 @@ For example, this creates an S3 bucket named ``dev_bucket``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+   app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev_bucket/
 
 
 This copies the contents of ``./testdata`` into the ``dev_bucket``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./scripts/socorro_aws_s3.sh sync ./testdata s3://dev_bucket/
+   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./testdata s3://dev_bucket/
 
 
 This lists the contents of the bucket:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./scripts/socorro_aws_s3.sh ls s3://dev_bucket/
+   app@socorro:/app$ scripts/socorro_aws_s3.sh ls s3://dev_bucket/
 
 
 Since this is just a wrapper, you can get help:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./scripts/socorro_aws_s3.sh help
+   app@socorro:/app$ scripts/socorro_aws_s3.sh help
 
 
 pubsub
@@ -225,14 +225,14 @@ For example:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd pubsub publish ed35821d-3af5-4fe9-bfa3-dc4dc0181128
+   app@socorro:/app$ socorro-cmd pubsub publish ed35821d-3af5-4fe9-bfa3-dc4dc0181128
 
 
 For help:
 
 .. code-block:: shell
 
-   app@socorro:/app$ ./socorro-cmd pubsub publish --help
+   app@socorro:/app$ socorro-cmd pubsub publish --help
 
 
 .. Note::
@@ -252,20 +252,20 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   $ make shell
 
   # Generate a file of crashids--one per line
-  app@socorro:/app$ ./socorro-cmd fetch_crashids > crashids.txt
+  app@socorro:/app$ socorro-cmd fetch_crashids > crashids.txt
 
   # Pull raw crash data from -prod for each crash id and put it in the
   # "crashdata" directory on the host
-  app@socorro:/app$ cat crashids.txt | ./socorro-cmd fetch_crash_data ./crashdata
+  app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
 
   # Create a dev_bucket in localstack-s3
-  app@socorro:/app$ ./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+  app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev_bucket/
 
   # Copy that data from the host into the localstack-s3 container
   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
 
   # Add all the crash ids to the queue
-  app@socorro:/app$ cat crashids.txt | ./socorro-cmd pubsub publish
+  app@socorro:/app$ cat crashids.txt | socorro-cmd pubsub publish
 
   # Then exit the container
   app@socorro:/app$ exit
