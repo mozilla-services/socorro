@@ -99,6 +99,9 @@ class FallbackToPipeAction(argparse.Action):
         if option_strings:
             raise ValueError("This action does not work with named arguments")
         if nargs != '*':
+            # For nargs='*', the action is called with an empty list.
+            # For other values ('?', '+', 1), the action isn't called, so we
+            # can't fallback to reading from stdin.
             raise ValueError("nargs should be '*'")
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
