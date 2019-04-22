@@ -6,11 +6,12 @@ import argparse
 import json
 import os
 import os.path
-import sys
 
 from socorro.lib.datetimeutil import JsonDTEncoder
 from socorro.lib.requestslib import session_with_retries
-from socorro.scripts import FlagAction, WrappedTextHelpFormatter
+from socorro.scripts import (FallbackToPipeAction,
+                             FlagAction,
+                             WrappedTextHelpFormatter)
 
 
 DESCRIPTION = """
@@ -147,7 +148,10 @@ def main(argv=None):
     )
 
     parser.add_argument('outputdir', help='directory to place crash data in')
-    parser.add_argument('crashid', nargs='*', help='one or more crash ids to fetch data for')
+    parser.add_argument('crashid',
+                        help='one or more crash ids to fetch data for',
+                        nargs='*',
+                        action=FallbackToPipeAction)
 
     if argv is None:
         args = parser.parse_args()
@@ -167,10 +171,7 @@ def main(argv=None):
     else:
         print('No api token provided. Skipping dumps and personally identifiable information.')
 
-    # This will pull crash ids from the command line if specified, otherwise it'll pull from stdin
-    crashids_iterable = args.crashid or sys.stdin
-
-    for crash_id in crashids_iterable:
+    for crash_id in args.crashid:
         crash_id = crash_id.strip()
 
         print('Working on %s...' % crash_id)

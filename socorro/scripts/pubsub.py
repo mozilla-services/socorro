@@ -11,7 +11,7 @@ import sys
 from google.api_core.exceptions import AlreadyExists, NotFound
 from google.cloud import pubsub_v1
 
-from socorro.scripts import WrappedTextHelpFormatter
+from socorro.scripts import FallbackToPipeAction, WrappedTextHelpFormatter
 
 
 DESCRIPTION = 'Local dev environment Pub/Sub emulator manipulation script.'
@@ -147,23 +147,6 @@ def publish_crashid(config, queue, crashids):
         print('Published: %s' % crash_id)
 
 
-def list_from_arg_or_pipe(arg):
-    """Get values list from a positional argument or piped from stdin."""
-    if arg:
-        # The list was passed as an argument
-        items = arg
-    elif sys.stdin.isatty():
-        # There is no data being piped to the script, but instead it is an
-        # interactive TTY. Instead of blocking while waiting for input, return
-        # an empty list.
-        items = []
-    else:
-        # Data is being piped to this script. Remove trailing newlines from
-        # reading sys.stdin as line iterator.
-        items = [item.rstrip() for item in sys.stdin]
-    return items
-
-
 def main(argv=None):
     if not os.environ.get('PUBSUB_EMULATOR_HOST', ''):
         print('WARNING: You are running against the real GCP and not the emulator.')
@@ -182,7 +165,8 @@ def main(argv=None):
     subparsers.add_parser('status', help='Show status of everything.')
     publish_parser = subparsers.add_parser('publish', help='Publish a crash id to a topic.')
     publish_parser.add_argument('--queue', default='standard', help='Queue to publish to.')
-    publish_parser.add_argument('crashid', nargs='*', help='Crash id(s) to publish.')
+    publish_parser.add_argument('crashid', help='Crash id(s) to publish.',
+                                nargs='*', action=FallbackToPipeAction)
 
     args, remaining = parser.parse_known_args()
 
@@ -200,8 +184,4 @@ def main(argv=None):
     elif args.cmd == 'status':
         return status(config, args)
     elif args.cmd == 'publish':
-        crashids = list_from_arg_or_pipe(args.crashid)
-        if crashids:
-            return publish_crashid(config, args.queue, crashids)
-        else:
-            publish_parser.print_help()
+        return publish_crashid(config, args.queue, args.crashid)
