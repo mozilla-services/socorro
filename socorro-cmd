@@ -15,6 +15,7 @@ Run "socorro-cmd --help" for help.
 """
 
 import argparse
+import importlib
 import inspect
 import os
 import sys
@@ -63,8 +64,7 @@ def django_cmd(cmd):
 def import_path(python_path):
     """Import a name from a module."""
     module_path, name = python_path.rsplit('.', 1)
-    __import__(module_path)
-    module = sys.modules[module_path]
+    module = importlib.import_module(module_path)
     return getattr(module, name)
 
 
