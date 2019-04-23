@@ -156,7 +156,7 @@ class ProcessorApp(FetchTransformSaveApp):
         reference_value_from='secrets.sentry',
     )
 
-    def _capture_error(self, crash_id, exc_info):
+    def _capture_error(self, exc_info, crash_id=None):
         """Capture an error in sentry if able.
 
         :arg crash_id: a crash id
@@ -168,12 +168,29 @@ class ProcessorApp(FetchTransformSaveApp):
         else:
             sentry_dsn = None
 
+        extra = {}
+        if crash_id:
+            extra['crash_id'] = crash_id
+
         raven_client.capture_error(
             sentry_dsn,
             self.logger,
             exc_info,
-            extra={'crash_id': crash_id}
+            extra=extra
         )
+
+    def _basic_iterator(self):
+        try:
+            for crashid in super()._basic_iterator():
+                yield crashid
+        except Exception:
+            self._capture_error(sys.exc_info())
+            self.logger.warning('error in crashid iterator', exc_info=True)
+
+            # NOTE(willkg): Queue code should not be throwing unhandled
+            # exceptions. If we hit one, we should make sure it gets to sentry
+            # and then let the caller deal with it
+            raise
 
     def _transform(self, crash_id):
         """Transform a raw crash into a process crash.
@@ -194,7 +211,7 @@ class ProcessorApp(FetchTransformSaveApp):
             return
         except Exception as x:
             # We don't know what this error is, so we should capture it
-            self._capture_error(crash_id, sys.exc_info())
+            self._capture_error(sys.exc_info(), crash_id)
             self.logger.warning('error loading crash %s', crash_id, exc_info=True)
             self.processor.reject_raw_crash(crash_id, 'error in loading: %s' % x)
             return
@@ -235,7 +252,7 @@ class ProcessorApp(FetchTransformSaveApp):
                 exc_info = [(exc_type, exc_value, exc_tb)]
 
             for exc_info_item in exc_info:
-                self._capture_error(crash_id, exc_info_item)
+                self._capture_error(exc_info_item, crash_id)
                 self.logger.warning('error in processing or saving crash %s', crash_id)
 
             # Re-raise the original exception with the correct traceback
