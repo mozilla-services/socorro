@@ -8,6 +8,7 @@ import os
 
 from configman import Namespace, RequiredConfig
 from google.cloud import pubsub_v1
+from google.api_core.exceptions import DeadlineExceeded
 
 
 # Maximum number of messages to pull from a Pub/Sub topic in a single pull
@@ -128,11 +129,17 @@ class PubSubCrashQueue(RequiredConfig):
         while True:
             msgs = 0
             for sub_path in sub_paths:
-                response = self.subscriber.pull(
-                    sub_path,
-                    max_messages=PUBSUB_MAX_MESSAGES,
-                    return_immediately=True
-                )
+                try:
+                    response = self.subscriber.pull(
+                        sub_path,
+                        max_messages=PUBSUB_MAX_MESSAGES,
+                        return_immediately=True
+                    )
+                except DeadlineExceeded:
+                    # If we exceeded the timeout, treat it as if there was
+                    # nothing to receive and move on.
+                    continue
+
                 if response.received_messages:
                     msgs += 1
                     for msg in response.received_messages:
