@@ -277,10 +277,7 @@ class SuperSearchFields(SuperSearchFieldsData):
         es_connection = self.get_connection()
 
         try:
-            self.context.create_index(
-                temp_index,
-                self.context.get_socorro_index_settings(mapping),
-            )
+            self.context.create_index(temp_index, mappings=mapping)
 
             now = datetimeutil.utc_now()
             last_week = now - datetime.timedelta(days=7)

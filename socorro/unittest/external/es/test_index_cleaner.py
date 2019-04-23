@@ -36,8 +36,8 @@ class TestIntegrationIndexCleaner(ElasticsearchTestCase):
         for index in self.indices:
             try:
                 self.index_client.delete(index)
-            # "Missing" indices have already been deleted, no need to worry.
             except elasticsearch.exceptions.NotFoundError:
+                # "Missing" indices have already been deleted, no need to worry.
                 pass
 
     def get_index_for_date(self, date):

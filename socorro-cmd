@@ -91,9 +91,6 @@ COMMANDS = [
     ),
     Group(
         'Local development environment maintenance', {
-            'create_recent_indices': import_path(
-                'socorro.external.es.create_recent_indices_app.CreateRecentESIndicesApp'
-            ),
             'clear_indices': import_path(
                 'socorro.external.es.clear_indices_app.ClearESIndicesApp'
             ),
@@ -101,6 +98,7 @@ COMMANDS = [
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
             'db': import_path('socorro.scripts.db.main'),
+            'es': import_path('socorro.scripts.es.main'),
             'pubsub': import_path('socorro.scripts.pubsub.main'),
             'depcheck': django_cmd('depcheck'),
         }

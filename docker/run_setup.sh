@@ -13,14 +13,16 @@ set -e
 # types, indexes, and keys; also bulk-loads static data for some lookup tables
 /app/docker/run_setup_postgres.sh
 
-# Drop and re-create local S3 buckets
+# Delete and create local S3 buckets
 /app/docker/run_recreate_s3_buckets.sh
 
-# Delete all Elasticsearch indices
+# Delete and create Elasticsearch indices
 /app/socorro-cmd clear_indices
+/app/socorro-cmd es create
 
-# Delete and re-create Pub/Sub topics and subscriptions
-/app/docker/run_setup_pubsub.sh
+# Delete and create Pub/Sub topics and subscriptions
+/app/socorro-cmd pubsub delete
+/app/socorro-cmd pubsub create
 
 # Initialize the crontabber bookkeeping for all configured jobs to success
 /app/socorro-cmd crontabber --mark-success=all

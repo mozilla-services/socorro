@@ -3,16 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import contextlib
-import logging
 
 from configman import Namespace, RequiredConfig
 from configman.converters import list_converter
 import elasticsearch
 
 from socorro.external.es.super_search_fields import SuperSearchFields
-
-
-logger = logging.getLogger(__name__)
 
 
 # Elasticsearch indices configuration.
@@ -141,37 +137,29 @@ class ConnectionContext(RequiredConfig):
             'mappings': mappings,
         }
 
-    def create_socorro_index(self, index_name, mappings=None, log_result=False):
+    def create_index(self, index_name, mappings=None):
         """Create an index that will receive crash reports.
 
-        Note: This function can get called in two contexts: when the processor
-        is saving crash reports and also in the local dev environment scripts.
-        The former wants to ignore index-existing errors quietly but the latter
-        wants to log the result. Hence the fickle nature of this function.
+        :arg index_name: the name of the index to create
+        :arg mappings: dict of doctype->ES mapping
+
+        :returns: True if the index was created, False if it already
+            existed
 
         """
         if mappings is None:
             mappings = SuperSearchFields(context=self).get_mapping()
 
         es_settings = self.get_socorro_index_settings(mappings)
-        self.create_index(index_name, es_settings, log_result)
 
-    def create_index(self, index_name, es_settings, log_result=False):
-        """Create an index in elasticsearch, with specified settings.
-
-        If the index already exists or is created concurrently during the
-        execution of this function, nothing will happen.
-
-        """
         try:
             client = self.indices_client()
             client.create(index=index_name, body=es_settings,)
-            if log_result:
-                logger.info('Created new elasticsearch index: %s', index_name)
+            return True
+
         except elasticsearch.exceptions.RequestError as e:
             # If this index already exists, swallow the error.
             # NOTE! This is NOT how the error looks like in ES 2.x
             if 'IndexAlreadyExistsException' not in str(e):
                 raise
-            if log_result:
-                logger.info('Index exists: %s', index_name)
+            return False

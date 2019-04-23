@@ -45,67 +45,66 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         api = SuperSearchFieldsModel(config=config)
 
         fake_mappings = [
+            # First mapping
             {
-                'mappings': {
-                    config.elasticsearch_doctype: {
-                        'properties': {
-                            # Add a bunch of unknown fields.
-                            'field_z': {
-                                'type': 'string'
-                            },
-                            'namespace1': {
-                                'type': 'object',
-                                'properties': {
-                                    'field_a': {
-                                        'type': 'string'
-                                    },
-                                    'field_b': {
-                                        'type': 'long'
-                                    }
+                config.elasticsearch_doctype: {
+                    'properties': {
+                        # Add a bunch of unknown fields.
+                        'field_z': {
+                            'type': 'string'
+                        },
+                        'namespace1': {
+                            'type': 'object',
+                            'properties': {
+                                'field_a': {
+                                    'type': 'string'
+                                },
+                                'field_b': {
+                                    'type': 'long'
                                 }
-                            },
-                            'namespace2': {
-                                'type': 'object',
-                                'properties': {
-                                    'subspace1': {
-                                        'type': 'object',
-                                        'properties': {
-                                            'field_b': {
-                                                'type': 'long'
-                                            }
+                            }
+                        },
+                        'namespace2': {
+                            'type': 'object',
+                            'properties': {
+                                'subspace1': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'field_b': {
+                                            'type': 'long'
                                         }
                                     }
                                 }
-                            },
-                            # Add a few known fields that should not appear.
-                            'processed_crash': {
-                                'type': 'object',
-                                'properties': {
-                                    'signature': {
-                                        'type': 'string'
-                                    },
-                                    'product': {
-                                        'type': 'string'
-                                    },
-                                }
+                            }
+                        },
+                        # Add a few known fields that should not appear.
+                        'processed_crash': {
+                            'type': 'object',
+                            'properties': {
+                                'signature': {
+                                    'type': 'string'
+                                },
+                                'product': {
+                                    'type': 'string'
+                                },
                             }
                         }
                     }
                 }
             },
+
+            # Second mapping to compare to the first
             {
-                'mappings': {
-                    api.context.get_doctype(): {
-                        'properties': {
-                            'namespace1': {
-                                'type': 'object',
-                                'properties': {
-                                    'subspace1': {
-                                        'type': 'object',
-                                        'properties': {
-                                            'field_d': {
-                                                'type': 'long'
-                                            }
+                config.elasticsearch_doctype: {
+                    'properties': {
+                        'namespace1': {
+                            'type': 'object',
+                            'properties': {
+                                'subspace1': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'field_d': {
+                                            'type': 'long'
                                         }
                                     }
                                 }
@@ -127,7 +126,7 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
                 index = date.strftime(api.context.get_index_template())
                 mapping = fake_mappings[i % len(fake_mappings)]
 
-                api.context.create_index(index, mapping)
+                api.context.create_index(index, mappings=mapping)
                 indices.append(index)
 
             api = SuperSearchFieldsModel(config=config)
