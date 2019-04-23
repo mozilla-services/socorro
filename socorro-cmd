@@ -94,7 +94,9 @@ COMMANDS = [
             'create_recent_indices': import_path(
                 'socorro.external.es.create_recent_indices_app.CreateRecentESIndicesApp'
             ),
-            'clear_indices': 'socorro.external.es.clear_indices_app.ClearESIndicesApp',
+            'clear_indices': import_path(
+                'socorro.external.es.clear_indices_app.ClearESIndicesApp'
+            ),
             'upload_telemetry_schema': import_path(
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
