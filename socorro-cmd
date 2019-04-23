@@ -15,7 +15,9 @@ Run "socorro-cmd --help" for help.
 """
 
 import argparse
+import importlib
 import inspect
+import os
 import sys
 import textwrap
 import types
@@ -49,6 +51,23 @@ def showcommands_cmd(argv):
         print('')
 
 
+def django_cmd(cmd):
+    """Run a Django command."""
+    def _django_cmd(argv):
+        argv = ['socorro-cmd', cmd] + argv
+        sys.path.insert(0, 'webapp-django')
+        import manage
+        manage.main(argv)
+    return _django_cmd
+
+
+def import_path(python_path):
+    """Import a name from a module."""
+    module_path, name = python_path.rsplit('.', 1)
+    module = importlib.import_module(module_path)
+    return getattr(module, name)
+
+
 class Group:
     """Defines a grouping of commands"""
     def __init__(self, name, cmd_to_run_map):
@@ -65,58 +84,49 @@ class Group:
 COMMANDS = [
     Group(
         'Crash processing utilities', {
-            'add_crashid_to_queue': 'socorro.scripts.add_crashid_to_queue.main',
-            'fetch_crashids': 'socorro.scripts.fetch_crashids.main',
-            'fetch_crash_data': 'socorro.scripts.fetch_crash_data.main',
-            'reprocess': 'socorro.scripts.reprocess.main',
+            'fetch_crashids': import_path('socorro.scripts.fetch_crashids.main'),
+            'fetch_crash_data': import_path('socorro.scripts.fetch_crash_data.main'),
+            'reprocess': import_path('socorro.scripts.reprocess.main'),
         }
     ),
     Group(
         'Local development environment maintenance', {
-            'create_recent_indices': (
+            'create_recent_indices': import_path(
                 'socorro.external.es.create_recent_indices_app.CreateRecentESIndicesApp'
             ),
-            'clear_indices': 'socorro.external.es.clear_indices_app.ClearESIndicesApp',
-            'upload_telemetry_schema': (
+            'clear_indices': import_path(
+                'socorro.external.es.clear_indices_app.ClearESIndicesApp'
+            ),
+            'upload_telemetry_schema': import_path(
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
-            'db': 'socorro.scripts.db.main',
-            'pubsub': 'socorro.scripts.pubsub.main',
+            'db': import_path('socorro.scripts.db.main'),
+            'pubsub': import_path('socorro.scripts.pubsub.main'),
+            'depcheck': django_cmd('depcheck'),
         }
     ),
     Group(
-        'Services (run these in their respective containers)', {
-            'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
-            'processor': 'socorro.processor.processor_app.ProcessorApp',
+        'Services', {
+            'crontabber': import_path('socorro.cron.crontabber_app.CronTabberApp'),
+            'processor': import_path('socorro.processor.processor_app.ProcessorApp'),
         }
     ),
     Group(
         'Miscellaneous', {
             'showcommands': showcommands_cmd,
-            'signature': 'socorro.signature.cmd_signature.main',
-            'signature-doc': 'socorro.signature.cmd_doc.main',
+            'signature': import_path('socorro.signature.cmd_signature.main'),
+            'signature-doc': import_path('socorro.signature.cmd_doc.main'),
         }
     )
 ]
 
 
-def import_and_run(runner):
-    """Takes a runner, converts it to a callable, and runs it
+def import_and_run(app):
+    """Takes a runner and runs it
 
-    A runner can either be a Python-dotted string which will get imported and
-    run, or a callable which will get run directly.
+    Runners can be either a function or a Socorro App.
 
     """
-    if isinstance(runner, six.string_types):
-        # Import the class from the module
-        module_path, cls_name = runner.rsplit('.', 1)
-        __import__(module_path)
-        module = sys.modules[module_path]
-        app = getattr(module, cls_name)
-
-    else:
-        app = runner
-
     # If the app is a main function, we run it as is
     if isinstance(app, types.FunctionType):
         sys.exit(app(sys.argv[1:]))
