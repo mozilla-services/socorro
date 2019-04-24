@@ -11,6 +11,7 @@ import argparse
 import datetime
 
 from configman import ConfigurationManager
+from configman.environment import environment
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.connection_context import ConnectionContext
@@ -23,7 +24,13 @@ EPILOG = 'Requires Elasticsearch configuration to be set in environment.'
 
 
 def get_conn():
-    cm = ConfigurationManager(ConnectionContext.get_required_config())
+    # Create a configuration manager that will only check the environment for
+    # configuration and not command line parameters
+
+    cm = ConfigurationManager(
+        ConnectionContext.get_required_config(),
+        values_source_list=[environment]
+    )
     config = cm.get_config()
     return ConnectionContext(config)
 
@@ -53,15 +60,25 @@ def cmd_create(weeks_past, weeks_future):
 def cmd_list():
     """List indices."""
     conn = get_conn()
-    indices_client = conn.indices_client()
-    status = indices_client.status()
-    indices = status['indices'].keys()
+    indices = conn.get_indices()
     if indices:
         print('Indices:')
         for index in indices:
             print('   %s' % index)
     else:
         print('No indices.')
+
+
+def cmd_delete(indices):
+    """Delete indices."""
+    conn = get_conn()
+    indices = conn.get_indices()
+    if indices:
+        for index_name in conn.get_indices():
+            conn.delete_index(index_name)
+            print('Deleted index: %s' % index_name)
+    else:
+        print('No indices to delete.')
 
 
 def main(argv=None):
@@ -85,6 +102,12 @@ def main(argv=None):
 
     subparsers.add_parser('list', help='list indices')
 
+    delete_parser = subparsers.add_parser('delete', help='delete indices')
+    delete_parser.add_argument(
+        'index', nargs='*',
+        help='Indices to delete'
+    )
+
     args = parser.parse_args()
 
     if args.cmd == 'create':
@@ -92,3 +115,6 @@ def main(argv=None):
 
     if args.cmd == 'list':
         return cmd_list()
+
+    if args.cmd == 'delete':
+        return cmd_delete(args.index)
