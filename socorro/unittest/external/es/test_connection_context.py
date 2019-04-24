@@ -31,6 +31,7 @@ class TestConnectionContext:
         template = es_conn.get_index_template()
         now = utc_now()
         index_name = now.strftime(template)
+
         es_conn.create_index(index_name)
         es_conn.health_check()
         assert index_name in list(es_conn.get_indices())
@@ -45,10 +46,10 @@ class TestConnectionContext:
         current_index_name = now.strftime(template)
         before_retention_policy = now - datetime.timedelta(weeks=es_conn.config.retention_policy)
         old_index_name = before_retention_policy.strftime(template)
+
         es_conn.create_index(current_index_name)
         es_conn.create_index(old_index_name)
         es_conn.health_check()
-
         assert list(es_conn.get_indices()) == [old_index_name, current_index_name]
 
         # Now delete all expired indices and make sure current is still there
