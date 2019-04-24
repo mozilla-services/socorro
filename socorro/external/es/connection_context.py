@@ -3,12 +3,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import contextlib
+import datetime
+import re
 
 from configman import Namespace, RequiredConfig
 from configman.converters import list_converter
 import elasticsearch
 
 from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.lib.datetimeutil import utc_now
 
 
 # Elasticsearch indices configuration.
@@ -56,9 +59,22 @@ class ConnectionContext(RequiredConfig):
     required_config.add_option(
         'elasticsearch_index',
         default='socorro%Y%W',
-        doc='an index format to pull crashes from elasticsearch '
-            "(use datetime's strftime format to have "
-            'daily, weekly or monthly indexes)',
+        doc=(
+            'template for generating index names--use datetime\'s strftime '
+            'format to have daily, weekly or monthly indexes'
+        ),
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'elasticsearch_index_regex',
+        doc='regex that matches indexes--this should match elasticsearch_index',
+        default='^socorro[0-9]{6}$',
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'retention_policy',
+        default=26,
+        doc='number of weeks to retain an index',
         reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
@@ -154,7 +170,7 @@ class ConnectionContext(RequiredConfig):
 
         try:
             client = self.indices_client()
-            client.create(index=index_name, body=es_settings,)
+            client.create(index=index_name, body=es_settings)
             return True
 
         except elasticsearch.exceptions.RequestError as e:
@@ -163,3 +179,52 @@ class ConnectionContext(RequiredConfig):
             if 'IndexAlreadyExistsException' not in str(e):
                 raise
             return False
+
+    def get_indices(self):
+        """Return list of existing crash report indices."""
+        indices_client = self.indices_client()
+        index_regex = re.compile(self.config.elasticsearch_index_regex, re.I)
+
+        status = indices_client.status()
+        indices = [
+            index for index in status['indices'].keys()
+            if index_regex.match(index)
+        ]
+        indices.sort()
+        return indices
+
+    def delete_index(self, index_name):
+        """Delete an index."""
+        self.indices_client().delete(index_name)
+
+    def delete_expired_indices(self):
+        """Delete indices that exceed our retention policy.
+
+        :returns: list of index names that were deleted
+
+        """
+        policy = datetime.timedelta(weeks=self.config.retention_policy)
+        cutoff = (utc_now() - policy).replace(tzinfo=None)
+
+        was_deleted = []
+        for index_name in self.get_indices():
+            # strptime ignores week numbers if a day isn't specified, so we append
+            # '-1' and '-%w' to specify Monday as the day.
+            index_date = datetime.datetime.strptime(
+                index_name + '-1',
+                self.config.elasticsearch_index + '-%w'
+            )
+            if index_date >= cutoff:
+                continue
+
+            self.delete_index(index_name)
+            was_deleted.append(index_name)
+
+        return was_deleted
+
+    def refresh(self, index_name=None):
+        self.indices_client().refresh(index=index_name or '_all')
+
+    def health_check(self):
+        with self() as conn:
+            conn.cluster.health(wait_for_status='yellow', request_timeout=5)

@@ -17,7 +17,7 @@ set -e
 /app/docker/run_recreate_s3_buckets.sh
 
 # Delete and create Elasticsearch indices
-/app/socorro-cmd clear_indices
+/app/socorro-cmd es delete
 /app/socorro-cmd es create
 
 # Delete and create Pub/Sub topics and subscriptions

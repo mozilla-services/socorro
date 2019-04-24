@@ -91,9 +91,6 @@ COMMANDS = [
     ),
     Group(
         'Local development environment maintenance', {
-            'clear_indices': import_path(
-                'socorro.external.es.clear_indices_app.ClearESIndicesApp'
-            ),
             'upload_telemetry_schema': import_path(
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
