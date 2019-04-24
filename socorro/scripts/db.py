@@ -12,7 +12,7 @@ from six.moves.urllib.parse import urlparse
 from socorro.scripts import WrappedTextHelpFormatter
 
 
-DESCRIPTION = 'Manages the database set by DSN'
+DESCRIPTION = 'Create and delete the database set by DSN'
 
 EPILOG = 'Required DSN to be set in the environment.'
 

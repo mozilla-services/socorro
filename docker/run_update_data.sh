@@ -15,6 +15,3 @@ set -eo pipefail
 
 # Insert data that's no longer on archive.mozilla.org
 python ./scripts/insert_missing_versions.py
-
-# Create ES indexes for the next few weeks
-./socorro-cmd create_recent_indices

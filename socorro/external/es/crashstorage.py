@@ -309,7 +309,7 @@ class ESCrashStorage(CrashStorageBase):
         crash_id = crash_document['crash_id']
 
         # Attempt to create the index; it's OK if it already exists.
-        self.es_context.create_socorro_index(index_name)
+        self.es_context.create_index(index_name)
 
         # Submit the crash for indexing.
         # Don't retry more than 5 times. That is to avoid infinite loops in

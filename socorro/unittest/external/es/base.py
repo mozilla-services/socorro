@@ -111,7 +111,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         with self.es_context() as conn:
             self.connection = conn
 
-        self.es_context.create_socorro_index(self.es_context.get_index_template())
+        self.es_context.create_index(self.es_context.get_index_template())
 
     def teardown_method(self, method):
         # Clear the test indices.

@@ -14,10 +14,5 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 class TestIntegrationIndexCreator(ElasticsearchTestCase):
     def test_create_index(self):
         context = self.es_context
-        context.create_index(context.get_index_template(), es_settings={'foo': 'bar'})
-        assert self.index_client.exists(context.get_index_template())
-
-    def test_create_socorro_index(self):
-        context = self.es_context
-        context.create_socorro_index(context.get_index_template())
+        context.create_index(context.get_index_template())
         assert self.index_client.exists(context.get_index_template())
