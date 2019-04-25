@@ -36,7 +36,7 @@ class TestIntegrationQuery(ElasticsearchTestCase):
     def test_get(self):
         self.index_crash({'product': 'WaterWolf'})
         self.index_crash({'product': 'EarthRaccoon'})
-        self.refresh_index()
+        self.es_context.refresh()
 
         query = {
             'query': {

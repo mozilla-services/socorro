@@ -1082,9 +1082,6 @@ class CronTabberApp(App, RequiredConfig):
 
 # NOTE(willkg): Times are in UTC.
 DEFAULT_JOBS = ','.join([
-    # Elasticsearch maintenance
-    'socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|7d|06:00',
-
     # Product/version maintenance
     'socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
 

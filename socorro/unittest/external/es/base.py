@@ -190,7 +190,4 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             actions.append(action)
 
         bulk(client=self.connection, actions=actions)
-        self.refresh_index()
-
-    def refresh_index(self, es_index=None):
-        self.index_client.refresh(index=es_index or self.es_context.get_index_template())
+        self.es_context.refresh()

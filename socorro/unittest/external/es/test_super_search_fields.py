@@ -217,7 +217,7 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
             'date_processed': datetimeutil.utc_now(),
             'product': 'WaterWolf',
         })
-        self.refresh_index()
+        self.es_context.refresh()
         mapping = self.api.get_mapping({
             'name': 'product',
             'storage_mapping': {

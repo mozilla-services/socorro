@@ -6,13 +6,13 @@
 Remember! Every new model you introduce here automatically gets exposed
 in the public API in the `api` app.
 """
+
 import datetime
 import functools
 import hashlib
 import logging
 import time
 
-from configman import configuration, Namespace
 import six
 
 from django.conf import settings
@@ -22,13 +22,13 @@ from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.utils.encoding import iri_to_uri
 
-from socorro.app import socorro_app
-import socorro.external.boto.crash_data
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.external.es.connection_context import ConnectionContext as ESConnectionContext
-from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 from socorro.lib import BadArgumentError
 from socorro.lib.requestslib import session_with_retries
+from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
+from socorro.external.pubsub.crashqueue import PubSubCrashQueue
+
+from crashstats.crashstats.configman_utils import config_from_configman
 
 
 logger = logging.getLogger('crashstats.models')
@@ -242,45 +242,7 @@ class BugzillaRestHTTPUnexpectedError(Exception):
     """Happens Bugzilla's REST API doesn't give us a HTTP error we expect"""
 
 
-def config_from_configman():
-    definition_source = Namespace()
-    definition_source.namespace('logging')
-    definition_source.logging = socorro_app.App.required_config.logging
-
-    definition_source.namespace('metricscfg')
-    definition_source.metricscfg = socorro_app.App.required_config.metricscfg
-
-    definition_source.namespace('elasticsearch')
-    definition_source.elasticsearch.add_option(
-        'elasticsearch_class',
-        default=ESConnectionContext,
-    )
-    definition_source.namespace('queue')
-    definition_source.add_option(
-        'crashqueue_class',
-        default=PubSubCrashQueue
-    )
-    definition_source.namespace('crashdata')
-    definition_source.crashdata.add_option(
-        'crash_data_class',
-        default=socorro.external.boto.crash_data.SimplifiedCrashData,
-    )
-    definition_source.namespace('telemetrydata')
-    definition_source.telemetrydata.add_option(
-        'telemetry_data_class',
-        default=socorro.external.boto.crash_data.TelemetryCrashData,
-    )
-
-    return configuration(
-        definition_source=definition_source,
-        values_source_list=[
-            settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
-        ]
-    )
-
-
 def get_api_whitelist(*args, **kwargs):
-
     def get_from_es(namespace, baseline=None):
         # @namespace is something like 'raw_crash' or 'processed_crash'
 
@@ -640,7 +602,7 @@ class SocorroMiddleware(SocorroCommon):
 class TelemetryCrash(SocorroMiddleware):
     """Model for data we store in the S3 bucket to send to Telemetry"""
 
-    implementation = socorro.external.boto.crash_data.TelemetryCrashData
+    implementation = TelemetryCrashData
     implementation_config_namespace = 'telemetrydata'
 
     required_params = (
@@ -652,7 +614,7 @@ class TelemetryCrash(SocorroMiddleware):
 
 
 class ProcessedCrash(SocorroMiddleware):
-    implementation = socorro.external.boto.crash_data.SimplifiedCrashData
+    implementation = SimplifiedCrashData
     implementation_config_namespace = 'crashdata'
 
     required_params = (
@@ -769,7 +731,7 @@ class RawCrash(SocorroMiddleware):
     token that carries the "View Raw Dumps" permission.
     """
 
-    implementation = socorro.external.boto.crash_data.SimplifiedCrashData
+    implementation = SimplifiedCrashData
     implementation_config_namespace = 'crashdata'
 
     required_params = (
