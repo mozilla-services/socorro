@@ -588,10 +588,10 @@ OVERVIEW_VERSION_URLS = config('OVERVIEW_VERSION_URLS', '')
 
 # Raven sends errors to Sentry.
 # The release is optional.
-RAVEN_DSN = config('RAVEN_DSN', '')
-if RAVEN_DSN:
+SENTRY_DSN = config('SENTRY_DSN', '')
+if SENTRY_DSN:
     RAVEN_CONFIG = {
-        'dsn': RAVEN_DSN,
+        'dsn': SENTRY_DSN,
         'release': SOCORRO_REVISION,
         # Defines keys to be sanitized by SanitizeKeysProcessor
         'sanitize_keys': [

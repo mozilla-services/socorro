@@ -277,7 +277,7 @@ class TestDepCheckCommand:
     def test_run_sentry(self):
         """Alert Sentry if there's a DSN configured."""
         dsn = 'https://foo:bar@example.com/123456'
-        with override_settings(RAVEN_DSN=dsn):
+        with override_settings(SENTRY_DSN=dsn):
             cmd = Command()
             vuln = Vulnerability(
                 type='python',

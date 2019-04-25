@@ -57,7 +57,7 @@ class Command(BaseCommand):
         vulnerabilities = self.get_python_vulnerabilities() + self.get_javascript_vulnerabilities()
         if vulnerabilities:
             try:
-                dsn = settings.RAVEN_DSN
+                dsn = settings.SENTRY_DSN
             except KeyError:
                 dsn = None
 

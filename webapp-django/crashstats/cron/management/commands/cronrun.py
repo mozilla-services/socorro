@@ -70,7 +70,7 @@ class Command(BaseCommand):
             else:
                 return self.cmd_run_all()
         except Exception:
-            capture_error(settings.RAVEN_DSN)
+            capture_error(settings.SENTRY_DSN)
             raise
 
     @contextlib.contextmanager
@@ -169,7 +169,7 @@ class Command(BaseCommand):
                 )
 
                 # Send error to sentry, log it, and remember the failure
-                capture_error(settings.RAVEN_DSN)
+                capture_error(settings.SENTRY_DSN)
                 logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
                 self._remember_failure(
                     cmd,
