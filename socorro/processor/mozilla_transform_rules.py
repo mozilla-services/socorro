@@ -13,7 +13,7 @@ import six
 from six.moves.urllib.parse import unquote_plus
 
 from socorro.lib import javautil
-from socorro.lib import raven_client
+from socorro.lib import sentry_client
 from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import (
@@ -796,7 +796,7 @@ class SignatureGeneratorRule(Rule):
     def _error_handler(self, crash_data, exc_info, extra):
         """Captures errors from signature generation"""
         extra['uuid'] = crash_data.get('uuid', None)
-        raven_client.capture_error(
+        sentry_client.capture_error(
             self.sentry_dsn, self.logger, exc_info=exc_info, extra=extra
         )
 

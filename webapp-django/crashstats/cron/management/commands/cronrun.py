@@ -33,7 +33,7 @@ from crashstats.cron.utils import (
     get_run_times,
     time_to_run,
 )
-from socorro.lib.raven_client import capture_error
+from socorro.lib.sentry_client import capture_error
 
 
 logger = logging.getLogger('crashstats.cron')

@@ -15,7 +15,7 @@ from subprocess import PIPE, Popen
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from socorro.lib import raven_client
+from socorro.lib import sentry_client
 
 
 VulnerabilityBase = namedtuple('Vulnerability', (
@@ -80,7 +80,7 @@ class Command(BaseCommand):
                 raise CommandError('Option "%s" does not point to a file (%s)' % (option, value))
 
     def alert_sentry(self, dsn, vulnerabilities):
-        client = raven_client.get_client(dsn)
+        client = sentry_client.get_client(dsn)
         client.context.activate()
         client.context.merge({
             'extra': {

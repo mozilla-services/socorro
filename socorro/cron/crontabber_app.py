@@ -19,7 +19,7 @@ import six
 
 from socorro.app.socorro_app import App
 from socorro.cron.base import convert_frequency
-from socorro.lib import raven_client
+from socorro.lib import sentry_client
 from socorro.lib.datetimeutil import utc_now, timesince
 from socorro.lib.dbutil import (
     SQLDidNotReturnSingleRow,
@@ -601,7 +601,7 @@ class CronTabberApp(App, RequiredConfig):
     required_config.namespace('sentry')
     required_config.sentry.add_option(
         'dsn',
-        doc='DSN for Sentry via raven',
+        doc='DSN for Sentry',
         default='',
         reference_value_from='secrets.sentry',
         secret=True
@@ -642,7 +642,7 @@ class CronTabberApp(App, RequiredConfig):
     required_config.add_option(
         name='sentrytest',
         default=False,
-        doc='Send a sample raven exception',
+        doc='Send a sample sentry exception',
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
@@ -875,7 +875,7 @@ class CronTabberApp(App, RequiredConfig):
             exc_type, exc_value, exc_tb = sys.exc_info()
 
             if self.config.sentry and self.config.sentry.dsn:
-                client = raven_client.get_client(self.config.sentry.dsn)
+                client = sentry_client.get_client(self.config.sentry.dsn)
                 identifier = client.get_ident(client.captureException())
                 self.logger.info('Error captured in Sentry. Reference: %s' % identifier)
 
@@ -1070,11 +1070,11 @@ class CronTabberApp(App, RequiredConfig):
         self.job_state_database[app_name] = info
 
     def sentrytest(self):
-        """return true if we managed to send a sample raven exception"""
+        """return true if we managed to send a sample sentry exception"""
         if not (self.config.sentry and self.config.sentry.dsn):
             raise SentryConfigurationError('sentry dsn not configured')
 
-        client = raven_client.get_client(self.config.sentry.dsn)
+        client = sentry_client.get_client(self.config.sentry.dsn)
         identifier = client.captureMessage('Sentry test sent from crontabber')
         self.logger.info('Sentry successful identifier: %s', identifier)
         return True

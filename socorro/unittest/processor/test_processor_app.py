@@ -147,7 +147,7 @@ class TestProcessorApp(object):
         )
         assert finished_func.call_count == 1
 
-    def test_transform_polystorage_error_without_raven_configured(self, caplogpp):
+    def test_transform_polystorage_error_without_sentry_configured(self, caplogpp):
         caplogpp.set_level('DEBUG')
 
         config = self.get_standard_config()
@@ -164,23 +164,23 @@ class TestProcessorApp(object):
         pa.destination.save_raw_and_processed.side_effect = mocked_save_raw_and_processed
 
         # The important thing is that this is the exception that
-        # is raised and not something from the raven error handling.
+        # is raised and not something from the sentry error handling.
         with pytest.raises(PolyStorageError):
             pa.transform('mycrashid')
 
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Sentry DSN is not configured and an exception happened' in logging_msgs
 
-    @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_polystorage_error_with_raven_configured_successful(
-        self, mock_raven, caplogpp
+    @mock.patch('socorro.lib.sentry_client.get_client')
+    def test_transform_polystorage_error_with_sentry_configured_successful(
+        self, mock_get_client, caplogpp
     ):
         caplogpp.set_level('DEBUG')
 
         # Mock everything
-        raven_mock_client = mock.MagicMock()
-        raven_mock_client.captureException.return_value = 'someidentifier'
-        mock_raven.Client.return_value = raven_mock_client
+        mock_client = mock.MagicMock()
+        mock_client.captureException.return_value = 'someidentifier'
+        mock_get_client.return_value = mock_client
 
         # Set up a processor and mock out .save_raw_and_processed() with multiple
         # errors
@@ -196,12 +196,12 @@ class TestProcessorApp(object):
         pa.destination.save_raw_and_processed.side_effect = expected_exception
 
         # The important thing is that this is the exception that is raised and
-        # not something from the raven error handling
+        # not something from the sentry error handling
         with pytest.raises(PolyStorageError):
             pa.transform('mycrashid')
 
         # Assert that we sent both exceptions to Sentry
-        raven_mock_client.captureException.assert_has_calls(
+        mock_client.captureException.assert_has_calls(
             [mock.call(exc) for exc in expected_exception.exceptions]
         )
 
@@ -209,13 +209,14 @@ class TestProcessorApp(object):
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
-    @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_save_error_with_raven_configured_successful(self, mock_raven, caplogpp):
+    @mock.patch('socorro.lib.sentry_client.get_client')
+    def test_transform_save_error_with_sentry_configured_successful(
+            self, mock_get_client, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        raven_mock_client = mock.MagicMock()
-        raven_mock_client.captureException.return_value = 'someidentifier'
-        mock_raven.Client.return_value = raven_mock_client
+        mock_client = mock.MagicMock()
+        mock_client.captureException.return_value = 'someidentifier'
+        mock_get_client.return_value = mock_client
 
         # Set up a processor and mock .save_raw_and_processed() to raise an exception
         config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
@@ -233,7 +234,7 @@ class TestProcessorApp(object):
 
         # Assert that we sent the exception to Sentry
         assert (
-            raven_mock_client.captureException.call_args_list == [
+            mock_client.captureException.call_args_list == [
                 mock.call((ValueError, expected_exception, WHATEVER))
             ]
         )
@@ -242,13 +243,14 @@ class TestProcessorApp(object):
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
-    @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_get_error_with_raven_configured_successful(self, mock_raven, caplogpp):
+    @mock.patch('socorro.lib.sentry_client.get_client')
+    def test_transform_get_error_with_sentry_configured_successful(
+            self, mock_get_client, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        raven_mock_client = mock.MagicMock()
-        raven_mock_client.captureException.return_value = 'someidentifier'
-        mock_raven.Client.return_value = raven_mock_client
+        mock_client = mock.MagicMock()
+        mock_client.captureException.return_value = 'someidentifier'
+        mock_get_client.return_value = mock_client
 
         # Set up a processor and mock .get_raw_crash() to raise an exception
         config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
@@ -264,7 +266,7 @@ class TestProcessorApp(object):
 
         # Assert that the processor sent something to Sentry
         assert (
-            raven_mock_client.captureException.call_args_list == [
+            mock_client.captureException.call_args_list == [
                 mock.call((ValueError, expected_exception, WHATEVER))
             ]
         )
@@ -273,15 +275,16 @@ class TestProcessorApp(object):
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
-    @mock.patch('socorro.lib.raven_client.raven')
-    def test_transform_polystorage_error_with_raven_configured_failing(self, mock_raven, caplogpp):
+    @mock.patch('socorro.lib.sentry_client.get_client')
+    def test_transform_polystorage_error_with_sentry_configured_failing(
+            self, mock_get_client, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        raven_mock_client = mock.MagicMock()
+        mock_client = mock.MagicMock()
 
         # Mock this to throw an error if it's called because it shouldn't get called
-        raven_mock_client.captureException.side_effect = ValueError('raven error')
-        mock_raven.Client.return_value = raven_mock_client
+        mock_client.captureException.side_effect = ValueError('sentry error')
+        mock_get_client.return_value = mock_client
 
         # Set up processor and mock .save_raw_and_processed() to raise an exception
         config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')

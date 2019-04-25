@@ -274,8 +274,8 @@ class TestDepCheckCommand:
                     cmd.handle()
                     cmd.alert_log.assert_called_with([vuln])
 
-    def test_run_raven(self):
-        """Alert via Raven if there's a Sentry DSN configured."""
+    def test_run_sentry(self):
+        """Alert Sentry if there's a DSN configured."""
         dsn = 'https://foo:bar@example.com/123456'
         with override_settings(RAVEN_DSN=dsn):
             cmd = Command()
