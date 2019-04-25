@@ -33,7 +33,7 @@ from crashstats.cron.utils import (
     get_run_times,
     time_to_run,
 )
-from socorro.lib.raven_client import capture_error
+from socorro.lib.sentry_client import capture_error
 
 
 logger = logging.getLogger('crashstats.cron')
@@ -70,7 +70,7 @@ class Command(BaseCommand):
             else:
                 return self.cmd_run_all()
         except Exception:
-            capture_error(settings.RAVEN_DSN)
+            capture_error(settings.SENTRY_DSN)
             raise
 
     @contextlib.contextmanager
@@ -169,7 +169,7 @@ class Command(BaseCommand):
                 )
 
                 # Send error to sentry, log it, and remember the failure
-                capture_error(settings.RAVEN_DSN)
+                capture_error(settings.SENTRY_DSN)
                 logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
                 self._remember_failure(
                     cmd,

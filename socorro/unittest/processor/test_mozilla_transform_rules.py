@@ -11,7 +11,6 @@ import requests_mock
 import six
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
-from socorro.lib.revision_data import get_version
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.mozilla_transform_rules import (
     AddonsRule,
@@ -1594,15 +1593,14 @@ class TestSignatureGeneratorRule:
             'SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed'  # noqa
         ]
 
-    @patch('socorro.lib.raven_client.raven')
-    def test_rule_fail_and_capture_error(self, mock_raven):
+    @patch('socorro.lib.sentry_client.get_client')
+    def test_rule_fail_and_capture_error(self, mock_get_client):
         exc_value = Exception('Cough')
 
         class BadRule(object):
             def predicate(self, raw_crash, processed_crash):
                 raise exc_value
 
-        version = get_version()
         sentry_dsn = 'https://username:password@sentry.example.com/'
 
         config = get_basic_config()
@@ -1632,11 +1630,11 @@ class TestSignatureGeneratorRule:
         ]
 
         # Make sure the client was instantiated with the sentry_dsn
-        mock_raven.Client.assert_called_once_with(dsn=sentry_dsn, release=version)
+        mock_get_client.assert_called_once_with(sentry_dsn)
 
         # Make sure captureExeption was called with the right args.
         assert (
-            mock_raven.Client().captureException.call_args_list == [
+            mock_get_client.return_value.captureException.call_args_list == [
                 call((Exception, exc_value, WHATEVER))
             ]
         )

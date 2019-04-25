@@ -31,8 +31,8 @@ class TestProcessor2015(object):
         config.processor_name = 'dwight'
         return config
 
-    @patch('socorro.lib.raven_client.raven')
-    def test_rule_error(self, mock_raven):
+    @patch('socorro.lib.sentry_client.get_client')
+    def test_rule_error(self, mock_get_client):
         captured_exceptions = []  # a global
 
         def mock_capture_exception(exc_info):
@@ -41,12 +41,12 @@ class TestProcessor2015(object):
 
         client = MagicMock()
 
-        def mock_Client(**config):
-            client.config = config
+        def mock_Client(dsn):
+            client.dsn = dsn
             client.captureException.side_effect = mock_capture_exception
             return client
 
-        mock_raven.Client.side_effect = mock_Client
+        mock_get_client.side_effect = mock_Client
 
         config = self.get_config()
         config.sentry = DotDict()

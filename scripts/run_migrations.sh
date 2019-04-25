@@ -9,14 +9,13 @@
 
 set -e
 
-# If RAVEN_DSN is defined, then define SENTRY_DSN and evoke the sentry-cli bash
-# hook which will send errors to sentry.
-if [ -n "${RAVEN_DSN}" ]; then
-    echo "RAVEN_DSN defined--enabling sentry."
-    export SENTRY_DSN=${RAVEN_DSN}
+# If SENTRY_DSN is defined, then enable the sentry-cli bash hook which will
+# send errors to sentry.
+if [ -n "${SENTRY_DSN}" ]; then
+    echo "SENTRY_DSN defined--enabling sentry."
     eval "$(/webapp-frontend-deps/node_modules/.bin/sentry-cli bash-hook)"
 else
-    echo "RAVEN_DSN not defined--not enabling sentry."
+    echo "SENTRY_DSN not defined--not enabling sentry."
 fi
 
 # Get a datestamp

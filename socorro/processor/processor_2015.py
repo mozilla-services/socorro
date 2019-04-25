@@ -18,7 +18,7 @@ from configman import (
 from configman.converters import str_to_list
 from configman.dotdict import DotDict
 
-from socorro.lib import raven_client
+from socorro.lib import sentry_client
 from socorro.lib.datetimeutil import utc_now
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule2015,
@@ -270,7 +270,7 @@ class Processor2015(RequiredConfig):
             except Exception as exc:
                 # If a rule throws an error, capture it and toss it in the
                 # processor notes
-                raven_client.capture_error(
+                sentry_client.capture_error(
                     sentry_dsn=self.sentry_dsn,
                     logger=self.logger,
                     extra={'crash_id': crash_id}

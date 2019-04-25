@@ -16,7 +16,7 @@ import six
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.lib import raven_client
+from socorro.lib import sentry_client
 from socorro.lib.util import dotdict_to_dict
 
 
@@ -151,7 +151,7 @@ class ProcessorApp(FetchTransformSaveApp):
     required_config.namespace('sentry')
     required_config.sentry.add_option(
         'dsn',
-        doc='DSN for Sentry via raven',
+        doc='DSN for Sentry',
         default='',
         reference_value_from='secrets.sentry',
     )
@@ -172,7 +172,7 @@ class ProcessorApp(FetchTransformSaveApp):
         if crash_id:
             extra['crash_id'] = crash_id
 
-        raven_client.capture_error(
+        sentry_client.capture_error(
             sentry_dsn,
             self.logger,
             exc_info,
