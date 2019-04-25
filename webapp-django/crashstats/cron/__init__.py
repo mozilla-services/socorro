@@ -48,6 +48,13 @@ JOBS = [
         'cmd': 'esclean',
         'frequency': '7d',
         'time': '06:00',
+    },
+    {
+        # Verify Socorro processed all incoming crashes daily at 4:00am
+        'cmd': 'verifyprocessed',
+        'frequency': '1d',
+        'time': '04:00',
+        'backfill': True,
     }
 ]
 
