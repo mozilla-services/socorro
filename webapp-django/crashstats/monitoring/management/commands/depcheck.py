@@ -105,6 +105,7 @@ class Command(BaseCommand):
         # for any paths.
         cmd = [settings.SAFETY_PATH, 'check', '--json']
         if getattr(settings, 'SAFETY_API_KEY', ''):
+            self.stdout.write('Using safety api key.')
             cmd += ['--key', settings.SAFETY_API_KEY]
 
         process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -125,11 +126,17 @@ class Command(BaseCommand):
                     ) for result in results
                 ]
             except (ValueError, IndexError) as err:
-                raise DependencySecurityCheckFailed(
-                    'Could not parse pyup safety output',
-                    err,
-                    output,
-                )
+                if error_output:
+                    raise DependencySecurityCheckFailed(
+                        'pyup safety returned error',
+                        error_output
+                    )
+                else:
+                    raise DependencySecurityCheckFailed(
+                        'Could not parse pyup safety output',
+                        err,
+                        output,
+                    )
 
         raise DependencySecurityCheckFailed(error_output)
 
