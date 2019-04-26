@@ -64,24 +64,16 @@ import concurrent.futures
 import copy
 from functools import partial
 import json
-import logging
 
-from configman import Namespace, class_converter
 import more_itertools
-import psycopg2
+from pyquery import PyQuery as pq
 from six.moves.urllib.parse import urljoin
 
-from socorro.cron.base import BaseCronApp
-from socorro.lib.requestslib import session_with_retries
-from socorro.lib.transaction import transaction_context
+from django.core.management.base import BaseCommand
+from django.db.utils import IntegrityError
 
-# NOTE(willkg): We have to do this because lxml 4.2.5 has imports that kick up
-# warnings in Python 3. Once lxml puts out a new version with a fix, we can
-# stop doing this.
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', category=ImportWarning)
-    from pyquery import PyQuery as pq
+from crashstats.crashstats.models import ProductVersion
+from socorro.lib.requestslib import session_with_retries
 
 
 # Substrings that indicate the directory is not a platform we want to traverse
@@ -111,9 +103,6 @@ def get_session():
     # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds, then
     # it has issues and we should try again some other time
     return session_with_retries(default_timeout=5.0)
-
-
-logger = logging.getLogger(__name__)
 
 
 class Downloader:
@@ -164,12 +153,12 @@ class Downloader:
         """
         url = urljoin(self.base_url, url_path)
         if self.verbose:
-            logger.info('downloading: %s', url)
+            print('downloading: %s' % url)
         resp = get_session().get(url)
         if resp.status_code != 200:
             if self.verbose:
                 # Most of these are 404s because we guessed a url wrong which is fine
-                logger.warning('bad status: %s: %s', url, resp.status_code)
+                print('bad status: %s: %s' % (url, resp.status_code))
             return ''
 
         return resp.content
@@ -244,7 +233,10 @@ class Downloader:
         # greater than (major_version - 4) and esr builds
         if major_version:
             major_version_minus_4 = major_version - 4
-            logger.info('Skipping anything before %s and not esr', major_version_minus_4)
+            print(
+                'Skipping anything before %s and not esr (%s)' %
+                (product_name, major_version_minus_4)
+            )
             version_links = [
                 link for link in version_links
                 if (
@@ -298,7 +290,7 @@ class Downloader:
             # platforms that have them
             json_links = self.get_json_links(build_link['path'])
             if not json_links:
-                logger.warning('could not find json files in: %s', build_link['path'])
+                print('could not find json files in: %s' % build_link['path'])
                 continue
 
             # Go through all the links we acquired by traversing all the platform
@@ -389,37 +381,18 @@ class Downloader:
         return build_data
 
 
-class ArchiveScraperCronApp(BaseCronApp):
-    app_name = 'archivescraper'
-    app_description = 'scraper for archive.mozilla.org for release info'
-    app_version = '1.0'
+class Command(BaseCommand):
+    help = 'Scrape archive.mozilla.org for productversion information.'
 
-    required_config = Namespace()
-    required_config.add_option(
-        'base_url',
-        default='https://archive.mozilla.org/pub/',
-        doc='base url to use for fetching builds'
-    )
-    required_config.add_option(
-        'verbose',
-        default=False,
-        doc='print verbose information about spidering'
-    )
-    required_config.add_option(
-        'num_workers',
-        default=20,
-        doc='number of concurrent workers for downloading; set to 1 for single process'
-    )
-    required_config.add_option(
-        'database_class',
-        default='socorro.external.postgresql.connection_context.ConnectionContext',
-        from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.database = self.config.database_class(self.config)
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--base-url', default='https://archive.mozilla.org/pub/',
+            help='base url to use for fetching builds'
+        )
+        parser.add_argument(
+            '--num-workers', default=20, type=int,
+            help='Number of concurrent workers for downloading; set to 1 for single process'
+        )
 
     def get_max_major_version(self, product_name):
         """Retrieve the max major version for this product.
@@ -429,23 +402,13 @@ class ArchiveScraperCronApp(BaseCronApp):
         :returns: maximum major version as an int or None
 
         """
-        with transaction_context(self.database) as conn:
-            cursor = conn.cursor()
-            sql = """
-            SELECT max(major_version)
-            FROM crashstats_productversion
-            WHERE product_name = %s
-            """
-            params = (product_name,)
-            cursor.execute(sql, params)
-            data = cursor.fetchall()
-            if data:
-                return data[0][0]
-
+        pv = ProductVersion.objects.order_by('-major_version').first()
+        if pv is not None:
+            return pv.major_version
         return None
 
     def insert_build(self, product_name, release_channel, major_version, release_version,
-                     version_string, build_id, archive_url):
+                     version_string, build_id, archive_url, verbose):
         """Insert a new build into the crashstats_productversion table."""
         params = {
             'product_name': product_name,
@@ -456,36 +419,27 @@ class ArchiveScraperCronApp(BaseCronApp):
             'build_id': build_id,
             'archive_url': archive_url
         }
+        try:
+            ProductVersion.objects.create(**params)
+            if verbose:
+                self.stdout.write('INSERTING: %s' % list(sorted(params.items())))
+            return True
 
-        if self.config.verbose:
-            logger.info('INSERTING: %s' % list(sorted(params.items())))
-
-        with transaction_context(self.database) as conn:
-            cursor = conn.cursor()
-            sql = """
-            INSERT INTO crashstats_productversion (
-                product_name, release_channel, major_version, release_version,
-                version_string, build_id, archive_url
-            )
-            VALUES (
-                %(product_name)s, %(release_channel)s, %(major_version)s, %(release_version)s,
-                %(version_string)s, %(build_id)s, %(archive_url)s
-            )
-            """
-            try:
-                cursor.execute(sql, params)
-            except psycopg2.IntegrityError:
-                # If it's an IntegrityError, we already have it and everything is fine
+        except IntegrityError as ie:
+            if 'violates unique constraint' in str(ie):
+                # If there's an IntegrityError, it's because one already exists.
+                # That's fine, so let's skip it.
                 pass
-            except psycopg2.Error:
-                logger.exception('failed to insert')
+            else:
+                raise
 
-    def scrape_and_insert_build_info(self, product_name, archive_directory):
+    def scrape_and_insert_build_info(self, base_url, num_workers, verbose, product_name,
+                                     archive_directory):
         """Scrape and insert build info for a specific product/directory."""
         downloader = Downloader(
-            base_url=self.config.base_url,
-            num_workers=self.config.num_workers,
-            verbose=self.config.verbose,
+            base_url=base_url,
+            num_workers=num_workers,
+            verbose=verbose
         )
         major_version = self.get_max_major_version(product_name)
         build_data = downloader.scrape_candidates(
@@ -495,31 +449,43 @@ class ArchiveScraperCronApp(BaseCronApp):
         )
         num_builds = 0
         for item in build_data:
-            num_builds += 1
-            self.insert_build(**item)
+            if self.insert_build(verbose=verbose, **item):
+                num_builds += 1
         return num_builds
 
-    def run(self):
-        """Run the crontabber job."""
+    def handle(self, **options):
+        num_workers = options['num_workers']
+        base_url = options['base_url']
+        verbose = options['verbosity'] > 1
+
         num_builds = 0
 
         # Capture Firefox beta and release builds
         num_builds += self.scrape_and_insert_build_info(
+            base_url=base_url,
+            num_workers=num_workers,
+            verbose=verbose,
             product_name='Firefox',
             archive_directory='firefox',
         )
 
         # Pick up DevEdition beta builds for which b1 and b2 are "Firefox builds"
         num_builds += self.scrape_and_insert_build_info(
+            base_url=base_url,
+            num_workers=num_workers,
+            verbose=verbose,
             product_name='DevEdition',
             archive_directory='devedition',
         )
 
         # Capture Fennec beta and release builds
         num_builds += self.scrape_and_insert_build_info(
+            base_url=base_url,
+            num_workers=num_workers,
+            verbose=verbose,
             product_name='Fennec',
             archive_directory='mobile',
         )
 
-        logger.info('Inserted %s builds.', num_builds)
-        logger.info('Done!')
+        self.stdout.write('Inserted %s builds.' % num_builds)
+        self.stdout.write('Done!')

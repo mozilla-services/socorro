@@ -5,9 +5,9 @@
 from jinja2 import Environment
 import pytest
 
-from socorro.cron.crontabber_app import CronTabberApp
-from socorro.cron.jobs.archivescraper import ArchiveScraperCronApp
-from socorro.unittest.cron.crontabber_tests_base import get_config_manager
+from django.core.management import call_command
+
+from crashstats.crashstats.models import ProductVersion
 
 
 HOST = 'http://archive.example.com'
@@ -109,42 +109,19 @@ def setup_site(req_mock, root, file_contents):
         req_mock.get(HOST + path, text=index_page)
 
 
-@pytest.fixture
-def config():
-    """Pytest fixture that returns config for ArchiveScraperCronApp"""
-    # Configuration for crontabber jobs is buried in CrontabberApp, so we
-    # create one of those and then extract the configuration that we want. It's
-    # either that or we have to hard-code expanding all the configuration bits.
-    config_manager = get_config_manager(
-        jobs='socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
-        overrides={
-            'crontabber.class-ArchiveScraperCronApp.base_url': HOST + '/pub/',
-            # Use 1 worker which keeps it synchronous and single-process
-            'crontabber.class-ArchiveScraperCronApp.num_workers': 1,
-        }
-    )
-    with config_manager.context() as config:
-        crontabberapp = CronTabberApp(config)
-        class_config = crontabberapp.config.crontabber['class-ArchiveScraperCronApp']
-        yield class_config
+class TestArchiveScraperCronApp:
+    def fetch_data(self):
+        return list(
+            ProductVersion.objects
+            .order_by('build_id', 'version_string')
+            .values(
+                'product_name', 'release_channel', 'release_version', 'version_string',
+                'build_id', 'archive_url', 'major_version'
+            )
+        )
 
-
-class TestArchiveScraperCronApp(object):
-    def fetch_data(self, conn):
-        cursor = conn.cursor()
-        columns = [
-            'product_name', 'release_channel', 'release_version', 'version_string', 'build_id',
-            'archive_url', 'major_version'
-        ]
-        cursor.execute("""
-        SELECT %s
-        FROM crashstats_productversion
-        ORDER BY build_id, version_string
-        """ % ', '.join(columns))
-        data = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        return data
-
-    def test_scrape_candidates(self, config, req_mock, db_conn):
+    @pytest.mark.django_db(transaction=True)
+    def test_scrape_candidates(self, req_mock):
         # Set up a site
         site = [
             (
@@ -227,6 +204,12 @@ class TestArchiveScraperCronApp(object):
         )
         req_mock.get(HOST + '/pub/firefox/releases/', text=release_page)
 
+        # Fill out the top-level urls with blank documents
+        req_mock.get(HOST + '/pub/devedition/releases/', text='<html></html>')
+        req_mock.get(HOST + '/pub/devedition/candidates/', text='<html></html>')
+        req_mock.get(HOST + '/pub/mobile/releases/', text='<html></html>')
+        req_mock.get(HOST + '/pub/mobile/candidates/', text='<html></html>')
+
         expected_data = [
             # 63.0 should have a 63.0rc1/beta, a 63.rc2/beta, and a 63.0/release
             {
@@ -296,17 +279,14 @@ class TestArchiveScraperCronApp(object):
             },
         ]
 
-        # Create an archive scraper
-        archive_scraper = ArchiveScraperCronApp(config, {})
-
         # Scrape a first time with an empty db and assert that it inserted all
         # the versions we expected
-        archive_scraper.scrape_and_insert_build_info('Firefox', 'firefox')
-        data = self.fetch_data(db_conn)
+        call_command('archivescraper', '--num-workers', '1', '--base-url', HOST)
+        data = self.fetch_data()
         assert data == expected_data
 
         # Scrape it a second time and assert that the contents haven't
         # changed
-        archive_scraper.scrape_and_insert_build_info('Firefox', 'firefox')
-        data = self.fetch_data(db_conn)
+        call_command('archivescraper', '--num-workers', '1', '--base-url', HOST)
+        data = self.fetch_data()
         assert data == expected_data

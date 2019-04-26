@@ -1082,6 +1082,4 @@ class CronTabberApp(App, RequiredConfig):
 
 # NOTE(willkg): Times are in UTC.
 DEFAULT_JOBS = ','.join([
-    # Product/version maintenance
-    'socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
 ])
