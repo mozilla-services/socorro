@@ -291,4 +291,4 @@ class TestDepCheckCommand:
                 with mock.patch.object(cmd, 'get_javascript_vulnerabilities', return_value=[]):
                     with mock.patch.object(cmd, 'alert_sentry'):
                         cmd.handle()
-                        cmd.alert_sentry.assert_called_with(dsn, [vuln])
+                        cmd.alert_sentry.assert_called_with([vuln])
