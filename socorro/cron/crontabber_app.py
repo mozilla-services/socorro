@@ -1084,7 +1084,4 @@ class CronTabberApp(App, RequiredConfig):
 DEFAULT_JOBS = ','.join([
     # Product/version maintenance
     'socorro.cron.jobs.archivescraper.ArchiveScraperCronApp|1h',
-
-    # Processed crash verification
-    'socorro.cron.jobs.verify_processed.VerifyProcessedCronApp|1d|04:00',
 ])

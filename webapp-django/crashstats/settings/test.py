@@ -23,10 +23,5 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
 
-# Fix some implementations configuration
-SOCORRO_IMPLEMENTATIONS_CONFIG['resource']['boto'] = {  # noqa
-    'bucket_name': 'crashstats-test'
-}
-
 # Remove SessionRefresh middleware so that tests don't need to have a non-expired OIDC token
 MIDDLEWARE.remove('mozilla_django_oidc.middleware.SessionRefresh')  # noqa

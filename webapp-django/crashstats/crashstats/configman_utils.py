@@ -6,7 +6,10 @@
 Utility functions for working with configman components.
 """
 
-from configman import configuration, Namespace
+import importlib
+
+from configman import ConfigurationManager, configuration, Namespace
+from configman.environment import environment
 
 from django.conf import settings
 
@@ -14,6 +17,27 @@ from socorro.app.socorro_app import App
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.external.es.connection_context import ConnectionContext as ESConnectionContext
 from socorro.external.pubsub.crashqueue import PubSubCrashQueue
+
+
+def get_s3_context():
+    """Return an S3ConnectionContext."""
+    # The class could be anything, so get the class first
+    cls_path = settings.SOCORRO_IMPLEMENTATIONS_CONFIG['resource']['boto']['resource_class']
+    module, name = cls_path.rsplit('.', 1)
+    cls = getattr(importlib.import_module(module), name)
+
+    # Now create a configuration and instantiate the class with it
+    cm = ConfigurationManager(
+        cls.get_required_config(),
+        values_source_list=[
+            # We prefer the webapp's configuration over things in the
+            # environment which are likely to be configman things
+            settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
+            environment,
+        ]
+    )
+    config = cm.get_config()
+    return cls(config)
 
 
 def config_from_configman():

@@ -79,20 +79,18 @@ class Command(BaseCommand):
         )
 
     def handle(self, **options):
-        start_date = options.get('last_success')
-        if not start_date:
+        start_date_arg = options.get('last_success')
+        if not start_date_arg:
             # Default to now minus a day
             start_date = timezone.now() - datetime.timedelta(days=1)
         else:
             # Try to parse it as a datetime
-            start_date = parse_datetime(start_date)
+            start_date = parse_datetime(start_date_arg)
             if not start_date:
                 # Try to parse it as a date
-                start_date = parse_date(start_date)
+                start_date = parse_date(start_date_arg)
             if not start_date:
-                raise CommandError(
-                    'Unrecognized last_success format: %s' % options.get('last_success')
-                )
+                raise CommandError('Unrecognized last_success format: %s' % start_date_arg)
 
         start_date_formatted = start_date.strftime('%Y-%m-%d')
 
