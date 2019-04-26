@@ -4,18 +4,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Runs crontabber.
+# Runs cronrun (used to be called crontabber).
 
 set -e
 
-# Run crontabber sleeping 5 minutes between runs
+# Run cronrun sleeping 5 minutes between runs
 while true
 do
-    # NOTE(willkg): We don't want crontabber to exit weird and then have that
+    # NOTE(willkg): We don't want cronrun to exit weird and then have that
     # kill the container, but this is a lousy thing to do.
-    ./socorro-cmd crontabber || true
-    # NOTE(willkg): We are in a period of time where there are multiple
-    # crontabbers.
     ./webapp-django/manage.py cronrun || true
     echo "Sleep 5 minutes..."
     sleep 300

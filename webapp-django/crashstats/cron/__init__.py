@@ -55,6 +55,11 @@ JOBS = [
         'frequency': '1d',
         'time': '04:00',
         'backfill': True,
+    },
+    {
+        # Scrape archive.mozilla.org for productversion data every hour
+        'cmd': 'archivescraper',
+        'frequency': '1h',
     }
 ]
 

@@ -16,6 +16,7 @@ from functools import partial
 import markus
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
@@ -102,9 +103,12 @@ class Command(BaseCommand):
 
                 try:
                     MissingProcessedCrash.objects.create(crash_id=crash_id, is_processed=False)
-                except MissingProcessedCrash.IntegrityError:
-                    # If there's already one, that's fine
-                    pass
+                except IntegrityError as ie:
+                    if 'violates unique constraint' in str(ie):
+                        # If there's already one, that's fine
+                        pass
+                    else:
+                        raise
         else:
             self.stdout.write('All crashes for %s were processed.' % date)
 
