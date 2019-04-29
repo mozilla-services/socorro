@@ -242,7 +242,7 @@ class Command(BaseCommand):
                 return
 
         # Can't lock it, so raise an error
-        raise OngoingJobError(job.ongoing)
+        raise OngoingJobError('%s: %s' % (job.app_name, job.ongoing))
 
     def _log_run(self, cmd, seconds, time_, last_success, now, exc_type, exc_value, exc_tb):
         job = Job.objects.get_or_create(app_name=cmd)[0]
