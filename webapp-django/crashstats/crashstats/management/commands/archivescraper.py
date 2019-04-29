@@ -482,10 +482,13 @@ class Command(BaseCommand):
             major_version=major_version,
             stdout=self.stdout
         )
+        total_builds = 0
         num_builds = 0
         for item in build_data:
+            total_builds += 1
             if self.insert_build(verbose=verbose, **item):
                 num_builds += 1
+        self.stdout.write('found %s builds; inserted %s builds' % (total_builds, num_builds))
         return num_builds
 
     def handle(self, **options):
@@ -493,10 +496,8 @@ class Command(BaseCommand):
         base_url = options['base_url']
         verbose = options['verbosity'] > 1
 
-        num_builds = 0
-
         # Capture Firefox beta and release builds
-        num_builds += self.scrape_and_insert_build_info(
+        self.scrape_and_insert_build_info(
             base_url=base_url,
             num_workers=num_workers,
             verbose=verbose,
@@ -505,7 +506,7 @@ class Command(BaseCommand):
         )
 
         # Pick up DevEdition beta builds for which b1 and b2 are "Firefox builds"
-        num_builds += self.scrape_and_insert_build_info(
+        self.scrape_and_insert_build_info(
             base_url=base_url,
             num_workers=num_workers,
             verbose=verbose,
@@ -514,7 +515,7 @@ class Command(BaseCommand):
         )
 
         # Capture Fennec beta and release builds
-        num_builds += self.scrape_and_insert_build_info(
+        self.scrape_and_insert_build_info(
             base_url=base_url,
             num_workers=num_workers,
             verbose=verbose,
@@ -522,5 +523,4 @@ class Command(BaseCommand):
             archive_directory='mobile',
         )
 
-        self.stdout.write('Inserted %s builds.' % num_builds)
         self.stdout.write('Done!')
