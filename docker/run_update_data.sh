@@ -10,8 +10,7 @@
 set -eo pipefail
 
 # Fetch release data (verbosely)
-./socorro-cmd crontabber --reset-job=archivescraper
-./socorro-cmd crontabber --job=archivescraper
+webapp-django/manage.py archivescraper
 
 # Insert data that's no longer on archive.mozilla.org
 python ./scripts/insert_missing_versions.py
