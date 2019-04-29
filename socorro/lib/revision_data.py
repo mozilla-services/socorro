@@ -46,15 +46,17 @@ def get_revision_data():
     return {}
 
 
-def get_version():
+def get_version(revision_data=None):
     """Returns the Socorro version
 
     This pulls revision data and then returns the best version-y thing
     available: the tag, the commit, or "unknown" if there's no revision
     data.
 
+    :arg revision_data: revision data, or None to fetch from disk
     :returns: string
 
     """
-    revision_data = get_revision_data()
+    if revision_data is None:
+        revision_data = get_revision_data()
     return revision_data.get('version') or revision_data.get('commit') or 'unknown'

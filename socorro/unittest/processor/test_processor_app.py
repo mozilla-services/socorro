@@ -308,12 +308,12 @@ class TestProcessorApp(object):
         # Assert calls to logger--one set for each of the errors in
         # PolyStorageError
         expected = [
-            ('Unable to report error with Raven', WHATEVER),
+            ('Unable to report error with Sentry', WHATEVER),
             ('Sentry DSN is not configured and an exception happened', None),
             ('Exception occurred', first_exc_info),
             ('error in processing or saving crash mycrashid', None),
 
-            ('Unable to report error with Raven', WHATEVER),
+            ('Unable to report error with Sentry', WHATEVER),
             ('Sentry DSN is not configured and an exception happened', None),
             ('Exception occurred', second_exc_info),
             ('error in processing or saving crash mycrashid', None)

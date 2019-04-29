@@ -5,13 +5,11 @@
 import logging
 import sys
 
-import raven
-
-from socorro.lib.revision_data import get_version
+import sentry_sdk
 
 
 def get_client(dsn):
-    return raven.Client(dsn=dsn, release=get_version())
+    return sentry_sdk.Hub.current
 
 
 def capture_error(sentry_dsn, logger=None, exc_info=None, extra=None):
@@ -33,22 +31,21 @@ def capture_error(sentry_dsn, logger=None, exc_info=None, extra=None):
         try:
             # Set up the Sentry client.
             client = get_client(sentry_dsn)
-            client.context.activate()
-            client.context.merge({'extra': extra})
 
-            # Try to send the exception.
-            try:
-                identifier = client.captureException(exc_info)
+            with sentry_sdk.push_scope() as scope:
+                for key, value in extra.items():
+                    scope.set_extra(key, value)
+
+                # Send the exception.
+                identifier = client.capture_exception(error=exc_info)
                 logger.info('Error captured in Sentry! Reference: %s' % identifier)
 
                 # At this point, if everything is good, the exceptions were
                 # successfully sent to sentry and we can return.
                 return
-            finally:
-                client.context.clear()
         except Exception:
             # Log the exception from trying to send the error to Sentry.
-            logger.error('Unable to report error with Raven', exc_info=True)
+            logger.error('Unable to report error with Sentry', exc_info=True)
 
     # Sentry isn't configured or it's busted, so log the error we got that we
     # wanted to capture.
