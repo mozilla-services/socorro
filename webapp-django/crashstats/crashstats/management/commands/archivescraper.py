@@ -118,6 +118,25 @@ class Downloader:
         self.base_url = base_url
         self.num_workers = num_workers
         self.verbose = verbose
+        self.msgs = []
+
+    def worker_write(self, msg, verbose=False):
+        """Writes to stdout or msgs buffer.
+
+        Use this in workers rather than printing directly to stdout so it can
+        be passed to the parent process correctly.
+
+        :arg str msg: the message to write
+        :arg bool verbose: whether to write this only if in verbose mode
+
+        """
+        if verbose and not self.verbose:
+            return
+
+        if self.num_workers > 1:
+            self.msgs.append(msg)
+        else:
+            print(msg)
 
     def get_links(self, content):
         """Retrieve valid links on the page.
@@ -152,13 +171,12 @@ class Downloader:
 
         """
         url = urljoin(self.base_url, url_path)
-        if self.verbose:
-            print('downloading: %s' % url)
+        self.worker_write('downloading: %s' % url, verbose=True)
         resp = get_session().get(url)
         if resp.status_code != 200:
             if self.verbose:
                 # Most of these are 404s because we guessed a url wrong which is fine
-                print('bad status: %s: %s' % (url, resp.status_code))
+                self.worker_write('bad status: %s: %s' % (url, resp.status_code))
             return ''
 
         return resp.content
@@ -208,62 +226,10 @@ class Downloader:
 
         return all_json_links
 
-    def scrape_candidates(self, product_name, archive_directory, major_version):
-        """Scrape the candidates/ directory for beta, release candidate, and final releases."""
-        url_path = '/pub/%s/candidates/' % archive_directory
-
-        # First, let's look at /pub/PRODUCT/releases/ so we know what final
-        # builds have been released
-        release_path = '/pub/%s/releases/' % archive_directory
-        release_path_content = self.download(release_path)
-
-        # Get the final release version numbers, so something like "64.0b8/" -> "64.0b8"
-        final_releases = [
-            link['text'].rstrip('/') for link in self.get_links(release_path_content)
-            if link['text'][0].isdigit()
-        ]
-
-        content = self.download(url_path)
-        version_links = [
-            link for link in self.get_links(content)
-            if link['text'][0].isdigit()
-        ]
-
-        # If we've got a major_version, then we only want to scrape data for versions
-        # greater than (major_version - 4) and esr builds
-        if major_version:
-            major_version_minus_4 = major_version - 4
-            print(
-                'Skipping anything before %s and not esr (%s)' %
-                (product_name, major_version_minus_4)
-            )
-            version_links = [
-                link for link in version_links
-                if (
-                    # "63.0b7-candidates/" -> 63
-                    int(link['text'].split('.')[0]) >= major_version_minus_4 or
-                    'esr' in link['text']
-                )
-            ]
-
-        scrape = partial(
-            self.scrape_candidate_version,
-            product_name=product_name,
-            final_releases=final_releases
-        )
-
-        if self.num_workers == 1:
-            build_data = map(scrape, version_links)
-
-        else:
-            with concurrent.futures.ProcessPoolExecutor(max_workers=self.num_workers) as executor:
-                build_data = executor.map(scrape, version_links, timeout=300)
-
-        # build_data is a list of lists so we flatten that
-        return list(more_itertools.flatten(build_data))
-
     def scrape_candidate_version(self, link, product_name, final_releases):
         """Traverse candidates/VERSION/ tree returning list of build info."""
+        self.msgs = []
+
         content = self.download(link['path'])
         build_links = [
             link for link in self.get_links(content)
@@ -290,7 +256,7 @@ class Downloader:
             # platforms that have them
             json_links = self.get_json_links(build_link['path'])
             if not json_links:
-                print('could not find json files in: %s' % build_link['path'])
+                self.worker_write('could not find json files in: %s' % build_link['path'])
                 continue
 
             # Go through all the links we acquired by traversing all the platform
@@ -378,7 +344,75 @@ class Downloader:
                         data['version_string'] = rc_version_string
                         build_data.append(data)
 
-        return build_data
+        return build_data, self.msgs
+
+    def scrape_candidates(self, product_name, archive_directory, major_version, stdout):
+        """Scrape the candidates/ directory for beta, release candidate, and final releases."""
+        url_path = '/pub/%s/candidates/' % archive_directory
+        stdout.write('scrape_candidates working on %s' % url_path)
+
+        # First, let's look at /pub/PRODUCT/releases/ so we know what final
+        # builds have been released
+        release_path = '/pub/%s/releases/' % archive_directory
+        release_path_content = self.download(release_path)
+
+        # Get the final release version numbers, so something like "64.0b8/" -> "64.0b8"
+        final_releases = [
+            link['text'].rstrip('/') for link in self.get_links(release_path_content)
+            if link['text'][0].isdigit()
+        ]
+
+        content = self.download(url_path)
+        version_links = [
+            link for link in self.get_links(content)
+            if link['text'][0].isdigit()
+        ]
+
+        # If we've got a major_version, then we only want to scrape data for versions
+        # greater than (major_version - 4) and esr builds
+        if major_version:
+            major_version_minus_4 = major_version - 4
+            stdout.write(
+                'skipping anything before %s and not esr (%s)' %
+                (product_name, major_version_minus_4)
+            )
+            version_links = [
+                link for link in version_links
+                if (
+                    # "63.0b7-candidates/" -> 63
+                    int(link['text'].split('.')[0]) >= major_version_minus_4 or
+                    'esr' in link['text']
+                )
+            ]
+
+        scrape = partial(
+            self.scrape_candidate_version,
+            product_name=product_name,
+            final_releases=final_releases
+        )
+
+        if self.num_workers == 1:
+            results = map(scrape, version_links)
+
+        else:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+                results = executor.map(scrape, version_links, timeout=300)
+
+        results = list(results)
+        # Convert [(build_data, msgs), (build_data, msgs), ...] into
+        # build_data and msgs
+        if results:
+            build_data, msgs = more_itertools.unzip(results)
+        else:
+            build_data, msgs = [], []
+
+        # Print all the msgs to stdout
+        for msg_group in msgs:
+            for msg in msg_group:
+                stdout.write('worker: %s' % msg)
+
+        # build_data is a list of lists so we flatten that
+        return list(more_itertools.flatten(build_data))
 
 
 class Command(BaseCommand):
@@ -445,7 +479,8 @@ class Command(BaseCommand):
         build_data = downloader.scrape_candidates(
             product_name=product_name,
             archive_directory=archive_directory,
-            major_version=major_version
+            major_version=major_version,
+            stdout=self.stdout
         )
         num_builds = 0
         for item in build_data:
