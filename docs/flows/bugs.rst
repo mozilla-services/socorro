@@ -24,7 +24,7 @@ bug. Socorro keeps a cache of that data to show in various webapp views.
        exploitabilityreport [shape=tab, label="exploitability report"];
      }
 
-     bugzilla [shape=rect, label="BugzillaCronApp"];
+     bugzilla [shape=rect, label="bugassociations"];
      model [shape=box3d, label="crashstats_bugassociation"];
 
      bugzilla -> model [label="produces"];
@@ -47,11 +47,10 @@ in the ``crashstats_bugassociation`` PostgreSQL table.
 Where the data comes from
 =========================
 
-The ``socorro.crontabber.jobs.bugzilla.BugzillaCronApp`` crontabber app looks at
-all the bugs in Bugzilla that have been created or had their
-``cf_crash_signature`` field updated for some period of time. It updates the
-``bug_associations`` table with any new associations and any associations that
-were removed.
+The ``bugassociations`` Django command looks at all the bugs in Bugzilla that
+have been created or had their ``cf_crash_signature`` field updated for some
+period of time. It updates the ``bug_associations`` table with any new
+associations and any associations that were removed.
 
 
 What uses the data

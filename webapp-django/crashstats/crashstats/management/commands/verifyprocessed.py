@@ -28,7 +28,7 @@ RAW_CRASH_PREFIX_TEMPLATE = 'v2/raw_crash/%s/%s/'
 PROCESSED_CRASH_TEMPLATE = 'v1/processed_crash/%s'
 
 
-metrics = markus.get_metrics('crontabber.verifyprocessed')
+metrics = markus.get_metrics('cron.verifyprocessed')
 
 
 def check_crashids(entropy, boto_conn, bucket_name, date):

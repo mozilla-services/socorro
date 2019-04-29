@@ -8,7 +8,7 @@ from django.db import models
 class Job(models.Model):
     app_name = models.CharField(
         max_length=100, null=False, blank=False, unique=True,
-        help_text='the name of the crontabber app'
+        help_text='the Django command'
     )
     next_run = models.DateTimeField(
         null=True, blank=True,
@@ -47,7 +47,7 @@ class Job(models.Model):
 class Log(models.Model):
     app_name = models.CharField(
         max_length=100, null=False, blank=False,
-        help_text='the crontabber app this log entry is for'
+        help_text='the Django command this log entry is for'
     )
     log_time = models.DateTimeField(
         auto_now_add=True,

@@ -283,19 +283,20 @@ user was visiting when Firefox crashed.
      :ref:`webapp-chapter`
 
 
-Housekeeping with Crontabber (Python, Crontabber, Configman)
-------------------------------------------------------------
+Housekeeping with cronrun (Python, Django)
+------------------------------------------
 
-Crontabber is a self-healing scheduled task manager. We use it to run jobs that
-perform housekeeping functions in the crash ingestion pipeline like:
+We have a ``cronrun`` Django command that acts as a self-healing command runner
+that can run any Django command with specified arguments at scheduled times.
+We use it to run jobs that perform housekeeping functions in the crash
+ingestion pipeline like:
 
 1. updating product/version information
 2. updating regarding bugs associated with crash signatures
 3. updating "first time we saw this signature" type information
 
-Crontabber jobs that fail are re-run. Some crontabber jobs are set up to
-backfill, so if they fail, they will eventually run for all the times they
-needed to.
+cronrun jobs that fail are re-run. Some cronrun jobs are set up to backfill, so
+if they fail, they will eventually run for all the times they needed to.
 
 .. seealso::
 
@@ -305,17 +306,8 @@ needed to.
    **Documentation (Jobs)**
      https://socorro.readthedocs.io/
 
-   **Code (Crontabber)**
-     https://github.com/mozilla/crontabber
-
-   **Documentation (Crontabber)**
-     https://crontabber.readthedocs.io/
-
-   **Crontabber state**
-     https://crash-stats.mozilla.com/crontabber-state/
-
-   **Socorro crontabber documentation**
-     :ref:`crontabber-chapter`
+   **Socorro scheduled tasks (cronrun) documentation**
+     :ref:`cron-chapter`
 
 
 Telemetry (External system)

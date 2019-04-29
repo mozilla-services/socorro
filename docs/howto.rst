@@ -5,11 +5,12 @@ How to
 Run security checks for dependencies
 ====================================
 
-You can run the crontabber job that checks for security vulnerabilities locally:
+You can run Django command that checks for security vulnerabilities locally:
 
 ::
 
-   make dependencycheck
+   $ make shell
+   app@socorro:app/$ socorro-cmd depcheck
 
 
 Connect to PostgreSQL Database in local dev environment

@@ -11,7 +11,7 @@ from six.moves.urllib.parse import urlparse
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
-from django.db import connection, transaction
+from django.db import connection
 from django.shortcuts import redirect, render
 
 from crashstats.crashstats.models import GraphicsDevice
@@ -58,30 +58,6 @@ def site_status(request):
     context['django_db_data'] = django_db_data
     context['django_db_error'] = django_db_error
 
-    # Get crontabber data
-    try:
-        # There's no crontabber tables in the db when the tests run
-        # because it's not managed by Django. Therefore this sql fails
-        # in the tests. When this fails, it kills the transaction the tests
-        # run in which loses the request session which causes the session
-        # middleware to kick up an HTTP 400 which causes the test to fail.
-        #
-        # Wrapping this in an atomic context prevents that cavalcade of
-        # clown shoes from happening.
-        with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    'SELECT app_name, next_run, last_run, last_success, error_count, last_error '
-                    'FROM crontabber WHERE error_count > 0'
-                )
-                cols = [col[0] for col in cursor.description]
-                crontabber_data = [dict(zip(cols, row)) for row in cursor.fetchall()]
-                crontabber_error = ''
-    except Exception as exc:
-        crontabber_data = []
-        crontabber_error = 'error: %s' % exc
-    context['crontabber_data'] = crontabber_data
-    context['crontabber_error'] = crontabber_error
     context['title'] = 'Site status'
 
     return render(request, 'admin/site_status.html', context)

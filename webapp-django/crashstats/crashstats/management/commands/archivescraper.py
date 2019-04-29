@@ -22,10 +22,6 @@ Rough directory structure::
       nightly/       nightly builds
 
 
-This traverses the entire tree every time. If there are missing builds, it will
-pick them up the next time it runs. There's no maintained state for this job
-and it always backfills.
-
 This job only looks for build information for the en-US locale for the first
 platform in a build directory that has build information. Once it's found some
 build information, it moves on to the next version.
@@ -48,15 +44,13 @@ The first run will collect everything. After that, it'll skip versions that are
 before the latest major version in the database minus 4. For example, if there
 are builds in the database for 63, then it'll only scrape information for 59
 and higher for that product. It will collect anything with "esr" in the name.
+If there are missing builds, it will pick them up the next time it runs.
 
 You can run this in a local development environment like this::
 
-    docker-compose run app shell ./socorro-cmd crontabber \
-        --job=archivescraper --crontabber.class-ArchiveScraperCronApp.verbose
+    $ ./webapp-django/manage.py archivescraper
 
-
-The "verbose" argument will cause it to log helpful information for diagnosing
-issues.
+See ``--help`` for arguments.
 
 """
 

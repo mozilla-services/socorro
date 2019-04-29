@@ -66,11 +66,7 @@ Setup Quickstart
 
      $ make build
 
-   That will build the Docker images required for development: processor,
-   webapp, and crontabber.
-
-   Each of these images covers a single Socorro component: processor, webapp,
-   and crontabber.
+   That will build the app Docker image required for development.
 
 5. Initialize Postgres, Elasticsearch, S3, and Pub/Sub.
 
@@ -78,7 +74,7 @@ Setup Quickstart
 
      $ make runservices
 
-   This starts services containers. Then run::
+   This starts service containers. Then run::
 
      $ make setup
 
@@ -136,9 +132,8 @@ environment that has no crash data in it.
    **Run the webapp!**
        See :ref:`webapp-chapter` for additional setup and running the webapp.
 
-   **Run crontabber!**
-       See :ref:`crontabber-chapter` for additional setup and running
-       crontabber.
+   **Run scheduled tasks!**
+       See :ref:`cron-chapter` for additional setup and running cronrun.
 
 
 .. _gettingstarted-chapter-updating:
@@ -207,10 +202,7 @@ Configuration is pulled from three sources:
 1. Envronment variables
 2. ENV files located in ``/app/docker/config/``. See ``docker-compose.yml`` for
    which ENV files are used in which containers, and their precedence.
-3. Defaults for crontabber are in ``socorro/cron/crontabber_app.py`` in
-   ``CronTabberApp.config_defaults``.
-
-   Defaults for the processor are in ``socorro/processor/processor_app.py``
+3. Defaults for the processor are in ``socorro/processor/processor_app.py``
    in ``CONFIG_DEFAULTS``.
 
    Defaults for the webapp are in ``webapp-django/crashstats/settings/``.

@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.utils.encoding import smart_text
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
+from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.monitoring.views import assert_supersearch_no_errors
 from crashstats.supersearch.models import SuperSearch
@@ -25,11 +26,11 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert reverse('monitoring:crontabber_status') in smart_text(response.content)
+        assert reverse('monitoring:cron_status') in smart_text(response.content)
 
 
 class TestCrontabberStatusViews(BaseTestViews):
-    def test_crontabber_status_ok(self):
+    def test_cron_status_ok(self):
         recently = timezone.now()
         CronJob.objects.create(
             app_name='job1',
@@ -38,12 +39,12 @@ class TestCrontabberStatusViews(BaseTestViews):
             last_run=recently
         )
 
-        url = reverse('monitoring:crontabber_status')
+        url = reverse('monitoring:cron_status')
         response = self.client.get(url)
         assert response.status_code == 200
         assert json.loads(response.content) == {'status': 'ALLGOOD'}
 
-    def test_crontabber_status_trouble(self):
+    def test_cron_status_trouble(self):
         recently = timezone.now()
         CronJob.objects.create(
             app_name='job1',
@@ -70,17 +71,15 @@ class TestCrontabberStatusViews(BaseTestViews):
             last_run=recently
         )
 
-        url = reverse('monitoring:crontabber_status')
+        url = reverse('monitoring:cron_status')
         response = self.client.get(url)
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data['status'] == 'Broken'
         assert data['broken'] == ['job1']
 
-    def test_crontabber_status_not_run_for_a_while(self):
-        some_time_ago = (
-            timezone.now() - datetime.timedelta(minutes=settings.CRONTABBER_STALE_MINUTES)
-        )
+    def test_cron_status_not_run_for_a_while(self):
+        some_time_ago = timezone.now() - datetime.timedelta(minutes=MAX_ONGOING)
         CronJob.objects.create(
             app_name='job1',
             error_count=0,
@@ -94,15 +93,15 @@ class TestCrontabberStatusViews(BaseTestViews):
             last_run=some_time_ago
         )
 
-        url = reverse('monitoring:crontabber_status')
+        url = reverse('monitoring:cron_status')
         response = self.client.get(url)
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data['status'] == 'Stale'
         assert data['last_run'] == some_time_ago.isoformat()
 
-    def test_crontabber_status_never_run(self):
-        url = reverse('monitoring:crontabber_status')
+    def test_cron_status_never_run(self):
+        url = reverse('monitoring:cron_status')
         response = self.client.get(url)
         assert response.status_code == 200
         data = json.loads(response.content)

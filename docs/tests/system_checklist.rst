@@ -175,20 +175,16 @@ Checklist
     Crontabber
     ==========
 
-    Is crontabber working?
+    Is the crontabber node working?
 
-    * Check healthcheck endpoint (/monitoring/crontabber/)
+    * Check the Job and Log Django admin pages.
 
-      It should say ALLGOOD.
-
-    * Check the webapp crontabber-state page (/crontabber-state/)
-
-    Is crontabber throwing errors?
+    Is cronrun throwing errors?
 
     * Check Sentry for errors
-    * Log into admin node and check logs for errors
+    * Log into a logging node and check logs for errors:
 
-      Do: "tail -f /var/log/socorro/crontabber"
+      Do: "tail -f /var/log/raw/socorro.crontabber.docker.crontabber.log"
 
       To check for errors, grep for "ERROR".
 

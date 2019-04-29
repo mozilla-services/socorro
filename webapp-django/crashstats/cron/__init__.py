@@ -1,15 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-# NOTE(willkg): Times are in UTC. These are Django-based jobs. The other
-# crontabber handles the jobs that haven't been converted, yet.
 #
 # NOTE(willkg): You can't have the same job in here twice with two different
 # frequencies. If we ever need to do that, we'll need to stop using "cmd" as
 # the key in the db.
 #
-# cmd, frequency, time, backfill
+# Times are in UTC
+#
+# cmd, cmd_args, frequency, time, backfill, last_success
 JOBS = [
     {
         # Test cron job
