@@ -133,10 +133,7 @@ class Downloader:
         if verbose and not self.verbose:
             return
 
-        if self.num_workers > 1:
-            self.msgs.append(msg)
-        else:
-            print(msg)
+        self.msgs.append(msg)
 
     def get_links(self, content):
         """Retrieve valid links on the page.
