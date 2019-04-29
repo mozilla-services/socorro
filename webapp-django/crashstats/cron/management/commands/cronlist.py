@@ -15,6 +15,17 @@ class Command(BaseCommand):
     def handle(self, **options):
         for job_spec in JOBS:
             self.stdout.write(job_spec['cmd'])
+
+            cmdline = [job_spec['cmd']]
+            if job_spec.get('cmd_args'):
+                cmdline.extend(job_spec['cmd_args'])
+            if job_spec.get('backfill'):
+                cmdline.append('--run-time=RUNTIME')
+            if job_spec.get('last_success'):
+                cmdline.append('--last-success=LASTSUCCESS')
+            cmdline = ' '.join(cmdline)
+            self.stdout.write('    cmdline:      %s' % cmdline)
+
             schedule = []
             schedule.append('every ' + job_spec.get('frequency', DEFAULT_FREQUENCY))
             if job_spec.get('time'):
