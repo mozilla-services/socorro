@@ -154,17 +154,11 @@ class ProcessorApp(FetchTransformSaveApp):
         :arg exc_info: the exc info as it comes from sys.exc_info()
 
         """
-        if self.config.sentry and self.config.sentry.dsn:
-            sentry_dsn = self.config.sentry.dsn
-        else:
-            sentry_dsn = None
-
         extra = {}
         if crash_id:
             extra['crash_id'] = crash_id
 
         sentry_client.capture_error(
-            sentry_dsn,
             self.logger,
             exc_info,
             extra=extra

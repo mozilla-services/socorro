@@ -31,28 +31,12 @@ class TestProcessor2015(object):
         config.processor_name = 'dwight'
         return config
 
-    @patch('socorro.lib.sentry_client.get_client')
-    def test_rule_error(self, mock_get_client):
-        captured_exceptions = []  # a global
-
-        def mock_capture_exception(exc_info):
-            captured_exceptions.append(exc_info[1])
-            return 'someidentifier'
-
-        client = MagicMock()
-
-        def mock_Client(dsn):
-            client.dsn = dsn
-            client.captureException.side_effect = mock_capture_exception
-            return client
-
-        mock_get_client.side_effect = mock_Client
-
+    @patch('socorro.lib.sentry_client.get_hub', side_effect=Exception('fail'))
+    @patch('socorro.lib.sentry_client.is_enabled', return_value=False)
+    def test_rule_error_sentry_disabled(self, is_enabled, mock_get_hub):
         config = self.get_config()
-        config.sentry = DotDict()
-        config.sentry.dsn = ''
 
-        # Test with no dsn set
+        # Test with Sentry disabled (no dsn set)
         raw_crash = {
             'uuid': '1'
         }
@@ -66,9 +50,30 @@ class TestProcessor2015(object):
             processed_crash.processor_notes ==
             'dwight; Processor2015; rule BadRule failed: KeyError'
         )
+        mock_get_hub.assert_not_called()
 
-        # Test with dsn set
-        config.sentry.dsn = 'https://user:pwd@sentry.example.com/01/'
+    @patch('socorro.lib.sentry_client.get_hub')
+    @patch('socorro.lib.sentry_client.is_enabled', return_value=True)
+    def test_rule_error_sentry_enabled(self, is_enabled, mock_get_hub):
+        config = self.get_config()
+        captured_exceptions = []  # a global
+
+        def mock_capture_exception(error):
+            captured_exceptions.append(error[1])
+            return 'someidentifier'
+
+        hub = MagicMock()
+
+        def mock_Hub():
+            hub.capture_exception.side_effect = mock_capture_exception
+            return hub
+
+        mock_get_hub.side_effect = mock_Hub
+
+        # Test with Sentry enabled (dsn set)
+        raw_crash = {
+            'uuid': '1'
+        }
         processed_crash = DotDict()
 
         processor = Processor2015(config, rules=[BadRule])

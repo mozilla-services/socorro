@@ -8,14 +8,25 @@ import sys
 import sentry_sdk
 
 
-def get_client(dsn):
+def is_enabled():
+    """Return True if sentry was initialized with a DSN."""
+    return (sentry_sdk.Hub.current.client and
+            sentry_sdk.Hub.current.client.options['dsn'] is not None)
+
+
+def get_hub():
+    """Get the initialized Sentry hub.
+
+    With a previous SDK (raven), this was called get_client, and initialized
+    the it with a DSN. With the current SDK, this returns the Hub, and is
+    mostly used to give tests something to test against.
+    """
     return sentry_sdk.Hub.current
 
 
-def capture_error(sentry_dsn, logger=None, exc_info=None, extra=None):
-    """Capture an error in sentry if able
+def capture_error(logger=None, exc_info=None, extra=None):
+    """Capture an error in sentry if enabled.
 
-    :arg sentry_dsn: the sentry dsn (or None)
     :arg logger: the logger to use
     :arg exc_info: the exception information as a tuple like from `sys.exc_info`
     :arg extra: any extra information to send along as a dict
@@ -25,19 +36,19 @@ def capture_error(sentry_dsn, logger=None, exc_info=None, extra=None):
 
     exc_info = exc_info or sys.exc_info()
 
-    if sentry_dsn:
+    if is_enabled():
         extra = extra or {}
 
         try:
-            # Set up the Sentry client.
-            client = get_client(sentry_dsn)
+            # Get the configured Sentry hub
+            hub = get_hub()
 
             with sentry_sdk.push_scope() as scope:
                 for key, value in extra.items():
                     scope.set_extra(key, value)
 
                 # Send the exception.
-                identifier = client.capture_exception(error=exc_info)
+                identifier = hub.capture_exception(error=exc_info)
                 logger.info('Error captured in Sentry! Reference: %s' % identifier)
 
                 # At this point, if everything is good, the exceptions were

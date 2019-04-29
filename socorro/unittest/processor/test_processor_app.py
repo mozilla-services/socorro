@@ -35,7 +35,7 @@ class FakeCrashQueue(object):
 
 
 class TestProcessorApp(object):
-    def get_standard_config(self, sentry_dsn=None):
+    def get_standard_config(self):
         config = DotDict()
 
         config.source = DotDict()
@@ -61,9 +61,6 @@ class TestProcessorApp(object):
         config.companion_process = DotDict()
         mocked_companion_process = mock.Mock()
         config.companion_process.companion_class = mock.Mock(return_value=mocked_companion_process)
-
-        config.sentry = mock.MagicMock()
-        config.sentry.dsn = sentry_dsn
 
         return config
 
@@ -171,20 +168,21 @@ class TestProcessorApp(object):
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Sentry DSN is not configured and an exception happened' in logging_msgs
 
-    @mock.patch('socorro.lib.sentry_client.get_client')
+    @mock.patch('socorro.lib.sentry_client.get_hub')
+    @mock.patch('socorro.lib.sentry_client.is_enabled', return_value=True)
     def test_transform_polystorage_error_with_sentry_configured_successful(
-        self, mock_get_client, caplogpp
+        self, is_enabled, mock_get_hub, caplogpp
     ):
         caplogpp.set_level('DEBUG')
 
         # Mock everything
-        mock_client = mock.MagicMock()
-        mock_client.captureException.return_value = 'someidentifier'
-        mock_get_client.return_value = mock_client
+        mock_hub = mock.MagicMock()
+        mock_hub.capture_exception.return_value = 'someidentifier'
+        mock_get_hub.return_value = mock_hub
 
         # Set up a processor and mock out .save_raw_and_processed() with multiple
         # errors
-        config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
+        config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({'raw': 'crash'})
@@ -201,25 +199,26 @@ class TestProcessorApp(object):
             pa.transform('mycrashid')
 
         # Assert that we sent both exceptions to Sentry
-        mock_client.captureException.assert_has_calls(
-            [mock.call(exc) for exc in expected_exception.exceptions]
+        mock_hub.capture_exception.assert_has_calls(
+            [mock.call(error=exc) for exc in expected_exception.exceptions]
         )
 
         # Assert that the logger logged the appropriate thing
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
-    @mock.patch('socorro.lib.sentry_client.get_client')
+    @mock.patch('socorro.lib.sentry_client.get_hub')
+    @mock.patch('socorro.lib.sentry_client.is_enabled', return_value=True)
     def test_transform_save_error_with_sentry_configured_successful(
-            self, mock_get_client, caplogpp):
+            self, is_enabled, mock_get_hub, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        mock_client = mock.MagicMock()
-        mock_client.captureException.return_value = 'someidentifier'
-        mock_get_client.return_value = mock_client
+        mock_hub = mock.MagicMock()
+        mock_hub.capture_exception.return_value = 'someidentifier'
+        mock_get_hub.return_value = mock_hub
 
         # Set up a processor and mock .save_raw_and_processed() to raise an exception
-        config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
+        config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({'raw': 'crash'})
@@ -234,8 +233,8 @@ class TestProcessorApp(object):
 
         # Assert that we sent the exception to Sentry
         assert (
-            mock_client.captureException.call_args_list == [
-                mock.call((ValueError, expected_exception, WHATEVER))
+            mock_hub.capture_exception.call_args_list == [
+                mock.call(error=(ValueError, expected_exception, WHATEVER))
             ]
         )
 
@@ -243,17 +242,18 @@ class TestProcessorApp(object):
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
-    @mock.patch('socorro.lib.sentry_client.get_client')
+    @mock.patch('socorro.lib.sentry_client.get_hub')
+    @mock.patch('socorro.lib.sentry_client.is_enabled', return_value=True)
     def test_transform_get_error_with_sentry_configured_successful(
-            self, mock_get_client, caplogpp):
+            self, is_enabled, mock_get_hub, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        mock_client = mock.MagicMock()
-        mock_client.captureException.return_value = 'someidentifier'
-        mock_get_client.return_value = mock_client
+        mock_hub = mock.MagicMock()
+        mock_hub.capture_exception.return_value = 'someidentifier'
+        mock_get_hub.return_value = mock_hub
 
         # Set up a processor and mock .get_raw_crash() to raise an exception
-        config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
+        config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
 
@@ -266,8 +266,8 @@ class TestProcessorApp(object):
 
         # Assert that the processor sent something to Sentry
         assert (
-            mock_client.captureException.call_args_list == [
-                mock.call((ValueError, expected_exception, WHATEVER))
+            mock_hub.capture_exception.call_args_list == [
+                mock.call(error=(ValueError, expected_exception, WHATEVER))
             ]
         )
 
@@ -275,19 +275,20 @@ class TestProcessorApp(object):
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
-    @mock.patch('socorro.lib.sentry_client.get_client')
+    @mock.patch('socorro.lib.sentry_client.get_hub')
+    @mock.patch('socorro.lib.sentry_client.is_enabled', return_value=True)
     def test_transform_polystorage_error_with_sentry_configured_failing(
-            self, mock_get_client, caplogpp):
+            self, is_enabled, mock_get_hub, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        mock_client = mock.MagicMock()
+        mock_hub = mock.MagicMock()
 
         # Mock this to throw an error if it's called because it shouldn't get called
-        mock_client.captureException.side_effect = ValueError('sentry error')
-        mock_get_client.return_value = mock_client
+        mock_hub.capture_exception.side_effect = ValueError('sentry error')
+        mock_get_hub.return_value = mock_hub
 
         # Set up processor and mock .save_raw_and_processed() to raise an exception
-        config = self.get_standard_config(sentry_dsn='https://abc123@example.com/project')
+        config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({'raw': 'crash'})

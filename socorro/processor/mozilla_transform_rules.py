@@ -785,19 +785,12 @@ class SignatureGeneratorRule(Rule):
 
     def __init__(self, config):
         super().__init__(config)
-        try:
-            sentry_dsn = self.config.sentry.dsn
-        except (AttributeError, KeyError):
-            sentry_dsn = None
-        self.sentry_dsn = sentry_dsn
         self.generator = SignatureGenerator(error_handler=self._error_handler)
 
     def _error_handler(self, crash_data, exc_info, extra):
         """Captures errors from signature generation"""
         extra['uuid'] = crash_data.get('uuid', None)
-        sentry_client.capture_error(
-            self.sentry_dsn, self.logger, exc_info=exc_info, extra=extra
-        )
+        sentry_client.capture_error(self.logger, exc_info=exc_info, extra=extra)
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
