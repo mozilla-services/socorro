@@ -41,6 +41,7 @@ class LogAdmin(admin.ModelAdmin):
         'success',
         'pretty_error'
     ]
+    list_filter = ['app_name']
 
     def pretty_duration(self, obj):
         if not obj.duration:

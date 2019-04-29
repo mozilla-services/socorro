@@ -148,6 +148,8 @@ class Command(BaseCommand):
                         # the last_success as an argument
                         cmd_kwargs['last_success'] = format_datetime(last_success)
 
+                    logger.info('running: %s %s %s', cmd, cmd_args, cmd_kwargs)
+
                     start_time = time.time()
                     self._run_job(job_spec, *cmd_args, **cmd_kwargs)
                     end_time = time.time()
@@ -240,7 +242,7 @@ class Command(BaseCommand):
                 return
 
         # Can't lock it, so raise an error
-        raise OngoingJobError(job.ongoing)
+        raise OngoingJobError('%s: %s' % (job.app_name, job.ongoing))
 
     def _log_run(self, cmd, seconds, time_, last_success, now, exc_type, exc_value, exc_tb):
         job = Job.objects.get_or_create(app_name=cmd)[0]
