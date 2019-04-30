@@ -1333,7 +1333,7 @@ class TestBetaVersionRule(object):
             'added "b0" suffix to version number'
         ]
 
-    def test_aurora_channel(self, db_conn):
+    def test_aurora_channel(self):
         """Test aurora channel lookup"""
         config = self.get_config()
         raw_crash = {}
