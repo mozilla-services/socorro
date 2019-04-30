@@ -20,7 +20,7 @@ saw a signature.
        topcrashersreport [shape=tab, label="topcrashers report"];
      }
 
-     updatesignatures [shape=rect, label="UpdateSignaturesCronApp"];
+     updatesignatures [shape=rect, label="updatesignatures"];
      model [shape=box3d, label="crashstats_bugassociation"];
 
      updatesignatures -> model [label="produces"];
@@ -39,10 +39,9 @@ in the ``crashstats_signature`` PostgreSQL table.
 Where the data comes from
 =========================
 
-The ``socorro.crontabber.jobs.update_signatures.UpdateSignaturesCronApp``
-crontabber app looks at all the crash reports in Elasticsearch for some period
-of time, then goes through and updates the ``first_build`` and ``first_date``
-columns.
+The ``updatesignatures`` Django command looks at all the crash reports in
+Elasticsearch for some period of time, then goes through and updates the
+``first_build`` and ``first_date`` columns.
 
 
 What uses the data

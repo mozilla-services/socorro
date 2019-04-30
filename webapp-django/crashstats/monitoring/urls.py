@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.conf.urls import url
+from django.views.generic import RedirectView
 
 from crashstats.monitoring import views
 
@@ -10,7 +11,12 @@ from crashstats.monitoring import views
 app_name = 'monitoring'
 urlpatterns = [
     url(r'^monitoring/$', views.index, name='index'),
-    url(r'^monitoring/crontabber/$', views.crontabber_status, name='crontabber_status'),
+    url(r'^monitoring/cron/$', views.cron_status, name='cron_status'),
+    # FIXME(willkg): Deprecated as of 4/30/2019
+    url(
+        r'^monitoring/crontabber/$',
+        RedirectView.as_view(url='/monitoring/cron/', permanent=True)
+    ),
 
     # Dockerflow endpoints
     url(r'^__heartbeat__$', views.dockerflow_heartbeat, name='dockerflow_heartbeat'),

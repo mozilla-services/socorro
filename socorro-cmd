@@ -102,7 +102,7 @@ COMMANDS = [
     ),
     Group(
         'Services', {
-            'crontabber': import_path('socorro.cron.crontabber_app.CronTabberApp'),
+            'cronrun': django_cmd('cronrun'),
             'processor': import_path('socorro.processor.processor_app.ProcessorApp'),
         }
     ),

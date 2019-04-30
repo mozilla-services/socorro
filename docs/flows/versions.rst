@@ -34,7 +34,7 @@ Where the data comes from
 
 Data can get in the table in two ways:
 
-1. the ``ArchiveScraperCronApp`` crontabber app scrapes archive.mozilla.org
+1. the ``archivescraper`` Django command scrapes archive.mozilla.org
    data every hour and adds new things to the table
 
 2. the Django admin page lets administrators add new data and edit existing

@@ -24,6 +24,5 @@ set -e
 /app/socorro-cmd pubsub delete
 /app/socorro-cmd pubsub create
 
-# Initialize the crontabber bookkeeping for all configured jobs to success
-/app/socorro-cmd crontabber --mark-success=all
+# Initialize the cronrun bookkeeping for all configured jobs to success
 /app/webapp-django/manage.py cronmarksuccess all

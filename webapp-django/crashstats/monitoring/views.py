@@ -15,6 +15,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from crashstats.crashstats import utils
+from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch
 
@@ -24,8 +25,8 @@ def index(request):
 
 
 @utils.json_view
-def crontabber_status(request):
-    """Returns the high-level status of crontabber jobs"""
+def cron_status(request):
+    """Returns the high-level status of cron jobs."""
     context = {
         'status': 'ALLGOOD'
     }
@@ -41,9 +42,7 @@ def crontabber_status(request):
 
     # Adjust status based on last_run
     if last_runs:
-        ancient_times = timezone.now() - datetime.timedelta(
-            minutes=settings.CRONTABBER_STALE_MINUTES
-        )
+        ancient_times = timezone.now() - datetime.timedelta(minutes=MAX_ONGOING)
         most_recent_run = max(last_runs)
         if most_recent_run < ancient_times:
             context['status'] = 'Stale'

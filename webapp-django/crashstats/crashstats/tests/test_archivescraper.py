@@ -109,7 +109,7 @@ def setup_site(req_mock, root, file_contents):
         req_mock.get(HOST + path, text=index_page)
 
 
-class TestArchiveScraperCronApp:
+class TestArchiveScraper:
     def fetch_data(self):
         return list(
             ProductVersion.objects

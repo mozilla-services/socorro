@@ -60,37 +60,5 @@
         </table>
       {% endif %}
     </div>
-
-    <div>
-      <h2>Crontabber failed jobs</h2>
-      {% if crontabber_error %}
-        <p>{{ crontabber_error }}</p>
-      {% else %}
-        <table>
-          <thead>
-            <tr>
-              <th>app_name</th>
-              <th>next_run</th>
-              <th>last_run</th>
-              <th>last_success</th>
-              <th>error_count</th>
-              <th>last_error</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in crontabber_data %}
-              <tr>
-                <td>{{ row.app_name }}</td>
-                <td>{{ row.next_run }}</td>
-                <td>{{ row.last_run }}</td>
-                <td>{{ row.last_success }}</td>
-                <td>{{ row.error_count }}</td>
-                <td>{{ row.last_error }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-    </div>
   </div>
 {% endblock %}

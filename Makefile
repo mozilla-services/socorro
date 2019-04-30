@@ -119,7 +119,3 @@ runservices: my.env
 .PHONY: stop
 stop: my.env
 	${DC} stop
-
-.PHONY: dependencycheck
-dependencycheck: my.env
-	${DC} run --rm crontabber shell ./docker/run_dependency_checks.sh
