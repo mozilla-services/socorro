@@ -12,7 +12,7 @@ app_name = 'monitoring'
 urlpatterns = [
     url(r'^monitoring/$', views.index, name='index'),
     url(r'^monitoring/cron/$', views.cron_status, name='cron_status'),
-    # FIXME(willkg): DEPRECATED AS OF 4/30/2019
+    # FIXME(willkg): Deprecated as of 4/30/2019
     url(
         r'^monitoring/crontabber/$',
         RedirectView.as_view(url='/monitoring/cron/', permanent=True)

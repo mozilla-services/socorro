@@ -16,7 +16,7 @@ TODAY = datetime.datetime.now().strftime('%Y%m%d')
 BUCKET_NAME = os.environ.get('resource.boto.bucket_name')
 
 
-class TestVerifyProcessedCronApp:
+class TestVerifyProcessed:
     def fetch_crashids(self):
         return MissingProcessedCrash.objects.order_by('crash_id').values_list('crash_id', flat=True)
 
