@@ -20,7 +20,7 @@ saw a signature.
        topcrashersreport [shape=tab, label="topcrashers report"];
      }
 
-     updatesignatures [shape=rect, label="UpdateSignaturesCronApp"];
+     updatesignatures [shape=rect, label="updatesignatures"];
      model [shape=box3d, label="crashstats_bugassociation"];
 
      updatesignatures -> model [label="produces"];
