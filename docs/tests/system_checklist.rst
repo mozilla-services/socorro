@@ -88,9 +88,9 @@ Checklist
 
     Is the processor process running?
 
-    * Log into a processor node and watch the processor logs for errors.
+    * Log into a logging node and check logs for errors:
 
-      Do: "journalctl -u socorro-processor -f"
+      Do: "tail -f /var/log/raw/socorro.processor.docker.processor.log"
 
       To check for errors grep for "ERRORS".
 
@@ -137,11 +137,9 @@ Checklist
     Is the webapp throwing errors?
 
     * Check Sentry for errors
-    * Log into webapp node and check logs for errors.
+    * Log into a logging node and check logs for errors:
 
-      Do: "journalctl -u socorro-webapp -f"
-
-      To check for errors, grep that for "ERROR".
+      Do: "tail -f /var/log/raw/socorro.webapp.docker.webapp.log"
 
     Do webapp errors make it to Sentry?
 
