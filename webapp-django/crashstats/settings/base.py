@@ -12,9 +12,11 @@ import socket
 
 from decouple import config, Csv
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import ignore_logger
 import dj_database_url
 import sentry_sdk
 
+from crashstats.sentrylib import get_before_send, SENTRY_LOG_NAME
 from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS  # noqa
 from socorro.lib.revision_data import get_version
 
@@ -596,7 +598,22 @@ if SENTRY_DSN:
         release=SOCORRO_REVISION,
         send_default_pii=False,
         integrations=[DjangoIntegration()],
-        debug=SENTRY_DEBUG)
+        debug=SENTRY_DEBUG,
+        before_send=get_before_send())
+    ignore_logger(SENTRY_LOG_NAME)
+
+    if SENTRY_DEBUG:
+        # Add a DEBUG level handler for sentry processing messages
+        LOGGING['handlers']['sentry'] = {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'socorroapp'
+        }
+        LOGGING['loggers'][SENTRY_LOG_NAME] = {
+            'handlers': ['sentry'],
+            'level': 'DEBUG',
+            'propagate': False
+        }
 
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
 
