@@ -7,12 +7,10 @@ pytest plugins for socorro/unittest/ and webapp-django/ test suites.
 """
 
 import logging
-import os
 
 import boto
 from boto.exception import StorageResponseError
 from markus.testing import MetricsMock
-import psycopg2
 import pytest
 import requests_mock
 
@@ -43,35 +41,6 @@ def metricsmock():
 
     """
     return MetricsMock()
-
-
-@pytest.fixture
-def db_conn():
-    """Set up database and return connection."""
-    dsn = os.environ['DATABASE_URL']
-    conn = psycopg2.connect(dsn)
-
-    tables = [
-        'crashstats_productversion',
-        'crashstats_missingprocessedcrash',
-        'crashstats_signature',
-        'cron_job',
-        'cron_log',
-    ]
-
-    # Clean specific tables after usage
-    cursor = conn.cursor()
-    for table_name in tables:
-        cursor.execute('TRUNCATE %s CASCADE' % table_name)
-    conn.commit()
-
-    yield conn
-
-    # Clean specific tables after usage
-    cursor = conn.cursor()
-    for table_name in tables:
-        cursor.execute('TRUNCATE %s CASCADE' % table_name)
-    conn.commit()
 
 
 @pytest.yield_fixture
