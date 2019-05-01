@@ -98,9 +98,9 @@ mistune==0.8.4 \
     --hash=sha256:59a3429db53c50b5c6bcc8a07f8848cb00d7dc8bdb431a4ab41920d201d4756e \
     --hash=sha256:88a1051873018da288eee8538d476dffe1262495144b33ecb586c4ab266bb8d4
 
-recommonmark==0.4.0 \
-    --hash=sha256:cd8bf902e469dae94d00367a8197fb7b81fcabc9cfb79d520e0d22d0fbeaa8b7 \
-    --hash=sha256:6e29c723abcf5533842376d87c4589e62923ecb6002a8e059eb608345ddaff9d
+recommonmark==0.5.0 \
+    --hash=sha256:a520b8d25071a51ae23a27cf6252f2fe387f51bdc913390d83b2b50617f5bb48 \
+    --hash=sha256:c85228b9b7aea7157662520e74b4e8791c5eacd375332ec68381b52bf10165be
 # recommonmark 0.4.0 requires CommonMark <= 0.5.4--don't upgrade this!
 CommonMark==0.5.4 \
     --hash=sha256:34d73ec8085923c023930dfc0bcd1c4286e28a2a82de094bb72fabcc0281cbe5 # pyup:ignore
