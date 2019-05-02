@@ -4,12 +4,12 @@
 
 import mock
 
-from crashstats.api.cleaner import Cleaner, SmartWhitelistMatcher
+from crashstats.api.cleaner import Cleaner, SmartAllowlistMatcher
 
 
 class TestCleaner(object):
     def test_simplest_case(self):
-        whitelist = {'hits': ('foo', 'bar')}
+        allowlist = {'hits': ('foo', 'bar')}
         data = {
             'hits': [
                 {'foo': 1,
@@ -20,7 +20,7 @@ class TestCleaner(object):
                  'baz': 6},
             ]
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(allowlist)
         cleaner.start(data)
         expect = {
             'hits': [
@@ -34,7 +34,7 @@ class TestCleaner(object):
 
     @mock.patch('warnings.warn')
     def test_simplest_case_with_warning(self, p_warn):
-        whitelist = {'hits': ('foo', 'bar')}
+        allowlist = {'hits': ('foo', 'bar')}
         data = {
             'hits': [
                 {'foo': 1,
@@ -45,12 +45,12 @@ class TestCleaner(object):
                  'baz': 6},
             ]
         }
-        cleaner = Cleaner(whitelist, debug=True)
+        cleaner = Cleaner(allowlist, debug=True)
         cleaner.start(data)
         p_warn.assert_called_with("Skipping 'baz'")
 
     def test_all_dict_data(self):
-        whitelist = {Cleaner.ANY: ('foo', 'bar')}
+        allowlist = {Cleaner.ANY: ('foo', 'bar')}
         data = {
             'WaterWolf': {
                 'foo': 1,
@@ -63,7 +63,7 @@ class TestCleaner(object):
                 'baz': 9,
             },
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(allowlist)
         cleaner.start(data)
         expect = {
             'WaterWolf': {
@@ -78,7 +78,7 @@ class TestCleaner(object):
         assert data == expect
 
     def test_simple_list(self):
-        whitelist = ('foo', 'bar')
+        allowlist = ('foo', 'bar')
         data = [
             {
                 'foo': 1,
@@ -91,7 +91,7 @@ class TestCleaner(object):
                 'baz': 9,
             },
         ]
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(allowlist)
         cleaner.start(data)
         expect = [
             {
@@ -106,13 +106,13 @@ class TestCleaner(object):
         assert data == expect
 
     def test_plain_dict(self):
-        whitelist = ('foo', 'bar')
+        allowlist = ('foo', 'bar')
         data = {
             'foo': 1,
             'bar': 2,
             'baz': 3,
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(allowlist)
         cleaner.start(data)
         expect = {
             'foo': 1,
@@ -121,7 +121,7 @@ class TestCleaner(object):
         assert data == expect
 
     def test_dict_data_with_lists(self):
-        whitelist = {
+        allowlist = {
             'hits': {
                 Cleaner.ANY: ('foo', 'bar')
             }
@@ -138,7 +138,7 @@ class TestCleaner(object):
                 ]
             }
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(allowlist)
         cleaner.start(data)
         expect = {
             'hits': {
@@ -155,7 +155,7 @@ class TestCleaner(object):
         assert data == expect
 
     def test_all_dict_data_deeper(self):
-        whitelist = {Cleaner.ANY: {Cleaner.ANY: ('foo', 'bar')}}
+        allowlist = {Cleaner.ANY: {Cleaner.ANY: ('foo', 'bar')}}
         data = {
             'WaterWolf': {
                 '2012': {
@@ -182,7 +182,7 @@ class TestCleaner(object):
                 }
             },
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(allowlist)
         cleaner.start(data)
         expect = {
             'WaterWolf': {
@@ -209,10 +209,10 @@ class TestCleaner(object):
         assert data == expect
 
 
-class TestSmartWhitelistMatcher(object):
+class TestSmartAllowlistMatcher(object):
     def test_basic_in(self):
-        whitelist = ['some', 'thing*']
-        matcher = SmartWhitelistMatcher(whitelist)
+        allowlist = ['some', 'thing*']
+        matcher = SmartAllowlistMatcher(allowlist)
         assert 'some' in matcher
         assert 'something' not in matcher
         assert 'awesome' not in matcher

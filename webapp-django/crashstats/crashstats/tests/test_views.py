@@ -530,7 +530,7 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
-        # Be signed in with view_pii to avoid whitelisting
+        # Be signed in with view_pii to avoid allowlisting
         user = self._login()
         group = self._create_group_with_permission('view_pii')
         user.groups.add(group)
