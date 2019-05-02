@@ -43,6 +43,9 @@ class Job(models.Model):
         help_text='the datetime this job entry was locked'
     )
 
+    def __str__(self):
+        return '<Job: %s>' % self.app_name
+
 
 class Log(models.Model):
     app_name = models.CharField(
@@ -72,3 +75,10 @@ class Log(models.Model):
         null=True, blank=True,
         help_text='the exc traceback of an error if any'
     )
+
+    def __str__(self):
+        return '<Log: %s@%s, %s>' % (
+            self.app_name,
+            self.log_time.strftime('%Y-%m-%d %H:%M'),
+            bool(self.success)
+        )
