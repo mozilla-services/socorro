@@ -448,8 +448,8 @@ def get_version_context_for_product(product):
     major_to_versions = OrderedDict()
     for version in versions:
         # In figuring for featured versions, we don't want to include the
-        # catch-all-betas X.Yb faux version
-        if version.endswith('b'):
+        # catch-all-betas X.Yb faux version or ESR versions
+        if version.endswith(('b', 'esr')):
             continue
 
         try:
