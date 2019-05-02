@@ -56,7 +56,7 @@ class TestDocumentationViews(BaseTestViews):
 
         from crashstats.api import views
         for elt in doc('#mainbody .panel .title h2 a'):
-            assert elt.text not in views.BLACKLIST
+            assert elt.text not in views.API_DONT_SERVE_LIST
 
 
 class TestViews(BaseTestViews):

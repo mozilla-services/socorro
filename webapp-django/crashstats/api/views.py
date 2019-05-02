@@ -52,7 +52,7 @@ NOT_FOUND_EXCEPTIONS = (
 )
 
 
-class APIWhitelistError(Exception):
+class APIAllowlistError(Exception):
     pass
 
 
@@ -122,7 +122,7 @@ class FormWrapper(forms.Form):
 
 
 # Names of models we don't want to serve at all
-BLACKLIST = (
+API_DONT_SERVE_LIST = (
     # because it's only used for the admin
     'Field',
     'SuperSearchMissingFields',
@@ -165,7 +165,7 @@ def is_valid_model_class(model):
 @utils.add_CORS_header  # must be before `utils.json_view`
 @utils.json_view
 def model_wrapper(request, model_name):
-    if model_name in BLACKLIST:
+    if model_name in API_DONT_SERVE_LIST:
         raise http.Http404("Don't know what you're talking about!")
 
     model = None
@@ -209,8 +209,8 @@ def model_wrapper(request, model_name):
         }, status=403)
 
     # it being set to None means it's been deliberately disabled
-    if getattr(model, 'API_WHITELIST', False) is False:
-        raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
+    if getattr(model, 'API_ALLOWLIST', False) is False:
+        raise APIAllowlistError('No API_ALLOWLIST defined for %r' % model)
 
     instance = model()
 
@@ -287,16 +287,16 @@ def model_wrapper(request, model_name):
                 )
 
         elif not request.user.has_perm('crashstats.view_pii'):
-            if callable(model.API_WHITELIST):
-                whitelist = model.API_WHITELIST()
+            if callable(model.API_ALLOWLIST):
+                allowlist = model.API_ALLOWLIST()
             else:
-                whitelist = model.API_WHITELIST
+                allowlist = model.API_ALLOWLIST
 
-            if result and whitelist:
+            if result and allowlist:
                 cleaner = Cleaner(
-                    whitelist,
+                    allowlist,
                     # if True, uses warnings.warn() to show fields
-                    # not whitelisted
+                    # not allowlisted
                     debug=settings.DEBUG,
                 )
                 cleaner.start(result)
@@ -355,7 +355,7 @@ def documentation(request, default_context=None):
         try:
             if not is_valid_model_class(model):
                 continue
-            if model_name in BLACKLIST:
+            if model_name in API_DONT_SERVE_LIST:
                 continue
         except TypeError:
             # most likely a builtin class or something

@@ -35,42 +35,42 @@ class Cleaner(object):
 
     ANY = '__any__'
 
-    def __init__(self, whitelist, debug=False):
-        self.whitelist = whitelist
+    def __init__(self, allowlist, debug=False):
+        self.allowlist = allowlist
         self.debug = debug
 
     def start(self, data):
-        self._scrub(data, self.whitelist)
+        self._scrub(data, self.allowlist)
 
-    def _scrub(self, result, api_whitelist):
-        if isinstance(api_whitelist, (list, tuple)):
+    def _scrub(self, result, api_allowlist):
+        if isinstance(api_allowlist, (list, tuple)):
             if isinstance(result, dict):
-                self._scrub_item(result, api_whitelist)
+                self._scrub_item(result, api_allowlist)
             else:
-                self._scrub_list(result, api_whitelist)
+                self._scrub_list(result, api_allowlist)
         else:
-            for result_key, whitelist in api_whitelist.items():
+            for result_key, allowlist in api_allowlist.items():
                 if result_key == self.ANY:
-                    if isinstance(whitelist, (list, tuple)):
+                    if isinstance(allowlist, (list, tuple)):
                         if isinstance(result, dict):
                             for key, thing in result.items():
                                 if isinstance(thing, dict):
-                                    self._scrub_item(thing, whitelist)
+                                    self._scrub_item(thing, allowlist)
                                 elif isinstance(thing, (list, tuple)):
-                                    self._scrub_list(thing, whitelist)
+                                    self._scrub_list(thing, allowlist)
 
                     else:
                         for datum in result.values():
-                            self._scrub(datum, whitelist)
+                            self._scrub(datum, allowlist)
                 else:
                     data = result[result_key]
                     if isinstance(data, dict):
-                        self._scrub(data, whitelist)
+                        self._scrub(data, allowlist)
                     elif isinstance(data, list):
-                        self._scrub_list(data, whitelist)
+                        self._scrub_list(data, allowlist)
 
-    def _scrub_item(self, data, whitelist):
-        matcher = SmartWhitelistMatcher(whitelist)
+    def _scrub_item(self, data, allowlist):
+        matcher = SmartAllowlistMatcher(allowlist)
         for key in list(data.keys()):
             if key not in matcher:
                 # warnings.warn() never redirects the same message to
@@ -82,18 +82,18 @@ class Cleaner(object):
                     warnings.warn(msg)
                 del data[key]
 
-    def _scrub_list(self, sequence, whitelist):
+    def _scrub_list(self, sequence, allowlist):
         for i, data in enumerate(sequence):
-            self._scrub_item(data, whitelist)
+            self._scrub_item(data, allowlist)
             sequence[i] = data
 
 
-class SmartWhitelistMatcher(object):
-    def __init__(self, whitelist):
+class SmartAllowlistMatcher(object):
+    def __init__(self, allowlist):
         def format(item):
             return '^' + item.replace('*', r'[\w-]*') + '$'
 
-        items = [format(x) for x in whitelist]
+        items = [format(x) for x in allowlist]
         self.regex = re.compile('|'.join(items))
 
     def __contains__(self, key):

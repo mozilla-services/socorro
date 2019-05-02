@@ -401,7 +401,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
     def test_success_with_limited_json_dump_class(self, espy_mock):
         """Test a successful index of a crash report"""
         modified_config = self.get_tuned_config(ESCrashStorage)
-        modified_config.json_dump_whitelist_keys = [
+        modified_config.json_dump_allowlist_keys = [
             "largest_free_vm_block",
             "tiny_block_size",
             "write_combine_size",
@@ -445,7 +445,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         expected_processed_crash = deepcopy(a_processed_crash_with_no_stackwalker)
         expected_processed_crash['json_dump'] = {
             k: a_processed_crash['json_dump'][k]
-            for k in modified_config.json_dump_whitelist_keys
+            for k in modified_config.json_dump_allowlist_keys
         }
         del expected_processed_crash['memory_report']
 

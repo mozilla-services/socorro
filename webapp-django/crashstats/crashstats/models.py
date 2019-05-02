@@ -242,7 +242,7 @@ class BugzillaRestHTTPUnexpectedError(Exception):
     """Happens Bugzilla's REST API doesn't give us a HTTP error we expect"""
 
 
-def get_api_whitelist(*args, **kwargs):
+def get_api_allowlist(*args, **kwargs):
     def get_from_es(namespace, baseline=None):
         # @namespace is something like 'raw_crash' or 'processed_crash'
 
@@ -637,7 +637,7 @@ class ProcessedCrash(SocorroMiddleware):
     will require PII access to view PII parts of the processed crash.
     """
 
-    API_WHITELIST = (
+    API_ALLOWLIST = (
         'additional_minidumps',
         'addons',
         'addons_checked',
@@ -689,9 +689,9 @@ class ProcessedCrash(SocorroMiddleware):
     # Same as for RawCrash, we supplement with the existing list, on top
     # of the Super Search Fields, because there are many fields not yet
     # listed in Super Search Fields.
-    API_WHITELIST = get_api_whitelist(
+    API_ALLOWLIST = get_api_allowlist(
         'processed_crash',
-        baseline=API_WHITELIST
+        baseline=API_ALLOWLIST
     )
 
 
@@ -711,18 +711,18 @@ class UnredactedCrash(ProcessedCrash):
     access to use this API.
     """
 
-    # Why no `API_WHITELIST` here?
+    # Why no `API_ALLOWLIST` here?
     #
     # Basically, the intention is this; the `UnredactedCrash` model should
     # only be usable if you have those two permissions. And if you have
-    # `view_pii` it doesn't matter what `API_WHITELIST` does at all
+    # `view_pii` it doesn't matter what `API_ALLOWLIST` does at all
     # because of this. Basically, it doesn't even get to the
-    # `API_WHITELIST checking stuff.
+    # `API_ALLOWLIST checking stuff.
     #
     # The assumption is that "unredacted = processed + sensitive stuff". So,
     # if you don't have `view_pii` you won't get anything here you don't
     # already get from `ProcessedCrash`. And if you have `view_pii`
-    # there's no point writing down a whitelist.
+    # there's no point writing down a allowlist.
 
 
 class RawCrash(SocorroMiddleware):
@@ -756,7 +756,7 @@ class RawCrash(SocorroMiddleware):
     will require PII access to view PII parts of the raw crash.
     """
 
-    API_WHITELIST = (
+    API_ALLOWLIST = (
         'Accessibility',
         'AdapterDeviceID',
         'AdapterDriverVersion',
@@ -836,7 +836,7 @@ class RawCrash(SocorroMiddleware):
     # The reason we use the old list and pass it into the more dynamic wrapper
     # for getting the complete list is because we're apparently way behind
     # on having all of these added to the Super Search Fields.
-    API_WHITELIST = get_api_whitelist('raw_crash', baseline=API_WHITELIST)
+    API_ALLOWLIST = get_api_allowlist('raw_crash', baseline=API_ALLOWLIST)
 
     # If this is matched in the query string parameters, then
     # we will return the response in binary format in the API
@@ -874,7 +874,7 @@ class Bugs(SocorroMiddleware):
     for all the signatures covered by those bug ids.
     """
 
-    API_WHITELIST = {
+    API_ALLOWLIST = {
         'hits': (
             'id',
             'signature',
@@ -915,7 +915,7 @@ class SignaturesByBugs(SocorroMiddleware):
     API for getting signatures associated with specified bug ids.
     """
 
-    API_WHITELIST = {
+    API_ALLOWLIST = {
         'hits': (
             'id',
             'signature',
@@ -971,7 +971,7 @@ class SignatureFirstDate(SocorroMiddleware):
     signature.
     """
 
-    API_WHITELIST = {
+    API_ALLOWLIST = {
         'hits': (
             'signature',
             'first_date',
@@ -1021,7 +1021,7 @@ class VersionString(SocorroMiddleware):
     for (product, channel, build_id) combination.
     """
 
-    API_WHITELIST = {
+    API_ALLOWLIST = {
         'hits': (
             'version_string',
         )
@@ -1136,7 +1136,7 @@ class Reprocessing(SocorroMiddleware):
         'crashstats.reprocess_crashes',
     )
 
-    API_WHITELIST = None
+    API_ALLOWLIST = None
 
     required_params = (
         ('crash_ids', list),
@@ -1176,7 +1176,7 @@ class NoOpMiddleware(SocorroMiddleware):
     API that does nothing except help us test our API infrastructure.
     """
 
-    API_WHITELIST = (
+    API_ALLOWLIST = (
         'hits',
         'total',
     )

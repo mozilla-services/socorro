@@ -18,7 +18,7 @@ class NewSignatures(models.SocorroMiddleware):
     the specified time range.
     """
 
-    API_WHITELIST = None
+    API_ALLOWLIST = None
 
     possible_params = (
         ('start_date', datetime.date),

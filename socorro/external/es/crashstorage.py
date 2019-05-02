@@ -441,7 +441,7 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
     """
     required_config = Namespace()
     required_config.add_option(
-        name="json_dump_whitelist_keys",
+        name="json_dump_allowlist_keys",
         doc="keys of the json_dump field to keep in the processed crash",
         default=[
             "largest_free_vm_block",
@@ -477,7 +477,7 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         json_dump = processed_crash.get('json_dump', {})
         redacted_json_dump = {
             k: json_dump.get(k)
-            for k in self.config.json_dump_whitelist_keys
+            for k in self.config.json_dump_allowlist_keys
         }
         processed_crash['json_dump'] = redacted_json_dump
 

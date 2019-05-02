@@ -38,7 +38,7 @@ PARAMETERS_LISTING_FIELDS = (
 )
 
 
-def get_api_whitelist(include_all_fields=False):
+def get_api_allowlist(include_all_fields=False):
 
     def get_from_es(include_all_fields):
         cache_key = 'api_supersearch_fields'
@@ -75,7 +75,7 @@ class SuperSearch(ESSocorroMiddleware):
     API for searching and faceting on crash reports.
     """
 
-    API_WHITELIST = get_api_whitelist()
+    API_ALLOWLIST = get_api_allowlist()
 
     def __init__(self):
         self.all_fields = SuperSearchFields().get()
@@ -184,7 +184,7 @@ class SuperSearchUnredacted(SuperSearch):
     permissions depending on which fields are being queried.
     """
 
-    API_WHITELIST = get_api_whitelist(include_all_fields=True)
+    API_ALLOWLIST = get_api_allowlist(include_all_fields=True)
 
     def __init__(self):
         self.all_fields = SuperSearchFields().get()
@@ -228,7 +228,7 @@ class SuperSearchFields(ESSocorroMiddleware):
     API for getting the list of super search fields.
     """
 
-    API_WHITELIST = None
+    API_ALLOWLIST = None
 
     def get(self):
         return copy.deepcopy(self._fields)
@@ -243,7 +243,7 @@ class SuperSearchMissingFields(ESSocorroMiddleware):
 
 
 class Query(ESSocorroMiddleware):
-    # No API_WHITELIST because this can't be accessed through the public API.
+    # No API_ALLOWLIST because this can't be accessed through the public API.
 
     implementation = query.Query
 
