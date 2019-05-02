@@ -355,7 +355,7 @@ def test_json_view_custom_status(rf):
     assert response.status_code == 403
 
 
-class TestRenderException(object):
+class TestRenderException:
     def test_basic(self):
         html = utils.render_exception('hi!')
         assert html == '<ul><li>hi!</li></ul>'
@@ -372,7 +372,7 @@ class TestRenderException(object):
         assert html == '<ul><li>&lt;hack&gt;</li></ul>'
 
 
-class TestUtils(object):
+class TestUtils:
     def test_SignatureStats(self):
         signature = {
             'count': 2,
