@@ -389,6 +389,7 @@ def get_versions_for_product(product='Firefox', use_cache=True):
         return []
 
     # Get versions from facet, drop junk, and sort the final list
+    betas = set()
     versions = []
     for item in ret['facets']['version']:
         version = item['term']
@@ -396,9 +397,18 @@ def get_versions_for_product(product='Firefox', use_cache=True):
             # This generates the sort key but also parses the version to
             # make sure it's a valid looking version
             versions.append((generate_version_key(version), version))
+
+            # Add X.Yb to betas set
+            if 'b' in version:
+                beta_version = version[:version.find('b') + 1]
+                betas.add(beta_version)
         except VersionParseError:
             pass
 
+    # Add the (sortkey, X.Yb) to the list
+    versions.extend([(generate_version_key(beta), beta) for beta in betas])
+
+    # Sort by sortkey and then drop the sortkey
     versions.sort(key=lambda v: v[0], reverse=True)
     versions = [v[1] for v in versions]
 
@@ -432,22 +442,19 @@ def get_version_context_for_product(product):
 
     versions = get_versions_for_product(product, use_cache=False)
 
-    # Set of X.Yb to add
-    betas = set()
-
     # Map of major version (int) -> list of (key (str), versions (str)) so
     # we can get the most recent version of the last three majors which
     # we'll assume are "featured versions"
     major_to_versions = OrderedDict()
     for version in versions:
+        # In figuring for featured versions, we don't want to include the
+        # catch-all-betas X.Yb faux version
+        if version.endswith('b'):
+            continue
+
         try:
             major = int(version.split('.', 1)[0])
             major_to_versions.setdefault(major, []).append(version)
-
-            if 'b' in version:
-                # Add (key, X.Yb) to the betas set
-                beta_version = version[:version.find('b') + 1]
-                betas.add(beta_version)
         except ValueError:
             # If the first thing in the major version isn't an int, then skip
             # it
@@ -459,11 +466,6 @@ def get_version_context_for_product(product):
     featured_versions = [values[0] for values in major_to_versions.values()]
     featured_versions.sort(key=lambda v: generate_version_key(v), reverse=True)
     featured_versions = featured_versions[:3]
-
-    # Add the beta versions and then resort the versions in reverse so
-    # the most recent is first
-    versions.extend(betas)
-    versions.sort(key=lambda v: generate_version_key(v), reverse=True)
 
     # Generate the version data the context needs
     ret = [
