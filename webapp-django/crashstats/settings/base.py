@@ -751,6 +751,7 @@ CSP_SCRIPT_SRC = (
 CSP_STYLE_SRC = (
     "'self'",
     "'unsafe-inline'",
+    'https://code.cdn.mozilla.net',
 )
 CSP_IMG_SRC = (
     "'self'",
@@ -760,6 +761,10 @@ CSP_IMG_SRC = (
 )
 CSP_CONNECT_SRC = (
     "'self'",
+)
+CSP_FONT_SRC = (
+    "'self'",
+    'https://code.cdn.mozilla.net',
 )
 
 CSP_REPORT_URI = (
