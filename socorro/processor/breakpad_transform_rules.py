@@ -289,9 +289,9 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
             msg = 'MDSW failed with %s: %s' % (
                 return_code, stackwalker_data.mdsw_status_string
             )
+            # subprocess.Popen with shell=False returns negative exit codes
+            # where the number is the signal that got kicked up
             if return_code == -6:
-                # subprocess.Popen with shell=False returns negative exit codes
-                # where the number is the signal that got kicked up
                 msg = msg + ' (SIGABRT)'
 
             processor_meta.processor_notes.append(msg)
