@@ -364,7 +364,7 @@ def url(viewname, *args, **kwargs):
     string values), we have to sanitize the values.
     """
     def clean_argument(s):
-        if isinstance(s, six.string_types):
+        if isinstance(s, str):
             # First remove all proper control characters like '\n',
             # '\r' or '\t'.
             s = ''.join(c for c in s if ord(c) >= 32)

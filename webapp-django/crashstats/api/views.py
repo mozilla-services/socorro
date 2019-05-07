@@ -185,7 +185,7 @@ def model_wrapper(request, model_name):
         raise http.Http404('no service called `%s`' % model_name)
 
     required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
-    if isinstance(required_permissions, six.string_types):
+    if isinstance(required_permissions, str):
         required_permissions = [required_permissions]
     if (
         required_permissions and
@@ -270,7 +270,7 @@ def model_wrapper(request, model_name):
         if binary_response:
             # if you don't have all required permissions, you'll get a 403
             required_permissions = model.API_BINARY_PERMISSIONS
-            if isinstance(required_permissions, six.string_types):
+            if isinstance(required_permissions, str):
                 required_permissions = [required_permissions]
             if required_permissions and not has_permissions(request.user, required_permissions):
                 permission_names = []
@@ -404,7 +404,7 @@ def _describe_model(model_name, model):
     required_permissions = []
     if model_inst.API_REQUIRED_PERMISSIONS:
         permissions = model_inst.API_REQUIRED_PERMISSIONS
-        if isinstance(permissions, six.string_types):
+        if isinstance(permissions, str):
             permissions = [permissions]
         for permission in permissions:
             codename = permission.split('.', 1)[1]

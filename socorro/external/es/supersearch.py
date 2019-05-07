@@ -267,7 +267,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                     if len(param.value) == 1:
                         val = param.value[0]
 
-                        if not isinstance(val, six.string_types) or ' ' not in val:
+                        if not isinstance(val, str) or ' ' not in val:
                             # There's only one term and no white space, this
                             # is a simple term filter.
                             filter_value = val

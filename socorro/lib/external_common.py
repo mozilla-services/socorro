@@ -10,7 +10,6 @@ import datetime
 import json
 
 from configman.dotdict import DotDict
-import six
 
 from socorro.lib import BadArgumentError
 import socorro.lib.datetimeutil as dtutil
@@ -140,7 +139,7 @@ def check_type(param, datatype):
             'int': int,
         }[datatype]
 
-    if datatype is str and not isinstance(param, six.string_types):
+    if datatype is str and not isinstance(param, str):
         try:
             param = str(param)
         except ValueError:
@@ -173,7 +172,7 @@ def check_type(param, datatype):
         except ValueError:
             param = None
 
-    elif datatype == "json" and isinstance(param, six.string_types):
+    elif datatype == "json" and isinstance(param, str):
         try:
             param = json.loads(param)
         except ValueError:

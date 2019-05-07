@@ -9,7 +9,6 @@ import re
 import time
 
 import markus
-import six
 from six.moves.urllib.parse import unquote_plus
 
 from socorro.lib import javautil
@@ -165,7 +164,7 @@ class DatesAndTimesRule(Rule):
             'submitted_timestamp',
             date_from_ooid(raw_crash.uuid)
         )
-        if isinstance(processed_crash.submitted_timestamp, six.string_types):
+        if isinstance(processed_crash.submitted_timestamp, str):
             processed_crash.submitted_timestamp = datetime_from_isodate_string(
                 processed_crash.submitted_timestamp
             )
@@ -694,7 +693,7 @@ class OSPrettyVersionRule(Rule):
         processed_crash['os_pretty_version'] = None
 
         pretty_name = processed_crash.get('os_name')
-        if not isinstance(pretty_name, six.string_types):
+        if not isinstance(pretty_name, str):
             # This data is bogus or isn't there, there's nothing we can do.
             return True
 

@@ -23,7 +23,7 @@ from socorro.external.es.super_search_fields import FIELDS
 class Response(object):
     def __init__(self, content=None, status_code=200):
         self.raw = content
-        if not isinstance(content, six.string_types):
+        if not isinstance(content, str):
             content = json.dumps(content)
         self.content = content.strip()
         self.status_code = status_code

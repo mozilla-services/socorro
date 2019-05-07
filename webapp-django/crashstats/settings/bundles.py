@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import six
-
 
 # This determines what files are copied from npm libraries into the
 # static root when collectstatic runs.
@@ -399,10 +397,10 @@ _used = {}
 for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
     _trouble = set()
     for k, v in config.items():
-        assert isinstance(k, six.string_types), k
+        assert isinstance(k, str), k
         out = v['output_filename']
         assert isinstance(v['source_filenames'], tuple), v
-        assert isinstance(out, six.string_types), v
+        assert isinstance(out, str), v
         assert not out.split('/')[-1].startswith('.'), k
         assert '_' not in out
         assert out.endswith('.min.css') or out.endswith('.min.js')
