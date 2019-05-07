@@ -19,7 +19,6 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from ratelimit.decorators import ratelimit
-import six
 
 from crashstats.api.cleaner import Cleaner
 from crashstats.crashstats import models
@@ -95,8 +94,7 @@ class FormWrapperMeta(DeclarativeFieldsMetaclass):
         return super(FormWrapperMeta, cls).__new__(cls, name, bases, attrs)
 
 
-@six.add_metaclass(FormWrapperMeta)
-class FormWrapper(forms.Form):
+class FormWrapper(forms.Form, metaclass=FormWrapperMeta):
     def clean(self):
         cleaned_data = super(FormWrapper, self).clean()
 

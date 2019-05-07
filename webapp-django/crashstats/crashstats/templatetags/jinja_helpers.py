@@ -12,7 +12,6 @@ import humanfriendly
 import isodate
 import jinja2
 from libgravatar import Gravatar
-import six
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
@@ -36,7 +35,7 @@ def truncatechars(str_, max_length):
 @library.filter
 def digitgroupseparator(number):
     """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
-    if not isinstance(number, six.integer_types):
+    if not isinstance(number, int):
         return number
     return format(number, ',')
 
