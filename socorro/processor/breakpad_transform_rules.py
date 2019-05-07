@@ -112,7 +112,7 @@ class ExternalProcessRule(Rule):
             )
         return {}
 
-    def _execute_external_process(self, command_line, processor_meta):
+    def _execute_external_process(self, crash_id, command_line, processor_meta):
         # Tokenize the command line into args
         command_line_args = shlex.split(command_line, comments=False, posix=True)
 
@@ -160,12 +160,14 @@ class ExternalProcessRule(Rule):
         self.dot_save(processed_crash, self.config.return_code_key, return_code)
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        crash_id = raw_crash['uuid']
         command_parameters = dict(self.config)
         command_parameters['dump_file_pathname'] = raw_dumps[self.config['dump_field']]
         command_line = self.config.command_line.format(**command_parameters)
 
-        external_command_output, external_process_return_code = \
-            self._execute_external_process(command_line, processor_meta)
+        external_command_output, external_process_return_code = (
+            self._execute_external_process(crash_id, command_line, processor_meta)
+        )
 
         self._save_results(
             external_command_output,
@@ -252,16 +254,15 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         finally:
             os.unlink(file_pathname)
 
-    def _execute_external_process(self, command_line, processor_meta):
+    def _execute_external_process(self, crash_id, command_line, processor_meta):
         stackwalker_output, return_code = (
-            super()
-            ._execute_external_process(command_line, processor_meta)
+            super()._execute_external_process(crash_id, command_line, processor_meta)
         )
 
         if not isinstance(stackwalker_output, Mapping):
-            processor_meta.processor_notes.append(
-                'MDSW produced unexpected output: %s...' % str(stackwalker_output)[:10]
-            )
+            msg = 'MDSW produced unexpected output: %s (%s)' % str(stackwalker_output)[:20]
+            processor_meta.processor_notes.append(msg)
+            self.logger.warning(msg + ' (%s)' % crash_id)
             stackwalker_output = {}
 
         stackwalker_data = DotDict()
@@ -280,14 +281,21 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         )
 
         if return_code == 124:
-            msg = 'MDSW terminated with SIGKILL due to timeout'
+            msg = 'MDSW timeout (SIGKILL)'
             processor_meta.processor_notes.append(msg)
-            self.logger.warning(msg)
+            self.logger.warning(msg + ' (%s)' % crash_id)
 
         elif return_code != 0 or not stackwalker_data.success:
-            msg = 'MDSW failed with %s: %s' % (return_code, stackwalker_data.mdsw_status_string)
+            msg = 'MDSW failed with %s: %s' % (
+                return_code, stackwalker_data.mdsw_status_string
+            )
+            if return_code == -6:
+                # subprocess.Popen with shell=False returns negative exit codes
+                # where the number is the signal that got kicked up
+                msg = msg + ' (SIGABRT)'
+
             processor_meta.processor_notes.append(msg)
-            self.logger.warning(msg)
+            self.logger.warning(msg + ' (%s)' % crash_id)
 
         return stackwalker_data, return_code
 
@@ -317,6 +325,8 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         return self.config.command_line.format(**params)
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        crash_id = raw_crash['uuid']
+
         if 'additional_minidumps' not in processed_crash:
             processed_crash.additional_minidumps = []
 
@@ -343,6 +353,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
                 )
 
                 stackwalker_data, return_code = self._execute_external_process(
+                    crash_id,
                     command_line,
                     processor_meta
                 )
