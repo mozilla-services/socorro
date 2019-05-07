@@ -89,7 +89,7 @@ configparser==3.7.4 \
 py==1.8.0 \
     --hash=sha256:64f65755aee5b381cea27766a3a147c3f15b9b6b9ac88676de66ba2ae36793fa \
     --hash=sha256:dc639b046a6e2cff5bbe40194ad65936d6ba360b52b3c3fe1d08a82dd50b5e53
-# Used by several packages
+# Used by several packages, many that require <1.25
 urllib3==1.24.3 \
     --hash=sha256:2393a695cd12afedd0dcb26fe5d50d0cf248e5a66f75dbd89a3d4eb333a61af4 \
     --hash=sha256:a637e5fae88995b256e3409dc4d52c2e2e0ba32c42a6365fee8bbd2238de3cfb # pyup: <1.25
@@ -123,13 +123,10 @@ pyasn1-modules==0.2.4 \
     --hash=sha256:a52090e8c5841ebbf08ae455146792d9ef3e8445b21055d3a3b7ed9c712b7c7c \
     --hash=sha256:c00dad1d69d8592bbbc978f5beb3e992d3bf996e6b97eeec1c8608f81221d922 \
     --hash=sha256:c226b5c17683d98498e157d6ac0098b93f9c475da5bc50072f64bf3f3f6b828f
-# Used by aws-cli (1.16.122 requires >=3.1.2,<=3.5.0)
-# Used by google-auth (1.6.3 requires >=3.1.4)
-# Used by oauth2client (4.1.3 requires >=3.1.4)
-# Used by python-jose
+# aws-cli 1.16.122 requires >=3.1.2,<=3.5.0
 rsa==3.4.2 \
     --hash=sha256:25df4e10c263fb88b5ace923dd84bf9aa7f5019687b5e55382ffcdb8bede9db5 \
-    --hash=sha256:43f682fea81c452c98d09fc316aae12de6d30c4b5c84226642cf8f8fd1c93abd # pyup: >=3.1.4,<=3.5.0
+    --hash=sha256:43f682fea81c452c98d09fc316aae12de6d30c4b5c84226642cf8f8fd1c93abd # pyup: <=3.5.0
 certifi==2019.3.9 \
     --hash=sha256:59b7658e26ca9c7339e00f8f4636cdfe59d34fa37b9b04f6f9e9926b3cece1a5 \
     --hash=sha256:b26104d6835d1f5e49452a26eb2ff87fe7090b89dfcaee5ea2212697e1e1d7ae
@@ -221,10 +218,10 @@ boto3==1.9.112 \
     --hash=sha256:4e71a7e782280cb038e25bd33ae5acdbbd728bff83b2e2f37f48fb6e4dc6921e
 jsondiff==1.1.1 \
     --hash=sha256:2d0437782de9418efa34e694aa59f43d7adb1899bd9a793f063867ddba8f7893
-# Used by moto (1.3.7 requires >=0.93,<0.96)
+# moto 1.3.7 requires <0.96
 aws-xray-sdk==0.95 \
     --hash=sha256:72791618feb22eaff2e628462b0d58f398ce8c1bacfa989b7679817ab1fad60c \
-    --hash=sha256:9e7ba8dd08fd2939376c21423376206bff01d0deaea7d7721c6b35921fed1943 # pyup: >=0.93,<0.96
+    --hash=sha256:9e7ba8dd08fd2939376c21423376206bff01d0deaea7d7721c6b35921fed1943 # pyup: <0.96
 Werkzeug==0.15.2 \
     --hash=sha256:0a73e8bb2ff2feecfc5d56e6f458f5b99290ef34f565ffb2665801ff7de6af7a \
     --hash=sha256:7fad9770a8778f9576693f0cc29c7dcc36964df916b83734f4431c0e612a7fbc
@@ -353,7 +350,7 @@ scandir==1.10.0 \
     --hash=sha256:92c85ac42f41ffdc35b6da57ed991575bdbe69db895507af88b9f499b701c188 \
     --hash=sha256:b24086f2375c4a094a6b51e78b4cf7ca16c721dcee2eddd7aa6494b42d6d519d \
     --hash=sha256:cb925555f43060a1745d0a321cca94bcea927c50114b623d73179189a4e100ac
-# Used by moto (1.3.7 requires python-jose<3.0.0)
+# moto 1.3.7 requires <3.0.0
 python-jose==2.0.2 \
     --hash=sha256:391f860dbe274223d73dd87de25e4117bf09e8fe5f93a417663b1f2d7b591165 \
     --hash=sha256:3b35cdb0e55a88581ff6d3f12de753aa459e940b50fe7ca5aa25149bc94cb37b # pyup: <3.0.0
