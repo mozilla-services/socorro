@@ -8,14 +8,13 @@ import warnings
 
 from django_jinja import library
 import jinja2
-import six
 
 from django.forms.widgets import RadioSelect
 
 
 @library.global_function
 def describe_friendly_type(type_):
-    if type_ is six.text_type:
+    if type_ is str:
         return "String"
     if type_ is int:
         return "Integer"
@@ -59,10 +58,10 @@ def make_test_input(parameter, defaults):
         data['type'] = 'date'
     else:
         data['type'] = 'text'
-    if parameter['type'] is not six.text_type:
+    if parameter['type'] is not str:
         classes.append('validate-%s' % parameter['type'].__name__)
     if defaults.get(parameter['name']):
-        data['value'] = quote(six.text_type(defaults.get(parameter['name'])))
+        data['value'] = quote(str(defaults.get(parameter['name'])))
     else:
         data['value'] = ''
 

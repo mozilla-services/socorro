@@ -6,7 +6,6 @@ import copy
 import json
 
 import mock
-import six
 
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
@@ -31,7 +30,7 @@ class Response(object):
     @property
     def text(self):
         # Similar to content but with the right encoding
-        return six.text_type(self.content, 'utf-8')
+        return str(self.content, 'utf-8')
 
     def json(self):
         return self.raw

@@ -13,8 +13,6 @@ import hashlib
 import logging
 import time
 
-import six
-
 from django.conf import settings
 from django.core.cache import cache
 from django.db import models
@@ -548,7 +546,7 @@ class SocorroMiddleware(SocorroCommon):
             else:
                 if isinstance(value, str) and param['type'] is list:
                     value = [value]
-                elif param['type'] is six.text_type:
+                elif param['type'] is str:
                     # we'll let the url making function later deal with this
                     pass
                 else:
@@ -582,7 +580,7 @@ class SocorroMiddleware(SocorroCommon):
                                 (False, getattr(self, 'possible_params', []))):
             for item in items:
                 if isinstance(item, str):
-                    type_ = six.text_type
+                    type_ = str
                     name = item
                 elif isinstance(item, dict):
                     type_ = item['type']

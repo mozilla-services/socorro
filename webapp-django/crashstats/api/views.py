@@ -66,7 +66,7 @@ class MultipleStringField(forms.TypedMultipleChoiceField):
 
 
 TYPE_MAP = {
-    six.text_type: forms.CharField,
+    str: forms.CharField,
     list: MultipleStringField,
     datetime.date: forms.DateField,
     datetime.datetime: forms.DateTimeField,

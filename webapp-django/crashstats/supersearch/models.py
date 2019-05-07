@@ -5,8 +5,6 @@
 import copy
 import functools
 
-import six
-
 from django.core.cache import cache
 
 from crashstats.crashstats import models
@@ -122,7 +120,7 @@ class SuperSearch(ESSocorroMiddleware):
                 # Intervals can be strings for dates (like "day" or "1.5h")
                 # and can only be integers for numbers.
                 interval_type = {
-                    'date': six.text_type,
+                    'date': str,
                     'number': int
                 }.get(field['query_type'])
 
