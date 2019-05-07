@@ -122,9 +122,13 @@ pyasn1-modules==0.2.4 \
     --hash=sha256:a52090e8c5841ebbf08ae455146792d9ef3e8445b21055d3a3b7ed9c712b7c7c \
     --hash=sha256:c00dad1d69d8592bbbc978f5beb3e992d3bf996e6b97eeec1c8608f81221d922 \
     --hash=sha256:c226b5c17683d98498e157d6ac0098b93f9c475da5bc50072f64bf3f3f6b828f
-rsa==4.0 \
-    --hash=sha256:14ba45700ff1ec9eeb206a2ce76b32814958a98e372006c8fb76ba820211be66 \
-    --hash=sha256:1a836406405730121ae9823e19c6e806c62bbad73f890574fff50efa4122c487
+# Used by aws-cli (1.16.122 requires >=3.1.2,<=3.5.0)
+# Used by google-auth (1.6.3 requires >=3.1.4)
+# Used by oauth2client (4.1.3 requires >=3.1.4)
+# Used by python-jose
+rsa==3.4.2 \
+    --hash=sha256:25df4e10c263fb88b5ace923dd84bf9aa7f5019687b5e55382ffcdb8bede9db5 \
+    --hash=sha256:43f682fea81c452c98d09fc316aae12de6d30c4b5c84226642cf8f8fd1c93abd # pyup: >=3.1.4,<=3.5.0
 certifi==2019.3.9 \
     --hash=sha256:59b7658e26ca9c7339e00f8f4636cdfe59d34fa37b9b04f6f9e9926b3cece1a5 \
     --hash=sha256:b26104d6835d1f5e49452a26eb2ff87fe7090b89dfcaee5ea2212697e1e1d7ae
@@ -216,9 +220,10 @@ boto3==1.9.112 \
     --hash=sha256:4e71a7e782280cb038e25bd33ae5acdbbd728bff83b2e2f37f48fb6e4dc6921e
 jsondiff==1.1.1 \
     --hash=sha256:2d0437782de9418efa34e694aa59f43d7adb1899bd9a793f063867ddba8f7893
-aws-xray-sdk==2.4.2 \
-    --hash=sha256:75cbce8c777b7d8055719ee1a0db6043e53c44e8f1a62a956bd84db87c4a4c7c \
-    --hash=sha256:ce4adb60fe67ebe91f2fc57d5067b4e44df6e233652987be4fb2e549688cf9fe
+# Used by moto (1.3.7 requires >=0.93,<0.96)
+aws-xray-sdk==0.95 \
+    --hash=sha256:72791618feb22eaff2e628462b0d58f398ce8c1bacfa989b7679817ab1fad60c \
+    --hash=sha256:9e7ba8dd08fd2939376c21423376206bff01d0deaea7d7721c6b35921fed1943 # pyup: >=0.93,<0.96
 Werkzeug==0.15.2 \
     --hash=sha256:0a73e8bb2ff2feecfc5d56e6f458f5b99290ef34f565ffb2665801ff7de6af7a \
     --hash=sha256:7fad9770a8778f9576693f0cc29c7dcc36964df916b83734f4431c0e612a7fbc
@@ -347,9 +352,10 @@ scandir==1.10.0 \
     --hash=sha256:92c85ac42f41ffdc35b6da57ed991575bdbe69db895507af88b9f499b701c188 \
     --hash=sha256:b24086f2375c4a094a6b51e78b4cf7ca16c721dcee2eddd7aa6494b42d6d519d \
     --hash=sha256:cb925555f43060a1745d0a321cca94bcea927c50114b623d73179189a4e100ac
-python-jose==3.0.1 \
-    --hash=sha256:29701d998fe560e52f17246c3213a882a4a39da7e42c7015bcc1f7823ceaff1c \
-    --hash=sha256:ed7387f0f9af2ea0ddc441d83a6eb47a5909bd0c8a72ac3250e75afec2cc1371
+# Used by moto (1.3.7 requires python-jose<3.0.0)
+python-jose==2.0.2 \
+    --hash=sha256:391f860dbe274223d73dd87de25e4117bf09e8fe5f93a417663b1f2d7b591165 \
+    --hash=sha256:3b35cdb0e55a88581ff6d3f12de753aa459e940b50fe7ca5aa25149bc94cb37b # pyup: <3.0.0
 ecdsa==0.13 \
     --hash=sha256:40d002cf360d0e035cf2cb985e1308d41aaa087cbfc135b2dc2d844296ea546c \
     --hash=sha256:64cf1ee26d1cde3c73c6d7d107f835fed7c6a2904aef9eac223d57ad800c43fa
