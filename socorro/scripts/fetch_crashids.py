@@ -5,8 +5,8 @@
 import argparse
 import datetime
 from functools import total_ordering
+from urllib.parse import urlparse, parse_qs
 
-from six.moves.urllib.parse import urlparse, parse_qs
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.requestslib import session_with_retries

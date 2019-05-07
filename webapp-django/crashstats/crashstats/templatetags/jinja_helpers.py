@@ -5,6 +5,7 @@
 import datetime
 import json
 import re
+from urllib.parse import urlencode, parse_qs
 
 from django_jinja import library
 import humanfriendly
@@ -12,7 +13,6 @@ import isodate
 import jinja2
 from libgravatar import Gravatar
 import six
-from six.moves.urllib.parse import urlencode, parse_qs
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache

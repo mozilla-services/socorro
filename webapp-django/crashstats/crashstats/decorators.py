@@ -3,9 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import functools
+from urllib.parse import urlparse
 
 import markus
-from six.moves.urllib.parse import urlparse
 
 from django.contrib.auth.decorators import (
     REDIRECT_FIELD_NAME,

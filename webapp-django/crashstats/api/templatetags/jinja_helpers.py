@@ -3,12 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from urllib.parse import quote
 import warnings
 
 from django_jinja import library
 import jinja2
 import six
-from six.moves.urllib.parse import quote
 
 from django.forms.widgets import RadioSelect
 

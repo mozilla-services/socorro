@@ -6,10 +6,10 @@
 
 import json
 import os
+from urllib.parse import urlparse
 
 import jsonschema
 import requests
-from six.moves.urllib.parse import urlparse
 
 from socorro.external.boto.crashstorage import TelemetryBotoS3CrashStorage
 

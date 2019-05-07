@@ -9,8 +9,6 @@ import shutil
 import subprocess
 import sys
 
-import six
-
 
 DESCRIPTION = """
 Updates socorro-siggen extracted library with files from Socorro's
@@ -75,7 +73,7 @@ def main(argv=None):
     else:
         print('No previous sha to determine git commits.')
 
-    confirm = six.moves.input('Continue to copy? [y/N]: ')
+    confirm = input('Continue to copy? [y/N]: ')
     if confirm.strip().lower() != 'y':
         print('Exiting...')
         return 1

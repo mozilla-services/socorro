@@ -4,8 +4,7 @@
 
 import datetime
 import time
-
-from six.moves.urllib.parse import quote_plus, parse_qs, urlparse
+from urllib.parse import quote_plus, parse_qs, urlparse
 
 from django.core.cache import cache
 from django.test.client import RequestFactory

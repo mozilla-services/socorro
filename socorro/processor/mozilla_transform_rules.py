@@ -7,9 +7,9 @@ import gzip
 import json
 import re
 import time
+from urllib.parse import unquote_plus
 
 import markus
-from six.moves.urllib.parse import unquote_plus
 
 from socorro.lib import javautil
 from socorro.lib import sentry_client

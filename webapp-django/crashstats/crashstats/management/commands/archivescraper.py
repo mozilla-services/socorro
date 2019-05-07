@@ -58,10 +58,10 @@ import concurrent.futures
 import copy
 from functools import partial
 import json
+from urllib.parse import urljoin
 
 import more_itertools
 from pyquery import PyQuery as pq
-from six.moves.urllib.parse import urljoin
 
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError

@@ -4,10 +4,10 @@
 
 import json
 import re
+from urllib.parse import quote
 
 import mock
 import pyquery
-from six.moves.urllib.parse import quote
 
 from django.conf import settings
 from django.urls import reverse
