@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from io import StringIO
+
 import mock
 import pytest
-import six
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -16,7 +17,7 @@ from crashstats.authentication.management.commands import makesuperuser
 class TestMakeSuperuserCommand(object):
     def test_make_existing_user(self, db):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
-        buffer = six.StringIO()
+        buffer = StringIO()
         call_command('makesuperuser', 'BOB@mozilla.com', stdout=buffer)
         assert 'bob@mozilla.com is now a superuser/staff' in buffer.getvalue()
 
@@ -31,7 +32,7 @@ class TestMakeSuperuserCommand(object):
         bob.is_superuser = True
         bob.is_staff = True
         bob.save()
-        buffer = six.StringIO()
+        buffer = StringIO()
         call_command('makesuperuser', 'BOB@mozilla.com', stdout=buffer)
 
         # Assert what got printed
@@ -49,7 +50,7 @@ class TestMakeSuperuserCommand(object):
         bob.save()
         otto = User.objects.create(username='otto', email='otto@mozilla.com')
 
-        buffer = six.StringIO()
+        buffer = StringIO()
         call_command('makesuperuser', 'BOB@mozilla.com', 'oTTo@mozilla.com', stdout=buffer)
         assert 'bob@mozilla.com is now a superuser/staff' in buffer.getvalue()
         assert 'otto@mozilla.com is now a superuser/staff' in buffer.getvalue()
@@ -66,7 +67,7 @@ class TestMakeSuperuserCommand(object):
         assert [g.name for g in otto.groups.all()] == ['Hackers']
 
     def test_nonexisting_user(self, db):
-        buffer = six.StringIO()
+        buffer = StringIO()
         email = 'neverheardof@mozilla.com'
         call_command('makesuperuser', email, stdout=buffer)
         assert '{} is now a superuser/staff'.format(email) in buffer.getvalue()
@@ -83,7 +84,7 @@ class TestMakeSuperuserCommand(object):
     )
     def test_with_raw_input(self, mocked_raw_input, db):
         bob = User.objects.create(username='bob', email='bob@mozilla.com')
-        buffer = six.StringIO()
+        buffer = StringIO()
         cmd = makesuperuser.Command()
         cmd.stdout = buffer
         cmd.handle(emailaddress=[])
@@ -101,7 +102,7 @@ class TestMakeSuperuserCommand(object):
     )
     def test_with_raw_input_but_empty(self, mocked_raw_input, db):
         with pytest.raises(CommandError):
-            buffer = six.StringIO()
+            buffer = StringIO()
             cmd = makesuperuser.Command()
             cmd.stdout = buffer
             cmd.handle(emailaddress=[])

@@ -5,11 +5,11 @@
 from contextlib import contextmanager, closing
 import gzip
 import json
+from io import BytesIO
 import os
 
 from configman import Namespace
 from configman.dotdict import DotDict
-from six import BytesIO
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
