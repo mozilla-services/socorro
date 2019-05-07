@@ -439,9 +439,9 @@ class TestBreakpadTransformRule2015(object):
 
             assert processed_crash.json_dump == {}
             assert processed_crash.mdsw_return_code == 124
-            assert processed_crash.mdsw_status_string == "unknown error"
+            assert processed_crash.mdsw_status_string == 'unknown error'
             assert processed_crash.success is False
-            assert processor_meta.processor_notes == ["MDSW terminated with SIGKILL due to timeout"]
+            assert processor_meta.processor_notes == ['MDSW timeout (SIGKILL)']
 
             assert mm.has_record(
                 'incr',
