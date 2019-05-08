@@ -4,6 +4,9 @@ requirements:
   - requirements/default.txt:
       update: all
       pin: true
+  - requirements/contraints.txt:
+      update: insecure
+      pin: true
   - docs/requirements.txt:
       update: all
       pin: true
