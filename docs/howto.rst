@@ -51,13 +51,27 @@ Reprocessing crashes if you're an admin
 If you're an admin, you can create an API token with the "Reprocess Crashes"
 permission. You can use this token in conjunction with the
 ``scripts/reprocess.py`` script to set crashes up for reprocessing.
+In ``my.env``, set ``SOCORRO_REPROCESS_API_TOKEN`` to the token value.
 
 For example, this reprocesses a single crash::
 
     $ make shell
     app@socorro:app$ socorro-cmd reprocess c2815fd1-e87b-45e9-9630-765060180110
 
-This reprocesses crashes all crashes with a specified signature::
+When reprocessing many crashes, it is useful to collect crashids and then
+reprocess them. They are submitted in chunks, and if the script fails due
+to a network error, you can edit the collected crashids to start from the
+failure.
+
+This reprocesses 100 crashes with a specified signature::
 
     $ make shell
-    app@socorro:app$ socorro-cmd fetch_crashids --signature="some | signature" | socorro-cmd reprocess
+    app@socorro:app$ socorro-cmd fetch_crashids --signature="some | signature" > crashids
+    app@socorro:app$ cat crashids | socorro-cmd reprocess
+
+For more complex crash sets, pass a search URL to generate the list::
+
+    $ make shell
+    app@socorro:app$ socorro-cmd fetch_crashids --num=all --url="https://crash-stats.mozilla.org/search/?product=Sample&date=%3E%3D2019-05-07T22%3A00%3A00.000Z&date=%3C2019-05-07T23%3A00%3A00.000Z" > crashids
+    app@socorro:app$ cat crashids | socorro-cmd reprocess
+
