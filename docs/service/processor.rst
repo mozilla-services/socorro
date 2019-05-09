@@ -45,7 +45,7 @@ All helper scripts run in the shell in the container::
     $ make shell
 
 Some of the scripts require downloading production data from
-`crash-stats.mozilla.com <https://crash-stats.mozilla.com>`_, and it is
+`crash-stats.mozilla.org <https://crash-stats.mozilla.org>`_, and it is
 useful to add an API token with higher permissions before entering the shell.
 
 
@@ -64,7 +64,7 @@ using an API token with these permissions:
 * View Personal Identifiable Information
 * View Raw Dumps
 
-You can generate API tokens at `<https://crash-stats.mozilla.com/api/tokens/>`_.
+You can generate API tokens at `<https://crash-stats.mozilla.org/api/tokens/>`_.
 
 .. Note::
 
@@ -111,7 +111,7 @@ below.
 fetch_crashids
 --------------
 
-This will generate a list of crash ids from crash-stats.mozilla.com that meet
+This will generate a list of crash ids from crash-stats.mozilla.org that meet
 specified criteria. Crash ids are printed to stdout, so you can use this in
 conjunction with other scripts or redirect to a file.
 
@@ -132,7 +132,7 @@ copy and pasted:
 
 .. code-block:: shell
 
-   app@socorro:/app$ socorro-cmd fetch_crashids "--url=https://crash-stats.mozilla.com/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
+   app@socorro:/app$ socorro-cmd fetch_crashids "--url=https://crash-stats.mozilla.org/search/?product=Firefox&date=%3E%3D2017-09-05T15%3A09%3A00.000Z&date=%3C2017-09-12T15%3A09%3A00.000Z&_sort=-date&_facets=signature&_columns=date&_columns=signature&_columns=product&_columns=version&_columns=build_id&_columns=platform"
 
 You can get command help:
 
@@ -144,7 +144,7 @@ You can get command help:
 fetch_crash_data
 ----------------
 
-This will fetch raw crash data from crash-stats.mozilla.com and save it in the
+This will fetch raw crash data from crash-stats.mozilla.org and save it in the
 appropriate directory structure rooted at outputdir. If you have access to
 memory dumps and use a valid `API token`_, then memory dumps will be fetched
 for processing as well.

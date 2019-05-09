@@ -18,7 +18,7 @@ web app. Here is a list of those features:
   queries. It is also accessible via the public API, allowing users to build
   their own tools.
 
-  Example: https://crash-stats.mozilla.com/search/
+  Example: https://crash-stats.mozilla.org/search/
 
 * **Custom Queries**
 
@@ -36,14 +36,14 @@ web app. Here is a list of those features:
   share a signature. Features include listing crash reports, listing user
   comments and showing aggregation on any field of the database.
 
-  Example: https://crash-stats.mozilla.com/signature/?signature=nsTimeout::~nsTimeout%28%29
+  Example: https://crash-stats.mozilla.org/signature/?signature=nsTimeout::~nsTimeout%28%29
 
 * **Profile page**
 
   On the profile page, Super Search is used to show the recent crash
   reports that contain the user's email address.
 
-  Example: https://crash-stats.mozilla.com/profile/
+  Example: https://crash-stats.mozilla.org/profile/
 
 
 Supported versions of Elasticsearch
@@ -146,7 +146,7 @@ Here is an explanation of each properties of a field:
     Brief description of the field.
 
     This shows up in the `Super Search API documentation
-    <https://crash-stats.mozilla.com/documentation/supersearch/api/>`_.
+    <https://crash-stats.mozilla.org/documentation/supersearch/api/>`_.
 
 **namespace**
     The dotted name space for the source of the value of this field.

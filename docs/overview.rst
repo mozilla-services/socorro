@@ -240,16 +240,16 @@ saved to several places:
 Investigated with Webapp aka Crash Stats (Python, Django)
 ---------------------------------------------------------
 
-The webapp is located at `<https://crash-stats.mozilla.com>`_.
+The webapp is located at `<https://crash-stats.mozilla.org>`_.
 
 The webapp lets you search through crash reports and facet on aspects of them
 with `Super Search
-<https://crash-stats.mozilla.com/search/?product=Firefox&_dont_run=1>`_.
+<https://crash-stats.mozilla.org/search/?product=Firefox&_dont_run=1>`_.
 
 The webapp shows `top crashers
-<https://crash-stats.mozilla.com/topcrashers/?product=Firefox>`_.
+<https://crash-stats.mozilla.org/topcrashers/?product=Firefox>`_.
 
-The webapp has a `set of APIs <https://crash-stats.mozilla.com/api/>`_ for
+The webapp has a `set of APIs <https://crash-stats.mozilla.org/api/>`_ for
 accessing data.
 
 You can create an account in the webapp by logging in.
@@ -268,13 +268,13 @@ user was visiting when Firefox crashed.
      https://socorro.readthedocs.io/
 
    **Crash Stats user documentation**
-     https://crash-stats.mozilla.com/documentation/
+     https://crash-stats.mozilla.org/documentation/
 
    **Crash Stats Super search**
-     https://crash-stats.mozilla.com/search/?product=&_dont_run=1
+     https://crash-stats.mozilla.org/search/?product=&_dont_run=1
 
    **Crash Stats APIs**
-     https://crash-stats.mozilla.com/api/
+     https://crash-stats.mozilla.org/api/
 
    **Privacy policy**
      https://www.mozilla.org/en-US/privacy/websites/
