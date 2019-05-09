@@ -28,7 +28,7 @@ they should increase the number of processor nodes.
 
 """
 
-DEFAULT_HOST = 'https://crash-stats.mozilla.com'
+DEFAULT_HOST = 'https://crash-stats.mozilla.org'
 CHUNK_SIZE = 50
 SLEEP_DEFAULT = 1
 

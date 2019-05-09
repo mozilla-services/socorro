@@ -24,7 +24,7 @@ The second is to just specify command line arguments and the query will be based
 
 """
 
-DEFAULT_HOST = 'https://crash-stats.mozilla.com'
+DEFAULT_HOST = 'https://crash-stats.mozilla.org'
 
 MAX_PAGE = 1000
 

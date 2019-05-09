@@ -21,7 +21,7 @@ import requests
 
 
 GITHUB_API = 'https://api.github.com/'
-HOST = 'https://crash-stats.mozilla.com'
+HOST = 'https://crash-stats.mozilla.org'
 
 
 def fetch(url, is_json=True):

@@ -24,7 +24,7 @@ Socorro that has "View Personally Identifiable Information" permission.
 """
 
 # FIXME(willkg): This hits production. We might want it configurable.
-API_URL = 'https://crash-stats.mozilla.com/api'
+API_URL = 'https://crash-stats.mozilla.org/api'
 
 
 class OutputBase:

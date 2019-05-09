@@ -117,5 +117,5 @@ those crashes with your local ``crash_report.json`` file.
    .. code-block:: shell
 
       $ python socorro/schemas/validate_and_test.py \
-            "https://crash-stats.mozilla.com/search/?dom_ipc_enabled=%21__null__&memory_images=%3E10&version=54.0a1" \
-            "https://crash-stats.mozilla.com/api/SuperSearch/?memory_private=%3E100&product=Firefox&date=%3E%3D2017-02-24T16%3A14%3A00.000Z&date=%3C2017-03-03T16%3A14%3A00.000Z"
+            "https://crash-stats.mozilla.org/search/?dom_ipc_enabled=%21__null__&memory_images=%3E10&version=54.0a1" \
+            "https://crash-stats.mozilla.org/api/SuperSearch/?memory_private=%3E100&product=Firefox&date=%3E%3D2017-02-24T16%3A14%3A00.000Z&date=%3C2017-03-03T16%3A14%3A00.000Z"

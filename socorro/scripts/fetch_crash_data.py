@@ -15,7 +15,7 @@ from socorro.scripts import (FallbackToPipeAction,
 
 
 DESCRIPTION = """
-Fetches crash data from crash-stats.mozilla.com system
+Fetches crash data from crash-stats.mozilla.org system
 """
 
 EPILOG = """
@@ -29,11 +29,11 @@ identifiable information::
 
 To create an API token for Socorro in -prod, visit:
 
-    https://crash-stats.mozilla.com/api/tokens/
+    https://crash-stats.mozilla.org/api/tokens/
 
 """
 
-HOST = 'https://crash-stats.mozilla.com'
+HOST = 'https://crash-stats.mozilla.org'
 
 
 class CrashDoesNotExist(Exception):

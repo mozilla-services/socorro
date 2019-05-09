@@ -183,7 +183,7 @@ class Processor2015(RequiredConfig):
     required_config.add_option(
         'version_string_api',
         doc='url for the version string api endpoint in the webapp',
-        default='https://crash-stats.mozilla.com/api/VersionString'
+        default='https://crash-stats.mozilla.org/api/VersionString'
     )
 
     def __init__(self, config, rules=None, quit_check_callback=None):

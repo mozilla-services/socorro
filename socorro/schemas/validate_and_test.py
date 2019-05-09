@@ -14,7 +14,7 @@ import requests
 from socorro.external.boto.crashstorage import TelemetryBotoS3CrashStorage
 
 
-API_BASE = 'https://crash-stats.mozilla.com/api/{}/'
+API_BASE = 'https://crash-stats.mozilla.org/api/{}/'
 HERE = os.path.dirname(__file__)
 
 

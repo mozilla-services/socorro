@@ -73,13 +73,13 @@ Information (PII). There are three main classes of users:
 
 * Anonymous visitors and basic users do not have access to memory dumps or PII.
 * Users in the "Hackers" group can view memory dumps and PII.
-  `Memory Dump Access <https://crash-stats.mozilla.com/documentation/memory_dump_access/>`_
+  `Memory Dump Access <https://crash-stats.mozilla.org/documentation/memory_dump_access/>`_
   has the details for requesting access to this group.
 * Superusers maintain the site, set group membership in the Django admin, and
   have full access.
 
 A logged-in user can view their detailed permissions on the
-`Your Permissions <https://crash-stats.mozilla.com/permissions/>`_ page.
+`Your Permissions <https://crash-stats.mozilla.org/permissions/>`_ page.
 
 The groups and their permissions are defined in
 ``webapp-django/crashstats/crashstats/signals.py``. These are applied to

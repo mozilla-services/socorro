@@ -46,7 +46,7 @@ Checklist
 
     * local dev: http://localhost:8000/api/Status
     * -stage: https://crash-stats.allizom.org/api/Status
-    * -prod: https://crash-stats.mozilla.com/api/Status
+    * -prod: https://crash-stats.mozilla.org/api/Status
 
 
     Migrations

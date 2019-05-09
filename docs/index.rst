@@ -5,13 +5,13 @@ Socorro - Crash ingestion pipeline
 Socorro is a set of components for collecting, processing, and analyzing crash
 data. It is used by Mozilla for analyzing crash data for Mozilla products.
 Mozilla's crash analysis tool is hosted at
-`<https://crash-stats.mozilla.com/>`_.
+`<https://crash-stats.mozilla.org/>`_.
 
 
 :Free software: Mozilla Public License version 2.0
 :Code: https://github.com/mozilla-services/socorro/ and https://github.com/mozilla-services/antenna
 :Documentation: https://socorro.readthedocs.io/
-:Documentation: https://crash-stats.mozilla.com/documentation/
+:Documentation: https://crash-stats.mozilla.org/documentation/
 :Mailing list: https://lists.mozilla.org/listinfo/tools-socorro
 :IRC: `<irc://irc.mozilla.org/breakpad>`_
 :New bugs: https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
@@ -31,7 +31,7 @@ Mozilla's crash analysis tool is hosted at
 
 
 Crash Stats site documentation covering API docs, getting access to memory dumps,
-and Supersearch is located at `<https://crash-stats.mozilla.com/documentation/>`_.
+and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`_.
 
 
 .. toctree::

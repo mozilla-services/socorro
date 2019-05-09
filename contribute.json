@@ -17,7 +17,7 @@
         "report": "https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro"
     },
     "urls": {
-        "prod": "https://crash-stats.mozilla.com/",
+        "prod": "https://crash-stats.mozilla.org/",
         "stage": "https://crash-stats.allizom.org/"
     },
     "keywords": [
