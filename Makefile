@@ -42,8 +42,9 @@ default:
 	@echo "  test             - run unit tests"
 	@echo "  testshell        - open a shell for running tests"
 	@echo "  docs             - generate Sphinx HTML documentation, including API docs"
+	@echo "  mdswshell        - debug/compile shell for minidump-stackwalk"
 	@echo ""
-	@echo "  setup            - set up Postgres, Elasticsearch, and local S3"
+	@echo "  setup            - set up Postgres, Pub/Sub, Elasticsearch, and local S3"
 	@echo "  updatedata       - add/update necessary database data"
 	@echo "  help             - see this text"
 	@echo ""
@@ -54,6 +55,7 @@ clean:
 	-rm .docker-build*
 	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz depot_tools
 	-rm -rf .cache
+	-rm -rf mdsw_venv
 	cd minidump-stackwalk && make clean
 
 .PHONY: docs
@@ -99,6 +101,10 @@ updatedata: my.env
 .PHONY: shell
 shell: my.env .docker-build
 	${DC} run --rm app shell
+
+.PHONY: mdswshell
+mdswshell: my.env .docker-build
+	./docker/run_mdswshell.sh
 
 .PHONY: test
 test: my.env .docker-build

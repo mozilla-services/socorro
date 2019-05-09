@@ -45,7 +45,7 @@ and Supersearch is located at `<https://crash-stats.mozilla.com/documentation/>`
    contributing
    service/*
    flows/*
-   stackwalker
+   stackwalk
    schemas
    crashstorage/*
    tests/*

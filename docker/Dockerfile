@@ -14,7 +14,11 @@ RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
 
 
 FROM socorro_image_base as socorro_breakpad
+
 WORKDIR /mdsw/
+
+# Install some helpful debugging things
+RUN apt-get -y install gdb vim
 
 # Build breakpad client and stackwalker binaries
 COPY ./scripts/build-breakpad.sh /mdsw/scripts/
@@ -22,6 +26,9 @@ COPY ./scripts/build-stackwalker.sh /mdsw/scripts/
 COPY ./minidump-stackwalk/ /mdsw/minidump-stackwalk/
 RUN STACKWALKDIR=/stackwalk SRCDIR=/mdsw /mdsw/scripts/build-stackwalker.sh
 
+# Let app own /mdsw and /stackwalk so it's easier to debug later
+RUN chown -R app.app /mdsw
+RUN chown -R app.app /stackwalk
 
 FROM socorro_image_base
 WORKDIR /app/
