@@ -10,7 +10,6 @@ from configman import Namespace
 from configman.converters import class_converter, list_converter
 import elasticsearch
 import markus
-import six
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
 from socorro.external.es.super_search_fields import FIELDS
@@ -156,7 +155,7 @@ def truncate_keyword_field_values(fields, data):
             continue
 
         value = data.get(field_name)
-        if isinstance(value, six.string_types) and len(value) > MAX_KEYWORD_FIELD_VALUE_SIZE:
+        if isinstance(value, str) and len(value) > MAX_KEYWORD_FIELD_VALUE_SIZE:
             data[field_name] = value[:MAX_KEYWORD_FIELD_VALUE_SIZE]
 
             # FIXME(willkg): When we get metrics throughout the processor, we should

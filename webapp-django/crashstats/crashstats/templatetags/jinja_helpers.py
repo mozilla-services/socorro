@@ -5,14 +5,13 @@
 import datetime
 import json
 import re
+from urllib.parse import urlencode, parse_qs
 
 from django_jinja import library
 import humanfriendly
 import isodate
 import jinja2
 from libgravatar import Gravatar
-import six
-from six.moves.urllib.parse import urlencode, parse_qs
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
@@ -36,7 +35,7 @@ def truncatechars(str_, max_length):
 @library.filter
 def digitgroupseparator(number):
     """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
-    if not isinstance(number, six.integer_types):
+    if not isinstance(number, int):
         return number
     return format(number, ',')
 
@@ -364,7 +363,7 @@ def url(viewname, *args, **kwargs):
     string values), we have to sanitize the values.
     """
     def clean_argument(s):
-        if isinstance(s, six.string_types):
+        if isinstance(s, str):
             # First remove all proper control characters like '\n',
             # '\r' or '\t'.
             s = ''.join(c for c in s if ord(c) >= 32)

@@ -14,7 +14,6 @@ import boto.s3.connection
 from configman import Namespace, RequiredConfig, class_converter
 from configman.converters import str_to_boolean
 import markus
-import six
 
 from socorro.lib.ooid import date_from_ooid
 
@@ -177,7 +176,7 @@ class ConnectionContextBase(RequiredConfig):
     def submit(self, id, name_of_thing, thing):
         """submit something to boto"""
         # can only submit binary to boto
-        assert isinstance(thing, six.binary_type), type(thing)
+        assert isinstance(thing, bytes), type(thing)
         try:
             start_time = time.time()
 

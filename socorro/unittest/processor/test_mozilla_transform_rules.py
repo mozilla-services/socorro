@@ -3,12 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
+from io import BytesIO
 import json
 
 from configman.dotdict import DotDict
 from mock import call, Mock, patch
 import requests_mock
-import six
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.util import dotdict_to_dict
@@ -731,7 +731,7 @@ class TestOutOfMemoryBinaryRule(object):
 
         with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
             ret = json.dumps({'mysterious': ['awesome', 'memory']})
-            mocked_gzip_open.return_value = six.BytesIO(ret.encode('utf-8'))
+            mocked_gzip_open.return_value = BytesIO(ret.encode('utf-8'))
             rule = OutOfMemoryBinaryRule(config)
             # Stomp on the value to make it easier to test with
             rule.MAX_SIZE_UNCOMPRESSED = 1024

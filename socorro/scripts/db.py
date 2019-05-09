@@ -4,10 +4,10 @@
 
 import argparse
 import os
+from urllib.parse import urlparse
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from six.moves.urllib.parse import urlparse
 
 from socorro.scripts import WrappedTextHelpFormatter
 

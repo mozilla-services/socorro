@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import json
+from urllib.parse import quote
 
 import mock
 import pyquery
-from six.moves.urllib.parse import quote
 
 from django.urls import reverse
 from django.utils.encoding import smart_text

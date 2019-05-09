@@ -13,8 +13,6 @@ import hashlib
 import logging
 import time
 
-import six
-
 from django.conf import settings
 from django.core.cache import cache
 from django.db import models
@@ -546,9 +544,9 @@ class SocorroMiddleware(SocorroCommon):
                 if isinstance(value, datetime.datetime) and param['type'] is datetime.date:
                     value = value.date()
             else:
-                if isinstance(value, six.string_types) and param['type'] is list:
+                if isinstance(value, str) and param['type'] is list:
                     value = [value]
-                elif param['type'] is six.text_type:
+                elif param['type'] is str:
                     # we'll let the url making function later deal with this
                     pass
                 else:
@@ -581,8 +579,8 @@ class SocorroMiddleware(SocorroCommon):
         for required, items in ((True, getattr(self, 'required_params', [])),
                                 (False, getattr(self, 'possible_params', []))):
             for item in items:
-                if isinstance(item, six.string_types):
-                    type_ = six.text_type
+                if isinstance(item, str):
+                    type_ = str
                     name = item
                 elif isinstance(item, dict):
                     type_ = item['type']
@@ -1076,7 +1074,7 @@ class BugzillaBugInfo(SocorroCommon):
         return 'buginfo:{}'.format(bug_id)
 
     def get(self, bugs):
-        if isinstance(bugs, six.string_types):
+        if isinstance(bugs, str):
             bugs = [bugs]
         fields = ('summary', 'status', 'id', 'resolution')
         results = []

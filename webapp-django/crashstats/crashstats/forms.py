@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import six
-
 from django import forms
 
 
@@ -11,7 +9,7 @@ class _BaseForm(object):
     def clean(self):
         cleaned_data = super().clean()
         for field in cleaned_data:
-            if isinstance(cleaned_data[field], six.string_types):
+            if isinstance(cleaned_data[field], str):
                 cleaned_data[field] = (
                     cleaned_data[field].replace('\r\n', '\n')
                     .replace(u'\u2018', "'").replace(u'\u2019', "'").strip())

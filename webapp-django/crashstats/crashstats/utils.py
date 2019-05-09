@@ -9,9 +9,7 @@ import isodate
 import json
 import random
 import re
-
-import six
-from six.moves.urllib.parse import urlencode
+from urllib.parse import urlencode
 
 from django import http
 from django.conf import settings
@@ -522,7 +520,7 @@ def build_default_context(product=None, versions=None):
     context['active_versions'] = active_versions
 
     if versions is not None:
-        if isinstance(versions, six.string_types):
+        if isinstance(versions, str):
             versions = versions.split(';')
 
         if versions:

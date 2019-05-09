@@ -9,10 +9,10 @@ environment.
 
 from django.contrib.auth.models import Group, User
 from django.core.management.base import BaseCommand, CommandError
-from django.utils.six.moves import input
 
 
 def get_input(text):
+    """Get user input, or mock it for tests."""
     return input(text).strip()
 
 

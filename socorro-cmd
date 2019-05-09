@@ -17,12 +17,9 @@ Run "socorro-cmd --help" for help.
 import argparse
 import importlib
 import inspect
-import os
 import sys
 import textwrap
 import types
-
-import six
 
 from socorro.app.socorro_app import App
 
@@ -45,7 +42,7 @@ def showcommands_cmd(argv):
     for group in COMMANDS:
         print('%s:' % group.name)
         for cmd, runner in group:
-            if not isinstance(runner, six.string_types):
+            if not isinstance(runner, str):
                 runner = '%s in %s' % (runner.__name__, inspect.getfile(runner))
             print('  %-24s %s' % (cmd, runner))
         print('')

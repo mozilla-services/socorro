@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import six
-
 from django.utils.encoding import smart_text
 
 
@@ -16,7 +14,7 @@ def string_hex_to_hex_string(snippet):
     we always return a 4 character string preceeded by 0x.
     This function tries to make that conversion.
     """
-    assert isinstance(snippet, six.string_types)
+    assert isinstance(snippet, str)
     return '0x' + format(int(snippet, 16), '04x')
 
 

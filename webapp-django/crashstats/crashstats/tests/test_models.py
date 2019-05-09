@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import random
+from urllib.parse import urlparse, parse_qs
 
 import mock
 import pytest
-from six.moves.urllib.parse import urlparse, parse_qs
 
 from django.core.cache import cache
 from django.conf import settings

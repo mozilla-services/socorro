@@ -6,7 +6,6 @@ import copy
 import json
 
 import mock
-import six
 
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
@@ -23,7 +22,7 @@ from socorro.external.es.super_search_fields import FIELDS
 class Response(object):
     def __init__(self, content=None, status_code=200):
         self.raw = content
-        if not isinstance(content, six.string_types):
+        if not isinstance(content, str):
             content = json.dumps(content)
         self.content = content.strip()
         self.status_code = status_code
@@ -31,7 +30,7 @@ class Response(object):
     @property
     def text(self):
         # Similar to content but with the right encoding
-        return six.text_type(self.content, 'utf-8')
+        return str(self.content, 'utf-8')
 
     def json(self):
         return self.raw

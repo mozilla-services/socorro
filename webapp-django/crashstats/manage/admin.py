@@ -2,11 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import hashlib
-
 from collections import OrderedDict
+import hashlib
+from urllib.parse import urlparse
+
 import requests
-from six.moves.urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib import messages

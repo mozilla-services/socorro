@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from urllib.parse import urlparse
+
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import get_lexer_for_filename, CppLexer
 import requests
 
 from django import http
-
-from six.moves.urllib.parse import urlparse
 
 
 # List of hosts that we will fetch source files from that we syntax highlight and return to the

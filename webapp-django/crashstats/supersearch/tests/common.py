@@ -4,14 +4,12 @@
 
 import json
 
-import six
-
 from crashstats.crashstats.tests.test_models import Response
 
 
 class SuperSearchResponse(Response):
     def __init__(self, content=None, status_code=200, columns=None):
-        if isinstance(content, six.string_types):
+        if isinstance(content, str):
             content = json.loads(content)
 
         if columns is None:

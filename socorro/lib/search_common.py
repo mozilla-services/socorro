@@ -9,8 +9,6 @@ Common functions for search-related external modules.
 import datetime
 import json
 
-import six
-
 from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
@@ -198,7 +196,7 @@ class SearchBase(object):
                         OPERATORS_MAP['default']
                     )
 
-                    if isinstance(value, six.string_types):
+                    if isinstance(value, str):
                         if value.startswith(OPERATOR_NOT):
                             operator_not = True
                             value = value[1:]
@@ -431,10 +429,10 @@ class SearchBase(object):
 
 
 def convert_to_type(value, data_type):
-    if data_type == 'str' and not isinstance(value, six.string_types):
+    if data_type == 'str' and not isinstance(value, str):
         value = str(value)
     # yes, 'enum' is being converted to a string
-    elif data_type == 'enum' and not isinstance(value, six.string_types):
+    elif data_type == 'enum' and not isinstance(value, str):
         value = str(value)
     elif data_type == 'int' and not isinstance(value, int):
         value = int(value)
@@ -444,7 +442,7 @@ def convert_to_type(value, data_type):
         value = datetimeutil.string_to_datetime(value)
     elif data_type == 'date' and not isinstance(value, datetime.date):
         value = datetimeutil.string_to_datetime(value).date()
-    elif data_type == 'json' and isinstance(value, six.string_types):
+    elif data_type == 'json' and isinstance(value, str):
         value = json.loads(value)
     return value
 
