@@ -18,16 +18,12 @@ web app. Here is a list of those features:
   queries. It is also accessible via the public API, allowing users to build
   their own tools.
 
-  Example: https://crash-stats.mozilla.org/search/
-
 * **Custom Queries**
 
   Based on Super Search, this feature allows users to write JSON queries that
   are executed directly against Elasticsearch. This is a very sensitive
   feature that gives unrestricted access to your data. Specific permissions
   are needed for users to have access to it.
-
-  Example: nope, this is not publicly accessible :)
 
 * **Signature Report**
 
@@ -36,14 +32,10 @@ web app. Here is a list of those features:
   share a signature. Features include listing crash reports, listing user
   comments and showing aggregation on any field of the database.
 
-  Example: https://crash-stats.mozilla.org/signature/?signature=nsTimeout::~nsTimeout%28%29
-
 * **Profile page**
 
   On the profile page, Super Search is used to show the recent crash
   reports that contain the user's email address.
-
-  Example: https://crash-stats.mozilla.org/profile/
 
 
 Supported versions of Elasticsearch
