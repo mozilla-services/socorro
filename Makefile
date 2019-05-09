@@ -19,7 +19,6 @@ ifeq (1, ${NOCACHE})
 DOCKER_BUILD_OPTS := --no-cache
 endif
 
-DOCKER := $(shell which docker)
 DC := $(shell which docker-compose)
 
 
@@ -43,8 +42,9 @@ default:
 	@echo "  test             - run unit tests"
 	@echo "  testshell        - open a shell for running tests"
 	@echo "  docs             - generate Sphinx HTML documentation, including API docs"
+	@echo "  mdswshell        - debug/compile shell for minidump-stackwalk"
 	@echo ""
-	@echo "  setup            - set up Postgres, Elasticsearch, and local S3"
+	@echo "  setup            - set up Postgres, Pub/Sub, Elasticsearch, and local S3"
 	@echo "  updatedata       - add/update necessary database data"
 	@echo "  help             - see this text"
 	@echo ""
