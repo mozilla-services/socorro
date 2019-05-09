@@ -12,7 +12,6 @@ import sys
 from configman import Namespace
 from configman.converters import class_converter
 from configman.dotdict import DotDict
-import six
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -229,7 +228,7 @@ class ProcessorApp(FetchTransformSaveApp):
             # Capture the exception so we don't lose it as we do other things
             exc_type, exc_value, exc_tb = sys.exc_info()
 
-            # PolyStorage can throw a PolyStorageException which is a sequence
+            # PolyStorage can throw a PolyStorageError which is a sequence
             # of exc_info items, so we need to capture each one
             if isinstance(exc_value, collections.Sequence):
                 exc_info = exc_value
@@ -241,7 +240,7 @@ class ProcessorApp(FetchTransformSaveApp):
                 self.logger.warning('error in processing or saving crash %s', crash_id)
 
             # Re-raise the original exception with the correct traceback
-            six.reraise(exc_type, exc_value, exc_tb)
+            raise
 
         finally:
             # Clean up any dump files saved to the file system
