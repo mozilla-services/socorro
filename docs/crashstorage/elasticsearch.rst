@@ -7,35 +7,21 @@ Crash storage: Elasticsearch
 Features
 ========
 
-Socorro uses Elasticsearch as a back-end for several intensive features in the
-web app. Here is a list of those features:
+Socorro uses Elasticsearch as a back-end for several search and report features
+in the web app:
 
-* **Super Search**
-
-  Probably the most important one, Super Search is an improved search page
-  that allows users to search through any field they like in the database. It
-  exposes convenient and powerful operators and allows to build complex
-  queries. It is also accessible via the public API, allowing users to build
-  their own tools.
-
-* **Custom Queries**
-
-  Based on Super Search, this feature allows users to write JSON queries that
-  are executed directly against Elasticsearch. This is a very sensitive
-  feature that gives unrestricted access to your data. Specific permissions
-  are needed for users to have access to it.
-
-* **Signature Report**
-
-  A replacement for the old ``/report/list/`` page. It is heavily based
-  on Super Search, and provides useful information about crashes that
-  share a signature. Features include listing crash reports, listing user
-  comments and showing aggregation on any field of the database.
-
-* **Profile page**
-
-  On the profile page, Super Search is used to show the recent crash
-  reports that contain the user's email address.
+* **Super Search** allows users to search through any field in the database. It
+  exposes powerful operators to build complex queries. It is accessible via the
+  public API, allowing users to build their own tools. It is used to implement
+  the other search features.
+* **Custom Queries** allow users to write JSON queries that are executed
+  directly against Elasticsearch. This gives unrestricted access to the data,
+  and requires additional permissions.
+* **Signature Reports** provide useful information about crashes that share a
+  signature. This includes aggregation on any database field, exploring
+  crash reports, and generating graphs.
+* **Profile pages** show the recent crash reports that contain the user's email
+  address.
 
 
 Supported versions of Elasticsearch
