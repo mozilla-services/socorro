@@ -9,10 +9,7 @@ depending on what happened.
 """
 
 from contextlib import contextmanager
-import sys
 import time
-
-import six
 
 
 @contextmanager
@@ -78,24 +75,21 @@ def retry(connection_context, quit_check, fun, **kwargs):
     :returns: varies
 
     """
-    last_failure = None
-
-    for backoff_time in BACKOFF_TIMES:
+    max_attempts = len(BACKOFF_TIMES) - 1
+    for retry_round, backoff_time in enumerate(BACKOFF_TIMES):
         try:
             with connection_context() as conn:
                 return fun(conn, **kwargs)
         except Exception as exc:
-            last_failure = sys.exc_info()
+            if retry_round == max_attempts:
+                # If the final reconnect attempt failed, then raise the error.
+                raise
             if connection_context.is_retryable_exception(exc):
                 # Force a reconnection because that sometimes fixes things
                 connection_context.force_reconnect()
             else:
-                six.reraise(*last_failure)
+                raise
 
         time.sleep(backoff_time)
         if quit_check is not None:
             quit_check()
-
-    # If it gets here, it's because we've dropped out of the loop and there's
-    # no more retry attempts, so reraise the last error
-    six.reraise(*last_failure)
