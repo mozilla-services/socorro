@@ -19,6 +19,7 @@ ifeq (1, ${NOCACHE})
 DOCKER_BUILD_OPTS := --no-cache
 endif
 
+DOCKER := $(shell which docker)
 DC := $(shell which docker-compose)
 
 
@@ -54,6 +55,7 @@ clean:
 	-rm .docker-build*
 	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz depot_tools
 	-rm -rf .cache
+	-rm -rf mdsw_venv
 	cd minidump-stackwalk && make clean
 
 .PHONY: docs
@@ -99,6 +101,10 @@ updatedata: my.env
 .PHONY: shell
 shell: my.env .docker-build
 	${DC} run --rm app shell
+
+.PHONY: mdswshell
+mdswshell: my.env .docker-build
+	./docker/run_mdswshell.sh
 
 .PHONY: test
 test: my.env .docker-build
