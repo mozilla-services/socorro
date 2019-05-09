@@ -43,15 +43,12 @@ def transaction_context(connection_context):
             yield conn
             conn.commit()
         except Exception:
-            excinfo = sys.exc_info()
             try:
                 conn.rollback()
             except Exception:
-                # NOTE(willkg): This exception is effectively getting
-                # swallowed. We're assuming it's a red herring for whatever
-                # threw the original exception. In Python 3, we can chain them.
                 conn.logger.exception('cannot rollback')
-            six.reraise(*excinfo)
+                raise
+            raise
 
 
 # Backoff amounts in seconds; last is a 0 so it doesn't sleep after the last
