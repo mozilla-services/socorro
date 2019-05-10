@@ -23,24 +23,33 @@ DATADIR=./crashdata_mdsw_tmp
 STACKWALKER="$(getenv 'processor.command_pathname')"
 
 if [[ $# -eq 0 ]]; then
-    echo "Usage: run_mdsw.sh CRASHID"
-    exit 1
+    if [ -t 0 ]; then
+        # If stdin is a terminal, then there's no input
+        echo "Usage: run_mdsw.sh CRASHID"
+        exit 1
+    fi
+
+    # stdin is not a terminal, so pull the args from there
+    set -- ${@:-$(</dev/stdin)}
 fi
 
 mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 
-# Pull down the data for the crash if we don't have it, yet
-if [ ! -f "${DATADIR}/v1/dump/$1" ]; then
-    echo "Fetching crash data..."
-    ./socorro-cmd fetch_crash_data "${DATADIR}" $1
-fi
+for CRASHID in "$@"
+do
+    # Pull down the data for the crash if we don't have it, yet
+    if [ ! -f "${DATADIR}/v1/dump/$CRASHID" ]; then
+        echo "Fetching crash data..."
+        ./socorro-cmd fetch_crash_data "${DATADIR}" $CRASHID
+    fi
 
-# Find the raw crash file
-RAWCRASHFILE=$(find ${DATADIR}/v2/raw_crash/ -name $1 -type f)
+    # Find the raw crash file
+    RAWCRASHFILE=$(find ${DATADIR}/v2/raw_crash/ -name $CRASHID -type f)
 
-timeout -s KILL 600 "${STACKWALKER}" \
-    --raw-json $RAWCRASHFILE \
-    --symbols-url "https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1" \
-    --symbols-cache /tmp/symbols/cache \
-    --symbols-tmp /tmp/symbols/tmp \
-    ${DATADIR}/v1/dump/$1
+    timeout -s KILL 600 "${STACKWALKER}" \
+        --raw-json $RAWCRASHFILE \
+        --symbols-url "https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1" \
+        --symbols-cache /tmp/symbols/cache \
+        --symbols-tmp /tmp/symbols/tmp \
+        ${DATADIR}/v1/dump/$CRASHID
+done

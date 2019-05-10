@@ -567,8 +567,9 @@ bool ConvertStackToJSON(const ProcessState& process_state,
       if (ContainsModule(modules_with_corrupt_symbols, frame->module)) {
         frame_data["corrupt_symbols"] = true;
       }
-      assert(!frame->module->code_file().empty());
-      frame_data["module"] = PathnameStripper::File(frame->module->code_file());
+      if (!frame->module->code_file().empty()) {
+        frame_data["module"] = PathnameStripper::File(frame->module->code_file());
+      }
 
       if (!frame->function_name.empty()) {
         frame_data["function"] = frame->function_name;
@@ -890,7 +891,7 @@ static void ConvertCPUInfoToJSON(const string& cpuinfo,
     }
 
     try {
-        root["system_info"]["cpu_microcode_version"] = static_cast<Json::UInt>(std::stoi(trim(bits[1]), nullptr, 16));
+        root["system_info"]["cpu_microcode_version"] = static_cast<Json::UInt>(std::stoul(trim(bits[1]), nullptr, 16));
         break;
     } catch (const std::invalid_argument& e) {}
   }
