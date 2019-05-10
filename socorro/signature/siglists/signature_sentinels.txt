@@ -18,3 +18,4 @@ core::panicking::panic_fmt
 std::panicking::begin_panic
 std::panicking::begin_panic<T>
 std::panicking::begin_panic_fmt
+rust_begin_panic
