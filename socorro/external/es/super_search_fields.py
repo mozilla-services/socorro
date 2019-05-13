@@ -1204,6 +1204,7 @@ FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
+            'analyzer': 'keyword',
             'type': 'string'
         }
     },
