@@ -296,7 +296,7 @@ class TestBeforeSend:
     @pytest.mark.parametrize(
         'names, url, headers, expected_headers',
         TestSanitizeHeaders.CASES,
-        ids=tuple(case[0] for case in TestSanitizePostData.CASES))
+        ids=tuple(case[0] for case in TestSanitizeHeaders.CASES))
     def test_event_headers_sanitized(self, names, url, headers, expected_headers):
         """Request headers are sanitized of sensitive values."""
         event = {'request': {'url': url, 'headers': deepcopy(headers)}}
