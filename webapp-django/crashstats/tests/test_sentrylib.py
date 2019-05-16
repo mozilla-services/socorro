@@ -163,6 +163,25 @@ class TestSanitizeHeaders:
                 'Host': 'example.com'
             }
         ),
+        # Deployed behind an AWS Elastic Load Balancer (ELB)
+        (
+            'X-Forwarded-For,X-Real-IP',
+            'https://example.com/siteadmin/crash-me-now/',
+            {
+                'Host': 'example.com',
+                'X-Forwarded-For': '203.0.113.19, 203.0.113.19',
+                'X-Forwarded-Port': '443',
+                'X-Forwarded-Proto': 'https',
+                'X-Real-Ip': '203.0.113.19'
+            },
+            {
+                'Host': 'example.com',
+                'X-Forwarded-For': '[filtered]',  # Sensitive
+                'X-Forwarded-Port': '443',
+                'X-Forwarded-Proto': 'https',
+                'X-Real-Ip': '[filtered]'  # Also sensitive
+            }
+        )
     )
 
     @pytest.mark.parametrize(
