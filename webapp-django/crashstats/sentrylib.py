@@ -30,7 +30,7 @@ def get_before_send():
             SanitizeSQLQueryCrumb(('email', 'username', 'password', 'session_data', 'session_key',
                                    'tokens_token.key', 'auth_user.id')),
         )),
-        SanitizeHeaders(('Auth-Token',)),
+        SanitizeHeaders(('Auth-Token', 'X-Forwarded-For', 'X-Real-Ip')),
         SanitizePostData(('csrfmiddlewaretoken',)),
         SanitizeQueryString(('code', 'state')),
     )

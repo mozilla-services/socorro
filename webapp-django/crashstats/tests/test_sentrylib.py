@@ -163,6 +163,25 @@ class TestSanitizeHeaders:
                 'Host': 'example.com'
             }
         ),
+        # Deployed behind an AWS Elastic Load Balancer (ELB)
+        (
+            'X-Forwarded-For,X-Real-IP',
+            'https://example.com/siteadmin/crash-me-now/',
+            {
+                'Host': 'example.com',
+                'X-Forwarded-For': '203.0.113.19, 203.0.113.19',
+                'X-Forwarded-Port': '443',
+                'X-Forwarded-Proto': 'https',
+                'X-Real-Ip': '203.0.113.19'
+            },
+            {
+                'Host': 'example.com',
+                'X-Forwarded-For': '[filtered]',  # Sensitive
+                'X-Forwarded-Port': '443',
+                'X-Forwarded-Proto': 'https',
+                'X-Real-Ip': '[filtered]'  # Also sensitive
+            }
+        )
     )
 
     @pytest.mark.parametrize(
@@ -296,7 +315,7 @@ class TestBeforeSend:
     @pytest.mark.parametrize(
         'names, url, headers, expected_headers',
         TestSanitizeHeaders.CASES,
-        ids=tuple(case[0] for case in TestSanitizePostData.CASES))
+        ids=tuple(case[0] for case in TestSanitizeHeaders.CASES))
     def test_event_headers_sanitized(self, names, url, headers, expected_headers):
         """Request headers are sanitized of sensitive values."""
         event = {'request': {'url': url, 'headers': deepcopy(headers)}}
