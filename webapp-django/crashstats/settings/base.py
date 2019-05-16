@@ -600,7 +600,10 @@ if SENTRY_DSN:
         integrations=[DjangoIntegration()],
         debug=SENTRY_DEBUG,
         before_send=get_before_send())
-    ignore_logger(SENTRY_LOG_NAME)
+
+    # Do not generate events for some logs (ERROR or above)
+    ignore_logger(SENTRY_LOG_NAME)  # avoid infinite logging loops
+    ignore_logger('django.security.DisallowedHost')  # no fix needed, the system is working
 
     if SENTRY_DEBUG:
         # Add a DEBUG level handler for sentry processing messages
