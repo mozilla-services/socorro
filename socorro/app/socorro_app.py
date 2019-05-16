@@ -29,9 +29,10 @@ from configman import (
     environment,
     command_line,
 )
-from configman.converters import py_obj_to_str, str_to_python_object, str_to_list
+from configman.converters import py_obj_to_str, str_to_boolean, str_to_list, str_to_python_object
 import markus
-from socorro.lib.revision_data import get_revision_data
+import sentry_sdk
+from socorro.lib.revision_data import get_revision_data, get_version
 
 
 def cls_to_pypath(cls):
@@ -105,6 +106,23 @@ class App(RequiredConfig):
         default='markus.backends.datadog.DatadogMetrics',
         reference_value_from='resource.metrics',
         from_string_converter=str_to_list,
+    )
+
+    # Sentry handles reporting unhandled exceptions.
+    required_config.namespace('sentry')
+    required_config.sentry.add_option(
+        'dsn',
+        doc='DSN for Sentry',
+        default='',
+        reference_value_from='secrets.sentry',
+        secret=True
+    )
+    required_config.sentry.add_option(
+        'debug',
+        doc='Print details of initialization and event processing (true/false)',
+        reference_value_from='resource.sentry',
+        from_string_converter=str_to_boolean,
+        default=False,
     )
 
     def __init__(self, config):
@@ -205,6 +223,10 @@ class App(RequiredConfig):
             )
 
             config_manager.log_config(mylogger)
+
+            # Add version to crash reports
+            version = get_version(revision_data)
+            setup_crash_reporting(config, version)
 
             # we finally know what app to actually run, instantiate it
             app_to_run = cls(config)
@@ -316,3 +338,14 @@ def setup_metrics(config):
             raise ValueError('Invalid markus backend "%s"' % backend)
 
     markus.configure(backends=backends)
+
+
+def setup_crash_reporting(config, version):
+    """Setup Sentry crash reporting."""
+
+    if config.sentry and config.sentry.dsn:
+        sentry_sdk.init(
+            dsn=config.sentry.dsn,
+            release=version,
+            debug=config.sentry.debug,
+            send_default_pii=False)

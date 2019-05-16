@@ -147,15 +147,6 @@ class ProcessorApp(FetchTransformSaveApp):
         from_string_converter=class_converter
     )
 
-    # Sentry handles reporting unhandled exceptions.
-    required_config.namespace('sentry')
-    required_config.sentry.add_option(
-        'dsn',
-        doc='DSN for Sentry',
-        default='',
-        reference_value_from='secrets.sentry',
-    )
-
     def _capture_error(self, exc_info, crash_id=None):
         """Capture an error in sentry if able.
 
@@ -163,17 +154,11 @@ class ProcessorApp(FetchTransformSaveApp):
         :arg exc_info: the exc info as it comes from sys.exc_info()
 
         """
-        if self.config.sentry and self.config.sentry.dsn:
-            sentry_dsn = self.config.sentry.dsn
-        else:
-            sentry_dsn = None
-
         extra = {}
         if crash_id:
             extra['crash_id'] = crash_id
 
         sentry_client.capture_error(
-            sentry_dsn,
             self.logger,
             exc_info,
             extra=extra

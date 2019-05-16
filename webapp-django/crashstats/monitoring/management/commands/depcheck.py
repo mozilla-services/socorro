@@ -12,10 +12,9 @@ from collections import namedtuple
 from os.path import dirname
 from subprocess import PIPE, Popen
 
+import sentry_sdk
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-
-from socorro.lib import sentry_client
 
 
 VulnerabilityBase = namedtuple('Vulnerability', (
@@ -56,13 +55,8 @@ class Command(BaseCommand):
 
         vulnerabilities = self.get_python_vulnerabilities() + self.get_javascript_vulnerabilities()
         if vulnerabilities:
-            try:
-                dsn = settings.SENTRY_DSN
-            except KeyError:
-                dsn = None
-
-            if dsn:
-                self.alert_sentry(dsn, vulnerabilities)
+            if getattr(settings, 'SENTRY_DSN', None):
+                self.alert_sentry(vulnerabilities)
             else:
                 self.alert_log(vulnerabilities)
 
@@ -79,15 +73,10 @@ class Command(BaseCommand):
             elif not os.path.isfile(value):
                 raise CommandError('Option "%s" does not point to a file (%s)' % (option, value))
 
-    def alert_sentry(self, dsn, vulnerabilities):
-        client = sentry_client.get_client(dsn)
-        client.context.activate()
-        client.context.merge({
-            'extra': {
-                'data': {vuln.key: vuln.summary for vuln in vulnerabilities},
-            },
-        })
-        client.captureMessage('Dependency security check failed')
+    def alert_sentry(self, vulnerabilities):
+        with sentry_sdk.push_scope() as scope:
+            scope.set_extra("data", {vuln.key: vuln.summary for vuln in vulnerabilities})
+            sentry_sdk.capture_message('Dependency security check failed')
 
     def alert_log(self, vulnerabilities):
         self.stdout.write('Vulnerabilities found in dependencies!')

@@ -211,11 +211,6 @@ class Processor2015(RequiredConfig):
         for a_rule_class in rule_set:
             self.rules.append(a_rule_class(config))
 
-        if self.config.sentry and self.config.sentry.dsn:
-            self.sentry_dsn = self.config.sentry.dsn
-        else:
-            self.sentry_dsn = None
-
     def process_crash(self, raw_crash, raw_dumps, processed_crash):
         """Take a raw_crash and its associated raw_dumps and return a processed_crash
 
@@ -271,7 +266,6 @@ class Processor2015(RequiredConfig):
                 # If a rule throws an error, capture it and toss it in the
                 # processor notes
                 sentry_client.capture_error(
-                    sentry_dsn=self.sentry_dsn,
                     logger=self.logger,
                     extra={'crash_id': crash_id}
                 )

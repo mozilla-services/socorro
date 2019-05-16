@@ -1593,19 +1593,16 @@ class TestSignatureGeneratorRule:
             'SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed'  # noqa
         ]
 
-    @patch('socorro.lib.sentry_client.get_client')
-    def test_rule_fail_and_capture_error(self, mock_get_client):
+    @patch('socorro.lib.sentry_client.get_hub')
+    @patch('socorro.lib.sentry_client.is_enabled', return_value=True)
+    def test_rule_fail_and_capture_error(self, client_enabled, mock_get_hub):
         exc_value = Exception('Cough')
 
         class BadRule(object):
             def predicate(self, raw_crash, processed_crash):
                 raise exc_value
 
-        sentry_dsn = 'https://username:password@sentry.example.com/'
-
         config = get_basic_config()
-        config.sentry = DotDict()
-        config.sentry.dsn = sentry_dsn
         rule = SignatureGeneratorRule(config)
 
         # Override the regular SigntureGenerator with one with a BadRule
@@ -1629,12 +1626,9 @@ class TestSignatureGeneratorRule:
             'BadRule: Rule failed: Cough'
         ]
 
-        # Make sure the client was instantiated with the sentry_dsn
-        mock_get_client.assert_called_once_with(sentry_dsn)
-
         # Make sure captureExeption was called with the right args.
         assert (
-            mock_get_client.return_value.captureException.call_args_list == [
-                call((Exception, exc_value, WHATEVER))
+            mock_get_hub.return_value.capture_exception.call_args_list == [
+                call(error=(Exception, exc_value, WHATEVER))
             ]
         )
