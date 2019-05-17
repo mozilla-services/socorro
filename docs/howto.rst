@@ -81,7 +81,8 @@ For more complex crash sets, pass a search URL to generate the list::
 Processing requests for PII access
 ==================================
 
-People file bugs in Bugzilla asking to be granted access to PII.
+People file bugs in Bugzilla asking to be granted access to PII using
+`these instructions <https://crash-stats.mozilla.org/documentation/memory_dump_access/>`_.
 
 Process for handling those:
 
@@ -97,7 +98,7 @@ Process for handling those:
    agreement. Make sure to copy and paste the terms in the bug comments as well
    as the url to where it exists. Tag the reporter with a needinfo.
 
-5. Reply in the bug asking th emanager to verify the reporter requires access to
+5. Reply in the bug asking the manager to verify the reporter requires access to
    PII on Crash Stats for their job. Tag the manager with a needinfo.
 
 Then wait for those needinfos to be filled. Once that's done:
@@ -113,6 +114,8 @@ Then reply in the bug something like this::
     back in again. Let us know if you have any problems!
 
     Thank you!
+
+and mark the bug FIXED.
 
 That's it!
 
@@ -169,7 +172,7 @@ Wait for needinfos to resolve.
 10. Depending on what went out, watch Sentry, the logs, Datadog, and other
     things for problems.
 
-    Datadog and Sentry will sent notifications for problems.
+    Datadog and Sentry will send notifications for problems.
 
 11. Once everything is good to go, comment that everything is good and note
     anything that happened that we might want to know in the future. Then mark
