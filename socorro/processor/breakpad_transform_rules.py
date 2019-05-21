@@ -200,7 +200,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
             '{symbols_urls} '
             '--symbols-cache {symbol_cache_path} '
             '--symbols-tmp {symbol_tmp_path} '
-            '{dump_file_pathname} '
+            '{dump_file_pathname}'
         )
     )
     required_config.add_option(
