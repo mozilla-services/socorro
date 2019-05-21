@@ -3,10 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import re
 from unittest import mock
 
 import freezegun
 import pytest
+from markus.testing import GAUGE, MetricsMock
 
 from django.core.management import call_command
 from django.utils import timezone
@@ -89,3 +91,32 @@ class TestCronrun:
             call_command('cronrun')
 
         assert Job.objects.all().count() == len(JOBS)
+
+    def test_exception(self, db, caplog):
+        """Exceptions are caught, and logged multiple ways."""
+        caplog.set_level('INFO')
+        job_args = {
+            'job': 'crontest',
+            'job_arg': ['print="die die die"']
+        }
+
+        with mock.patch('crashstats.cron.management.commands.cronrun.call_command') as call, \
+                mock.patch('sentry_sdk.capture_exception') as capture, \
+                MetricsMock() as metrics_mock:
+            call.side_effect = RuntimeError('I Died')
+            call_command('cronrun', **job_args)
+
+        # The exception is captured by Sentry
+        capture.assert_called_once_with()
+
+        # The exception is logged
+        err_re = re.compile(r'error when running crontest.*\\nRuntimeError: I Died\\n$')
+        recs = [rec.message for rec in caplog.records]
+        assert any(err_re.match(rec) for rec in recs), recs
+
+        # The job duration is recorded as a failure
+        assert metrics_mock.has_record(
+            fun_name=GAUGE,
+            stat='cron.job_failure_runtime',
+            tags=['job:crontest']
+        )

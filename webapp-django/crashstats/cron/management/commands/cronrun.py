@@ -166,8 +166,8 @@ class Command(BaseCommand):
                 )
 
                 # Send error to sentry, log it, and remember the failure
-                sentry_sdk.capture_error()
-                logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
+                sentry_sdk.capture_exception()
+                logger.warning('error when running %s (%s): %s', cmd, run_time, single_line_tb)
                 self._remember_failure(
                     cmd,
                     end_time - start_time,
