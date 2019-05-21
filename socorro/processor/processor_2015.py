@@ -150,8 +150,7 @@ class Processor2015(RequiredConfig):
             '{symbols_urls} '
             '--symbols-cache {symbol_cache_path} '
             '--symbols-tmp {symbol_tmp_path} '
-            '{dump_file_pathname} '
-            '2> /dev/null'
+            '{dump_file_pathname}'
         )
     )
     required_config.add_option(
