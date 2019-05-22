@@ -241,13 +241,11 @@ def test_validate_super_search_fields(name, properties):
 
     property_keys = [
         'data_validation_type',
-        'default_value',
         'description',
         'form_field_choices',
         'has_full_version',
         'in_database_name',
         'is_exposed',
-        'is_mandatory',
         'is_returned',
         'name',
         'namespace',
@@ -260,7 +258,7 @@ def test_validate_super_search_fields(name, properties):
     assert sorted(properties.keys()) == sorted(property_keys)
 
     # Assert boolean fields have boolean values
-    for key in ['has_full_version', 'is_exposed', 'is_mandatory', 'is_returned']:
+    for key in ['has_full_version', 'is_exposed', 'is_returned']:
         assert properties[key] in (True, False)
 
     # Assert data_validation_type has a valid value

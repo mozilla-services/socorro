@@ -7,11 +7,9 @@ Common functions for search-related external modules.
 """
 
 import datetime
-import json
 
 from socorro.lib import (
     BadArgumentError,
-    MissingArgumentError,
     datetimeutil,
 )
 import socorro.lib.external_common as extern
@@ -84,20 +82,17 @@ class SearchParam(object):
 
 
 class SearchFilter(object):
-    def __init__(self, name, default=None, data_type='enum', mandatory=False):
+    def __init__(self, name, default=None, data_type='enum'):
         self.name = name
         self.default = default
         self.data_type = data_type
-        self.mandatory = mandatory
 
 
 class SearchBase(object):
     meta_filters = (
         SearchFilter('_aggs.product.version'),
         SearchFilter('_aggs.product.version.platform'),  # convenient for tests
-        SearchFilter(
-            '_aggs.android_cpu_abi.android_manufacturer.android_model'
-        ),
+        SearchFilter('_aggs.android_cpu_abi.android_manufacturer.android_model'),
         SearchFilter('_columns', default=[
             'uuid', 'date', 'signature', 'product', 'version'
         ]),
@@ -118,9 +113,7 @@ class SearchBase(object):
         for field in fields.values():
             self.filters.append(SearchFilter(
                 field['name'],
-                default=field['default_value'],
                 data_type=field['data_validation_type'],
-                mandatory=field['is_mandatory'],
             ))
 
             # Add a field to get a list of other fields to aggregate.
@@ -167,8 +160,6 @@ class SearchBase(object):
                 # to None in our case.
                 values = None
 
-            if values is None and param.mandatory:
-                raise MissingArgumentError(param.name)
             if values is None and param.default is not None:
                 values = param.default
 
@@ -442,8 +433,6 @@ def convert_to_type(value, data_type):
         value = datetimeutil.string_to_datetime(value)
     elif data_type == 'date' and not isinstance(value, datetime.date):
         value = datetimeutil.string_to_datetime(value).date()
-    elif data_type == 'json' and isinstance(value, str):
-        value = json.loads(value)
     return value
 
 

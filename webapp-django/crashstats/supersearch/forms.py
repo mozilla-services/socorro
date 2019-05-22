@@ -74,9 +74,7 @@ class SearchForm(forms.Form):
                 form_fields.MultipleValueField
             )
 
-            field_obj = field_type(
-                required=field_data['is_mandatory']
-            )
+            field_obj = field_type(required=False)
 
             if field_data['form_field_choices']:
                 field_obj.choices = make_restricted_choices(

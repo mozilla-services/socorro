@@ -170,19 +170,6 @@ Here is an explanation of each properties of a field:
     information.
 
 
-We also have these properties which are always set to the same values:
-
-**default_value**
-    The default value for a Super Search filter.
-
-    Always set to ``None``.
-
-**is_mandatory**
-    Is this field required to have a value in the Super Search form?
-
-    Always set to ``False``.
-
-
 Query types
 -----------
 

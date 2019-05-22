@@ -347,13 +347,11 @@ class SuperSearchMissingFieldsModel(SuperSearchFieldsModel):
 FIELDS = {
     'ActiveExperiment': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The telemetry experiment active at the time of the crash, if any.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ActiveExperiment',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ActiveExperiment',
         'namespace': 'raw_crash',
@@ -366,13 +364,11 @@ FIELDS = {
     },
     'ActiveExperimentBranch': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The experiment branch of the ActiveExperiment, if set.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ActiveExperimentBranch',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ActiveExperimentBranch',
         'namespace': 'raw_crash',
@@ -385,13 +381,11 @@ FIELDS = {
     },
     'AdapterRendererIDs': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'AdapterRendererIDs',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'AdapterRendererIDs',
         'namespace': 'raw_crash',
@@ -401,13 +395,11 @@ FIELDS = {
     },
     'Add-ons': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Add-ons',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'Add-ons',
         'namespace': 'raw_crash',
@@ -417,13 +409,11 @@ FIELDS = {
     },
     'BuildID': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'BuildID',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'BuildID',
         'namespace': 'raw_crash',
@@ -435,13 +425,11 @@ FIELDS = {
     },
     'Comments': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Comments',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'Comments',
         'namespace': 'raw_crash',
@@ -453,13 +441,11 @@ FIELDS = {
     },
     'CrashTime': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'CrashTime',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'CrashTime',
         'namespace': 'raw_crash',
@@ -469,13 +455,11 @@ FIELDS = {
     },
     'FlashVersion': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'FlashVersion',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'FlashVersion',
         'namespace': 'raw_crash',
@@ -485,13 +469,11 @@ FIELDS = {
     },
     'Hang': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Hang',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'Hang',
         'namespace': 'raw_crash',
@@ -503,13 +485,11 @@ FIELDS = {
     },
     'InstallTime': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'InstallTime',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'InstallTime',
         'namespace': 'raw_crash',
@@ -521,13 +501,11 @@ FIELDS = {
     },
     'Notes': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Notes',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'Notes',
         'namespace': 'raw_crash',
@@ -539,13 +517,11 @@ FIELDS = {
     },
     'PluginFilename': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginFilename',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'PluginFilename',
         'namespace': 'raw_crash',
@@ -555,13 +531,11 @@ FIELDS = {
     },
     'PluginName': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginName',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'PluginName',
         'namespace': 'raw_crash',
@@ -571,13 +545,11 @@ FIELDS = {
     },
     'PluginUserComment': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginUserComment',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'PluginUserComment',
         'namespace': 'raw_crash',
@@ -587,13 +559,11 @@ FIELDS = {
     },
     'PluginVersion': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginVersion',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'PluginVersion',
         'namespace': 'raw_crash',
@@ -603,13 +573,11 @@ FIELDS = {
     },
     'ProcessType': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'ProcessType',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'ProcessType',
         'namespace': 'raw_crash',
@@ -622,13 +590,11 @@ FIELDS = {
     },
     'ProductID': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'ProductID',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ProductID',
         'namespace': 'raw_crash',
@@ -638,13 +604,11 @@ FIELDS = {
     },
     'ProductName': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'ProductName',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ProductName',
         'namespace': 'raw_crash',
@@ -654,7 +618,6 @@ FIELDS = {
     },
     'record_replay': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': (
             'Set to 1 if this crash happened in a Web Replay middleman, recording, '
             'or replaying process.'
@@ -663,7 +626,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'RecordReplay',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'record_replay',
         'namespace': 'raw_crash',
@@ -675,7 +637,6 @@ FIELDS = {
     },
     'record_replay_error': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'Any fatal error that occurred while recording/replaying a tab.'
         ),
@@ -683,7 +644,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'RecordReplayError',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'record_replay_error',
         'namespace': 'raw_crash',
@@ -704,13 +664,11 @@ FIELDS = {
     },
     'ReleaseChannel': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'ReleaseChannel',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ReleaseChannel',
         'namespace': 'raw_crash',
@@ -720,13 +678,11 @@ FIELDS = {
     },
     'SecondsSinceLastCrash': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'SecondsSinceLastCrash',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'SecondsSinceLastCrash',
         'namespace': 'raw_crash',
@@ -738,13 +694,11 @@ FIELDS = {
     },
     'TextureUsage': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'TextureUsage',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'TextureUsage',
         'namespace': 'raw_crash',
@@ -754,13 +708,11 @@ FIELDS = {
     },
     'Version': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Version',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'Version',
         'namespace': 'raw_crash',
@@ -770,13 +722,11 @@ FIELDS = {
     },
     'Winsock_LSP': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Winsock_LSP',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'Winsock_LSP',
         'namespace': 'raw_crash',
@@ -786,13 +736,11 @@ FIELDS = {
     },
     'abort_message': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The abort message.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'AbortMessage',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'abort_message',
         'namespace': 'raw_crash',
@@ -811,7 +759,6 @@ FIELDS = {
     },
     'accessibility': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': (
             'The presence of this field indicates that accessibility services were accessed.'
         ),
@@ -819,7 +766,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'Accessibility',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'accessibility',
         'namespace': 'raw_crash',
@@ -831,13 +777,11 @@ FIELDS = {
     },
     'accessibility_client': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Out-of-process accessibility client program name and version information.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'AccessibilityClient',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'accessibility_client',
         'namespace': 'raw_crash',
@@ -850,7 +794,6 @@ FIELDS = {
     },
     'accessibility_in_proc_client': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'In-process accessibility client detection information. See Compatibility.h for more '
             'details.'
@@ -859,7 +802,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'AccessibilityInProcClient',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'accessibility_in_proc_client',
         'namespace': 'raw_crash',
@@ -872,13 +814,11 @@ FIELDS = {
     },
     'adapter_device_id': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The graphics adapter device identifier.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'AdapterDeviceID',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'adapter_device_id',
         'namespace': 'raw_crash',
@@ -891,13 +831,11 @@ FIELDS = {
     },
     'adapter_driver_version': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The graphics adapter driver version.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'AdapterDriverVersion',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'adapter_driver_version',
         'namespace': 'raw_crash',
@@ -907,13 +845,11 @@ FIELDS = {
     },
     'adapter_subsys_id': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The graphics adapter subsystem identifier.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'AdapterSubsysID',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'adapter_subsys_id',
         'namespace': 'raw_crash',
@@ -923,7 +859,6 @@ FIELDS = {
     },
     'adapter_vendor_id': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'The graphics adapter vendor. This value is sometimes a name, and sometimes a '
             'hexidecimal identifier. Common identifiers include: 0x8086 (Intel), 0x1002 (AMD), '
@@ -933,7 +868,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'AdapterVendorID',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'adapter_vendor_id',
         'namespace': 'raw_crash',
@@ -946,13 +880,11 @@ FIELDS = {
     },
     'additional_minidumps': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'additional_minidumps',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'additional_minidumps',
         'namespace': 'processed_crash',
@@ -962,7 +894,6 @@ FIELDS = {
     },
     'addons': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'A list of the addons currently enabled at the time of the crash. This takes the form '
             'of "addonid:version,[addonid:version...]". This value could be empty if the crash '
@@ -973,7 +904,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'addons',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'addons',
         'namespace': 'processed_crash',
@@ -986,13 +916,11 @@ FIELDS = {
     },
     'addons_checked': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'addons_checked',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'addons_checked',
         'namespace': 'processed_crash',
@@ -1004,13 +932,11 @@ FIELDS = {
     },
     'addons_should_have_blocked_e10s': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'AddonsShouldHaveBlockedE10s',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'addons_should_have_blocked_e10s',
         'namespace': 'raw_crash',
@@ -1022,7 +948,6 @@ FIELDS = {
     },
     'address': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'The crashing address. This value is only meaningful for crashes involving bad memory '
             'accesses.'
@@ -1031,7 +956,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'address',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'address',
         'namespace': 'processed_crash',
@@ -1044,13 +968,11 @@ FIELDS = {
     },
     'android_board': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The board used by the Android device.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_Board',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_board',
         'namespace': 'raw_crash',
@@ -1062,13 +984,11 @@ FIELDS = {
     },
     'android_brand': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The Android device brand.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_Brand',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_brand',
         'namespace': 'raw_crash',
@@ -1080,13 +1000,11 @@ FIELDS = {
     },
     'android_cpu_abi': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The Android primary CPU ABI being used.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_CPU_ABI',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_cpu_abi',
         'namespace': 'raw_crash',
@@ -1099,13 +1017,11 @@ FIELDS = {
     },
     'android_cpu_abi2': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The Android secondary CPU ABI being used.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_CPU_ABI2',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_cpu_abi2',
         'namespace': 'raw_crash',
@@ -1118,13 +1034,11 @@ FIELDS = {
     },
     'android_device': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The android device name.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_Device',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_device',
         'namespace': 'raw_crash',
@@ -1137,13 +1051,11 @@ FIELDS = {
     },
     'android_display': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Android_Display',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_display',
         'namespace': 'raw_crash',
@@ -1155,13 +1067,11 @@ FIELDS = {
     },
     'android_fingerprint': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Android_Fingerprint',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_fingerprint',
         'namespace': 'raw_crash',
@@ -1173,13 +1083,11 @@ FIELDS = {
     },
     'android_hardware': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The android device hardware.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_Hardware',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_hardware',
         'namespace': 'raw_crash',
@@ -1191,13 +1099,11 @@ FIELDS = {
     },
     'android_manufacturer': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The Android device manufacturer.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_Manufacturer',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_manufacturer',
         'namespace': 'raw_crash',
@@ -1210,13 +1116,11 @@ FIELDS = {
     },
     'android_model': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The Android device model name.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'Android_Model',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_model',
         'namespace': 'raw_crash',
@@ -1237,13 +1141,11 @@ FIELDS = {
     },
     'android_version': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The Android version.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Android_Version',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'android_version',
         'namespace': 'raw_crash',
@@ -1256,13 +1158,11 @@ FIELDS = {
     },
     'app_init_dlls': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'DLLs injected through the AppInit_DLLs registry key.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'AppInitDLLs',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'app_init_dlls',
         'namespace': 'raw_crash',
@@ -1275,7 +1175,6 @@ FIELDS = {
     },
     'app_notes': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'Notes from the application that crashed. Mostly contains graphics-related '
             'annotations.'
@@ -1284,7 +1183,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'app_notes',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'app_notes',
         'namespace': 'processed_crash',
@@ -1303,13 +1201,11 @@ FIELDS = {
     },
     'async_plugin_init': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': 'https://bugzilla.mozilla.org/show_bug.cgi?id=1155511',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'AsyncPluginInit',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'async_plugin_init',
         'namespace': 'raw_crash',
@@ -1322,13 +1218,11 @@ FIELDS = {
     },
     'async_plugin_shutdown': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'AsyncPluginShutdown',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'async_plugin_shutdown',
         'namespace': 'raw_crash',
@@ -1347,13 +1241,11 @@ FIELDS = {
     },
     'async_plugin_shutdown_states': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'AsyncPluginShutdownStates',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'async_plugin_shutdown_states',
         'namespace': 'raw_crash',
@@ -1372,13 +1264,11 @@ FIELDS = {
     },
     'async_shutdown_timeout': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'AsyncShutdownTimeout',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'async_shutdown_timeout',
         'namespace': 'raw_crash',
@@ -1401,7 +1291,6 @@ FIELDS = {
     },
     'available_page_file': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The maximum amount of memory the current process can commit. This value is equal '
             'to or smaller than the system-wide available commit value.'
@@ -1410,7 +1299,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'AvailablePageFile',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'available_page_file',
         'namespace': 'raw_crash',
@@ -1422,7 +1310,6 @@ FIELDS = {
     },
     'available_physical_memory': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The amount of physical memory currently available. This is the amount of physical '
             'memory that can be immediately reused without having to write its contents to disk '
@@ -1432,7 +1319,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'AvailablePhysicalMemory',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'available_physical_memory',
         'namespace': 'raw_crash',
@@ -1444,7 +1330,6 @@ FIELDS = {
     },
     'available_virtual_memory': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The amount of unreserved and uncommited (i.e. available) memory in the process\'s '
             'address space. Note that this memory may be fragmented into many separate segments, '
@@ -1455,7 +1340,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'AvailableVirtualMemory',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'available_virtual_memory',
         'namespace': 'raw_crash',
@@ -1467,13 +1351,11 @@ FIELDS = {
     },
     'b2g_os_version': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'B2G_OS_Version',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'b2g_os_version',
         'namespace': 'raw_crash',
@@ -1486,13 +1368,11 @@ FIELDS = {
     },
     'bios_manufacturer': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The BIOS manufacturer.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'BIOS_Manufacturer',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'bios_manufacturer',
         'namespace': 'raw_crash',
@@ -1505,13 +1385,11 @@ FIELDS = {
     },
     'bug836263-size': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'bug836263-size',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'bug836263-size',
         'namespace': 'raw_crash',
@@ -1521,13 +1399,11 @@ FIELDS = {
     },
     'build_date': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'build_date',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'build_date',
         'namespace': 'processed_crash',
@@ -1540,7 +1416,6 @@ FIELDS = {
     },
     'build_id': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The unique build identifier of this version, which is a timestamp of the form '
             'YYYYMMDDHHMMSS.'
@@ -1549,7 +1424,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'build',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'build_id',
         'namespace': 'processed_crash',
@@ -1561,13 +1435,11 @@ FIELDS = {
     },
     'buildid': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'buildid',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'buildid',
         'namespace': 'raw_crash',
@@ -1579,13 +1451,11 @@ FIELDS = {
     },
     'classifications': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'classifications',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'classifications',
         'namespace': 'processed_crash',
@@ -1630,13 +1500,11 @@ FIELDS = {
     },
     'client_crash_date': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'client_crash_date',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'client_crash_date',
         'namespace': 'processed_crash',
@@ -1649,7 +1517,6 @@ FIELDS = {
     },
     'co_get_interface_and_release_stream_failure': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Contains the hexadecimal value of the return code from Windows '
             'CoGetInterfaceAndReleaseStream API when invoked by IPDL serialization and '
@@ -1659,7 +1526,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'CoGetInterfaceAndReleaseStreamFailure',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'co_get_interface_and_release_stream_failure',
         'namespace': 'raw_crash',
@@ -1671,7 +1537,6 @@ FIELDS = {
     },
     'co_marshal_interface_failure': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Contains the hexadecimal value of the return code from Windows '
             'CoMarshalInterfaceFailure API when invoked by IPDL serialization and '
@@ -1681,7 +1546,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'CoMarshalInterfaceFailure',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'co_marshal_interface_failure',
         'namespace': 'raw_crash',
@@ -1693,13 +1557,11 @@ FIELDS = {
     },
     'completeddatetime': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'completeddatetime',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'completeddatetime',
         'namespace': 'processed_crash',
@@ -1712,13 +1574,11 @@ FIELDS = {
     },
     'contains_memory_report': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Has content for processed_crash.memory_report or not.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ContainsMemoryReport',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'contains_memory_report',
         'namespace': 'raw_crash',
@@ -1730,13 +1590,11 @@ FIELDS = {
     },
     'content_sandbox_capabilities': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ContentSandboxCapabilities',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'content_sandbox_capabilities',
         'namespace': 'raw_crash',
@@ -1748,13 +1606,11 @@ FIELDS = {
     },
     'content_sandbox_capable': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ContentSandboxCapable',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'content_sandbox_capable',
         'namespace': 'raw_crash',
@@ -1767,13 +1623,11 @@ FIELDS = {
     },
     'content_sandbox_enabled': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ContentSandboxEnabled',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'content_sandbox_enabled',
         'namespace': 'raw_crash',
@@ -1786,13 +1640,11 @@ FIELDS = {
     },
     'content_sandbox_level': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ContentSandboxLevel',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'content_sandbox_level',
         'namespace': 'raw_crash',
@@ -1807,13 +1659,11 @@ FIELDS = {
     # the "cpu_arch" field; remove in July 2019
     'dump_cpu_arch': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'cpu_arch',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'dump_cpu_arch',
         'namespace': 'processed_crash',
@@ -1826,7 +1676,6 @@ FIELDS = {
     },
     'cpu_arch': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'The build architecture. Usually one of: "x86", "amd64" (a.k.a. x86-64), "arm", '
             '"arm64".'
@@ -1837,7 +1686,6 @@ FIELDS = {
         # switch to "cpu_arch" after July 2019
         'in_database_name': 'cpu_name',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'cpu_arch',
         'namespace': 'processed_crash',
@@ -1850,13 +1698,11 @@ FIELDS = {
     },
     'cpu_count': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'Number of processor units in the CPU.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'cpu_count',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'cpu_count',
         'namespace': 'processed_crash.json_dump.system_info',
@@ -1868,7 +1714,6 @@ FIELDS = {
     },
     'cpu_info': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'Detailed processor info. Usually contains information such as the family, model, '
             'and stepping number.'
@@ -1877,7 +1722,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'cpu_info',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'cpu_info',
         'namespace': 'processed_crash',
@@ -1900,13 +1744,11 @@ FIELDS = {
     },
     'cpu_microcode_version': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Microcode version of the CPU.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'CPUMicrocodeVersion',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'cpu_microcode_version',
         'namespace': 'raw_crash',
@@ -1916,13 +1758,11 @@ FIELDS = {
     },
     'cpu_usage_flash_process1': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'CpuUsageFlashProcess1',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'cpu_usage_flash_process1',
         'namespace': 'raw_crash',
@@ -1934,13 +1774,11 @@ FIELDS = {
     },
     'cpu_usage_flash_process2': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'CpuUsageFlashProcess2',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'cpu_usage_flash_process2',
         'namespace': 'raw_crash',
@@ -1952,13 +1790,11 @@ FIELDS = {
     },
     'crash_address': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Address of the crash.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'crash_address',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'crash_address',
         'namespace': 'processed_crash.json_dump.crash_info',
@@ -1968,13 +1804,11 @@ FIELDS = {
     },
     'crash_time': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'crash_time',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'crash_time',
         'namespace': 'processed_crash',
@@ -1986,13 +1820,11 @@ FIELDS = {
     },
     'crash_type': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Type of the crash.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'type',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'crash_type',
         'namespace': 'processed_crash.json_dump.crash_info',
@@ -2002,13 +1834,11 @@ FIELDS = {
     },
     'crashedThread': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'crashedThread',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'crashedThread',
         'namespace': 'processed_crash',
@@ -2020,13 +1850,11 @@ FIELDS = {
     },
     'crashing_thread': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'Index of the crashing thread.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'crashing_thread',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'crashing_thread',
         'namespace': 'processed_crash.json_dump.crash_info',
@@ -2036,13 +1864,11 @@ FIELDS = {
     },
     'date': {
         'data_validation_type': 'datetime',
-        'default_value': None,
         'description': 'Date at which the crash report was received by Socorro.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'date_processed',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'date',
         'namespace': 'processed_crash',
@@ -2055,7 +1881,6 @@ FIELDS = {
     },
     'dom_ipc_enabled': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'The value of the "dom.ipc.enabled" preference (in other terms, whether e10s is '
             'enabled).'
@@ -2064,7 +1889,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'DOMIPCEnabled',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'dom_ipc_enabled',
         'namespace': 'raw_crash',
@@ -2077,13 +1901,11 @@ FIELDS = {
     },
     'dump': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'dump',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'dump',
         'namespace': 'processed_crash',
@@ -2096,7 +1918,6 @@ FIELDS = {
     },
     'e10s_cohort': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'The e10s cohort. Values can be: \'test\', \'control\', \'unsupportedChannel\', '
             '\'optedIn\', \'optedOut\', \'disqualified\', \'unsupportedChannel\' or \'unknown\'.'
@@ -2105,7 +1926,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'E10SCohort',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'e10s_cohort',
         'namespace': 'raw_crash',
@@ -2117,13 +1937,11 @@ FIELDS = {
     },
     'em_check_compatibility': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'EMCheckCompatibility',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'em_check_compatibility',
         'namespace': 'raw_crash',
@@ -2135,7 +1953,6 @@ FIELDS = {
     },
     'email': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'Users may opt in to providing their email address so that Mozilla may contact them '
             'about their crash report.'
@@ -2144,7 +1961,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'email',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'email',
         'namespace': 'processed_crash',
@@ -2159,7 +1975,6 @@ FIELDS = {
     },
     'exploitability': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'An automated estimate of how exploitable this crash is.',
         'form_field_choices': [
             'high',
@@ -2172,7 +1987,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'exploitability',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'exploitability',
         'namespace': 'processed_crash',
@@ -2193,7 +2007,6 @@ FIELDS = {
     },
     'flash_process_dump': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': '',
         'form_field_choices': [
             'sandbox',
@@ -2203,7 +2016,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'FlashProcessDump',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'flash_process_dump',
         'namespace': 'raw_crash',
@@ -2215,13 +2027,11 @@ FIELDS = {
     },
     'flash_version': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Version of the Flash Player plugin.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'flash_version',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'flash_version',
         'namespace': 'processed_crash',
@@ -2234,13 +2044,11 @@ FIELDS = {
     },
     'frame_poison_base': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'FramePoisonBase',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'frame_poison_base',
         'namespace': 'raw_crash',
@@ -2252,13 +2060,11 @@ FIELDS = {
     },
     'frame_poison_size': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'FramePoisonSize',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'frame_poison_size',
         'namespace': 'raw_crash',
@@ -2270,13 +2076,11 @@ FIELDS = {
     },
     'gmp_library_path': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Holds the path to the GMP plugin library.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'GMPLibraryPath',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'gmp_library_path',
         'namespace': 'raw_crash',
@@ -2292,13 +2096,11 @@ FIELDS = {
     },
     'gmp_plugin': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Whether it is a GMP plugin crash.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'GMPPlugin',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'gmp_plugin',
         'namespace': 'raw_crash',
@@ -2310,13 +2112,11 @@ FIELDS = {
     },
     'graphics_critical_error': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Log of graphics-related errors.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'GraphicsCriticalError',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'graphics_critical_error',
         'namespace': 'raw_crash',
@@ -2335,13 +2135,11 @@ FIELDS = {
     },
     'graphics_startup_test': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Whether the crash occured in the DriverCrashGuard.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'GraphicsStartupTest',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'graphics_startup_test',
         'namespace': 'raw_crash',
@@ -2353,7 +2151,6 @@ FIELDS = {
     },
     'hang_type': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Tells if a report was caused by a crash or a hang. In the database, the value '
             'is `0` if the problem was a crash of the software, and `1` or `-1` if the problem '
@@ -2370,7 +2167,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'hang_type',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'hang_type',
         'namespace': 'processed_crash',
@@ -2382,13 +2178,11 @@ FIELDS = {
     },
     'hangid': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'hangid',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'hangid',
         'namespace': 'processed_crash',
@@ -2400,7 +2194,6 @@ FIELDS = {
     },
     'has_device_touch_screen': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': (
             'Set to 1 if the device had a touch-screen, this only applies to Firefox '
             'desktop as on mobile devices we assume a touch-screen is always present.'
@@ -2409,7 +2202,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'HasDeviceTouchScreen',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'has_device_touch_screen',
         'namespace': 'raw_crash',
@@ -2421,13 +2213,11 @@ FIELDS = {
     },
     'id': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'id',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'id',
         'namespace': 'raw_crash',
@@ -2437,13 +2227,11 @@ FIELDS = {
     },
     'install_age': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'Length of time since this version was installed.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'install_age',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'install_age',
         'namespace': 'processed_crash',
@@ -2455,7 +2243,6 @@ FIELDS = {
     },
     'install_time': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'Epoch time of when this version was installed. Commonly used as a unique '
             'identifier for software installations (since it is unlikely that two instances '
@@ -2465,7 +2252,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'InstallTime',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'install_time',
         'namespace': 'raw_crash',
@@ -2477,13 +2263,11 @@ FIELDS = {
     },
     'ipc_channel_error': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The IPC channel error.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ipc_channel_error',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_channel_error',
         'namespace': 'raw_crash',
@@ -2493,13 +2277,11 @@ FIELDS = {
     },
     'ipc_extra_system_error': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'IPCExtraSystemError',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_extra_system_error',
         'namespace': 'raw_crash',
@@ -2520,13 +2302,11 @@ FIELDS = {
     },
     'ipc_fatal_error_msg': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The message linked to an IPC fatal error.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'IPCFatalErrorMsg',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_fatal_error_msg',
         'namespace': 'raw_crash',
@@ -2545,13 +2325,11 @@ FIELDS = {
     },
     'ipc_fatal_error_protocol': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The protocol linked to an IPC fatal error.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'IPCFatalErrorProtocol',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_fatal_error_protocol',
         'namespace': 'raw_crash',
@@ -2563,13 +2341,11 @@ FIELDS = {
     },
     'ipc_message_name': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'The name of the IPC message.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'IPCMessageName',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_message_name',
         'namespace': 'raw_crash',
@@ -2588,13 +2364,11 @@ FIELDS = {
     },
     'ipc_message_size': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'IPCMessageSize',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_message_size',
         'namespace': 'raw_crash',
@@ -2606,7 +2380,6 @@ FIELDS = {
     },
     'ipc_shutdown_state': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Shows that a shutdown hang was after we have received RecvShutdown but never '
             'each SendFinishShutdown or the hang happened before or after RecvShutdown. '
@@ -2616,7 +2389,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'IPCShutdownState',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_shutdown_state',
         'namespace': 'raw_crash',
@@ -2628,7 +2400,6 @@ FIELDS = {
     },
     'ipc_system_error': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'A replacement of `system_error`. '
             'https://bugzilla.mozilla.org/show_bug.cgi?id=1267222'
@@ -2637,7 +2408,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'IPCSystemError',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'ipc_system_error',
         'namespace': 'raw_crash',
@@ -2649,13 +2419,11 @@ FIELDS = {
     },
     'is_garbage_collecting': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'IsGarbageCollecting',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'is_garbage_collecting',
         'namespace': 'raw_crash',
@@ -2667,7 +2435,6 @@ FIELDS = {
     },
     'java_stack_trace': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'When Java code crashes due to an unhandled exception, this is the Java Stack Trace. '
             'It is usually more useful than the system stack trace given for the crashing thread.'
@@ -2676,7 +2443,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'java_stack_trace',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'java_stack_trace',
         'namespace': 'processed_crash',
@@ -2695,13 +2461,11 @@ FIELDS = {
     },
     'java_stack_trace_full': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Raw JavaStackTrace value.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'java_stack_trace_full',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'java_stack_trace_full',
         'namespace': 'processed_crash',
@@ -2722,13 +2486,11 @@ FIELDS = {
     },
     'jit_category': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'JIT classification.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'category',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'jit_category',
         'namespace': 'processed_crash.classifications.jit',
@@ -2738,13 +2500,11 @@ FIELDS = {
     },
     'jit_category_return_code': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'JIT classification.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'category_return_code',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'jit_category_return_code',
         'namespace': 'processed_crash.classifications.jit',
@@ -2754,13 +2514,11 @@ FIELDS = {
     },
     'json_dump': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The dump as a JSON object.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'json_dump',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'json_dump',
         'namespace': 'processed_crash',
@@ -2770,13 +2528,11 @@ FIELDS = {
     },
     'largest_free_vm_block': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'largest_free_vm_block',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'largest_free_vm_block',
         'namespace': 'processed_crash.json_dump',
@@ -2788,7 +2544,6 @@ FIELDS = {
     },
     'last_crash': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'Length of time between the previous crash submission and this one. Low values '
             'indicate repeated crashes.'
@@ -2797,7 +2552,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'last_crash',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'last_crash',
         'namespace': 'processed_crash',
@@ -2809,7 +2563,6 @@ FIELDS = {
     },
     'legacy_processing': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Whether the crash was accepted (0) or deferred (1) by the Socorro collector.'
         ),
@@ -2817,7 +2570,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'legacy_processing',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'legacy_processing',
         'namespace': 'raw_crash',
@@ -2829,13 +2581,11 @@ FIELDS = {
     },
     'main_module': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'Index into modules.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'main_module',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'main_module',
         'namespace': 'processed_crash.json_dump',
@@ -2845,7 +2595,6 @@ FIELDS = {
     },
     'memory_error_correction': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'Windows only, type of error correction used by system memory.  See '
             'documentation for MemoryErrorCorrection property of '
@@ -2865,7 +2614,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'MemoryErrorCorrection',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_error_correction',
         'namespace': 'raw_crash',
@@ -2878,7 +2626,6 @@ FIELDS = {
     },
     'memory_explicit': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "explicit" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -2887,7 +2634,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'explicit',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_explicit',
         'namespace': 'processed_crash.memory_measures',
@@ -2899,7 +2645,6 @@ FIELDS = {
     },
     'memory_gfx_textures': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "gfx-textures" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -2908,7 +2653,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'gfx_textures',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_gfx_textures',
         'namespace': 'processed_crash.memory_measures',
@@ -2920,7 +2664,6 @@ FIELDS = {
     },
     'memory_ghost_windows': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "ghost-windows" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -2929,7 +2672,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'ghost_windows',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_ghost_windows',
         'namespace': 'processed_crash.memory_measures',
@@ -2941,7 +2683,6 @@ FIELDS = {
     },
     'memory_heap_allocated': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "heap-allocated" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -2950,7 +2691,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'heap_allocated',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_heap_allocated',
         'namespace': 'processed_crash.memory_measures',
@@ -2962,7 +2702,6 @@ FIELDS = {
     },
     'memory_heap_overhead': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "heap-overhead" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -2971,7 +2710,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'heap_overhead',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_heap_overhead',
         'namespace': 'processed_crash.memory_measures',
@@ -2983,7 +2721,6 @@ FIELDS = {
     },
     'memory_heap_unclassified': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "heap-unclassified" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -2992,7 +2729,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'heap_unclassified',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_heap_unclassified',
         'namespace': 'processed_crash.memory_measures',
@@ -3004,7 +2740,6 @@ FIELDS = {
     },
     'memory_host_object_urls': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "host-object-urls" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -3013,7 +2748,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'host_object_urls',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_host_object_urls',
         'namespace': 'processed_crash.memory_measures',
@@ -3025,7 +2759,6 @@ FIELDS = {
     },
     'memory_images': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "images" measurement from the memory report. See about:memory for a fuller '
             'description.'
@@ -3034,7 +2767,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'images',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_images',
         'namespace': 'processed_crash.memory_measures',
@@ -3046,7 +2778,6 @@ FIELDS = {
     },
     'memory_js_main_runtime': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "js-main-runtime" measurement from the memory report. See about:memory for a '
             'fuller description.'
@@ -3055,7 +2786,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'js_main_runtime',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_js_main_runtime',
         'namespace': 'processed_crash.memory_measures',
@@ -3067,13 +2797,11 @@ FIELDS = {
     },
     'memory_measures': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'memory_measures',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_measures',
         'namespace': 'processed_crash',
@@ -3083,7 +2811,6 @@ FIELDS = {
     },
     'memory_private': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "private" measurement from the memory report. See about:memory for a fuller '
             'description.'
@@ -3092,7 +2819,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'private',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_private',
         'namespace': 'processed_crash.memory_measures',
@@ -3104,7 +2830,6 @@ FIELDS = {
     },
     'memory_resident': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "resident" measurement from the memory report. See about:memory for a fuller '
             'description.'
@@ -3113,7 +2838,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'resident',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_resident',
         'namespace': 'processed_crash.memory_measures',
@@ -3125,7 +2849,6 @@ FIELDS = {
     },
     'memory_resident_unique': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "resident-unique" measurement from the memory report. See about:memory for a '
             'fuller description.'
@@ -3134,7 +2857,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'resident_unique',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_resident_unique',
         'namespace': 'processed_crash.memory_measures',
@@ -3146,7 +2868,6 @@ FIELDS = {
     },
     'memory_system_heap_allocated': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "system-heap-allocated" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -3155,7 +2876,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'system_heap_allocated',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_system_heap_allocated',
         'namespace': 'processed_crash.memory_measures',
@@ -3167,7 +2887,6 @@ FIELDS = {
     },
     'memory_top_none_detached': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "top(none)/detached" measurement from the memory report. See about:memory for a '
             'fuller description.'
@@ -3176,7 +2895,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'top_none_detached',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_top_none_detached',
         'namespace': 'processed_crash.memory_measures',
@@ -3188,7 +2906,6 @@ FIELDS = {
     },
     'memory_vsize': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "vsize" measurement from the memory report. See about:memory for a fuller '
             'description.'
@@ -3197,7 +2914,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'vsize',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_vsize',
         'namespace': 'processed_crash.memory_measures',
@@ -3209,7 +2925,6 @@ FIELDS = {
     },
     'memory_vsize_max_contiguous': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The "vsize-max-contiguous" measurement from the memory report. See about:memory for '
             'a fuller description.'
@@ -3218,7 +2933,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'vsize_max_contiguous',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'memory_vsize_max_contiguous',
         'namespace': 'processed_crash.memory_measures',
@@ -3230,13 +2944,11 @@ FIELDS = {
     },
     'min_arm_version': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Min_ARM_Version',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'min_arm_version',
         'namespace': 'raw_crash',
@@ -3248,13 +2960,11 @@ FIELDS = {
     },
     'minidump_sha256_hash': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'SHA256 hash of the minidump if there was one.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'minidump_sha256_hash',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'minidump_sha256_hash',
         'namespace': 'processed_crash',
@@ -3266,7 +2976,6 @@ FIELDS = {
     },
     'moz_crash_reason': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the '
             'accompanying description. This is the sanitized value from the crash report.'
@@ -3275,7 +2984,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'moz_crash_reason',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'moz_crash_reason',
         'namespace': 'processed_crash',
@@ -3294,7 +3002,6 @@ FIELDS = {
     },
     'moz_crash_reason_raw': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the '
             'accompanying description. This is the raw value from the crash report.'
@@ -3303,7 +3010,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'moz_crash_reason_raw',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'moz_crash_reason_raw',
         'namespace': 'processed_crash',
@@ -3324,7 +3030,6 @@ FIELDS = {
     },
     'oom_allocation_size': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'A measure or estimate of the allocation request size that triggered an OOM crash. '
             'Note that allocators usually work with large (e.g. 1 MiB) chunks of memory, and a '
@@ -3335,7 +3040,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'OOMAllocationSize',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'oom_allocation_size',
         'namespace': 'raw_crash',
@@ -3347,13 +3051,11 @@ FIELDS = {
     },
     'os': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Operating System.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'os',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'os',
         'namespace': 'processed_crash.json_dump.system_info',
@@ -3363,13 +3065,11 @@ FIELDS = {
     },
     'os_ver': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Operating System Version.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'os_ver',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'os_ver',
         'namespace': 'processed_crash.json_dump.system_info',
@@ -3379,7 +3079,6 @@ FIELDS = {
     },
     'platform': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Basic name of the operating system. Can be \'Windows NT\', \'Mac OS X\' or '
             '\'Linux\'. Use `platform_pretty_version` for a more precise OS name including '
@@ -3389,7 +3088,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'os_name',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'platform',
         'namespace': 'processed_crash',
@@ -3410,13 +3108,11 @@ FIELDS = {
     },
     'platform_pretty_version': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'A better platform name, including version for Windows and Mac OS X.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'os_pretty_version',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'platform_pretty_version',
         'namespace': 'processed_crash',
@@ -3435,13 +3131,11 @@ FIELDS = {
     },
     'platform_version': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Version of the operating system.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'os_version',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'platform_version',
         'namespace': 'processed_crash',
@@ -3460,13 +3154,11 @@ FIELDS = {
     },
     'plugin_cpu_usage': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginCpuUsage',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'plugin_cpu_usage',
         'namespace': 'raw_crash',
@@ -3478,7 +3170,6 @@ FIELDS = {
     },
     'plugin_filename': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'When a plugin process crashes, this is the name of the file of the plugin loaded '
             'into that process.'
@@ -3487,7 +3178,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'PluginFilename',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'plugin_filename',
         'namespace': 'processed_crash',
@@ -3509,13 +3199,11 @@ FIELDS = {
     },
     'plugin_hang': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginHang',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'plugin_hang',
         'namespace': 'raw_crash',
@@ -3527,13 +3215,11 @@ FIELDS = {
     },
     'plugin_hang_ui_duration': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'PluginHangUIDuration',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'plugin_hang_ui_duration',
         'namespace': 'raw_crash',
@@ -3545,7 +3231,6 @@ FIELDS = {
     },
     'plugin_name': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'When a plugin process crashes, this is the name of the plugin loaded into that '
             'process.'
@@ -3554,7 +3239,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'PluginName',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'plugin_name',
         'namespace': 'processed_crash',
@@ -3576,7 +3260,6 @@ FIELDS = {
     },
     'plugin_version': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'When a plugin process crashes, this is the version of the plugin loaded into that '
             'process.'
@@ -3585,7 +3268,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'PluginVersion',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'plugin_version',
         'namespace': 'processed_crash',
@@ -3607,7 +3289,6 @@ FIELDS = {
     },
     'process_type': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'What type of process the crash happened in. When the main process crashes, this will '
             'not be present. But when a plugin or content process crashes, this will be '
@@ -3624,7 +3305,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'process_type',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'process_type',
         'namespace': 'processed_crash',
@@ -3636,7 +3316,6 @@ FIELDS = {
     },
     'processor_notes': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'Notes of the Socorro processor, contains information about what changes were made to '
             'the report during processing.'
@@ -3645,7 +3324,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'processor_notes',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'processor_notes',
         'namespace': 'processed_crash',
@@ -3664,13 +3342,11 @@ FIELDS = {
     },
     'product': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Name of the software.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'product',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'product',
         'namespace': 'processed_crash',
@@ -3692,13 +3368,11 @@ FIELDS = {
     },
     'productid': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Identifier of the software.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'productid',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'productid',
         'namespace': 'processed_crash',
@@ -3711,7 +3385,6 @@ FIELDS = {
     },
     'proto_signature': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'A concatenation of the signatures of all the frames of the crashing thread.'
         ),
@@ -3719,7 +3392,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'proto_signature',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'proto_signature',
         'namespace': 'processed_crash',
@@ -3738,7 +3410,6 @@ FIELDS = {
     },
     'reason': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'The crash\'s exception kind. Different OSes have different exception kinds. Example'
             'values: "EXCEPTION_ACCESS_VIOLATION_READ", "EXCEPTION_BREAKPOINT", "SIGSEGV".'
@@ -3747,7 +3418,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'reason',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'reason',
         'namespace': 'processed_crash',
@@ -3769,7 +3439,6 @@ FIELDS = {
     },
     'release_channel': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'The update channel that the user is on. Typically \'nightly\', \'aurora\', \'beta\', '
             'or \'release\', but this may also be other values like \'release-cck-partner\'.'
@@ -3778,7 +3447,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'release_channel',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'release_channel',
         'namespace': 'processed_crash',
@@ -3791,7 +3459,6 @@ FIELDS = {
     },
     'remote_type': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             '"extension" if a WebExtension, "web" or missing otherwise. This is only set for '
             'content crashes.'
@@ -3800,7 +3467,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'RemoteType',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'remote_type',
         'namespace': 'raw_crash',
@@ -3813,13 +3479,11 @@ FIELDS = {
     },
     'safe_mode': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': 'Was the browser running in Safe mode?',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'SafeMode',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'safe_mode',
         'namespace': 'raw_crash',
@@ -3831,13 +3495,11 @@ FIELDS = {
     },
     'shutdown_progress': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'See https://bugzilla.mozilla.org/show_bug.cgi?id=1038342',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'ShutdownProgress',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'shutdown_progress',
         'namespace': 'raw_crash',
@@ -3849,7 +3511,6 @@ FIELDS = {
     },
     'signature': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'This is the field most commonly used for aggregating individual crash reports '
             'into a group. It usually contains one or more stack frames from the crashing '
@@ -3860,7 +3521,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'signature',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'signature',
         'namespace': 'processed_crash',
@@ -3881,7 +3541,6 @@ FIELDS = {
     },
     'skunk_classification': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'The skunk classification of this crash report, assigned by the processors.'
         ),
@@ -3889,7 +3548,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'classification',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'skunk_classification',
         'namespace': 'processed_crash.classifications.skunk_works',
@@ -3899,13 +3557,11 @@ FIELDS = {
     },
     'startedDateTime': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'startedDateTime',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'startedDateTime',
         'namespace': 'processed_crash',
@@ -3918,7 +3574,6 @@ FIELDS = {
     },
     'startup_crash': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': (
             'Annotation that tells whether the crash happened before the startup phase was '
             'finished or not.'
@@ -3927,7 +3582,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'StartupCrash',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'startup_crash',
         'namespace': 'raw_crash',
@@ -3940,13 +3594,11 @@ FIELDS = {
     },
     'startup_time': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'StartupTime',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'startup_time',
         'namespace': 'raw_crash',
@@ -3958,7 +3610,6 @@ FIELDS = {
     },
     'status': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Status of the output of the stackwalker. Can be \'OK\', \'ERROR_*\' or '
             '\'SYMBOL_SUPPLIER_INTERRUPTED\'.'
@@ -3967,7 +3618,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'status',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'status',
         'namespace': 'processed_crash.json_dump',
@@ -3977,7 +3627,6 @@ FIELDS = {
     },
     'submitted_from_infobar': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': (
             'True if the crash report was submitted after the crash happened, from an infobar '
             'in the UI.'
@@ -3986,7 +3635,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'SubmittedFromInfobar',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'submitted_from_infobar',
         'namespace': 'raw_crash',
@@ -3998,13 +3646,11 @@ FIELDS = {
     },
     'submitted_timestamp': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The datetime when the crash was submitted to the Socorro collector.',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'submitted_timestamp',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'submitted_timestamp',
         'namespace': 'raw_crash',
@@ -4014,13 +3660,11 @@ FIELDS = {
     },
     'success': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'success',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'success',
         'namespace': 'processed_crash',
@@ -4032,7 +3676,6 @@ FIELDS = {
     },
     'support_classification': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'The support classification of this crash report, assigned by the processors.'
         ),
@@ -4040,7 +3683,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'classification',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'support_classification',
         'namespace': 'processed_crash.classifications.support',
@@ -4050,13 +3692,11 @@ FIELDS = {
     },
     'system_error': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'SystemError',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'system_error',
         'namespace': 'raw_crash',
@@ -4068,13 +3708,11 @@ FIELDS = {
     },
     'system_memory_use_percentage': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'The approximate percentage of physical memory that is in use.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'SystemMemoryUsePercentage',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'system_memory_use_percentage',
         'namespace': 'raw_crash',
@@ -4086,7 +3724,6 @@ FIELDS = {
     },
     'telemetry_environment': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'A field containing the entire Telemetry Environment, as sent with crash pings to '
             'Telemetry.'
@@ -4095,7 +3732,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'TelemetryEnvironment',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'telemetry_environment',
         'namespace': 'raw_crash',
@@ -4108,13 +3744,11 @@ FIELDS = {
     },
     'theme': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The current theme.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'Theme',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'theme',
         'namespace': 'raw_crash',
@@ -4127,13 +3761,11 @@ FIELDS = {
     },
     'thread_count': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'Number of threads.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'thread_count',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'thread_count',
         'namespace': 'processed_crash.json_dump',
@@ -4143,13 +3775,11 @@ FIELDS = {
     },
     'threads_index': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'Index of this thread in the list of threads?',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'threads_index',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'threads_index',
         'namespace': 'processed_crash.json_dump.crashing_thread',
@@ -4159,13 +3789,11 @@ FIELDS = {
     },
     'throttle_rate': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'The throttle rate for the triggered rule in the Socorro collector.',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'throttle_rate',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'throttle_rate',
         'namespace': 'raw_crash',
@@ -4177,13 +3805,11 @@ FIELDS = {
     },
     'throttleable': {
         'data_validation_type': 'bool',
-        'default_value': None,
         'description': 'Whether the crash report was throttleable when submitted.',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Throttleable',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'throttleable',
         'namespace': 'raw_crash',
@@ -4195,7 +3821,6 @@ FIELDS = {
     },
     'timestamp': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'Seconds since unix epoch when the crash was submitted to the Socorro collector.'
         ),
@@ -4203,7 +3828,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'timestamp',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'timestamp',
         'namespace': 'raw_crash',
@@ -4215,13 +3839,11 @@ FIELDS = {
     },
     'tiny_block_size': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'tiny_block_size',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'tiny_block_size',
         'namespace': 'processed_crash.json_dump',
@@ -4233,13 +3855,11 @@ FIELDS = {
     },
     'topmost_filenames': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Paths of the files at the top of the stack.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'topmost_filenames',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'topmost_filenames',
         'namespace': 'processed_crash',
@@ -4252,13 +3872,11 @@ FIELDS = {
     },
     'total_frames': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'Total number of frames in the thread.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'total_frames',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'total_frames',
         'namespace': 'processed_crash.json_dump.crashing_thread',
@@ -4268,13 +3886,11 @@ FIELDS = {
     },
     'total_page_file': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'TotalPageFile',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'total_page_file',
         'namespace': 'raw_crash',
@@ -4286,13 +3902,11 @@ FIELDS = {
     },
     'total_physical_memory': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'The total amount of physical memory.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'TotalPhysicalMemory',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'total_physical_memory',
         'namespace': 'raw_crash',
@@ -4304,7 +3918,6 @@ FIELDS = {
     },
     'total_virtual_memory': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'The size of the user-mode portion of the virtual address space of the calling '
             'process. This value depends on the type of process, the type of processor, and '
@@ -4315,7 +3928,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'TotalVirtualMemory',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'total_virtual_memory',
         'namespace': 'raw_crash',
@@ -4327,13 +3939,11 @@ FIELDS = {
     },
     'truncated': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'truncated',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': False,
         'name': 'truncated',
         'namespace': 'processed_crash',
@@ -4345,13 +3955,11 @@ FIELDS = {
     },
     'upload_file_minidump_browser': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'upload_file_minidump_browser',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'upload_file_minidump_browser',
         'namespace': 'processed_crash',
@@ -4361,13 +3969,11 @@ FIELDS = {
     },
     'upload_file_minidump_flash1': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'upload_file_minidump_flash1',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'upload_file_minidump_flash1',
         'namespace': 'processed_crash',
@@ -4377,13 +3983,11 @@ FIELDS = {
     },
     'upload_file_minidump_flash2': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'upload_file_minidump_flash2',
         'is_exposed': False,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'upload_file_minidump_flash2',
         'namespace': 'processed_crash',
@@ -4393,7 +3997,6 @@ FIELDS = {
     },
     'uptime': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': (
             'Length of time the process was running before it crashed. Small values (from 0 to '
             '5 or so) usually indicate start-up crashes.'
@@ -4402,7 +4005,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'uptime',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'uptime',
         'namespace': 'processed_crash',
@@ -4414,13 +4016,11 @@ FIELDS = {
     },
     'uptime_ts': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': 'TimeStamp based uptime.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'UptimeTS',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'uptime_ts',
         'namespace': 'raw_crash',
@@ -4432,7 +4032,6 @@ FIELDS = {
     },
     'url': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'The website which the user most recently visited in the browser before the crash. '
             'Users have the option of opting in or out of sending the current URL. This '
@@ -4443,7 +4042,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'url',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'url',
         'namespace': 'processed_crash',
@@ -4458,13 +4056,11 @@ FIELDS = {
     },
     'user_comments': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': 'Comments entered by the user when they crashed.',
         'form_field_choices': [],
         'has_full_version': True,
         'in_database_name': 'user_comments',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'user_comments',
         'namespace': 'processed_crash',
@@ -4487,13 +4083,11 @@ FIELDS = {
     },
     'useragent_locale': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'The locale of the software installation.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'useragent_locale',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'useragent_locale',
         'namespace': 'raw_crash',
@@ -4506,13 +4100,11 @@ FIELDS = {
     },
     'uuid': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': 'Unique identifier of the report.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'uuid',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'uuid',
         'namespace': 'processed_crash',
@@ -4525,13 +4117,11 @@ FIELDS = {
     },
     'vendor': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': '',
         'form_field_choices': None,
         'has_full_version': False,
         'in_database_name': 'Vendor',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'vendor',
         'namespace': 'raw_crash',
@@ -4543,7 +4133,6 @@ FIELDS = {
     },
     'version': {
         'data_validation_type': 'enum',
-        'default_value': None,
         'description': (
             'The product version number. A value lacking any letters indicates a normal release; '
             'a value with a "b" indicates a Beta release; a value with an "a" indicates an Aurora '
@@ -4554,7 +4143,6 @@ FIELDS = {
         'has_full_version': False,
         'in_database_name': 'version',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'version',
         'namespace': 'processed_crash',
@@ -4567,7 +4155,6 @@ FIELDS = {
     },
     'winsock_lsp': {
         'data_validation_type': 'str',
-        'default_value': None,
         'description': (
             'On Windows, a string of data from the Windows OS about the list of installed LSPs '
             '(Layered Service Provider).'
@@ -4576,7 +4163,6 @@ FIELDS = {
         'has_full_version': True,
         'in_database_name': 'Winsock_LSP',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'winsock_lsp',
         'namespace': 'processed_crash',
@@ -4595,13 +4181,11 @@ FIELDS = {
     },
     'write_combine_size': {
         'data_validation_type': 'int',
-        'default_value': None,
         'description': '',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'write_combine_size',
         'is_exposed': True,
-        'is_mandatory': False,
         'is_returned': True,
         'name': 'write_combine_size',
         'namespace': 'processed_crash.json_dump',

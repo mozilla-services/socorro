@@ -82,13 +82,6 @@ class SuperSearch(ESSocorroMiddleware):
         # make sure that none of those listed fields are restricted.
         self.parameters_listing_fields = list(PARAMETERS_LISTING_FIELDS)
 
-        self.required_params = tuple(
-            (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed'] and
-            not x['permissions_needed'] and
-            x['is_mandatory']
-        )
-
         self.extended_fields = self._get_extended_params()
         for field in self.extended_fields:
             if '_histogram.' in field[0] or '_aggs.' in field[0]:
@@ -96,9 +89,7 @@ class SuperSearch(ESSocorroMiddleware):
 
         self.possible_params = tuple(
             (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed'] and
-            not x['permissions_needed'] and
-            not x['is_mandatory']
+            if x['is_exposed'] and not x['permissions_needed']
         ) + SUPERSEARCH_META_PARAMS + tuple(self.extended_fields)
 
     def _get_extended_params(self):
@@ -187,16 +178,11 @@ class SuperSearchUnredacted(SuperSearch):
     def __init__(self):
         self.all_fields = SuperSearchFields().get()
 
-        self.required_params = tuple(
-            (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed'] and x['is_mandatory']
-        )
-
         histogram_fields = self._get_extended_params()
 
         self.possible_params = tuple(
             (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed'] and not x['is_mandatory']
+            if x['is_exposed']
         ) + SUPERSEARCH_META_PARAMS + histogram_fields
 
         permissions = {}
