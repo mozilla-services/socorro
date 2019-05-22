@@ -10,7 +10,6 @@ import time
 import traceback
 
 import markus
-import sentry_sdk
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -165,8 +164,6 @@ class Command(BaseCommand):
                     .replace('\n', '\\n')
                 )
 
-                # Send error to sentry, log it, and remember the failure
-                sentry_sdk.capture_error()
                 logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
                 self._remember_failure(
                     cmd,
