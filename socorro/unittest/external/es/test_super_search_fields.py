@@ -241,7 +241,6 @@ def test_validate_super_search_fields(name, properties):
 
     property_keys = [
         'data_validation_type',
-        'default_value',
         'description',
         'form_field_choices',
         'has_full_version',

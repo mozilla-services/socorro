@@ -86,7 +86,6 @@ class TestSuperSearchFieldsMissing(SiteAdminTestViews):
                     'query_type': 'enum',
                     'form_field_choices': None,
                     'permissions_needed': [],
-                    'default_value': None,
                     'is_exposed': True,
                     'is_returned': True,
                 }

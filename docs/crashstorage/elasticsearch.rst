@@ -170,14 +170,6 @@ Here is an explanation of each properties of a field:
     information.
 
 
-We also have these properties which are always set to the same values:
-
-**default_value**
-    The default value for a Super Search filter.
-
-    Always set to ``None``.
-
-
 Query types
 -----------
 
