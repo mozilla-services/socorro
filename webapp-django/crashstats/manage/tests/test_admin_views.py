@@ -89,7 +89,6 @@ class TestSuperSearchFieldsMissing(SiteAdminTestViews):
                     'default_value': None,
                     'is_exposed': True,
                     'is_returned': True,
-                    'is_mandatory': False,
                 }
             }
 

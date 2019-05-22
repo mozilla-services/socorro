@@ -177,11 +177,6 @@ We also have these properties which are always set to the same values:
 
     Always set to ``None``.
 
-**is_mandatory**
-    Is this field required to have a value in the Super Search form?
-
-    Always set to ``False``.
-
 
 Query types
 -----------

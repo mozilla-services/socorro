@@ -10,7 +10,6 @@ import datetime
 
 from socorro.lib import (
     BadArgumentError,
-    MissingArgumentError,
     datetimeutil,
 )
 import socorro.lib.external_common as extern
@@ -83,11 +82,10 @@ class SearchParam(object):
 
 
 class SearchFilter(object):
-    def __init__(self, name, default=None, data_type='enum', mandatory=False):
+    def __init__(self, name, default=None, data_type='enum'):
         self.name = name
         self.default = default
         self.data_type = data_type
-        self.mandatory = mandatory
 
 
 class SearchBase(object):
@@ -119,7 +117,6 @@ class SearchBase(object):
                 field['name'],
                 default=field['default_value'],
                 data_type=field['data_validation_type'],
-                mandatory=field['is_mandatory'],
             ))
 
             # Add a field to get a list of other fields to aggregate.
@@ -166,8 +163,6 @@ class SearchBase(object):
                 # to None in our case.
                 values = None
 
-            if values is None and param.mandatory:
-                raise MissingArgumentError(param.name)
             if values is None and param.default is not None:
                 values = param.default
 

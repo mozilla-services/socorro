@@ -22,7 +22,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
     'product': {
         'name': 'product',
@@ -33,7 +32,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
     'version': {
         'name': 'version',
@@ -44,7 +42,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
     'date': {
         'name': 'date',
@@ -55,7 +52,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
     'build_id': {
         'name': 'build_id',
@@ -66,7 +62,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
     'process_type': {
         'name': 'process_type',
@@ -77,7 +72,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
     'hang_type': {
         'name': 'hang_type',
@@ -88,7 +82,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
     'user_comments': {
         'name': 'user_comments',
@@ -99,7 +92,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'default_value': None,
         'is_exposed': True,
         'is_returned': True,
-        'is_mandatory': False,
     },
 }
 
