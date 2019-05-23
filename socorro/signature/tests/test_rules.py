@@ -18,6 +18,27 @@ rules = importlib.import_module(base_module + '.rules')
 generator = importlib.import_module(base_module + '.generator')
 
 
+@pytest.mark.parametrize('frame, expected_function', [
+    # Don't die on missing data
+    ({}, None),
+
+    # If file is missing, it should just return the same frame
+    ({'function': 'panic'}, 'panic'),
+
+    # Fix function if (file, function) are in lookup table
+    (
+        {
+            'file': 'git:github.com/rust-lang/rust:src/libstd/panicking.rs:91856ed52c58aa5ba66a015354d1cc69e9779bdf',  # noqa
+            'function': 'begin_panic_fmt'
+        },
+        'std::panicking::begin_panic_fmt'
+    )
+])
+def test_fix_missing_module(frame, expected_function):
+    actual_function = rules.fix_missing_module(frame).get('function')
+    assert actual_function == expected_function
+
+
 class TestCSignatureTool:
     @staticmethod
     def setup_config_c_sig_tool(
