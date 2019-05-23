@@ -12,7 +12,7 @@ import requests_mock
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.util import dotdict_to_dict
-from socorro.processor.mozilla_transform_rules import (
+from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
     DatesAndTimesRule,
@@ -729,7 +729,7 @@ class TestOutOfMemoryBinaryRule(object):
 
         processor_meta = get_basic_processor_meta()
 
-        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
+        with patch('socorro.processor.rules.mozilla.gzip.open') as mocked_gzip_open:
             ret = json.dumps({'mysterious': ['awesome', 'memory']})
             mocked_gzip_open.return_value = BytesIO(ret.encode('utf-8'))
             rule = OutOfMemoryBinaryRule(config)
@@ -748,7 +748,7 @@ class TestOutOfMemoryBinaryRule(object):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
+        with patch('socorro.processor.rules.mozilla.gzip.open') as mocked_gzip_open:
             opened = Mock()
             opened.read.return_value = json.dumps({
                 'some': 'notveryshortpieceofjson'
@@ -788,7 +788,7 @@ class TestOutOfMemoryBinaryRule(object):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
+        with patch('socorro.processor.rules.mozilla.gzip.open') as mocked_gzip_open:
             mocked_gzip_open.side_effect = IOError
             rule = OutOfMemoryBinaryRule(config)
 
@@ -810,9 +810,9 @@ class TestOutOfMemoryBinaryRule(object):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch('socorro.processor.mozilla_transform_rules.gzip.open') as mocked_gzip_open:
+        with patch('socorro.processor.rules.mozilla.gzip.open') as mocked_gzip_open:
             with patch(
-                'socorro.processor.mozilla_transform_rules.json.loads'
+                'socorro.processor.rules.mozilla.json.loads'
             ) as mocked_json_loads:
                 mocked_json_loads.side_effect = ValueError
 
@@ -845,7 +845,7 @@ class TestOutOfMemoryBinaryRule(object):
                 assert processor_notes == []
                 return 'mysterious-awesome-memory'
 
-        with patch('socorro.processor.mozilla_transform_rules.temp_file_context'):
+        with patch('socorro.processor.rules.mozilla.temp_file_context'):
             rule = MyOutOfMemoryBinaryRule(config)
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash.memory_report == 'mysterious-awesome-memory'

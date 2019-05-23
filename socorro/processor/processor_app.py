@@ -132,7 +132,7 @@ class ProcessorApp(FetchTransformSaveApp):
     required_config.processor.add_option(
         'processor_class',
         doc='the class that transforms raw crashes into processed crashes',
-        default='socorro.processor.processor_2015.Processor2015',
+        default='socorro.processor.processor_pipeline.ProcessorPipeline',
         from_string_converter=class_converter
     )
 

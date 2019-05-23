@@ -6,8 +6,8 @@ from configman import ConfigurationManager
 from configman.dotdict import DotDict
 from mock import MagicMock, Mock, patch
 
-from socorro.processor.processor_2015 import Processor2015
-from socorro.processor.general_transform_rules import (
+from socorro.processor.processor_pipeline import ProcessorPipeline
+from socorro.processor.rules.general import (
     CPUInfoRule,
     OSInfoRule
 )
@@ -19,10 +19,10 @@ class BadRule(Rule):
         raise KeyError('pii')
 
 
-class TestProcessor2015(object):
+class TestProcessorPipeline(object):
     def get_config(self):
         cm = ConfigurationManager(
-            definition_source=Processor2015.get_required_config(),
+            definition_source=ProcessorPipeline.get_required_config(),
             values_source_list=[],
         )
         config = cm.get_config()
@@ -42,13 +42,13 @@ class TestProcessor2015(object):
         }
         processed_crash = DotDict()
 
-        processor = Processor2015(config, rules=[BadRule])
+        processor = ProcessorPipeline(config, rules=[BadRule])
         processor.process_crash(raw_crash, {}, processed_crash)
 
         # Notes were added
         assert (
             processed_crash.processor_notes ==
-            'dwight; Processor2015; rule BadRule failed: KeyError'
+            'dwight; ProcessorPipeline; rule BadRule failed: KeyError'
         )
         mock_get_hub.assert_not_called()
 
@@ -76,13 +76,13 @@ class TestProcessor2015(object):
         }
         processed_crash = DotDict()
 
-        processor = Processor2015(config, rules=[BadRule])
+        processor = ProcessorPipeline(config, rules=[BadRule])
         processor.process_crash(raw_crash, {}, processed_crash)
 
         # Notes were added again
         assert (
             processed_crash.processor_notes ==
-            'dwight; Processor2015; rule BadRule failed: KeyError'
+            'dwight; ProcessorPipeline; rule BadRule failed: KeyError'
         )
         assert isinstance(captured_exceptions[0], KeyError)
 
@@ -96,11 +96,11 @@ class TestProcessor2015(object):
             'started_datetime': '2014-01-01T00:00:00'
         })
 
-        p = Processor2015(self.get_config(), rules=[
+        p = ProcessorPipeline(self.get_config(), rules=[
             CPUInfoRule,
             OSInfoRule,
         ])
-        with patch('socorro.processor.processor_2015.utc_now') as faked_utcnow:
+        with patch('socorro.processor.processor_pipeline.utc_now') as faked_utcnow:
             faked_utcnow.return_value = '2015-01-01T00:00:00'
             processed_crash = p.process_crash(raw_crash, raw_dumps, processed_crash)
 
@@ -110,7 +110,7 @@ class TestProcessor2015(object):
         assert processed_crash.completed_datetime == '2015-01-01T00:00:00'
         assert processed_crash.completeddatetime == '2015-01-01T00:00:00'
         expected = (
-            "dwight; Processor2015; earlier processing: 2014-01-01T00:00:00;"
+            "dwight; ProcessorPipeline; earlier processing: 2014-01-01T00:00:00;"
             " we've been here before; yep"
         )
         assert processed_crash.processor_notes == expected

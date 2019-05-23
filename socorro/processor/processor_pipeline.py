@@ -20,25 +20,22 @@ from configman.dotdict import DotDict
 
 from socorro.lib import sentry_client
 from socorro.lib.datetimeutil import utc_now
-from socorro.processor.breakpad_transform_rules import (
+from socorro.processor.rules.breakpad import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
-
-from socorro.processor.general_transform_rules import (
+from socorro.processor.rules.general import (
     CPUInfoRule,
     DeNullRule,
     IdentifierRule,
     OSInfoRule,
 )
-
 from socorro.processor.rules.memory_report_extraction import (
     MemoryReportExtraction,
 )
-
-from socorro.processor.mozilla_transform_rules import (
+from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
     DatesAndTimesRule,
@@ -100,7 +97,7 @@ DEFAULT_RULES = [
 ]
 
 
-class Processor2015(RequiredConfig):
+class ProcessorPipeline(RequiredConfig):
     """this class is a generalization of the Processor into a rule processing
     framework. This class is suitable for use in the 'processor_app'
     introducted in 2012."""

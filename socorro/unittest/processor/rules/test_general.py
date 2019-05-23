@@ -7,7 +7,7 @@ import copy
 from configman.dotdict import DotDict
 import pytest
 
-from socorro.processor.general_transform_rules import (
+from socorro.processor.rules.general import (
     CPUInfoRule,
     DeNullRule,
     IdentifierRule,
