@@ -20,25 +20,22 @@ from configman.dotdict import DotDict
 
 from socorro.lib import sentry_client
 from socorro.lib.datetimeutil import utc_now
-from socorro.processor.breakpad_transform_rules import (
+from socorro.processor.rules.breakpad import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
-
-from socorro.processor.general_transform_rules import (
+from socorro.processor.rules.general import (
     CPUInfoRule,
     DeNullRule,
     IdentifierRule,
     OSInfoRule,
 )
-
 from socorro.processor.rules.memory_report_extraction import (
     MemoryReportExtraction,
 )
-
-from socorro.processor.mozilla_transform_rules import (
+from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
     DatesAndTimesRule,

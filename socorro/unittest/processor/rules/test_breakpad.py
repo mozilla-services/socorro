@@ -10,7 +10,7 @@ from configman.dotdict import DotDict
 from markus.testing import MetricsMock
 from mock import patch
 
-from socorro.processor.breakpad_transform_rules import (
+from socorro.processor.rules.breakpad import (
     BreakpadStackwalkerRule2015,
     CrashingThreadRule,
     ExternalProcessRule,
@@ -302,7 +302,7 @@ class TestExternalProcessRule(object):
         ExternalProcessRule.dot_save(dd, 'a.b.c.d.e.f', 1000)
         assert dd.a.b.c.d.e.f == 1000
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
 
@@ -333,7 +333,7 @@ class TestExternalProcessRule(object):
         assert processed_crash.bogus_command_result == canonical_external_output
         assert processed_crash.bogus_command_return_code == 0
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_external_fails(self, mocked_subprocess_module):
         config = self.get_basic_config()
 
@@ -353,7 +353,7 @@ class TestExternalProcessRule(object):
         assert processed_crash.bogus_command_return_code == 124
         assert processor_meta.processor_notes == []
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_external_fails_2(self, mocked_subprocess_module):
         config = self.get_basic_config()
 
@@ -391,7 +391,7 @@ class TestBreakpadTransformRule2015(object):
         config.temporary_file_system_storage_path = '/tmp'
         return config
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
 
@@ -420,7 +420,7 @@ class TestBreakpadTransformRule2015(object):
                 tags=['outcome:success', 'exitcode:0']
             )
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_stackwalker_fails(self, mocked_subprocess_module):
         config = self.get_basic_config()
 
@@ -450,7 +450,7 @@ class TestBreakpadTransformRule2015(object):
                 tags=['outcome:fail', 'exitcode:124']
             )
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_stackwalker_fails_2(self, mocked_subprocess_module):
         config = self.get_basic_config()
 
@@ -482,7 +482,7 @@ class TestBreakpadTransformRule2015(object):
             'MDSW failed with -1: unknown error'
         )
 
-    @patch('socorro.processor.breakpad_transform_rules.os.unlink')
+    @patch('socorro.processor.rules.breakpad.os.unlink')
     def test_temp_file_context(self, mocked_unlink):
         config = self.get_basic_config()
 
@@ -512,7 +512,7 @@ class TestJitCrashCategorizeRule(object):
         config.temporary_file_system_storage_path = '/tmp'
         return config
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -539,7 +539,7 @@ class TestJitCrashCategorizeRule(object):
         assert processed_crash.classifications.jit.category == 'EXTRA-SPECIAL'
         assert processed_crash.classifications.jit.category_return_code == 0
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_success_all_types_of_signatures(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -577,7 +577,7 @@ class TestJitCrashCategorizeRule(object):
             assert processed_crash.classifications.jit.category == 'EXTRA-SPECIAL'
             assert processed_crash.classifications.jit.category_return_code == 0
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_subprocess_fail(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -604,7 +604,7 @@ class TestJitCrashCategorizeRule(object):
         assert processed_crash.classifications.jit.category is None
         assert processed_crash.classifications.jit.category_return_code == -1
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_wrong_os(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -630,7 +630,7 @@ class TestJitCrashCategorizeRule(object):
         assert 'classifications.jit.category' not in processed_crash
         assert 'classifications.jit.category_return_code' not in processed_crash
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_wrong_product(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -656,7 +656,7 @@ class TestJitCrashCategorizeRule(object):
         assert 'classifications.jit.category' not in processed_crash
         assert 'classifications.jit.category_return_code' not in processed_crash
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_wrong_cpu(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -682,7 +682,7 @@ class TestJitCrashCategorizeRule(object):
         assert 'classifications.jit.category' not in processed_crash
         assert 'classifications.jit.category_return_code' not in processed_crash
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_wrong_signature(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -708,7 +708,7 @@ class TestJitCrashCategorizeRule(object):
         assert 'classifications.jit.category' not in processed_crash
         assert 'classifications.jit.category_return_code' not in processed_crash
 
-    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    @patch('socorro.processor.rules.breakpad.subprocess')
     def test_module_on_stack_top(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)

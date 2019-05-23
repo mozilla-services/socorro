@@ -7,7 +7,7 @@ from configman.dotdict import DotDict
 from mock import MagicMock, Mock, patch
 
 from socorro.processor.processor_2015 import Processor2015
-from socorro.processor.general_transform_rules import (
+from socorro.processor.rules.general import (
     CPUInfoRule,
     OSInfoRule
 )
