@@ -13,7 +13,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
-from socorro.unittest.processor import get_basic_config, get_basic_processor_meta
+from socorro.unittest.processor import get_basic_processor_meta
 
 
 canonical_standard_raw_crash = DotDict({
@@ -116,8 +116,7 @@ class TestDeNullRule(object):
         (b'a\0bc\0', b'abc'),
     ])
     def test_de_null(self, data, expected):
-        config = get_basic_config()
-        rule = DeNullRule(config)
+        rule = DeNullRule()
         assert rule.de_null(data) == expected
 
     def test_rule_with_dict(self):
@@ -127,8 +126,7 @@ class TestDeNullRule(object):
             '\0key3': '\0val3'
         }
 
-        config = get_basic_config()
-        rule = DeNullRule(config)
+        rule = DeNullRule()
         rule.act(raw_crash, {}, {}, get_basic_processor_meta())
 
         assert raw_crash == {
@@ -145,8 +143,7 @@ class TestDeNullRule(object):
             '\0key3': '\0val3'
         })
 
-        config = get_basic_config()
-        rule = DeNullRule(config)
+        rule = DeNullRule()
         rule.act(raw_crash, {}, {}, get_basic_processor_meta())
 
         assert raw_crash == DotDict({
@@ -158,8 +155,6 @@ class TestDeNullRule(object):
 
 class TestIdentifierRule(object):
     def test_everything_we_hoped_for(self):
-        config = get_basic_config()
-
         uuid = '00000000-0000-0000-0000-000002140504'
         raw_crash = {
             'uuid': uuid
@@ -168,21 +163,19 @@ class TestIdentifierRule(object):
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
-        rule = IdentifierRule(config)
+        rule = IdentifierRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash['crash_id'] == uuid
         assert processed_crash['uuid'] == uuid
 
     def test_uuid_missing(self):
-        config = get_basic_config()
-
         raw_crash = {}
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
-        rule = IdentifierRule(config)
+        rule = IdentifierRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # raw crash and processed crashes should be unchanged
@@ -192,14 +185,12 @@ class TestIdentifierRule(object):
 
 class TestCPUInfoRule(object):
     def test_everything_we_hoped_for(self):
-        config = get_basic_config()
-
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = copy.copy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
-        rule = CPUInfoRule(config)
+        rule = CPUInfoRule()
 
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -212,8 +203,6 @@ class TestCPUInfoRule(object):
         assert raw_crash == canonical_standard_raw_crash
 
     def test_missing_cpu_count(self):
-        config = get_basic_config()
-
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         system_info = copy.copy(canonical_processed_crash['json_dump']['system_info'])
@@ -224,7 +213,7 @@ class TestCPUInfoRule(object):
         }
         processor_meta = get_basic_processor_meta()
 
-        rule = CPUInfoRule(config)
+        rule = CPUInfoRule()
 
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -236,14 +225,12 @@ class TestCPUInfoRule(object):
         assert raw_crash == canonical_standard_raw_crash
 
     def test_missing_json_dump(self):
-        config = get_basic_config()
-
         raw_crash = {}
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
-        rule = CPUInfoRule(config)
+        rule = CPUInfoRule()
 
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -257,7 +244,6 @@ class TestCPUInfoRule(object):
 
 class TestOSInfoRule(object):
     def test_everything_we_hoped_for(self):
-        config = get_basic_config()
         raw_crash = {}
         processed_crash = DotDict({
             'json_dump': {
@@ -269,7 +255,7 @@ class TestOSInfoRule(object):
         })
         processor_meta = get_basic_processor_meta()
 
-        rule = OSInfoRule(config)
+        rule = OSInfoRule()
 
         # the call to be tested
         rule.act(raw_crash, {}, processed_crash, processor_meta)
@@ -281,12 +267,11 @@ class TestOSInfoRule(object):
         assert raw_crash == {}
 
     def test_stuff_missing(self):
-        config = get_basic_config()
         raw_crash = {}
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        rule = OSInfoRule(config)
+        rule = OSInfoRule()
 
         # the call to be tested
         rule.act(raw_crash, {}, processed_crash, processor_meta)
