@@ -229,15 +229,16 @@ class ProcessorPipeline(RequiredConfig):
             TopMostFilesRule(),
             ThemePrettyNameRule(),
             MemoryReportExtraction(),
-            # a set of classifiers to help with jit crashes
+            # generate signature now that we've done all the processing it depends on
+            SignatureGeneratorRule(),
+            # a set of classifiers to help with jit crashes--must be last since it
+            # depends on signature generation
             JitCrashCategorizeRule(
                 dump_field=config.jit.dump_field,
                 command_line=config.jit.command_line,
                 command_pathname=config.jit.command_pathname,
                 kill_timeout=config.jit.kill_timeout
             ),
-            # generate signature now that we've done all the processing it depends on
-            SignatureGeneratorRule(),
         ]
 
     def process_crash(self, raw_crash, raw_dumps, processed_crash):
