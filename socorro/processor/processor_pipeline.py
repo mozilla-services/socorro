@@ -97,7 +97,7 @@ DEFAULT_RULES = [
 ]
 
 
-class Processor2015(RequiredConfig):
+class ProcessorPipeline(RequiredConfig):
     """this class is a generalization of the Processor into a rule processing
     framework. This class is suitable for use in the 'processor_app'
     introducted in 2012."""
