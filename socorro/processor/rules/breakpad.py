@@ -77,8 +77,18 @@ def dot_save(a_mapping, key, value):
     current_mapping[key_parts[-1]] = value
 
 
-def execute_external_process(crash_id, command_pathname, command_line,
-                             processor_meta, interpret_output):
+def execute_external_process(command_pathname, command_line, processor_meta, interpret_output):
+    """Executes an external process, interprets output, and returns output and return_code.
+
+    :arg str command_pathname: the path to the command to run
+    :arg str command_line: the complete command line to run
+    :arg processor_meta: the meta part of the processed crash
+    :arg fun interpret_output: the function to interpret the output; takes a file-pointer,
+        processor_meta, and command_pathname and returns interpreted output
+
+    :returns: (output, return_code)
+
+    """
     # Tokenize the command line into args
     command_line_args = shlex.split(command_line, comments=False, posix=True)
 
@@ -152,7 +162,6 @@ class BreakpadStackwalkerRule2015(Rule):
     def _execute_external_process(self, crash_id, command_pathname, command_line, processor_meta):
         output, return_code = (
             execute_external_process(
-                crash_id=crash_id,
                 command_pathname=command_pathname,
                 command_line=command_line,
                 processor_meta=processor_meta,
@@ -254,10 +263,10 @@ class BreakpadStackwalkerRule2015(Rule):
                 )
 
                 stackwalker_data, return_code = self._execute_external_process(
-                    crash_id,
-                    self.command_pathname,
-                    command_line,
-                    processor_meta
+                    crash_id=crash_id,
+                    command_pathname=self.command_pathname,
+                    command_line=command_line,
+                    processor_meta=processor_meta
                 )
 
                 if dump_name == self.dump_field:
@@ -316,7 +325,6 @@ class JitCrashCategorizeRule(Rule):
             return result
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        crash_id = raw_crash['uuid']
         params = {
             'command_pathname': self.command_pathname,
             'kill_timeout': self.kill_timeout,
@@ -325,7 +333,6 @@ class JitCrashCategorizeRule(Rule):
         command_line = self.command_line.format(**params)
 
         output, return_code = execute_external_process(
-            crash_id=crash_id,
             command_pathname=self.command_pathname,
             command_line=command_line,
             processor_meta=processor_meta,
