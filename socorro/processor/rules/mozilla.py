@@ -94,15 +94,9 @@ class PluginRule(Rule):   # Hangs are here
         if processed_crash.process_type == 'plugin':
             # Bug#543776 We actually will are relaxing the non-null policy...
             # a null filename, name, and version is OK. We'll use empty strings
-            processed_crash.PluginFilename = (
-                raw_crash.get('PluginFilename', '')
-            )
-            processed_crash.PluginName = (
-                raw_crash.get('PluginName', '')
-            )
-            processed_crash.PluginVersion = (
-                raw_crash.get('PluginVersion', '')
-            )
+            processed_crash.PluginFilename = raw_crash.get('PluginFilename', '')
+            processed_crash.PluginName = raw_crash.get('PluginName', '')
+            processed_crash.PluginVersion = raw_crash.get('PluginVersion', '')
 
 
 class AddonsRule(Rule):
@@ -174,9 +168,8 @@ class DatesAndTimesRule(Rule):
             time.mktime(processed_crash.submitted_timestamp.timetuple())
         )
         try:
-            timestampTime = int(
-                raw_crash.get('timestamp', submitted_timestamp_as_epoch)
-            )  # the old name for crash time
+            # the old name for crash time
+            timestampTime = int(raw_crash.get('timestamp', submitted_timestamp_as_epoch))
         except ValueError:
             timestampTime = 0
             processor_notes.append('non-integer value of "timestamp"')
@@ -192,9 +185,7 @@ class DatesAndTimesRule(Rule):
             )
         except ValueError:
             crash_time = 0
-            processor_notes.append(
-                'non-integer value of "CrashTime" (%s)' % raw_crash.CrashTime
-            )
+            processor_notes.append('non-integer value of "CrashTime" (%s)' % raw_crash.CrashTime)
 
         processed_crash.crash_time = crash_time
         if crash_time == submitted_timestamp_as_epoch:
@@ -211,24 +202,17 @@ class DatesAndTimesRule(Rule):
         except ValueError:
             installTime = 0
             processor_notes.append('non-integer value of "InstallTime"')
-        processed_crash.client_crash_date = datetime.datetime.fromtimestamp(
-            crash_time,
-            UTC
-        )
+        processed_crash.client_crash_date = datetime.datetime.fromtimestamp(crash_time, UTC)
         processed_crash.install_age = crash_time - installTime
         processed_crash.uptime = max(0, crash_time - startupTime)
         try:
             last_crash = int(raw_crash.SecondsSinceLastCrash)
         except (KeyError, TypeError, ValueError):
             last_crash = None
-            processor_notes.append(
-                'non-integer value of "SecondsSinceLastCrash"'
-            )
+            processor_notes.append('non-integer value of "SecondsSinceLastCrash"')
         if last_crash and last_crash > MAXINT:
             last_crash = None
-            processor_notes.append(
-                '"SecondsSinceLastCrash" larger than MAXINT - set to NULL'
-            )
+            processor_notes.append('"SecondsSinceLastCrash" larger than MAXINT - set to NULL')
         processed_crash.last_crash = last_crash
 
 
@@ -344,11 +328,7 @@ class OutOfMemoryBinaryRule(Rule):
 
 
 class ProductRewrite(Rule):
-    """Fix ProductName in raw crash for certain situations
-
-    NOTE(willkg): This changes the raw crash which is gross.
-
-    """
+    """Fix ProductName in raw crash for certain situations."""
 
     PRODUCT_MAP = {
         "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid",
@@ -411,8 +391,7 @@ class ExploitablityRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             processed_crash.exploitability = (
-                processed_crash['json_dump']
-                ['sensitive']['exploitability']
+                processed_crash['json_dump']['sensitive']['exploitability']
             )
         except KeyError:
             processed_crash.exploitability = 'unknown'
@@ -566,14 +545,17 @@ class BetaVersionRule(Rule):
     #: List of products to do lookups for
     SUPPORTED_PRODUCTS = ['firefox', 'fennec', 'fennecandroid']
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, version_string_api):
+        super().__init__()
         self.cache = ExpiringCache(max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL)
         self.metrics = markus.get_metrics('processor.betaversionrule')
 
         # For looking up version strings
-        self.version_string_api = config.version_string_api
+        self.version_string_api = version_string_api
         self.session = session_with_retries()
+
+    def __repr__(self):
+        return self.generate_repr(keys=['version_string_api'])
 
     def _get_real_version(self, product, channel, build_id):
         """Return real version number from crashstats_productversion table
@@ -745,12 +727,12 @@ class ThemePrettyNameRule(Rule):
 
     """
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.conversions = {
-            "{972ce4c6-7e08-4474-a285-3208198ce6fd}":
-                "{972ce4c6-7e08-4474-a285-3208198ce6fd} "
-                "(default theme)",
+            "{972ce4c6-7e08-4474-a285-3208198ce6fd}": (
+                "{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme)"
+            ),
         }
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
@@ -781,10 +763,10 @@ class ThemePrettyNameRule(Rule):
 
 
 class SignatureGeneratorRule(Rule):
-    """Generates a Socorro crash signature"""
+    """Generates a Socorro crash signature."""
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.generator = SignatureGenerator(error_handler=self._error_handler)
 
     def _error_handler(self, crash_data, exc_info, extra):

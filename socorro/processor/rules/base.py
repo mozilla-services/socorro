@@ -4,14 +4,13 @@
 
 import logging
 
-from configman import RequiredConfig
 import markus
 
 
 metrics = markus.get_metrics('processor.rule')
 
 
-class Rule(RequiredConfig):
+class Rule:
     """Base class for transform rules
 
     Provides structure for calling rules during the processor pipeline and also
@@ -19,9 +18,7 @@ class Rule(RequiredConfig):
 
     """
 
-    def __init__(self, config=None, quit_check_callback=None):
-        self.config = config
-        self.quit_check_callback = quit_check_callback
+    def __init__(self):
         self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, processor_meta_data):
@@ -67,3 +64,15 @@ class Rule(RequiredConfig):
 
     def close(self):
         pass
+
+    def generate_repr(self, keys=None):
+        keys = keys or []
+        return (
+            '<' +
+            self.__class__.__name__ +
+            ''.join([' %s=%r' % (key, getattr(self, key, None)) for key in keys]) +
+            '>'
+        )
+
+    def __repr__(self):
+        return self.generate_repr()

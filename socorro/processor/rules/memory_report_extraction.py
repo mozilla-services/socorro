@@ -16,7 +16,9 @@ UNITS_BYTES = 0
 
 class MemoryReportExtraction(Rule):
     """Extract key measurements from the memory_report object into a more
-    comprehensible and usable dictionary. """
+    comprehensible and usable dictionary.
+
+    """
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
@@ -107,9 +109,7 @@ class MemoryReportExtraction(Rule):
             if path.startswith('explicit/'):
                 if units != UNITS_BYTES:
                     raise ValueError(
-                        'bad units for an explicit/ report: {}, {}'.format(
-                            path, str(units)
-                        )
+                        'bad units for an explicit/ report: {}, {}'.format(path, str(units))
                     )
 
                 if kind == KIND_NONHEAP:
@@ -118,9 +118,7 @@ class MemoryReportExtraction(Rule):
                     explicit_heap += amount
                 else:
                     raise ValueError(
-                        'bad kind for an explicit/ report: {}, {}'.format(
-                            path, str(kind)
-                        )
+                        'bad kind for an explicit/ report: {}, {}'.format(path, str(kind))
                     )
 
                 if path.startswith('explicit/images/'):

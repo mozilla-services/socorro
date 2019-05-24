@@ -6,7 +6,6 @@ import os
 import json
 
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
-from socorro.unittest.processor import create_basic_fake_processor
 
 
 HERE = os.path.dirname(__file__)
@@ -19,13 +18,8 @@ def get_example_file_data(filename):
 
 
 class TestMemoryReportExtraction(object):
-    def get_config(self):
-        fake_processor = create_basic_fake_processor()
-        return fake_processor.config
-
     def test_predicate_success(self):
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         processed_crash = {}
         processed_crash['memory_report'] = {
@@ -39,8 +33,7 @@ class TestMemoryReportExtraction(object):
         assert predicate_result
 
     def test_predicate_no_match(self):
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         processed_crash = {}
 
@@ -58,8 +51,7 @@ class TestMemoryReportExtraction(object):
         assert not predicate_result
 
     def test_predicate_failure_bad_unrecognizable(self):
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data('bad_unrecognizable.json')
 
@@ -71,8 +63,7 @@ class TestMemoryReportExtraction(object):
         assert not predicate_result
 
     def test_action_success(self):
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data('good.json')
 
@@ -132,8 +123,7 @@ class TestMemoryReportExtraction(object):
     def test_action_failure_bad_kind(self, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data('bad_kind.json')
 
@@ -153,8 +143,7 @@ class TestMemoryReportExtraction(object):
     def test_action_failure_bad_units(self, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data('bad_units.json')
 
@@ -174,8 +163,7 @@ class TestMemoryReportExtraction(object):
     def test_action_failure_bad_pid(self, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data('good.json')
 
@@ -195,8 +183,7 @@ class TestMemoryReportExtraction(object):
     def test_action_failure_key_error(self, caplogpp):
         caplogpp.set_level('DEBUG')
 
-        config = self.get_config()
-        rule = MemoryReportExtraction(config)
+        rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data('bad_missing_key.json')
 

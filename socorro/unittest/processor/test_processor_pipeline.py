@@ -42,7 +42,7 @@ class TestProcessorPipeline(object):
         }
         processed_crash = DotDict()
 
-        processor = ProcessorPipeline(config, rules=[BadRule])
+        processor = ProcessorPipeline(config, rules=[BadRule()])
         processor.process_crash(raw_crash, {}, processed_crash)
 
         # Notes were added
@@ -76,7 +76,7 @@ class TestProcessorPipeline(object):
         }
         processed_crash = DotDict()
 
-        processor = ProcessorPipeline(config, rules=[BadRule])
+        processor = ProcessorPipeline(config, rules=[BadRule()])
         processor.process_crash(raw_crash, {}, processed_crash)
 
         # Notes were added again
@@ -97,8 +97,8 @@ class TestProcessorPipeline(object):
         })
 
         p = ProcessorPipeline(self.get_config(), rules=[
-            CPUInfoRule,
-            OSInfoRule,
+            CPUInfoRule(),
+            OSInfoRule(),
         ])
         with patch('socorro.processor.processor_pipeline.utc_now') as faked_utcnow:
             faked_utcnow.return_value = '2015-01-01T00:00:00'
