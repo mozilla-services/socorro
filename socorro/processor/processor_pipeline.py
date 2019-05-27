@@ -81,7 +81,7 @@ class ProcessorPipeline(RequiredConfig):
         doc='comma-delimited ordered list of urls for symbol lookup',
         default='https://localhost',
         from_string_converter=str_to_list,
-        reference_value_from='processor'
+        likely_to_be_changed=True
     )
     required_config.breakpad.add_option(
         'command_line',
@@ -107,7 +107,6 @@ class ProcessorPipeline(RequiredConfig):
             'on the same filesystem as symbols-cache'
         ),
         default=os.path.join(tempfile.gettempdir(), 'symbols-tmp'),
-        reference_value_from='processor'
     ),
     required_config.breakpad.add_option(
         'symbol_cache_path',
@@ -116,7 +115,6 @@ class ProcessorPipeline(RequiredConfig):
             'readable and writeable (quote path with embedded spaces)'
         ),
         default=os.path.join(tempfile.gettempdir(), 'symbols'),
-        reference_value_from='processor'
     )
     required_config.breakpad.add_option(
         'tmp_storage_path',
@@ -154,8 +152,7 @@ class ProcessorPipeline(RequiredConfig):
     required_config.betaversion.add_option(
         'version_string_api',
         doc='url for the version string api endpoint in the webapp',
-        default='https://crash-stats.mozilla.org/api/VersionString',
-        reference_value_from='processor'
+        default='https://crash-stats.mozilla.org/api/VersionString'
     )
 
     def __init__(self, config, rules=None, quit_check_callback=None):
