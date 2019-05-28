@@ -3,13 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-import sys
 import re
 
 from configman import class_converter, Namespace, RequiredConfig
 from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
-import six
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.lib import (
@@ -461,7 +459,6 @@ class SuperSearch(RequiredConfig, SearchBase):
                     shards = None
                     break
             except RequestError as exception:
-                exc_type, exc_value, exc_tb = sys.exc_info()
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
                 try:
@@ -475,8 +472,8 @@ class SuperSearch(RequiredConfig, SearchBase):
                     # Not an ElasticsearchParseException exception
                     pass
 
-                # Re-raise the original exception with the correct traceback
-                six.reraise(exc_type, exc_value, exc_tb)
+                # Re-raise the original exception
+                raise
 
         if shards and shards.failed:
             # Some shards failed. We want to explain what happened in the

@@ -125,5 +125,5 @@ class Test_retry(object):
             # Assert fun was called six times
             assert len(call_count) == 6
 
-            # quit_check gets called for every backoff, so 6 times
-            assert quit_check.call_count == 6
+            # quit_check gets called for every backoff but last, so 5 times
+            assert quit_check.call_count == 5
