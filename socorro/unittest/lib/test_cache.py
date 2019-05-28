@@ -29,16 +29,16 @@ class TestExpiringCache:
 
         cache = ExpiringCache(default_ttl=100)
         cache['foo'] = 'bar'
-        assert len(cache._data) == 1
+        assert len(cache) == 1
         cache.set('long_foo', value='bar2', ttl=1000)
-        assert len(cache._data) == 2
+        assert len(cache) == 2
 
         # default ttl is 100, so 99 seconds into the future, we should get back
         # both cached values
         mock_utc_now.return_value = now + datetime.timedelta(seconds=99)
         assert cache['foo'] == 'bar'
         assert cache['long_foo'] == 'bar2'
-        assert len(cache._data) == 2
+        assert len(cache) == 2
 
         # ttl is 100, so 101 seconds into the future, we should get a KeyError
         # for one cached key and the other should be fine
@@ -46,7 +46,7 @@ class TestExpiringCache:
         with pytest.raises(KeyError):
             cache['foo']
         assert cache['long_foo'] == 'bar2'
-        assert len(cache._data) == 1
+        assert len(cache) == 1
 
     def test_max_size(self):
         cache = ExpiringCache(max_size=5)
@@ -94,6 +94,8 @@ class TestExpiringCache:
         mock_utc_now.return_value = now + datetime.timedelta(seconds=105)
         cache.flush()
 
+        # We don't want to trigger eviction or anything like that, so check
+        # the contents of the internal data structure directly
         assert (
             cache._data == {
                 'foo10': [now_plus_10 + cache._default_ttl, 'bar'],

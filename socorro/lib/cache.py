@@ -105,4 +105,4 @@ class ExpiringCache(MutableMapping):
         return iter(self._data)
 
     def __len__(self):
-        raise len(self._data)
+        return len(self._data)
