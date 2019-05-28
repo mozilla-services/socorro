@@ -208,13 +208,11 @@ class TestProcessorApp(object):
         assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
 
     @mock.patch('socorro.lib.sentry_client.get_hub')
-    @mock.patch('socorro.lib.sentry_client.is_enabled', return_value=True)
-    def test_transform_save_error_with_sentry_configured_successful(
-            self, is_enabled, mock_get_hub, caplogpp):
+    def test_transform_save_error_with_sentry_configured_successful(self, mock_get_hub, caplogpp):
         caplogpp.set_level('DEBUG')
 
         mock_hub = mock.MagicMock()
-        mock_hub.capture_exception.return_value = 'someidentifier'
+        mock_hub.capture_exception.side_effect = RuntimeError('should not be called')
         mock_get_hub.return_value = mock_hub
 
         # Set up a processor and mock .save_raw_and_processed() to raise an exception
@@ -231,16 +229,9 @@ class TestProcessorApp(object):
         with pytest.raises(ValueError):
             pa.transform('mycrashid')
 
-        # Assert that we sent the exception to Sentry
-        assert (
-            mock_hub.capture_exception.call_args_list == [
-                mock.call(error=(ValueError, expected_exception, WHATEVER))
-            ]
-        )
-
-        # Assert that the logger logged the appropriate thing
-        logging_msgs = [rec.message for rec in caplogpp.records]
-        assert 'Error captured in Sentry! Reference: someidentifier' in logging_msgs
+        # Assert that the exception was not sent to Sentry and not logged
+        assert not mock_hub.capture_exception.called
+        assert len(caplogpp.records) == 0
 
     @mock.patch('socorro.lib.sentry_client.get_hub')
     @mock.patch('socorro.lib.sentry_client.is_enabled', return_value=True)
@@ -306,17 +297,19 @@ class TestProcessorApp(object):
         with pytest.raises(PolyStorageError):
             pa.transform('mycrashid')
 
-        # Assert calls to logger--one set for each of the errors in
-        # PolyStorageError
+        # Assert logs for failing to process crash
         expected = [
+            # Logs for failed Sentry reporting for first exception
             ('Unable to report error with Sentry', WHATEVER),
             ('Sentry DSN is not configured and an exception happened', None),
             ('Exception occurred', first_exc_info),
-            ('error in processing or saving crash mycrashid', None),
 
+            # Logs for failed Sentry reporting for second exception
             ('Unable to report error with Sentry', WHATEVER),
             ('Sentry DSN is not configured and an exception happened', None),
             ('Exception occurred', second_exc_info),
+
+            # Log for failing to process or save the crash
             ('error in processing or saving crash mycrashid', None)
         ]
         actual = [(rec.message, rec.exc_info) for rec in caplogpp.records]

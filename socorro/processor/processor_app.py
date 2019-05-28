@@ -5,7 +5,6 @@
 
 """The processor app converts raw crashes into processed crashes."""
 
-import collections
 import os
 import sys
 
@@ -14,7 +13,7 @@ from configman.converters import class_converter
 from configman.dotdict import DotDict
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib import sentry_client
 from socorro.lib.util import dotdict_to_dict
 
@@ -224,20 +223,11 @@ class ProcessorApp(FetchTransformSaveApp):
 
             self.destination.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
             self.logger.info('saved - %s', crash_id)
-        except Exception:
-            # Capture the exception so we don't lose it as we do other things
-            exc_type, exc_value, exc_tb = sys.exc_info()
-
-            # PolyStorage can throw a PolyStorageError which is a sequence
-            # of exc_info items, so we need to capture each one
-            if isinstance(exc_value, collections.Sequence):
-                exc_info = exc_value
-            else:
-                exc_info = [(exc_type, exc_value, exc_tb)]
-
-            for exc_info_item in exc_info:
-                self._capture_error(exc_info_item, crash_id)
-                self.logger.warning('error in processing or saving crash %s', crash_id)
+        except PolyStorageError as poly_storage_error:
+            # Capture and log the exceptions raised by storage backends
+            for storage_error in poly_storage_error:
+                self._capture_error(storage_error, crash_id)
+            self.logger.warning('error in processing or saving crash %s', crash_id)
 
             # Re-raise the original exception with the correct traceback
             raise
