@@ -737,7 +737,12 @@ OIDC_EXEMPT_URLS = [
     '/buginfo/bug',
 
     # Used by signature report as an XHR
-    'signature:signature_summary',  # data-urls-summary
+    # TODO: Should include aggregations and graphs, but they include a parameter in the URL
+    'signature:signature_summary',          # data-urls-summary
+    'signature:signature_reports',          # data-urls-reports
+    'signature:signature_bugzilla',         # data-urls-bugzilla
+    'signature:signature_comments',         # data-urls-comments
+    'signature:signature_correlations',     # data-urls-correlations
 ]
 LOGOUT_REDIRECT_URL = '/'
 
