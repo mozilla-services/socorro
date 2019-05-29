@@ -730,12 +730,14 @@ OIDC_OP_USER_ENDPOINT = config('OIDC_OP_USER_ENDPOINT', '')
 # contexts and that doesn't handle redirecting.
 OIDC_EXEMPT_URLS = [
     # Used by supersearch page as an XHR
-    '/search/fields/',
-    '/search/results/',
+    'supersearch:search_fields',    # data-fields-url
+    'supersearch:search_results',   # data-results-url
+
+    # Used by bugzilla.js
     '/buginfo/bug',
 
     # Used by signature report as an XHR
-    '/signature/summary/',
+    'signature:signature_summary',  # data-urls-summary
 ]
 LOGOUT_REDIRECT_URL = '/'
 
