@@ -27,13 +27,13 @@ identifiable information::
 
     SOCORRO_API_TOKEN=xyz
 
+Make sure the auth-token matches the host you're fetching data from.
+
 To create an API token for Socorro in -prod, visit:
 
     https://crash-stats.mozilla.org/api/tokens/
 
 """
-
-HOST = 'https://crash-stats.mozilla.org'
 
 
 class CrashDoesNotExist(Exception):
@@ -49,7 +49,7 @@ def create_dir_if_needed(d):
         os.makedirs(d)
 
 
-def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
+def fetch_crash(host, fetchdumps, fetchprocessed, outputdir, api_token, crash_id):
     """Fetch crash data and save to correct place on the file system
 
     http://antenna.readthedocs.io/en/latest/architecture.html#aws-s3-file-hierarchy
@@ -62,10 +62,12 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
     else:
         headers = {}
 
-    # Fetch raw crash metadata
     session = session_with_retries()
+
+    # Fetch raw crash metadata
+    print('Fetching raw %s' % crash_id)
     resp = session.get(
-        HOST + '/api/RawCrash/',
+        host + '/api/RawCrash/',
         params={
             'crash_id': crash_id,
             'format': 'meta',
@@ -94,7 +96,7 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
         dumps = {}
         dump_names = raw_crash.get('dump_checksums', {}).keys()
         for dump_name in dump_names:
-            print('Fetching %s -> %s' % (crash_id, dump_name))
+            print('Fetching dump %s/%s' % (crash_id, dump_name))
 
             # We store "upload_file_minidump" as "dump", so we need to use that
             # name when requesting from the RawCrash api
@@ -103,7 +105,7 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
                 file_name = 'dump'
 
             resp = session.get(
-                HOST + '/api/RawCrash/',
+                host + '/api/RawCrash/',
                 params={
                     'crash_id': crash_id,
                     'format': 'raw',
@@ -135,6 +137,34 @@ def fetch_crash(fetchdumps, outputdir, api_token, crash_id):
             with open(fn, 'wb') as fp:
                 fp.write(data)
 
+    if fetchprocessed:
+        # Fetch processed crash data
+        print('Fetching processed %s' % crash_id)
+        resp = session.get(
+            host + '/api/ProcessedCrash/',
+            params={
+                'crash_id': crash_id,
+                'format': 'meta',
+            },
+            headers=headers,
+        )
+
+        # Handle 404 and 403 so we can provide the user more context
+        if resp.status_code == 404:
+            raise CrashDoesNotExist(crash_id)
+        if api_token and resp.status_code == 403:
+            raise BadAPIToken(resp.json().get('error', 'No error provided'))
+
+        # Raise an error for any other non-200 response
+        resp.raise_for_status()
+
+        # Save processed crash to file system
+        processed_crash = resp.json()
+        fn = os.path.join(outputdir, 'v1', 'processed_crash', crash_id)
+        create_dir_if_needed(os.path.dirname(fn))
+        with open(fn, 'w') as fp:
+            json.dump(processed_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
+
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
@@ -143,8 +173,16 @@ def main(argv=None):
         epilog=EPILOG.strip(),
     )
     parser.add_argument(
+        '--host', default='https://crash-stats.mozilla.org',
+        help='host to pull crash data from; this needs to match SOCORRO_API_TOKEN value'
+    )
+    parser.add_argument(
         '--dumps', '--no-dumps', dest='fetchdumps', action=FlagAction, default=True,
         help='whether or not to save dumps'
+    )
+    parser.add_argument(
+        '--processed', '--no-processed', dest='fetchprocessed', action=FlagAction, default=False,
+        help='whether or not to save processed crash data'
     )
 
     parser.add_argument('outputdir', help='directory to place crash data in')
@@ -175,6 +213,13 @@ def main(argv=None):
         crash_id = crash_id.strip()
 
         print('Working on %s...' % crash_id)
-        fetch_crash(args.fetchdumps, outputdir, api_token, crash_id)
+        fetch_crash(
+            host=args.host,
+            fetchdumps=args.fetchdumps,
+            fetchprocessed=args.fetchprocessed,
+            outputdir=outputdir,
+            api_token=api_token,
+            crash_id=crash_id
+        )
 
     return 0
