@@ -16,6 +16,7 @@ alloc::raw_vec::capacity_overflow
 _alloca_probe
 __android_log_assert
 arena_
+BaseAllocator
 BaseGetNamedObjectDirectory
 __clear_cache
 .*calloc
