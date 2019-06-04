@@ -408,7 +408,7 @@ $(function() {
     $('input[type=text]', simpleSearchContainer).each(function() {
       var elt = $(this);
       elt.select2({
-        width: 'element',
+        width: '100%',
         tags: elt.data('choices'),
       });
     });
@@ -455,19 +455,19 @@ $(function() {
     sortInput.select2({
       data: sortFields,
       multiple: true,
-      width: 'element',
+      width: '100%',
       sortResults: socorro.search.sortResults,
     });
     facetsInput.select2({
       data: FACETS,
       multiple: true,
-      width: 'element',
+      width: '100%',
       sortResults: socorro.search.sortResults,
     });
     columnsInput.select2({
       data: COLUMNS,
       multiple: true,
-      width: 'element',
+      width: '100%',
       sortResults: socorro.search.sortResults,
     });
 
