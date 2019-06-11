@@ -4,11 +4,43 @@
 
 import copy
 import json
+import os
+import os.path
 
+import pytest
+
+from django.conf import settings
 from django.http import HttpResponse
 from django.utils.encoding import smart_text
 
 from crashstats.crashstats import utils
+
+
+def get_product_details_files():
+    product_details_path = os.path.join(settings.SOCORRO_ROOT, 'product_details')
+    return [
+        os.path.join(product_details_path, fn)
+        for fn in os.listdir(product_details_path)
+        if fn.endswith('.json')
+    ]
+
+
+@pytest.mark.parametrize('fn', get_product_details_files())
+def test_product_details_files(fn):
+    """Validate product_details/ JSON files."""
+    try:
+        with open(fn, 'r') as fp:
+            data = json.load(fp)
+    except json.decoder.JSONDecoderError as exc:
+        raise Exception('%s: invalid JSON: %s' % (os.path.basename(fn), exc))
+
+    if 'active_versions' not in data:
+        raise Exception('%s: missing "active_versions" key.' % os.path.basename(fn))
+
+    if not isinstance(data['active_versions'], list):
+        raise Exception(
+            '%s: "active_versions" value is not a list of strings' % os.path.basename(fn)
+        )
 
 
 def test_enhance_frame():
