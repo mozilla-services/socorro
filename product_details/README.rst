@@ -15,17 +15,24 @@ Here's an example:
 .. code-block:: json
 
    {
-       'active_versions': ['69.0a1', '68.0b8', '67.0.2']
+       "active_versions": ["69.0a1", "68.0b8", "67.0.2"]
    }
 
 Keys:
 
 ``active_versions``
-    List of one to five versions of this product that are currently active.
+    List of one or more versions of this product that are currently active.
 
-    Note that if you want an option for "all beta versions", end the
-    version with ``b`` and omit the beta number. For example, ``68.0b8``
-    covers just ``b8`` whereas ``68.0b`` covers all betas for ``68``.
+    If you want an option for "all beta versions", end the version with ``b``
+    and omit the beta number. For example, ``68.0b8`` covers just ``b8``
+    whereas ``68.0b`` covers all betas for ``68``.
+
+    For Firefox and Fennec, version strings should match the ``Version``
+    annotation in the crash report or the adjusted version string determined
+    by the Socorro processor's BetaVersionRule.
+
+    For all other products, version strings should match the ``Version``
+    annotation in the crash report.
 
 
 How to update product details files
