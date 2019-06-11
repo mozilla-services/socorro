@@ -28,19 +28,27 @@ def get_product_details_files():
 @pytest.mark.parametrize('fn', get_product_details_files())
 def test_product_details_files(fn):
     """Validate product_details/ JSON files."""
+    fn_basename = os.path.basename(fn)
+
     try:
         with open(fn, 'r') as fp:
             data = json.load(fp)
     except json.decoder.JSONDecoderError as exc:
-        raise Exception('%s: invalid JSON: %s' % (os.path.basename(fn), exc))
+        raise Exception('%s: invalid JSON: %s' % (fn_basename, exc))
 
     if 'active_versions' not in data:
-        raise Exception('%s: missing "active_versions" key.' % os.path.basename(fn))
+        raise Exception('%s: missing "active_versions" key' % fn_basename)
 
     if not isinstance(data['active_versions'], list):
         raise Exception(
-            '%s: "active_versions" value is not a list of strings' % os.path.basename(fn)
+            '%s: "active_versions" value is not a list of strings' % fn_basename
         )
+
+    for item in data['active_versions']:
+        if not isinstance(item, str):
+            raise Exception(
+                '%s: value %r is not a str' % (fn_basename, item)
+            )
 
 
 def test_enhance_frame():
