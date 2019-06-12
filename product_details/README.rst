@@ -15,13 +15,13 @@ Here's an example:
 .. code-block:: json
 
    {
-       "active_versions": ["69.0a1", "68.0b8", "67.0.2"]
+       "featured_versions": ["69.0a1", "68.0b8", "67.0.2"]
    }
 
 Keys:
 
-``active_versions``
-    List of one or more versions of this product that are currently active.
+``featured_versions``
+    List of one or more versions of this product that are currently featured.
 
     If you want an option for "all beta versions", end the version with ``b``
     and omit the beta number. For example, ``68.0b8`` covers just ``b8``
@@ -33,6 +33,9 @@ Keys:
 
     For all other products, version strings should match the ``Version``
     annotation in the crash report.
+
+    This affects the listed featured versions on the product home page and the
+    "Current Versions" drop down navigation menu in the Crash Stats website.
 
 
 How to update product details files

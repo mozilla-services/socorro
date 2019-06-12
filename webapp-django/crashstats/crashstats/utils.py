@@ -7,9 +7,12 @@ import datetime
 import functools
 import isodate
 import json
+import logging
 import random
 import re
 from urllib.parse import urlencode
+
+import requests
 
 from django import http
 from django.conf import settings
@@ -24,6 +27,9 @@ from socorro.lib.versionutil import (
     generate_version_key,
     VersionParseError
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -347,8 +353,8 @@ def get_versions_for_product(product='Firefox', use_cache=True):
 
     If SuperSearch returns an error, this returns an empty list.
 
-    NOTE(willkg): This data can be noisy in cases where crash reports return
-    junk versions. We might want to add a "minimum to matter" number.
+    NOTE(willkg): This data is noisy if there are crash reports with junk
+    versions.
 
     :arg str product: the product to query for
     :arg bool use_cache: whether or not to pull results from cache
@@ -417,6 +423,33 @@ def get_versions_for_product(product='Firefox', use_cache=True):
     return versions
 
 
+def get_manually_maintained_featured_versions(product):
+    """Returns manually maintained featured versions for a product
+
+    Some products have noisy crash data and so we maintain featured versions in
+    a file in the repository. If this file exists, use that set of featured
+    versions. Otherwise, we figure it out.
+
+    This looks at GitHub directly rather than look at the local files. This
+    allows us to land PRs that update the data and update the featured versions
+    on the production site without having to do a production deploy.
+
+    :returns: list of featured versions or None
+
+    """
+    url = '%s/%s.json' % (settings.PRODUCT_DETAILS_BASE_URL, product)
+    logger.debug('trying %s for featured versions', url)
+    try:
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            data = resp.json()['featured_versions']
+            logger.info('using %s for featured versions', url)
+            return data
+
+    except (requests.ConnectionError, json.decoder.JSONDecodeError, KeyError):
+        return None
+
+
 def get_version_context_for_product(product):
     """Returns version context for a specified product
 
@@ -440,30 +473,39 @@ def get_version_context_for_product(product):
 
     versions = get_versions_for_product(product, use_cache=False)
 
-    # Map of major version (int) -> list of (key (str), versions (str)) so
-    # we can get the most recent version of the last three majors which
-    # we'll assume are "featured versions"
-    major_to_versions = OrderedDict()
-    for version in versions:
-        # In figuring for featured versions, we don't want to include the
-        # catch-all-betas X.Yb faux version or ESR versions
-        if version.endswith(('b', 'esr')):
-            continue
+    # If this product has manually maintained featured versions, use that.
+    featured_versions = get_manually_maintained_featured_versions(product)
+    if featured_versions is not None:
+        for featured_version in featured_versions:
+            if featured_version not in versions:
+                versions.insert(0, featured_version)
+        versions.sort(key=lambda v: generate_version_key(v), reverse=True)
 
-        try:
-            major = int(version.split('.', 1)[0])
-            major_to_versions.setdefault(major, []).append(version)
-        except ValueError:
-            # If the first thing in the major version isn't an int, then skip
-            # it
-            continue
+    else:
+        # Map of major version (int) -> list of (key (str), versions (str)) so
+        # we can get the most recent version of the last three majors which
+        # we'll assume are "featured versions"
+        major_to_versions = OrderedDict()
+        for version in versions:
+            # In figuring for featured versions, we don't want to include the
+            # catch-all-betas X.Yb faux version or ESR versions
+            if version.endswith(('b', 'esr')):
+                continue
 
-    # The featured versions is the most recent 3 of the list of recent versions
-    # for each major version. Since versions were sorted when we went through
-    # them, the most recent one is in index 0.
-    featured_versions = [values[0] for values in major_to_versions.values()]
-    featured_versions.sort(key=lambda v: generate_version_key(v), reverse=True)
-    featured_versions = featured_versions[:3]
+            try:
+                major = int(version.split('.', 1)[0])
+                major_to_versions.setdefault(major, []).append(version)
+            except ValueError:
+                # If the first thing in the major version isn't an int, then skip
+                # it
+                continue
+
+        # The featured versions is the most recent 3 of the list of recent versions
+        # for each major version. Since versions were sorted when we went through
+        # them, the most recent one is in index 0.
+        featured_versions = [values[0] for values in major_to_versions.values()]
+        featured_versions.sort(key=lambda v: generate_version_key(v), reverse=True)
+        featured_versions = featured_versions[:3]
 
     # Generate the version data the context needs
     ret = [

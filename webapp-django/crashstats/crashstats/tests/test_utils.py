@@ -36,15 +36,15 @@ def test_product_details_files(fn):
     except json.decoder.JSONDecoderError as exc:
         raise Exception('%s: invalid JSON: %s' % (fn_basename, exc))
 
-    if 'active_versions' not in data:
-        raise Exception('%s: missing "active_versions" key' % fn_basename)
+    if 'featured_versions' not in data:
+        raise Exception('%s: missing "featured_versions" key' % fn_basename)
 
-    if not isinstance(data['active_versions'], list):
+    if not isinstance(data['featured_versions'], list):
         raise Exception(
-            '%s: "active_versions" value is not a list of strings' % fn_basename
+            '%s: "featured_versions" value is not a list of strings' % fn_basename
         )
 
-    for item in data['active_versions']:
+    for item in data['featured_versions']:
         if not isinstance(item, str):
             raise Exception(
                 '%s: value %r is not a str' % (fn_basename, item)
