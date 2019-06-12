@@ -203,7 +203,9 @@ LOGGING_LEVEL = config('LOGGING_LEVEL', 'INFO')
 host_id = socket.gethostname()
 
 # GitHub repo url base
-PRODUCT_DETAILS_BASE_URL = 'https://github.com/mozilla-services/socorro/master/product_details'
+PRODUCT_DETAILS_BASE_URL = (
+    'https://raw.githubusercontent.com/mozilla-services/socorro/master/product_details'
+)
 
 
 class AddHostID(logging.Filter):
