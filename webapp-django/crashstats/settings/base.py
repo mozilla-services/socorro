@@ -718,12 +718,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
     }
 }
 
-# Configuration for the depcheck command
-NPM_PATH = config('NPM_PATH', '/usr/bin/npm')
-SAFETY_PATH = config('SAFETY_PATH', '/usr/local/bin/safety')
-SAFETY_API_KEY = config('SAFETY_API_KEY', '')
-PACKAGE_JSON_PATH = config('PACKAGE_JSON_PATH', '/app/webapp-django/package.json')
-
 # OIDC credentials are needed to be able to connect with OpenID Connect.
 # Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
 OIDC_RP_CLIENT_ID = config('OIDC_RP_CLIENT_ID', '')

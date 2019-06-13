@@ -5,7 +5,7 @@ requirements:
       update: all
       pin: true
   - requirements/contraints.txt:
-      update: insecure
+      update: all
       pin: true
   - docs/requirements.txt:
       update: all
