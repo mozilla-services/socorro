@@ -37,12 +37,6 @@ JOBS = [
         'backfill': True,
     },
     {
-        # Check dependencies for security updates every day at 5:00am
-        'cmd': 'depcheck',
-        'frequency': '1d',
-        'time': '05:00',
-    },
-    {
         # Clean elasticsaerch indices every week at 6:00am
         'cmd': 'esclean',
         'frequency': '7d',
