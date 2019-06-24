@@ -3470,7 +3470,9 @@ FIELDS = {
         'is_returned': True,
         'name': 'remote_type',
         'namespace': 'raw_crash',
-        'permissions_needed': [],
+        'permissions_needed': [
+            'crashstats.view_pii'
+        ],
         'query_type': 'enum',
         'storage_mapping': {
             'analyzer': 'keyword',

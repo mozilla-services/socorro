@@ -277,7 +277,9 @@
                     <th scope="row">Process Type</th>
                     <td>
                       {{ report.process_type }}
-                      ({{ raw.RemoteType and raw.RemoteType or 'web' }})
+                      {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
+                        ({{ raw.RemoteType and raw.RemoteType or 'web' }})
+                      {% endif %}
                       {% if report.PluginName %}
                         <b class="name">{{ report.PluginName }}</b>
                       {% endif %}

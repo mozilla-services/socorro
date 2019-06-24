@@ -607,6 +607,12 @@ class TestViews(BaseTestViews):
 
         models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
 
+        # Log in because RemoteType is PII
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_pii')
+
         url = reverse('crashstats:report_index', args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         assert response.status_code == 200
