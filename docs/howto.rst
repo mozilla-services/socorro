@@ -4,17 +4,6 @@ How to
 
 .. contents::
 
-Run security checks for dependencies
-====================================
-
-You can run Django command that checks for security vulnerabilities locally:
-
-::
-
-   $ make shell
-   app@socorro:app/$ socorro-cmd depcheck
-
-
 Connect to PostgreSQL Database in local dev environment
 =======================================================
 
@@ -42,7 +31,7 @@ Reprocessing lots of crashes if you are not an admin
 ----------------------------------------------------
 
 If you need to reprocess a lot of crashes, please `write up a bug
-<https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro>`_.
+<https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&comment=DESCRIBE%20WHAT%20YOU%20WANT%20REPROCESSED%20HERE&component=General&form_name=enter_bug&product=Socorro&short_desc=reprocess%20request%3A%20SUMMARY>`_.
 In the bug description, include a Super Search url with the crashes you want
 reprocessed.
 
