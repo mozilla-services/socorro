@@ -132,6 +132,30 @@ After that, the commit should explain *why* the changes are being made and any
 notes that future readers should know for context or be aware of.
 
 
+Migrations
+==========
+
+Database migrations (django)
+----------------------------
+
+We use Django's ORM and thus we do database migrations using Django's
+migration system.
+
+Do this::
+
+    $ make shell
+    app@socorro:/app$ cd webapp-django
+    app@socorro:/app/webapp-django$ ./manage.py makemigration --name "BUGID_desc" APP
+
+
+Elasticsearch migrations (Elasticsearch)
+----------------------------------------
+
+We don't do migrations of Elasticsearch data. The system creates a new index
+every week, so any changes to new fields or mappings will be reflected the
+next time it creates an index.
+
+
 Dependencies
 ============
 
