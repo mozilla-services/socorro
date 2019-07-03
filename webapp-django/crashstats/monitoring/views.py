@@ -97,7 +97,10 @@ def dockerflow_heartbeat(request):
         ['resource']['elasticsearch']
     )
     es = elasticsearch.Elasticsearch(
-        hosts=es_settings['elasticsearch_urls']
+        hosts=es_settings['elasticsearch_urls'],
+        timeout=30,
+        connection_class=elasticsearch.connection.RequestsHttpConnection,
+        verify_certs=True
     )
     es.info()  # will raise an error if there's a problem with the cluster
 
