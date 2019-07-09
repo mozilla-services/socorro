@@ -61,6 +61,8 @@ services:
       - pubsub
       - memcached
       - oidcprovider
+    links:
+      - "oidcprovider:oidcprovider.127.0.0.1.nip.io"
     command: ["webapp", "--dev"]
     ports:
       - "8000:8000"

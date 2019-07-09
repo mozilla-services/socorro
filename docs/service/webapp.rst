@@ -44,13 +44,8 @@ You can do this as many times as you like.
 Setting up the webapp for OpenID Connect Login
 ----------------------------------------------
 
-In order to authenticate in the webapp using the "Login" button, you
-need to add the following entry to your ``/etc/hosts`` (or equivalent) file::
-
-  127.0.0.1 oidcprovider
-
-This allows your host machine to properly handle the authentication provided by
-the `oidcprovider` docker container.
+A test OpenID Connect (OIDC) provider is served from the container
+``oidcprovider``, and is available at http://oidcprovider.127.0.0.1.nip.io:8080.
 
 When logging in with ``oidcprovider``, use the "Sign up" workflow to create a
 fake account:
