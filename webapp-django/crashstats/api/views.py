@@ -12,8 +12,6 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
-# explicit import because django.forms has an __all__
-from django.forms.forms import DeclarativeFieldsMetaclass
 from django.core.validators import ProhibitNullCharactersValidator
 from django.shortcuts import render
 from django.urls import reverse
@@ -85,26 +83,21 @@ TYPE_MAP = {
 }
 
 
-def fancy_init(self, model, *args, **kwargs):
-    self.model = model
-    self.__old_init__(*args, **kwargs)
-    for parameter in model().get_annotated_params():
-        required = parameter['required']
-        name = parameter['name']
-        field_class = TYPE_MAP[parameter['type']]
-        self.fields[name] = field_class(required=required)
+class MiddlewareModelForm(forms.Form):
+    """Generate a Form from a SocorroMiddleware-derived model class."""
+    def __init__(self, model, *args, **kwargs):
+        self.model = model
+        super().__init__(*args, **kwargs)
 
+        # Populate the form fields
+        for parameter in model().get_annotated_params():
+            required = parameter['required']
+            name = parameter['name']
+            field_class = TYPE_MAP[parameter['type']]
+            self.fields[name] = field_class(required=required)
 
-class FormWrapperMeta(DeclarativeFieldsMetaclass):
-    def __new__(cls, name, bases, attrs):
-        attrs['__old_init__'] = bases[0].__init__
-        attrs['__init__'] = fancy_init
-        return super(FormWrapperMeta, cls).__new__(cls, name, bases, attrs)
-
-
-class FormWrapper(forms.Form, metaclass=FormWrapperMeta):
     def clean(self):
-        cleaned_data = super(FormWrapper, self).clean()
+        cleaned_data = super().clean()
 
         for field in self.fields:
             # Because the context for all of this is the API,
@@ -232,7 +225,7 @@ def model_wrapper(request, model_name):
     binary_response = False
 
     request_data = request.method == 'GET' and request.GET or request.POST
-    form = FormWrapper(model, request_data)
+    form = MiddlewareModelForm(model, request_data)
     if form.is_valid():
         try:
             result = function(**form.cleaned_data)
