@@ -119,15 +119,11 @@ def has_permissions(user, permissions):
 
 
 def is_valid_model_class(model):
-    try:
-        return (
-            issubclass(model, models.SocorroMiddleware) and
-            model is not models.SocorroMiddleware and
-            model is not supersearch_models.ESSocorroMiddleware
-        )
-    except TypeError:
-        # issubclass throws a TypeError if the model is not a class.
-        return False
+    return (
+        issubclass(model, models.SocorroMiddleware) and
+        model is not models.SocorroMiddleware and
+        model is not supersearch_models.ESSocorroMiddleware
+    )
 
 
 @csrf_exempt
@@ -307,13 +303,9 @@ def api_models_and_names():
         if model_name.endswith('Middleware'):
             model_name = model_name[:-10]
 
-        try:
-            if not is_valid_model_class(model):
-                continue
-            if model_name in API_DONT_SERVE_LIST:
-                continue
-        except TypeError:
-            # most likely a builtin class or something
+        if not is_valid_model_class(model):
+            continue
+        if model_name in API_DONT_SERVE_LIST:
             continue
 
         models_with_names.append((model, model_name))
