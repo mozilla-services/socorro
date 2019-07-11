@@ -13,7 +13,6 @@ from django.urls import reverse
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
-from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.crashstats.utils import SignatureStats, render_exception, urlencode_obj
@@ -95,7 +94,7 @@ def signature_report(request, params, default_context=None):
         for x in SuperSearchFields().get().values()
         if x['is_exposed'] and
         x['is_returned'] and
-        has_permissions(request.user, x['permissions_needed']) and
+        request.user.has_perms(x['permissions_needed']) and
         x['name'] != 'signature'  # exclude the signature field
     )
     context['fields'] = [
@@ -441,9 +440,7 @@ def signature_summary(request, params):
 
     # If the user has permissions, show exploitability.
     all_fields = SuperSearchFields().get()
-    if has_permissions(
-        request.user, all_fields['exploitability']['permissions_needed']
-    ):
+    if request.user.has_perms(all_fields['exploitability']['permissions_needed']):
         params['_histogram.date'] = ['exploitability']
 
     api = SuperSearchUnredacted()

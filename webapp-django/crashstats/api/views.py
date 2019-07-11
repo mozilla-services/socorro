@@ -111,13 +111,6 @@ API_DONT_SERVE_LIST = (
 )
 
 
-def has_permissions(user, permissions):
-    for permission in permissions:
-        if not user.has_perm(permission):
-            return False
-    return True
-
-
 def is_valid_model_class(model):
     return (
         issubclass(model, models.SocorroMiddleware) and
@@ -161,7 +154,7 @@ def model_wrapper(request, model_name):
         required_permissions and
         (
             not request.user.is_active or
-            not has_permissions(request.user, required_permissions)
+            not request.user.has_perms(required_permissions)
         )
     ):
         permission_names = []
@@ -229,7 +222,7 @@ def model_wrapper(request, model_name):
         if binary_response:
             # if you don't have all required permissions, you'll get a 403
             required_permissions = model.API_BINARY_PERMISSIONS
-            if required_permissions and not has_permissions(request.user, required_permissions):
+            if required_permissions and not request.user.has_perms(required_permissions):
                 permission_names = []
                 for permission in required_permissions:
                     codename = permission.split('.', 1)[1]
@@ -323,7 +316,7 @@ def documentation(request, default_context=None):
         model_inst = model()
         if (
             model_inst.API_REQUIRED_PERMISSIONS and
-            not has_permissions(request.user, model_inst.API_REQUIRED_PERMISSIONS)
+            not request.user.has_perms(model_inst.API_REQUIRED_PERMISSIONS)
         ):
             continue
         endpoints.append(_describe_model(model_name, model))
