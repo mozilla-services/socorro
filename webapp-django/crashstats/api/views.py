@@ -79,7 +79,7 @@ TYPE_MAP = {
     datetime.datetime: forms.DateTimeField,
     int: forms.IntegerField,
     # NOTE: Not used in any API models
-    bool: forms.BooleanField,
+    bool: forms.NullBooleanField,
 }
 
 
@@ -95,29 +95,6 @@ class MiddlewareModelForm(forms.Form):
             name = parameter['name']
             field_class = TYPE_MAP[parameter['type']]
             self.fields[name] = field_class(required=required)
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-        for field in self.fields:
-            # Because the context for all of this is the API,
-            # and we're using django forms there's a mismatch to how
-            # boolean fields should be handled.
-            # Django forms are meant for HTML forms. A key principle
-            # functionality of a HTML form and a checkbox is that
-            # if the user choses to NOT check a checkbox, the browser
-            # will not send `mybool=false` or `mybool=''`. It will simply
-            # not send anything and then the server has to assume the user
-            # chose to NOT check it because it was offerend.
-            # On a web API, however, the user doesn't use checkboxes.
-            # He uses `?mybool=truthy` or `&mybool=falsy`.
-            # Therefore, for our boolean fields, if the value is not
-            # present at all, we have to assume it to be None.
-            # That makes it possible to actually set `mybool=false`
-            if isinstance(self.fields[field], forms.BooleanField):
-                if field not in self.data:
-                    self.cleaned_data[field] = None
-        return cleaned_data
 
 
 # Names of models we don't want to serve at all
