@@ -52,10 +52,6 @@ NOT_FOUND_EXCEPTIONS = (
 )
 
 
-class APIAllowlistError(Exception):
-    pass
-
-
 class MultipleStringField(forms.TypedMultipleChoiceField):
     """
     Field that does not validate if the field values are in self.choices
@@ -81,8 +77,10 @@ TYPE_MAP = {
     str: forms.CharField,
     list: MultipleStringField,
     datetime.date: forms.DateField,
+    # NOTE: Not used in any API models
     datetime.datetime: forms.DateTimeField,
     int: forms.IntegerField,
+    # NOTE: Not used in any API models
     bool: forms.BooleanField,
 }
 
@@ -93,9 +91,6 @@ def fancy_init(self, model, *args, **kwargs):
     for parameter in model().get_annotated_params():
         required = parameter['required']
         name = parameter['name']
-
-        if parameter['type'] not in TYPE_MAP:
-            raise NotImplementedError(parameter['type'])
         field_class = TYPE_MAP[parameter['type']]
         self.fields[name] = field_class(required=required)
 
@@ -196,8 +191,6 @@ def model_wrapper(request, model_name):
         raise http.Http404('no service called `%s`' % model_name)
 
     required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
-    if isinstance(required_permissions, str):
-        required_permissions = [required_permissions]
     if (
         required_permissions and
         (
@@ -218,10 +211,6 @@ def model_wrapper(request, model_name):
                 ', '.join(permission_names),
             )
         }, status=403)
-
-    # it being set to None means it's been deliberately disabled
-    if getattr(model, 'API_ALLOWLIST', False) is False:
-        raise APIAllowlistError('No API_ALLOWLIST defined for %r' % model)
 
     instance = model()
 
@@ -247,13 +236,6 @@ def model_wrapper(request, model_name):
     if form.is_valid():
         try:
             result = function(**form.cleaned_data)
-        except ValueError as e:
-            if 'No JSON object could be decoded' in e:
-                return http.HttpResponseBadRequest(
-                    json.dumps({'error': 'Not a valid JSON response'}),
-                    content_type='application/json; charset=UTF-8'
-                )
-            raise
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
                 json.dumps({'error': ('%s: %s' % (type(exception).__name__, exception))}),
@@ -281,8 +263,6 @@ def model_wrapper(request, model_name):
         if binary_response:
             # if you don't have all required permissions, you'll get a 403
             required_permissions = model.API_BINARY_PERMISSIONS
-            if isinstance(required_permissions, str):
-                required_permissions = [required_permissions]
             if required_permissions and not has_permissions(request.user, required_permissions):
                 permission_names = []
                 for permission in required_permissions:
@@ -326,9 +306,6 @@ def model_wrapper(request, model_name):
     if getattr(model, 'deprecation_warning', False):
         if isinstance(result, dict):
             result['DEPRECATION_WARNING'] = model.deprecation_warning
-        # If you return a tuple of two dicts, the second one becomes
-        # the extra headers.
-        # return result, {
         headers['DEPRECATION-WARNING'] = model.deprecation_warning.replace('\n', ' ')
 
     if model.cache_seconds:
@@ -341,12 +318,8 @@ def model_wrapper(request, model_name):
     return result, headers
 
 
-@pass_default_context
-def documentation(request, default_context=None):
-    context = default_context or {}
-
-    endpoints = []
-
+def api_models_and_names():
+    """Return list of (model class, model name) pairs."""
     all_models = []
     unique_model_names = set()
     for source in MODELS_MODULES:
@@ -358,6 +331,7 @@ def documentation(request, default_context=None):
                 all_models.append(value)
                 unique_model_names.add(name)
 
+    models_with_names = []
     for model in all_models:
         model_name = model.__name__
         if model_name.endswith('Middleware'):
@@ -372,6 +346,18 @@ def documentation(request, default_context=None):
             # most likely a builtin class or something
             continue
 
+        models_with_names.append((model, model_name))
+    models_with_names.sort(key=lambda pair: pair[1])
+    return models_with_names
+
+
+@pass_default_context
+def documentation(request, default_context=None):
+    context = default_context or {}
+
+    # Include models that the user is allowed to access
+    endpoints = []
+    for model, model_name in api_models_and_names():
         model_inst = model()
         if (
             model_inst.API_REQUIRED_PERMISSIONS and
@@ -379,8 +365,6 @@ def documentation(request, default_context=None):
         ):
             continue
         endpoints.append(_describe_model(model_name, model))
-
-    endpoints.sort(key=lambda ep: ep['name'])
 
     base_url = (
         '%s://%s' % (request.is_secure() and 'https' or 'http',
@@ -414,10 +398,7 @@ def _describe_model(model_name, model):
 
     required_permissions = []
     if model_inst.API_REQUIRED_PERMISSIONS:
-        permissions = model_inst.API_REQUIRED_PERMISSIONS
-        if isinstance(permissions, str):
-            permissions = [permissions]
-        for permission in permissions:
+        for permission in model_inst.API_REQUIRED_PERMISSIONS:
             codename = permission.split('.', 1)[1]
             required_permissions.append(Permission.objects.get(codename=codename).name)
 
