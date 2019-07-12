@@ -8,6 +8,7 @@ import json
 from django.core.cache import cache
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
+from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.encoding import smart_text
 
@@ -15,7 +16,9 @@ from markus.testing import MetricsMock
 import mock
 from moto import mock_s3_deprecated
 import pyquery
+import pytest
 
+from crashstats.api.views import MultipleStringField
 from crashstats.crashstats.models import (
     BugAssociation,
     NoOpMiddleware,
@@ -851,3 +854,29 @@ class TestCrashVerify(object):
                 u'elasticsearch_crash': False,
             }
         )
+
+
+class TestMultipleStringField:
+    """Test the MultipleStringField class."""
+
+    def test_empty_list_required(self):
+        """If a field is required, an empty list is a validation error."""
+        field = MultipleStringField()
+        with pytest.raises(ValidationError):
+            field.clean([])
+
+    def test_empty_list_optional(self):
+        """If a field is optional, an empty list is valid."""
+        assert MultipleStringField(required=False).clean([]) == []
+
+    def test_good_argument(self):
+        """A list with one string arguments is valid."""
+        assert MultipleStringField().clean(["one"]) == ["one"]
+
+    @pytest.mark.xfail
+    def test_null_arg(self):
+        """A embedded null character is a validation error."""
+        field = MultipleStringField()
+        value = "Embeded_Null_\0"
+        with pytest.raises(ValidationError):
+            field.clean([value])
