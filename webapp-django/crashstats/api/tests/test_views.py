@@ -873,10 +873,9 @@ class TestMultipleStringField:
         """A list with one string arguments is valid."""
         assert MultipleStringField().clean(["one"]) == ["one"]
 
-    @pytest.mark.xfail
     def test_null_arg(self):
         """A embedded null character is a validation error."""
         field = MultipleStringField()
-        value = "Embeded_Null_\0"
+        value = "Embeded_Null_\x00"
         with pytest.raises(ValidationError):
             field.clean([value])

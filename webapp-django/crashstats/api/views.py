@@ -14,6 +14,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
 # explicit import because django.forms has an __all__
 from django.forms.forms import DeclarativeFieldsMetaclass
+from django.core.validators import ProhibitNullCharactersValidator
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -56,12 +57,24 @@ class APIAllowlistError(Exception):
 
 
 class MultipleStringField(forms.TypedMultipleChoiceField):
-    """Field that do not validate if the field values are in self.choices"""
+    """
+    Field that does not validate if the field values are in self.choices
 
-    def validate(self, value):
-        """Nothing to do here"""
-        if self.required and not value:
-            raise forms.ValidationError(self.error_messages['required'])
+    Validators are run on each item in the list, rather than against the whole input,
+    like other Django fields.
+    """
+
+    default_validators = [ProhibitNullCharactersValidator()]
+
+    def valid_value(self, value):
+        """
+        Run validators on each item in the list.
+
+        The TypedMultipleChoiceField.valid_value method checks that
+        the string is in self.choices, and this version explictly skips that check.
+        """
+        self.run_validators(value)
+        return True
 
 
 TYPE_MAP = {
