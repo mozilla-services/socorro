@@ -6,3 +6,4 @@
 FROM mozillaparsys/oidc_testprovider
 
 COPY ./docker/config/oidcprovider-fixtures.json /code/fixtures.json
+COPY ./docker/run_oidcprovider.sh /code/bin/run.sh

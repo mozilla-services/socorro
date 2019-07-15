@@ -57,6 +57,14 @@ fake account:
 The OIDC user is stored in the ``oidcprovider`` docker container, and will need
 to be recreated on restart.
 
+To automatically create an OIDC account when running ``oidcprovider``, add the
+details in ``my.env``::
+
+    OIDC_EMAIL=admin@example.com
+    OIDC_USERNAME=admin
+    OIDC_PASSWORD=password
+
+You can then skip the "Sign up" workflow and use the "Log in" workflow.
 
 Permissions
 ===========

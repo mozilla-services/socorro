@@ -75,6 +75,8 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.oidcprovider
     image: local/socorro_oidcprovider
+    env_file:
+      - my.env
     ports:
       - "8080:8080"
 
