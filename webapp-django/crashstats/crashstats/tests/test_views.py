@@ -1006,6 +1006,54 @@ class TestViews(BaseTestViews):
         assert 'context' in smart_text(response.content)
         assert 'frame_pointer' in smart_text(response.content)
 
+    def test_report_index_unpaired_surrogate(self):
+        """An unpaired surrogate like \udf03 can't be encoded in UTF-8, so it is escaped."""
+        json_dump = {
+            'crash_info': {
+                'crashing_thread': 0,
+            },
+            'status': 'OK',
+            'modules': [
+                {
+                    "base_addr": "0x7ff83e7a1000",
+                    "code_id": "00000000000000000000000000000000",
+                    "debug_file": "surrogate@example.com.xpi\udf03",
+                    "debug_id": "000000000000000000000000000000000",
+                    "end_addr": "0x7ff83e84a000",
+                    "filename": "surrogate@example.com.xpi\udf03",
+                    "version": ""
+                },
+            ]
+        }
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                crash['signature'] = 'shutdownhang | foo::bar()'
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = mocked_processed_crash_get
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # The escaped surrogate appears in the page
+        assert 'surrogate@example.com.xpi\\udf03' in smart_text(response.content)
+
     def test_report_index_with_telemetry_environment(self):
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
