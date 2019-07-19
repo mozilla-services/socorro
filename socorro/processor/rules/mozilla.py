@@ -252,6 +252,7 @@ class MozCrashReasonRule(Rule):
     DISALLOWED_PREFIXES = (
         'Failed to load module',
         'byte index',
+        'do not use eval with system privileges'
     )
 
     def sanitize_reason(self, reason):

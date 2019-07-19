@@ -658,6 +658,7 @@ class TestMozCrashReasonRule(object):
         bad_reasons = [
             'byte index 21548 is not a char boundary',
             'Failed to load module "jar:file..."'
+            'do not use eval with system privileges: jar:file...',
         ]
         for reason in bad_reasons:
             raw_crash = {
