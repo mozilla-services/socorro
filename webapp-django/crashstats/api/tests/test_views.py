@@ -2,12 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from collections import Iterable
 import contextlib
 import json
 
 from django.core.cache import cache
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
+from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.encoding import smart_text
 
@@ -15,7 +17,9 @@ from markus.testing import MetricsMock
 import mock
 from moto import mock_s3_deprecated
 import pyquery
+import pytest
 
+from crashstats.api.views import api_models_and_names, MultipleStringField, TYPE_MAP
 from crashstats.crashstats.models import (
     BugAssociation,
     NoOpMiddleware,
@@ -851,3 +855,101 @@ class TestCrashVerify(object):
                 u'elasticsearch_crash': False,
             }
         )
+
+
+class TestMultipleStringField:
+    """Test the MultipleStringField class."""
+
+    def test_empty_list_required(self):
+        """If a field is required, an empty list is a validation error."""
+        field = MultipleStringField()
+        with pytest.raises(ValidationError):
+            field.clean([])
+
+    def test_empty_list_optional(self):
+        """If a field is optional, an empty list is valid."""
+        assert MultipleStringField(required=False).clean([]) == []
+
+    def test_good_argument(self):
+        """A list with one string arguments is valid."""
+        assert MultipleStringField().clean(["one"]) == ["one"]
+
+    def test_null_arg(self):
+        """A embedded null character is a validation error."""
+        field = MultipleStringField()
+        value = "Embeded_Null_\x00"
+        with pytest.raises(ValidationError):
+            field.clean([value])
+
+
+API_MODEL_NAMES = [
+    "Bugs",
+    "NewSignatures",
+    "NoOp",
+    "ProcessedCrash",
+    "RawCrash",
+    "Reprocessing",
+    "SignatureFirstDate",
+    "SignaturesByBugs",
+    "SuperSearch",
+    "SuperSearchFields",
+    "SuperSearchUnredacted",
+    "UnredactedCrash",
+    "VersionString",
+]
+
+
+def test_api_model_names():
+    """
+    Verify the expected API model list.
+
+    This allows parametrized testing of the API Models, for better failure messages.
+    """
+    names = [name for model, name in api_models_and_names()]
+    assert names == API_MODEL_NAMES
+
+
+@pytest.mark.parametrize("name", API_MODEL_NAMES)
+class TestAPIModels:
+
+    MODEL = {}
+
+    def setup_class(cls):
+        """Generate the dictionary of model names to model classes."""
+        for model, model_name in api_models_and_names():
+            cls.MODEL[model_name] = model
+
+    def test_api_required_permissions(self, name):
+        """API_REQUIRED_PERMISSIONS is None or an iterable."""
+        model_obj = self.MODEL[name]()
+        req_perms = model_obj.API_REQUIRED_PERMISSIONS
+        assert req_perms is None or (
+            isinstance(req_perms, Iterable) and not isinstance(req_perms, str)
+        )
+
+    def test_api_binary_permissions(self, name):
+        """API_BINARY_PERMISSIONS is None or an iterable."""
+        model_obj = self.MODEL[name]()
+        bin_perms = model_obj.API_BINARY_PERMISSIONS
+        assert bin_perms is None or (
+            isinstance(bin_perms, Iterable) and not isinstance(bin_perms, str)
+        )
+
+    def test_api_allowlist(self, name):
+        """API_ALLOWLIST is defined."""
+        model = self.MODEL[name]
+        api_allowlist = model.API_ALLOWLIST
+        assert (
+            api_allowlist is None or
+            isinstance(api_allowlist, Iterable) or
+            (callable(api_allowlist) and isinstance(api_allowlist(), Iterable))
+        )
+
+    def test_get_annotated_params(self, name):
+        """get_annotated_params returns a list suitable for creating the form."""
+        model_obj = self.MODEL[name]()
+        params = model_obj.get_annotated_params()
+        for param in params:
+            assert "required" in param
+            assert "name" in param
+            assert param["type"] in TYPE_MAP

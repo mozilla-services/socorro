@@ -17,7 +17,6 @@ from django.views.decorators.http import require_POST
 
 from ratelimit.decorators import ratelimit
 
-from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.utils import render_exception, urlencode_obj
 from crashstats.crashstats.views import pass_default_context
@@ -60,7 +59,7 @@ def get_allowed_fields(user):
     return tuple(
         x['name']
         for x in SuperSearchFields().get().values()
-        if x['is_exposed'] and has_permissions(user, x['permissions_needed'])
+        if x['is_exposed'] and user.has_perms(x['permissions_needed'])
     )
 
 

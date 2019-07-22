@@ -12,8 +12,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
-# explicit import because django.forms has an __all__
-from django.forms.forms import DeclarativeFieldsMetaclass
+from django.core.validators import ProhibitNullCharactersValidator
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -51,72 +50,51 @@ NOT_FOUND_EXCEPTIONS = (
 )
 
 
-class APIAllowlistError(Exception):
-    pass
-
-
 class MultipleStringField(forms.TypedMultipleChoiceField):
-    """Field that do not validate if the field values are in self.choices"""
+    """
+    Field that does not validate if the field values are in self.choices
 
-    def validate(self, value):
-        """Nothing to do here"""
-        if self.required and not value:
-            raise forms.ValidationError(self.error_messages['required'])
+    Validators are run on each item in the list, rather than against the whole input,
+    like other Django fields.
+    """
+
+    default_validators = [ProhibitNullCharactersValidator()]
+
+    def valid_value(self, value):
+        """
+        Run validators on each item in the list.
+
+        The TypedMultipleChoiceField.valid_value method checks that
+        the string is in self.choices, and this version explictly skips that check.
+        """
+        self.run_validators(value)
+        return True
 
 
 TYPE_MAP = {
     str: forms.CharField,
     list: MultipleStringField,
     datetime.date: forms.DateField,
+    # NOTE: Not used in any API models
     datetime.datetime: forms.DateTimeField,
     int: forms.IntegerField,
-    bool: forms.BooleanField,
+    # NOTE: Not used in any API models
+    bool: forms.NullBooleanField,
 }
 
 
-def fancy_init(self, model, *args, **kwargs):
-    self.model = model
-    self.__old_init__(*args, **kwargs)
-    for parameter in model().get_annotated_params():
-        required = parameter['required']
-        name = parameter['name']
+class MiddlewareModelForm(forms.Form):
+    """Generate a Form from a SocorroMiddleware-derived model class."""
+    def __init__(self, model, *args, **kwargs):
+        self.model = model
+        super().__init__(*args, **kwargs)
 
-        if parameter['type'] not in TYPE_MAP:
-            raise NotImplementedError(parameter['type'])
-        field_class = TYPE_MAP[parameter['type']]
-        self.fields[name] = field_class(required=required)
-
-
-class FormWrapperMeta(DeclarativeFieldsMetaclass):
-    def __new__(cls, name, bases, attrs):
-        attrs['__old_init__'] = bases[0].__init__
-        attrs['__init__'] = fancy_init
-        return super(FormWrapperMeta, cls).__new__(cls, name, bases, attrs)
-
-
-class FormWrapper(forms.Form, metaclass=FormWrapperMeta):
-    def clean(self):
-        cleaned_data = super(FormWrapper, self).clean()
-
-        for field in self.fields:
-            # Because the context for all of this is the API,
-            # and we're using django forms there's a mismatch to how
-            # boolean fields should be handled.
-            # Django forms are meant for HTML forms. A key principle
-            # functionality of a HTML form and a checkbox is that
-            # if the user choses to NOT check a checkbox, the browser
-            # will not send `mybool=false` or `mybool=''`. It will simply
-            # not send anything and then the server has to assume the user
-            # chose to NOT check it because it was offerend.
-            # On a web API, however, the user doesn't use checkboxes.
-            # He uses `?mybool=truthy` or `&mybool=falsy`.
-            # Therefore, for our boolean fields, if the value is not
-            # present at all, we have to assume it to be None.
-            # That makes it possible to actually set `mybool=false`
-            if isinstance(self.fields[field], forms.BooleanField):
-                if field not in self.data:
-                    self.cleaned_data[field] = None
-        return cleaned_data
+        # Populate the form fields
+        for parameter in model().get_annotated_params():
+            required = parameter['required']
+            name = parameter['name']
+            field_class = TYPE_MAP[parameter['type']]
+            self.fields[name] = field_class(required=required)
 
 
 # Names of models we don't want to serve at all
@@ -133,23 +111,12 @@ API_DONT_SERVE_LIST = (
 )
 
 
-def has_permissions(user, permissions):
-    for permission in permissions:
-        if not user.has_perm(permission):
-            return False
-    return True
-
-
 def is_valid_model_class(model):
-    try:
-        return (
-            issubclass(model, models.SocorroMiddleware) and
-            model is not models.SocorroMiddleware and
-            model is not supersearch_models.ESSocorroMiddleware
-        )
-    except TypeError:
-        # issubclass throws a TypeError if the model is not a class.
-        return False
+    return (
+        issubclass(model, models.SocorroMiddleware) and
+        model is not models.SocorroMiddleware and
+        model is not supersearch_models.ESSocorroMiddleware
+    )
 
 
 @csrf_exempt
@@ -183,13 +150,11 @@ def model_wrapper(request, model_name):
         raise http.Http404('no service called `%s`' % model_name)
 
     required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
-    if isinstance(required_permissions, str):
-        required_permissions = [required_permissions]
     if (
         required_permissions and
         (
             not request.user.is_active or
-            not has_permissions(request.user, required_permissions)
+            not request.user.has_perms(required_permissions)
         )
     ):
         permission_names = []
@@ -205,10 +170,6 @@ def model_wrapper(request, model_name):
                 ', '.join(permission_names),
             )
         }, status=403)
-
-    # it being set to None means it's been deliberately disabled
-    if getattr(model, 'API_ALLOWLIST', False) is False:
-        raise APIAllowlistError('No API_ALLOWLIST defined for %r' % model)
 
     instance = model()
 
@@ -230,17 +191,10 @@ def model_wrapper(request, model_name):
     binary_response = False
 
     request_data = request.method == 'GET' and request.GET or request.POST
-    form = FormWrapper(model, request_data)
+    form = MiddlewareModelForm(model, request_data)
     if form.is_valid():
         try:
             result = function(**form.cleaned_data)
-        except ValueError as e:
-            if 'No JSON object could be decoded' in e:
-                return http.HttpResponseBadRequest(
-                    json.dumps({'error': 'Not a valid JSON response'}),
-                    content_type='application/json; charset=UTF-8'
-                )
-            raise
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
                 json.dumps({'error': ('%s: %s' % (type(exception).__name__, exception))}),
@@ -268,9 +222,7 @@ def model_wrapper(request, model_name):
         if binary_response:
             # if you don't have all required permissions, you'll get a 403
             required_permissions = model.API_BINARY_PERMISSIONS
-            if isinstance(required_permissions, str):
-                required_permissions = [required_permissions]
-            if required_permissions and not has_permissions(request.user, required_permissions):
+            if required_permissions and not request.user.has_perms(required_permissions):
                 permission_names = []
                 for permission in required_permissions:
                     codename = permission.split('.', 1)[1]
@@ -313,9 +265,6 @@ def model_wrapper(request, model_name):
     if getattr(model, 'deprecation_warning', False):
         if isinstance(result, dict):
             result['DEPRECATION_WARNING'] = model.deprecation_warning
-        # If you return a tuple of two dicts, the second one becomes
-        # the extra headers.
-        # return result, {
         headers['DEPRECATION-WARNING'] = model.deprecation_warning.replace('\n', ' ')
 
     if model.cache_seconds:
@@ -328,12 +277,8 @@ def model_wrapper(request, model_name):
     return result, headers
 
 
-@pass_default_context
-def documentation(request, default_context=None):
-    context = default_context or {}
-
-    endpoints = []
-
+def api_models_and_names():
+    """Return list of (model class, model name) pairs."""
     all_models = []
     unique_model_names = set()
     for source in MODELS_MODULES:
@@ -345,29 +290,36 @@ def documentation(request, default_context=None):
                 all_models.append(value)
                 unique_model_names.add(name)
 
+    models_with_names = []
     for model in all_models:
         model_name = model.__name__
         if model_name.endswith('Middleware'):
             model_name = model_name[:-10]
 
-        try:
-            if not is_valid_model_class(model):
-                continue
-            if model_name in API_DONT_SERVE_LIST:
-                continue
-        except TypeError:
-            # most likely a builtin class or something
+        if not is_valid_model_class(model):
+            continue
+        if model_name in API_DONT_SERVE_LIST:
             continue
 
+        models_with_names.append((model, model_name))
+    models_with_names.sort(key=lambda pair: pair[1])
+    return models_with_names
+
+
+@pass_default_context
+def documentation(request, default_context=None):
+    context = default_context or {}
+
+    # Include models that the user is allowed to access
+    endpoints = []
+    for model, model_name in api_models_and_names():
         model_inst = model()
         if (
             model_inst.API_REQUIRED_PERMISSIONS and
-            not has_permissions(request.user, model_inst.API_REQUIRED_PERMISSIONS)
+            not request.user.has_perms(model_inst.API_REQUIRED_PERMISSIONS)
         ):
             continue
         endpoints.append(_describe_model(model_name, model))
-
-    endpoints.sort(key=lambda ep: ep['name'])
 
     base_url = (
         '%s://%s' % (request.is_secure() and 'https' or 'http',
@@ -401,10 +353,7 @@ def _describe_model(model_name, model):
 
     required_permissions = []
     if model_inst.API_REQUIRED_PERMISSIONS:
-        permissions = model_inst.API_REQUIRED_PERMISSIONS
-        if isinstance(permissions, str):
-            permissions = [permissions]
-        for permission in permissions:
+        for permission in model_inst.API_REQUIRED_PERMISSIONS:
             codename = permission.split('.', 1)[1]
             required_permissions.append(Permission.objects.get(codename=codename).name)
 
