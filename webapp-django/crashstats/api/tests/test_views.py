@@ -19,17 +19,27 @@ from moto import mock_s3_deprecated
 import pyquery
 import pytest
 
-from crashstats.api.views import api_models_and_names, MultipleStringField, TYPE_MAP
+from crashstats.api.views import (
+    api_models_and_names,
+    is_valid_model_class,
+    MultipleStringField,
+    TYPE_MAP,
+)
 from crashstats.crashstats.models import (
     BugAssociation,
     NoOpMiddleware,
     ProcessedCrash,
     Reprocessing,
     RawCrash,
+    SocorroMiddleware,
     UnredactedCrash,
 )
 from crashstats.crashstats.tests.conftest import BaseTestViews
-from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
+from crashstats.supersearch.models import (
+    SuperSearch,
+    SuperSearchUnredacted,
+    ESSocorroMiddleware,
+)
 from crashstats.tokens.models import Token
 from socorro.lib.ooid import create_new_ooid
 from socorro.unittest.conftest import BotoHelper
@@ -48,6 +58,21 @@ class TestDedentLeft(object):
         """.rstrip()
         # because this code right above is indented with 2 * 4 spaces
         assert dedent_left(text, 8) == 'Line 1\nLine 2\nLine 3'
+
+
+class TestIsValidModelClass():
+    """Test that is_valid_model_class validates API models."""
+
+    @pytest.mark.parametrize("model", (SuperSearch, SuperSearchUnredacted))
+    def test_valid(self, model):
+        assert is_valid_model_class(model)
+
+    @pytest.mark.parametrize(
+        "not_model",
+        ("SuperSearch", int, contextlib, SocorroMiddleware, ESSocorroMiddleware)
+    )
+    def test_invalid(self, not_model):
+        assert not is_valid_model_class(not_model)
 
 
 class TestDocumentationViews(BaseTestViews):

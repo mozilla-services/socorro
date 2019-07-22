@@ -113,6 +113,7 @@ API_DONT_SERVE_LIST = (
 
 def is_valid_model_class(model):
     return (
+        isinstance(model, type) and
         issubclass(model, models.SocorroMiddleware) and
         model is not models.SocorroMiddleware and
         model is not supersearch_models.ESSocorroMiddleware
