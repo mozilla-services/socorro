@@ -9,7 +9,9 @@ from django import http
 from django.conf import settings
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from django.template import loader
 from django.urls import reverse
 from django.utils.http import urlquote
 
@@ -238,7 +240,9 @@ def report_index(request, crash_id, default_context=None):
             ':'.join(x) for x in context['report']['addons']
         ]
 
-    return render(request, 'crashstats/report_index.html', context)
+    content = loader.render_to_string('crashstats/report_index.html', context, request)
+    utf8_content = content.encode('utf-8', errors='backslashreplace')
+    return HttpResponse(utf8_content, charset='utf-8')
 
 
 @pass_default_context
