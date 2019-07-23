@@ -10,8 +10,10 @@ import sentry_sdk
 
 def is_enabled():
     """Return True if sentry was initialized with a DSN."""
-    return (sentry_sdk.Hub.current.client and
-            sentry_sdk.Hub.current.client.options['dsn'] is not None)
+    return (
+        sentry_sdk.Hub.current.client
+        and sentry_sdk.Hub.current.client.options["dsn"] is not None
+    )
 
 
 def get_hub():
@@ -49,16 +51,16 @@ def capture_error(logger=None, exc_info=None, extra=None):
 
                 # Send the exception.
                 identifier = hub.capture_exception(error=exc_info)
-                logger.info('Error captured in Sentry! Reference: %s' % identifier)
+                logger.info("Error captured in Sentry! Reference: %s" % identifier)
 
                 # At this point, if everything is good, the exceptions were
                 # successfully sent to sentry and we can return.
                 return
         except Exception:
             # Log the exception from trying to send the error to Sentry.
-            logger.error('Unable to report error with Sentry', exc_info=True)
+            logger.error("Unable to report error with Sentry", exc_info=True)
 
     # Sentry isn't configured or it's busted, so log the error we got that we
     # wanted to capture.
-    logger.warning('Sentry DSN is not configured and an exception happened')
-    logger.error('Exception occurred', exc_info=exc_info)
+    logger.warning("Sentry DSN is not configured and an exception happened")
+    logger.error("Exception occurred", exc_info=exc_info)

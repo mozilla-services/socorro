@@ -9,9 +9,7 @@ import os.path
 
 from socorro.lib.datetimeutil import JsonDTEncoder
 from socorro.lib.requestslib import session_with_retries
-from socorro.scripts import (FallbackToPipeAction,
-                             FlagAction,
-                             WrappedTextHelpFormatter)
+from socorro.scripts import FallbackToPipeAction, FlagAction, WrappedTextHelpFormatter
 
 
 DESCRIPTION = """
@@ -56,22 +54,17 @@ def fetch_crash(host, fetchdumps, fetchprocessed, outputdir, api_token, crash_id
 
     """
     if api_token:
-        headers = {
-            'Auth-Token': api_token
-        }
+        headers = {"Auth-Token": api_token}
     else:
         headers = {}
 
     session = session_with_retries()
 
     # Fetch raw crash metadata
-    print('Fetching raw %s' % crash_id)
+    print("Fetching raw %s" % crash_id)
     resp = session.get(
-        host + '/api/RawCrash/',
-        params={
-            'crash_id': crash_id,
-            'format': 'meta',
-        },
+        host + "/api/RawCrash/",
+        params={"crash_id": crash_id, "format": "meta"},
         headers=headers,
     )
 
@@ -79,73 +72,69 @@ def fetch_crash(host, fetchdumps, fetchprocessed, outputdir, api_token, crash_id
     if resp.status_code == 404:
         raise CrashDoesNotExist(crash_id)
     if api_token and resp.status_code == 403:
-        raise BadAPIToken(resp.json().get('error', 'No error provided'))
+        raise BadAPIToken(resp.json().get("error", "No error provided"))
 
     # Raise an error for any other non-200 response
     resp.raise_for_status()
 
     # Save raw crash to file system
     raw_crash = resp.json()
-    fn = os.path.join(outputdir, 'v2', 'raw_crash', crash_id[0:3], '20' + crash_id[-6:], crash_id)
+    fn = os.path.join(
+        outputdir, "v2", "raw_crash", crash_id[0:3], "20" + crash_id[-6:], crash_id
+    )
     create_dir_if_needed(os.path.dirname(fn))
-    with open(fn, 'w') as fp:
+    with open(fn, "w") as fp:
         json.dump(raw_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
 
     if fetchdumps:
         # Fetch dumps
         dumps = {}
-        dump_names = raw_crash.get('dump_checksums', {}).keys()
+        dump_names = raw_crash.get("dump_checksums", {}).keys()
         for dump_name in dump_names:
-            print('Fetching dump %s/%s' % (crash_id, dump_name))
+            print("Fetching dump %s/%s" % (crash_id, dump_name))
 
             # We store "upload_file_minidump" as "dump", so we need to use that
             # name when requesting from the RawCrash api
             file_name = dump_name
-            if file_name == 'upload_file_minidump':
-                file_name = 'dump'
+            if file_name == "upload_file_minidump":
+                file_name = "dump"
 
             resp = session.get(
-                host + '/api/RawCrash/',
-                params={
-                    'crash_id': crash_id,
-                    'format': 'raw',
-                    'name': file_name
-                },
+                host + "/api/RawCrash/",
+                params={"crash_id": crash_id, "format": "raw", "name": file_name},
                 headers=headers,
             )
 
             if resp.status_code != 200:
-                raise Exception('Something unexpected happened. status_code %s, content %s' % (
-                    resp.status_code, resp.content)
+                raise Exception(
+                    "Something unexpected happened. status_code %s, content %s"
+                    % (resp.status_code, resp.content)
                 )
 
             dumps[dump_name] = resp.content
 
         # Save dump_names to file system
-        fn = os.path.join(outputdir, 'v1', 'dump_names', crash_id)
+        fn = os.path.join(outputdir, "v1", "dump_names", crash_id)
         create_dir_if_needed(os.path.dirname(fn))
-        with open(fn, 'w') as fp:
+        with open(fn, "w") as fp:
             json.dump(list(dumps.keys()), fp)
 
         # Save dumps to file system
         for dump_name, data in dumps.items():
-            if dump_name == 'upload_file_minidump':
-                dump_name = 'dump'
+            if dump_name == "upload_file_minidump":
+                dump_name = "dump"
 
-            fn = os.path.join(outputdir, 'v1', dump_name, crash_id)
+            fn = os.path.join(outputdir, "v1", dump_name, crash_id)
             create_dir_if_needed(os.path.dirname(fn))
-            with open(fn, 'wb') as fp:
+            with open(fn, "wb") as fp:
                 fp.write(data)
 
     if fetchprocessed:
         # Fetch processed crash data
-        print('Fetching processed %s' % crash_id)
+        print("Fetching processed %s" % crash_id)
         resp = session.get(
-            host + '/api/ProcessedCrash/',
-            params={
-                'crash_id': crash_id,
-                'format': 'meta',
-            },
+            host + "/api/ProcessedCrash/",
+            params={"crash_id": crash_id, "format": "meta"},
             headers=headers,
         )
 
@@ -153,16 +142,16 @@ def fetch_crash(host, fetchdumps, fetchprocessed, outputdir, api_token, crash_id
         if resp.status_code == 404:
             raise CrashDoesNotExist(crash_id)
         if api_token and resp.status_code == 403:
-            raise BadAPIToken(resp.json().get('error', 'No error provided'))
+            raise BadAPIToken(resp.json().get("error", "No error provided"))
 
         # Raise an error for any other non-200 response
         resp.raise_for_status()
 
         # Save processed crash to file system
         processed_crash = resp.json()
-        fn = os.path.join(outputdir, 'v1', 'processed_crash', crash_id)
+        fn = os.path.join(outputdir, "v1", "processed_crash", crash_id)
         create_dir_if_needed(os.path.dirname(fn))
-        with open(fn, 'w') as fp:
+        with open(fn, "w") as fp:
             json.dump(processed_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
 
 
@@ -173,23 +162,34 @@ def main(argv=None):
         epilog=EPILOG.strip(),
     )
     parser.add_argument(
-        '--host', default='https://crash-stats.mozilla.org',
-        help='host to pull crash data from; this needs to match SOCORRO_API_TOKEN value'
+        "--host",
+        default="https://crash-stats.mozilla.org",
+        help="host to pull crash data from; this needs to match SOCORRO_API_TOKEN value",
     )
     parser.add_argument(
-        '--dumps', '--no-dumps', dest='fetchdumps', action=FlagAction, default=True,
-        help='whether or not to save dumps'
+        "--dumps",
+        "--no-dumps",
+        dest="fetchdumps",
+        action=FlagAction,
+        default=True,
+        help="whether or not to save dumps",
     )
     parser.add_argument(
-        '--processed', '--no-processed', dest='fetchprocessed', action=FlagAction, default=False,
-        help='whether or not to save processed crash data'
+        "--processed",
+        "--no-processed",
+        dest="fetchprocessed",
+        action=FlagAction,
+        default=False,
+        help="whether or not to save processed crash data",
     )
 
-    parser.add_argument('outputdir', help='directory to place crash data in')
-    parser.add_argument('crashid',
-                        help='one or more crash ids to fetch data for',
-                        nargs='*',
-                        action=FallbackToPipeAction)
+    parser.add_argument("outputdir", help="directory to place crash data in")
+    parser.add_argument(
+        "crashid",
+        help="one or more crash ids to fetch data for",
+        nargs="*",
+        action=FallbackToPipeAction,
+    )
 
     if argv is None:
         args = parser.parse_args()
@@ -199,27 +199,29 @@ def main(argv=None):
     # Validate outputdir and exit if it doesn't exist or isn't a directory
     outputdir = args.outputdir
     if os.path.exists(outputdir) and not os.path.isdir(outputdir):
-        print('%s is not a directory. Please fix. Exiting.' % outputdir)
+        print("%s is not a directory. Please fix. Exiting." % outputdir)
         return 1
 
     # Sort out API token existence
-    api_token = os.environ.get('SOCORRO_API_TOKEN')
+    api_token = os.environ.get("SOCORRO_API_TOKEN")
     if api_token:
-        print('Using api token: %s%s' % (api_token[:4], 'x' * (len(api_token) - 4)))
+        print("Using api token: %s%s" % (api_token[:4], "x" * (len(api_token) - 4)))
     else:
-        print('No api token provided. Skipping dumps and personally identifiable information.')
+        print(
+            "No api token provided. Skipping dumps and personally identifiable information."
+        )
 
     for crash_id in args.crashid:
         crash_id = crash_id.strip()
 
-        print('Working on %s...' % crash_id)
+        print("Working on %s..." % crash_id)
         fetch_crash(
             host=args.host,
             fetchdumps=args.fetchdumps,
             fetchprocessed=args.fetchprocessed,
             outputdir=outputdir,
             api_token=api_token,
-            crash_id=crash_id
+            crash_id=crash_id,
         )
 
     return 0

@@ -39,44 +39,44 @@ from socorro.app.socorro_app import App
 class FetchTransformSaveApp(App):
     """Fetch/transform/save apps."""
 
-    app_name = 'fetch_transform_save_app'
-    app_version = '0.1'
+    app_name = "fetch_transform_save_app"
+    app_version = "0.1"
     app_description = __doc__
 
     required_config = Namespace()
     # The queue class has an iterator for work items to be processed.
-    required_config.namespace('queue')
+    required_config.namespace("queue")
     required_config.queue.add_option(
-        'crashqueue_class',
-        doc='an iterable that will stream work items for processing',
-        default='',
-        from_string_converter=class_converter
+        "crashqueue_class",
+        doc="an iterable that will stream work items for processing",
+        default="",
+        from_string_converter=class_converter,
     )
 
     # The source class has methods to fetch the data to use.
     required_config.source = Namespace()
     required_config.source.add_option(
-        'crashstorage_class',
-        doc='the source storage class',
-        default='socorro.external.fs.crashstorage.FSPermanentStorage',
-        from_string_converter=class_converter
+        "crashstorage_class",
+        doc="the source storage class",
+        default="socorro.external.fs.crashstorage.FSPermanentStorage",
+        from_string_converter=class_converter,
     )
 
     # The destination class has methods to save the transformed data to storage.
     required_config.destination = Namespace()
     required_config.destination.add_option(
-        'crashstorage_class',
-        doc='the destination storage class',
-        default='socorro.external.fs.crashstorage.FSPermanentStorage',
-        from_string_converter=class_converter
+        "crashstorage_class",
+        doc="the destination storage class",
+        default="socorro.external.fs.crashstorage.FSPermanentStorage",
+        from_string_converter=class_converter,
     )
 
     required_config.producer_consumer = Namespace()
     required_config.producer_consumer.add_option(
-        'producer_consumer_class',
-        doc='the class implements a threaded producer consumer queue',
-        default='socorro.lib.threaded_task_manager.ThreadedTaskManager',
-        from_string_converter=class_converter
+        "producer_consumer_class",
+        doc="the class implements a threaded producer consumer queue",
+        default="socorro.lib.threaded_task_manager.ThreadedTaskManager",
+        from_string_converter=class_converter,
     )
 
     def __init__(self, config):
@@ -112,7 +112,9 @@ class FetchTransformSaveApp(App):
                 # we're running all in the same thread, a failure here could
                 # derail the the whole processor. Best just log the problem
                 # so that we can continue.
-                self.logger.error('Error completing job %s: %s', crash_id, x, exc_info=True)
+                self.logger.error(
+                    "Error completing job %s: %s", crash_id, x, exc_info=True
+                )
 
     def _transform(self, crash_id):
         """this default transform function only transfers raw data from the
@@ -131,7 +133,7 @@ class FetchTransformSaveApp(App):
             dumps = {}
         try:
             self.destination.save_raw_crash(raw_crash, dumps, crash_id)
-            self.logger.info('saved - %s', crash_id)
+            self.logger.info("saved - %s", crash_id)
         except Exception as x:
             self.logger.error("writing raw: %s", str(x), exc_info=True)
         else:
@@ -148,23 +150,23 @@ class FetchTransformSaveApp(App):
         self.queue = self.config.queue.crashqueue_class(
             self.config.queue,
             namespace=self.app_instance_name,
-            quit_check_callback=self.quit_check
+            quit_check_callback=self.quit_check,
         )
         self.source = self.config.source.crashstorage_class(
             self.config.source,
             namespace=self.app_name,
-            quit_check_callback=self.quit_check
+            quit_check_callback=self.quit_check,
         )
         self.destination = self.config.destination.crashstorage_class(
             self.config.destination,
             namespace=self.app_name,
-            quit_check_callback=self.quit_check
+            quit_check_callback=self.quit_check,
         )
 
     def _setup_task_manager(self):
         """instantiate the threaded task manager to run the producer/consumer
         queue that is the heart of the processor."""
-        self.logger.info('installing signal handers')
+        self.logger.info("installing signal handers")
         # set up the signal handler for dealing with SIGTERM. the target should
         # be this app instance so the signal handler can reach in and set the
         # quit flag to be True.  See the 'respond_to_SIGTERM' method for the
@@ -174,7 +176,7 @@ class FetchTransformSaveApp(App):
         self.task_manager = self.config.producer_consumer.producer_consumer_class(
             self.config.producer_consumer,
             job_source_iterator=self.source_iterator,
-            task_func=self.transform
+            task_func=self.transform,
         )
 
     def close(self):
@@ -201,4 +203,4 @@ class FetchTransformSaveApp(App):
         self._setup_source_and_destination()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self.close()
-        self.logger.info('done.')
+        self.logger.info("done.")

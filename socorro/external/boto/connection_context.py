@@ -36,38 +36,38 @@ class JSONISOEncoder(json.JSONEncoder):
 class ConnectionContextBase(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
-        'access_key',
+        "access_key",
         doc="access key",
         default=None,
-        reference_value_from='resource.boto',
+        reference_value_from="resource.boto",
     )
     required_config.add_option(
-        'secret_access_key',
+        "secret_access_key",
         doc="secret access key",
         default=None,
         secret=True,
-        reference_value_from='secrets.boto',
+        reference_value_from="secrets.boto",
         likely_to_be_changed=True,
     )
     required_config.add_option(
-        'bucket_name',
+        "bucket_name",
         doc="The name of the bucket.",
-        default='crashstats',
-        reference_value_from='resource.boto',
+        default="crashstats",
+        reference_value_from="resource.boto",
         likely_to_be_changed=True,
     )
     required_config.add_option(
-        'prefix',
+        "prefix",
         doc="a prefix to use inside the bucket",
-        default='',
-        reference_value_from='resource.boto',
+        default="",
+        reference_value_from="resource.boto",
         likely_to_be_changed=True,
     )
     required_config.add_option(
-        'boto_metrics_prefix',
+        "boto_metrics_prefix",
         doc="a prefix to use for boto metrics",
-        default='',
-        reference_value_from='resource.boto'
+        default="",
+        reference_value_from="resource.boto",
     )
 
     RETRYABLE_EXCEPTIONS = (
@@ -80,10 +80,7 @@ class ConnectionContextBase(RequiredConfig):
     def __init__(self, config, quit_check_callback=None):
         self.config = config
         self._CreateError = boto.exception.StorageCreateError
-        self.ResponseError = (
-            boto.exception.StorageResponseError,
-            KeyNotFound
-        )
+        self.ResponseError = (boto.exception.StorageResponseError, KeyNotFound)
         self._bucket_cache = {}
         self.metrics = markus.get_metrics(config.boto_metrics_prefix)
 
@@ -103,7 +100,7 @@ class ConnectionContextBase(RequiredConfig):
         datestamp = date_from_ooid(crashid)
         if datestamp is None:
             # We should never hit this situation unless the crashid is not valid
-            raise CrashidMissingDatestamp('%s is missing datestamp' % crashid)
+            raise CrashidMissingDatestamp("%s is missing datestamp" % crashid)
         return datestamp
 
     def build_keys(self, prefix, name_of_thing, crashid):
@@ -123,40 +120,39 @@ class ConnectionContextBase(RequiredConfig):
         :returns: list of keys to try in order
 
         """
-        if name_of_thing == 'raw_crash':
+        if name_of_thing == "raw_crash":
             # Insert the first 3 chars of the crashid providing some entropy
             # earlier in the key so that consecutive s3 requests get
             # distributed across multiple s3 partitions
             entropy = crashid[:3]
-            date = self._get_datestamp(crashid).strftime('%Y%m%d')
+            date = self._get_datestamp(crashid).strftime("%Y%m%d")
             return [
-                '%(prefix)s/v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s' % {
-                    'prefix': prefix,
-                    'nameofthing': name_of_thing,
-                    'entropy': entropy,
-                    'date': date,
-                    'crashid': crashid
+                "%(prefix)s/v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s"
+                % {
+                    "prefix": prefix,
+                    "nameofthing": name_of_thing,
+                    "entropy": entropy,
+                    "date": date,
+                    "crashid": crashid,
                 }
             ]
 
-        elif name_of_thing == 'crash_report':
+        elif name_of_thing == "crash_report":
             # Crash data from the TelemetryBotoS3CrashStorage
-            date = self._get_datestamp(crashid).strftime('%Y%m%d')
+            date = self._get_datestamp(crashid).strftime("%Y%m%d")
             return [
-                '%(prefix)s/v1/%(nameofthing)s/%(date)s/%(crashid)s' % {
-                    'prefix': prefix,
-                    'nameofthing': name_of_thing,
-                    'date': date,
-                    'crashid': crashid
+                "%(prefix)s/v1/%(nameofthing)s/%(date)s/%(crashid)s"
+                % {
+                    "prefix": prefix,
+                    "nameofthing": name_of_thing,
+                    "date": date,
+                    "crashid": crashid,
                 }
             ]
 
         return [
-            '%(prefix)s/v1/%(nameofthing)s/%(crashid)s' % {
-                'prefix': prefix,
-                'nameofthing': name_of_thing,
-                'crashid': crashid
-            }
+            "%(prefix)s/v1/%(nameofthing)s/%(crashid)s"
+            % {"prefix": prefix, "nameofthing": name_of_thing, "crashid": crashid}
         ]
 
     def _get_bucket(self, conn, bucket_name):
@@ -188,16 +184,16 @@ class ConnectionContextBase(RequiredConfig):
             key = all_keys[0]
             key_object = bucket.new_key(key)
             key_object.set_contents_from_string(thing)
-            index_outcome = 'successful'
+            index_outcome = "successful"
         except Exception:
-            index_outcome = 'failed'
+            index_outcome = "failed"
             raise
         finally:
             elapsed_time = time.time() - start_time
             self.metrics.histogram(
-                'submit',
+                "submit",
                 value=elapsed_time * 1000.0,
-                tags=['kind:' + name_of_thing, 'outcome:' + index_outcome]
+                tags=["kind:" + name_of_thing, "outcome:" + index_outcome],
             )
 
     def fetch(self, id, name_of_thing):
@@ -215,11 +211,8 @@ class ConnectionContextBase(RequiredConfig):
 
         # None of the keys worked, so raise an error
         raise KeyNotFound(
-            '%s (bucket=%r keys=%r) not found, no value returned' % (
-                id,
-                self.config.bucket_name,
-                all_keys,
-            )
+            "%s (bucket=%r keys=%r) not found, no value returned"
+            % (id, self.config.bucket_name, all_keys)
         )
 
     def _convert_mapping_to_string(self, a_mapping):
@@ -244,13 +237,14 @@ class ConnectionContextBase(RequiredConfig):
 
 class S3ConnectionContext(ConnectionContextBase):
     """This derived class includes the specifics for connection to S3"""
+
     required_config = Namespace()
     required_config.add_option(
-        'calling_format',
+        "calling_format",
         doc="fully qualified python path to the boto calling format function",
-        default='boto.s3.connection.SubdomainCallingFormat',
+        default="boto.s3.connection.SubdomainCallingFormat",
         from_string_converter=class_converter,
-        reference_value_from='resource.boto',
+        reference_value_from="resource.boto",
         likely_to_be_changed=True,
     )
 
@@ -261,10 +255,10 @@ class S3ConnectionContext(ConnectionContextBase):
 
     def _get_credentials(self):
         return {
-            'aws_access_key_id': self.config.access_key,
-            'aws_secret_access_key': self.config.secret_access_key,
-            'is_secure': True,
-            'calling_format': self._calling_format(),
+            "aws_access_key_id": self.config.access_key,
+            "aws_secret_access_key": self.config.secret_access_key,
+            "is_secure": True,
+            "calling_format": self._calling_format(),
         }
 
 
@@ -275,19 +269,20 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
     you can use S3 buckets with periods in the names.
 
     """
+
     required_config = Namespace()
     required_config.add_option(
-        'region',
+        "region",
         doc="Name of the S3 region (e.g. us-west-2)",
-        default='us-west-2',
-        reference_value_from='resource.boto',
+        default="us-west-2",
+        reference_value_from="resource.boto",
     )
     required_config.add_option(
-        'calling_format',
+        "calling_format",
         doc="fully qualified python path to the boto calling format function",
-        default='boto.s3.connection.OrdinaryCallingFormat',
+        default="boto.s3.connection.OrdinaryCallingFormat",
         from_string_converter=class_converter,
-        reference_value_from='resource.boto',
+        reference_value_from="resource.boto",
         likely_to_be_changed=True,
     )
 
@@ -301,8 +296,7 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
             return self.connection
         except AttributeError:
             self.connection = self._connect_to_endpoint(
-                self._region,
-                **self._get_credentials()
+                self._region, **self._get_credentials()
             )
             return self.connection
 
@@ -311,8 +305,7 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
             return self._get_bucket(conn, bucket_name)
         except self.ResponseError:
             self._bucket_cache[bucket_name] = conn.create_bucket(
-                bucket_name,
-                location=self._region,
+                bucket_name, location=self._region
             )
             return self._bucket_cache[bucket_name]
 
@@ -323,32 +316,31 @@ class HostPortS3ConnectionContext(S3ConnectionContext):
     Useful if you're connecting to a fake s3 or minio or some other non-S3 thing.
 
     """
+
     required_config = Namespace()
     required_config.add_option(
-        'host',
-        doc='The hostname to connect to',
-        reference_value_from='resource.boto',
+        "host", doc="The hostname to connect to", reference_value_from="resource.boto"
     )
     required_config.add_option(
-        'port',
-        doc='The network port',
-        reference_value_from='resource.boto',
-        from_string_converter=int
+        "port",
+        doc="The network port",
+        reference_value_from="resource.boto",
+        from_string_converter=int,
     )
     required_config.add_option(
-        'secure',
-        doc='Whether to connect securely or not (true/false)',
-        reference_value_from='resource.boto',
+        "secure",
+        doc="Whether to connect securely or not (true/false)",
+        reference_value_from="resource.boto",
         from_string_converter=str_to_boolean,
         default=True,
     )
 
     def _get_credentials(self):
         return {
-            'aws_access_key_id': self.config.access_key,
-            'aws_secret_access_key': self.config.secret_access_key,
-            'is_secure': self.config.secure,
-            'calling_format': self._calling_format(),
-            'host': self.config.host,
-            'port': self.config.port,
+            "aws_access_key_id": self.config.access_key,
+            "aws_secret_access_key": self.config.secret_access_key,
+            "is_secure": self.config.secure,
+            "calling_format": self._calling_format(),
+            "host": self.config.host,
+            "port": self.config.port,
         }

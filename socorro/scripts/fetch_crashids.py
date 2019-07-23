@@ -24,7 +24,7 @@ The second is to just specify command line arguments and the query will be based
 
 """
 
-DEFAULT_HOST = 'https://crash-stats.mozilla.org'
+DEFAULT_HOST = "https://crash-stats.mozilla.org"
 
 MAX_PAGE = 1000
 
@@ -37,6 +37,7 @@ class Infinity(object):
     doing here is wrong, but it's helpful. We can rename it if someone gets really annoyed.
 
     """
+
     def __eq__(self, obj):
         return isinstance(obj, Infinity)
 
@@ -44,7 +45,7 @@ class Infinity(object):
         return False
 
     def __repr__(self):
-        return 'Infinity'
+        return "Infinity"
 
     def __sub__(self, obj):
         if isinstance(obj, Infinity):
@@ -53,7 +54,7 @@ class Infinity(object):
 
     def __rsub__(self, obj):
         # We don't need to deal with negative infinities, so let's not
-        raise ValueError('This Infinity does not support right-hand-side')
+        raise ValueError("This Infinity does not support right-hand-side")
 
 
 # For our purposes, there is only one infinity
@@ -70,47 +71,45 @@ def fetch_crashids(host, params, num_results):
     :returns: generator of crash ids
 
     """
-    url = host + '/api/SuperSearch/'
+    url = host + "/api/SuperSearch/"
 
     session = session_with_retries()
 
     # Set up first page
-    params['_results_offset'] = 0
-    params['_results_number'] = min(MAX_PAGE, num_results)
+    params["_results_offset"] = 0
+    params["_results_number"] = min(MAX_PAGE, num_results)
 
     # Fetch pages of crash ids until we've gotten as many as we want or there aren't any more to get
     crashids_count = 0
     while True:
         resp = session.get(url, params=params)
         if resp.status_code != 200:
-            raise Exception('Bad response: %s %s' % (resp.status_code, resp.content))
+            raise Exception("Bad response: %s %s" % (resp.status_code, resp.content))
 
-        hits = resp.json()['hits']
+        hits = resp.json()["hits"]
 
         for hit in hits:
             crashids_count += 1
-            yield hit['uuid']
+            yield hit["uuid"]
 
             # If we've gotten as many crashids as we need, we return
             if crashids_count >= num_results:
                 return
 
         # If there are no more crash ids to get, we return
-        total = resp.json()['total']
+        total = resp.json()["total"]
         if not hits or crashids_count >= total:
             return
 
         # Get the next page, but only as many results as we need
-        params['_results_offset'] += MAX_PAGE
-        params['_results_number'] = min(
+        params["_results_offset"] += MAX_PAGE
+        params["_results_number"] = min(
             # MAX_PAGE is the maximum we can request
             MAX_PAGE,
-
             # The number of results Super Search can return to us that is hasn't returned so far
             total - crashids_count,
-
             # The numver of results we want that we haven't gotten, yet
-            num_results - crashids_count
+            num_results - crashids_count,
         )
 
 
@@ -121,7 +120,7 @@ def extract_params(url):
 
     for key in list(params.keys()):
         # Remove any params that start with a _ except _sort since that's helpful
-        if key.startswith('_') and key != '_sort':
+        if key.startswith("_") and key != "_sort":
             del params[key]
 
     return params
@@ -129,35 +128,33 @@ def extract_params(url):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        formatter_class=WrappedTextHelpFormatter,
-        description=DESCRIPTION.strip(),
+        formatter_class=WrappedTextHelpFormatter, description=DESCRIPTION.strip()
     )
     parser.add_argument(
-        '--host', default=DEFAULT_HOST,
-        help='host for system to fetch crashids from'
+        "--host", default=DEFAULT_HOST, help="host for system to fetch crashids from"
     )
     parser.add_argument(
-        '--date', default='',
+        "--date",
+        default="",
         help=(
             'date to pull crash ids from as YYYY-MM-DD, "yesterday", "today", or "now"; '
             'defaults to "yesterday"'
-        )
+        ),
     )
     parser.add_argument(
-        '--signature-contains', default='', dest='signature',
-        help='signature contains this string'
+        "--signature-contains",
+        default="",
+        dest="signature",
+        help="signature contains this string",
+    )
+    parser.add_argument("--url", default="", help="Super Search url to base query on")
+    parser.add_argument(
+        "--num",
+        default=100,
+        help='number of crash ids you want or "all" for all of them',
     )
     parser.add_argument(
-        '--url', default='',
-        help='Super Search url to base query on'
-    )
-    parser.add_argument(
-        '--num', default=100,
-        help='number of crash ids you want or "all" for all of them'
-    )
-    parser.add_argument(
-        '-v', '--verbose', action='store_true',
-        help='increase verbosity of output'
+        "-v", "--verbose", action="store_true", help="increase verbosity of output"
     )
 
     if argv is None:
@@ -165,23 +162,21 @@ def main(argv=None):
     else:
         args = parser.parse_args(argv)
 
-    host = args.host.rstrip('/')
+    host = args.host.rstrip("/")
 
     # Start with params from --url value or product=Firefox
     if args.url:
         params = extract_params(args.url)
     else:
-        params = {
-            'product': 'Firefox'
-        }
+        params = {"product": "Firefox"}
 
-    params['_columns'] = 'uuid'
+    params["_columns"] = "uuid"
 
     # Override with date if specified
-    if 'date' not in params or args.date:
-        datestamp = args.date or 'yesterday'
+    if "date" not in params or args.date:
+        datestamp = args.date or "yesterday"
 
-        if datestamp == 'now':
+        if datestamp == "now":
             # Create a start -> end window that has wiggle room on either side
             # to deal with time differences between the client and server, but
             # also big enough to pick up results even in stage where it doesn't
@@ -191,37 +186,34 @@ def main(argv=None):
 
             # For "now", we want precision so we don't hit cache and we want to
             # sort by reverse date so that we get the most recent crashes
-            startdate = startdate.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-            enddate = enddate.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-            params['_sort'] = '-date'
+            startdate = startdate.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            enddate = enddate.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            params["_sort"] = "-date"
 
         else:
-            if datestamp == 'today':
+            if datestamp == "today":
                 startdate = utc_now()
-            elif datestamp == 'yesterday':
+            elif datestamp == "yesterday":
                 startdate = utc_now() - datetime.timedelta(days=1)
             else:
-                startdate = datetime.datetime.strptime(datestamp, '%Y-%m-%d')
+                startdate = datetime.datetime.strptime(datestamp, "%Y-%m-%d")
 
             enddate = startdate + datetime.timedelta(days=1)
 
             # For "today", "yesterday", and other dates, we want a day
             # precision so that Socorro can cache it
-            startdate = startdate.strftime('%Y-%m-%d')
-            enddate = enddate.strftime('%Y-%m-%d')
+            startdate = startdate.strftime("%Y-%m-%d")
+            enddate = enddate.strftime("%Y-%m-%d")
 
-        params['date'] = [
-            '>=%s' % startdate,
-            '<%s' % enddate
-        ]
+        params["date"] = [">=%s" % startdate, "<%s" % enddate]
 
     # Override with signature-contains if specified
     sig = args.signature
     if sig:
-        params['signature'] = '~' + sig
+        params["signature"] = "~" + sig
 
     num_results = args.num
-    if num_results == 'all':
+    if num_results == "all":
         num_results = INFINITY
 
     else:
@@ -232,7 +224,7 @@ def main(argv=None):
             return 1
 
     if args.verbose:
-        print('Params: %s' % params)
+        print("Params: %s" % params)
 
     for crashid in fetch_crashids(host, params, num_results):
         print(crashid)

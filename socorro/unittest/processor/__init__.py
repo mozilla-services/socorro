@@ -8,9 +8,9 @@ from socorro.signature.rules import CSignatureTool
 
 
 csig_config = DotDict()
-csig_config.irrelevant_signature_re = ''
-csig_config.prefix_signature_re = ''
-csig_config.signatures_with_line_numbers_re = ''
+csig_config.irrelevant_signature_re = ""
+csig_config.prefix_signature_re = ""
+csig_config.signatures_with_line_numbers_re = ""
 csig_config.signature_sentinels = []
 csig_config.collapse_arguments = True
 c_signature_tool = CSignatureTool(csig_config)

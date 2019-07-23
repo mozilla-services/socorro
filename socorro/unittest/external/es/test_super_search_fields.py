@@ -27,6 +27,7 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
     """Test SuperSearchFields with an elasticsearch database containing fake data"""
+
     def setup_method(self, method):
         super().setup_method(method)
 
@@ -40,7 +41,7 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
 
     def test_get_missing_fields(self):
         config = self.get_base_config(
-            cls=SuperSearchFieldsModel, es_index='socorro_integration_test_%W'
+            cls=SuperSearchFieldsModel, es_index="socorro_integration_test_%W"
         )
         api = SuperSearchFieldsModel(config=config)
 
@@ -48,67 +49,48 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
             # First mapping
             {
                 config.elasticsearch_doctype: {
-                    'properties': {
+                    "properties": {
                         # Add a bunch of unknown fields.
-                        'field_z': {
-                            'type': 'string'
+                        "field_z": {"type": "string"},
+                        "namespace1": {
+                            "type": "object",
+                            "properties": {
+                                "field_a": {"type": "string"},
+                                "field_b": {"type": "long"},
+                            },
                         },
-                        'namespace1': {
-                            'type': 'object',
-                            'properties': {
-                                'field_a': {
-                                    'type': 'string'
-                                },
-                                'field_b': {
-                                    'type': 'long'
+                        "namespace2": {
+                            "type": "object",
+                            "properties": {
+                                "subspace1": {
+                                    "type": "object",
+                                    "properties": {"field_b": {"type": "long"}},
                                 }
-                            }
-                        },
-                        'namespace2': {
-                            'type': 'object',
-                            'properties': {
-                                'subspace1': {
-                                    'type': 'object',
-                                    'properties': {
-                                        'field_b': {
-                                            'type': 'long'
-                                        }
-                                    }
-                                }
-                            }
+                            },
                         },
                         # Add a few known fields that should not appear.
-                        'processed_crash': {
-                            'type': 'object',
-                            'properties': {
-                                'signature': {
-                                    'type': 'string'
-                                },
-                                'product': {
-                                    'type': 'string'
-                                },
-                            }
-                        }
+                        "processed_crash": {
+                            "type": "object",
+                            "properties": {
+                                "signature": {"type": "string"},
+                                "product": {"type": "string"},
+                            },
+                        },
                     }
                 }
             },
-
             # Second mapping to compare to the first
             {
                 config.elasticsearch_doctype: {
-                    'properties': {
-                        'namespace1': {
-                            'type': 'object',
-                            'properties': {
-                                'subspace1': {
-                                    'type': 'object',
-                                    'properties': {
-                                        'field_d': {
-                                            'type': 'long'
-                                        }
-                                    }
+                    "properties": {
+                        "namespace1": {
+                            "type": "object",
+                            "properties": {
+                                "subspace1": {
+                                    "type": "object",
+                                    "properties": {"field_d": {"type": "long"}},
                                 }
-                            }
+                            },
                         }
                     }
                 }
@@ -132,15 +114,15 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
             api = SuperSearchFieldsModel(config=config)
             missing_fields = api.get_missing_fields()
             expected = [
-                'field_z',
-                'namespace1.field_a',
-                'namespace1.field_b',
-                'namespace1.subspace1.field_d',
-                'namespace2.subspace1.field_b',
+                "field_z",
+                "namespace1.field_a",
+                "namespace1.field_b",
+                "namespace1.subspace1.field_d",
+                "namespace2.subspace1.field_b",
             ]
 
-            assert missing_fields['hits'] == expected
-            assert missing_fields['total'] == 5
+            assert missing_fields["hits"] == expected
+            assert missing_fields["total"] == 5
 
         finally:
             for index in indices:
@@ -151,48 +133,48 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         doctype = self.es_context.get_doctype()
 
         assert doctype in mapping
-        properties = mapping[doctype]['properties']
+        properties = mapping[doctype]["properties"]
 
-        assert 'processed_crash' in properties
-        assert 'raw_crash' in properties
+        assert "processed_crash" in properties
+        assert "raw_crash" in properties
 
-        processed_crash = properties['processed_crash']['properties']
+        processed_crash = properties["processed_crash"]["properties"]
 
         # Check in_database_name is used.
-        assert 'os_name' in processed_crash
-        assert 'platform' not in processed_crash
+        assert "os_name" in processed_crash
+        assert "platform" not in processed_crash
 
         # Those fields have no `storage_mapping`.
-        assert 'fake_field' not in properties['raw_crash']['properties']
+        assert "fake_field" not in properties["raw_crash"]["properties"]
 
         # Those fields have a `storage_mapping`.
-        assert processed_crash['release_channel'] == {
-            'analyzer': 'keyword',
-            'type': 'string'
+        assert processed_crash["release_channel"] == {
+            "analyzer": "keyword",
+            "type": "string",
         }
 
         # Test nested objects.
-        assert 'json_dump' in processed_crash
-        assert 'properties' in processed_crash['json_dump']
-        assert 'write_combine_size' in processed_crash['json_dump']['properties']
-        assert processed_crash['json_dump']['properties']['write_combine_size'] == {
-            'type': 'long',
-            'doc_values': True
+        assert "json_dump" in processed_crash
+        assert "properties" in processed_crash["json_dump"]
+        assert "write_combine_size" in processed_crash["json_dump"]["properties"]
+        assert processed_crash["json_dump"]["properties"]["write_combine_size"] == {
+            "type": "long",
+            "doc_values": True,
         }
 
         # Test overwriting a field.
-        mapping = self.api.get_mapping(overwrite_mapping={
-            'name': 'fake_field',
-            'namespace': 'raw_crash',
-            'in_database_name': 'fake_field',
-            'storage_mapping': {
-                'type': 'long'
+        mapping = self.api.get_mapping(
+            overwrite_mapping={
+                "name": "fake_field",
+                "namespace": "raw_crash",
+                "in_database_name": "fake_field",
+                "storage_mapping": {"type": "long"},
             }
-        })
-        properties = mapping[doctype]['properties']
+        )
+        properties = mapping[doctype]["properties"]
 
-        assert 'fake_field' in properties['raw_crash']['properties']
-        assert properties['raw_crash']['properties']['fake_field']['type'] == 'long'
+        assert "fake_field" in properties["raw_crash"]["properties"]
+        assert properties["raw_crash"]["properties"]["fake_field"]["type"] == "long"
 
     def test_test_mapping(self):
         """Much test. So meta. Wow test_test_. """
@@ -201,29 +183,25 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         assert self.api.test_mapping(mapping) is None
 
         # Insert an invalid storage mapping.
-        mapping = self.api.get_mapping({
-            'name': 'fake_field',
-            'namespace': 'raw_crash',
-            'in_database_name': 'fake_field',
-            'storage_mapping': {
-                'type': 'unkwown'
+        mapping = self.api.get_mapping(
+            {
+                "name": "fake_field",
+                "namespace": "raw_crash",
+                "in_database_name": "fake_field",
+                "storage_mapping": {"type": "unkwown"},
             }
-        })
+        )
         with pytest.raises(BadArgumentError):
             self.api.test_mapping(mapping)
 
         # Test with a correct mapping but with data that cannot be indexed.
-        self.index_crash({
-            'date_processed': datetimeutil.utc_now(),
-            'product': 'WaterWolf',
-        })
+        self.index_crash(
+            {"date_processed": datetimeutil.utc_now(), "product": "WaterWolf"}
+        )
         self.es_context.refresh()
-        mapping = self.api.get_mapping({
-            'name': 'product',
-            'storage_mapping': {
-                'type': 'long'
-            }
-        })
+        mapping = self.api.get_mapping(
+            {"name": "product", "storage_mapping": {"type": "long"}}
+        )
         with pytest.raises(BadArgumentError):
             self.api.test_mapping(mapping)
 
@@ -232,7 +210,7 @@ def get_fields():
     return FIELDS.items()
 
 
-@pytest.mark.parametrize('name, properties', get_fields())
+@pytest.mark.parametrize("name, properties", get_fields())
 def test_validate_super_search_fields(name, properties):
     """Validates the contents of socorro.external.es.super_search_fields.FIELDS"""
 
@@ -240,93 +218,95 @@ def test_validate_super_search_fields(name, properties):
     # switch this to a schema validation.
 
     property_keys = [
-        'data_validation_type',
-        'description',
-        'form_field_choices',
-        'has_full_version',
-        'in_database_name',
-        'is_exposed',
-        'is_returned',
-        'name',
-        'namespace',
-        'permissions_needed',
-        'query_type',
-        'storage_mapping',
+        "data_validation_type",
+        "description",
+        "form_field_choices",
+        "has_full_version",
+        "in_database_name",
+        "is_exposed",
+        "is_returned",
+        "name",
+        "namespace",
+        "permissions_needed",
+        "query_type",
+        "storage_mapping",
     ]
 
     # Assert it has all the keys
     assert sorted(properties.keys()) == sorted(property_keys)
 
     # Assert boolean fields have boolean values
-    for key in ['has_full_version', 'is_exposed', 'is_returned']:
+    for key in ["has_full_version", "is_exposed", "is_returned"]:
         assert properties[key] in (True, False)
 
     # Assert data_validation_type has a valid value
-    assert properties['data_validation_type'] in ('bool', 'datetime', 'enum', 'int', 'str')
+    assert properties["data_validation_type"] in (
+        "bool",
+        "datetime",
+        "enum",
+        "int",
+        "str",
+    )
 
     # Assert query_type has a valid value
-    assert properties['query_type'] in ('bool', 'date', 'enum', 'flag', 'number', 'string')
+    assert properties["query_type"] in (
+        "bool",
+        "date",
+        "enum",
+        "flag",
+        "number",
+        "string",
+    )
 
     # The name in the mapping should be the same as the name in properties
-    assert properties['name'] == name
+    assert properties["name"] == name
 
 
-@pytest.mark.parametrize('value, expected', [
-    # No type -> False
-    ({}, False),
-
-    # object -> False
-    ({'type': 'object'}, False),
-
-    # Analyzed string -> False
-    ({'type': 'string'}, False),
-    ({'type': 'string', 'analyzer': 'keyword'}, False),
-
-    # Unanalyzed string -> True
-    ({'type': 'string', 'index': 'not_analyzed'}, True),
-
-    # Anything else -> True
-    ({'type': 'long'}, True),
-])
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # No type -> False
+        ({}, False),
+        # object -> False
+        ({"type": "object"}, False),
+        # Analyzed string -> False
+        ({"type": "string"}, False),
+        ({"type": "string", "analyzer": "keyword"}, False),
+        # Unanalyzed string -> True
+        ({"type": "string", "index": "not_analyzed"}, True),
+        # Anything else -> True
+        ({"type": "long"}, True),
+    ],
+)
 def test_is_doc_values_friendly(value, expected):
     assert is_doc_values_friendly(value) == expected
 
 
 def test_add_doc_values():
-    data = {'type': 'short'}
+    data = {"type": "short"}
     add_doc_values(data)
-    assert data == {
-        'type': 'short',
-        'doc_values': True
-    }
+    assert data == {"type": "short", "doc_values": True}
 
     data = {
-        'fields': {
-            'AsyncShutdownTimeout': {
-                'analyzer': 'standard',
-                'index': 'analyzed',
-                'type': 'string',
+        "fields": {
+            "AsyncShutdownTimeout": {
+                "analyzer": "standard",
+                "index": "analyzed",
+                "type": "string",
             },
-            'full': {
-                'index': 'not_analyzed',
-                'type': 'string',
-            }
+            "full": {"index": "not_analyzed", "type": "string"},
         },
-        'type': 'multi_field',
+        "type": "multi_field",
     }
     add_doc_values(data)
     assert data == {
-        'fields': {
-            'AsyncShutdownTimeout': {
-                'analyzer': 'standard',
-                'index': 'analyzed',
-                'type': 'string',
+        "fields": {
+            "AsyncShutdownTimeout": {
+                "analyzer": "standard",
+                "index": "analyzed",
+                "type": "string",
             },
-            'full': {
-                'index': 'not_analyzed',
-                'type': 'string',
-                'doc_values': True,
-            }
+            "full": {"index": "not_analyzed", "type": "string", "doc_values": True},
         },
-        'type': 'multi_field',
+        "type": "multi_field",
     }

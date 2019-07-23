@@ -7,10 +7,7 @@ import time
 from configman.dotdict import DotDict
 from mock import Mock
 
-from socorro.lib.threaded_task_manager import (
-    ThreadedTaskManager,
-    default_task_func,
-)
+from socorro.lib.threaded_task_manager import ThreadedTaskManager, default_task_func
 
 
 class TestThreadedTaskManager(object):
@@ -77,7 +74,7 @@ class TestThreadedTaskManager(object):
         ttm = ThreadedTaskManager(
             config,
             task_func=insert_into_list,
-            job_source_iterator=(((x,), {}) for x in range(10))
+            job_source_iterator=(((x,), {}) for x in range(10)),
         )
         try:
             ttm.start()

@@ -14,7 +14,7 @@ class Testdotdict_to_dict(object):
         # Test all the primitives
         assert dotdict_to_dict(None) is None
         assert dotdict_to_dict([]) == []
-        assert dotdict_to_dict('') == ''
+        assert dotdict_to_dict("") == ""
         assert dotdict_to_dict(1) == 1
         assert dotdict_to_dict({}) == {}
 
@@ -28,32 +28,12 @@ class Testdotdict_to_dict(object):
             copy.deepcopy(new_dict)
 
         # dict -> dict
-        comp({'a': 1}, {'a': 1})
+        comp({"a": 1}, {"a": 1})
 
         # outer dotdict -> dict
-        comp(DotDict({'a': 1}), {'a': 1})
+        comp(DotDict({"a": 1}), {"a": 1})
 
         # in a list
-        comp(
-            {
-                'a': 1,
-                'b': [
-                    DotDict({
-                        'a': 2
-                    }),
-                    3,
-                    4
-                ]
-            },
-            {'a': 1, 'b': [{'a': 2}, 3, 4]}
-        )
+        comp({"a": 1, "b": [DotDict({"a": 2}), 3, 4]}, {"a": 1, "b": [{"a": 2}, 3, 4]})
         # mixed dotdicts
-        comp(
-            DotDict({
-                'a': 1,
-                'b': DotDict({
-                    'a': 2
-                })
-            }),
-            {'a': 1, 'b': {'a': 2}}
-        )
+        comp(DotDict({"a": 1, "b": DotDict({"a": 2})}), {"a": 1, "b": {"a": 2}})

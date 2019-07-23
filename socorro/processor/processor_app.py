@@ -19,96 +19,78 @@ from socorro.lib.util import dotdict_to_dict
 
 
 CONFIG_DEFAULTS = {
-    'always_ignore_mismatches': True,
-
-    'queue': {
-        'crashqueue_class': 'socorro.external.pubsub.crashqueue.PubSubCrashQueue',
+    "always_ignore_mismatches": True,
+    "queue": {
+        "crashqueue_class": "socorro.external.pubsub.crashqueue.PubSubCrashQueue"
     },
-
-    'source': {
-        'benchmark_tag': 'BotoBenchmarkRead',
-        'crashstorage_class': 'socorro.external.crashstorage_base.BenchmarkingCrashStorage',
-        'wrapped_crashstore': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
+    "source": {
+        "benchmark_tag": "BotoBenchmarkRead",
+        "crashstorage_class": "socorro.external.crashstorage_base.BenchmarkingCrashStorage",
+        "wrapped_crashstore": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
     },
-
-    'destination': {
-        'crashstorage_class': 'socorro.external.crashstorage_base.PolyCrashStorage',
-
+    "destination": {
+        "crashstorage_class": "socorro.external.crashstorage_base.PolyCrashStorage",
         # Each key in this list corresponds to a key in this dict containing
         # a crash storage config.
-        'storage_namespaces': ','.join([
-            's3',
-            'elasticsearch',
-            'statsd',
-            'telemetry',
-        ]),
-
-        's3': {
-            'active_list': 'save_raw_and_processed',
-            'benchmark_tag': 'BotoBenchmarkWrite',
-            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
-            'metrics_prefix': 'processor.s3',
-            'use_mapping_file': 'False',
-            'wrapped_object_class': 'socorro.external.boto.crashstorage.BotoS3CrashStorage',
+        "storage_namespaces": ",".join(["s3", "elasticsearch", "statsd", "telemetry"]),
+        "s3": {
+            "active_list": "save_raw_and_processed",
+            "benchmark_tag": "BotoBenchmarkWrite",
+            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
+            "metrics_prefix": "processor.s3",
+            "use_mapping_file": "False",
+            "wrapped_object_class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
         },
-        'elasticsearch': {
-            'active_list': 'save_raw_and_processed',
-            'benchmark_tag': 'BotoBenchmarkWrite',
-            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
-            'es_redactor': {
-                'forbidden_keys': ', '.join([
-                    'memory_report',
-                    'upload_file_minidump_browser.json_dump',
-                    'upload_file_minidump_flash1.json_dump',
-                    'upload_file_minidump_flash2.json_dump',
-                ]),
+        "elasticsearch": {
+            "active_list": "save_raw_and_processed",
+            "benchmark_tag": "BotoBenchmarkWrite",
+            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
+            "es_redactor": {
+                "forbidden_keys": ", ".join(
+                    [
+                        "memory_report",
+                        "upload_file_minidump_browser.json_dump",
+                        "upload_file_minidump_flash1.json_dump",
+                        "upload_file_minidump_flash2.json_dump",
+                    ]
+                )
             },
-            'metrics_prefix': 'processor.es',
-            'use_mapping_file': 'False',
-            'wrapped_object_class': (
-                'socorro.external.es.crashstorage.ESCrashStorageRedactedJsonDump'
+            "metrics_prefix": "processor.es",
+            "use_mapping_file": "False",
+            "wrapped_object_class": (
+                "socorro.external.es.crashstorage.ESCrashStorageRedactedJsonDump"
             ),
         },
-        'statsd': {
-            'active_list': 'save_raw_and_processed',
-            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsCounter',
-            'metrics_prefix': 'processor',
+        "statsd": {
+            "active_list": "save_raw_and_processed",
+            "crashstorage_class": "socorro.external.crashstorage_base.MetricsCounter",
+            "metrics_prefix": "processor",
         },
-        'telemetry': {
-            'active_list': 'save_raw_and_processed',
-            'bucket_name': 'org-mozilla-telemetry-crashes',
-            'crashstorage_class': 'socorro.external.crashstorage_base.MetricsBenchmarkingWrapper',
-            'metrics_prefix': 'processor.telemetry',
-            'wrapped_object_class': (
-                'socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage'
+        "telemetry": {
+            "active_list": "save_raw_and_processed",
+            "bucket_name": "org-mozilla-telemetry-crashes",
+            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
+            "metrics_prefix": "processor.telemetry",
+            "wrapped_object_class": (
+                "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage"
             ),
         },
     },
-
-    'companion_process': {
-        'companion_class': 'socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
-        'symbol_cache_size': '40G',
-        'verbosity': 0,
+    "companion_process": {
+        "companion_class": "socorro.processor.symbol_cache_manager.SymbolLRUCacheManager",
+        "symbol_cache_size": "40G",
+        "verbosity": 0,
     },
-
-    'producer_consumer': {
-        'maximum_queue_size': 8,
-        'number_of_threads': 4,
-    },
-
-    'resource': {
-        'boto': {
-            'prefix': '',
-            'boto_metrics_prefix': 'processor.s3'
-        },
-
-        'elasticsearch': {
+    "producer_consumer": {"maximum_queue_size": 8, "number_of_threads": 4},
+    "resource": {
+        "boto": {"prefix": "", "boto_metrics_prefix": "processor.s3"},
+        "elasticsearch": {
             # FIXME(willkg): Where does this file come from?
-            'elasticsearch_index_settings': (
-                '/app/socorro/external/elasticsearch/socorro_index_settings.json'
+            "elasticsearch_index_settings": (
+                "/app/socorro/external/elasticsearch/socorro_index_settings.json"
             ),
-            'timeout': 2,
-            'use_mapping_file': False,
+            "timeout": 2,
+            "use_mapping_file": False,
         },
     },
 }
@@ -117,8 +99,8 @@ CONFIG_DEFAULTS = {
 class ProcessorApp(FetchTransformSaveApp):
     """Configman app that transforms raw crashes into processed crashes."""
 
-    app_name = 'processor'
-    app_version = '3.0'
+    app_name = "processor"
+    app_version = "3.0"
     app_description = __doc__
     config_defaults = CONFIG_DEFAULTS
 
@@ -126,23 +108,23 @@ class ProcessorApp(FetchTransformSaveApp):
 
     # The processor is the pipeline that transforms raw crashes into
     # processed crashes.
-    required_config.namespace('processor')
+    required_config.namespace("processor")
     required_config.processor.add_option(
-        'processor_class',
-        doc='the class that transforms raw crashes into processed crashes',
-        default='socorro.processor.processor_pipeline.ProcessorPipeline',
-        from_string_converter=class_converter
+        "processor_class",
+        doc="the class that transforms raw crashes into processed crashes",
+        default="socorro.processor.processor_pipeline.ProcessorPipeline",
+        from_string_converter=class_converter,
     )
 
     # The companion_process runs alongside the processor and cleans up
     # the symbol lru cache.
-    required_config.namespace('companion_process')
+    required_config.namespace("companion_process")
     required_config.companion_process.add_option(
-        'companion_class',
-        doc='a classname that runs a process in parallel with the processor',
-        default='',
+        "companion_class",
+        doc="a classname that runs a process in parallel with the processor",
+        default="",
         # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
     )
 
     def _capture_error(self, exc_info, crash_id=None):
@@ -154,13 +136,9 @@ class ProcessorApp(FetchTransformSaveApp):
         """
         extra = {}
         if crash_id:
-            extra['crash_id'] = crash_id
+            extra["crash_id"] = crash_id
 
-        sentry_client.capture_error(
-            self.logger,
-            exc_info,
-            extra=extra
-        )
+        sentry_client.capture_error(self.logger, exc_info, extra=extra)
 
     def _basic_iterator(self):
         try:
@@ -168,7 +146,7 @@ class ProcessorApp(FetchTransformSaveApp):
                 yield crashid
         except Exception:
             self._capture_error(sys.exc_info())
-            self.logger.warning('error in crashid iterator', exc_info=True)
+            self.logger.warning("error in crashid iterator", exc_info=True)
 
             # NOTE(willkg): Queue code should not be throwing unhandled
             # exceptions. If we hit one, we should make sure it gets to sentry
@@ -190,13 +168,15 @@ class ProcessorApp(FetchTransformSaveApp):
         except CrashIDNotFound:
             # If the crash isn't found, we just reject it--no need to capture
             # errors here
-            self.processor.reject_raw_crash(crash_id, 'crash cannot be found in raw crash storage')
+            self.processor.reject_raw_crash(
+                crash_id, "crash cannot be found in raw crash storage"
+            )
             return
         except Exception as x:
             # We don't know what this error is, so we should capture it
             self._capture_error(sys.exc_info(), crash_id)
-            self.logger.warning('error loading crash %s', crash_id, exc_info=True)
-            self.processor.reject_raw_crash(crash_id, 'error in loading: %s' % x)
+            self.logger.warning("error loading crash %s", crash_id, exc_info=True)
+            self.processor.reject_raw_crash(crash_id, "error in loading: %s" % x)
             return
 
         # Fetch processed crash data--there won't be any if this crash hasn't
@@ -209,7 +189,9 @@ class ProcessorApp(FetchTransformSaveApp):
         # Process the crash and remove any temporary artifacts from disk
         try:
             # Process the crash to generate a processed crash
-            processed_crash = self.processor.process_crash(raw_crash, dumps, processed_crash)
+            processed_crash = self.processor.process_crash(
+                raw_crash, dumps, processed_crash
+            )
 
             # Convert the raw and processed crashes from DotDict into Python standard data
             # structures
@@ -221,13 +203,15 @@ class ProcessorApp(FetchTransformSaveApp):
             # individual crash storage implementations may choose to honor re-saving
             # the raw_crash or not.
 
-            self.destination.save_raw_and_processed(raw_crash, None, processed_crash, crash_id)
-            self.logger.info('saved - %s', crash_id)
+            self.destination.save_raw_and_processed(
+                raw_crash, None, processed_crash, crash_id
+            )
+            self.logger.info("saved - %s", crash_id)
         except PolyStorageError as poly_storage_error:
             # Capture and log the exceptions raised by storage backends
             for storage_error in poly_storage_error:
                 self._capture_error(storage_error, crash_id)
-            self.logger.warning('error in processing or saving crash %s', crash_id)
+            self.logger.warning("error in processing or saving crash %s", crash_id)
 
             # Re-raise the original exception with the correct traceback
             raise
@@ -235,19 +219,18 @@ class ProcessorApp(FetchTransformSaveApp):
         finally:
             # Clean up any dump files saved to the file system
             for a_dump_pathname in dumps.values():
-                if 'TEMPORARY' in a_dump_pathname:
+                if "TEMPORARY" in a_dump_pathname:
                     try:
                         os.unlink(a_dump_pathname)
                     except OSError as x:
-                        self.logger.info('deletion of dump failed: %s', x)
+                        self.logger.info("deletion of dump failed: %s", x)
 
     def _setup_source_and_destination(self):
         """Instantiate classes necessary for processing."""
         super()._setup_source_and_destination()
         if self.config.companion_process.companion_class:
             self.companion_process = self.config.companion_process.companion_class(
-                self.config.companion_process,
-                self.quit_check
+                self.config.companion_process, self.quit_check
             )
         else:
             self.companion_process = None
@@ -259,8 +242,7 @@ class ProcessorApp(FetchTransformSaveApp):
         self.waiting_func = None
 
         self.processor = self.config.processor.processor_class(
-            self.config.processor,
-            quit_check_callback=self.quit_check
+            self.config.processor, quit_check_callback=self.quit_check
         )
 
     def close(self):
@@ -280,5 +262,5 @@ class ProcessorApp(FetchTransformSaveApp):
             pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(ProcessorApp.run())

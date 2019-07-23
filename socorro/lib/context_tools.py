@@ -18,12 +18,12 @@ def temp_file_context(raw_dump_path, logger=None):
     try:
         yield raw_dump_path
     finally:
-        if 'TEMPORARY' in raw_dump_path:
+        if "TEMPORARY" in raw_dump_path:
             try:
                 os.unlink(raw_dump_path)
             except OSError:
                 logger.warning(
-                    'unable to delete %s. manual deletion is required.',
+                    "unable to delete %s. manual deletion is required.",
                     raw_dump_path,
-                    exc_info=True
+                    exc_info=True,
                 )

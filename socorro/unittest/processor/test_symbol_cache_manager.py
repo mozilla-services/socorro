@@ -13,7 +13,7 @@ from socorro.processor.symbol_cache_manager import (
 )
 
 
-@pytest.mark.skipif(os.uname()[0] != 'Linux', reason='only run if on Linux')
+@pytest.mark.skipif(os.uname()[0] != "Linux", reason="only run if on Linux")
 class TestEventHandler(object):
     def test_init(self):
         mocked_monitor = Mock()
@@ -29,7 +29,7 @@ class TestEventHandler(object):
 
         event = Mock()
         event.dir = True
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
@@ -42,22 +42,20 @@ class TestEventHandler(object):
 
         event = Mock()
         event.dir = False
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
         handler.process_IN_DELETE(event)
 
-        mocked_monitor._remove_cached.called_once_with(
-            event.pathname
-        )
+        mocked_monitor._remove_cached.called_once_with(event.pathname)
 
     def test_process_IN_CREATE_1(self):
         mocked_monitor = Mock()
 
         event = Mock()
         event.dir = True
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
@@ -70,22 +68,20 @@ class TestEventHandler(object):
 
         event = Mock()
         event.dir = False
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
         handler.process_IN_DELETE(event)
 
-        mocked_monitor._update_cache.called_once_with(
-            event.pathname
-        )
+        mocked_monitor._update_cache.called_once_with(event.pathname)
 
     def test_process_IN_MOVED_TO_1(self):
         mocked_monitor = Mock()
 
         event = Mock()
         event.dir = True
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
@@ -98,22 +94,20 @@ class TestEventHandler(object):
 
         event = Mock()
         event.dir = False
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
         handler.process_IN_DELETE(event)
 
-        mocked_monitor._remove_cached.called_once_with(
-            event.pathname
-        )
+        mocked_monitor._remove_cached.called_once_with(event.pathname)
 
     def test_process_IN_OPEN_1(self):
         mocked_monitor = Mock()
 
         event = Mock()
         event.dir = True
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
@@ -126,22 +120,20 @@ class TestEventHandler(object):
 
         event = Mock()
         event.dir = False
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
         handler.process_IN_DELETE(event)
 
-        mocked_monitor._remove_cached.called_once_with(
-            event.pathname
-        )
+        mocked_monitor._remove_cached.called_once_with(event.pathname)
 
     def test_process_IN_MODIFY_1(self):
         mocked_monitor = Mock()
 
         event = Mock()
         event.dir = True
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
@@ -154,20 +146,16 @@ class TestEventHandler(object):
 
         event = Mock()
         event.dir = False
-        event.pathname = 'hello'
+        event.pathname = "hello"
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
         handler.process_IN_DELETE(event)
 
-        mocked_monitor._remove_cached.called_once_with(
-            event.pathname,
-            True
-        )
+        mocked_monitor._remove_cached.called_once_with(event.pathname, True)
 
 
 class Test_from_string_to_parse_size:
-
     def test_bad_input(self):
         with pytest.raises(ValueError):
             from_string_to_parse_size(17)
@@ -176,15 +164,15 @@ class Test_from_string_to_parse_size:
             from_string_to_parse_size(None)
 
         with pytest.raises(ValueError):
-            from_string_to_parse_size('')
+            from_string_to_parse_size("")
 
         # bad conversion
         with pytest.raises(ValueError):
-            from_string_to_parse_size('g1')
+            from_string_to_parse_size("g1")
 
         # unknown size suffix
         with pytest.raises(ValueError):
-            from_string_to_parse_size('1g')
+            from_string_to_parse_size("1g")
 
     def test_ok(self):
         assert from_string_to_parse_size("1") == 1

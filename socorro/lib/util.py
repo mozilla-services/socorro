@@ -12,6 +12,7 @@ def dotdict_to_dict(sdotdict):
     things named DotDict to dict so it's deep-copyable.
 
     """
+
     def _dictify(thing):
         if isinstance(thing, collections.Mapping):
             return dict([(key, _dictify(val)) for key, val in thing.items()])

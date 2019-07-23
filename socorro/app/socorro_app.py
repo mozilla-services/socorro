@@ -29,7 +29,12 @@ from configman import (
     environment,
     command_line,
 )
-from configman.converters import py_obj_to_str, str_to_boolean, str_to_list, str_to_python_object
+from configman.converters import (
+    py_obj_to_str,
+    str_to_boolean,
+    str_to_list,
+    str_to_python_object,
+)
 import markus
 import sentry_sdk
 from socorro.lib.revision_data import get_revision_data, get_version
@@ -42,20 +47,15 @@ def cls_to_pypath(cls):
     to Configman as it tries to refer to a class by its proper module name.
     This function will convert a class into its properly qualified actual
     pathname."""
-    if cls.__module__ == '__main__':
-        module_path = (
-            sys.modules['__main__']
-            .__file__[:-3]
-        )
-        module_name = ''
+    if cls.__module__ == "__main__":
+        module_path = sys.modules["__main__"].__file__[:-3]
+        module_name = ""
         for a_python_path in sys.path:
-            tentative_pathname = module_path.replace(a_python_path, '')
+            tentative_pathname = module_path.replace(a_python_path, "")
             if tentative_pathname != module_path:
-                module_name = (
-                    tentative_pathname.replace('/', '.').strip('.')
-                )
+                module_name = tentative_pathname.replace("/", ".").strip(".")
                 break
-        if module_name == '':
+        if module_name == "":
             return py_obj_to_str(cls)
     else:
         module_name = cls.__module__
@@ -64,9 +64,10 @@ def cls_to_pypath(cls):
 
 class App(RequiredConfig):
     """The base class for all Socorro applications"""
-    app_name = 'SocorroAppBaseClass'
+
+    app_name = "SocorroAppBaseClass"
     app_version = "1.0"
-    app_description = 'base class for app system'
+    app_description = "base class for app system"
 
     #: String containing a module import path. The module is used as a
     #: source for default configuration values. If None, this makes no
@@ -74,53 +75,49 @@ class App(RequiredConfig):
     config_defaults = None
 
     required_config = Namespace()
-    required_config.add_option(
-        'host_id',
-        doc='host id',
-        default='',
-    )
-    required_config.namespace('logging')
+    required_config.add_option("host_id", doc="host id", default="")
+    required_config.namespace("logging")
     required_config.logging.add_option(
-        'level',
-        doc='logging level: DEBUG, INFO, WARNING, ERROR, or CRITICAL',
-        default='INFO',
-        reference_value_from='resource.logging',
+        "level",
+        doc="logging level: DEBUG, INFO, WARNING, ERROR, or CRITICAL",
+        default="INFO",
+        reference_value_from="resource.logging",
     )
 
-    required_config.namespace('metricscfg')
+    required_config.namespace("metricscfg")
     required_config.metricscfg.add_option(
-        'statsd_host',
-        doc='host for statsd server',
-        default='localhost',
-        reference_value_from='resource.metrics'
+        "statsd_host",
+        doc="host for statsd server",
+        default="localhost",
+        reference_value_from="resource.metrics",
     )
     required_config.metricscfg.add_option(
-        'statsd_port',
-        doc='port for statsd server',
+        "statsd_port",
+        doc="port for statsd server",
         default=8125,
-        reference_value_from='resource.metrics'
+        reference_value_from="resource.metrics",
     )
     required_config.metricscfg.add_option(
-        'markus_backends',
-        doc='comma separated list of Markus backends to use',
-        default='markus.backends.datadog.DatadogMetrics',
-        reference_value_from='resource.metrics',
+        "markus_backends",
+        doc="comma separated list of Markus backends to use",
+        default="markus.backends.datadog.DatadogMetrics",
+        reference_value_from="resource.metrics",
         from_string_converter=str_to_list,
     )
 
     # Sentry handles reporting unhandled exceptions.
-    required_config.namespace('sentry')
+    required_config.namespace("sentry")
     required_config.sentry.add_option(
-        'dsn',
-        doc='DSN for Sentry',
-        default='',
-        reference_value_from='secrets.sentry',
-        secret=True
+        "dsn",
+        doc="DSN for Sentry",
+        default="",
+        reference_value_from="secrets.sentry",
+        secret=True,
     )
     required_config.sentry.add_option(
-        'debug',
-        doc='Print details of initialization and event processing (true/false)',
-        reference_value_from='resource.sentry',
+        "debug",
+        doc="Print details of initialization and event processing (true/false)",
+        reference_value_from="resource.sentry",
         from_string_converter=str_to_boolean,
         default=False,
     )
@@ -129,7 +126,7 @@ class App(RequiredConfig):
         self.config = config
         # give a name to this running instance of the program.
         self.app_instance_name = self._app_instance_name()
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def main(self):  # pragma: no cover
         """derived classes must override this function with business logic"""
@@ -143,19 +140,16 @@ class App(RequiredConfig):
         # tag output that is traceble back to an app/machine/process.
         return "%s_%s_%d" % (
             self.app_name,
-            os.uname()[1].replace('.', '_'),
-            os.getpid()
+            os.uname()[1].replace(".", "_"),
+            os.getpid(),
         )
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):
         # NOTE(willkg): This is a classmethod, so we need a different logger.
-        mylogger = logging.getLogger(__name__ + '.' + cls.__name__)
+        mylogger = logging.getLogger(__name__ + "." + cls.__name__)
         if config_path is None:
-            config_path = os.environ.get(
-                'DEFAULT_SOCORRO_CONFIG_PATH',
-                './config'
-            )
+            config_path = os.environ.get("DEFAULT_SOCORRO_CONFIG_PATH", "./config")
 
         if values_source_list is None:
             values_source_list = [
@@ -164,7 +158,7 @@ class App(RequiredConfig):
                 # get values from the environment
                 environment,
                 # use the command line to get the final overriding values
-                command_line
+                command_line,
             ]
 
         # Pull base set of defaults from the config module if it is specified
@@ -172,17 +166,15 @@ class App(RequiredConfig):
             values_source_list.insert(0, cls.config_defaults)
 
         config_definition = cls.get_required_config()
-        if 'application' not in config_definition:
+        if "application" not in config_definition:
             # FIXME(mkelly): We used to have a SocorroWelcomeApp that defined an
             # "application" option. We no longer have that. This section should
             # get reworked possibly as part of getting rid of application
             # defaults.
             application_config = Namespace()
             application_config.add_option(
-                'application',
-                doc=(
-                    'the fully qualified classname of the app to run'
-                ),
+                "application",
+                doc=("the fully qualified classname of the app to run"),
                 default=cls_to_pypath(cls),
                 # the following setting means this option will NOT be
                 # commented out when configman generates a config file
@@ -198,7 +190,7 @@ class App(RequiredConfig):
             app_description=cls.app_description,
             values_source_list=values_source_list,
             options_banned_from_help=[],
-            config_pathname=config_path
+            config_pathname=config_path,
         )
 
         def fix_exit_code(code):
@@ -216,10 +208,8 @@ class App(RequiredConfig):
             revision_data = get_revision_data()
             revision_items = sorted(revision_data.items())
             mylogger.info(
-                'version.json: {%s}',
-                ', '.join(
-                    ['%r: %r' % (key, val) for key, val in revision_items]
-                )
+                "version.json: {%s}",
+                ", ".join(["%r: %r" % (key, val) for key, val in revision_items]),
             )
 
             config_manager.log_config(mylogger)
@@ -249,61 +239,43 @@ def setup_logging(config):
             return True
 
     logging_config = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'filters': {
-            'add_hostid': {
-                '()': AddHostID
+        "version": 1,
+        "disable_existing_loggers": False,
+        "filters": {"add_hostid": {"()": AddHostID}},
+        "formatters": {
+            "socorroapp": {
+                "format": "%(asctime)s %(levelname)s - %(name)s - %(threadName)s - %(message)s"
+            },
+            "mozlog": {
+                "()": "dockerflow.logging.JsonLogFormatter",
+                "logger_name": "socorro",
             },
         },
-        'formatters': {
-            'socorroapp': {
-                'format': '%(asctime)s %(levelname)s - %(name)s - %(threadName)s - %(message)s',
-            },
-            'mozlog': {
-                '()': 'dockerflow.logging.JsonLogFormatter',
-                'logger_name': 'socorro'
-            },
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'socorroapp',
-            },
-            'mozlog': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-                'formatter': 'mozlog',
-                'filters': ['add_hostid']
+        "handlers": {
+            "console": {"class": "logging.StreamHandler", "formatter": "socorroapp"},
+            "mozlog": {
+                "level": "DEBUG",
+                "class": "logging.StreamHandler",
+                "formatter": "mozlog",
+                "filters": ["add_hostid"],
             },
         },
     }
 
-    if os.environ.get('LOCAL_DEV_ENV') == 'True':
+    if os.environ.get("LOCAL_DEV_ENV") == "True":
         # In a local development environment, we don't want to see mozlog
         # format at all, but we do want to see markus things and py.warnings.
         # So set the logging up that way.
-        logging_config['loggers'] = {
-            'py.warnings': {
-                'handlers': ['console'],
-            },
-            'markus': {
-                'handlers': ['console'],
-                'level': logging.INFO,
-            },
-            'socorro': {
-                'handlers': ['console'],
-                'level': logging_level,
-            },
+        logging_config["loggers"] = {
+            "py.warnings": {"handlers": ["console"]},
+            "markus": {"handlers": ["console"], "level": logging.INFO},
+            "socorro": {"handlers": ["console"], "level": logging_level},
         }
 
     else:
         # In a server environment, we want to use mozlog format.
-        logging_config['loggers'] = {
-            'socorro': {
-                'handlers': ['mozlog'],
-                'level': logging_level,
-            },
+        logging_config["loggers"] = {
+            "socorro": {"handlers": ["mozlog"], "level": logging_level}
         }
 
     logging.config.dictConfig(logging_config)
@@ -314,26 +286,28 @@ def setup_metrics(config):
     backends = []
 
     for backend in config.metricscfg.markus_backends:
-        if backend == 'markus.backends.statsd.StatsdMetrics':
-            backends.append({
-                'class': 'markus.backends.statsd.StatsdMetrics',
-                'options': {
-                    'statsd_host': config.metricscfg.statsd_host,
-                    'statsd_port': config.metricscfg.statsd_port,
+        if backend == "markus.backends.statsd.StatsdMetrics":
+            backends.append(
+                {
+                    "class": "markus.backends.statsd.StatsdMetrics",
+                    "options": {
+                        "statsd_host": config.metricscfg.statsd_host,
+                        "statsd_port": config.metricscfg.statsd_port,
+                    },
                 }
-            })
-        elif backend == 'markus.backends.datadog.DatadogMetrics':
-            backends.append({
-                'class': 'markus.backends.datadog.DatadogMetrics',
-                'options': {
-                    'statsd_host': config.metricscfg.statsd_host,
-                    'statsd_port': config.metricscfg.statsd_port,
+            )
+        elif backend == "markus.backends.datadog.DatadogMetrics":
+            backends.append(
+                {
+                    "class": "markus.backends.datadog.DatadogMetrics",
+                    "options": {
+                        "statsd_host": config.metricscfg.statsd_host,
+                        "statsd_port": config.metricscfg.statsd_port,
+                    },
                 }
-            })
-        elif backend == 'markus.backends.logging.LoggingMetrics':
-            backends.append({
-                'class': 'markus.backends.logging.LoggingMetrics',
-            })
+            )
+        elif backend == "markus.backends.logging.LoggingMetrics":
+            backends.append({"class": "markus.backends.logging.LoggingMetrics"})
         else:
             raise ValueError('Invalid markus backend "%s"' % backend)
 
@@ -348,4 +322,5 @@ def setup_crash_reporting(config, version):
             dsn=config.sentry.dsn,
             release=version,
             debug=config.sentry.debug,
-            send_default_pii=False)
+            send_default_pii=False,
+        )

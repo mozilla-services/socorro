@@ -6,7 +6,11 @@ import time
 
 from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 from socorro.lib.ooid import create_new_ooid
-from socorro.unittest.external.pubsub import ACK_DEADLINE, get_config_manager, PubSubHelper
+from socorro.unittest.external.pubsub import (
+    ACK_DEADLINE,
+    get_config_manager,
+    PubSubHelper,
+)
 
 
 class TestPubSubCrashQueue:
@@ -17,13 +21,13 @@ class TestPubSubCrashQueue:
 
             with pubsub_helper as pubsub:
                 standard_crash = create_new_ooid()
-                pubsub.publish('standard', standard_crash)
+                pubsub.publish("standard", standard_crash)
 
                 reprocessing_crash = create_new_ooid()
-                pubsub.publish('reprocessing', reprocessing_crash)
+                pubsub.publish("reprocessing", reprocessing_crash)
 
                 priority_crash = create_new_ooid()
-                pubsub.publish('priority', priority_crash)
+                pubsub.publish("priority", priority_crash)
 
                 crash_queue = PubSubCrashQueue(config)
                 new_crashes = list(crash_queue.new_crashes())
@@ -32,8 +36,8 @@ class TestPubSubCrashQueue:
         for item in new_crashes:
             assert isinstance(item, tuple)
             assert isinstance(item[0], tuple)  # *args
-            assert isinstance(item[1], dict)   # **kwargs
-            assert list(item[1].keys()) == ['finished_func']
+            assert isinstance(item[1], dict)  # **kwargs
+            assert list(item[1].keys()) == ["finished_func"]
 
         # Assert new_crashes order is the correct order
         crash_ids = [item[0][0] for item in new_crashes]
@@ -48,7 +52,7 @@ class TestPubSubCrashQueue:
 
             with pubsub_helper as pubsub:
                 # Publish crash id to the queue
-                pubsub.publish('standard', original_crash_id)
+                pubsub.publish("standard", original_crash_id)
 
                 crash_queue = PubSubCrashQueue(config)
                 new_crashes = list(crash_queue.new_crashes())
@@ -64,7 +68,7 @@ class TestPubSubCrashQueue:
 
                 # Now ack the crash_id and we don't get it again
                 for args, kwargs in new_crashes:
-                    kwargs['finished_func']()
+                    kwargs["finished_func"]()
 
                 # Wait beyond the ack deadline in the grossest way possible
                 time.sleep(ACK_DEADLINE + 1)

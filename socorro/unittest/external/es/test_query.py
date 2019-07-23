@@ -8,11 +8,7 @@ import elasticsearch
 import mock
 import pytest
 
-from socorro.lib import (
-    DatabaseError,
-    MissingArgumentError,
-    ResourceNotFound,
-)
+from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.query import Query
 from socorro.lib import datetimeutil
@@ -34,40 +30,30 @@ class TestIntegrationQuery(ElasticsearchTestCase):
         self.api = Query(config=config)
 
     def test_get(self):
-        self.index_crash({'product': 'WaterWolf'})
-        self.index_crash({'product': 'EarthRaccoon'})
+        self.index_crash({"product": "WaterWolf"})
+        self.index_crash({"product": "EarthRaccoon"})
         self.es_context.refresh()
 
-        query = {
-            'query': {
-                'match_all': {}
-            }
-        }
+        query = {"query": {"match_all": {}}}
         res = self.api.get(query=query)
         assert res
-        assert 'hits' in res
-        assert res['hits']['total'] == 2
+        assert "hits" in res
+        assert res["hits"]["total"] == 2
 
         query = {
-            'query': {
-                'filtered': {
-                    'query': {
-                        'match_all': {}
-                    },
-                    'filter': {
-                        'term': {
-                            'product': 'earthraccoon'
-                        }
-                    }
+            "query": {
+                "filtered": {
+                    "query": {"match_all": {}},
+                    "filter": {"term": {"product": "earthraccoon"}},
                 }
             }
         }
         res = self.api.get(query=query)
         assert res
-        assert 'hits' in res
-        assert res['hits']['total'] == 1
+        assert "hits" in res
+        assert res["hits"]["total"] == 1
 
-    @mock.patch('socorro.external.es.connection_context.elasticsearch')
+    @mock.patch("socorro.external.es.connection_context.elasticsearch")
     def test_get_with_errors(self, mocked_es):
         # Test missing argument.
         with pytest.raises(MissingArgumentError):
@@ -77,70 +63,59 @@ class TestIntegrationQuery(ElasticsearchTestCase):
         mocked_connection = mock.Mock()
         mocked_es.Elasticsearch.return_value = mocked_connection
 
-        mocked_connection.search.side_effect = (
-            elasticsearch.exceptions.NotFoundError(
-                404, '[[socorro_201801] missing]'
-            )
+        mocked_connection.search.side_effect = elasticsearch.exceptions.NotFoundError(
+            404, "[[socorro_201801] missing]"
         )
         with pytest.raises(ResourceNotFound):
-            self.api.get(query={'query': {}})
+            self.api.get(query={"query": {}})
 
         # Test a generic error response from elasticsearch.
-        mocked_connection.search.side_effect = (
-            elasticsearch.exceptions.TransportError('aaa')
+        mocked_connection.search.side_effect = elasticsearch.exceptions.TransportError(
+            "aaa"
         )
         with pytest.raises(DatabaseError):
-            self.api.get(query={'query': {}})
+            self.api.get(query={"query": {}})
 
-    @mock.patch('socorro.external.es.connection_context.elasticsearch')
+    @mock.patch("socorro.external.es.connection_context.elasticsearch")
     def test_get_with_indices(self, mocked_es):
         mocked_connection = mock.Mock()
         mocked_es.Elasticsearch.return_value = mocked_connection
 
         # Test default indices.
-        self.api.get(
-            query={'query': {}}
-        )
+        self.api.get(query={"query": {}})
         mocked_connection.search.assert_called_with(
             body='{"query": {}}',
             index=[self.es_context.get_index_template()],
-            doc_type=self.es_context.get_doctype()
+            doc_type=self.es_context.get_doctype(),
         )
 
         # Test all indices.
-        self.api.get(
-            query={'query': {}},
-            indices=['ALL']
-        )
-        mocked_connection.search.assert_called_with(
-            body='{"query": {}}'
-        )
+        self.api.get(query={"query": {}}, indices=["ALL"])
+        mocked_connection.search.assert_called_with(body='{"query": {}}')
 
         # Test forcing indices.
         self.api.get(
-            query={'query': {}},
-            indices=['socorro_201801', 'socorro_200047', 'not_an_index']
+            query={"query": {}},
+            indices=["socorro_201801", "socorro_200047", "not_an_index"],
         )
         mocked_connection.search.assert_called_with(
             body='{"query": {}}',
-            index=['socorro_201801', 'socorro_200047', 'not_an_index'],
-            doc_type=self.es_context.get_doctype()
+            index=["socorro_201801", "socorro_200047", "not_an_index"],
+            doc_type=self.es_context.get_doctype(),
         )
 
         # Test default indices with an index schema based on dates.
-        index_schema = 'socorro_%Y%W'
+        index_schema = "socorro_%Y%W"
         config = self.get_base_config(cls=Query, es_index=index_schema)
         api = Query(config=config)
 
         now = datetimeutil.utc_now()
         last_week = now - datetime.timedelta(days=7)
-        indices = generate_list_of_indexes(last_week, now, api.context.get_index_template())
-
-        api.get(
-            query={'query': {}}
+        indices = generate_list_of_indexes(
+            last_week, now, api.context.get_index_template()
         )
+
+        api.get(query={"query": {}})
         mocked_connection.search.assert_called_with(
-            body='{"query": {}}',
-            index=indices,
-            doc_type=api.context.get_doctype()
+            body='{"query": {}}', index=indices, doc_type=api.context.get_doctype()
         )

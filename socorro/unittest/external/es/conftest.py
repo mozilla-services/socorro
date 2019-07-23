@@ -13,8 +13,7 @@ from socorro.external.es.connection_context import ConnectionContext
 def es_conn():
     """Create an Elasticsearch ConnectionContext and clean up indices afterwards."""
     cm = ConfigurationManager(
-        ConnectionContext.get_required_config(),
-        values_source_list=[environment]
+        ConnectionContext.get_required_config(), values_source_list=[environment]
     )
     config = cm.get_config()
     conn = ConnectionContext(config)

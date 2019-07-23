@@ -24,7 +24,7 @@ Socorro that has "View Personally Identifiable Information" permission.
 """
 
 # FIXME(willkg): This hits production. We might want it configurable.
-API_URL = 'https://crash-stats.mozilla.org/api'
+API_URL = "https://crash-stats.mozilla.org/api"
 
 
 class OutputBase:
@@ -36,6 +36,7 @@ class OutputBase:
     Otherwise they can just implement ``data`` and should be fine.
 
     """
+
     def __enter__(self):
         return self
 
@@ -48,7 +49,7 @@ class OutputBase:
         :arg str line: the line to print to stderr
 
         """
-        print('WARNING: %s' % line, file=sys.stderr)
+        print("WARNING: %s" % line, file=sys.stderr)
 
     def data(self, crash_id, old_sig, result, verbose):
         """Outputs a data point
@@ -64,25 +65,25 @@ class OutputBase:
 
 class TextOutput(OutputBase):
     def data(self, crash_id, old_sig, result, verbose):
-        print('Crash id: %s' % crash_id)
-        print('Original: %s' % old_sig)
-        print('New:      %s' % result.signature)
-        print('Same?:    %s' % (old_sig == result.signature))
+        print("Crash id: %s" % crash_id)
+        print("Original: %s" % old_sig)
+        print("New:      %s" % result.signature)
+        print("Same?:    %s" % (old_sig == result.signature))
 
         if result.notes:
-            print('Notes:    (%d)' % len(result.notes))
+            print("Notes:    (%d)" % len(result.notes))
             for note in result.notes:
-                print('          %s' % note)
+                print("          %s" % note)
         if verbose and result.debug_log:
-            print('Debug:    (%d)' % len(result.debug_log))
+            print("Debug:    (%d)" % len(result.debug_log))
             for item in result.debug_log:
-                print('          %s' % item)
+                print("          %s" % item)
 
 
 class CSVOutput(OutputBase):
     def __enter__(self):
         self.out = csv.writer(sys.stdout, quoting=csv.QUOTE_ALL)
-        self.out.writerow(['crashid', 'old', 'new', 'same?', 'notes'])
+        self.out.writerow(["crashid", "old", "new", "same?", "notes"])
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -90,20 +91,20 @@ class CSVOutput(OutputBase):
 
     def data(self, crash_id, old_sig, result, verbose):
         self.out.writerow(
-            [crash_id, old_sig, result.signature, str(old_sig == result.signature), result.notes]
+            [
+                crash_id,
+                old_sig,
+                result.signature,
+                str(old_sig == result.signature),
+                result.notes,
+            ]
         )
 
 
 def fetch(endpoint, crash_id, api_token=None):
-    kwargs = {
-        'params': {
-            'crash_id': crash_id
-        }
-    }
+    kwargs = {"params": {"crash_id": crash_id}}
     if api_token:
-        kwargs['headers'] = {
-            'Auth-Token': api_token
-        }
+        kwargs["headers"] = {"Auth-Token": api_token}
 
     return requests.get(API_URL + endpoint, **kwargs)
 
@@ -114,17 +115,20 @@ def main(argv=None):
     """
     parser = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
     parser.add_argument(
-        '-v', '--verbose', help='increase output verbosity', action='store_true'
+        "-v", "--verbose", help="increase output verbosity", action="store_true"
+    )
+    parser.add_argument("--format", help="specify output format: csv, text (default)")
+    parser.add_argument(
+        "--different-only",
+        dest="different",
+        action="store_true",
+        help="limit output to just the signatures that changed",
     )
     parser.add_argument(
-        '--format', help='specify output format: csv, text (default)'
-    )
-    parser.add_argument(
-        '--different-only', dest='different', action='store_true',
-        help='limit output to just the signatures that changed',
-    )
-    parser.add_argument(
-        'crashids', metavar='crashid', nargs='*', help='crash id to generate signatures for'
+        "crashids",
+        metavar="crashid",
+        nargs="*",
+        help="crash id to generate signatures for",
     )
 
     if argv is None:
@@ -132,12 +136,12 @@ def main(argv=None):
     else:
         args = parser.parse_args(argv)
 
-    if args.format == 'csv':
+    if args.format == "csv":
         outputter = CSVOutput
     else:
         outputter = TextOutput
 
-    api_token = os.environ.get('SOCORRO_API_TOKEN', '')
+    api_token = os.environ.get("SOCORRO_API_TOKEN", "")
 
     generator = SignatureGenerator()
     if args.crashids:
@@ -158,49 +162,51 @@ def main(argv=None):
         for crash_id in crashids_iterable:
             crash_id = crash_id.strip()
 
-            resp = fetch('/RawCrash/', crash_id, api_token)
+            resp = fetch("/RawCrash/", crash_id, api_token)
             if resp.status_code == 404:
-                out.warning('%s: does not exist.' % crash_id)
+                out.warning("%s: does not exist." % crash_id)
                 continue
             if resp.status_code == 429:
-                out.warning('API rate limit reached. %s' % resp.content)
+                out.warning("API rate limit reached. %s" % resp.content)
                 # FIXME(willkg): Maybe there's something better we could do here. Like maybe wait a
                 # few minutes.
                 return 1
             if resp.status_code == 500:
-                out.warning('HTTP 500: %s' % resp.content)
+                out.warning("HTTP 500: %s" % resp.content)
                 continue
 
             raw_crash = resp.json()
 
             # If there's an error in the raw crash, then something is wrong--probably with the API
             # token. So print that out and exit.
-            if 'error' in raw_crash:
-                out.warning('Error fetching raw crash: %s' % raw_crash['error'])
+            if "error" in raw_crash:
+                out.warning("Error fetching raw crash: %s" % raw_crash["error"])
                 return 1
 
-            resp = fetch('/ProcessedCrash/', crash_id, api_token)
+            resp = fetch("/ProcessedCrash/", crash_id, api_token)
             if resp.status_code == 404:
-                out.warning('%s: does not have processed crash.' % crash_id)
+                out.warning("%s: does not have processed crash." % crash_id)
                 continue
             if resp.status_code == 429:
-                out.warning('API rate limit reached. %s' % resp.content)
+                out.warning("API rate limit reached. %s" % resp.content)
                 # FIXME(willkg): Maybe there's something better we could do here. Like maybe wait a
                 # few minutes.
                 return 1
             if resp.status_code == 500:
-                out.warning('HTTP 500: %s' % resp.content)
+                out.warning("HTTP 500: %s" % resp.content)
                 continue
 
             processed_crash = resp.json()
 
             # If there's an error in the processed crash, then something is wrong--probably with the
             # API token. So print that out and exit.
-            if 'error' in processed_crash:
-                out.warning('Error fetching processed crash: %s' % processed_crash['error'])
+            if "error" in processed_crash:
+                out.warning(
+                    "Error fetching processed crash: %s" % processed_crash["error"]
+                )
                 return 1
 
-            old_signature = processed_crash['signature']
+            old_signature = processed_crash["signature"]
             crash_data = convert_to_crash_data(raw_crash, processed_crash)
 
             result = generator.generate(crash_data)

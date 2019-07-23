@@ -15,8 +15,7 @@ def _get_file_content(filename, parsed=True):
             return f.read()
 
 
-CRASH_REPORT_JSON_SCHEMA = _get_file_content('crash_report.json')
+CRASH_REPORT_JSON_SCHEMA = _get_file_content("crash_report.json")
 CRASH_REPORT_JSON_SCHEMA_AS_STRING = _get_file_content(
-    'crash_report.json',
-    parsed=False
+    "crash_report.json", parsed=False
 )

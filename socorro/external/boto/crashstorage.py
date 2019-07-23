@@ -21,34 +21,37 @@ from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
 class BotoCrashStorage(CrashStorageBase):
     """Saves and loads crash data to S3"""
+
     required_config = Namespace()
     required_config.add_option(
-        'resource_class',
-        default='socorro.external.boto.connection_context.ConnectionContextBase',
-        doc='fully qualified dotted Python classname to handle Boto connections',
+        "resource_class",
+        default="socorro.external.boto.connection_context.ConnectionContextBase",
+        doc="fully qualified dotted Python classname to handle Boto connections",
         from_string_converter=class_converter,
-        reference_value_from='resource.boto'
+        reference_value_from="resource.boto",
     )
     required_config.add_option(
-        'temporary_file_system_storage_path',
-        doc='a local filesystem path where dumps temporarily during processing',
-        default='/home/socorro/temp',
-        reference_value_from='resource.boto',
+        "temporary_file_system_storage_path",
+        doc="a local filesystem path where dumps temporarily during processing",
+        default="/home/socorro/temp",
+        reference_value_from="resource.boto",
     )
     required_config.add_option(
-        'dump_file_suffix',
-        doc='the suffix used to identify a dump file (for use in temp files)',
-        default='.dump',
-        reference_value_from='resource.boto',
+        "dump_file_suffix",
+        doc="the suffix used to identify a dump file (for use in temp files)",
+        default=".dump",
+        reference_value_from="resource.boto",
     )
     required_config.add_option(
-        'json_object_hook',
-        default='configman.dotdict.DotDict',
+        "json_object_hook",
+        default="configman.dotdict.DotDict",
         from_string_converter=class_converter,
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
+    def __init__(self, config, namespace="", quit_check_callback=None):
+        super().__init__(
+            config, namespace=namespace, quit_check_callback=quit_check_callback
+        )
         self.connection_source = config.resource_class(config)
 
     @staticmethod
@@ -56,19 +59,23 @@ class BotoCrashStorage(CrashStorageBase):
         if dumps is None:
             dumps = MemoryDumpsMapping()
 
-        raw_crash_data = boto_connection._convert_mapping_to_string(raw_crash).encode('utf-8')
-        boto_connection.submit(crash_id, 'raw_crash', raw_crash_data)
+        raw_crash_data = boto_connection._convert_mapping_to_string(raw_crash).encode(
+            "utf-8"
+        )
+        boto_connection.submit(crash_id, "raw_crash", raw_crash_data)
 
-        dump_names_data = boto_connection._convert_list_to_string(dumps.keys()).encode('utf-8')
-        boto_connection.submit(crash_id, 'dump_names', dump_names_data)
+        dump_names_data = boto_connection._convert_list_to_string(dumps.keys()).encode(
+            "utf-8"
+        )
+        boto_connection.submit(crash_id, "dump_names", dump_names_data)
 
         # We don't know what type of dumps mapping we have. We do know,
         # however, that by calling the memory_dump_mapping method, we will get
         # a MemoryDumpMapping which is exactly what we need.
         dumps = dumps.as_memory_dumps_mapping()
         for dump_name, dump in iteritems(dumps):
-            if dump_name in (None, '', 'upload_file_minidump'):
-                dump_name = 'dump'
+            if dump_name in (None, "", "upload_file_minidump"):
+                dump_name = "dump"
             boto_connection.submit(crash_id, dump_name, dump)
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
@@ -78,13 +85,15 @@ class BotoCrashStorage(CrashStorageBase):
             self.do_save_raw_crash,
             raw_crash=raw_crash,
             dumps=dumps,
-            crash_id=crash_id
+            crash_id=crash_id,
         )
 
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
-        crash_id = processed_crash['uuid']
-        data = boto_connection._convert_mapping_to_string(processed_crash).encode('utf-8')
+        crash_id = processed_crash["uuid"]
+        data = boto_connection._convert_mapping_to_string(processed_crash).encode(
+            "utf-8"
+        )
         boto_connection.submit(crash_id, "processed_crash", data)
 
     def save_processed(self, processed_crash):
@@ -92,7 +101,7 @@ class BotoCrashStorage(CrashStorageBase):
             self.connection_source,
             self.quit_check,
             self._do_save_processed,
-            processed_crash=processed_crash
+            processed_crash=processed_crash,
         )
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
@@ -103,10 +112,10 @@ class BotoCrashStorage(CrashStorageBase):
     @staticmethod
     def do_get_raw_crash(boto_connection, crash_id, json_object_hook):
         try:
-            raw_crash_as_string = boto_connection.fetch(crash_id, 'raw_crash')
+            raw_crash_as_string = boto_connection.fetch(crash_id, "raw_crash")
             return json.loads(raw_crash_as_string, object_hook=json_object_hook)
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
+            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
     def get_raw_crash(self, crash_id):
         return retry(
@@ -114,18 +123,18 @@ class BotoCrashStorage(CrashStorageBase):
             self.quit_check,
             self.do_get_raw_crash,
             crash_id=crash_id,
-            json_object_hook=self.config.json_object_hook
+            json_object_hook=self.config.json_object_hook,
         )
 
     @staticmethod
     def do_get_raw_dump(boto_connection, crash_id, name=None):
         try:
-            if name in (None, '', 'upload_file_minidump'):
-                name = 'dump'
+            if name in (None, "", "upload_file_minidump"):
+                name = "dump"
             a_dump = boto_connection.fetch(crash_id, name)
             return a_dump
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
+            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
     def get_raw_dump(self, crash_id, name=None):
         return retry(
@@ -133,23 +142,23 @@ class BotoCrashStorage(CrashStorageBase):
             self.quit_check,
             self.do_get_raw_dump,
             crash_id=crash_id,
-            name=name
+            name=name,
         )
 
     @staticmethod
     def do_get_raw_dumps(boto_connection, crash_id):
         try:
-            dump_names_as_string = boto_connection.fetch(crash_id, 'dump_names')
+            dump_names_as_string = boto_connection.fetch(crash_id, "dump_names")
             dump_names = boto_connection._convert_string_to_list(dump_names_as_string)
 
             dumps = MemoryDumpsMapping()
             for dump_name in dump_names:
-                if dump_name in (None, '', 'upload_file_minidump'):
-                    dump_name = 'dump'
+                if dump_name in (None, "", "upload_file_minidump"):
+                    dump_name = "dump"
                 dumps[dump_name] = boto_connection.fetch(crash_id, dump_name)
             return dumps
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
+            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
     def get_raw_dumps(self, crash_id):
         """Fetch raw dumps
@@ -161,7 +170,7 @@ class BotoCrashStorage(CrashStorageBase):
             self.connection_source,
             self.quit_check,
             self.do_get_raw_dumps,
-            crash_id=crash_id
+            crash_id=crash_id,
         )
 
     def get_raw_dumps_as_files(self, crash_id):
@@ -170,16 +179,18 @@ class BotoCrashStorage(CrashStorageBase):
         return in_memory_dumps.as_file_dumps_mapping(
             crash_id,
             self.config.temporary_file_system_storage_path,
-            self.config.dump_file_suffix
+            self.config.dump_file_suffix,
         )
 
     @staticmethod
     def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):
         try:
-            processed_crash_as_string = boto_connection.fetch(crash_id, 'processed_crash')
-            return json.loads(processed_crash_as_string, object_hook=json_object_hook,)
+            processed_crash_as_string = boto_connection.fetch(
+                crash_id, "processed_crash"
+            )
+            return json.loads(processed_crash_as_string, object_hook=json_object_hook)
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
+            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
     def get_unredacted_processed(self, crash_id):
         return retry(
@@ -187,18 +198,18 @@ class BotoCrashStorage(CrashStorageBase):
             self.quit_check,
             self._do_get_unredacted_processed,
             crash_id=crash_id,
-            json_object_hook=self.config.json_object_hook
+            json_object_hook=self.config.json_object_hook,
         )
 
 
 class BotoS3CrashStorage(BotoCrashStorage):
     required_config = Namespace()
     required_config.add_option(
-        'resource_class',
-        default='socorro.external.boto.connection_context.RegionalS3ConnectionContext',
-        doc='fully qualified dotted Python classname to handle Boto connections',
+        "resource_class",
+        default="socorro.external.boto.connection_context.RegionalS3ConnectionContext",
+        doc="fully qualified dotted Python classname to handle Boto connections",
         from_string_converter=class_converter,
-        reference_value_from='resource.boto'
+        reference_value_from="resource.boto",
     )
 
 
@@ -212,11 +223,11 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
     required_config = Namespace()
     required_config.add_option(
-        'resource_class',
-        default='socorro.external.boto.connection_context.RegionalS3ConnectionContext',
-        doc='fully qualified dotted Python classname to handle Boto connections',
+        "resource_class",
+        default="socorro.external.boto.connection_context.RegionalS3ConnectionContext",
+        doc="fully qualified dotted Python classname to handle Boto connections",
         from_string_converter=class_converter,
-        reference_value_from='resource.boto'
+        reference_value_from="resource.boto",
     )
 
     def __init__(self, config, *args, **kwargs):
@@ -233,38 +244,42 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
         # Rename fields in raw_crash
         raw_fields_map = dict(
-            (x['in_database_name'], x['name'])
+            (x["in_database_name"], x["name"])
             for x in self._all_fields.values()
-            if x['namespace'] == 'raw_crash'
+            if x["namespace"] == "raw_crash"
         )
         for key, val in raw_crash.items():
             crash_report[raw_fields_map.get(key, key)] = val
 
         # Rename fields in processed_crash
         processed_fields_map = dict(
-            (x['in_database_name'], x['name'])
+            (x["in_database_name"], x["name"])
             for x in self._all_fields.values()
-            if x['namespace'] == 'processed_crash'
+            if x["namespace"] == "processed_crash"
         )
         for key, val in processed_crash.items():
             crash_report[processed_fields_map.get(key, key)] = val
 
         # Validate crash_report
-        crash_report = json_schema_reducer.make_reduced_dict(CRASH_REPORT_JSON_SCHEMA, crash_report)
+        crash_report = json_schema_reducer.make_reduced_dict(
+            CRASH_REPORT_JSON_SCHEMA, crash_report
+        )
         self.save_processed(crash_report)
 
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
         """Overriding this to change "name of thing" to crash_report"""
-        crash_id = processed_crash['uuid']
-        data = boto_connection._convert_mapping_to_string(processed_crash).encode('utf-8')
+        crash_id = processed_crash["uuid"]
+        data = boto_connection._convert_mapping_to_string(processed_crash).encode(
+            "utf-8"
+        )
         boto_connection.submit(crash_id, "crash_report", data)
 
     @staticmethod
     def _do_get_unredacted_processed(boto_connection, crash_id, json_object_hook):
         """Overriding this to change "name of thing" to crash_report"""
         try:
-            processed_crash_as_string = boto_connection.fetch(crash_id, 'crash_report')
+            processed_crash_as_string = boto_connection.fetch(crash_id, "crash_report")
             return json.loads(processed_crash_as_string, object_hook=json_object_hook)
         except boto_connection.ResponseError as x:
-            raise CrashIDNotFound('%s not found: %s' % (crash_id, x))
+            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))

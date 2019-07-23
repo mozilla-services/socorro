@@ -18,16 +18,12 @@ from socorro.external.es.super_search_fields import FIELDS
 
 
 DEFAULT_VALUES = {
-    'resource.elasticsearch.elasticsearch_index': (
-        'socorro_integration_test_reports'
-    ),
-    'resource.elasticsearch.elasticsearch_timeout': 10,
+    "resource.elasticsearch.elasticsearch_index": ("socorro_integration_test_reports"),
+    "resource.elasticsearch.elasticsearch_timeout": 10,
 }
 
 
-CRON_JOB_EXTA_VALUES = {
-    'resource.elasticsearch.backoff_delays': [1],
-}
+CRON_JOB_EXTA_VALUES = {"resource.elasticsearch.backoff_delays": [1]}
 
 
 def minimum_es_version(minimum_version):
@@ -36,12 +32,14 @@ def minimum_es_version(minimum_version):
     :arg minimum_version: string; the minimum Elasticsearch version required
 
     """
+
     def decorated(test):
         """Decorator to only run the test if ES version is greater or equal than specified"""
+
         @wraps(test)
         def test_with_version(self):
             """Only run the test if ES version is not less than specified"""
-            actual_version = self.connection.info()['version']['number']
+            actual_version = self.connection.info()["version"]["number"]
             if LooseVersion(actual_version) >= LooseVersion(minimum_version):
                 test(self)
             else:
@@ -61,12 +59,13 @@ class SuperSearchWithFields(SuperSearch):
     """
 
     def get(self, **kwargs):
-        kwargs['_fields'] = copy.deepcopy(FIELDS)
+        kwargs["_fields"] = copy.deepcopy(FIELDS)
         return super().get(**kwargs)
 
 
 class TestCaseWithConfig(object):
     """A simple TestCase class that can create configuration objects"""
+
     def setup_method(self, method):
         pass
 
@@ -88,9 +87,9 @@ class TestCaseWithConfig(object):
 
         config_manager = ConfigurationManager(
             config_definitions,
-            app_name='testapp',
-            app_version='1.0',
-            app_description='Elasticsearch integration tests',
+            app_name="testapp",
+            app_version="1.0",
+            app_description="Elasticsearch integration tests",
             values_source_list=[environment, values_source],
             argv_source=[],
         )
@@ -119,7 +118,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         super().teardown_method(method)
 
     def health_check(self):
-        self.connection.cluster.health(wait_for_status='yellow', request_timeout=5)
+        self.connection.cluster.health(wait_for_status="yellow", request_timeout=5)
 
     def get_url(self):
         """Returns the first url in the elasticsearch_urls list"""
@@ -135,9 +134,7 @@ class ElasticsearchTestCase(TestCaseWithConfig):
     def get_base_config(self, cls=ConnectionContext, es_index=None):
         extra_values = None
         if es_index:
-            extra_values = {
-                'resource.elasticsearch.elasticsearch_index': es_index
-            }
+            extra_values = {"resource.elasticsearch.elasticsearch_index": es_index}
 
         return self.get_tuned_config(cls, extra_values=extra_values)
 
@@ -149,9 +146,9 @@ class ElasticsearchTestCase(TestCaseWithConfig):
         processed_crash = processed_crash or {}
 
         doc = {
-            'crash_id': crash_id,
-            'processed_crash': processed_crash,
-            'raw_crash': raw_crash,
+            "crash_id": crash_id,
+            "processed_crash": processed_crash,
+            "raw_crash": raw_crash,
         }
         index_name = self.es_context.get_index_template()
         res = self.connection.index(
@@ -160,9 +157,11 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             id=crash_id,
             body=doc,
         )
-        return res['_id']
+        return res["_id"]
 
-    def index_many_crashes(self, number, processed_crash=None, raw_crash=None, loop_field=None):
+    def index_many_crashes(
+        self, number, processed_crash=None, raw_crash=None, loop_field=None
+    ):
         processed_crash = processed_crash or {}
         raw_crash = raw_crash or {}
 
@@ -177,15 +176,15 @@ class ElasticsearchTestCase(TestCaseWithConfig):
                 processed_copy = processed_crash
 
             doc = {
-                'crash_id': crash_id,
-                'processed_crash': processed_copy,
-                'raw_crash': raw_crash,
+                "crash_id": crash_id,
+                "processed_crash": processed_copy,
+                "raw_crash": raw_crash,
             }
             action = {
-                '_index': self.es_context.get_index_template(),
-                '_type': self.es_context.get_doctype(),
-                '_id': crash_id,
-                '_source': doc,
+                "_index": self.es_context.get_index_template(),
+                "_type": self.es_context.get_doctype(),
+                "_id": crash_id,
+                "_source": doc,
             }
             actions.append(action)
 

@@ -18,15 +18,15 @@ class TestUploadTelemetrySchema:
 
         assert app.main() == 1
         recs = [rec.message for rec in caplogpp.records]
-        assert 'Failure: The crashstats S3 bucket must be created first.' in recs
+        assert "Failure: The crashstats S3 bucket must be created first." in recs
 
     @mock_s3_deprecated
     def test_upload_worked(self, boto_helper, caplogpp):
-        caplogpp.set_level('DEBUG')
-        boto_helper.get_or_create_bucket('crashstats')
+        caplogpp.set_level("DEBUG")
+        boto_helper.get_or_create_bucket("crashstats")
         config = get_config(UploadTelemetrySchema)
         app = UploadTelemetrySchema(config)
 
         assert app.main() == 0
         recs = [rec.message for rec in caplogpp.records]
-        assert 'Success: Schema uploaded!' in recs
+        assert "Success: Schema uploaded!" in recs

@@ -15,7 +15,7 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     FileDumpsMapping,
-    MemoryDumpsMapping
+    MemoryDumpsMapping,
 )
 from socorro.lib.datetimeutil import utc_now, JsonDTISOEncoder
 from socorro.lib.ooid import date_from_ooid, depth_from_ooid
@@ -63,50 +63,49 @@ class FSPermanentStorage(CrashStorageBase):
 
     required_config = Namespace()
     required_config.add_option(
-        'fs_root',
-        doc='a path to a file system',
-        default='./crashes',
-
+        "fs_root",
+        doc="a path to a file system",
+        default="./crashes",
         # We strip / from the right so we can consistently use os.sep.join
         # instead of os.path.join (which is faster).
-        from_string_converter=lambda x: x.rstrip('/'),
-        reference_value_from='resource.fs',
+        from_string_converter=lambda x: x.rstrip("/"),
+        reference_value_from="resource.fs",
     )
     required_config.add_option(
-        'umask',
-        doc='umask to use for new files',
+        "umask",
+        doc="umask to use for new files",
         default=0o022,
-        reference_value_from='resource.fs',
+        reference_value_from="resource.fs",
     )
     required_config.add_option(
-        'json_file_suffix',
-        doc='the suffix used to identify a json file',
-        default='.json',
-        reference_value_from='resource.fs',
+        "json_file_suffix",
+        doc="the suffix used to identify a json file",
+        default=".json",
+        reference_value_from="resource.fs",
     )
     required_config.add_option(
-        'jsonz_file_suffix',
-        doc='the suffix used to identify a gzipped json file',
-        default='.jsonz',
-        reference_value_from='resource.fs',
+        "jsonz_file_suffix",
+        doc="the suffix used to identify a gzipped json file",
+        default=".jsonz",
+        reference_value_from="resource.fs",
     )
     required_config.add_option(
-        'dump_file_suffix',
-        doc='the suffix used to identify a dump file',
-        default='.dump',
-        reference_value_from='resource.fs',
+        "dump_file_suffix",
+        doc="the suffix used to identify a dump file",
+        default=".dump",
+        reference_value_from="resource.fs",
     )
     required_config.add_option(
-        'dump_field',
-        doc='the default dump field',
-        default='upload_file_minidump',
-        reference_value_from='resource.fs',
+        "dump_field",
+        doc="the default dump field",
+        default="upload_file_minidump",
+        reference_value_from="resource.fs",
     )
     required_config.add_option(
-        'name_branch_base',
-        doc='the directory base name to use for the named radix tree storage',
-        default='name',
-        reference_value_from='resource.fs',
+        "name_branch_base",
+        doc="the directory base name to use for the named radix tree storage",
+        default="name",
+        reference_value_from="resource.fs",
     )
 
     def __init__(self, *args, **kwargs):
@@ -139,10 +138,7 @@ class FSPermanentStorage(CrashStorageBase):
 
     @staticmethod
     def _get_radix(crash_id):
-        return [
-            crash_id[i * 2:(i + 1) * 2]
-            for i in range(depth_from_ooid(crash_id))
-        ]
+        return [crash_id[i * 2 : (i + 1) * 2] for i in range(depth_from_ooid(crash_id))]
 
     def _get_base(self, crash_id):
         date = date_from_ooid(crash_id)
@@ -155,7 +151,7 @@ class FSPermanentStorage(CrashStorageBase):
         dump_names = []
         for a_pathname in pathnames:
             base_name = os.path.basename(a_pathname)
-            dump_name = base_name[37:-len(self.config.dump_file_suffix)]
+            dump_name = base_name[37 : -len(self.config.dump_file_suffix)]
             if not dump_name:
                 dump_name = self.config.dump_field
             dump_names.append(dump_name)
@@ -172,45 +168,52 @@ class FSPermanentStorage(CrashStorageBase):
                 pass
 
             for fn, contents in files.items():
-                with open(os.sep.join([parent_dir, fn]), 'wb') as f:
+                with open(os.sep.join([parent_dir, fn]), "wb") as f:
                     f.write(contents)
 
     def save_processed(self, processed_crash):
-        crash_id = processed_crash['uuid']
+        crash_id = processed_crash["uuid"]
         processed_crash = processed_crash.copy()
         f = BytesIO()
-        with closing(gzip.GzipFile(mode='wb', fileobj=f)) as fz:
+        with closing(gzip.GzipFile(mode="wb", fileobj=f)) as fz:
             data = json.dumps(processed_crash, cls=JsonDTISOEncoder)
-            fz.write(data.encode('utf-8'))
-        self._save_files(crash_id, {
-            crash_id + self.config.jsonz_file_suffix: f.getvalue()
-        })
+            fz.write(data.encode("utf-8"))
+        self._save_files(
+            crash_id, {crash_id + self.config.jsonz_file_suffix: f.getvalue()}
+        )
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         if dumps is None:
             dumps = MemoryDumpsMapping()
         files = {
-            crash_id + self.config.json_file_suffix: json.dumps(raw_crash).encode('utf-8')
+            crash_id
+            + self.config.json_file_suffix: json.dumps(raw_crash).encode("utf-8")
         }
         in_memory_dumps = dumps.as_memory_dumps_mapping()
-        files.update({
-            self._get_dump_file_name(crash_id, fn): dump
-            for fn, dump in in_memory_dumps.items()
-        })
+        files.update(
+            {
+                self._get_dump_file_name(crash_id, fn): dump
+                for fn, dump in in_memory_dumps.items()
+            }
+        )
         self._save_files(crash_id, files)
 
     def get_raw_crash(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
-        with open(os.sep.join([parent_dir, crash_id + self.config.json_file_suffix]), 'r') as f:
+        with open(
+            os.sep.join([parent_dir, crash_id + self.config.json_file_suffix]), "r"
+        ) as f:
             return json.load(f, object_hook=DotDict)
 
     def get_raw_dump(self, crash_id, name=None):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
-        with open(os.sep.join([parent_dir, self._get_dump_file_name(crash_id, name)]), 'rb') as f:
+        with open(
+            os.sep.join([parent_dir, self._get_dump_file_name(crash_id, name)]), "rb"
+        ) as f:
             return f.read()
 
     def get_raw_dumps_as_files(self, crash_id):
@@ -220,11 +223,15 @@ class FSPermanentStorage(CrashStorageBase):
         dump_paths = [
             os.sep.join([parent_dir, dump_file_name])
             for dump_file_name in os.listdir(parent_dir)
-            if (dump_file_name.startswith(crash_id) and
-                dump_file_name.endswith(self.config.dump_file_suffix))
+            if (
+                dump_file_name.startswith(crash_id)
+                and dump_file_name.endswith(self.config.dump_file_suffix)
+            )
         ]
         # we want to return a name/pathname mapping for the raw dumps
-        return FileDumpsMapping(zip(self._dump_names_from_paths(dump_paths), dump_paths))
+        return FileDumpsMapping(
+            zip(self._dump_names_from_paths(dump_paths), dump_paths)
+        )
 
     def get_raw_dumps(self, crash_id):
         file_dump_mapping = self.get_raw_dumps_as_files(crash_id)
@@ -234,20 +241,17 @@ class FSPermanentStorage(CrashStorageBase):
     def get_unredacted_processed(self, crash_id):
         """this method returns an unredacted processed crash"""
         parent_dir = self._get_radixed_parent_directory(crash_id)
-        pathname = os.sep.join([
-            parent_dir,
-            crash_id + self.config.jsonz_file_suffix
-        ])
+        pathname = os.sep.join([parent_dir, crash_id + self.config.jsonz_file_suffix])
         if not os.path.exists(pathname):
             raise CrashIDNotFound
-        with closing(gzip.GzipFile(pathname, 'rb')) as f:
+        with closing(gzip.GzipFile(pathname, "rb")) as f:
             return json.load(f, object_hook=DotDict)
 
     def _get_radixed_parent_directory(self, crash_id):
         return os.sep.join(
-            self._get_base(crash_id) +
-            [self.config.name_branch_base] +
-            self._get_radix(crash_id)
+            self._get_base(crash_id)
+            + [self.config.name_branch_base]
+            + self._get_radix(crash_id)
         )
 
     def remove(self, crash_id):
@@ -255,9 +259,8 @@ class FSPermanentStorage(CrashStorageBase):
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
 
-        removal_candidates = (
-            [os.sep.join([parent_dir, crash_id + '.json'])] +
-            list(self.get_raw_dumps_as_files(crash_id).values())
+        removal_candidates = [os.sep.join([parent_dir, crash_id + ".json"])] + list(
+            self.get_raw_dumps_as_files(crash_id).values()
         )
 
         # Remove all the files related to the crash

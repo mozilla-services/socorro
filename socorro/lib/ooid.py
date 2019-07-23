@@ -28,7 +28,11 @@ def create_new_ooid(timestamp=None, depth=DEFAULT_DEPTH):
     assert depth <= 4 and depth >= 1
     new_uuid = str(uuid.uuid4())
     return "%s%d%02d%02d%02d" % (
-        new_uuid[:-7], depth, timestamp.year % 100, timestamp.month, timestamp.day
+        new_uuid[:-7],
+        depth,
+        timestamp.year % 100,
+        timestamp.month,
+        timestamp.day,
     )
 
 
@@ -56,16 +60,14 @@ def date_from_ooid(ooid):
     """
     try:
         return datetime.datetime(
-            2000 + int(ooid[-6:-4]),
-            int(ooid[-4:-2]),
-            int(ooid[-2:]),
-            tzinfo=UTC
+            2000 + int(ooid[-6:-4]), int(ooid[-4:-2]), int(ooid[-2:]), tzinfo=UTC
         )
     except (ValueError, TypeError, IndexError):
         return None
 
 
-CRASH_ID_RE = re.compile(r"""
+CRASH_ID_RE = re.compile(
+    r"""
     ^
     [a-f0-9]{8}-
     [a-f0-9]{4}-
@@ -74,7 +76,9 @@ CRASH_ID_RE = re.compile(r"""
     [a-f0-9]{6}
     [0-9]{6}      # date in YYMMDD
     $
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 
 def is_crash_id_valid(crash_id):

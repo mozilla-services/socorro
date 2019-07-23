@@ -7,7 +7,7 @@ import logging
 import markus
 
 
-metrics = markus.get_metrics('processor.rule')
+metrics = markus.get_metrics("processor.rule")
 
 
 class Rule:
@@ -19,7 +19,7 @@ class Rule:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, processor_meta_data):
         """Determines whether to run the action for this crash
@@ -58,8 +58,10 @@ class Rule:
 
         """
         rule_name = self.__class__.__name__
-        with metrics.timer('act.timing', tags=['rule:%s' % rule_name]):
-            if self.predicate(raw_crash, raw_dumps, processed_crash, processor_meta_data):
+        with metrics.timer("act.timing", tags=["rule:%s" % rule_name]):
+            if self.predicate(
+                raw_crash, raw_dumps, processed_crash, processor_meta_data
+            ):
                 self.action(raw_crash, raw_dumps, processed_crash, processor_meta_data)
 
     def close(self):
@@ -68,10 +70,10 @@ class Rule:
     def generate_repr(self, keys=None):
         keys = keys or []
         return (
-            '<' +
-            self.__class__.__name__ +
-            ''.join([' %s=%r' % (key, getattr(self, key, None)) for key in keys]) +
-            '>'
+            "<"
+            + self.__class__.__name__
+            + "".join([" %s=%r" % (key, getattr(self, key, None)) for key in keys])
+            + ">"
         )
 
     def __repr__(self):

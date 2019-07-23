@@ -33,21 +33,25 @@ class TestFetchTransformSaveApp(object):
             def transform(self, anItem):
                 self.the_list.append(anItem)
 
-        config = DotDict({
-            'logger': MagicMock(),
-            'number_of_threads': 2,
-            'maximum_queue_size': 2,
-            'queue': DotDict({'crashqueue_class': None}),
-            'source': DotDict({'crashstorage_class': None}),
-            'destination': DotDict({'crashstorage_class': None}),
-            'producer_consumer': DotDict({
-                'producer_consumer_class': TaskManager,
-                'logger': MagicMock(),
-                'number_of_threads': 1,
-                'maximum_queue_size': 1,
-                'quit_on_empty_queue': True,
-            })
-        })
+        config = DotDict(
+            {
+                "logger": MagicMock(),
+                "number_of_threads": 2,
+                "maximum_queue_size": 2,
+                "queue": DotDict({"crashqueue_class": None}),
+                "source": DotDict({"crashstorage_class": None}),
+                "destination": DotDict({"crashstorage_class": None}),
+                "producer_consumer": DotDict(
+                    {
+                        "producer_consumer_class": TaskManager,
+                        "logger": MagicMock(),
+                        "number_of_threads": 1,
+                        "maximum_queue_size": 1,
+                        "quit_on_empty_queue": True,
+                    }
+                ),
+            }
+        )
 
         fts_app = TestFTSAppClass(config)
         fts_app.main()
@@ -62,46 +66,40 @@ class TestFetchTransformSaveApp(object):
                     yield ((x,), {})
 
         class FakeQueue(object):
-            def __init__(self, config, namespace='', quit_check_callback=None):
+            def __init__(self, config, namespace="", quit_check_callback=None):
                 pass
 
             def new_crashes(self):
                 # NOTE(willkg): these are keys in the FakeStorageSource
-                crash_ids = ['1234', '1235', '1236', '1237']
+                crash_ids = ["1234", "1235", "1236", "1237"]
                 for crash_id in crash_ids:
                     yield crash_id
 
         class FakeStorageSource(object):
-            def __init__(self, config, namespace='', quit_check_callback=None):
-                self.store = DotDict({
-                    '1234': DotDict({
-                        'ooid': '1234',
-                        'Product': 'FireSquid',
-                        'Version': '1.0'
-                    }),
-                    '1235': DotDict({
-                        'ooid': '1235',
-                        'Product': 'ThunderRat',
-                        'Version': '1.0'
-                    }),
-                    '1236': DotDict({
-                        'ooid': '1236',
-                        'Product': 'Caminimal',
-                        'Version': '1.0'
-                    }),
-                    '1237': DotDict({
-                        'ooid': '1237',
-                        'Product': 'Fennicky',
-                        'Version': '1.0'
-                    }),
-                })
+            def __init__(self, config, namespace="", quit_check_callback=None):
+                self.store = DotDict(
+                    {
+                        "1234": DotDict(
+                            {"ooid": "1234", "Product": "FireSquid", "Version": "1.0"}
+                        ),
+                        "1235": DotDict(
+                            {"ooid": "1235", "Product": "ThunderRat", "Version": "1.0"}
+                        ),
+                        "1236": DotDict(
+                            {"ooid": "1236", "Product": "Caminimal", "Version": "1.0"}
+                        ),
+                        "1237": DotDict(
+                            {"ooid": "1237", "Product": "Fennicky", "Version": "1.0"}
+                        ),
+                    }
+                )
                 self.number_of_close_calls = 0
 
             def get_raw_crash(self, ooid):
                 return self.store[ooid]
 
             def get_raw_dumps(self, ooid):
-                return {'upload_file_minidump': 'this is a fake dump'}
+                return {"upload_file_minidump": "this is a fake dump"}
 
             def new_crashes(self):
                 for k in self.store.keys():
@@ -111,7 +109,7 @@ class TestFetchTransformSaveApp(object):
                 self.number_of_close_calls += 1
 
         class FakeStorageDestination(object):
-            def __init__(self, config, namespace='', quit_check_callback=None):
+            def __init__(self, config, namespace="", quit_check_callback=None):
                 self.store = DotDict()
                 self.dumps = DotDict()
                 self.number_of_close_calls = 0
@@ -123,20 +121,24 @@ class TestFetchTransformSaveApp(object):
             def close(self):
                 self.number_of_close_calls += 1
 
-        config = DotDict({
-            'logger': MagicMock(),
-            'number_of_threads': 2,
-            'maximum_queue_size': 2,
-            'queue': DotDict({'crashqueue_class': FakeQueue}),
-            'source': DotDict({'crashstorage_class': FakeStorageSource}),
-            'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
-            'producer_consumer': DotDict({
-                'producer_consumer_class': ThreadedTaskManager,
-                'logger': MagicMock(),
-                'number_of_threads': 1,
-                'maximum_queue_size': 1
-            })
-        })
+        config = DotDict(
+            {
+                "logger": MagicMock(),
+                "number_of_threads": 2,
+                "maximum_queue_size": 2,
+                "queue": DotDict({"crashqueue_class": FakeQueue}),
+                "source": DotDict({"crashstorage_class": FakeStorageSource}),
+                "destination": DotDict({"crashstorage_class": FakeStorageDestination}),
+                "producer_consumer": DotDict(
+                    {
+                        "producer_consumer_class": ThreadedTaskManager,
+                        "logger": MagicMock(),
+                        "number_of_threads": 1,
+                        "maximum_queue_size": 1,
+                    }
+                ),
+            }
+        )
 
         fts_app = NonInfiniteFTSAppClass(config)
         fts_app.main()
@@ -146,7 +148,7 @@ class TestFetchTransformSaveApp(object):
 
         assert source.store == destination.store
         assert len(destination.dumps) == 4
-        assert destination.dumps['1237'] == source.get_raw_dumps('1237')
+        assert destination.dumps["1237"] == source.get_raw_dumps("1237")
         # ensure that each storage system had its close called
         assert source.number_of_close_calls == 1
         assert destination.number_of_close_calls == 1
@@ -170,10 +172,7 @@ class TestFetchTransformSaveApp(object):
                         if k % 4:
                             yield k
                         else:
-                            yield (
-                                (k, ),
-                                {"finished_func": faked_finished_func}
-                            )
+                            yield ((k,), {"finished_func": faked_finished_func})
                     for k in range(2):
                         yield None
 
@@ -186,20 +185,24 @@ class TestFetchTransformSaveApp(object):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dump
 
-        config = DotDict({
-            'logger': MagicMock(),
-            'number_of_threads': 2,
-            'maximum_queue_size': 2,
-            'queue': DotDict({'crashqueue_class': FakeQueue}),
-            'source': DotDict({'crashstorage_class': None}),
-            'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
-            'producer_consumer': DotDict({
-                'producer_consumer_class': ThreadedTaskManager,
-                'logger': MagicMock(),
-                'number_of_threads': 1,
-                'maximum_queue_size': 1
-            })
-        })
+        config = DotDict(
+            {
+                "logger": MagicMock(),
+                "number_of_threads": 2,
+                "maximum_queue_size": 2,
+                "queue": DotDict({"crashqueue_class": FakeQueue}),
+                "source": DotDict({"crashstorage_class": None}),
+                "destination": DotDict({"crashstorage_class": FakeStorageDestination}),
+                "producer_consumer": DotDict(
+                    {
+                        "producer_consumer_class": ThreadedTaskManager,
+                        "logger": MagicMock(),
+                        "number_of_threads": 1,
+                        "maximum_queue_size": 1,
+                    }
+                ),
+            }
+        )
 
         fts_app = FetchTransformSaveApp(config)
         fts_app.queue = FakeQueue()
@@ -215,17 +218,17 @@ class TestFetchTransformSaveApp(object):
             elif x < 1000:
                 if x - 1 != y[0][0] and not error_detected:
                     error_detected = True
-                    assert x == y, 'iterator fails on iteration %d: %s' % (x, y)
+                    assert x == y, "iterator fails on iteration %d: %s" % (x, y)
                 # invoke that finished func to ensure that we've got the
                 # right object
                 try:
-                    y[1]['finished_func']()
+                    y[1]["finished_func"]()
                 except KeyError:
                     no_finished_function_counter += 1
             else:
                 if y is not None and not error_detected:
                     error_detected = True
-                    assert x is None, 'iterator fails on iteration %d: %s' % (x, y)
+                    assert x is None, "iterator fails on iteration %d: %s" % (x, y)
         assert faked_finished_func.call_count == (999 - no_finished_function_counter)
 
     def test_no_source(self):
@@ -238,20 +241,24 @@ class TestFetchTransformSaveApp(object):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dump
 
-        config = DotDict({
-            'logger': MagicMock(),
-            'number_of_threads': 2,
-            'maximum_queue_size': 2,
-            'queue': DotDict({'crashqueue_class': None}),
-            'source': DotDict({'crashstorage_class': None}),
-            'destination': DotDict({'crashstorage_class': FakeStorageDestination}),
-            'producer_consumer': DotDict({
-                'producer_consumer_class': ThreadedTaskManager,
-                'logger': MagicMock(),
-                'number_of_threads': 1,
-                'maximum_queue_size': 1
-            })
-        })
+        config = DotDict(
+            {
+                "logger": MagicMock(),
+                "number_of_threads": 2,
+                "maximum_queue_size": 2,
+                "queue": DotDict({"crashqueue_class": None}),
+                "source": DotDict({"crashstorage_class": None}),
+                "destination": DotDict({"crashstorage_class": FakeStorageDestination}),
+                "producer_consumer": DotDict(
+                    {
+                        "producer_consumer_class": ThreadedTaskManager,
+                        "logger": MagicMock(),
+                        "number_of_threads": 1,
+                        "maximum_queue_size": 1,
+                    }
+                ),
+            }
+        )
 
         fts_app = FetchTransformSaveApp(config)
 
@@ -261,53 +268,51 @@ class TestFetchTransformSaveApp(object):
     def test_no_destination(self):
         class FakeStorageSource(object):
             def __init__(self, config, quit_check_callback):
-                self.store = DotDict({
-                    '1234': DotDict({
-                        'ooid': '1234',
-                        'Product': 'FireSquid',
-                        'Version': '1.0'
-                    }),
-                    '1235': DotDict({
-                        'ooid': '1235',
-                        'Product': 'ThunderRat',
-                        'Version': '1.0'
-                    }),
-                    '1236': DotDict({
-                        'ooid': '1236',
-                        'Product': 'Caminimal',
-                        'Version': '1.0'
-                    }),
-                    '1237': DotDict({
-                        'ooid': '1237',
-                        'Product': 'Fennicky',
-                        'Version': '1.0'
-                    }),
-                })
+                self.store = DotDict(
+                    {
+                        "1234": DotDict(
+                            {"ooid": "1234", "Product": "FireSquid", "Version": "1.0"}
+                        ),
+                        "1235": DotDict(
+                            {"ooid": "1235", "Product": "ThunderRat", "Version": "1.0"}
+                        ),
+                        "1236": DotDict(
+                            {"ooid": "1236", "Product": "Caminimal", "Version": "1.0"}
+                        ),
+                        "1237": DotDict(
+                            {"ooid": "1237", "Product": "Fennicky", "Version": "1.0"}
+                        ),
+                    }
+                )
 
             def get_raw_crash(self, ooid):
                 return self.store[ooid]
 
             def get_raw_dump(self, ooid):
-                return 'this is a fake dump'
+                return "this is a fake dump"
 
             def new_ooids(self):
                 for k in self.store.keys():
                     yield k
 
-        config = DotDict({
-            'logger': MagicMock(),
-            'number_of_threads': 2,
-            'maximum_queue_size': 2,
-            'queue': DotDict({'crashqueue_class': None}),
-            'source': DotDict({'crashstorage_class': FakeStorageSource}),
-            'destination': DotDict({'crashstorage_class': None}),
-            'producer_consumer': DotDict({
-                'producer_consumer_class': ThreadedTaskManager,
-                'logger': MagicMock(),
-                'number_of_threads': 1,
-                'maximum_queue_size': 1
-            })
-        })
+        config = DotDict(
+            {
+                "logger": MagicMock(),
+                "number_of_threads": 2,
+                "maximum_queue_size": 2,
+                "queue": DotDict({"crashqueue_class": None}),
+                "source": DotDict({"crashstorage_class": FakeStorageSource}),
+                "destination": DotDict({"crashstorage_class": None}),
+                "producer_consumer": DotDict(
+                    {
+                        "producer_consumer_class": ThreadedTaskManager,
+                        "logger": MagicMock(),
+                        "number_of_threads": 1,
+                        "maximum_queue_size": 1,
+                    }
+                ),
+            }
+        )
 
         fts_app = FetchTransformSaveApp(config)
 

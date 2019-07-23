@@ -10,7 +10,7 @@ from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 
 
 # Socorro uses three queues. Each is implemented as a Pub/Sub topic and subscription.
-QUEUES = ['standard', 'priority', 'reprocessing']
+QUEUES = ["standard", "priority", "reprocessing"]
 
 # Pub/Sub acknowledgement deadline in seconds
 ACK_DEADLINE = 2
@@ -30,7 +30,7 @@ class PubSubHelper:
         project_id = self.config.project_id
 
         for queue in QUEUES:
-            topic_name = self.config['%s_topic_name' % queue]
+            topic_name = self.config["%s_topic_name" % queue]
             topic_path = publisher.topic_path(project_id, topic_name)
 
             try:
@@ -38,13 +38,15 @@ class PubSubHelper:
             except AlreadyExists:
                 pass
 
-            subscription_name = self.config['%s_subscription_name' % queue]
-            subscription_path = subscriber.subscription_path(project_id, subscription_name)
+            subscription_name = self.config["%s_subscription_name" % queue]
+            subscription_path = subscriber.subscription_path(
+                project_id, subscription_name
+            )
             try:
                 subscriber.create_subscription(
                     name=subscription_path,
                     topic=topic_path,
-                    ack_deadline_seconds=ACK_DEADLINE
+                    ack_deadline_seconds=ACK_DEADLINE,
                 )
             except AlreadyExists:
                 pass
@@ -55,7 +57,7 @@ class PubSubHelper:
         project_id = self.config.project_id
 
         for queue in QUEUES:
-            topic_name = self.config['%s_topic_name' % queue]
+            topic_name = self.config["%s_topic_name" % queue]
             topic_path = publisher.topic_path(project_id, topic_name)
 
             # Delete all subscriptions
@@ -75,18 +77,20 @@ class PubSubHelper:
     def get_crash_ids(self, queue_name):
         subscriber = pubsub_v1.SubscriberClient()
         project_id = self.config.project_id
-        sub_name = self.config['%s_subscription_name' % queue_name]
+        sub_name = self.config["%s_subscription_name" % queue_name]
         sub_path = subscriber.subscription_path(project_id, sub_name)
 
         ack_ids = []
         crash_ids = []
         while True:
-            response = subscriber.pull(sub_path, max_messages=1, return_immediately=True)
+            response = subscriber.pull(
+                sub_path, max_messages=1, return_immediately=True
+            )
             if not response.received_messages:
                 break
 
             for msg in response.received_messages:
-                crash_ids.append(msg.message.data.decode('utf-8'))
+                crash_ids.append(msg.message.data.decode("utf-8"))
                 ack_ids.append(msg.ack_id)
 
         if ack_ids:
@@ -99,18 +103,15 @@ class PubSubHelper:
         publisher = pubsub_v1.PublisherClient()
         project_id = self.config.project_id
 
-        topic_name = self.config['%s_topic_name' % queue_name]
+        topic_name = self.config["%s_topic_name" % queue_name]
         topic_path = publisher.topic_path(project_id, topic_name)
 
-        future = publisher.publish(topic_path, data=crash_id.encode('utf-8'))
+        future = publisher.publish(topic_path, data=crash_id.encode("utf-8"))
         future.result()
 
 
 def get_config_manager():
     pubsub_config = PubSubCrashQueue.get_required_config()
     return ConfigurationManager(
-        [pubsub_config],
-        app_name='test-pubsub',
-        app_description='',
-        argv_source=[]
+        [pubsub_config], app_name="test-pubsub", app_description="", argv_source=[]
     )

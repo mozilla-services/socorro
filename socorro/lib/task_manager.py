@@ -47,7 +47,7 @@ def respond_to_SIGTERM(signal_number, frame, target=None):
 
     """
     if target:
-        target.logger.info('detected SIGTERM')
+        target.logger.info("detected SIGTERM")
         # by setting the quit flag to true, any calls to the 'quit_check'
         # method that is so liberally passed around in this framework will
         # result in raising the quit exception.  The current quit exception
@@ -60,19 +60,15 @@ def respond_to_SIGTERM(signal_number, frame, target=None):
 class TaskManager(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
-        'idle_delay',
-        default=7,
-        doc='the delay in seconds if no job is found'
+        "idle_delay", default=7, doc="the delay in seconds if no job is found"
     )
     required_config.add_option(
-        'quit_on_empty_queue',
-        default=False,
-        doc='stop if the queue is empty'
+        "quit_on_empty_queue", default=False, doc="stop if the queue is empty"
     )
 
-    def __init__(self, config,
-                 job_source_iterator=default_iterator,
-                 task_func=default_task_func):
+    def __init__(
+        self, config, job_source_iterator=default_iterator, task_func=default_task_func
+    ):
         """
         parameters:
             job_source_iterator - an iterator to serve as the source of data.
@@ -90,11 +86,11 @@ class TaskManager(RequiredConfig):
         super().__init__()
         self.config = config
         self._pid = os.getpid()
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.job_param_source_iter = job_source_iterator
         self.task_func = task_func
         self.quit = False
-        self.logger.debug('TaskManager finished init')
+        self.logger.debug("TaskManager finished init")
 
     def quit_check(self):
         """this is the polling function that the threads periodically look at.
@@ -117,7 +113,7 @@ class TaskManager(RequiredConfig):
             except TypeError:
                 return self.job_param_source_iter
 
-    def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=''):
+    def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
         """When there is litte work to do, the queuing thread sleeps a lot.
         It can't sleep for too long without checking for the quit flag and/or
         logging about why it is sleeping.
@@ -138,10 +134,7 @@ class TaskManager(RequiredConfig):
         for x in range(int(seconds)):
             self.quit_check()
             if wait_log_interval and not x % wait_log_interval:
-                self.logger.info('%s: %dsec of %dsec',
-                                 wait_reason,
-                                 x,
-                                 seconds)
+                self.logger.info("%s: %dsec of %dsec", wait_reason, x, seconds)
                 self.quit_check()
             time.sleep(1.0)
 
@@ -151,18 +144,19 @@ class TaskManager(RequiredConfig):
         are running, but here we don't have other threads.  So the waiting
         func will never get called.  I can see wanting this function to be
         called at least once after the end of the task loop."""
-        self.logger.debug('threadless start')
+        self.logger.debug("threadless start")
         try:
             # May never exhaust
             for job_params in self._get_iterator():
-                self.logger.debug('received %r', job_params)
+                self.logger.debug("received %r", job_params)
                 self.quit_check()
                 if job_params is None:
                     if self.config.quit_on_empty_queue:
                         raise KeyboardInterrupt
-                    self.logger.info("there is nothing to do.  Sleeping "
-                                     "for %d seconds" %
-                                     self.config.idle_delay)
+                    self.logger.info(
+                        "there is nothing to do.  Sleeping "
+                        "for %d seconds" % self.config.idle_delay
+                    )
                     self._responsive_sleep(self.config.idle_delay)
                     continue
                 self.quit_check()
@@ -176,7 +170,7 @@ class TaskManager(RequiredConfig):
                 except Exception:
                     self.logger.error("Error in processing a job", exc_info=True)
         except KeyboardInterrupt:
-            self.logger.debug('queuingThread gets quit request')
+            self.logger.debug("queuingThread gets quit request")
         finally:
             self.quit = True
             self.logger.debug("ThreadlessTaskManager dies quietly")

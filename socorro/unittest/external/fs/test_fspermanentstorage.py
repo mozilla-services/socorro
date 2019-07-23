@@ -9,14 +9,11 @@ from configman import ConfigurationManager
 from mock import Mock
 import pytest
 
-from socorro.external.crashstorage_base import (
-    CrashIDNotFound,
-    MemoryDumpsMapping,
-)
+from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMapping
 from socorro.external.fs.crashstorage import FSPermanentStorage
 
 
-FS_ROOT = os.environ['resource.fs.fs_root']
+FS_ROOT = os.environ["resource.fs.fs_root"]
 
 
 class TestFSPermanentStorage(object):
@@ -34,36 +31,30 @@ class TestFSPermanentStorage(object):
     def _common_config_setup(self):
         mock_logging = Mock()
         required_config = FSPermanentStorage.get_required_config()
-        required_config.add_option('logger', default=mock_logging)
+        required_config.add_option("logger", default=mock_logging)
         config_manager = ConfigurationManager(
             [required_config],
-            app_name='testapp',
-            app_version='1.0',
-            app_description='app description',
-            values_source_list=[{
-                'logger': mock_logging,
-                'fs_root': FS_ROOT,
-            }],
-            argv_source=[]
+            app_name="testapp",
+            app_version="1.0",
+            app_description="app description",
+            values_source_list=[{"logger": mock_logging, "fs_root": FS_ROOT}],
+            argv_source=[],
         )
         return config_manager
 
     def _make_test_crash(self, crash_id=CRASH_ID_1):
         self.fsrts.save_raw_crash(
-            raw_crash={'test': 'TEST'},
-            dumps=MemoryDumpsMapping({
-                'foo': b'bar',
-                self.fsrts.config.dump_field: b'baz'
-            }),
-            crash_id=crash_id
+            raw_crash={"test": "TEST"},
+            dumps=MemoryDumpsMapping(
+                {"foo": b"bar", self.fsrts.config.dump_field: b"baz"}
+            ),
+            crash_id=crash_id,
         )
 
     def _make_processed_test_crash(self):
-        self.fsrts.save_processed({
-            'uuid': self.CRASH_ID_2,
-            'test': 'TEST',
-            'email': 'should not exist'
-        })
+        self.fsrts.save_processed(
+            {"uuid": self.CRASH_ID_2, "test": "TEST", "email": "should not exist"}
+        )
 
     def test_save_raw_crash(self):
         self._make_test_crash()
@@ -74,37 +65,39 @@ class TestFSPermanentStorage(object):
         assert os.path.exists(
             os.path.join(
                 self.fsrts._get_radixed_parent_directory(self.CRASH_ID_2),
-                self.CRASH_ID_2 + self.fsrts.config.jsonz_file_suffix
+                self.CRASH_ID_2 + self.fsrts.config.jsonz_file_suffix,
             )
         )
 
     def test_get_raw_crash(self):
         self._make_test_crash()
-        assert self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'] == 'TEST'
+        assert self.fsrts.get_raw_crash(self.CRASH_ID_1)["test"] == "TEST"
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_raw_crash(self.CRASH_ID_2)
 
     def test_get_unredacted_processed_crash(self):
         self._make_processed_test_crash()
-        assert self.fsrts.get_unredacted_processed(self.CRASH_ID_2)['test'] == 'TEST'
-        assert 'email' in self.fsrts.get_unredacted_processed(self.CRASH_ID_2)
+        assert self.fsrts.get_unredacted_processed(self.CRASH_ID_2)["test"] == "TEST"
+        assert "email" in self.fsrts.get_unredacted_processed(self.CRASH_ID_2)
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_unredacted_processed(self.CRASH_ID_1)
 
     def test_get_processed_crash(self):
         self._make_processed_test_crash()
-        assert self.fsrts.get_processed(self.CRASH_ID_2)['test'] == 'TEST'
-        assert 'email' not in self.fsrts.get_processed(self.CRASH_ID_2)
+        assert self.fsrts.get_processed(self.CRASH_ID_2)["test"] == "TEST"
+        assert "email" not in self.fsrts.get_processed(self.CRASH_ID_2)
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_unredacted_processed(self.CRASH_ID_1)
 
     def test_get_raw_dump(self):
         self._make_test_crash()
-        contents = self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo')
-        assert contents == b'bar'
+        contents = self.fsrts.get_raw_dump(self.CRASH_ID_1, "foo")
+        assert contents == b"bar"
 
-        contents = self.fsrts.get_raw_dump(self.CRASH_ID_1, self.fsrts.config.dump_field)
-        assert contents == b'baz'
+        contents = self.fsrts.get_raw_dump(
+            self.CRASH_ID_1, self.fsrts.config.dump_field
+        )
+        assert contents == b"baz"
 
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_raw_dump(self.CRASH_ID_2, "foo")
@@ -114,10 +107,9 @@ class TestFSPermanentStorage(object):
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        expected = MemoryDumpsMapping({
-            'foo': b'bar',
-            self.fsrts.config.dump_field: b'baz'
-        })
+        expected = MemoryDumpsMapping(
+            {"foo": b"bar", self.fsrts.config.dump_field: b"baz"}
+        )
         assert self.fsrts.get_raw_dumps(self.CRASH_ID_1) == expected
 
         with pytest.raises(CrashIDNotFound):

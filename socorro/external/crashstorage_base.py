@@ -44,14 +44,14 @@ class MemoryDumpsMapping(dict):
         each of the dump to a filesystem."""
         name_to_pathname_mapping = FileDumpsMapping()
         for a_dump_name, a_dump in self.items():
-            if a_dump_name in (None, '', 'dump'):
-                a_dump_name = 'upload_file_minidump'
+            if a_dump_name in (None, "", "dump"):
+                a_dump_name = "upload_file_minidump"
             dump_pathname = os.path.join(
                 temp_path,
-                "%s.%s.TEMPORARY%s" % (crash_id, a_dump_name, dump_file_suffix)
+                "%s.%s.TEMPORARY%s" % (crash_id, a_dump_name, dump_file_suffix),
             )
             name_to_pathname_mapping[a_dump_name] = dump_pathname
-            with open(dump_pathname, 'wb') as f:
+            with open(dump_pathname, "wb") as f:
                 f.write(a_dump)
         return name_to_pathname_mapping
 
@@ -95,7 +95,7 @@ class FileDumpsMapping(dict):
         of the dumps in the mapping."""
         in_memory_dumps = MemoryDumpsMapping()
         for dump_key, dump_path in self.items():
-            with open(dump_path, 'rb') as f:
+            with open(dump_path, "rb") as f:
                 in_memory_dumps[dump_key] = f.read()
         return in_memory_dumps
 
@@ -106,10 +106,11 @@ class Redactor(RequiredConfig):
     in the configuration under the name 'forbidden_keys'.  They may take the
     form of dotted keys with subkeys.  For example, "a.b.c" means that the key,
     "c" is to be redacted."""
+
     required_config = Namespace()
     required_config.add_option(
-        name='forbidden_keys',
-        doc='a list of keys not allowed in a redacted processed crash',
+        name="forbidden_keys",
+        doc="a list of keys not allowed in a redacted processed crash",
         default=(
             "url, email, user_id, exploitability,"
             "json_dump.sensitive,"
@@ -118,20 +119,18 @@ class Redactor(RequiredConfig):
             "upload_file_minidump_browser.json_dump.sensitive,"
             "memory_info"
         ),
-        reference_value_from='resource.redactor',
+        reference_value_from="resource.redactor",
     )
 
     def __init__(self, config):
         self.config = config
-        self.forbidden_keys = [
-            x.strip() for x in self.config.forbidden_keys.split(',')
-        ]
+        self.forbidden_keys = [x.strip() for x in self.config.forbidden_keys.split(",")]
 
     def redact(self, a_mapping):
         """this is the function that does the redaction."""
         for a_key in self.forbidden_keys:
             sub_mapping = a_mapping
-            sub_keys = a_key.split('.')
+            sub_keys = a_key.split(".")
             try:
                 for a_sub_key in sub_keys[:-1]:  # step through the subkeys
                     sub_mapping = sub_mapping[a_sub_key.strip()]
@@ -151,15 +150,16 @@ class CrashIDNotFound(Exception):
 
 class CrashStorageBase(RequiredConfig):
     """the base class for all crash storage classes"""
+
     required_config = Namespace()
     required_config.add_option(
         name="redactor_class",
         doc="the name of the class that implements a 'redact' method",
         default=Redactor,
-        reference_value_from='resource.redactor',
+        reference_value_from="resource.redactor",
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
+    def __init__(self, config, namespace="", quit_check_callback=None):
         """base class constructor
 
         parameters:
@@ -192,7 +192,7 @@ class CrashStorageBase(RequiredConfig):
             self.quit_check = lambda: False
         self.exceptions_eligible_for_retry = ()
         self.redactor = config.redactor_class(config)
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def close(self):
         """some implementations may need explicit closing."""
@@ -349,6 +349,7 @@ class PolyStorageError(Exception, collections.MutableSequence):
     :arg message: an optional over all error message
 
     """
+
     def __init__(self, *args):
         super().__init__(*args)
         self.exceptions = []  # the collection
@@ -358,7 +359,7 @@ class PolyStorageError(Exception, collections.MutableSequence):
         self.exceptions.append(sys.exc_info())
 
     def has_exceptions(self):
-        """Boolean opposite of is_empty"""""
+        """Boolean opposite of is_empty""" ""
         return bool(self.exceptions)
 
     def __len__(self):
@@ -387,7 +388,7 @@ class PolyStorageError(Exception, collections.MutableSequence):
             output.append(self.args[0])
         for e in self.exceptions:
             output.append(repr(e[1]))
-        return ','.join(output)
+        return ",".join(output)
 
 
 class StorageNamespaceList(collections.Sequence):
@@ -402,6 +403,7 @@ class StorageNamespaceList(collections.Sequence):
     and include any config options that those classes define via their own
     ``required_config`` attributes.
     """
+
     def __init__(self, storage_namespaces):
         self.storage_namespaces = storage_namespaces
         self.required_config = Namespace()
@@ -409,8 +411,7 @@ class StorageNamespaceList(collections.Sequence):
         for storage_name in storage_namespaces:
             self.required_config[storage_name] = Namespace()
             self.required_config[storage_name].add_option(
-                'crashstorage_class',
-                from_string_converter=class_converter,
+                "crashstorage_class", from_string_converter=class_converter
             )
 
     def __len__(self):
@@ -420,7 +421,7 @@ class StorageNamespaceList(collections.Sequence):
         return self.storage_namespaces[key]
 
     def __repr__(self):
-        return 'StorageNamespaceList(%s)' % repr(self.storage_namespaces)
+        return "StorageNamespaceList(%s)" % repr(self.storage_namespaces)
 
     @classmethod
     def converter(cls, storage_namespace_list_str):
@@ -430,7 +431,7 @@ class StorageNamespaceList(collections.Sequence):
             storage_namespace_list_str - comma-separated list of config
                 namespaces containing info about crash storages.
         """
-        namespaces = [name.strip() for name in storage_namespace_list_str.split(',')]
+        namespaces = [name.strip() for name in storage_namespace_list_str.split(",")]
         return cls(namespaces)
 
 
@@ -462,16 +463,17 @@ class PolyCrashStorage(CrashStorageBase):
     see the ``my.config`` option as being set to "Postgres", while the S3Storage
     instance will see ``my.config`` set to "S3".
     """
+
     required_config = Namespace()
     required_config.add_option(
-        'storage_namespaces',
-        doc='a comma delimited list of storage namespaces',
-        default='',
+        "storage_namespaces",
+        doc="a comma delimited list of storage namespaces",
+        default="",
         from_string_converter=StorageNamespaceList.converter,
         likely_to_be_changed=True,
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
+    def __init__(self, config, namespace="", quit_check_callback=None):
         """instantiate all the subordinate crashstorage instances
 
         parameters:
@@ -490,11 +492,15 @@ class PolyCrashStorage(CrashStorageBase):
         self.storage_namespaces = config.storage_namespaces
         self.stores = DotDict()
         for storage_namespace in self.storage_namespaces:
-            absolute_namespace = '.'.join(x for x in [namespace, storage_namespace] if x)
-            self.stores[storage_namespace] = config[storage_namespace].crashstorage_class(
+            absolute_namespace = ".".join(
+                x for x in [namespace, storage_namespace] if x
+            )
+            self.stores[storage_namespace] = config[
+                storage_namespace
+            ].crashstorage_class(
                 config[storage_namespace],
                 namespace=absolute_namespace,
-                quit_check_callback=quit_check_callback
+                quit_check_callback=quit_check_callback,
             )
 
     def close(self):
@@ -513,7 +519,7 @@ class PolyCrashStorage(CrashStorageBase):
             try:
                 a_store.close()
             except Exception as x:
-                self.logger.error('%s failure: %s', a_store.__class__, str(x))
+                self.logger.error("%s failure: %s", a_store.__class__, str(x))
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
@@ -532,7 +538,7 @@ class PolyCrashStorage(CrashStorageBase):
             try:
                 a_store.save_raw_crash(raw_crash, dumps, crash_id)
             except Exception as x:
-                self.logger.error('%s failure: %s', a_store.__class__, str(x))
+                self.logger.error("%s failure: %s", a_store.__class__, str(x))
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
@@ -549,7 +555,9 @@ class PolyCrashStorage(CrashStorageBase):
             try:
                 a_store.save_processed(processed_crash)
             except Exception as x:
-                self.logger.error('%s failure: %s', a_store.__class__, str(x), exc_info=True)
+                self.logger.error(
+                    "%s failure: %s", a_store.__class__, str(x), exc_info=True
+                )
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
@@ -560,19 +568,23 @@ class PolyCrashStorage(CrashStorageBase):
         for a_store in self.stores.values():
             self.quit_check()
             try:
-                actual_store = getattr(a_store, 'wrapped_object', a_store)
+                actual_store = getattr(a_store, "wrapped_object", a_store)
 
-                if hasattr(actual_store, 'is_mutator') and actual_store.is_mutator():
+                if hasattr(actual_store, "is_mutator") and actual_store.is_mutator():
                     my_processed_crash = copy.deepcopy(processed_crash)
                     my_raw_crash = copy.deepcopy(raw_crash)
                 else:
                     my_processed_crash = processed_crash
                     my_raw_crash = raw_crash
 
-                a_store.save_raw_and_processed(my_raw_crash, dump, my_processed_crash, crash_id)
+                a_store.save_raw_and_processed(
+                    my_raw_crash, dump, my_processed_crash, crash_id
+                )
             except Exception:
-                store_class = getattr(a_store, 'wrapped_object', a_store.__class__)
-                self.logger.error('%r failed (crash id: %s)', store_class, crash_id, exc_info=True)
+                store_class = getattr(a_store, "wrapped_object", a_store.__class__)
+                self.logger.error(
+                    "%r failed (crash id: %s)", store_class, crash_id, exc_info=True
+                )
                 storage_exception.gather_current_exception()
         if storage_exception.has_exceptions():
             raise storage_exception
@@ -580,30 +592,31 @@ class PolyCrashStorage(CrashStorageBase):
 
 class BenchmarkingCrashStorage(CrashStorageBase):
     """Wrapper around crash stores that will benchmark the calls in the logs"""
+
     required_config = Namespace()
     required_config.add_option(
         name="benchmark_tag",
         doc="a tag to put on logged benchmarking lines",
-        default='Benchmark',
+        default="Benchmark",
     )
     required_config.add_option(
         name="wrapped_crashstore",
         doc="another crash store to be benchmarked",
-        default='',
-        from_string_converter=class_converter
+        default="",
+        from_string_converter=class_converter,
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
+    def __init__(self, config, namespace="", quit_check_callback=None):
+        super().__init__(
+            config, namespace=namespace, quit_check_callback=quit_check_callback
+        )
         self.wrapped_crashstore = config.wrapped_crashstore(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
+            config, namespace=namespace, quit_check_callback=quit_check_callback
         )
         self.tag = config.benchmark_tag
         self.start_timer = datetime.datetime.now
         self.end_timer = datetime.datetime.now
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def close(self):
         """some implementations may need explicit closing."""
@@ -613,87 +626,97 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         start_time = self.start_timer()
         self.wrapped_crashstore.save_raw_crash(raw_crash, dumps, crash_id)
         end_time = self.end_timer()
-        self.logger.debug('%s save_raw_crash %s', self.tag, end_time - start_time)
+        self.logger.debug("%s save_raw_crash %s", self.tag, end_time - start_time)
 
     def save_processed(self, processed_crash):
         start_time = self.start_timer()
         self.wrapped_crashstore.save_processed(processed_crash)
         end_time = self.end_timer()
-        self.logger.debug('%s save_processed %s', self.tag, end_time - start_time)
+        self.logger.debug("%s save_processed %s", self.tag, end_time - start_time)
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
         start_time = self.start_timer()
-        self.wrapped_crashstore.save_raw_and_processed(raw_crash, dumps, processed_crash, crash_id)
+        self.wrapped_crashstore.save_raw_and_processed(
+            raw_crash, dumps, processed_crash, crash_id
+        )
         end_time = self.end_timer()
-        self.logger.debug('%s save_raw_and_processed %s', self.tag, end_time - start_time)
+        self.logger.debug(
+            "%s save_raw_and_processed %s", self.tag, end_time - start_time
+        )
 
     def get_raw_crash(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_crash(crash_id)
         end_time = self.end_timer()
-        self.logger.debug('%s get_raw_crash %s', self.tag, end_time - start_time)
+        self.logger.debug("%s get_raw_crash %s", self.tag, end_time - start_time)
         return result
 
     def get_raw_dump(self, crash_id, name=None):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dump(crash_id)
         end_time = self.end_timer()
-        self.logger.debug('%s get_raw_dump %s', self.tag, end_time - start_time)
+        self.logger.debug("%s get_raw_dump %s", self.tag, end_time - start_time)
         return result
 
     def get_raw_dumps(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dumps(crash_id)
         end_time = self.end_timer()
-        self.logger.debug('%s get_raw_dumps %s', self.tag, end_time - start_time)
+        self.logger.debug("%s get_raw_dumps %s", self.tag, end_time - start_time)
         return result
 
     def get_raw_dumps_as_files(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dumps_as_files(crash_id)
         end_time = self.end_timer()
-        self.logger.debug('%s get_raw_dumps_as_files %s', self.tag, end_time - start_time)
+        self.logger.debug(
+            "%s get_raw_dumps_as_files %s", self.tag, end_time - start_time
+        )
         return result
 
     def get_unredacted_processed(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_unredacted_processed(crash_id)
         end_time = self.end_timer()
-        self.logger.debug('%s get_unredacted_processed %s', self.tag, end_time - start_time)
+        self.logger.debug(
+            "%s get_unredacted_processed %s", self.tag, end_time - start_time
+        )
         return result
 
     def remove(self, crash_id):
         start_time = self.start_timer()
         self.wrapped_crashstore.remove(crash_id)
         end_time = self.end_timer()
-        self.logger.debug('%s remove %s', self.tag, end_time - start_time)
+        self.logger.debug("%s remove %s", self.tag, end_time - start_time)
 
 
 class MetricsEnabledBase(RequiredConfig):
     """Base class for capturing metrics for crashstorage classes"""
+
     required_config = Namespace()
     required_config.add_option(
-        'metrics_prefix',
-        doc='a string to be used as the prefix for metrics keys',
-        default=''
+        "metrics_prefix",
+        doc="a string to be used as the prefix for metrics keys",
+        default="",
     )
     required_config.add_option(
-        'active_list',
-        default='save_raw_and_processed,act',
-        doc='a comma delimeted list of counters that are enabled',
-        from_string_converter=str_to_list
+        "active_list",
+        default="save_raw_and_processed,act",
+        doc="a comma delimeted list of counters that are enabled",
+        from_string_converter=str_to_list,
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
+    def __init__(self, config, namespace="", quit_check_callback=None):
         self.config = config
         self.metrics = markus.get_metrics(self.config.metrics_prefix)
 
     def _make_key(self, *args):
-        return '.'.join(x for x in args if x)
+        return ".".join(x for x in args if x)
 
 
 class MetricsCounter(MetricsEnabledBase):
     """Counts the number of times it's called"""
+
     required_config = Namespace()
 
     def __getattr__(self, attr):
@@ -707,20 +730,21 @@ class MetricsCounter(MetricsEnabledBase):
 
 class MetricsBenchmarkingWrapper(MetricsEnabledBase):
     """Sends timings for specified method calls in wrapped crash store"""
+
     required_config = Namespace()
     required_config.add_option(
         name="wrapped_object_class",
-        doc='fully qualified Python class path for an object to an be benchmarked',
-        default='',
-        from_string_converter=class_converter
+        doc="fully qualified Python class path for an object to an be benchmarked",
+        default="",
+        from_string_converter=class_converter,
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
-        super().__init__(config, namespace=namespace, quit_check_callback=quit_check_callback)
+    def __init__(self, config, namespace="", quit_check_callback=None):
+        super().__init__(
+            config, namespace=namespace, quit_check_callback=quit_check_callback
+        )
         self.wrapped_object = config.wrapped_object_class(
-            config,
-            namespace=namespace,
-            quit_check_callback=quit_check_callback
+            config, namespace=namespace, quit_check_callback=quit_check_callback
         )
 
     def close(self):
@@ -729,9 +753,13 @@ class MetricsBenchmarkingWrapper(MetricsEnabledBase):
     def __getattr__(self, attr):
         wrapped_attr = getattr(self.wrapped_object, attr)
         if attr in self.config.active_list:
+
             def benchmarker(*args, **kwargs):
-                metrics_key = self._make_key(self.config.wrapped_object_class.__name__, attr)
+                metrics_key = self._make_key(
+                    self.config.wrapped_object_class.__name__, attr
+                )
                 with self.metrics.timer(metrics_key):
                     return wrapped_attr(*args, **kwargs)
+
             return benchmarker
         return wrapped_attr

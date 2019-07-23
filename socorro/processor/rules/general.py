@@ -17,6 +17,7 @@ class DeNullRule(Rule):
     get saved back to storage, so this doesn't overwrite the original material.
 
     """
+
     def de_null(self, s):
         """Remove nulls from bytes and str values
 
@@ -25,11 +26,11 @@ class DeNullRule(Rule):
         :returns: str or bytes without nulls
 
         """
-        if isinstance(s, bytes) and b'\0' in s:
-            return s.replace(b'\0', b'')
+        if isinstance(s, bytes) and b"\0" in s:
+            return s.replace(b"\0", b"")
 
-        if isinstance(s, str) and '\0' in s:
-            return s.replace('\0', '')
+        if isinstance(s, str) and "\0" in s:
+            return s.replace("\0", "")
 
         # If it's not a bytes or a str, it's something else and we should
         # return it as is
@@ -48,35 +49,39 @@ class DeNullRule(Rule):
 
 class IdentifierRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        if 'uuid' in raw_crash:
-            processed_crash['crash_id'] = raw_crash['uuid']
-            processed_crash['uuid'] = raw_crash['uuid']
+        if "uuid" in raw_crash:
+            processed_crash["crash_id"] = raw_crash["uuid"]
+            processed_crash["uuid"] = raw_crash["uuid"]
 
 
 class CPUInfoRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # This is the CPU that the product was built for
-        processed_crash['cpu_arch'] = glom(
-            processed_crash, 'json_dump.system_info.cpu_arch', default=''
+        processed_crash["cpu_arch"] = glom(
+            processed_crash, "json_dump.system_info.cpu_arch", default=""
         )
         # NOTE(willkg): "cpu_name" is deprecated and we can remove it in July 2019
-        processed_crash['cpu_name'] = glom(
-            processed_crash, 'json_dump.system_info.cpu_arch', default=''
+        processed_crash["cpu_name"] = glom(
+            processed_crash, "json_dump.system_info.cpu_arch", default=""
         )
 
         # This is the CPU info of the machine the product was running on
-        processed_crash['cpu_info'] = glom(
-            processed_crash, 'json_dump.system_info.cpu_info', default=''
+        processed_crash["cpu_info"] = glom(
+            processed_crash, "json_dump.system_info.cpu_info", default=""
         )
-        processed_crash['cpu_count'] = glom(
-            processed_crash, 'json_dump.system_info.cpu_count', default=0
+        processed_crash["cpu_count"] = glom(
+            processed_crash, "json_dump.system_info.cpu_count", default=0
         )
 
 
 class OSInfoRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        os_name = glom(processed_crash, 'json_dump.system_info.os', default='Unknown').strip()
-        processed_crash['os_name'] = os_name
+        os_name = glom(
+            processed_crash, "json_dump.system_info.os", default="Unknown"
+        ).strip()
+        processed_crash["os_name"] = os_name
 
-        os_ver = glom(processed_crash, 'json_dump.system_info.os_ver', default='').strip()
-        processed_crash['os_version'] = os_ver
+        os_ver = glom(
+            processed_crash, "json_dump.system_info.os_ver", default=""
+        ).strip()
+        processed_crash["os_version"] = os_ver

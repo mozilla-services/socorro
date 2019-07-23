@@ -13,6 +13,7 @@ from socorro.lib import BadArgumentError, external_common
 
 class TestExternalCommon(object):
     """Test functions of the external_common module. """
+
     def test_check_type(self):
         # Test 1: null
         param = None
@@ -95,22 +96,15 @@ class TestExternalCommon(object):
         filters = [
             ("param1", "default", ["list", "str"]),
             ("param2", None, "int"),
-            ("param3", ["list", "of", 4, "values"], ["list", "str"])
+            ("param3", ["list", "of", 4, "values"], ["list", "str"]),
         ]
-        arguments = {
-            "param1": "value1",
-            "unknown": 12345
-        }
+        arguments = {"param1": "value1", "unknown": 12345}
         params_exp = DotDict()
         params_exp.param1 = ["value1"]
         params_exp.param2 = None
         params_exp.param3 = ["list", "of", "4", "values"]
 
-        params = external_common.parse_arguments(
-            filters,
-            arguments,
-            modern=False,
-        )
+        params = external_common.parse_arguments(filters, arguments, modern=False)
 
         assert params == params_exp
 
@@ -138,21 +132,15 @@ class TestExternalCommon(object):
         params_exp = DotDict()
         params_exp.param1 = ["value1"]
         params_exp.param2 = None
-        params_exp.param3 = ['some', 'default', 'list']
+        params_exp.param3 = ["some", "default", "list"]
         params_exp.param4 = ["list", "of", "4", "values"]
         params_exp.param5 = True
         params_exp.param6 = None
         params_exp.param7 = datetime.date(2016, 2, 9)
-        params_exp.param8 = datetime.datetime(2016, 2, 9).replace(
-            tzinfo=isodate.UTC
-        )
+        params_exp.param8 = datetime.datetime(2016, 2, 9).replace(tzinfo=isodate.UTC)
         params_exp.param9 = None
 
-        params = external_common.parse_arguments(
-            filters,
-            arguments,
-            modern=True
-        )
+        params = external_common.parse_arguments(filters, arguments, modern=True)
         for key in params:
             assert params[key] == params_exp[key]
         assert params == params_exp
@@ -160,34 +148,24 @@ class TestExternalCommon(object):
     def test_parse_arguments_with_class_validators(self):
         class NumberConverter(object):
             def clean(self, value):
-                conv = {'one': 1, 'two': 2, 'three': 3}
+                conv = {"one": 1, "two": 2, "three": 3}
                 try:
                     return conv[value]
                 except KeyError:
-                    raise ValueError('No idea?!')
+                    raise ValueError("No idea?!")
 
         # Define a set of filters with some types being non-trivial types
         # but instead a custom validator.
 
-        filters = [
-            ("param1", 0, NumberConverter()),
-        ]
-        arguments = {
-            "param1": "one",
-        }
+        filters = [("param1", 0, NumberConverter())]
+        arguments = {"param1": "one"}
         params_exp = DotDict()
         params_exp.param1 = 1
 
-        params = external_common.parse_arguments(
-            filters,
-            arguments,
-            modern=True
-        )
+        params = external_common.parse_arguments(filters, arguments, modern=True)
         assert params == params_exp
 
         # note that a ValueError becomes a BadArgumentError
-        arguments = {
-            "param1": "will cause a ValueError in NumberConverter.clean",
-        }
+        arguments = {"param1": "will cause a ValueError in NumberConverter.clean"}
         with pytest.raises(BadArgumentError):
             external_common.parse_arguments(filters, arguments, modern=True)

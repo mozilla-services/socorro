@@ -18,14 +18,14 @@ def get_config(cls, values_source=None):
     values_source = values_source or {}
 
     conf = cls.get_required_config()
-    conf.add_option('logger', default=mock.Mock())
-    conf.add_option('metrics', default=mock.Mock())
+    conf.add_option("logger", default=mock.Mock())
+    conf.add_option("metrics", default=mock.Mock())
 
     cm = ConfigurationManager(
         [conf],
-        app_name='testapp',
-        app_version='1.0',
-        app_description='',
+        app_name="testapp",
+        app_version="1.0",
+        app_description="",
         values_source_list=[values_source],
         argv_source=[],
     )

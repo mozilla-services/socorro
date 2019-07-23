@@ -22,18 +22,23 @@ class HTTPAdapterWithTimeout(HTTPAdapter):
         Defaults to 5.0 seconds.
 
     """
+
     def __init__(self, *args, **kwargs):
-        self._default_timeout = kwargs.pop('default_timeout', 5.0)
+        self._default_timeout = kwargs.pop("default_timeout", 5.0)
         super().__init__(*args, **kwargs)
 
     def send(self, *args, **kwargs):
         # If there's a timeout, use that. Otherwise, use the default.
-        kwargs['timeout'] = kwargs.get('timeout') or self._default_timeout
+        kwargs["timeout"] = kwargs.get("timeout") or self._default_timeout
         return super().send(*args, **kwargs)
 
 
-def session_with_retries(total_retries=5, backoff_factor=0.2,
-                         status_forcelist=(429, 500), default_timeout=5.0):
+def session_with_retries(
+    total_retries=5,
+    backoff_factor=0.2,
+    status_forcelist=(429, 500),
+    default_timeout=5.0,
+):
     """Returns session that retries on HTTP 429 and 500 with default timeout
 
     :arg int total_retries: total number of times to retry
@@ -57,18 +62,18 @@ def session_with_retries(total_retries=5, backoff_factor=0.2,
     retries = Retry(
         total=total_retries,
         backoff_factor=backoff_factor,
-        status_forcelist=list(status_forcelist)
+        status_forcelist=list(status_forcelist),
     )
 
     session = requests.Session()
 
     # Set the User-Agent header so we can distinguish our stuff from other stuff
-    session.headers.update({
-        'User-Agent': 'socorro-requests/1.0'
-    })
+    session.headers.update({"User-Agent": "socorro-requests/1.0"})
 
-    adapter = HTTPAdapterWithTimeout(max_retries=retries, default_timeout=default_timeout)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
+    adapter = HTTPAdapterWithTimeout(
+        max_retries=retries, default_timeout=default_timeout
+    )
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
 
     return session
