@@ -12,7 +12,7 @@
 
 set -e
 
-BLACKARGS=("--line-length=88" "--target-version=py36" scripts)
+BLACKARGS=("--line-length=88" "--target-version=py36" docker scripts)
 
 if [[ $1 == "--fix" ]]; then
     echo ">>> black fix"
