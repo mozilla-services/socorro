@@ -10,18 +10,42 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0008_1498441-name-unique'),
-    ]
+    dependencies = [("crashstats", "0008_1498441-name-unique")]
 
     operations = [
         migrations.CreateModel(
-            name='Product',
+            name="Product",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('product_name', models.CharField(help_text=b'ProductName of product as it appears in crash reports', max_length=50, unique=True)),
-                ('sort', models.IntegerField(default=100, help_text=b'sort order spot for this product')),
-                ('is_active', models.BooleanField(default=True, help_text=b'whether or not this product is active and should show up on the site')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "product_name",
+                    models.CharField(
+                        help_text=b"ProductName of product as it appears in crash reports",
+                        max_length=50,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "sort",
+                    models.IntegerField(
+                        default=100, help_text=b"sort order spot for this product"
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text=b"whether or not this product is active and should show up on the site",
+                    ),
+                ),
             ],
-        ),
+        )
     ]

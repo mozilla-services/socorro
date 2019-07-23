@@ -12,9 +12,6 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0004_1463121-signature'),
-    ]
+    dependencies = [("crashstats", "0004_1463121-signature")]
 
-    operations = [
-    ]
+    operations = []

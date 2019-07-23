@@ -17,14 +17,14 @@ class TestLeftoverPipelineFinder(object):
         busted_pipeline = copy.deepcopy(settings.PIPELINE)
         # Doesn't matter which key we chose to bust, so let's just
         # pick the first one.
-        key = list(busted_pipeline['STYLESHEETS'].keys())[0]
-        filenames = busted_pipeline['STYLESHEETS'][key]['source_filenames']
+        key = list(busted_pipeline["STYLESHEETS"].keys())[0]
+        filenames = busted_pipeline["STYLESHEETS"][key]["source_filenames"]
 
         # add a junk one
-        filenames += ('neverheardof.css',)
-        busted_pipeline['STYLESHEETS'][key]['source_filenames'] = filenames
+        filenames += ("neverheardof.css",)
+        busted_pipeline["STYLESHEETS"][key]["source_filenames"] = filenames
 
         settings.PIPELINE = busted_pipeline
 
         with pytest.raises(ImproperlyConfigured):
-            call_command('collectstatic', '--noinput', interactive=False)
+            call_command("collectstatic", "--noinput", interactive=False)

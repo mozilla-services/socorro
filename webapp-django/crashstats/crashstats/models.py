@@ -29,7 +29,7 @@ from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 from crashstats.crashstats.configman_utils import config_from_configman
 
 
-logger = logging.getLogger('crashstats.models')
+logger = logging.getLogger("crashstats.models")
 
 
 # Django models first
@@ -41,26 +41,23 @@ class BugAssociationManager(models.Manager):
         # it seemed prudent to go for simpler for now
         bug_ids = [
             bug[0]
-            for bug in self.filter(signature__in=signatures).values_list('bug_id')
+            for bug in self.filter(signature__in=signatures).values_list("bug_id")
         ]
         return self.filter(bug_id__in=bug_ids)
 
 
 class BugAssociation(models.Model):
     """Specifies assocations between bug ids in Bugzilla and signatures"""
-    bug_id = models.IntegerField(
-        null=False,
-        help_text='Bugzilla bug id'
-    )
+
+    bug_id = models.IntegerField(null=False, help_text="Bugzilla bug id")
     signature = models.TextField(
-        null=False, blank=False,
-        help_text='Socorro-style crash report signature'
+        null=False, blank=False, help_text="Socorro-style crash report signature"
     )
 
     objects = BugAssociationManager()
 
     class Meta:
-        unique_together = ('bug_id', 'signature')
+        unique_together = ("bug_id", "signature")
 
 
 class GraphicsDeviceManager(models.Manager):
@@ -76,9 +73,14 @@ class GraphicsDeviceManager(models.Manager):
         """Returns dict of (vendor_hex, adapter_hex) -> (vendor_name, adapter_name)"""
         # NOTE(willkg): graphics devices are hierarchical, but it's easier to do
         # one query and get some extra stuff than to do one query per vendor
-        qs = self.filter(vendor_hex__in=vendor_hexes, adapter_hex__in=adapter_hexes).values()
+        qs = self.filter(
+            vendor_hex__in=vendor_hexes, adapter_hex__in=adapter_hexes
+        ).values()
         names = {
-            (item['vendor_hex'], item['adapter_hex']): (item['vendor_name'], item['adapter_name'])
+            (item["vendor_hex"], item["adapter_hex"]): (
+                item["vendor_name"],
+                item["adapter_name"],
+            )
             for item in qs
         }
 
@@ -87,6 +89,7 @@ class GraphicsDeviceManager(models.Manager):
 
 class GraphicsDevice(models.Model):
     """Specifies a device hex/name"""
+
     vendor_hex = models.CharField(max_length=100)
     adapter_hex = models.CharField(max_length=100, blank=True, null=True)
     vendor_name = models.TextField(blank=True, null=True)
@@ -95,18 +98,24 @@ class GraphicsDevice(models.Model):
     objects = GraphicsDeviceManager()
 
     class Meta:
-        unique_together = ('vendor_hex', 'adapter_hex')
+        unique_together = ("vendor_hex", "adapter_hex")
 
 
 class Platform(models.Model):
     """Lookup table for platforms"""
+
     name = models.CharField(
-        max_length=20, blank=False, null=False, unique=True,
-        help_text='Name of the platform'
+        max_length=20,
+        blank=False,
+        null=False,
+        unique=True,
+        help_text="Name of the platform",
     )
     short_name = models.CharField(
-        max_length=20, blank=False, null=False,
-        help_text='Short abbreviated name of the platform'
+        max_length=20,
+        blank=False,
+        null=False,
+        help_text="Short abbreviated name of the platform",
     )
 
 
@@ -118,72 +127,85 @@ class ProductManager(models.Manager):
 
 class Product(models.Model):
     """Lookup table for products"""
+
     product_name = models.CharField(
-        max_length=50, blank=False, null=False, unique=True,
-        help_text='ProductName of product as it appears in crash reports'
+        max_length=50,
+        blank=False,
+        null=False,
+        unique=True,
+        help_text="ProductName of product as it appears in crash reports",
     )
     sort = models.IntegerField(
-        default=100,
-        help_text='sort order spot for this product'
+        default=100, help_text="sort order spot for this product"
     )
     is_active = models.BooleanField(
         default=True,
-        help_text='whether or not this product is active and should show up on the site'
+        help_text="whether or not this product is active and should show up on the site",
     )
 
     objects = ProductManager()
 
     class Meta:
-        ordering = ['sort']
+        ordering = ["sort"]
 
 
 class ProductVersion(models.Model):
     """Lookup table for product versions and build information."""
 
     product_name = models.CharField(
-        max_length=50, blank=False, null=False,
-        help_text='ProductName of product as it appears in crash reports'
+        max_length=50,
+        blank=False,
+        null=False,
+        help_text="ProductName of product as it appears in crash reports",
     )
     release_channel = models.CharField(
-        max_length=50, blank=False, null=False,
-        help_text='release channel for this version'
+        max_length=50,
+        blank=False,
+        null=False,
+        help_text="release channel for this version",
     )
     major_version = models.IntegerField(
         help_text='major version of this version; for example "63.0b4" would be 63'
     )
     release_version = models.CharField(
-        max_length=50, blank=False, null=False,
-        help_text='version as it appears in crash reports'
+        max_length=50,
+        blank=False,
+        null=False,
+        help_text="version as it appears in crash reports",
     )
     version_string = models.CharField(
-        max_length=50, blank=False, null=False,
-        help_text='actual version'
+        max_length=50, blank=False, null=False, help_text="actual version"
     )
     build_id = models.CharField(
-        max_length=50, blank=False, null=False,
-        help_text='the build id for this version'
+        max_length=50,
+        blank=False,
+        null=False,
+        help_text="the build id for this version",
     )
     archive_url = models.TextField(
-        blank=True, null=True,
-        help_text='the url on archive.mozilla.org for data on this build'
+        blank=True,
+        null=True,
+        help_text="the url on archive.mozilla.org for data on this build",
     )
 
     class Meta:
-        unique_together = ('product_name', 'release_channel', 'build_id', 'version_string')
+        unique_together = (
+            "product_name",
+            "release_channel",
+            "build_id",
+            "version_string",
+        )
 
 
 class Signature(models.Model):
     """Bookkeeping table to keep track of when we first saw a signature."""
 
-    signature = models.TextField(
-        unique=True,
-        help_text='the crash report signature'
-    )
+    signature = models.TextField(unique=True, help_text="the crash report signature")
     first_build = models.BigIntegerField(
-        help_text='the first build id this signature was seen in'
+        help_text="the first build id this signature was seen in"
     )
     first_date = models.DateTimeField(
-        help_text='the first crash report date this signature was seen in'
+        help_text="the first crash report date this signature was seen in"
     )
 
 
@@ -191,24 +213,20 @@ class MissingProcessedCrash(models.Model):
     """Bookkeeping table to keep track of missing processed crashes."""
 
     crash_id = models.CharField(
-        unique=True,
-        max_length=36,
-        help_text='crash id for missing processed crash'
+        unique=True, max_length=36, help_text="crash id for missing processed crash"
     )
     is_processed = models.BooleanField(
-        default=False,
-        help_text='whether this crash was eventually processed'
+        default=False, help_text="whether this crash was eventually processed"
     )
     created = models.DateTimeField(
-        auto_now_add=True,
-        help_text='date discovered it was missing'
+        auto_now_add=True, help_text="date discovered it was missing"
     )
 
     def collected_date(self):
-        return '20' + self.crash_id[-6:]
+        return "20" + self.crash_id[-6:]
 
     def report_url(self):
-        return reverse('crashstats:report_index', args=(self.crash_id,))
+        return reverse("crashstats:report_index", args=(self.crash_id,))
 
     def check_processed(self):
         """Check whether this crash id was processed.
@@ -218,7 +236,9 @@ class MissingProcessedCrash(models.Model):
         """
         processed_api = ProcessedCrash()
         try:
-            processed_api.get(crash_id=self.crash_id, dont_cache=True, refresh_cache=True)
+            processed_api.get(
+                crash_id=self.crash_id, dont_cache=True, refresh_cache=True
+            )
             return True
         except CrashIDNotFound:
             return False
@@ -226,11 +246,12 @@ class MissingProcessedCrash(models.Model):
             return str(exc)
 
     class Meta:
-        verbose_name = 'missing processed crash'
-        verbose_name_plural = 'missing processed crashes'
+        verbose_name = "missing processed crash"
+        verbose_name_plural = "missing processed crashes"
 
 
 # Socorro x-middleware models
+
 
 class DeprecatedModelError(DeprecationWarning):
     """Used when a deprecated model is being used in debug mode"""
@@ -244,13 +265,14 @@ def get_api_allowlist(*args, **kwargs):
     def get_from_es(namespace, baseline=None):
         # @namespace is something like 'raw_crash' or 'processed_crash'
 
-        cache_key = 'api_supersearch_fields_%s' % namespace
+        cache_key = "api_supersearch_fields_%s" % namespace
         fields = cache.get(cache_key)
 
         if fields is None:
             # This needs to be imported in runtime because otherwise you'll
             # get a circular import.
             from crashstats.supersearch.models import SuperSearchFields
+
             all_fields = SuperSearchFields().get()
             fields = []
             if baseline:
@@ -259,12 +281,12 @@ def get_api_allowlist(*args, **kwargs):
                 fields.extend(baseline)
             for meta in all_fields.values():
                 if (
-                    meta['namespace'] == namespace and
-                    not meta['permissions_needed'] and
-                    meta['is_returned']
+                    meta["namespace"] == namespace
+                    and not meta["permissions_needed"]
+                    and meta["is_returned"]
                 ):
-                    if meta['in_database_name'] not in fields:
-                        fields.append(meta['in_database_name'])
+                    if meta["in_database_name"] not in fields:
+                        fields.append(meta["in_database_name"])
             fields = tuple(fields)
 
             # Cache for 1 hour.
@@ -287,15 +309,15 @@ def _clean_path(path):
     as a file directory.
     """
     path = iri_to_uri(path)
-    path = path.replace(' ', '_')
-    path = '/'.join(slugify(x) for x in path.split('/'))
-    if path.startswith('/'):
+    path = path.replace(" ", "_")
+    path = "/".join(slugify(x) for x in path.split("/"))
+    if path.startswith("/"):
         path = path[1:]
     return path
 
 
 def _clean_query(query, max_length=30):
-    cleaned = _clean_path(query.replace('&', '/'))
+    cleaned = _clean_path(query.replace("&", "/"))
     # if we allow the query part become too long,
     # we might run the rist of getting a OSError number 63
     # which is "File name too long"
@@ -314,30 +336,30 @@ def measure_fetches(method):
             # happens when fetch() is used recursively
             return result
         result, hit_or_miss = result
-        if not getattr(settings, 'ANALYZE_MODEL_FETCHES', False):
+        if not getattr(settings, "ANALYZE_MODEL_FETCHES", False):
             return result
         t1 = time.time()
         self = args[0]
         msecs = int((t1 - t0) * 1000)
-        hit_or_miss = 'HIT' if hit_or_miss else 'MISS'
+        hit_or_miss = "HIT" if hit_or_miss else "MISS"
 
         try:
             value = self.__class__.__name__
-            key = 'all_classes'
+            key = "all_classes"
             all_ = cache.get(key) or []
             if value not in all_:
                 all_.append(value)
                 cache.set(key, all_, 60 * 60 * 24)
 
-            valuekey = hashlib.md5(value.encode('utf-8')).hexdigest()
-            for prefix, incr in (('times', msecs), ('uses', 1)):
-                key = '%s_%s_%s' % (prefix, hit_or_miss, valuekey)
+            valuekey = hashlib.md5(value.encode("utf-8")).hexdigest()
+            for prefix, incr in (("times", msecs), ("uses", 1)):
+                key = "%s_%s_%s" % (prefix, hit_or_miss, valuekey)
                 try:
                     cache.incr(key, incr)
                 except ValueError:
                     cache.set(key, incr, 60 * 60 * 24)
         except Exception:
-            logger.error('Unable to collect model fetches data', exc_info=True)
+            logger.error("Unable to collect model fetches data", exc_info=True)
         finally:
             return result
 
@@ -368,26 +390,30 @@ class SocorroCommon(object):
         self,
         implementation,
         headers=None,
-        method='get',
+        method="get",
         params=None,
         data=None,
         expect_json=True,
         dont_cache=False,
         refresh_cache=False,
         retries=None,
-        retry_sleeptime=None
+        retry_sleeptime=None,
     ):
         cache_key = None
 
-        if settings.CACHE_IMPLEMENTATION_FETCHES and not dont_cache and self.cache_seconds:
+        if (
+            settings.CACHE_IMPLEMENTATION_FETCHES
+            and not dont_cache
+            and self.cache_seconds
+        ):
             name = implementation.__class__.__name__
             key_string = name + repr(params)
-            cache_key = hashlib.md5(key_string.encode('utf-8')).hexdigest()
+            cache_key = hashlib.md5(key_string.encode("utf-8")).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)
                 if result is not None:
-                    logger.debug('CACHE HIT %s' % implementation.__class__.__name__)
+                    logger.debug("CACHE HIT %s" % implementation.__class__.__name__)
                     return result, True
 
         implementation_method = getattr(implementation, method)
@@ -399,10 +425,10 @@ class SocorroCommon(object):
         return result, False
 
     def _complete_url(self, url):
-        if url.startswith('/'):
-            if not getattr(self, 'base_url', None):
+        if url.startswith("/"):
+            if not getattr(self, "base_url", None):
                 raise NotImplementedError("No base_url defined in context")
-            url = '%s%s' % (self.base_url, url)
+            url = "%s%s" % (self.base_url, url)
         return url
 
     def get_implementation(self):
@@ -419,13 +445,13 @@ class SocorroMiddleware(SocorroCommon):
     implementation = None
 
     # Config namespace to use for the implementation
-    implementation_config_namespace = ''
+    implementation_config_namespace = ""
 
-    default_date_format = '%Y-%m-%d'
-    default_datetime_format = '%Y-%m-%dT%H:%M:%S'
+    default_date_format = "%Y-%m-%d"
+    default_datetime_format = "%Y-%m-%dT%H:%M:%S"
 
     # Help text shown in the documentation
-    HELP_TEXT = ''
+    HELP_TEXT = ""
 
     # By default, no particular permission is needed to use a model
     API_REQUIRED_PERMISSIONS = None
@@ -445,28 +471,19 @@ class SocorroMiddleware(SocorroCommon):
         return self._post(url, payload)
 
     def put(self, url, payload):
-        return self._post(url, payload, method='put')
+        return self._post(url, payload, method="put")
 
     def delete(self, **kwargs):
         # Set dont_cache=True here because we never want to cache a delete.
-        return self._get(
-            method='delete',
-            dont_cache=True,
-            **kwargs
-        )
+        return self._get(method="delete", dont_cache=True, **kwargs)
 
-    def _post(self, url, payload, method='post'):
+    def _post(self, url, payload, method="post"):
         # set dont_cache=True here because the request depends on the payload
-        return self.fetch(
-            url,
-            method=method,
-            data=payload,
-            dont_cache=True,
-        )
+        return self.fetch(url, method=method, data=payload, dont_cache=True)
 
     def parse_parameters(self, kwargs):
-        defaults = getattr(self, 'defaults', {})
-        aliases = getattr(self, 'aliases', {})
+        defaults = getattr(self, "defaults", {})
+        aliases = getattr(self, "aliases", {})
 
         for key, value in defaults.items():
             kwargs[key] = kwargs.get(key) or value
@@ -480,11 +497,11 @@ class SocorroMiddleware(SocorroCommon):
 
     def _get(
         self,
-        method='get',
+        method="get",
         dont_cache=False,
         refresh_cache=False,
         expect_json=True,
-        **kwargs
+        **kwargs,
     ):
         """
         Generic `get` method that will take `self.required_params` and
@@ -531,40 +548,40 @@ class SocorroMiddleware(SocorroCommon):
         params = {}
 
         for param in self.get_annotated_params():
-            name = param['name']
+            name = param["name"]
             value = kwargs.get(name)
 
             # 0 is a perfectly fine value, it should not be considered "falsy".
             if not value and value != 0 and value is not False:
-                if param['required']:
+                if param["required"]:
                     raise RequiredParameterError(name)
                 continue
 
-            if isinstance(value, param['type']):
-                if isinstance(value, datetime.datetime) and param['type'] is datetime.date:
+            if isinstance(value, param["type"]):
+                if (
+                    isinstance(value, datetime.datetime)
+                    and param["type"] is datetime.date
+                ):
                     value = value.date()
             else:
-                if isinstance(value, str) and param['type'] is list:
+                if isinstance(value, str) and param["type"] is list:
                     value = [value]
-                elif param['type'] is str:
+                elif param["type"] is str:
                     # we'll let the url making function later deal with this
                     pass
                 else:
                     try:
                         # test if it can be cast
-                        param['type'](value)
+                        param["type"](value)
                     except (TypeError, ValueError):
                         raise ParameterTypeError(
-                            'Expected %s to be a %s not %s' % (
-                                name,
-                                param['type'],
-                                type(value)
-                            )
+                            "Expected %s to be a %s not %s"
+                            % (name, param["type"], type(value))
                         )
             if isinstance(value, datetime.datetime):
                 value = value.isoformat()
             elif isinstance(value, datetime.date):
-                value = value.strftime('%Y-%m-%d')
+                value = value.strftime("%Y-%m-%d")
             params[name] = value
         return params
 
@@ -576,59 +593,45 @@ class SocorroMiddleware(SocorroCommon):
             * type
             * required
         """
-        for required, items in ((True, getattr(self, 'required_params', [])),
-                                (False, getattr(self, 'possible_params', []))):
+        for required, items in (
+            (True, getattr(self, "required_params", [])),
+            (False, getattr(self, "possible_params", [])),
+        ):
             for item in items:
                 if isinstance(item, str):
                     type_ = str
                     name = item
                 elif isinstance(item, dict):
-                    type_ = item['type']
-                    name = item['name']
+                    type_ = item["type"]
+                    name = item["name"]
                 else:
                     assert isinstance(item, tuple)
                     name = item[0]
                     type_ = item[1]
 
-                yield {
-                    'name': name,
-                    'required': required,
-                    'type': type_,
-                }
+                yield {"name": name, "required": required, "type": type_}
 
 
 class TelemetryCrash(SocorroMiddleware):
     """Model for data we store in the S3 bucket to send to Telemetry"""
 
     implementation = TelemetryCrashData
-    implementation_config_namespace = 'telemetrydata'
+    implementation_config_namespace = "telemetrydata"
 
-    required_params = (
-        'crash_id',
-    )
-    aliases = {
-        'crash_id': 'uuid',
-    }
+    required_params = ("crash_id",)
+    aliases = {"crash_id": "uuid"}
 
 
 class ProcessedCrash(SocorroMiddleware):
     implementation = SimplifiedCrashData
-    implementation_config_namespace = 'crashdata'
+    implementation_config_namespace = "crashdata"
 
-    required_params = (
-        'crash_id',
-    )
-    possible_params = (
-        'datatype',
-    )
+    required_params = ("crash_id",)
+    possible_params = ("datatype",)
 
-    aliases = {
-        'crash_id': 'uuid',
-    }
+    aliases = {"crash_id": "uuid"}
 
-    defaults = {
-        'datatype': 'processed',
-    }
+    defaults = {"datatype": "processed"}
 
     HELP_TEXT = """
     API for retrieving crash data generated by processing. Note that you
@@ -636,72 +639,64 @@ class ProcessedCrash(SocorroMiddleware):
     """
 
     API_ALLOWLIST = (
-        'additional_minidumps',
-        'addons',
-        'addons_checked',
-        'address',
-        'app_notes',
-        'build',
-        'client_crash_date',
-        'completeddatetime',
-        'cpu_arch',  # NOTE(willkg): Added in January 2019--this replaces cpu_name
-        'cpu_info',
-        'cpu_name',  # NOTE(willkg): Deprecated January 2019--remove this in July 2019
-        'crashedThread',
-        'crash_time',
-        'date_processed',
-        'dump',
-        'flash_version',
-        'hangid',
-        'hang_type',
-        'id',
-        'install_age',
-        'java_stack_trace',
-        'json_dump',
-        'last_crash',
-        'mdsw_status_string',
-        'os_name',
-        'os_version',
-        'pluginFilename',
-        'pluginName',
-        'pluginVersion',
-        'processor_notes',
-        'process_type',
-        'product',
-        'productid',
-        'reason',
-        'release_channel',
-        'ReleaseChannel',
-        'signature',
-        'startedDateTime',
-        'success',
-        'topmost_filenames',
-        'truncated',
-        'upload_file_minidump_*',
-        'uptime',
-        'uuid',
-        'version',
-        'Winsock_LSP',
+        "additional_minidumps",
+        "addons",
+        "addons_checked",
+        "address",
+        "app_notes",
+        "build",
+        "client_crash_date",
+        "completeddatetime",
+        "cpu_arch",  # NOTE(willkg): Added in January 2019--this replaces cpu_name
+        "cpu_info",
+        "cpu_name",  # NOTE(willkg): Deprecated January 2019--remove this in July 2019
+        "crashedThread",
+        "crash_time",
+        "date_processed",
+        "dump",
+        "flash_version",
+        "hangid",
+        "hang_type",
+        "id",
+        "install_age",
+        "java_stack_trace",
+        "json_dump",
+        "last_crash",
+        "mdsw_status_string",
+        "os_name",
+        "os_version",
+        "pluginFilename",
+        "pluginName",
+        "pluginVersion",
+        "processor_notes",
+        "process_type",
+        "product",
+        "productid",
+        "reason",
+        "release_channel",
+        "ReleaseChannel",
+        "signature",
+        "startedDateTime",
+        "success",
+        "topmost_filenames",
+        "truncated",
+        "upload_file_minidump_*",
+        "uptime",
+        "uuid",
+        "version",
+        "Winsock_LSP",
     )
 
     # Same as for RawCrash, we supplement with the existing list, on top
     # of the Super Search Fields, because there are many fields not yet
     # listed in Super Search Fields.
-    API_ALLOWLIST = get_api_allowlist(
-        'processed_crash',
-        baseline=API_ALLOWLIST
-    )
+    API_ALLOWLIST = get_api_allowlist("processed_crash", baseline=API_ALLOWLIST)
 
 
 class UnredactedCrash(ProcessedCrash):
-    defaults = {
-        'datatype': 'unredacted',
-    }
+    defaults = {"datatype": "unredacted"}
 
-    API_REQUIRED_PERMISSIONS = (
-        'crashstats.view_exploitability',
-        'crashstats.view_pii'
-    )
+    API_REQUIRED_PERMISSIONS = ("crashstats.view_exploitability", "crashstats.view_pii")
 
     HELP_TEXT = """
     API for retrieving crash data generated by processing including PII
@@ -730,24 +725,14 @@ class RawCrash(SocorroMiddleware):
     """
 
     implementation = SimplifiedCrashData
-    implementation_config_namespace = 'crashdata'
+    implementation_config_namespace = "crashdata"
 
-    required_params = (
-        'crash_id',
-    )
-    possible_params = (
-        'format',
-        'name',
-    )
+    required_params = ("crash_id",)
+    possible_params = ("format", "name")
 
-    defaults = {
-        'format': 'meta',
-    }
+    defaults = {"format": "meta"}
 
-    aliases = {
-        'crash_id': 'uuid',
-        'format': 'datatype',
-    }
+    aliases = {"crash_id": "uuid", "format": "datatype"}
 
     HELP_TEXT = """
     API for retrieving the original crash report. Note that you
@@ -755,196 +740,167 @@ class RawCrash(SocorroMiddleware):
     """
 
     API_ALLOWLIST = (
-        'Accessibility',
-        'AdapterDeviceID',
-        'AdapterDriverVersion',
-        'AdapterRendererIDs',
-        'AdapterSubsysID',
-        'AdapterVendorID',
-        'additional_minidumps',
-        'Add-ons',
-        'Android_Board',
-        'Android_Brand',
-        'Android_CPU_ABI',
-        'Android_CPU_ABI2',
-        'Android_Device',
-        'Android_Display',
-        'Android_Fingerprint',
-        'Android_Hardware',
-        'Android_Manufacturer',
-        'Android_Model',
-        'Android_Version',
-        'AsyncShutdownTimeout',
-        'AvailablePageFile',
-        'AvailablePhysicalMemory',
-        'AvailableVirtualMemory',
-        'B2G_OS_Version',
-        'BIOS_Manufacturer',
-        'bug836263-size',
-        'buildid',
-        'BuildID',
-        'CpuUsageFlashProcess1',
-        'CpuUsageFlashProcess2',
-        'CrashTime',
-        'DOMIPCEnabled',
-        'EMCheckCompatibility',
-        'FlashVersion',
-        'FramePoisonBase',
-        'FramePoisonSize',
-        'id',
-        'InstallTime',
-        'IsGarbageCollecting',
-        'legacy_processing',
-        'Min_ARM_Version',
-        'MinidumpSha256Hash',
-        'Notes',
-        'NumberOfProcessors',
-        'OOMAllocationSize',
-        'PluginCpuUsage',
-        'PluginFilename',
-        'PluginHang',
-        'PluginHangUIDuration',
-        'PluginName',
-        'PluginUserComment',
-        'PluginVersion',
-        'ProcessType',
-        'ProductID',
-        'ProductName',
-        'RecordReplay',
-        'ReleaseChannel',
-        'SecondsSinceLastCrash',
-        'ShutdownProgress',
-        'StartupTime',
-        'submitted_timestamp',
-        'SystemMemoryUsePercentage',
-        'Theme',
-        'Throttleable',
-        'throttle_rate',
-        'timestamp',
-        'TotalVirtualMemory',
-        'upload_file_minidump_*',
-        'useragent_locale',
-        'uuid',
-        'Vendor',
-        'version',
-        'Version',
-        'Winsock_LSP',
+        "Accessibility",
+        "AdapterDeviceID",
+        "AdapterDriverVersion",
+        "AdapterRendererIDs",
+        "AdapterSubsysID",
+        "AdapterVendorID",
+        "additional_minidumps",
+        "Add-ons",
+        "Android_Board",
+        "Android_Brand",
+        "Android_CPU_ABI",
+        "Android_CPU_ABI2",
+        "Android_Device",
+        "Android_Display",
+        "Android_Fingerprint",
+        "Android_Hardware",
+        "Android_Manufacturer",
+        "Android_Model",
+        "Android_Version",
+        "AsyncShutdownTimeout",
+        "AvailablePageFile",
+        "AvailablePhysicalMemory",
+        "AvailableVirtualMemory",
+        "B2G_OS_Version",
+        "BIOS_Manufacturer",
+        "bug836263-size",
+        "buildid",
+        "BuildID",
+        "CpuUsageFlashProcess1",
+        "CpuUsageFlashProcess2",
+        "CrashTime",
+        "DOMIPCEnabled",
+        "EMCheckCompatibility",
+        "FlashVersion",
+        "FramePoisonBase",
+        "FramePoisonSize",
+        "id",
+        "InstallTime",
+        "IsGarbageCollecting",
+        "legacy_processing",
+        "Min_ARM_Version",
+        "MinidumpSha256Hash",
+        "Notes",
+        "NumberOfProcessors",
+        "OOMAllocationSize",
+        "PluginCpuUsage",
+        "PluginFilename",
+        "PluginHang",
+        "PluginHangUIDuration",
+        "PluginName",
+        "PluginUserComment",
+        "PluginVersion",
+        "ProcessType",
+        "ProductID",
+        "ProductName",
+        "RecordReplay",
+        "ReleaseChannel",
+        "SecondsSinceLastCrash",
+        "ShutdownProgress",
+        "StartupTime",
+        "submitted_timestamp",
+        "SystemMemoryUsePercentage",
+        "Theme",
+        "Throttleable",
+        "throttle_rate",
+        "timestamp",
+        "TotalVirtualMemory",
+        "upload_file_minidump_*",
+        "useragent_locale",
+        "uuid",
+        "Vendor",
+        "version",
+        "Version",
+        "Winsock_LSP",
     )
 
     # The reason we use the old list and pass it into the more dynamic wrapper
     # for getting the complete list is because we're apparently way behind
     # on having all of these added to the Super Search Fields.
-    API_ALLOWLIST = get_api_allowlist('raw_crash', baseline=API_ALLOWLIST)
+    API_ALLOWLIST = get_api_allowlist("raw_crash", baseline=API_ALLOWLIST)
 
     # If this is matched in the query string parameters, then
     # we will return the response in binary format in the API
-    API_BINARY_RESPONSE = {
-        'format': 'raw',
-    }
-    API_BINARY_FILENAME = '%(crash_id)s.dmp'
+    API_BINARY_RESPONSE = {"format": "raw"}
+    API_BINARY_FILENAME = "%(crash_id)s.dmp"
     # permissions needed to download it as a binary response
-    API_BINARY_PERMISSIONS = (
-        'crashstats.view_rawdump',
-    )
+    API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
 
     def get(self, **kwargs):
-        format_ = kwargs.get('format', 'meta')
-        if format_ == 'raw_crash':
+        format_ = kwargs.get("format", "meta")
+        if format_ == "raw_crash":
             # legacy
-            format_ = kwargs['format'] = 'raw'
-        expect_dict = format_ != 'raw'
+            format_ = kwargs["format"] = "raw"
+        expect_dict = format_ != "raw"
         result = super().get(**kwargs)
         # This 'result', will either be a binary blob or a python dict.
         # Unless kwargs['format']==raw, this has to be a python dict.
         if expect_dict and not isinstance(result, dict):
-            raise BadArgumentError('format')
+            raise BadArgumentError("format")
         return result
 
 
 class Bugs(SocorroMiddleware):
     # NOTE(willkg): This is implemented with a Django model.
-    required_params = (
-        ('signatures', list),
-    )
+    required_params = (("signatures", list),)
 
     HELP_TEXT = """
     API to retrieve bug ids for the given signatures as well as bug ids
     for all the signatures covered by those bug ids.
     """
 
-    API_ALLOWLIST = {
-        'hits': (
-            'id',
-            'signature',
-        ),
-    }
+    API_ALLOWLIST = {"hits": ("id", "signature")}
 
     def get(self, *args, **kwargs):
         params = self.parse_parameters(kwargs)
 
         hits = list(
-            BugAssociation.objects
-            .get_bugs_and_related_bugs(signatures=params['signatures'])
-            .values('bug_id', 'signature')
-            .order_by('bug_id', 'signature')
+            BugAssociation.objects.get_bugs_and_related_bugs(
+                signatures=params["signatures"]
+            )
+            .values("bug_id", "signature")
+            .order_by("bug_id", "signature")
         )
 
         hits = [
-            {
-                'id': int(hit['bug_id']),
-                'signature': hit['signature']
-            } for hit in hits
+            {"id": int(hit["bug_id"]), "signature": hit["signature"]} for hit in hits
         ]
 
-        return {
-            'hits': hits,
-            'total': len(hits)
-        }
+        return {"hits": hits, "total": len(hits)}
 
 
 class SignaturesByBugs(SocorroMiddleware):
     # NOTE(willkg): This is implemented with a Django model.
 
-    required_params = (
-        ('bug_ids', list),
-    )
+    required_params = (("bug_ids", list),)
 
     HELP_TEXT = """
     API for getting signatures associated with specified bug ids.
     """
 
-    API_ALLOWLIST = {
-        'hits': (
-            'id',
-            'signature',
-        ),
-    }
+    API_ALLOWLIST = {"hits": ("id", "signature")}
 
     def get(self, *args, **kwargs):
         params = self.parse_parameters(kwargs)
 
         # Make sure bug_ids is a list of numbers and if not, raise
         # and error
-        if not all([bug_id.isdigit() for bug_id in params['bug_ids']]):
-            raise BadArgumentError('bug_ids')
+        if not all([bug_id.isdigit() for bug_id in params["bug_ids"]]):
+            raise BadArgumentError("bug_ids")
 
         hits = list(
-            BugAssociation.objects
-            .filter(bug_id__in=params['bug_ids'])
-            .values('bug_id', 'signature')
+            BugAssociation.objects.filter(bug_id__in=params["bug_ids"]).values(
+                "bug_id", "signature"
+            )
         )
 
         hits = [
-            {
-                'id': int(hit['bug_id']),
-                'signature': hit['signature']
-            } for hit in hits
+            {"id": int(hit["bug_id"]), "signature": hit["signature"]} for hit in hits
         ]
 
-        return {
-            'hits': hits,
-            'total': len(hits)
-        }
+        return {"hits": hits, "total": len(hits)}
 
 
 class SignatureFirstDate(SocorroMiddleware):
@@ -960,44 +916,34 @@ class SignatureFirstDate(SocorroMiddleware):
     # alone when exposed in the API.
     cache_seconds = 5 * 60  # 5 minutes only
 
-    required_params = (
-        ('signatures', list),
-    )
+    required_params = (("signatures", list),)
 
     HELP_TEXT = """
     API for getting the first date and build Socorro saw the specified
     signature.
     """
 
-    API_ALLOWLIST = {
-        'hits': (
-            'signature',
-            'first_date',
-            'first_build',
-        )
-    }
+    API_ALLOWLIST = {"hits": ("signature", "first_date", "first_build")}
 
     def get(self, *args, **kwargs):
         params = self.parse_parameters(kwargs)
 
         hits = list(
-            Signature.objects
-            .filter(signature__in=params['signatures'])
-            .values('signature', 'first_build', 'first_date')
+            Signature.objects.filter(signature__in=params["signatures"]).values(
+                "signature", "first_build", "first_date"
+            )
         )
 
         hits = [
             {
-                'signature': hit['signature'],
-                'first_build': str(hit['first_build']),
-                'first_date': hit['first_date'].isoformat()
-            } for hit in hits
+                "signature": hit["signature"],
+                "first_build": str(hit["first_build"]),
+                "first_date": hit["first_date"].isoformat(),
+            }
+            for hit in hits
         ]
 
-        return {
-            'hits': hits,
-            'total': len(hits)
-        }
+        return {"hits": hits, "total": len(hits)}
 
 
 class VersionString(SocorroMiddleware):
@@ -1008,56 +954,43 @@ class VersionString(SocorroMiddleware):
     # the API.
     cache_seconds = 2 * 60  # 2 minutes only
 
-    required_params = (
-        'product',
-        'channel',
-        'build_id',
-    )
+    required_params = ("product", "channel", "build_id")
 
     HELP_TEXT = """
     API used by Socorro processor for looking up beta and rc version strings
     for (product, channel, build_id) combination.
     """
 
-    API_ALLOWLIST = {
-        'hits': (
-            'version_string',
-        )
-    }
+    API_ALLOWLIST = {"hits": ("version_string",)}
 
     def get(self, *args, **kwargs):
         params = self.parse_parameters(kwargs)
 
         versions = list(
-            ProductVersion.objects
-            .filter(
-                product_name=params['product'],
-                release_channel=params['channel'].lower(),
-                build_id=params['build_id'],
-            )
-            .values_list('version_string', flat=True)
+            ProductVersion.objects.filter(
+                product_name=params["product"],
+                release_channel=params["channel"].lower(),
+                build_id=params["build_id"],
+            ).values_list("version_string", flat=True)
         )
 
         if versions:
-            if params['channel'].lower() in ('aurora', 'beta'):
-                if 'b' in versions[0]:
+            if params["channel"].lower() in ("aurora", "beta"):
+                if "b" in versions[0]:
                     # If we're looking at betas which have a "b" in the
                     # versions, then ignore "rc" versions because they didn't
                     # get released
-                    versions = [version for version in versions if 'rc' not in version]
+                    versions = [version for version in versions if "rc" not in version]
 
                 else:
                     # If we're looking at non-betas, then only return "rc"
                     # versions because this crash report is in the beta channel
                     # and not the release channel
-                    versions = [version for version in versions if 'rc' in version]
+                    versions = [version for version in versions if "rc" in version]
 
-        versions = [{'version_string': vers} for vers in versions]
+        versions = [{"version_string": vers} for vers in versions]
 
-        return {
-            'hits': versions,
-            'total': len(versions)
-        }
+        return {"hits": versions, "total": len(versions)}
 
 
 class BugzillaBugInfo(SocorroCommon):
@@ -1071,12 +1004,12 @@ class BugzillaBugInfo(SocorroCommon):
     def make_cache_key(bug_id):
         # This is the same cache key that we use in show_bug_link()
         # the jinja helper function.
-        return 'buginfo:{}'.format(bug_id)
+        return "buginfo:{}".format(bug_id)
 
     def get(self, bugs):
         if isinstance(bugs, str):
             bugs = [bugs]
-        fields = ('summary', 'status', 'id', 'resolution')
+        fields = ("summary", "status", "id", "resolution")
         results = []
         missing = []
         for bug in bugs:
@@ -1087,37 +1020,29 @@ class BugzillaBugInfo(SocorroCommon):
             else:
                 results.append(cached)
         if missing:
-            params = {
-                'bugs': ','.join(missing),
-                'fields': ','.join(fields),
-            }
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
+            params = {"bugs": ",".join(missing), "fields": ",".join(fields)}
+            headers = {"Accept": "application/json", "Content-Type": "application/json"}
             url = settings.BZAPI_BASE_URL + (
-                '/bug?id=%(bugs)s&include_fields=%(fields)s' % params
+                "/bug?id=%(bugs)s&include_fields=%(fields)s" % params
             )
             session = session_with_retries(
                 # BZAPI isn't super reliable, so be extra patient
                 total_retries=5,
                 # 502 = Bad Gateway
                 # 504 = Gateway Time-out
-                status_forcelist=(500, 502, 504)
+                status_forcelist=(500, 502, 504),
             )
             response = session.get(
-                url,
-                headers=headers,
-                timeout=self.BUGZILLA_REST_TIMEOUT,
+                url, headers=headers, timeout=self.BUGZILLA_REST_TIMEOUT
             )
             if response.status_code != 200:
                 raise BugzillaRestHTTPUnexpectedError(response.status_code)
 
-            for each in response.json()['bugs']:
-                cache_key = self.make_cache_key(each['id'])
+            for each in response.json()["bugs"]:
+                cache_key = self.make_cache_key(each["id"])
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
-        return {'bugs': results}
+        return {"bugs": results}
 
 
 class Reprocessing(SocorroMiddleware):
@@ -1130,23 +1055,21 @@ class Reprocessing(SocorroMiddleware):
 
     implementation = PubSubCrashQueue
 
-    API_REQUIRED_PERMISSIONS = (
-        'crashstats.reprocess_crashes',
-    )
+    API_REQUIRED_PERMISSIONS = ("crashstats.reprocess_crashes",)
 
     API_ALLOWLIST = None
 
-    required_params = (
-        ('crash_ids', list),
-    )
+    required_params = (("crash_ids", list),)
 
     get = None
 
     def post(self, **data):
-        crash_ids = data['crash_ids']
+        crash_ids = data["crash_ids"]
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
-        return self.get_implementation().publish(queue='reprocessing', crash_ids=crash_ids)
+        return self.get_implementation().publish(
+            queue="reprocessing", crash_ids=crash_ids
+        )
 
 
 class PriorityJob(SocorroMiddleware):
@@ -1154,17 +1077,15 @@ class PriorityJob(SocorroMiddleware):
 
     implementation = PubSubCrashQueue
 
-    required_params = (
-        ('crash_ids', list),
-    )
+    required_params = (("crash_ids", list),)
 
     get = None
 
     def post(self, **data):
-        crash_ids = data['crash_ids']
+        crash_ids = data["crash_ids"]
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
-        return self.get_implementation().publish(queue='priority', crash_ids=crash_ids)
+        return self.get_implementation().publish(queue="priority", crash_ids=crash_ids)
 
 
 class NoOpMiddleware(SocorroMiddleware):
@@ -1174,20 +1095,14 @@ class NoOpMiddleware(SocorroMiddleware):
     API that does nothing except help us test our API infrastructure.
     """
 
-    API_ALLOWLIST = (
-        'hits',
-        'total',
-    )
+    API_ALLOWLIST = ("hits", "total")
 
-    required_params = ('product',)
+    required_params = ("product",)
 
     def get(self, **kwargs):
         params = self.parse_parameters(kwargs)
 
-        if params['product'] == 'bad':
-            raise BadArgumentError('Bad product')
+        if params["product"] == "bad":
+            raise BadArgumentError("Bad product")
 
-        return {
-            'hits': [],
-            'total': 0
-        }
+        return {"hits": [], "total": 0}

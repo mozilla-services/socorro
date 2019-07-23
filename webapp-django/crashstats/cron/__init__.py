@@ -12,52 +12,51 @@
 JOBS = [
     {
         # Test cron job
-        'cmd': 'crontest',
-        'frequency': '1d',
+        "cmd": "crontest",
+        "frequency": "1d",
     },
-
     {
         # Audit hackers group every week
-        'cmd': 'auditgroups',
-        'cmd_args': ['--persist'],
-        'frequency': '7d',
-        'time': '05:00',
+        "cmd": "auditgroups",
+        "cmd_args": ["--persist"],
+        "frequency": "7d",
+        "time": "05:00",
     },
     {
         # Update BugAssociations every hour
-        'cmd': 'bugassociations',
-        'frequency': '1h',
-        'last_success': True,
+        "cmd": "bugassociations",
+        "frequency": "1h",
+        "last_success": True,
     },
     {
         # Update Signature bookkeeping every hour
-        'cmd': 'updatesignatures',
-        'frequency': '1h',
-        'last_success': True,
-        'backfill': True,
+        "cmd": "updatesignatures",
+        "frequency": "1h",
+        "last_success": True,
+        "backfill": True,
     },
     {
         # Clean elasticsaerch indices every week at 6:00am
-        'cmd': 'esclean',
-        'frequency': '7d',
-        'time': '06:00',
+        "cmd": "esclean",
+        "frequency": "7d",
+        "time": "06:00",
     },
     {
         # Verify Socorro processed all incoming crashes daily at 4:00am
-        'cmd': 'verifyprocessed',
-        'frequency': '1d',
-        'time': '04:00',
-        'backfill': True,
+        "cmd": "verifyprocessed",
+        "frequency": "1d",
+        "time": "04:00",
+        "backfill": True,
     },
     {
         # Scrape archive.mozilla.org for productversion data every hour
-        'cmd': 'archivescraper',
-        'frequency': '1h',
-    }
+        "cmd": "archivescraper",
+        "frequency": "1h",
+    },
 ]
 
 # Map of cmd -> job_spec
-JOBS_MAP = dict([(job_spec['cmd'], job_spec) for job_spec in JOBS])
+JOBS_MAP = dict([(job_spec["cmd"], job_spec) for job_spec in JOBS])
 
 
 # The maximum time we let a job go for before we declare it a zombie (in seconds)
@@ -69,7 +68,7 @@ ERROR_RETRY_TIME = 60
 
 
 # Default frequency for jobs
-DEFAULT_FREQUENCY = '1d'
+DEFAULT_FREQUENCY = "1d"
 
 
 class FrequencyDefinitionError(Exception):

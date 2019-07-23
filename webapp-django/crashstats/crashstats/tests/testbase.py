@@ -52,7 +52,7 @@ class DjangoTestCase(django.test.TestCase):
             klass.implementation = self._mockeries[klass]
         super().tearDown()
 
-    def _login(self, email='test@example.com', username='test', password='secret'):
+    def _login(self, email="test@example.com", username="test", password="secret"):
         User.objects.create_user(username, email, password)
         assert self.client.login(username=username, password=password)
         # Do this so that the last_login gets set and saved

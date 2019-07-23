@@ -15,33 +15,33 @@ from django.dispatch import receiver
 #   {% if request.user.has_perm('crashstats.view_pii') %}
 #
 PERMISSIONS = {
-    'view_pii': 'View Personal Identifiable Information',
-    'view_rawdump': 'View Raw Dumps',
-    'view_exploitability': 'View Exploitability Results',
-    'view_flash_exploitability': 'View Flash Exploitability Results',
-    'run_custom_queries': 'Run Custom Queries in Super Search',
-    'run_long_queries': 'Run Long Queries',
-    'reprocess_crashes': 'Reprocess Crashes',
+    "view_pii": "View Personal Identifiable Information",
+    "view_rawdump": "View Raw Dumps",
+    "view_exploitability": "View Exploitability Results",
+    "view_flash_exploitability": "View Flash Exploitability Results",
+    "run_custom_queries": "Run Custom Queries in Super Search",
+    "run_long_queries": "Run Long Queries",
+    "reprocess_crashes": "Reprocess Crashes",
 }
 
 
 GROUPS = {
-    'Hackers': [
-        'reprocess_crashes',
-        'run_long_queries',
-        'view_exploitability',
-        'view_flash_exploitability',
-        'view_pii',
-        'view_rawdump',
+    "Hackers": [
+        "reprocess_crashes",
+        "run_long_queries",
+        "view_exploitability",
+        "view_flash_exploitability",
+        "view_pii",
+        "view_rawdump",
     ],
-    'Hackers Plus': [
-        'reprocess_crashes',
-        'run_custom_queries',
-        'run_long_queries',
-        'view_exploitability',
-        'view_flash_exploitability',
-        'view_pii',
-        'view_rawdump',
+    "Hackers Plus": [
+        "reprocess_crashes",
+        "run_custom_queries",
+        "run_long_queries",
+        "view_exploitability",
+        "view_flash_exploitability",
+        "view_pii",
+        "view_rawdump",
     ],
 }
 
@@ -58,10 +58,10 @@ def setup_custom_permissions_and_groups(sender, **kwargs):
     created.
 
     """
-    if sender.name == 'django.contrib.auth':
-        print('Creating Socorro permissions:')
-        appname = 'crashstats'
-        ct, _ = ContentType.objects.get_or_create(model='', app_label=appname)
+    if sender.name == "django.contrib.auth":
+        print("Creating Socorro permissions:")
+        appname = "crashstats"
+        ct, _ = ContentType.objects.get_or_create(model="", app_label=appname)
         perm_instances = {}
         for codename, name in PERMISSIONS.items():
             perm, created = Permission.objects.get_or_create(
@@ -71,7 +71,7 @@ def setup_custom_permissions_and_groups(sender, **kwargs):
             if created:
                 print('  Permission: "%s" created.' % name)
 
-        print('Creating Socorro groups:')
+        print("Creating Socorro groups:")
         for group_name, perms in GROUPS.items():
             group, created = Group.objects.get_or_create(name=group_name)
             for perm_codename in perms:

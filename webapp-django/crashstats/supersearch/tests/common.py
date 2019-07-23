@@ -15,12 +15,10 @@ class SuperSearchResponse(Response):
         if columns is None:
             columns = []
 
-        assert 'hits' in content
-        for i, hit in enumerate(content['hits']):
-            content['hits'][i] = dict(
-                (key, val)
-                for key, val in hit.items()
-                if key in columns
+        assert "hits" in content
+        for i, hit in enumerate(content["hits"]):
+            content["hits"][i] = dict(
+                (key, val) for key, val in hit.items() if key in columns
             )
 
         super().__init__(content, status_code)

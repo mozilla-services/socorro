@@ -22,126 +22,103 @@ from crashstats.supersearch.models import SuperSearch
 
 class TestViews(BaseTestViews):
     def test_index(self):
-        url = reverse('monitoring:index')
+        url = reverse("monitoring:index")
         response = self.client.get(url)
         assert response.status_code == 200
 
-        assert reverse('monitoring:cron_status') in smart_text(response.content)
+        assert reverse("monitoring:cron_status") in smart_text(response.content)
 
 
 class TestCrontabberStatusViews(BaseTestViews):
     def test_cron_status_ok(self):
         recently = timezone.now()
         CronJob.objects.create(
-            app_name='job1',
-            error_count=0,
-            depends_on='',
-            last_run=recently
+            app_name="job1", error_count=0, depends_on="", last_run=recently
         )
 
-        url = reverse('monitoring:cron_status')
+        url = reverse("monitoring:cron_status")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert json.loads(response.content) == {'status': 'ALLGOOD'}
+        assert json.loads(response.content) == {"status": "ALLGOOD"}
 
     def test_cron_status_trouble(self):
         recently = timezone.now()
         CronJob.objects.create(
-            app_name='job1',
-            error_count=1,
-            depends_on='',
-            last_run=recently
+            app_name="job1", error_count=1, depends_on="", last_run=recently
         )
         CronJob.objects.create(
-            app_name='job2',
-            error_count=0,
-            depends_on='job1',
-            last_run=recently
+            app_name="job2", error_count=0, depends_on="job1", last_run=recently
         )
         CronJob.objects.create(
-            app_name='job3',
-            error_count=0,
-            depends_on='job2',
-            last_run=recently
+            app_name="job3", error_count=0, depends_on="job2", last_run=recently
         )
         CronJob.objects.create(
-            app_name='job1b',
-            error_count=0,
-            depends_on='',
-            last_run=recently
+            app_name="job1b", error_count=0, depends_on="", last_run=recently
         )
 
-        url = reverse('monitoring:cron_status')
+        url = reverse("monitoring:cron_status")
         response = self.client.get(url)
         assert response.status_code == 200
         data = json.loads(response.content)
-        assert data['status'] == 'Broken'
-        assert data['broken'] == ['job1']
+        assert data["status"] == "Broken"
+        assert data["broken"] == ["job1"]
 
     def test_cron_status_not_run_for_a_while(self):
         some_time_ago = timezone.now() - datetime.timedelta(minutes=MAX_ONGOING)
         CronJob.objects.create(
-            app_name='job1',
-            error_count=0,
-            depends_on='',
-            last_run=some_time_ago
+            app_name="job1", error_count=0, depends_on="", last_run=some_time_ago
         )
         CronJob.objects.create(
-            app_name='job2',
-            error_count=0,
-            depends_on='job1',
-            last_run=some_time_ago
+            app_name="job2", error_count=0, depends_on="job1", last_run=some_time_ago
         )
 
-        url = reverse('monitoring:cron_status')
+        url = reverse("monitoring:cron_status")
         response = self.client.get(url)
         assert response.status_code == 200
         data = json.loads(response.content)
-        assert data['status'] == 'Stale'
-        assert data['last_run'] == some_time_ago.isoformat()
+        assert data["status"] == "Stale"
+        assert data["last_run"] == some_time_ago.isoformat()
 
     def test_cron_status_never_run(self):
-        url = reverse('monitoring:cron_status')
+        url = reverse("monitoring:cron_status")
         response = self.client.get(url)
         assert response.status_code == 200
         data = json.loads(response.content)
-        assert data['status'] == 'Stale'
+        assert data["status"] == "Stale"
 
 
 class TestHealthcheckViews(BaseTestViews):
     def test_dockerflow_lbheartbeat(self):
         # Verify __lbheartbeat__ works
-        url = reverse('monitoring:dockerflow_lbheartbeat')
-        response = self.client.get(url, {'elb': 'true'})
+        url = reverse("monitoring:dockerflow_lbheartbeat")
+        response = self.client.get(url, {"elb": "true"})
         assert response.status_code == 200
-        assert json.loads(response.content)['ok'] is True
+        assert json.loads(response.content)["ok"] is True
 
         # Verify it doesn't run ay db queries
         self.assertNumQueries(0, self.client.get, url)
 
         # Verify deprecated endpoint works
-        url = reverse('monitoring:healthcheck')
-        response = self.client.get(url, {'elb': 'true'})
+        url = reverse("monitoring:healthcheck")
+        response = self.client.get(url, {"elb": "true"})
         assert response.status_code == 200
-        assert json.loads(response.content)['ok'] is True
+        assert json.loads(response.content)["ok"] is True
 
-    @mock.patch('requests.get')
-    @mock.patch('crashstats.monitoring.views.elasticsearch')
+    @mock.patch("requests.get")
+    @mock.patch("crashstats.monitoring.views.elasticsearch")
     def test_healthcheck(self, mocked_elasticsearch, rget):
         searches = []
 
         def mocked_supersearch_get(**params):
             searches.append(params)
-            assert params['product'] == [settings.DEFAULT_PRODUCT]
-            assert params['_results_number'] == 1
-            assert params['_columns'] == ['uuid']
+            assert params["product"] == [settings.DEFAULT_PRODUCT]
+            assert params["_results_number"] == 1
+            assert params["_columns"] == ["uuid"]
             return {
-                'hits': [
-                    {'uuid': '12345'},
-                ],
-                'facets': [],
-                'total': 30002,
-                'errors': [],
+                "hits": [{"uuid": "12345"}],
+                "facets": [],
+                "total": 30002,
+                "errors": [],
             }
 
         SuperSearch.implementation().get.side_effect = mocked_supersearch_get
@@ -152,18 +129,18 @@ class TestHealthcheckViews(BaseTestViews):
         rget.side_effect = mocked_requests_get
 
         # Verify the __heartbeat__ endpoint
-        url = reverse('monitoring:dockerflow_heartbeat')
+        url = reverse("monitoring:dockerflow_heartbeat")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert json.loads(response.content)['ok'] is True
+        assert json.loads(response.content)["ok"] is True
         assert len(searches) == 1
 
         # Verify the deprecated healthcheck endpoint
         searches = []
-        url = reverse('monitoring:healthcheck')
+        url = reverse("monitoring:healthcheck")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert json.loads(response.content)['ok'] is True
+        assert json.loads(response.content)["ok"] is True
         assert len(searches) == 1
 
     def test_assert_supersearch_errors(self):
@@ -171,16 +148,14 @@ class TestHealthcheckViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             searches.append(params)
-            assert params['product'] == [settings.DEFAULT_PRODUCT]
-            assert params['_results_number'] == 1
-            assert params['_columns'] == ['uuid']
+            assert params["product"] == [settings.DEFAULT_PRODUCT]
+            assert params["_results_number"] == 1
+            assert params["_columns"] == ["uuid"]
             return {
-                'hits': [
-                    {'uuid': '12345'},
-                ],
-                'facets': [],
-                'total': 320,
-                'errors': ['bad'],
+                "hits": [{"uuid": "12345"}],
+                "facets": [],
+                "total": 320,
+                "errors": ["bad"],
             }
 
         SuperSearch.implementation().get.side_effect = mocked_supersearch_get
@@ -197,22 +172,22 @@ class TestDockerflow(object):
         # that
         settings.SOCORRO_ROOT = str(tmpdir)
 
-        resp = client.get(reverse('monitoring:dockerflow_version'))
+        resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
-        assert resp['Content-Type'] == 'application/json'
-        assert smart_text(resp.content) == '{}'
+        assert resp["Content-Type"] == "application/json"
+        assert smart_text(resp.content) == "{}"
 
     def test_version_with_file(self, client, settings, tmpdir):
         """Test with a version.json file"""
         text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
 
         # Create the version.json file in the tmpdir
-        version_json = tmpdir.join('version.json')
+        version_json = tmpdir.join("version.json")
         version_json.write(text)
 
         settings.SOCORRO_ROOT = str(tmpdir)
 
-        resp = client.get(reverse('monitoring:dockerflow_version'))
+        resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
-        assert resp['Content-Type'] == 'application/json'
+        assert resp["Content-Type"] == "application/json"
         assert smart_text(resp.content) == text

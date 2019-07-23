@@ -14,15 +14,32 @@ from crashstats.crashstats.utils import parse_isodate
 
 
 OPERATORS = (
-    '__true__', '__null__', '$', '~', '^', '@', '=', '<=', '>=', '<', '>',
-    '!__true__', '!__null__', '!$', '!~', '!^', '!@', '!=', '!'
+    "__true__",
+    "__null__",
+    "$",
+    "~",
+    "^",
+    "@",
+    "=",
+    "<=",
+    ">=",
+    "<",
+    ">",
+    "!__true__",
+    "!__null__",
+    "!$",
+    "!~",
+    "!^",
+    "!@",
+    "!=",
+    "!",
 )
 
 
 def split_on_operator(value):
     for op in sorted(OPERATORS, key=len, reverse=True):
         if value.startswith(op):
-            value = value[len(op):]
+            value = value[len(op) :]
             return (op, value)
 
     return (None, value)
@@ -89,8 +106,9 @@ class MultiplePrefixedValueField(PrefixedField):
     """Special field that uses SelectMultiple widget to deal with multiple values
 
     """
+
     def __init__(self, *args, **kwargs):
-        kwargs['widget'] = forms.SelectMultiple
+        kwargs["widget"] = forms.SelectMultiple
         super().__init__(*args, **kwargs)
 
     def clean(self, values, *args, **kwargs):
@@ -115,10 +133,10 @@ class MultiplePrefixedValueField(PrefixedField):
 
     def validate_ordered_values(self, values, operators):
         operator_functions = {
-            '>': operator.gt,
-            '<': operator.lt,
-            '>=': operator.ge,
-            '<=': operator.le,
+            ">": operator.gt,
+            "<": operator.lt,
+            ">=": operator.ge,
+            "<=": operator.le,
         }
         for i, value in enumerate(values):
             op = operators[i]
@@ -131,10 +149,8 @@ class MultiplePrefixedValueField(PrefixedField):
                     continue
                 if not op_function(other_value, value):
                     raise forms.ValidationError(
-                        'Operator combination failed {} {} {}'.format(
-                            value,
-                            op,
-                            other_value
+                        "Operator combination failed {} {} {}".format(
+                            value, op, other_value
                         )
                     )
 
@@ -167,11 +183,12 @@ class StringField(MultipleValueField):
     on that field ("contains", "starts with"... ).
 
     """
+
     pass
 
 
 class BooleanField(forms.CharField):
-    truthy_strings = ('__true__', 'true', 't', '1', 'y', 'yes')
+    truthy_strings = ("__true__", "true", "t", "1", "y", "yes")
 
     def to_python(self, value):
         """Return None if the value is None. Return 'true' if the value is one
@@ -184,5 +201,5 @@ class BooleanField(forms.CharField):
             return None
 
         if smart_str(value).lower() in self.truthy_strings:
-            return '__true__'
-        return '!__true__'
+            return "__true__"
+        return "!__true__"

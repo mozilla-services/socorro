@@ -18,7 +18,7 @@ def test_mark_success(db):
     # Call it and make sure all the jobs now have Job records and are all
     # successes
     out = StringIO()
-    call_command('cronmarksuccess', stdout=out)
+    call_command("cronmarksuccess", stdout=out)
     jobs = list(Job.objects.all())
     assert len(jobs) == len(JOBS)
     for job in jobs:

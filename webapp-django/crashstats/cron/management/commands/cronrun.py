@@ -34,36 +34,35 @@ from crashstats.cron.utils import (
 )
 
 
-logger = logging.getLogger('crashstats.cron')
+logger = logging.getLogger("crashstats.cron")
 
-metrics = markus.get_metrics('cron')
+metrics = markus.get_metrics("cron")
 
 
 class Command(BaseCommand):
-    help = 'Run cron jobs.'
+    help = "Run cron jobs."
 
     def add_arguments(self, parser):
+        parser.add_argument("--job", help="Run a specific job.")
         parser.add_argument(
-            '--job',
-            help='Run a specific job.'
+            "--force",
+            action="store_true",
+            help="Force a job to run even if it is not time.",
         )
         parser.add_argument(
-            '--force', action='store_true',
-            help='Force a job to run even if it is not time.'
-        )
-        parser.add_argument(
-            '--job-arg', action='append',
-            help='Cron job command arguments in name=value format.'
+            "--job-arg",
+            action="append",
+            help="Cron job command arguments in name=value format.",
         )
 
     def handle(self, **options):
         """Execute cronrun command."""
-        if options['job']:
-            job_args = options.get('job_arg') or []
+        if options["job"]:
+            job_args = options.get("job_arg") or []
             # Re-add the -- because they're optional arguments; note that this
             # doesn't support positional arguments
-            cmd_args = ['--%s' % arg for arg in job_args]
-            return self.cmd_run_one(options['job'], options['force'], cmd_args)
+            cmd_args = ["--%s" % arg for arg in job_args]
+            return self.cmd_run_one(options["job"], options["force"], cmd_args)
         else:
             return self.cmd_run_all()
 
@@ -71,7 +70,7 @@ class Command(BaseCommand):
     def stdout_to_logger(self, cmd):
         class StdoutLogger:
             def write(self, txt):
-                logger.info('%s: %s' % (cmd, txt.strip()))
+                logger.info("%s: %s" % (cmd, txt.strip()))
 
         stdout = self.stdout
         self.stdout = StdoutLogger()
@@ -79,9 +78,9 @@ class Command(BaseCommand):
         self.stdout = stdout
 
     def cmd_run_all(self):
-        logger.info('Running all jobs...')
+        logger.info("Running all jobs...")
         for job_spec in JOBS:
-            self._run_one(job_spec, cmd_args=job_spec.get('cmd_args', []))
+            self._run_one(job_spec, cmd_args=job_spec.get("cmd_args", []))
         return 0
 
     def cmd_run_one(self, description, force=False, cmd_args=None):
@@ -100,7 +99,7 @@ class Command(BaseCommand):
 
         """
         cmd_args = cmd_args or []
-        cmd = job_spec['cmd']
+        cmd = job_spec["cmd"]
 
         # Make sure we have a job record before trying to run anything
         job = Job.objects.get_or_create(app_name=cmd)[0]
@@ -110,12 +109,12 @@ class Command(BaseCommand):
             return self._run_job(job_spec, *cmd_args)
 
         # Figure out whether this job should be run now
-        seconds = convert_frequency(job_spec.get('frequency', DEFAULT_FREQUENCY))
+        seconds = convert_frequency(job_spec.get("frequency", DEFAULT_FREQUENCY))
         if not time_to_run(job_spec, job):
             logger.info("skipping %s: not time to run", cmd)
             return
 
-        logger.info('about to run %s', cmd)
+        logger.info("about to run %s", cmd)
 
         now = timezone.now()
         log_run = True
@@ -123,7 +122,7 @@ class Command(BaseCommand):
         start_time = None
         run_time = None
 
-        with self.lock_job(job_spec['cmd']):
+        with self.lock_job(job_spec["cmd"]):
             try:
                 cmd_kwargs = {}
                 last_success = job.last_success
@@ -132,23 +131,23 @@ class Command(BaseCommand):
                 # through all possible ones until either we get them all done
                 # or it dies
                 for run_time in get_run_times(job_spec, job.last_success):
-                    if job_spec.get('backfill', False):
+                    if job_spec.get("backfill", False):
                         # If "backfill" is in the spec, then we want to pass in
                         # run_time as an argument
-                        cmd_kwargs['run_time'] = format_datetime(run_time)
+                        cmd_kwargs["run_time"] = format_datetime(run_time)
 
-                    if job_spec.get('last_success', False):
+                    if job_spec.get("last_success", False):
                         # If "last_success" is in the spec, we want to pass in
                         # the last_success as an argument
-                        cmd_kwargs['last_success'] = format_datetime(last_success)
+                        cmd_kwargs["last_success"] = format_datetime(last_success)
 
-                    logger.info('running: %s %s %s', cmd, cmd_args, cmd_kwargs)
+                    logger.info("running: %s %s %s", cmd, cmd_args, cmd_kwargs)
 
                     start_time = time.time()
                     self._run_job(job_spec, *cmd_args, **cmd_kwargs)
                     end_time = time.time()
 
-                    logger.info('successfully ran %s on %s', cmd, run_time)
+                    logger.info("successfully ran %s on %s", cmd, run_time)
                     last_success = run_time
                     self._remember_success(cmd, last_success, end_time - start_time)
 
@@ -159,18 +158,15 @@ class Command(BaseCommand):
             except Exception:
                 end_time = time.time()
                 exc_type, exc_value, exc_tb = sys.exc_info()
-                single_line_tb = (
-                    ''.join(traceback.format_exception(*sys.exc_info()))
-                    .replace('\n', '\\n')
-                )
+                single_line_tb = "".join(
+                    traceback.format_exception(*sys.exc_info())
+                ).replace("\n", "\\n")
 
-                logger.error('error when running %s (%s): %s', cmd, run_time, single_line_tb)
+                logger.error(
+                    "error when running %s (%s): %s", cmd, run_time, single_line_tb
+                )
                 self._remember_failure(
-                    cmd,
-                    end_time - start_time,
-                    exc_type,
-                    exc_value,
-                    exc_tb
+                    cmd, end_time - start_time, exc_type, exc_value, exc_tb
                 )
 
             finally:
@@ -178,34 +174,36 @@ class Command(BaseCommand):
                     self._log_run(
                         cmd,
                         seconds,
-                        job_spec.get('time'),
+                        job_spec.get("time"),
                         run_time,
                         now,
-                        exc_type, exc_value, exc_tb
+                        exc_type,
+                        exc_value,
+                        exc_tb,
                     )
 
     def _run_job(self, job_spec, *cmd_args, **cmd_kwargs):
         """Run job with specified args."""
-        with self.stdout_to_logger(job_spec['cmd']):
-            return call_command(job_spec['cmd'], *cmd_args, stdout=self.stdout, **cmd_kwargs)
+        with self.stdout_to_logger(job_spec["cmd"]):
+            return call_command(
+                job_spec["cmd"], *cmd_args, stdout=self.stdout, **cmd_kwargs
+            )
 
     def _remember_success(self, cmd, success_date, duration):
         Log.objects.create(
-            app_name=cmd,
-            success=success_date,
-            duration='%.5f' % duration,
+            app_name=cmd, success=success_date, duration="%.5f" % duration
         )
-        metrics.gauge('job_success_runtime', value=duration, tags=['job:%s' % cmd])
+        metrics.gauge("job_success_runtime", value=duration, tags=["job:%s" % cmd])
 
     def _remember_failure(self, cmd, duration, exc_type, exc_value, exc_tb):
         Log.objects.create(
             app_name=cmd,
-            duration='%.5f' % duration,
+            duration="%.5f" % duration,
             exc_type=repr(exc_type),
             exc_value=repr(exc_value),
-            exc_traceback=''.join(traceback.format_tb(exc_tb))
+            exc_traceback="".join(traceback.format_tb(exc_tb)),
         )
-        metrics.gauge('job_failure_runtime', value=duration, tags=['job:%s' % cmd])
+        metrics.gauge("job_failure_runtime", value=duration, tags=["job:%s" % cmd])
 
     @contextlib.contextmanager
     def lock_job(self, cmd):
@@ -227,16 +225,20 @@ class Command(BaseCommand):
         # going on for too long, let's try to lock it again
         job = Job.objects.filter(app_name=cmd).get()
         if (now - job.ongoing).seconds > MAX_ONGOING:
-            results = Job.objects.filter(app_name=cmd, ongoing=job.ongoing).update(ongoing=now)
+            results = Job.objects.filter(app_name=cmd, ongoing=job.ongoing).update(
+                ongoing=now
+            )
             if results == 1:
                 yield
                 Job.objects.filter(app_name=cmd).update(ongoing=None)
                 return
 
         # Can't lock it, so raise an error
-        raise OngoingJobError('%s: %s' % (job.app_name, job.ongoing))
+        raise OngoingJobError("%s: %s" % (job.app_name, job.ongoing))
 
-    def _log_run(self, cmd, seconds, time_, last_success, now, exc_type, exc_value, exc_tb):
+    def _log_run(
+        self, cmd, seconds, time_, last_success, now, exc_type, exc_value, exc_tb
+    ):
         job = Job.objects.get_or_create(app_name=cmd)[0]
 
         if not job.first_run:
@@ -257,11 +259,11 @@ class Command(BaseCommand):
         job.next_run = next_run
 
         if exc_type:
-            tb = ''.join(traceback.format_tb(exc_tb))
+            tb = "".join(traceback.format_tb(exc_tb))
             job.last_error = {
-                'type': exc_type,
-                'value': str(exc_value),
-                'traceback': tb,
+                "type": exc_type,
+                "value": str(exc_value),
+                "traceback": tb,
             }
             job.error_count = job.error_count + 1
         else:

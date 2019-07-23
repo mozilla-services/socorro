@@ -17,5 +17,5 @@ class NewSignaturesForm(BaseForm):
 
     def clean_product(self):
         """Remove all empty values from the list of products. """
-        value = self.cleaned_data['product']
+        value = self.cleaned_data["product"]
         return list(filter(bool, value))

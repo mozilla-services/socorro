@@ -23,26 +23,27 @@ MAX_PAGE = 1000
 
 
 class Command(BaseCommand):
-    help = 'Updates the signatures table using crash data from Elasticsearch'
+    help = "Updates the signatures table using crash data from Elasticsearch"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--last-success', default='',
+            "--last-success",
+            default="",
             help=(
-                'The start of the window to look at in YYYY-mm-ddTHH:MM format in UTC. '
-                'Defaults to run-time value minus 90 minutes.'
-            )
+                "The start of the window to look at in YYYY-mm-ddTHH:MM format in UTC. "
+                "Defaults to run-time value minus 90 minutes."
+            ),
         )
         parser.add_argument(
-            '--run-time', default='',
+            "--run-time",
+            default="",
             help=(
-                'The end of the window to look at in YYYY-mm-ddTHH:MM format in UTC. '
-                'Defaults to now.'
-            )
+                "The end of the window to look at in YYYY-mm-ddTHH:MM format in UTC. "
+                "Defaults to now."
+            ),
         )
         parser.add_argument(
-            '--dry-run', action='store_true',
-            help='Whether or not to do a dry run.'
+            "--dry-run", action="store_true", help="Whether or not to do a dry run."
         )
 
     def update_crashstats_signature(self, signature, report_date, report_build):
@@ -54,15 +55,13 @@ class Command(BaseCommand):
             sig.first_date = min(report_date, sig.first_date)
         except Signature.DoesNotExist:
             sig = Signature.objects.create(
-                signature=signature,
-                first_build=report_build,
-                first_date=report_date
+                signature=signature, first_build=report_build, first_date=report_date
             )
         sig.save()
 
     def handle(self, **options):
-        start_datetime = options.get('last_success')
-        end_datetime = options.get('run_time')
+        start_datetime = options.get("last_success")
+        end_datetime = options.get("run_time")
 
         if end_datetime:
             end_datetime = parse_datetime(end_datetime)
@@ -84,26 +83,25 @@ class Command(BaseCommand):
         end_datetime = end_datetime.replace(second=0, microsecond=0)
 
         if not end_datetime > start_datetime:
-            raise CommandError('start time must be before end time.')
+            raise CommandError("start time must be before end time.")
 
         # Do a super search and get the signature, buildid, and date processed for
         # every crash in the range
         all_fields = SuperSearchFieldsData().get()
         api = SuperSearch()
-        self.stdout.write('Looking at %s to %s' % (start_datetime, end_datetime))
+        self.stdout.write("Looking at %s to %s" % (start_datetime, end_datetime))
 
         params = {
-            'date': [
-                '>={}'.format(start_datetime.isoformat()),
-                '<{}'.format(end_datetime.isoformat()),
+            "date": [
+                ">={}".format(start_datetime.isoformat()),
+                "<{}".format(end_datetime.isoformat()),
             ],
-            '_columns': ['signature', 'build_id', 'date'],
-            '_facets_size': 0,
-            '_fields': all_fields,
-
+            "_columns": ["signature", "build_id", "date"],
+            "_facets_size": 0,
+            "_fields": all_fields,
             # Set up first page
-            '_results_offset': 0,
-            '_results_number': MAX_PAGE,
+            "_results_offset": 0,
+            "_results_number": MAX_PAGE,
         }
 
         results = {}
@@ -111,55 +109,54 @@ class Command(BaseCommand):
 
         while True:
             resp = api.get(**params)
-            hits = resp['hits']
+            hits = resp["hits"]
             for hit in hits:
                 crashids_count += 1
 
-                if not hit['build_id']:
+                if not hit["build_id"]:
                     # Not all crashes have a build id, so skip the ones that don't.
                     continue
 
-                if hit['signature'] in results:
-                    data = results[hit['signature']]
-                    data['build_id'] = min(data['build_id'], hit['build_id'])
-                    data['date'] = min(data['date'], hit['date'])
+                if hit["signature"] in results:
+                    data = results[hit["signature"]]
+                    data["build_id"] = min(data["build_id"], hit["build_id"])
+                    data["date"] = min(data["date"], hit["date"])
                 else:
                     data = {
-                        'signature': hit['signature'],
-                        'build_id': hit['build_id'],
-                        'date': hit['date']
+                        "signature": hit["signature"],
+                        "build_id": hit["build_id"],
+                        "date": hit["date"],
                     }
-                results[hit['signature']] = data
+                results[hit["signature"]] = data
 
             # If there are no more crash ids to get, we return
-            total = resp['total']
+            total = resp["total"]
             if not hits or crashids_count >= total:
                 break
 
             # Get the next page, but only as many results as we need
-            params['_results_offset'] += MAX_PAGE
-            params['_results_number'] = min(
+            params["_results_offset"] += MAX_PAGE
+            params["_results_number"] = min(
                 # MAX_PAGE is the maximum we can request
                 MAX_PAGE,
-
                 # The number of results Super Search can return to us that is hasn't returned so far
-                total - crashids_count
+                total - crashids_count,
             )
 
         signature_data = results.values()
 
         # Save signature data to the db
         for item in signature_data:
-            if options['dry_run']:
+            if options["dry_run"]:
                 self.stdout.write(
-                    'Inserting/updating signature (%s, %s, %s)' %
-                    (item['signature'], item['date'], item['build_id'])
+                    "Inserting/updating signature (%s, %s, %s)"
+                    % (item["signature"], item["date"], item["build_id"])
                 )
             else:
                 self.update_crashstats_signature(
-                    signature=item['signature'],
-                    report_date=item['date'],
-                    report_build=item['build_id'],
+                    signature=item["signature"],
+                    report_date=item["date"],
+                    report_build=item["build_id"],
                 )
 
-        self.stdout.write('Inserted/updated %d signatures.' % len(signature_data))
+        self.stdout.write("Inserted/updated %d signatures." % len(signature_data))

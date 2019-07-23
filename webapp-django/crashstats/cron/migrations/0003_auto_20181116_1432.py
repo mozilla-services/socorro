@@ -10,44 +10,66 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('cron', '0002_job_log'),
-    ]
+    dependencies = [("cron", "0002_job_log")]
 
     operations = [
         migrations.AlterField(
-            model_name='job',
-            name='depends_on',
-            field=models.TextField(blank=True, help_text=b'comma separated list of apps this app depends on', null=True),
+            model_name="job",
+            name="depends_on",
+            field=models.TextField(
+                blank=True,
+                help_text=b"comma separated list of apps this app depends on",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='job',
-            name='first_run',
-            field=models.DateTimeField(blank=True, help_text=b'the datetime of the first time ever run', null=True),
+            model_name="job",
+            name="first_run",
+            field=models.DateTimeField(
+                blank=True,
+                help_text=b"the datetime of the first time ever run",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='job',
-            name='last_error',
-            field=models.TextField(blank=True, help_text=b'JSON blob of the last error', null=True),
+            model_name="job",
+            name="last_error",
+            field=models.TextField(
+                blank=True, help_text=b"JSON blob of the last error", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='job',
-            name='last_run',
-            field=models.DateTimeField(blank=True, help_text=b'the datetime of the last time this was run', null=True),
+            model_name="job",
+            name="last_run",
+            field=models.DateTimeField(
+                blank=True,
+                help_text=b"the datetime of the last time this was run",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='job',
-            name='last_success',
-            field=models.DateTimeField(blank=True, help_text=b'the datetime of the last successful run', null=True),
+            model_name="job",
+            name="last_success",
+            field=models.DateTimeField(
+                blank=True,
+                help_text=b"the datetime of the last successful run",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='job',
-            name='next_run',
-            field=models.DateTimeField(blank=True, help_text=b'the datetime of the next time to run', null=True),
+            model_name="job",
+            name="next_run",
+            field=models.DateTimeField(
+                blank=True, help_text=b"the datetime of the next time to run", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='job',
-            name='ongoing',
-            field=models.DateTimeField(blank=True, help_text=b'the datetime this job entry was locked', null=True),
+            model_name="job",
+            name="ongoing",
+            field=models.DateTimeField(
+                blank=True,
+                help_text=b"the datetime this job entry was locked",
+                null=True,
+            ),
         ),
     ]

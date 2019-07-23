@@ -17,34 +17,26 @@ from crashstats.crashstats.models import (
     Product,
     ProductVersion,
     Signature,
-
     # Middleware
-    PriorityJob
+    PriorityJob,
 )
 
 
-ACTION_TO_NAME = {
-    ADDITION: 'add',
-    CHANGE: 'change',
-    DELETION: 'delete'
-}
+ACTION_TO_NAME = {ADDITION: "add", CHANGE: "change", DELETION: "delete"}
 
 
 @admin.register(LogEntry)
 class LogEntryAdmin(admin.ModelAdmin):
-    date_hierarchy = 'action_time'
+    date_hierarchy = "action_time"
 
     list_display = [
-        'action_time',
-        'admin',
-        'object_link',
-        'action',
-        'get_change_message',
+        "action_time",
+        "admin",
+        "object_link",
+        "action",
+        "get_change_message",
     ]
-    list_display_links = [
-        'action_time',
-        'get_change_message',
-    ]
+    list_display_links = ["action_time", "get_change_message"]
 
     def admin(self, obj):
         return obj.user.email
@@ -68,21 +60,23 @@ class LogEntryAdmin(admin.ModelAdmin):
             # try returning an actual link instead of object repr string
             try:
                 url = reverse(
-                    'admin:{}_{}_change'.format(content_type.app_label,
-                                                content_type.model),
-                    args=[obj.object_id]
+                    "admin:{}_{}_change".format(
+                        content_type.app_label, content_type.model
+                    ),
+                    args=[obj.object_id],
                 )
-                object_link = format_html('<a href="{}">{}</a>',
-                                          url, object_link)
+                object_link = format_html('<a href="{}">{}</a>', url, object_link)
             except NoReverseMatch:
                 pass
         return object_link
-    object_link.admin_order_field = 'object_repr'
-    object_link.short_description = 'object'
+
+    object_link.admin_order_field = "object_repr"
+    object_link.short_description = "object"
 
     def get_change_message(self, obj):
         return obj.get_change_message()
-    get_change_message.short_description = 'change message'
+
+    get_change_message.short_description = "change message"
 
     def has_add_permission(self, request):
         return False
@@ -96,109 +90,75 @@ class LogEntryAdmin(admin.ModelAdmin):
 
 @admin.register(BugAssociation)
 class BugAssociationAdmin(admin.ModelAdmin):
-    list_display = [
-        'bug_id',
-        'signature'
-    ]
-    search_fields = [
-        'bug_id',
-        'signature'
-    ]
+    list_display = ["bug_id", "signature"]
+    search_fields = ["bug_id", "signature"]
 
 
 @admin.register(GraphicsDevice)
 class GraphicsDeviceAdmin(admin.ModelAdmin):
-    list_display = [
-        'id',
-        'vendor_hex',
-        'adapter_hex',
-        'vendor_name',
-        'adapter_name'
-    ]
-    search_fields = [
-        'vendor_hex',
-        'adapter_hex',
-        'vendor_name',
-        'adapter_name'
-    ]
+    list_display = ["id", "vendor_hex", "adapter_hex", "vendor_name", "adapter_name"]
+    search_fields = ["vendor_hex", "adapter_hex", "vendor_name", "adapter_name"]
 
 
 @admin.register(Platform)
 class PlatformAdmin(admin.ModelAdmin):
-    list_display = [
-        'name',
-        'short_name'
-    ]
+    list_display = ["name", "short_name"]
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = [
-        'product_name',
-        'sort',
-        'is_active'
-    ]
+    list_display = ["product_name", "sort", "is_active"]
 
 
 @admin.register(ProductVersion)
 class ProductVersionAdmin(admin.ModelAdmin):
     list_display = [
-        'product_name',
-        'release_channel',
-        'major_version',
-        'release_version',
-        'version_string',
-        'build_id',
-        'archive_url'
+        "product_name",
+        "release_channel",
+        "major_version",
+        "release_version",
+        "version_string",
+        "build_id",
+        "archive_url",
     ]
 
-    search_fields = [
-        'version_string'
-    ]
+    search_fields = ["version_string"]
 
-    list_filter = [
-        'major_version',
-        'product_name',
-        'release_channel',
-    ]
+    list_filter = ["major_version", "product_name", "release_channel"]
 
 
 @admin.register(Signature)
 class SignatureAdmin(admin.ModelAdmin):
-    list_display = [
-        'signature',
-        'first_build',
-        'first_date'
-    ]
-    search_fields = [
-        'signature'
-    ]
+    list_display = ["signature", "first_build", "first_date"]
+    search_fields = ["signature"]
 
 
 def process_crashes(modeladmin, request, queryset):
     """Process selected missing processed crashes from admin page."""
     priority_api = PriorityJob()
-    crash_ids = list(queryset.values_list('crash_id', flat=True))
+    crash_ids = list(queryset.values_list("crash_id", flat=True))
     priority_api.post(crash_ids=crash_ids)
-    messages.add_message(request, messages.INFO, 'Sent %s crashes for processing.' % len(crash_ids))
+    messages.add_message(
+        request, messages.INFO, "Sent %s crashes for processing." % len(crash_ids)
+    )
 
 
-process_crashes.short_description = 'Process crashes'
+process_crashes.short_description = "Process crashes"
 
 
 @admin.register(MissingProcessedCrash)
 class MissingProcessedCrashAdmin(admin.ModelAdmin):
     list_display = [
-        'crash_id',
-        'created',
-        'collected_date',
-        'is_processed',
-        'check_processed',
-        'report_url_linked',
+        "crash_id",
+        "created",
+        "collected_date",
+        "is_processed",
+        "check_processed",
+        "report_url_linked",
     ]
     actions = [process_crashes]
 
-    list_filter = ['is_processed']
+    list_filter = ["is_processed"]
 
     def report_url_linked(self, obj):
         return format_html('<a href="{}">{}</a>', obj.report_url(), obj.report_url())

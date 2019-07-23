@@ -14,10 +14,10 @@ from django import http
 
 # List of hosts that we will fetch source files from that we syntax highlight and return to the
 # user in highlight_file view.
-ALLOWED_SOURCE_HOSTS = ['gecko-generated-sources.s3.amazonaws.com']
+ALLOWED_SOURCE_HOSTS = ["gecko-generated-sources.s3.amazonaws.com"]
 
 # List of allowed schemes
-ALLOWED_SCHEMES = ['http', 'https']
+ALLOWED_SCHEMES = ["http", "https"]
 
 
 def highlight_url(request):
@@ -36,43 +36,41 @@ def highlight_url(request):
     NOTE(willkg): The output of pygments has CSS in the page, but no JS.
 
     """
-    url = request.GET.get('url')
+    url = request.GET.get("url")
 
     if not url:
-        return http.HttpResponseBadRequest('No url specified.')
+        return http.HttpResponseBadRequest("No url specified.")
 
     parsed = urlparse(url)
 
     # We will only pull urls from allowed hosts
     if parsed.netloc not in ALLOWED_SOURCE_HOSTS:
-        return http.HttpResponseForbidden('Document at disallowed host.')
+        return http.HttpResponseForbidden("Document at disallowed host.")
 
     if parsed.scheme not in ALLOWED_SCHEMES:
-        return http.HttpResponseForbidden('Document at disallowed scheme.')
+        return http.HttpResponseForbidden("Document at disallowed scheme.")
 
     resp = requests.get(url)
     if resp.status_code != 200:
-        return http.HttpResponseNotFound('Document at URL does not exist.')
+        return http.HttpResponseNotFound("Document at URL does not exist.")
 
-    filename = parsed.path.split('/')[-1]
-    if filename.endswith('.h'):
+    filename = parsed.path.split("/")[-1]
+    if filename.endswith(".h"):
         # Pygments will default to C which we don't want, so override it here.
         lexer = CppLexer()
     else:
         lexer = get_lexer_for_filename(filename)
 
     lines = []
-    if request.GET.get('line'):
+    if request.GET.get("line"):
         try:
-            lines = [int(request.GET.get('line'))]
+            lines = [int(request.GET.get("line"))]
         except ValueError:
             pass
 
     formatter = HtmlFormatter(
-        full=True,
-        title=parsed.path,
-        linenos='table',
-        lineanchors='L',
-        hl_lines=lines,
+        full=True, title=parsed.path, linenos="table", lineanchors="L", hl_lines=lines
     )
-    return http.HttpResponse(highlight(resp.text, lexer, formatter), content_type='text/html')
+    return http.HttpResponse(
+        highlight(resp.text, lexer, formatter), content_type="text/html"
+    )

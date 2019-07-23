@@ -17,13 +17,12 @@ class PolicyException(models.Model):
     """
 
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-        help_text='This user is excepted from the Mozilla-employees-only policy.'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        help_text="This user is excepted from the Mozilla-employees-only policy.",
     )
-    comment = models.TextField(
-        help_text='Explanation for this exception.'
-    )
+    comment = models.TextField(help_text="Explanation for this exception.")
     created = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return 'PolicyException <%d, %s>' % (self.id, self.user.email)
+        return "PolicyException <%d, %s>" % (self.id, self.user.email)

@@ -10,15 +10,16 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0011_1506907_productversion'),
-    ]
+    dependencies = [("crashstats", "0011_1506907_productversion")]
 
     operations = [
         migrations.AddField(
-            model_name='productversion',
-            name='major_version',
-            field=models.IntegerField(default=0, help_text=b'major version of this version; for example "63.0b4" would be 63'),
+            model_name="productversion",
+            name="major_version",
+            field=models.IntegerField(
+                default=0,
+                help_text=b'major version of this version; for example "63.0b4" would be 63',
+            ),
             preserve_default=False,
-        ),
+        )
     ]

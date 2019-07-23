@@ -15,7 +15,7 @@ def string_hex_to_hex_string(snippet):
     This function tries to make that conversion.
     """
     assert isinstance(snippet, str)
-    return '0x' + format(int(snippet, 16), '04x')
+    return "0x" + format(int(snippet, 16), "04x")
 
 
 def pci_ids__parse_graphics_devices_iterable(iterable):
@@ -40,24 +40,21 @@ def pci_ids__parse_graphics_devices_iterable(iterable):
     """
     for line in iterable:
         line = smart_text(line)
-        if line.startswith('#'):
-            if 'List of known device classes' in line:
+        if line.startswith("#"):
+            if "List of known device classes" in line:
                 # There's a section at the bottom of the files which
                 # we don't need to parse.
                 break
             continue
         if not line.strip():
             continue
-        if not line.startswith('\t'):
+        if not line.startswith("\t"):
             try:
                 vendor_hex, vendor_name = line.strip().split(None, 1)
             except ValueError:
                 continue
         else:
-            if (
-                line.strip().startswith(vendor_hex) and
-                len(line.strip().split()) > 2
-            ):
+            if line.strip().startswith(vendor_hex) and len(line.strip().split()) > 2:
                 _, adapter_hex, adapter_name = line.strip().split(None, 2)
             else:
                 adapter_hex, adapter_name = line.strip().split(None, 1)
@@ -65,10 +62,10 @@ def pci_ids__parse_graphics_devices_iterable(iterable):
                 vendor_hex = string_hex_to_hex_string(vendor_hex)
                 adapter_hex = string_hex_to_hex_string(adapter_hex)
                 yield {
-                    'vendor_hex': vendor_hex,
-                    'vendor_name': vendor_name,
-                    'adapter_hex': adapter_hex,
-                    'adapter_name': adapter_name
+                    "vendor_hex": vendor_hex,
+                    "vendor_name": vendor_name,
+                    "adapter_hex": adapter_hex,
+                    "adapter_name": adapter_name,
                 }
             except ValueError:
                 continue

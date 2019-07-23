@@ -11,7 +11,7 @@ from socorro.external.es.connection_context import ConnectionContext
 @pytest.fixture
 def es_conn():
     """Create an Elasticsearch ConnectionContext and clean up indices afterwards."""
-    conn = ConnectionContext(config_from_configman()['elasticsearch'])
+    conn = ConnectionContext(config_from_configman()["elasticsearch"])
     yield conn
     for index in conn.get_indices():
         conn.delete_index(index)

@@ -12,8 +12,8 @@ def remove_eventlog_tables(apps, schema_editor):
     cursor = connection.cursor()
 
     # Drop the pinax-eventlog table because we don't use that app anymore
-    cursor.execute('DROP TABLE IF EXISTS eventlog_log')
-    
+    cursor.execute("DROP TABLE IF EXISTS eventlog_log")
+
 
 def noop(apps, schema_editor):
     pass
@@ -21,10 +21,6 @@ def noop(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0014_auto_20181214_1951'),
-    ]
+    dependencies = [("crashstats", "0014_auto_20181214_1951")]
 
-    operations = [
-        migrations.RunPython(remove_eventlog_tables, noop),
-    ]
+    operations = [migrations.RunPython(remove_eventlog_tables, noop)]

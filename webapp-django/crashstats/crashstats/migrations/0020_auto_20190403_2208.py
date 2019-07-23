@@ -5,16 +5,15 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0019_missing-crashes-migration'),
-    ]
+    dependencies = [("crashstats", "0019_missing-crashes-migration")]
 
     operations = [
-        migrations.DeleteModel(
-            name='MissingProcessedCrashes',
-        ),
+        migrations.DeleteModel(name="MissingProcessedCrashes"),
         migrations.AlterModelOptions(
-            name='missingprocessedcrash',
-            options={'verbose_name': 'missing processed crash', 'verbose_name_plural': 'missing processed crashes'},
+            name="missingprocessedcrash",
+            options={
+                "verbose_name": "missing processed crash",
+                "verbose_name_plural": "missing processed crashes",
+            },
         ),
     ]

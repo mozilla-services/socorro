@@ -72,15 +72,15 @@ from socorro.lib.requestslib import session_with_retries
 
 # Substrings that indicate the directory is not a platform we want to traverse
 NON_PLATFORM_SUBSTRINGS = [
-    'beetmover',
-    'contrib',
-    'funnelcake',
-    'jsshell',
-    'logs',
-    'mar-tools',
-    'partner-repacks',
-    'source',
-    'update'
+    "beetmover",
+    "contrib",
+    "funnelcake",
+    "jsshell",
+    "logs",
+    "mar-tools",
+    "partner-repacks",
+    "source",
+    "update",
 ]
 
 
@@ -88,8 +88,8 @@ def key_for_build_link(link):
     """Extract build number from build link."""
     # The path is something like "build10/". We want to pull out the
     # integer from that.
-    path = link['path']
-    return int(''.join([c for c in path if c.isdigit()]))
+    path = link["path"]
+    return int("".join([c for c in path if c.isdigit()]))
 
 
 def get_session():
@@ -142,12 +142,9 @@ class Downloader:
         """
         d = pq(content)
         return [
-            {
-                'path': elem.get('href'),
-                'text': elem.text
-            }
-            for elem in d('a')
-            if elem.get('href') and elem.text and elem.text not in ('.', '..')
+            {"path": elem.get("href"), "text": elem.text}
+            for elem in d("a")
+            if elem.get("href") and elem.text and elem.text not in (".", "..")
         ]
 
     def download(self, url_path):
@@ -162,13 +159,13 @@ class Downloader:
 
         """
         url = urljoin(self.base_url, url_path)
-        self.worker_write('downloading: %s' % url, verbose=True)
+        self.worker_write("downloading: %s" % url, verbose=True)
         resp = get_session().get(url)
         if resp.status_code != 200:
             if self.verbose:
                 # Most of these are 404s because we guessed a url wrong which is fine
-                self.worker_write('bad status: %s: %s' % (url, resp.status_code))
-            return ''
+                self.worker_write("bad status: %s: %s" % (url, resp.status_code))
+            return ""
 
         return resp.content
 
@@ -182,32 +179,38 @@ class Downloader:
         """
         build_contents = self.download(path)
         directory_links = [
-            link['path'] for link in self.get_links(build_contents)
-            if link['text'].endswith('/')
+            link["path"]
+            for link in self.get_links(build_contents)
+            if link["text"].endswith("/")
         ]
 
         all_json_links = []
         for directory_link in directory_links:
             # Skip known unhelpful directories
-            if any([(bad_dir in directory_link) for bad_dir in NON_PLATFORM_SUBSTRINGS]):
+            if any(
+                [(bad_dir in directory_link) for bad_dir in NON_PLATFORM_SUBSTRINGS]
+            ):
                 continue
 
             # We don't need to track all locales, so we only look at en-US and get
             # the information from the first platform that we check that has it
-            locale_contents = self.download(directory_link + 'en-US/')
+            locale_contents = self.download(directory_link + "en-US/")
             if not locale_contents:
                 continue
 
             json_links = [
-                link['path'] for link in self.get_links(locale_contents)
-                if (link['path'].endswith('.json') and
-                    'mozinfo' not in link['path'] and
-                    'test_packages' not in link['path'])
+                link["path"]
+                for link in self.get_links(locale_contents)
+                if (
+                    link["path"].endswith(".json")
+                    and "mozinfo" not in link["path"]
+                    and "test_packages" not in link["path"]
+                )
             ]
 
             # If there's a buildhub.json link, return that
             buildhub_links = [
-                link for link in json_links if link.endswith('buildhub.json')
+                link for link in json_links if link.endswith("buildhub.json")
             ]
             if buildhub_links:
                 all_json_links.append(buildhub_links[0])
@@ -221,20 +224,19 @@ class Downloader:
         """Traverse candidates/VERSION/ tree returning list of build info."""
         self.msgs = []
 
-        content = self.download(link['path'])
+        content = self.download(link["path"])
         build_links = [
-            link for link in self.get_links(content)
-            if link['text'].startswith('build')
+            link for link in self.get_links(content) if link["text"].startswith("build")
         ]
 
         #  /pub/PRODUCT/candidates/VERSION/...   # noqa
         # 0/1  / 2     /3         /4
-        version_root = link['path'].split('/')[4]
-        version_root = version_root.replace('-candidates', '')
+        version_root = link["path"].split("/")[4]
+        version_root = version_root.replace("-candidates", "")
 
         # Was there a final release of this series? If so, then we can do
         # final build versions
-        is_final_release = (version_root in final_releases)
+        is_final_release = version_root in final_releases
 
         # Sort the builds by the build number so they're in numeric order because
         # the last one is possibly a final build
@@ -245,9 +247,11 @@ class Downloader:
         for i, build_link in enumerate(build_links):
             # Get all the json files with build information in them for all the
             # platforms that have them
-            json_links = self.get_json_links(build_link['path'])
+            json_links = self.get_json_links(build_link["path"])
             if not json_links:
-                self.worker_write('could not find json files in: %s' % build_link['path'])
+                self.worker_write(
+                    "could not find json files in: %s" % build_link["path"]
+                )
                 continue
 
             # Go through all the links we acquired by traversing all the platform
@@ -256,45 +260,42 @@ class Downloader:
                 json_file = self.download(json_link)
                 data = json.loads(json_file)
 
-                if 'buildhub' in json_link:
+                if "buildhub" in json_link:
                     # We have a buildhub.json file to use, so we use that
                     # structure
                     data = {
-                        'product_name': product_name,
-                        'release_channel': data['target']['channel'],
-                        'major_version': int(data['target']['version'].split('.')[0]),
-                        'release_version': data['target']['version'],
-                        'build_id': data['build']['id'],
-                        'archive_url': urljoin(self.base_url, json_link)
+                        "product_name": product_name,
+                        "release_channel": data["target"]["channel"],
+                        "major_version": int(data["target"]["version"].split(".")[0]),
+                        "release_version": data["target"]["version"],
+                        "build_id": data["build"]["id"],
+                        "archive_url": urljoin(self.base_url, json_link),
                     }
 
                 else:
                     # We have the older build info file format, so we use that
                     # structure
                     data = {
-                        'product_name': product_name,
-                        'release_channel': data['moz_update_channel'],
-                        'major_version': int(data['moz_app_version'].split('.')[0]),
-                        'release_version': data['moz_app_version'],
-                        'build_id': data['buildid'],
-                        'archive_url': urljoin(self.base_url, json_link)
+                        "product_name": product_name,
+                        "release_channel": data["moz_update_channel"],
+                        "major_version": int(data["moz_app_version"].split(".")[0]),
+                        "release_version": data["moz_app_version"],
+                        "build_id": data["buildid"],
+                        "archive_url": urljoin(self.base_url, json_link),
                     }
 
                 # The build link text is something like "build1/" and we
                 # want just the number part, so we drop "build" and the "/"
-                rc_version_string = version_root + 'rc' + build_link['text'][5:-1]
+                rc_version_string = version_root + "rc" + build_link["text"][5:-1]
 
                 # Whether or not this is the final build for a set of builds; for
                 # example for [build1, build2, build3] the last build is build3
                 # and if there was a release in the /pub/PRODUCT/releases/ directory
                 # then this is a final build
-                final_build = (
-                    (i + 1 == len(build_links)) and
-                    is_final_release
-                )
+                final_build = (i + 1 == len(build_links)) and is_final_release
 
                 if final_build:
-                    if data['release_channel'] == 'release':
+                    if data["release_channel"] == "release":
                         # If this is a final build for a major release, then we want to
                         # insert two entries--one for the last rc in the beta channel
                         # and one for the final release in the release channel. This
@@ -302,61 +303,61 @@ class Downloader:
                         # builds in one request.
 
                         # Insert the rc beta build
-                        data['release_channel'] = 'beta'
-                        data['version_string'] = rc_version_string
+                        data["release_channel"] = "beta"
+                        data["version_string"] = rc_version_string
                         build_data.append(data)
 
                         # Insert the final release build
                         second_data = copy.deepcopy(data)
-                        second_data['version_string'] = version_root
-                        second_data['release_channel'] = 'release'
+                        second_data["version_string"] = version_root
+                        second_data["release_channel"] = "release"
                         build_data.append(second_data)
 
                     else:
                         # This is the final build for a beta release, so we insert both
                         # an rc as well as a final as betas
-                        data['version_string'] = version_root
+                        data["version_string"] = version_root
                         build_data.append(data)
 
                         second_data = copy.deepcopy(data)
-                        second_data['version_string'] = rc_version_string
+                        second_data["version_string"] = rc_version_string
                         build_data.append(second_data)
 
                 else:
-                    if data['release_channel'] == 'release':
+                    if data["release_channel"] == "release":
                         # This is a release channel build, but it's not a final build,
                         # so insert it as an rc beta build
-                        data['version_string'] = rc_version_string
-                        data['release_channel'] = 'beta'
+                        data["version_string"] = rc_version_string
+                        data["release_channel"] = "beta"
                         build_data.append(data)
 
                     else:
                         # Insert the rc beta build
-                        data['version_string'] = rc_version_string
+                        data["version_string"] = rc_version_string
                         build_data.append(data)
 
         return build_data, self.msgs
 
     def scrape_candidates(self, product_name, archive_directory, major_version, stdout):
         """Scrape the candidates/ directory for beta, release candidate, and final releases."""
-        url_path = '/pub/%s/candidates/' % archive_directory
-        stdout.write('scrape_candidates working on %s' % url_path)
+        url_path = "/pub/%s/candidates/" % archive_directory
+        stdout.write("scrape_candidates working on %s" % url_path)
 
         # First, let's look at /pub/PRODUCT/releases/ so we know what final
         # builds have been released
-        release_path = '/pub/%s/releases/' % archive_directory
+        release_path = "/pub/%s/releases/" % archive_directory
         release_path_content = self.download(release_path)
 
         # Get the final release version numbers, so something like "64.0b8/" -> "64.0b8"
         final_releases = [
-            link['text'].rstrip('/') for link in self.get_links(release_path_content)
-            if link['text'][0].isdigit()
+            link["text"].rstrip("/")
+            for link in self.get_links(release_path_content)
+            if link["text"][0].isdigit()
         ]
 
         content = self.download(url_path)
         version_links = [
-            link for link in self.get_links(content)
-            if link['text'][0].isdigit()
+            link for link in self.get_links(content) if link["text"][0].isdigit()
         ]
 
         # If we've got a major_version, then we only want to scrape data for versions
@@ -364,29 +365,32 @@ class Downloader:
         if major_version:
             major_version_minus_4 = major_version - 4
             stdout.write(
-                'skipping anything before %s and not esr (%s)' %
-                (product_name, major_version_minus_4)
+                "skipping anything before %s and not esr (%s)"
+                % (product_name, major_version_minus_4)
             )
             version_links = [
-                link for link in version_links
+                link
+                for link in version_links
                 if (
                     # "63.0b7-candidates/" -> 63
-                    int(link['text'].split('.')[0]) >= major_version_minus_4 or
-                    'esr' in link['text']
+                    int(link["text"].split(".")[0]) >= major_version_minus_4
+                    or "esr" in link["text"]
                 )
             ]
 
         scrape = partial(
             self.scrape_candidate_version,
             product_name=product_name,
-            final_releases=final_releases
+            final_releases=final_releases,
         )
 
         if self.num_workers == 1:
             results = map(scrape, version_links)
 
         else:
-            with concurrent.futures.ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+            with concurrent.futures.ProcessPoolExecutor(
+                max_workers=self.num_workers
+            ) as executor:
                 results = executor.map(scrape, version_links, timeout=300)
 
         results = list(results)
@@ -400,23 +404,26 @@ class Downloader:
         # Print all the msgs to stdout
         for msg_group in msgs:
             for msg in msg_group:
-                stdout.write('worker: %s' % msg)
+                stdout.write("worker: %s" % msg)
 
         # build_data is a list of lists so we flatten that
         return list(more_itertools.flatten(build_data))
 
 
 class Command(BaseCommand):
-    help = 'Scrape archive.mozilla.org for productversion information.'
+    help = "Scrape archive.mozilla.org for productversion information."
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--base-url', default='https://archive.mozilla.org/pub/',
-            help='base url to use for fetching builds'
+            "--base-url",
+            default="https://archive.mozilla.org/pub/",
+            help="base url to use for fetching builds",
         )
         parser.add_argument(
-            '--num-workers', default=20, type=int,
-            help='Number of concurrent workers for downloading; set to 1 for single process'
+            "--num-workers",
+            default=20,
+            type=int,
+            help="Number of concurrent workers for downloading; set to 1 for single process",
         )
 
     def get_max_major_version(self, product_name):
@@ -427,51 +434,59 @@ class Command(BaseCommand):
         :returns: maximum major version as an int or None
 
         """
-        pv = ProductVersion.objects.order_by('-major_version').first()
+        pv = ProductVersion.objects.order_by("-major_version").first()
         if pv is not None:
             return pv.major_version
         return None
 
-    def insert_build(self, product_name, release_channel, major_version, release_version,
-                     version_string, build_id, archive_url, verbose):
+    def insert_build(
+        self,
+        product_name,
+        release_channel,
+        major_version,
+        release_version,
+        version_string,
+        build_id,
+        archive_url,
+        verbose,
+    ):
         """Insert a new build into the crashstats_productversion table."""
         params = {
-            'product_name': product_name,
-            'release_channel': release_channel,
-            'major_version': major_version,
-            'release_version': release_version,
-            'version_string': version_string,
-            'build_id': build_id,
-            'archive_url': archive_url
+            "product_name": product_name,
+            "release_channel": release_channel,
+            "major_version": major_version,
+            "release_version": release_version,
+            "version_string": version_string,
+            "build_id": build_id,
+            "archive_url": archive_url,
         }
         try:
             ProductVersion.objects.create(**params)
             if verbose:
-                self.stdout.write('INSERTING: %s' % list(sorted(params.items())))
+                self.stdout.write("INSERTING: %s" % list(sorted(params.items())))
             return True
 
         except IntegrityError as ie:
-            if 'violates unique constraint' in str(ie):
+            if "violates unique constraint" in str(ie):
                 # If there's an IntegrityError, it's because one already exists.
                 # That's fine, so let's skip it.
                 pass
             else:
                 raise
 
-    def scrape_and_insert_build_info(self, base_url, num_workers, verbose, product_name,
-                                     archive_directory):
+    def scrape_and_insert_build_info(
+        self, base_url, num_workers, verbose, product_name, archive_directory
+    ):
         """Scrape and insert build info for a specific product/directory."""
         downloader = Downloader(
-            base_url=base_url,
-            num_workers=num_workers,
-            verbose=verbose
+            base_url=base_url, num_workers=num_workers, verbose=verbose
         )
         major_version = self.get_max_major_version(product_name)
         build_data = downloader.scrape_candidates(
             product_name=product_name,
             archive_directory=archive_directory,
             major_version=major_version,
-            stdout=self.stdout
+            stdout=self.stdout,
         )
         total_builds = 0
         num_builds = 0
@@ -479,21 +494,23 @@ class Command(BaseCommand):
             total_builds += 1
             if self.insert_build(verbose=verbose, **item):
                 num_builds += 1
-        self.stdout.write('found %s builds; inserted %s builds' % (total_builds, num_builds))
+        self.stdout.write(
+            "found %s builds; inserted %s builds" % (total_builds, num_builds)
+        )
         return num_builds
 
     def handle(self, **options):
-        num_workers = options['num_workers']
-        base_url = options['base_url']
-        verbose = options['verbosity'] > 1
+        num_workers = options["num_workers"]
+        base_url = options["base_url"]
+        verbose = options["verbosity"] > 1
 
         # Capture Firefox beta and release builds
         self.scrape_and_insert_build_info(
             base_url=base_url,
             num_workers=num_workers,
             verbose=verbose,
-            product_name='Firefox',
-            archive_directory='firefox',
+            product_name="Firefox",
+            archive_directory="firefox",
         )
 
         # Pick up DevEdition beta builds for which b1 and b2 are "Firefox builds"
@@ -501,8 +518,8 @@ class Command(BaseCommand):
             base_url=base_url,
             num_workers=num_workers,
             verbose=verbose,
-            product_name='DevEdition',
-            archive_directory='devedition',
+            product_name="DevEdition",
+            archive_directory="devedition",
         )
 
         # Capture Fennec beta and release builds
@@ -510,8 +527,8 @@ class Command(BaseCommand):
             base_url=base_url,
             num_workers=num_workers,
             verbose=verbose,
-            product_name='Fennec',
-            archive_directory='mobile',
+            product_name="Fennec",
+            archive_directory="mobile",
         )
 
-        self.stdout.write('Done!')
+        self.stdout.write("Done!")

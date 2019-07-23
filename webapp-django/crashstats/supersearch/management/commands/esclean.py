@@ -9,15 +9,15 @@ from socorro.external.es.connection_context import ConnectionContext
 
 
 class Command(BaseCommand):
-    help = 'Delete expired Elasticsearch indices.'
+    help = "Delete expired Elasticsearch indices."
 
     def handle(self, **options):
-        config = config_from_configman()['elasticsearch']
+        config = config_from_configman()["elasticsearch"]
         conn = ConnectionContext(config)
         indices = conn.delete_expired_indices()
         if indices:
-            self.stdout.write('Deleting expired crash report indices.')
+            self.stdout.write("Deleting expired crash report indices.")
             for index in indices:
-                self.stdout.write('Deleting %s' % index)
+                self.stdout.write("Deleting %s" % index)
         else:
-            self.stdout.write('No expired indices to delete.')
+            self.stdout.write("No expired indices to delete.")

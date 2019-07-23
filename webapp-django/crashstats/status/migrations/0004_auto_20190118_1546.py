@@ -9,14 +9,14 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('status', '0003_auto_20181214_1951'),
-    ]
+    dependencies = [("status", "0003_auto_20181214_1951")]
 
     operations = [
         migrations.AlterField(
-            model_name='statusmessage',
-            name='message',
-            field=models.TextField(help_text='Plain text, but will linkify "bug #XXXXXXX" strings'),
-        ),
+            model_name="statusmessage",
+            name="message",
+            field=models.TextField(
+                help_text='Plain text, but will linkify "bug #XXXXXXX" strings'
+            ),
+        )
     ]

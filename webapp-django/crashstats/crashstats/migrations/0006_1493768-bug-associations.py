@@ -10,21 +10,29 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0005_1463121-signature-data-migration'),
-    ]
+    dependencies = [("crashstats", "0005_1463121-signature-data-migration")]
 
     operations = [
         migrations.CreateModel(
-            name='BugAssociation',
+            name="BugAssociation",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('bug_id', models.IntegerField(help_text=b'Bugzilla bug id')),
-                ('signature', models.TextField(help_text=b'Socorro-style crash report signature')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("bug_id", models.IntegerField(help_text=b"Bugzilla bug id")),
+                (
+                    "signature",
+                    models.TextField(help_text=b"Socorro-style crash report signature"),
+                ),
             ],
         ),
         migrations.AlterUniqueTogether(
-            name='bugassociation',
-            unique_together=set([('bug_id', 'signature')]),
+            name="bugassociation", unique_together=set([("bug_id", "signature")])
         ),
     ]

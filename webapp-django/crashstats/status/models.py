@@ -12,11 +12,7 @@ class StatusMessage(models.Model):
     )
     severity = models.CharField(
         max_length=20,
-        choices=(
-            ('info', 'Info'),
-            ('warning', 'Warning'),
-            ('critical', 'Critical'),
-        )
+        choices=(("info", "Info"), ("warning", "Warning"), ("critical", "Critical")),
     )
     enabled = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)

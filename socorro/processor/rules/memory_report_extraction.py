@@ -26,12 +26,10 @@ class MemoryReportExtraction(Rule):
             return (
                 # ... we have a pid...
                 "pid" in processed_crash["json_dump"]
-                and
                 # ... we have a memory report...
-                bool(processed_crash["memory_report"])
-                and
+                and bool(processed_crash["memory_report"])
                 # ... and that memory report is recognisable.
-                "version" in processed_crash["memory_report"]
+                and "version" in processed_crash["memory_report"]
                 and "reports" in processed_crash["memory_report"]
                 and "hasMozMallocUsableSize" in processed_crash["memory_report"]
             )

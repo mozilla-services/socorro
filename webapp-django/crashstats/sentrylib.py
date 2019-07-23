@@ -10,10 +10,10 @@ from urllib.parse import parse_qsl, urlencode
 import glom
 import markus
 
-metrics = markus.get_metrics('webapp.sentry')
+metrics = markus.get_metrics("webapp.sentry")
 
 # Logger for event processing
-SENTRY_LOG_NAME = 'crashstats.sentrylib'
+SENTRY_LOG_NAME = "crashstats.sentrylib"
 logger = logging.getLogger(SENTRY_LOG_NAME)
 
 
@@ -26,13 +26,24 @@ def get_before_send():
     https://docs.sentry.io/error-reporting/configuration/filtering/?platform=python
     """
     sanitizers = (
-        SanitizeBreadcrumbs((
-            SanitizeSQLQueryCrumb(('email', 'username', 'password', 'session_data', 'session_key',
-                                   'tokens_token.key', 'auth_user.id')),
-        )),
-        SanitizeHeaders(('Auth-Token', 'X-Forwarded-For', 'X-Real-Ip')),
-        SanitizePostData(('csrfmiddlewaretoken',)),
-        SanitizeQueryString(('code', 'state')),
+        SanitizeBreadcrumbs(
+            (
+                SanitizeSQLQueryCrumb(
+                    (
+                        "email",
+                        "username",
+                        "password",
+                        "session_data",
+                        "session_key",
+                        "tokens_token.key",
+                        "auth_user.id",
+                    )
+                ),
+            )
+        ),
+        SanitizeHeaders(("Auth-Token", "X-Forwarded-For", "X-Real-Ip")),
+        SanitizePostData(("csrfmiddlewaretoken",)),
+        SanitizeQueryString(("code", "state")),
     )
     return SentrySanitizer(sanitizers=sanitizers)
 
@@ -58,7 +69,7 @@ class SentrySanitizer:
         self.sanitizers = sanitizers or []
 
     def __repr__(self):
-        return '{}(sanitizers={!r})'.format(self.__class__.__name__, self.sanitizers)
+        return "{}(sanitizers={!r})".format(self.__class__.__name__, self.sanitizers)
 
     def __call__(self, event, hint):
         """Sanitize a Sentry event.
@@ -73,7 +84,7 @@ class SentrySanitizer:
             for sanitizer in self.sanitizers:
                 sanitizer(event, hint)
         except Exception:
-            metrics.incr('before_send_exception')
+            metrics.incr("before_send_exception")
             raise
 
         logger.debug("after sanitizing event=%s", event)
@@ -107,11 +118,11 @@ class SanitizeBreadcrumbs:
         self.crumb_sanitizers = crumb_sanitizers
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self.crumb_sanitizers)
+        return "{}({!r})".format(self.__class__.__name__, self.crumb_sanitizers)
 
     def __call__(self, event, hint):
         """Filter each breadcrumb in an event."""
-        for crumb in event.get('breadcrumbs', []):
+        for crumb in event.get("breadcrumbs", []):
             for crumb_sanitizer in self.crumb_sanitizers:
                 # Pass an empty hint rather than the event's hint
                 crumb = crumb_sanitizer(crumb, {})
@@ -137,22 +148,24 @@ class SanitizeSQLQueryCrumb:
         self.keywords = keywords
         self.all_keywords = list(keywords)
         for keyword in keywords:
-            if '.' in keyword:
+            if "." in keyword:
                 # table.column_name could be (PostgreSQL) quoted as well
-                self.all_keywords.append('.'.join('"%s"' % part for part in keyword.split('.')))
+                self.all_keywords.append(
+                    ".".join('"%s"' % part for part in keyword.split("."))
+                )
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self.keywords)
+        return "{}({!r})".format(self.__class__.__name__, self.keywords)
 
     def __call__(self, crumb, hint):
         """Sanitize SQL queries containing a keyword."""
-        if crumb.get('category') != 'query' or not crumb.get('message'):
+        if crumb.get("category") != "query" or not crumb.get("message"):
             return
 
         message = crumb["message"]
         has_keyword = any(keyword in message for keyword in self.all_keywords)
         if has_keyword:
-            crumb["message"] = '[filtered]'
+            crumb["message"] = "[filtered]"
 
 
 class SanitizeSectionByKeyName:
@@ -176,7 +189,7 @@ class SanitizeSectionByKeyName:
         self.names = names
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self.names)
+        return "{}({!r})".format(self.__class__.__name__, self.names)
 
     def is_sensitive_key(self, key):
         """Return True if the key is a sensitive key."""
@@ -192,7 +205,7 @@ class SanitizeSectionByKeyName:
         data_out = {}
         for key, value in data.items():
             if self.is_sensitive_key(key):
-                data_out[key] = '[filtered]'
+                data_out[key] = "[filtered]"
             else:
                 data_out[key] = value
         glom.glom(event, glom.Assign(self.section_path, data_out))
@@ -214,7 +227,7 @@ class SanitizeHeaders(SanitizeSectionByKeyName):
         }
     """
 
-    section_path = 'request.headers'
+    section_path = "request.headers"
 
     def __init__(self, names):
         """Initialize a SanitizeHeaders
@@ -245,7 +258,7 @@ class SanitizePostData(SanitizeSectionByKeyName):
         }
     """
 
-    section_path = 'request.data'
+    section_path = "request.data"
 
 
 class SanitizeQueryString:
@@ -272,18 +285,18 @@ class SanitizeQueryString:
         self.names = names
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self.names)
+        return "{}({!r})".format(self.__class__.__name__, self.names)
 
     def __call__(self, event, hint):
         """Sanitize the querystring."""
         try:
-            querystring = glom.glom(event, 'request.query_string')
+            querystring = glom.glom(event, "request.query_string")
         except glom.PathAccessError:
             return
 
         out_pairs = []
         for name, value in parse_qsl(querystring, keep_blank_values=True):
             if name in self.names and value:
-                value = '[filtered]'
+                value = "[filtered]"
             out_pairs.append((name, value))
-        event['request']['query_string'] = urlencode(out_pairs)
+        event["request"]["query_string"] = urlencode(out_pairs)

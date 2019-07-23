@@ -32,11 +32,7 @@ from socorro.lib.ooid import is_crash_id_valid
 
 
 # List of all modules that contain models we want to expose.
-MODELS_MODULES = (
-    models,
-    tools_models,
-    supersearch_models,
-)
+MODELS_MODULES = (models, tools_models, supersearch_models)
 
 
 BAD_REQUEST_EXCEPTIONS = (
@@ -45,9 +41,7 @@ BAD_REQUEST_EXCEPTIONS = (
     models.RequiredParameterError,
 )
 
-NOT_FOUND_EXCEPTIONS = (
-    CrashIDNotFound,
-)
+NOT_FOUND_EXCEPTIONS = (CrashIDNotFound,)
 
 
 class MultipleStringField(forms.TypedMultipleChoiceField):
@@ -85,47 +79,45 @@ TYPE_MAP = {
 
 class MiddlewareModelForm(forms.Form):
     """Generate a Form from a SocorroMiddleware-derived model class."""
+
     def __init__(self, model, *args, **kwargs):
         self.model = model
         super().__init__(*args, **kwargs)
 
         # Populate the form fields
         for parameter in model().get_annotated_params():
-            required = parameter['required']
-            name = parameter['name']
-            field_class = TYPE_MAP[parameter['type']]
+            required = parameter["required"]
+            name = parameter["name"]
+            field_class = TYPE_MAP[parameter["type"]]
             self.fields[name] = field_class(required=required)
 
 
 # Names of models we don't want to serve at all
 API_DONT_SERVE_LIST = (
     # because it's only used for the admin
-    'Field',
-    'SuperSearchMissingFields',
+    "Field",
+    "SuperSearchMissingFields",
     # because it's very sensitive and we don't want to expose it
-    'Query',
+    "Query",
     # because it's an internal thing only
-    'PriorityJob',
-    'Products',
-    'TelemetryCrash',
+    "PriorityJob",
+    "Products",
+    "TelemetryCrash",
 )
 
 
 def is_valid_model_class(model):
     return (
-        isinstance(model, type) and
-        issubclass(model, models.SocorroMiddleware) and
-        model is not models.SocorroMiddleware and
-        model is not supersearch_models.ESSocorroMiddleware
+        isinstance(model, type)
+        and issubclass(model, models.SocorroMiddleware)
+        and model is not models.SocorroMiddleware
+        and model is not supersearch_models.ESSocorroMiddleware
     )
 
 
 @csrf_exempt
 @ratelimit(
-    key='ip',
-    method=['GET', 'POST', 'PUT'],
-    rate=utils.ratelimit_rate,
-    block=True
+    key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
 )
 @track_api_pageview
 @utils.add_CORS_header  # must be before `utils.json_view`
@@ -143,34 +135,32 @@ def model_wrapper(request, model_name):
         except AttributeError:
             pass
         try:
-            model = getattr(source, model_name + 'Middleware')
+            model = getattr(source, model_name + "Middleware")
         except AttributeError:
             pass
 
     if model is None or not is_valid_model_class(model):
-        raise http.Http404('no service called `%s`' % model_name)
+        raise http.Http404("no service called `%s`" % model_name)
 
-    required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
-    if (
-        required_permissions and
-        (
-            not request.user.is_active or
-            not request.user.has_perms(required_permissions)
-        )
+    required_permissions = getattr(model(), "API_REQUIRED_PERMISSIONS", None)
+    if required_permissions and (
+        not request.user.is_active or not request.user.has_perms(required_permissions)
     ):
         permission_names = []
         for permission in required_permissions:
-            codename = permission.split('.', 1)[1]
+            codename = permission.split(".", 1)[1]
             try:
                 permission_names.append(Permission.objects.get(codename=codename).name)
             except Permission.DoesNotExist:
                 permission_names.append(codename)
         # you're not allowed to use this model
-        return http.JsonResponse({
-            'error': "Use of this endpoint requires the '%s' permission" % (
-                ', '.join(permission_names),
-            )
-        }, status=403)
+        return http.JsonResponse(
+            {
+                "error": "Use of this endpoint requires the '%s' permission"
+                % (", ".join(permission_names),)
+            },
+            status=403,
+        )
 
     instance = model()
 
@@ -181,7 +171,7 @@ def model_wrapper(request, model_name):
     # internally use that to determine its output.
     instance.api_user = request.user
 
-    if request.method == 'POST':
+    if request.method == "POST":
         function = instance.post
     else:
         function = instance.get
@@ -191,20 +181,24 @@ def model_wrapper(request, model_name):
     # assume first that it won't need a binary response
     binary_response = False
 
-    request_data = request.method == 'GET' and request.GET or request.POST
+    request_data = request.method == "GET" and request.GET or request.POST
     form = MiddlewareModelForm(model, request_data)
     if form.is_valid():
         try:
             result = function(**form.cleaned_data)
         except NOT_FOUND_EXCEPTIONS as exception:
             return http.HttpResponseNotFound(
-                json.dumps({'error': ('%s: %s' % (type(exception).__name__, exception))}),
-                content_type='application/json; charset=UTF-8'
+                json.dumps(
+                    {"error": ("%s: %s" % (type(exception).__name__, exception))}
+                ),
+                content_type="application/json; charset=UTF-8",
             )
         except BAD_REQUEST_EXCEPTIONS as exception:
             return http.HttpResponseBadRequest(
-                json.dumps({'error': ('%s: %s' % (type(exception).__name__, exception))}),
-                content_type='application/json; charset=UTF-8'
+                json.dumps(
+                    {"error": ("%s: %s" % (type(exception).__name__, exception))}
+                ),
+                content_type="application/json; charset=UTF-8",
             )
 
         # Some models allows to return a binary reponse. It does so based on
@@ -223,21 +217,25 @@ def model_wrapper(request, model_name):
         if binary_response:
             # if you don't have all required permissions, you'll get a 403
             required_permissions = model.API_BINARY_PERMISSIONS
-            if required_permissions and not request.user.has_perms(required_permissions):
+            if required_permissions and not request.user.has_perms(
+                required_permissions
+            ):
                 permission_names = []
                 for permission in required_permissions:
-                    codename = permission.split('.', 1)[1]
+                    codename = permission.split(".", 1)[1]
                     try:
-                        permission_names.append(Permission.objects.get(codename=codename).name)
+                        permission_names.append(
+                            Permission.objects.get(codename=codename).name
+                        )
                     except Permission.DoesNotExist:
                         permission_names.append(codename)
                 # you're not allowed to get the binary response
                 return http.HttpResponseForbidden(
-                    "Binary response requires the '%s' permission\n" %
-                    (', '.join(permission_names))
+                    "Binary response requires the '%s' permission\n"
+                    % (", ".join(permission_names))
                 )
 
-        elif not request.user.has_perm('crashstats.view_pii'):
+        elif not request.user.has_perm("crashstats.view_pii"):
             if callable(model.API_ALLOWLIST):
                 allowlist = model.API_ALLOWLIST()
             else:
@@ -254,26 +252,26 @@ def model_wrapper(request, model_name):
 
     else:
         # custom override of the status code
-        return {'errors': dict(form.errors)}, 400
+        return {"errors": dict(form.errors)}, 400
 
     if binary_response:
-        assert model.API_BINARY_FILENAME, 'No API_BINARY_FILENAME set on model'
-        response = http.HttpResponse(result, content_type='application/octet-stream')
+        assert model.API_BINARY_FILENAME, "No API_BINARY_FILENAME set on model"
+        response = http.HttpResponse(result, content_type="application/octet-stream")
         filename = model.API_BINARY_FILENAME % form.cleaned_data
-        response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+        response["Content-Disposition"] = 'attachment; filename="%s"' % filename
         return response
 
-    if getattr(model, 'deprecation_warning', False):
+    if getattr(model, "deprecation_warning", False):
         if isinstance(result, dict):
-            result['DEPRECATION_WARNING'] = model.deprecation_warning
-        headers['DEPRECATION-WARNING'] = model.deprecation_warning.replace('\n', ' ')
+            result["DEPRECATION_WARNING"] = model.deprecation_warning
+        headers["DEPRECATION-WARNING"] = model.deprecation_warning.replace("\n", " ")
 
     if model.cache_seconds:
         # We can set a Cache-Control header.
         # We say 'private' because the content can depend on the user
         # and we don't want the response to be collected in HTTP proxies
         # by mistake.
-        headers['Cache-Control'] = 'private, max-age={}'.format(model.cache_seconds)
+        headers["Cache-Control"] = "private, max-age={}".format(model.cache_seconds)
 
     return result, headers
 
@@ -294,7 +292,7 @@ def api_models_and_names():
     models_with_names = []
     for model in all_models:
         model_name = model.__name__
-        if model_name.endswith('Middleware'):
+        if model_name.endswith("Middleware"):
             model_name = model_name[:-10]
 
         if not is_valid_model_class(model):
@@ -315,38 +313,39 @@ def documentation(request, default_context=None):
     endpoints = []
     for model, model_name in api_models_and_names():
         model_inst = model()
-        if (
-            model_inst.API_REQUIRED_PERMISSIONS and
-            not request.user.has_perms(model_inst.API_REQUIRED_PERMISSIONS)
+        if model_inst.API_REQUIRED_PERMISSIONS and not request.user.has_perms(
+            model_inst.API_REQUIRED_PERMISSIONS
         ):
             continue
         endpoints.append(_describe_model(model_name, model))
 
-    base_url = (
-        '%s://%s' % (request.is_secure() and 'https' or 'http',
-                     RequestSite(request).domain)
+    base_url = "%s://%s" % (
+        request.is_secure() and "https" or "http",
+        RequestSite(request).domain,
     )
     if request.user.is_active:
         your_tokens = tokens_models.Token.objects.active().filter(user=request.user)
     else:
         your_tokens = tokens_models.Token.objects.none()
-    context.update({
-        'endpoints': endpoints,
-        'base_url': base_url,
-        'count_tokens': your_tokens.count()
-    })
-    return render(request, 'api/documentation.html', context)
+    context.update(
+        {
+            "endpoints": endpoints,
+            "base_url": base_url,
+            "count_tokens": your_tokens.count(),
+        }
+    )
+    return render(request, "api/documentation.html", context)
 
 
 def _describe_model(model_name, model):
     model_inst = model()
     params = list(model_inst.get_annotated_params())
-    params.sort(key=lambda x: (not x['required'], x['name']))
+    params.sort(key=lambda x: (not x["required"], x["name"]))
     methods = []
     if model.get:
-        methods.append('GET')
+        methods.append("GET")
     elif model.post:
-        methods.append('POST')
+        methods.append("POST")
 
     help_text = model.HELP_TEXT
     if help_text:
@@ -355,18 +354,18 @@ def _describe_model(model_name, model):
     required_permissions = []
     if model_inst.API_REQUIRED_PERMISSIONS:
         for permission in model_inst.API_REQUIRED_PERMISSIONS:
-            codename = permission.split('.', 1)[1]
+            codename = permission.split(".", 1)[1]
             required_permissions.append(Permission.objects.get(codename=codename).name)
 
     data = {
-        'name': model_name,
-        'url': reverse('api:model_wrapper', args=(model_name,)),
-        'parameters': params,
-        'defaults': getattr(model, 'defaults', {}),
-        'methods': methods,
-        'help_text': help_text,
-        'required_permissions': required_permissions,
-        'deprecation_warning': getattr(model, 'deprecation_warning', None),
+        "name": model_name,
+        "url": reverse("api:model_wrapper", args=(model_name,)),
+        "parameters": params,
+        "defaults": getattr(model, "defaults", {}),
+        "methods": methods,
+        "help_text": help_text,
+        "required_permissions": required_permissions,
+        "deprecation_warning": getattr(model, "deprecation_warning", None),
     }
     return data
 
@@ -385,32 +384,25 @@ def dedent_left(text, spaces):
         'Three\n'
     """
     lines = []
-    regex = re.compile(r'^\s{%s}' % spaces)
+    regex = re.compile(r"^\s{%s}" % spaces)
     for line in text.splitlines():
-        line = regex.sub('', line)
+        line = regex.sub("", line)
         lines.append(line)
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 @csrf_exempt
-@ratelimit(
-    key='ip',
-    method=['GET'],
-    rate=utils.ratelimit_rate,
-    block=True
-)
+@ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
 @utils.add_CORS_header
 @utils.json_view
 def crash_verify(request):
     """Verifies crash data in crash data destinations"""
-    crash_id = request.GET.get('crash_id', None)
+    crash_id = request.GET.get("crash_id", None)
 
     if not crash_id or not is_crash_id_valid(crash_id):
-        return http.JsonResponse({'error': 'unknown crash id'}, status=400)
+        return http.JsonResponse({"error": "unknown crash id"}, status=400)
 
-    data = {
-        'uuid': crash_id
-    }
+    data = {"uuid": crash_id}
 
     # Check S3 crash bucket for raw and processed crash data
     raw_api = models.RawCrash()
@@ -419,7 +411,7 @@ def crash_verify(request):
         has_raw_crash = True
     except CrashIDNotFound:
         has_raw_crash = False
-    data['s3_raw_crash'] = has_raw_crash
+    data["s3_raw_crash"] = has_raw_crash
 
     processed_api = models.ProcessedCrash()
     try:
@@ -427,21 +419,20 @@ def crash_verify(request):
         has_processed_crash = True
     except CrashIDNotFound:
         has_processed_crash = False
-    data['s3_processed_crash'] = has_processed_crash
+    data["s3_processed_crash"] = has_processed_crash
 
     # Check Elasticsearch for crash data
     supersearch_api = supersearch_models.SuperSearch()
     params = {
-        '_columns': ['uuid'],
-        '_results_number': 1,
-        'uuid': crash_id,
-        'dont_cache': True,
-        'refresh_cache': True
+        "_columns": ["uuid"],
+        "_results_number": 1,
+        "uuid": crash_id,
+        "dont_cache": True,
+        "refresh_cache": True,
     }
     results = supersearch_api.get(**params)
-    data['elasticsearch_crash'] = (
-        results['total'] == 1 and
-        results['hits'][0]['uuid'] == crash_id
+    data["elasticsearch_crash"] = (
+        results["total"] == 1 and results["hits"][0]["uuid"] == crash_id
     )
 
     # Check S3 telemetry bucket for crash data
@@ -451,6 +442,6 @@ def crash_verify(request):
         has_telemetry_crash = True
     except CrashIDNotFound:
         has_telemetry_crash = False
-    data['s3_telemetry_crash'] = has_telemetry_crash
+    data["s3_telemetry_crash"] = has_telemetry_crash
 
-    return http.HttpResponse(json.dumps(data), content_type='application/json')
+    return http.HttpResponse(json.dumps(data), content_type="application/json")
