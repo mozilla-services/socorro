@@ -1879,12 +1879,29 @@ FIELDS = {
             'type': 'date'
         }
     },
-    'dom_ipc_enabled': {
+    'dom_fission_enabled': {
         'data_validation_type': 'str',
         'description': (
-            'The value of the "dom.ipc.enabled" preference (in other terms, whether e10s is '
-            'enabled).'
+            'Set to 1 when DOM fission is enabled, and subframes are potentially '
+            'loaded in a separate process.'
         ),
+        'form_field_choices': [],
+        'has_full_version': False,
+        'in_database_name': 'DOMFissionEnabled',
+        'is_exposed': True,
+        'is_returned': True,
+        'name': 'dom_fission_enabled',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'flag',
+        'storage_mapping': {
+            'None_value': 0,
+            'type': 'short'
+        }
+    },
+    'dom_ipc_enabled': {
+        'data_validation_type': 'str',
+        'description': 'Set to 1 when a tab is running in a content process.',
         'form_field_choices': [],
         'has_full_version': False,
         'in_database_name': 'DOMIPCEnabled',
