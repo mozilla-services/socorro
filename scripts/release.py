@@ -77,7 +77,7 @@ def get_remote_name():
 
 
 def make_tag(bug_number, remote_name, tag_name, commits_since_tag):
-    message = '\n'.join(commits_since_tag)
+    message = "\n".join(commits_since_tag)
 
     if bug_number:
         # Add bug number to tag
@@ -91,18 +91,24 @@ def make_tag(bug_number, remote_name, tag_name, commits_since_tag):
     print("=" * 80)
 
     # Create tag
-    input(">>> Ready to tag \"{}\"? Ctrl-c to cancel".format(tag_name))
+    input('>>> Ready to tag "{}"? Ctrl-c to cancel'.format(tag_name))
     print(">>> Creating tag...")
     subprocess.check_call(["git", "tag", "-s", tag_name, "-m", message])
 
     # Push tag
-    input(">>> Ready to push to remote \"{}\"? Ctrl-c to cancel".format(remote_name))
+    input('>>> Ready to push to remote "{}"? Ctrl-c to cancel'.format(remote_name))
     print(">>> Pushing...")
     subprocess.check_call(["git", "push", "--tags", remote_name, tag_name])
 
 
-def make_bug(remote_name, project_name, tag_name, commits_since_tag, bugzilla_product,
-             bugzilla_component):
+def make_bug(
+    remote_name,
+    project_name,
+    tag_name,
+    commits_since_tag,
+    bugzilla_product,
+    bugzilla_component,
+):
     summary = f"{project_name} deploy: {tag_name}"
     print(">>> Creating deploy bug...")
     print(">>> Summary")
@@ -141,7 +147,7 @@ def make_bug(remote_name, project_name, tag_name, commits_since_tag, bugzilla_pr
 
 def run():
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest='cmd')
+    subparsers = parser.add_subparsers(dest="cmd")
     subparsers.required = True
 
     make_bug_parser = subparsers.add_parser("make-bug", help="Make a deploy bug")
@@ -192,9 +198,7 @@ def run():
     last_tag = check_output(
         "git for-each-ref --sort=-taggerdate --count=1 --format %(tag) refs/tags"
     )
-    last_tag_message = check_output(
-        f"git tag -l --format=\"%(contents)\" {last_tag}"
-    )
+    last_tag_message = check_output(f'git tag -l --format="%(contents)" {last_tag}')
     print(f">>> Last tag was: {last_tag}")
     print(">>> Message:")
     print("=" * 80)
@@ -237,15 +241,19 @@ def run():
         tag_name = datetime.datetime.now().strftime("%Y.%m.%d")
 
     # If it's already taken, append a -N
-    existing_tags = check_output(f"git tag -l \"{tag_name}*\"").splitlines()
+    existing_tags = check_output(f'git tag -l "{tag_name}*"').splitlines()
     if existing_tags:
         index = len([x for x in existing_tags if x.startswith(tag_name)]) + 1
         tag_name = f"{tag_name}-{index}"
 
     if args.cmd == "make-bug":
         make_bug(
-            remote_name, project_name, tag_name, commits_since_tag, args.product,
-            args.component
+            remote_name,
+            project_name,
+            tag_name,
+            commits_since_tag,
+            args.product,
+            args.component,
         )
     elif args.cmd == "make-tag":
         make_tag(args.bug, remote_name, tag_name, commits_since_tag)
