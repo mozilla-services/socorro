@@ -10,35 +10,35 @@ from crashstats.cron.models import Job
 
 
 class Command(BaseCommand):
-    help = 'List available cron jobs.'
+    help = "List available cron jobs."
 
     def handle(self, **options):
         for job_spec in JOBS:
-            self.stdout.write(job_spec['cmd'])
+            self.stdout.write(job_spec["cmd"])
 
-            cmdline = [job_spec['cmd']]
-            if job_spec.get('cmd_args'):
-                cmdline.extend(job_spec['cmd_args'])
-            if job_spec.get('backfill'):
-                cmdline.append('--run-time=RUNTIME')
-            if job_spec.get('last_success'):
-                cmdline.append('--last-success=LASTSUCCESS')
-            cmdline = ' '.join(cmdline)
-            self.stdout.write('    cmdline:      %s' % cmdline)
+            cmdline = [job_spec["cmd"]]
+            if job_spec.get("cmd_args"):
+                cmdline.extend(job_spec["cmd_args"])
+            if job_spec.get("backfill"):
+                cmdline.append("--run-time=RUNTIME")
+            if job_spec.get("last_success"):
+                cmdline.append("--last-success=LASTSUCCESS")
+            cmdline = " ".join(cmdline)
+            self.stdout.write("    cmdline:      %s" % cmdline)
 
             schedule = []
-            schedule.append('every ' + job_spec.get('frequency', DEFAULT_FREQUENCY))
-            if job_spec.get('time'):
-                schedule.append(job_spec['time'] + ' UTC')
-            schedule = ' @ '.join(schedule)
-            self.stdout.write('    schedule:     %s' % schedule)
+            schedule.append("every " + job_spec.get("frequency", DEFAULT_FREQUENCY))
+            if job_spec.get("time"):
+                schedule.append(job_spec["time"] + " UTC")
+            schedule = " @ ".join(schedule)
+            self.stdout.write("    schedule:     %s" % schedule)
 
             try:
-                job = Job.objects.get(app_name=job_spec['cmd'])
-                self.stdout.write('    last run:     %s' % job.last_run)
-                self.stdout.write('    last_success: %s' % job.last_success)
-                self.stdout.write('    next run:     %s' % job.next_run)
+                job = Job.objects.get(app_name=job_spec["cmd"])
+                self.stdout.write("    last run:     %s" % job.last_run)
+                self.stdout.write("    last_success: %s" % job.last_success)
+                self.stdout.write("    next run:     %s" % job.next_run)
                 if job.last_error:
-                    self.stdout.write('    ' + job.last_error)
+                    self.stdout.write("    " + job.last_error)
             except Job.DoesNotExist:
-                self.stdout.write('    Never run.')
+                self.stdout.write("    Never run.")

@@ -90,7 +90,7 @@ def parse_arguments(filters, arguments, modern=False):
 
                 for t in reversed(types):
                     if t == "list" and not isinstance(param, list):
-                        if param is None or param == '':
+                        if param is None or param == "":
                             param = []
                         else:
                             param = [param]
@@ -119,7 +119,7 @@ def check_type(param, datatype):
     if param is None:
         return param
 
-    if getattr(datatype, 'clean', None) and callable(datatype.clean):
+    if getattr(datatype, "clean", None) and callable(datatype.clean):
         try:
             return datatype.clean(param)
         except ValueError:
@@ -129,14 +129,14 @@ def check_type(param, datatype):
         # You've given it something like `'bool'` as a string.
         # This is the legacy way of doing it.
         datatype = {
-            'str': str,
-            'bool': bool,
-            'float': float,
-            'date': datetime.date,
-            'datetime': datetime.datetime,
-            'timedelta': datetime.timedelta,
-            'json': 'json',  # exception
-            'int': int,
+            "str": str,
+            "bool": bool,
+            "float": float,
+            "date": datetime.date,
+            "datetime": datetime.datetime,
+            "timedelta": datetime.timedelta,
+            "json": "json",  # exception
+            "int": int,
         }[datatype]
 
     if datatype is str and not isinstance(param, str):

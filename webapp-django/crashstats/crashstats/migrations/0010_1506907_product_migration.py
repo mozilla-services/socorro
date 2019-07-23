@@ -9,26 +9,29 @@ from django.db import connection, migrations
 
 
 def copy_products(apps, schema_editor):
-    Product = apps.get_model('crashstats', 'Product')
+    Product = apps.get_model("crashstats", "Product")
     cursor = connection.cursor()
 
     # Verify the table is there. If not, we don't need to do anything.
-    cursor.execute("""
+    cursor.execute(
+        """
     SELECT relname FROM pg_catalog.pg_class
     WHERE relname = 'products'
-    """)
+    """
+    )
     row = cursor.fetchone()
     if row is None:
-        print('no products table--nothing to do', end='')
+        print("no products table--nothing to do", end="")
         return
 
     # Second, pull all the data from it
-    columns = ['product_name', 'sort']
+    columns = ["product_name", "sort"]
     cursor.execute(
         """
         SELECT %(columns)s
         FROM products
-        """ % {'columns': ', '.join(columns)}
+        """
+        % {"columns": ", ".join(columns)}
     )
 
     # Third, insert it into the new table
@@ -38,24 +41,20 @@ def copy_products(apps, schema_editor):
         # NOTE(willkg): In the old table, we used sort=-1 to denote inactive
         # products. In the new table, we have a dedicated field.
         Product.objects.create(
-            product_name=product['product_name'],
-            sort=product['sort'] if product['sort'] != -1 else 100,
-            is_active=product['sort'] != -1
+            product_name=product["product_name"],
+            sort=product["sort"] if product["sort"] != -1 else 100,
+            is_active=product["sort"] != -1,
         )
         insert_count += 1
-    print('(inserted: %s)' % insert_count, end='')
+    print("(inserted: %s)" % insert_count, end="")
 
 
 def delete_products(apps, schema_editor):
-    Product = apps.get_model('crashstats', 'Product')
+    Product = apps.get_model("crashstats", "Product")
     Product.objects.all().delete()
 
 
 class Migration(migrations.Migration):
-    dependencies = [
-        ('crashstats', '0009_1506907_product'),
-    ]
+    dependencies = [("crashstats", "0009_1506907_product")]
 
-    operations = [
-        migrations.RunPython(copy_products, delete_products),
-    ]
+    operations = [migrations.RunPython(copy_products, delete_products)]

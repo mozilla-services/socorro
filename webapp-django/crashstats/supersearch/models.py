@@ -14,56 +14,53 @@ from socorro.external.es import super_search_fields
 
 
 SUPERSEARCH_META_PARAMS = (
-    ('_aggs.product.version', list),
-    ('_aggs.android_cpu_abi.android_manufacturer.android_model', list),
-    ('_columns', list),
-    ('_facets', list),
-    ('_facets_size', int),
-    '_fields',
-    ('_results_offset', int),
-    ('_results_number', int),
-    '_return_query',
-    ('_sort', list),
+    ("_aggs.product.version", list),
+    ("_aggs.android_cpu_abi.android_manufacturer.android_model", list),
+    ("_columns", list),
+    ("_facets", list),
+    ("_facets_size", int),
+    "_fields",
+    ("_results_offset", int),
+    ("_results_number", int),
+    "_return_query",
+    ("_sort", list),
 )
 
 
 # Those parameters contain list of fields and thus need to be verified before
 # sent to the middleware, so that no private field can be accessed.
 PARAMETERS_LISTING_FIELDS = (
-    '_aggs.product.version',
-    '_aggs.android_cpu_abi.android_manufacturer.android_model',
-    '_facets',
+    "_aggs.product.version",
+    "_aggs.android_cpu_abi.android_manufacturer.android_model",
+    "_facets",
 )
 
 
 def get_api_allowlist(include_all_fields=False):
-
     def get_from_es(include_all_fields):
-        cache_key = 'api_supersearch_fields'
+        cache_key = "api_supersearch_fields"
         fields = cache.get(cache_key)
         if fields is None:
             all_fields = SuperSearchFields().get()
             fields = []
             for meta in all_fields.values():
                 if (
-                    meta['name'] not in fields and
-                    meta['is_returned'] and (
-                        include_all_fields or
-                        not meta['permissions_needed']
-                    )
+                    meta["name"] not in fields
+                    and meta["is_returned"]
+                    and (include_all_fields or not meta["permissions_needed"])
                 ):
-                    fields.append(meta['name'])
+                    fields.append(meta["name"])
             fields = tuple(fields)
 
             # Cache for 1 hour.
             cache.set(cache_key, fields, 60 * 60)
-        return {'hits': fields}
+        return {"hits": fields}
 
     return functools.partial(get_from_es, include_all_fields)
 
 
 class ESSocorroMiddleware(models.SocorroMiddleware):
-    implementation_config_namespace = 'elasticsearch'
+    implementation_config_namespace = "elasticsearch"
 
 
 class SuperSearch(ESSocorroMiddleware):
@@ -84,39 +81,37 @@ class SuperSearch(ESSocorroMiddleware):
 
         self.extended_fields = self._get_extended_params()
         for field in self.extended_fields:
-            if '_histogram.' in field[0] or '_aggs.' in field[0]:
+            if "_histogram." in field[0] or "_aggs." in field[0]:
                 self.parameters_listing_fields.append(field[0])
 
-        self.possible_params = tuple(
-            (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed'] and not x['permissions_needed']
-        ) + SUPERSEARCH_META_PARAMS + tuple(self.extended_fields)
+        self.possible_params = (
+            tuple(
+                (x["name"], list)
+                for x in self.all_fields.values()
+                if x["is_exposed"] and not x["permissions_needed"]
+            )
+            + SUPERSEARCH_META_PARAMS
+            + tuple(self.extended_fields)
+        )
 
     def _get_extended_params(self):
         # Add histogram fields for all 'date' or 'number' fields.
         extended_fields = []
         for field in self.all_fields.values():
-            if not field['is_exposed'] or field['permissions_needed']:
+            if not field["is_exposed"] or field["permissions_needed"]:
                 continue
 
-            extended_fields.append(
-                ('_aggs.%s' % field['name'], list)
-            )
+            extended_fields.append(("_aggs.%s" % field["name"], list))
 
-            if field['query_type'] in ('date', 'number'):
-                extended_fields.append(
-                    ('_histogram.%s' % field['name'], list)
-                )
+            if field["query_type"] in ("date", "number"):
+                extended_fields.append(("_histogram.%s" % field["name"], list))
 
                 # Intervals can be strings for dates (like "day" or "1.5h")
                 # and can only be integers for numbers.
-                interval_type = {
-                    'date': str,
-                    'number': int
-                }.get(field['query_type'])
+                interval_type = {"date": str, "number": int}.get(field["query_type"])
 
                 extended_fields.append(
-                    ('_histogram_interval.%s' % field['name'], interval_type)
+                    ("_histogram_interval.%s" % field["name"], interval_type)
                 )
 
         return tuple(extended_fields)
@@ -128,41 +123,39 @@ class SuperSearch(ESSocorroMiddleware):
         # Initialize the list of allowed fields with all the fields we know
         # that are returned and do not require any permission.
         allowed_fields = set(
-            x for x in self.all_fields
-            if self.all_fields[x]['is_returned'] and
-            not self.all_fields[x]['permissions_needed']
+            x
+            for x in self.all_fields
+            if self.all_fields[x]["is_returned"]
+            and not self.all_fields[x]["permissions_needed"]
         )
 
         # Extend that list with the special fields, like `_histogram.*`.
         # Those are accepted values for fields listing other fields.
         for field in self.extended_fields:
             histogram = field[0]
-            if not histogram.startswith('_histogram.'):
+            if not histogram.startswith("_histogram."):
                 continue
 
-            field_name = histogram[len('_histogram.'):]
+            field_name = histogram[len("_histogram.") :]
             if (
-                field_name in self.all_fields and
-                self.all_fields[field_name]['is_returned'] and
-                not self.all_fields[field_name]['permissions_needed']
+                field_name in self.all_fields
+                and self.all_fields[field_name]["is_returned"]
+                and not self.all_fields[field_name]["permissions_needed"]
             ):
                 allowed_fields.add(histogram)
 
         for field in set(allowed_fields):
-            allowed_fields.add('_cardinality.%s' % field)
+            allowed_fields.add("_cardinality.%s" % field)
 
         # Now make sure all fields listing fields only have unrestricted
         # values.
         for param in self.parameters_listing_fields:
             values = kwargs.get(param, [])
-            filtered_values = [
-                x for x in values
-                if x in allowed_fields
-            ]
+            filtered_values = [x for x in values if x in allowed_fields]
             kwargs[param] = filtered_values
 
         # SuperSearch requires that the list of fields be passed to it.
-        kwargs['_fields'] = self.all_fields
+        kwargs["_fields"] = self.all_fields
 
         return super().get(**kwargs)
 
@@ -180,21 +173,24 @@ class SuperSearchUnredacted(SuperSearch):
 
         histogram_fields = self._get_extended_params()
 
-        self.possible_params = tuple(
-            (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed']
-        ) + SUPERSEARCH_META_PARAMS + histogram_fields
+        self.possible_params = (
+            tuple(
+                (x["name"], list) for x in self.all_fields.values() if x["is_exposed"]
+            )
+            + SUPERSEARCH_META_PARAMS
+            + histogram_fields
+        )
 
         permissions = {}
         for field_data in self.all_fields.values():
-            for perm in field_data['permissions_needed']:
+            for perm in field_data["permissions_needed"]:
                 permissions[perm] = True
 
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
 
     def get(self, **kwargs):
         # SuperSearch requires that the list of fields be passed to it.
-        kwargs['_fields'] = self.all_fields
+        kwargs["_fields"] = self.all_fields
 
         # Notice that here we use `SuperSearch` as the class, so that we
         # shortcut the `get` function in that class. The goal is to avoid
@@ -231,10 +227,6 @@ class Query(ESSocorroMiddleware):
 
     implementation = query.Query
 
-    required_params = (
-        'query',
-    )
+    required_params = ("query",)
 
-    possible_params = (
-        'indices',
-    )
+    possible_params = ("indices",)

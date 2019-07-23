@@ -44,7 +44,9 @@ class TestConnectionContext:
         template = es_conn.get_index_template()
         now = utc_now()
         current_index_name = now.strftime(template)
-        before_retention_policy = now - datetime.timedelta(weeks=es_conn.config.retention_policy)
+        before_retention_policy = now - datetime.timedelta(
+            weeks=es_conn.config.retention_policy
+        )
         old_index_name = before_retention_policy.strftime(template)
 
         es_conn.create_index(current_index_name)

@@ -16,7 +16,7 @@ from crashstats.cron import (
 )
 
 
-FREQUENCY_RE = re.compile(r'^(\d+)([^\d])$')
+FREQUENCY_RE = re.compile(r"^(\d+)([^\d])$")
 
 
 def convert_frequency(value):
@@ -37,18 +37,18 @@ def convert_frequency(value):
     number = int(match.group(1))
     unit = match.group(2)
 
-    if unit == 'h':
+    if unit == "h":
         number *= 60 * 60
-    elif unit == 'm':
+    elif unit == "m":
         number *= 60
-    elif unit == 'd':
+    elif unit == "d":
         number *= 60 * 60 * 24
     elif unit:
         raise FrequencyDefinitionError(value)
     return number
 
 
-VALID_TIME_RE = re.compile(r'^\d\d:\d\d$')
+VALID_TIME_RE = re.compile(r"^\d\d:\d\d$")
 
 
 def convert_time(value):
@@ -56,7 +56,7 @@ def convert_time(value):
     if not VALID_TIME_RE.match(value):
         raise TimeDefinitionError("Invalid definition of time %r" % value)
 
-    hh, mm = value.split(':')
+    hh, mm = value.split(":")
     if int(hh) > 23 or int(mm) > 59:
         raise TimeDefinitionError("Invalid definition of time %r" % value)
     return (int(hh), int(mm))
@@ -69,7 +69,7 @@ def get_matching_job_specs(cmds):
         a single job_spec, and list of cmds returns list of job_specs
 
     """
-    if cmds == ['all']:
+    if cmds == ["all"]:
         return JOBS
     if isinstance(cmds, str):
         return JOBS_MAP.get(cmds)
@@ -79,7 +79,7 @@ def get_matching_job_specs(cmds):
 def time_to_run(job_spec, job):
     """Determine whether it's time for this cmd to run."""
     now = timezone.now()
-    time_ = job_spec.get('time')
+    time_ = job_spec.get("time")
 
     if job.next_run is None:
         if time_:
@@ -98,7 +98,7 @@ def get_run_times(job_spec, last_success):
     now = timezone.now()
 
     # If this is not a backfill job, just run it
-    if not job_spec.get('backfill', False):
+    if not job_spec.get("backfill", False):
         yield now
         return
 
@@ -110,17 +110,12 @@ def get_run_times(job_spec, last_success):
     # Figure out the backfill times and yield those; base it on the
     # first_run datetime so the job doesn't drift
     when = last_success
-    if job_spec.get('time'):
+    if job_spec.get("time"):
         # So, reset the hour/minute part to always match the
         # intention.
-        hh, mm = convert_time(job_spec['time'])
-        when = when.replace(
-            hour=hh,
-            minute=mm,
-            second=0,
-            microsecond=0
-        )
-    seconds = convert_frequency(job_spec.get('frequency', DEFAULT_FREQUENCY))
+        hh, mm = convert_time(job_spec["time"])
+        when = when.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    seconds = convert_frequency(job_spec.get("frequency", DEFAULT_FREQUENCY))
     interval = datetime.timedelta(seconds=seconds)
     # Loop over each missed interval from the time of the last success,
     # forward by each interval until it reaches the time 'now'.
@@ -132,5 +127,5 @@ def get_run_times(job_spec, last_success):
 def format_datetime(value):
     """Return '' or '%Y-%m-%dT%H:%M' formatted datetime."""
     if not value:
-        return ''
-    return value.strftime('%Y-%m-%dT%H:%M')
+        return ""
+    return value.strftime("%Y-%m-%dT%H:%M")

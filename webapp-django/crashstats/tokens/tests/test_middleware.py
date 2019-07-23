@@ -27,13 +27,13 @@ class TestMiddleware(DjangoTestCase):
     middleware = APIAuthenticationMiddleware()
 
     def test_impropertly_configured(self):
-        request = RequestFactory().get('/')
+        request = RequestFactory().get("/")
         with pytest.raises(ImproperlyConfigured):
             self.middleware.process_request(request)
 
     def _get_request(self, **headers):
         # boilerplate stuff
-        request = RequestFactory(**headers).get('/')
+        request = RequestFactory(**headers).get("/")
         self.django_session_middleware.process_request(request)
         self.django_auth_middleware.process_request(request)
         assert request.user
@@ -44,19 +44,17 @@ class TestMiddleware(DjangoTestCase):
         assert self.middleware.process_request(request) is None
 
     def test_non_existant_token_key(self):
-        request = self._get_request(HTTP_AUTH_TOKEN='xxx')
+        request = self._get_request(HTTP_AUTH_TOKEN="xxx")
 
         response = self.middleware.process_request(request)
         assert response.status_code == 403
         # the response content will be JSON
         result = json.loads(response.content)
-        assert result['error'] == 'API Token not matched'
+        assert result["error"] == "API Token not matched"
 
     def test_expired_token(self):
-        user = User.objects.create(username='peterbe')
-        token = models.Token.objects.create(
-            user=user,
-        )
+        user = User.objects.create(username="peterbe")
+        token = models.Token.objects.create(user=user)
         token.expires -= datetime.timedelta(
             days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS
         )
@@ -66,13 +64,11 @@ class TestMiddleware(DjangoTestCase):
         response = self.middleware.process_request(request)
         assert response.status_code == 403
         result = json.loads(response.content)
-        assert result['error'] == 'API Token found but expired'
+        assert result["error"] == "API Token found but expired"
 
     def test_token_valid(self):
-        user = User.objects.create(username='peterbe')
-        token = models.Token.objects.create(
-            user=user,
-        )
+        user = User.objects.create(username="peterbe")
+        token = models.Token.objects.create(user=user)
         request = self._get_request(HTTP_AUTH_TOKEN=token.key)
 
         response = self.middleware.process_request(request)
@@ -80,42 +76,29 @@ class TestMiddleware(DjangoTestCase):
         assert request.user == user
 
     def test_token_permissions(self):
-        user = User.objects.create(username='peterbe')
-        token = models.Token.objects.create(
-            user=user,
-        )
-        ct, __ = ContentType.objects.get_or_create(
-            model='',
-            app_label='crashstats',
-        )
-        permission = Permission.objects.create(
-            codename='play',
-            content_type=ct
-        )
+        user = User.objects.create(username="peterbe")
+        token = models.Token.objects.create(user=user)
+        ct, __ = ContentType.objects.get_or_create(model="", app_label="crashstats")
+        permission = Permission.objects.create(codename="play", content_type=ct)
         token.permissions.add(permission)
-        Permission.objects.create(
-            codename='fire',
-            content_type=ct
-        )
+        Permission.objects.create(codename="fire", content_type=ct)
         # deliberately not adding this second permission
 
         request = self._get_request(HTTP_AUTH_TOKEN=token.key)
         # do the magic to the request
         self.middleware.process_request(request)
         assert request.user == user
-        assert request.user.has_perm('crashstats.play')
-        assert not request.user.has_perm('crashstats.fire')
+        assert request.user.has_perm("crashstats.play")
+        assert not request.user.has_perm("crashstats.fire")
 
     def test_token_on_inactive_user(self):
-        user = User.objects.create(username='peterbe')
+        user = User.objects.create(username="peterbe")
         user.is_active = False
         user.save()
-        token = models.Token.objects.create(
-            user=user,
-        )
+        token = models.Token.objects.create(user=user)
         request = self._get_request(HTTP_AUTH_TOKEN=token.key)
 
         response = self.middleware.process_request(request)
         assert response.status_code == 403
         result = json.loads(response.content)
-        assert result['error'] == 'User of API token not active'
+        assert result["error"] == "User of API token not active"

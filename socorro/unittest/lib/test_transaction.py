@@ -5,10 +5,7 @@
 import mock
 import pytest
 
-from socorro.lib.transaction import (
-    retry,
-    transaction_context
-)
+from socorro.lib.transaction import retry, transaction_context
 
 
 class Test_transaction_context(object):
@@ -25,7 +22,7 @@ class Test_transaction_context(object):
     def test_rollback_called(self):
         connection_context = mock.MagicMock()
 
-        exc = Exception('omg')
+        exc = Exception("omg")
 
         with pytest.raises(Exception) as exc_info:
             with transaction_context(connection_context):
@@ -47,11 +44,7 @@ class Test_retry(object):
         quit_check = mock.MagicMock()
         fun = mock.MagicMock()
 
-        retry(
-            connection_context,
-            quit_check,
-            fun
-        )
+        retry(connection_context, quit_check, fun)
 
         # Assert fun was called with the connection as the first argument
         fun.assert_called_with(conn)
@@ -60,7 +53,7 @@ class Test_retry(object):
         assert not quit_check.called
 
     def test_retry_once(self):
-        with mock.patch('socorro.lib.transaction.time.sleep') as sleep_mock:
+        with mock.patch("socorro.lib.transaction.time.sleep") as sleep_mock:
             sleep_mock.return_value = None
 
             conn = object()
@@ -68,7 +61,7 @@ class Test_retry(object):
             connection_context.return_value.__enter__.return_value = conn
             quit_check = mock.MagicMock()
 
-            exc = Exception('omg!')
+            exc = Exception("omg!")
 
             def fun(conn, call_count):
                 # The first time this is called, raise an exception; use
@@ -80,12 +73,7 @@ class Test_retry(object):
                 return 1
 
             call_count = []
-            retry(
-                connection_context,
-                quit_check,
-                fun,
-                call_count=call_count
-            )
+            retry(connection_context, quit_check, fun, call_count=call_count)
 
             # Assert fun was called twice
             assert len(call_count) == 2
@@ -94,7 +82,7 @@ class Test_retry(object):
             assert quit_check.call_count == 1
 
     def test_retry_and_die(self):
-        with mock.patch('socorro.lib.transaction.time.sleep') as sleep_mock:
+        with mock.patch("socorro.lib.transaction.time.sleep") as sleep_mock:
             sleep_mock.return_value = None
 
             conn = object()
@@ -102,7 +90,7 @@ class Test_retry(object):
             connection_context.return_value.__enter__.return_value = conn
             quit_check = mock.MagicMock()
 
-            exc = Exception('omg!')
+            exc = Exception("omg!")
 
             def fun(conn, call_count):
                 # Raise exceptions to simulate failing; use call_count to keep
@@ -112,12 +100,7 @@ class Test_retry(object):
 
             call_count = []
             with pytest.raises(Exception) as exc_info:
-                retry(
-                    connection_context,
-                    quit_check,
-                    fun,
-                    call_count=call_count
-                )
+                retry(connection_context, quit_check, fun, call_count=call_count)
 
             # Assert retry runs out of backoffs and throws the last error
             assert exc_info.value == exc

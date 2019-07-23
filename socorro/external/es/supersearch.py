@@ -10,27 +10,23 @@ from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
 
 from socorro.external.es.base import generate_list_of_indexes
-from socorro.lib import (
-    BadArgumentError,
-    MissingArgumentError,
-    datetimeutil,
-)
+from socorro.lib import BadArgumentError, MissingArgumentError, datetimeutil
 from socorro.lib.search_common import SearchBase
 
 
-BAD_INDEX_REGEX = re.compile(r'\[\[(.*)\] missing\]')
+BAD_INDEX_REGEX = re.compile(r"\[\[(.*)\] missing\]")
 ELASTICSEARCH_PARSE_EXCEPTION_REGEX = re.compile(
-    r'ElasticsearchParseException\[Failed to parse \[([^\]]+)\]\]'
+    r"ElasticsearchParseException\[Failed to parse \[([^\]]+)\]\]"
 )
 
 
 class SuperSearch(RequiredConfig, SearchBase):
     required_config = Namespace()
     required_config.add_option(
-        'elasticsearch_class',
-        doc='a class that implements the ES connection object',
-        default='socorro.external.es.connection_context.ConnectionContext',
-        from_string_converter=class_converter
+        "elasticsearch_class",
+        doc="a class that implements the ES connection object",
+        default="socorro.external.es.connection_context.ConnectionContext",
+        from_string_converter=class_converter,
     )
 
     def __init__(self, config):
@@ -51,21 +47,20 @@ class SuperSearch(RequiredConfig, SearchBase):
         start_date = None
         end_date = None
         for date in dates:
-            if '>' in date.operator:
+            if ">" in date.operator:
                 start_date = date.value
-            if '<' in date.operator:
+            if "<" in date.operator:
                 end_date = date.value
 
-        return generate_list_of_indexes(start_date, end_date, self.context.get_index_template())
+        return generate_list_of_indexes(
+            start_date, end_date, self.context.get_index_template()
+        )
 
     def get_full_field_name(self, field_data):
-        if not field_data['namespace']:
-            return field_data['in_database_name']
+        if not field_data["namespace"]:
+            return field_data["in_database_name"]
 
-        return '{}.{}'.format(
-            field_data['namespace'],
-            field_data['in_database_name'],
-        )
+        return "{}.{}".format(field_data["namespace"], field_data["in_database_name"])
 
     def format_field_names(self, hit):
         """Return a hit with each field's database name replaced by its
@@ -102,19 +97,18 @@ class SuperSearch(RequiredConfig, SearchBase):
         except KeyError:
             raise BadArgumentError(value, msg='Unknown field "%s"' % value)
 
-        if not field_['is_returned']:
+        if not field_["is_returned"]:
             # Returning this field is not allowed.
             raise BadArgumentError(
-                value,
-                msg='Field "%s" is not allowed to be returned' % value
+                value, msg='Field "%s" is not allowed to be returned' % value
             )
 
         field_name = self.get_full_field_name(field_)
 
-        if full and field_['has_full_version']:
+        if full and field_["has_full_version"]:
             # If the param has a full version, that means what matters
             # is the full string, and not its individual terms.
-            field_name += '.full'
+            field_name += ".full"
 
         return field_name
 
@@ -127,31 +121,31 @@ class SuperSearch(RequiredConfig, SearchBase):
         aggs = aggregations.to_dict()
 
         def _format(aggregation):
-            if 'buckets' not in aggregation:
+            if "buckets" not in aggregation:
                 # This is a cardinality aggregation, there are no terms.
                 return aggregation
 
-            for i, bucket in enumerate(aggregation['buckets']):
+            for i, bucket in enumerate(aggregation["buckets"]):
                 new_bucket = {
-                    'term': bucket.get('key_as_string', bucket['key']),
-                    'count': bucket['doc_count'],
+                    "term": bucket.get("key_as_string", bucket["key"]),
+                    "count": bucket["doc_count"],
                 }
                 facets = {}
 
                 for key in bucket:
                     # Go through all sub aggregations. Those are contained in
                     # all the keys that are not 'key' or 'count'.
-                    if key in ('key', 'key_as_string', 'doc_count'):
+                    if key in ("key", "key_as_string", "doc_count"):
                         continue
 
                     facets[key] = _format(bucket[key])
 
                 if facets:
-                    new_bucket['facets'] = facets
+                    new_bucket["facets"] = facets
 
-                aggregation['buckets'][i] = new_bucket
+                aggregation["buckets"][i] = new_bucket
 
-            return aggregation['buckets']
+            return aggregation["buckets"]
 
         for agg in aggs:
             aggs[agg] = _format(aggs[agg])
@@ -165,15 +159,15 @@ class SuperSearch(RequiredConfig, SearchBase):
         the database and can be accessed with the super_search_fields service.
         """
         # Require that the list of fields be passed.
-        if not kwargs.get('_fields'):
-            raise MissingArgumentError('_fields')
-        self.all_fields = kwargs['_fields']
+        if not kwargs.get("_fields"):
+            raise MissingArgumentError("_fields")
+        self.all_fields = kwargs["_fields"]
 
         # Filter parameters and raise potential errors.
         params = self.get_parameters(**kwargs)
 
         # Find the indices to use to optimize the elasticsearch query.
-        indices = self.get_indices(params['date'])
+        indices = self.get_indices(params["date"])
 
         # Create and configure the search object.
         search = Search(
@@ -189,29 +183,26 @@ class SuperSearch(RequiredConfig, SearchBase):
         for field, sub_params in params.items():
             sub_filters = None
             for param in sub_params:
-                if param.name.startswith('_'):
+                if param.name.startswith("_"):
                     # By default, all param values are turned into lists,
                     # even when they have and can have only one value.
                     # For those we know there can only be one value,
                     # so we just extract it from the made-up list.
-                    if param.name == '_results_offset':
+                    if param.name == "_results_offset":
                         results_from = param.value[0]
-                    elif param.name == '_results_number':
+                    elif param.name == "_results_number":
                         results_number = param.value[0]
                         if results_number > 1000:
                             raise BadArgumentError(
-                                '_results_number',
-                                msg=(
-                                    '_results_number cannot be greater '
-                                    'than 1,000'
-                                )
+                                "_results_number",
+                                msg=("_results_number cannot be greater " "than 1,000"),
                             )
                         if results_number < 0:
                             raise BadArgumentError(
-                                '_results_number',
-                                msg='_results_number cannot be negative'
+                                "_results_number",
+                                msg="_results_number cannot be negative",
                             )
-                    elif param.name == '_facets_size':
+                    elif param.name == "_facets_size":
                         facets_size = param.value[0]
                         # Why cap it?
                         # Because if the query is covering a lot of different
@@ -221,10 +212,10 @@ class SuperSearch(RequiredConfig, SearchBase):
                         # when there is plenty of data yields a 11MB JSON
                         # file.
                         if facets_size > 10000:
-                            raise BadArgumentError('_facets_size greater than 10,000')
+                            raise BadArgumentError("_facets_size greater than 10,000")
 
                     for f in self.histogram_fields:
-                        if param.name == '_histogram_interval.%s' % f:
+                        if param.name == "_histogram_interval.%s" % f:
                             histogram_intervals[f] = param.value[0]
 
                     # Don't use meta parameters in the query.
@@ -233,31 +224,26 @@ class SuperSearch(RequiredConfig, SearchBase):
                 field_data = self.all_fields[param.name]
                 name = self.get_full_field_name(field_data)
 
-                if param.data_type in ('date', 'datetime'):
+                if param.data_type in ("date", "datetime"):
                     param.value = datetimeutil.date_to_string(param.value)
-                elif param.data_type == 'enum':
+                elif param.data_type == "enum":
                     param.value = [x.lower() for x in param.value]
-                elif param.data_type == 'str' and not param.operator:
+                elif param.data_type == "str" and not param.operator:
                     param.value = [x.lower() for x in param.value]
 
                 # Operators needing wildcards, and the associated value
                 # transformation with said wildcards.
                 operator_wildcards = {
-                    '~': '*%s*',  # contains
-                    '^': '%s*',  # starts with
-                    '$': '*%s'  # ends with
+                    "~": "*%s*",  # contains
+                    "^": "%s*",  # starts with
+                    "$": "*%s",  # ends with
                 }
                 # Operators needing ranges, and the associated Elasticsearch
                 # comparison operator.
-                operator_range = {
-                    '>': 'gt',
-                    '<': 'lt',
-                    '>=': 'gte',
-                    '<=': 'lte',
-                }
+                operator_range = {">": "gt", "<": "lt", ">=": "gte", "<=": "lte"}
 
                 args = {}
-                filter_type = 'term'
+                filter_type = "term"
                 filter_value = None
 
                 if not param.operator:
@@ -265,56 +251,54 @@ class SuperSearch(RequiredConfig, SearchBase):
                     if len(param.value) == 1:
                         val = param.value[0]
 
-                        if not isinstance(val, str) or ' ' not in val:
+                        if not isinstance(val, str) or " " not in val:
                             # There's only one term and no white space, this
                             # is a simple term filter.
                             filter_value = val
                         else:
                             # If the term contains white spaces, we want to
                             # perform a phrase query.
-                            filter_type = 'query'
+                            filter_type = "query"
                             args = Q(
-                                'simple_query_string',
+                                "simple_query_string",
                                 query=param.value[0],
                                 fields=[name],
-                                default_operator='and',
+                                default_operator="and",
                             ).to_dict()
                     else:
                         # There are several terms, this is a terms filter.
-                        filter_type = 'terms'
+                        filter_type = "terms"
                         filter_value = param.value
-                elif param.operator == '=':
+                elif param.operator == "=":
                     # is exactly
-                    if field_data['has_full_version']:
-                        name = '%s.full' % name
+                    if field_data["has_full_version"]:
+                        name = "%s.full" % name
                     filter_value = param.value
                 elif param.operator in operator_range:
-                    filter_type = 'range'
-                    filter_value = {
-                        operator_range[param.operator]: param.value
-                    }
-                elif param.operator == '__null__':
-                    filter_type = 'missing'
-                    args['field'] = name
-                elif param.operator == '__true__':
-                    filter_type = 'term'
+                    filter_type = "range"
+                    filter_value = {operator_range[param.operator]: param.value}
+                elif param.operator == "__null__":
+                    filter_type = "missing"
+                    args["field"] = name
+                elif param.operator == "__true__":
+                    filter_type = "term"
                     filter_value = True
-                elif param.operator == '@':
-                    filter_type = 'regexp'
-                    if field_data['has_full_version']:
-                        name = '%s.full' % name
+                elif param.operator == "@":
+                    filter_type = "regexp"
+                    if field_data["has_full_version"]:
+                        name = "%s.full" % name
                     filter_value = param.value
                 elif param.operator in operator_wildcards:
-                    filter_type = 'query'
+                    filter_type = "query"
 
                     # Wildcard operations are better applied to a non-analyzed
                     # field (called "full") if there is one.
-                    if field_data['has_full_version']:
-                        name = '%s.full' % name
+                    if field_data["has_full_version"]:
+                        name = "%s.full" % name
 
                     q_args = {}
                     q_args[name] = operator_wildcards[param.operator] % param.value
-                    query = Q('wildcard', **q_args)
+                    query = Q("wildcard", **q_args)
                     args = query.to_dict()
 
                 if filter_value is not None:
@@ -327,7 +311,7 @@ class SuperSearch(RequiredConfig, SearchBase):
 
                     if sub_filters is None:
                         sub_filters = new_filter
-                    elif filter_type == 'range':
+                    elif filter_type == "range":
                         sub_filters &= new_filter
                     else:
                         sub_filters |= new_filter
@@ -337,7 +321,7 @@ class SuperSearch(RequiredConfig, SearchBase):
             if sub_filters is not None:
                 filters.append(sub_filters)
 
-        search = search.filter(F('bool', must=filters))
+        search = search.filter(F("bool", must=filters))
 
         # Restricting returned fields.
         fields = []
@@ -345,7 +329,7 @@ class SuperSearch(RequiredConfig, SearchBase):
         # We keep track of the requested columns in order to make sure we
         # return those column names and not aliases for example.
         self.request_columns = []
-        for param in params['_columns']:
+        for param in params["_columns"]:
             for value in param.value:
                 if not value:
                     continue
@@ -358,7 +342,7 @@ class SuperSearch(RequiredConfig, SearchBase):
 
         # Sorting.
         sort_fields = []
-        for param in params['_sort']:
+        for param in params["_sort"]:
             for value in param.value:
                 if not value:
                     continue
@@ -369,7 +353,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 # Example: given ['product', '-version'], the results will be
                 # sorted by ascending product then descending version.
                 desc = False
-                if value.startswith('-'):
+                if value.startswith("-"):
                     desc = True
                     value = value[1:]
 
@@ -378,7 +362,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 if desc:
                     # The underlying library understands that '-' means
                     # sorting in descending order.
-                    field_name = '-' + field_name
+                    field_name = "-" + field_name
 
                 sort_fields.append(field_name)
 
@@ -390,22 +374,14 @@ class SuperSearch(RequiredConfig, SearchBase):
 
         # Create facets.
         if facets_size:
-            self._create_aggregations(
-                params,
-                search,
-                facets_size,
-                histogram_intervals
-            )
+            self._create_aggregations(params, search, facets_size, histogram_intervals)
 
         # Query and compute results.
         hits = []
 
-        if params['_return_query'][0].value[0]:
+        if params["_return_query"][0].value[0]:
             # Return only the JSON query that would be sent to elasticsearch.
-            return {
-                'query': search.to_dict(),
-                'indices': indices,
-            }
+            return {"query": search.to_dict(), "indices": indices}
 
         errors = []
 
@@ -422,11 +398,11 @@ class SuperSearch(RequiredConfig, SearchBase):
 
                 total = search.count()
 
-                aggregations = getattr(results, 'aggregations', {})
+                aggregations = getattr(results, "aggregations", {})
                 if aggregations:
                     aggregations = self.format_aggregations(aggregations)
 
-                shards = getattr(results, '_shards', {})
+                shards = getattr(results, "_shards", {})
 
                 break  # Yay! Results!
             except NotFoundError as e:
@@ -439,10 +415,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                     # it does, better know it.
                     raise
 
-                errors.append({
-                    'type': 'missing_index',
-                    'index': missing_index,
-                })
+                errors.append({"type": "missing_index", "index": missing_index})
 
                 if indices:
                     # Update the list of indices and try again.
@@ -462,7 +435,9 @@ class SuperSearch(RequiredConfig, SearchBase):
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
                 try:
-                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(exception.error)[-1]
+                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(
+                        exception.error
+                    )[-1]
                     # Loop over the original parameters to try to figure
                     # out which *key* had the bad input.
                     for key, value in kwargs.items():
@@ -483,37 +458,25 @@ class SuperSearch(RequiredConfig, SearchBase):
                 failed_indices[failure.index] += 1
 
             for index, shards_count in failed_indices.items():
-                errors.append({
-                    'type': 'shards',
-                    'index': index,
-                    'shards_count': shards_count,
-                })
+                errors.append(
+                    {"type": "shards", "index": index, "shards_count": shards_count}
+                )
 
-        return {
-            'hits': hits,
-            'total': total,
-            'facets': aggregations,
-            'errors': errors,
-        }
+        return {"hits": hits, "total": total, "facets": aggregations, "errors": errors}
 
-    def _create_aggregations(
-        self, params, search, facets_size, histogram_intervals
-    ):
+    def _create_aggregations(self, params, search, facets_size, histogram_intervals):
         # Create facets.
-        for param in params['_facets']:
+        for param in params["_facets"]:
             self._add_second_level_aggs(
-                param,
-                search.aggs,
-                facets_size,
-                histogram_intervals,
+                param, search.aggs, facets_size, histogram_intervals
             )
 
         # Create sub-aggregations.
         for key in params:
-            if not key.startswith('_aggs.'):
+            if not key.startswith("_aggs."):
                 continue
 
-            fields = key.split('.')[1:]
+            fields = key.split(".")[1:]
 
             if fields[0] not in self.all_fields:
                 continue
@@ -531,71 +494,59 @@ class SuperSearch(RequiredConfig, SearchBase):
 
             for value in params[key]:
                 self._add_second_level_aggs(
-                    value,
-                    sub_bucket,
-                    facets_size,
-                    histogram_intervals,
+                    value, sub_bucket, facets_size, histogram_intervals
                 )
 
             search.aggs.bucket(fields[0], base_bucket)
 
         # Create histograms.
         for f in self.histogram_fields:
-            key = '_histogram.%s' % f
+            key = "_histogram.%s" % f
             if params.get(key):
                 histogram_bucket = self._get_histogram_agg(f, histogram_intervals)
 
                 for param in params[key]:
                     self._add_second_level_aggs(
-                        param,
-                        histogram_bucket,
-                        facets_size,
-                        histogram_intervals,
+                        param, histogram_bucket, facets_size, histogram_intervals
                     )
 
-                search.aggs.bucket('histogram_%s' % f, histogram_bucket)
+                search.aggs.bucket("histogram_%s" % f, histogram_bucket)
 
     def _get_histogram_agg(self, field, intervals):
         histogram_type = (
-            self.all_fields[field]['query_type'] == 'date' and
-            'date_histogram' or 'histogram'
+            self.all_fields[field]["query_type"] == "date"
+            and "date_histogram"
+            or "histogram"
         )
         return A(
-            histogram_type,
-            field=self.get_field_name(field),
-            interval=intervals[field],
+            histogram_type, field=self.get_field_name(field), interval=intervals[field]
         )
 
     def _get_cardinality_agg(self, field):
-        return A(
-            'cardinality',
-            field=self.get_field_name(field),
-        )
+        return A("cardinality", field=self.get_field_name(field))
 
     def _get_fields_agg(self, field, facets_size):
-        return A(
-            'terms',
-            field=self.get_field_name(field),
-            size=facets_size,
-        )
+        return A("terms", field=self.get_field_name(field), size=facets_size)
 
-    def _add_second_level_aggs(self, param, recipient, facets_size, histogram_intervals):
+    def _add_second_level_aggs(
+        self, param, recipient, facets_size, histogram_intervals
+    ):
         for field in param.value:
             if not field:
                 continue
 
-            if field.startswith('_histogram'):
-                field_name = field[len('_histogram.'):]
+            if field.startswith("_histogram"):
+                field_name = field[len("_histogram.") :]
                 if field_name not in self.histogram_fields:
                     continue
 
-                bucket_name = 'histogram_%s' % field_name
+                bucket_name = "histogram_%s" % field_name
                 bucket = self._get_histogram_agg(field_name, histogram_intervals)
 
-            elif field.startswith('_cardinality'):
-                field_name = field[len('_cardinality.'):]
+            elif field.startswith("_cardinality"):
+                field_name = field[len("_cardinality.") :]
 
-                bucket_name = 'cardinality_%s' % field_name
+                bucket_name = "cardinality_%s" % field_name
                 bucket = self._get_cardinality_agg(field_name)
 
             else:

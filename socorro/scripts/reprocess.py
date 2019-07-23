@@ -28,61 +28,68 @@ they should increase the number of processor nodes.
 
 """
 
-DEFAULT_HOST = 'https://crash-stats.mozilla.org'
+DEFAULT_HOST = "https://crash-stats.mozilla.org"
 CHUNK_SIZE = 50
 SLEEP_DEFAULT = 1
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        formatter_class=WrappedTextHelpFormatter,
-        description=DESCRIPTION.strip(),
+        formatter_class=WrappedTextHelpFormatter, description=DESCRIPTION.strip()
     )
     parser.add_argument(
-        '--sleep',
-        help='how long in seconds to sleep before submitting the next group',
+        "--sleep",
+        help="how long in seconds to sleep before submitting the next group",
         type=int,
-        default=SLEEP_DEFAULT
+        default=SLEEP_DEFAULT,
     )
-    parser.add_argument('--host', help='host for system to reprocess in', default=DEFAULT_HOST)
-    parser.add_argument('crashid', help='one or more crash ids to fetch data for',
-                        nargs='*', action=FallbackToPipeAction)
+    parser.add_argument(
+        "--host", help="host for system to reprocess in", default=DEFAULT_HOST
+    )
+    parser.add_argument(
+        "crashid",
+        help="one or more crash ids to fetch data for",
+        nargs="*",
+        action=FallbackToPipeAction,
+    )
 
     if argv is None:
         args = parser.parse_args()
     else:
         args = parser.parse_args(argv)
 
-    api_token = os.environ.get('SOCORRO_REPROCESS_API_TOKEN')
+    api_token = os.environ.get("SOCORRO_REPROCESS_API_TOKEN")
     if not api_token:
-        print('You need to set SOCORRO_REPROCESS_API_TOKEN in the environment')
+        print("You need to set SOCORRO_REPROCESS_API_TOKEN in the environment")
         return 1
 
-    url = args.host.rstrip('/') + '/api/Reprocessing/'
-    print('Sending reprocessing requests to: %s' % url)
+    url = args.host.rstrip("/") + "/api/Reprocessing/"
+    print("Sending reprocessing requests to: %s" % url)
     session = session_with_retries()
 
     crash_ids = args.crashid
-    print('Reprocessing %s crashes sleeping %s seconds between groups...' % (
-        len(crash_ids), args.sleep
-    ))
+    print(
+        "Reprocessing %s crashes sleeping %s seconds between groups..."
+        % (len(crash_ids), args.sleep)
+    )
 
     groups = list(chunked(crash_ids, CHUNK_SIZE))
     for i, group in enumerate(groups):
-        print('Processing group ending with %s ... (%s/%s)' % (group[-1], i + 1, len(groups)))
+        print(
+            "Processing group ending with %s ... (%s/%s)"
+            % (group[-1], i + 1, len(groups))
+        )
         resp = session.post(
-            url,
-            data={'crash_ids': group},
-            headers={
-                'Auth-Token': api_token
-            }
+            url, data={"crash_ids": group}, headers={"Auth-Token": api_token}
         )
         if resp.status_code != 200:
-            print('Got back non-200 status code: %s %s' % (resp.status_code, resp.content))
+            print(
+                "Got back non-200 status code: %s %s" % (resp.status_code, resp.content)
+            )
             continue
 
         # NOTE(willkg): We sleep here because the webapp has a bunch of rate limiting and we don't
         # want to trigger that. It'd be nice if we didn't have to do this.
         time.sleep(args.sleep)
 
-    print('Done!')
+    print("Done!")

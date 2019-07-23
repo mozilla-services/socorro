@@ -27,11 +27,9 @@ class JavaException(object):
         can have exception messages, too.
 
         """
-        text = '%s\n%s' % (
+        text = "%s\n%s" % (
             self.exception_class,
-            '\n'.join([
-                '\t%s' % line for line in self.stack
-            ])
+            "\n".join(["\t%s" % line for line in self.stack]),
         )
         return text
 
@@ -54,16 +52,13 @@ def parse_java_stack_trace(text):
 
     """
     if not text:
-        raise MalformedJavaStackTrace('no text blob')
+        raise MalformedJavaStackTrace("no text blob")
 
     stage = CLASS_MESSAGE
     lines = peekable(text.splitlines())
 
     new_exc = JavaException(
-        exception_class='',
-        exception_message='',
-        stack=[],
-        additional=[]
+        exception_class="", exception_message="", stack=[], additional=[]
     )
 
     for line in lines:
@@ -71,16 +66,16 @@ def parse_java_stack_trace(text):
             continue
 
         if stage is CLASS_MESSAGE:
-            if ':' in line:
-                cls, msg = line.split(':', 1)
+            if ":" in line:
+                cls, msg = line.split(":", 1)
             else:
-                cls, msg = line, ''
+                cls, msg = line, ""
 
             # Append lines to the message until one of them starts with
             # a tab.
             next_line = lines.peek(None)
-            while next_line and not next_line.startswith('\tat '):
-                msg = msg + '\n' + next(lines)
+            while next_line and not next_line.startswith("\tat "):
+                msg = msg + "\n" + next(lines)
                 next_line = lines.peek(None)
 
             new_exc.exception_class = cls.strip()
@@ -90,20 +85,22 @@ def parse_java_stack_trace(text):
 
         elif stage is STACK:
             # Verify this has a tab at the beginning of the line
-            if line[0] != '\t':
-                raise MalformedJavaStackTrace('stack line missing tab')
+            if line[0] != "\t":
+                raise MalformedJavaStackTrace("stack line missing tab")
 
             # Drop first tab from the line
             new_exc.stack.append(line[1:])
 
             next_line = lines.peek(None)
-            if next_line and next_line.strip().startswith(('Suppressed:', 'Caused by:')):
+            if next_line and next_line.strip().startswith(
+                ("Suppressed:", "Caused by:")
+            ):
                 stage = ADDITIONAL
 
         elif stage is ADDITIONAL:
             # Verify this has a tab at the beginning of the line
-            if line[0] != '\t':
-                raise MalformedJavaStackTrace('additional line missing tab')
+            if line[0] != "\t":
+                raise MalformedJavaStackTrace("additional line missing tab")
 
             # Drop first tab from the line
             new_exc.additional.append(line[1:])

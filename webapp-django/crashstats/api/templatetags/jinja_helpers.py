@@ -32,51 +32,45 @@ def describe_friendly_type(type_):
 
 @library.global_function
 def make_test_input(parameter, defaults):
-    if parameter['type'] is bool:
+    if parameter["type"] is bool:
         # If it's optional, make it possible to select "Not set",
-        if parameter['required']:
-            raise NotImplementedError(
-                'required booleans are not supported'
-            )
+        if parameter["required"]:
+            raise NotImplementedError("required booleans are not supported")
         else:
-            widget = RadioSelect(choices=(
-                ('', 'Not set'),
-                ('false', 'False'),
-                ('true', 'True'),
-            ))
-            return widget.render(parameter['name'], '')
+            widget = RadioSelect(
+                choices=(("", "Not set"), ("false", "False"), ("true", "True"))
+            )
+            return widget.render(parameter["name"], "")
 
-    template = u'<input type="%(type)s" name="%(name)s"'
-    data = {
-        'name': parameter['name'],
-    }
+    template = '<input type="%(type)s" name="%(name)s"'
+    data = {"name": parameter["name"]}
     classes = []
-    if parameter['required']:
-        classes.append('required')
+    if parameter["required"]:
+        classes.append("required")
 
-    if parameter['type'] is datetime.date:
-        data['type'] = 'date'
+    if parameter["type"] is datetime.date:
+        data["type"] = "date"
     else:
-        data['type'] = 'text'
-    if parameter['type'] is not str:
-        classes.append('validate-%s' % parameter['type'].__name__)
-    if defaults.get(parameter['name']):
-        data['value'] = quote(str(defaults.get(parameter['name'])))
+        data["type"] = "text"
+    if parameter["type"] is not str:
+        classes.append("validate-%s" % parameter["type"].__name__)
+    if defaults.get(parameter["name"]):
+        data["value"] = quote(str(defaults.get(parameter["name"])))
     else:
-        data['value'] = ''
+        data["value"] = ""
 
-    data['classes'] = ' '.join(classes)
-    if data['classes']:
+    data["classes"] = " ".join(classes)
+    if data["classes"]:
         template += ' class="%(classes)s"'
-    if data['value']:
+    if data["value"]:
         template += ' value="%(value)s"'
-    template += '>'
+    template += ">"
     html = template % data
     return jinja2.Markup(html)
 
 
 @library.filter
-def pluralize(count, multiple='s', single=''):
+def pluralize(count, multiple="s", single=""):
     if count == 1:
         return single
     return multiple

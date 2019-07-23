@@ -9,7 +9,7 @@ import markus
 
 
 class CrashstatsConfig(AppConfig):
-    name = 'crashstats.crashstats'
+    name = "crashstats.crashstats"
 
     def ready(self):
         # Import signals kicking off signal registration

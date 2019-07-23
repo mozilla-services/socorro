@@ -14,10 +14,7 @@ import os
 # This path is hard-coded to the repository root in .circleci/config.yml. This
 # file is generated during deploys to server environments.
 REVISION_DATA_PATH = os.path.join(
-    os.path.dirname(__file__),
-    os.pardir,
-    os.pardir,
-    'version.json'
+    os.path.dirname(__file__), os.pardir, os.pardir, "version.json"
 )
 
 
@@ -41,7 +38,7 @@ def get_revision_data():
 
     """
     if os.path.exists(REVISION_DATA_PATH):
-        with open(REVISION_DATA_PATH, 'r') as fp:
+        with open(REVISION_DATA_PATH, "r") as fp:
             return json.load(fp)
     return {}
 
@@ -59,4 +56,4 @@ def get_version(revision_data=None):
     """
     if revision_data is None:
         revision_data = get_revision_data()
-    return revision_data.get('version') or revision_data.get('commit') or 'unknown'
+    return revision_data.get("version") or revision_data.get("commit") or "unknown"

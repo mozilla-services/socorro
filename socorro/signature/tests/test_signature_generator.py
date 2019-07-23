@@ -11,8 +11,8 @@ from . import WHATEVER
 # NOTE(willkg): We do this so that we can extract signature generation into its
 # own namespace as an external library. This allows the tests to run if it's in
 # "siggen" or "socorro.signature".
-base_module = '.'.join(__name__.split('.')[:-2])
-generator = importlib.import_module(base_module + '.generator')
+base_module = ".".join(__name__.split(".")[:-2])
+generator = importlib.import_module(base_module + ".generator")
 
 
 class TestSignatureGenerator:
@@ -23,9 +23,9 @@ class TestSignatureGenerator:
         # NOTE(willkg): This is what the current pipeline yields. If any of those parts change, this
         # might change, too. The point of this test is that we can pass in empty dicts and the
         # SignatureGenerator and the rules in the default pipeline don't fall over.
-        assert ret.signature == 'EMPTY: no crashing thread identified'
+        assert ret.signature == "EMPTY: no crashing thread identified"
         assert ret.notes == [
-            'SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed'  # noqa
+            "SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed"  # noqa
         ]
 
     def test_failing_rule(self):
@@ -35,13 +35,13 @@ class TestSignatureGenerator:
         generator_obj = generator.SignatureGenerator(pipeline=[BadRule()])
         ret = generator_obj.generate({})
 
-        assert ret.signature == ''
+        assert ret.signature == ""
         assert ret.notes == [
-            'BadRule: Rule failed: \'BadRule\' object has no attribute \'predicate\''
+            "BadRule: Rule failed: 'BadRule' object has no attribute 'predicate'"
         ]
 
     def test_error_handler(self):
-        exc_value = Exception('Cough')
+        exc_value = Exception("Cough")
 
         class BadRule(object):
             def predicate(self, crash_data, result):
@@ -52,15 +52,13 @@ class TestSignatureGenerator:
         generator_obj = generator.SignatureGenerator(
             pipeline=[BadRule()], error_handler=error_handler
         )
-        generator_obj.generate({'uuid': 'ou812'})
+        generator_obj.generate({"uuid": "ou812"})
 
         # Make sure error_handler was called with right extra
-        assert (
-            error_handler.call_args_list == [
-                mock.call(
-                    {'uuid': 'ou812'},
-                    exc_info=(Exception, exc_value, WHATEVER),
-                    extra={'rule': 'BadRule'}
-                )
-            ]
-        )
+        assert error_handler.call_args_list == [
+            mock.call(
+                {"uuid": "ou812"},
+                exc_info=(Exception, exc_value, WHATEVER),
+                extra={"rule": "BadRule"},
+            )
+        ]

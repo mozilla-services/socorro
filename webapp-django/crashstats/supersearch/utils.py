@@ -25,18 +25,18 @@ def get_date_boundaries(params):
     start_date = None
     end_date = None
 
-    if not params.get('date'):
+    if not params.get("date"):
         end_date = timezone.now()
         start_date = end_date - default_date_range
     else:
-        for param in params['date']:
-            d = isodate.parse_datetime(
-                split_on_operator(param)[1]
-            ).replace(tzinfo=timezone.utc)
+        for param in params["date"]:
+            d = isodate.parse_datetime(split_on_operator(param)[1]).replace(
+                tzinfo=timezone.utc
+            )
 
-            if param.startswith('<') and (not end_date or end_date < d):
+            if param.startswith("<") and (not end_date or end_date < d):
                 end_date = d
-            if param.startswith('>') and (not start_date or start_date > d):
+            if param.startswith(">") and (not start_date or start_date > d):
                 start_date = d
 
         if not end_date:

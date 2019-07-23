@@ -4,4 +4,4 @@
 
 # Load the socorro/unittest/conftest.py file so webapp tests can use those
 # pytest fixtures
-pytest_plugins = ['socorro.unittest.conftest']
+pytest_plugins = ["socorro.unittest.conftest"]

@@ -10,8 +10,8 @@ from crashstats.cron.models import Job
 
 def test_reset_job(db):
     """Verify cronresetjob works."""
-    call_command('cronmarksuccess')
+    call_command("cronmarksuccess")
     assert Job.objects.all().count() == len(JOBS)
 
-    call_command('cronreset', 'all')
+    call_command("cronreset", "all")
     assert Job.objects.all().count() == 0

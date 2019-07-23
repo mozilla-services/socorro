@@ -43,7 +43,7 @@ def transaction_context(connection_context):
             try:
                 conn.rollback()
             except Exception:
-                conn.logger.exception('cannot rollback')
+                conn.logger.exception("cannot rollback")
                 raise
             raise
 

@@ -30,7 +30,7 @@ class Response(object):
     @property
     def text(self):
         # Similar to content but with the right encoding
-        return str(self.content, 'utf-8')
+        return str(self.content, "utf-8")
 
     def json(self):
         return self.raw
@@ -61,19 +61,22 @@ class ProductVersionsMixin(object):
                 pass
 
     """
+
     def setUp(self):
         super().setUp()
         cache.clear()
 
         # Create products
-        Product.objects.create(product_name='WaterWolf', sort=1, is_active=True)
-        Product.objects.create(product_name='NightTrain', sort=2, is_active=True)
-        Product.objects.create(product_name='SeaMonkey', sort=3, is_active=True)
+        Product.objects.create(product_name="WaterWolf", sort=1, is_active=True)
+        Product.objects.create(product_name="NightTrain", sort=2, is_active=True)
+        Product.objects.create(product_name="SeaMonkey", sort=3, is_active=True)
 
         # Create product versions
-        self.mock_gvfp_patcher = mock.patch('crashstats.crashstats.utils.get_versions_for_product')
+        self.mock_gvfp_patcher = mock.patch(
+            "crashstats.crashstats.utils.get_versions_for_product"
+        )
         self.mock_gvfp = self.mock_gvfp_patcher.start()
-        self.set_product_versions(['20.0', '19.1', '19.0', '18.0'])
+        self.set_product_versions(["20.0", "19.1", "19.0", "18.0"])
 
     def tearDown(self):
         self.mock_gvfp_patcher.stop()
@@ -88,14 +91,14 @@ class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
         super().setUp()
 
         # Tests assume and require a non-persistent cache backend
-        assert 'LocMemCache' in settings.CACHES['default']['BACKEND']
+        assert "LocMemCache" in settings.CACHES["default"]["BACKEND"]
 
         def mocked_supersearchfields(**params):
             results = copy.deepcopy(FIELDS)
             # to be realistic we want to introduce some dupes that have a
             # different key but its `in_database_name` is one that is already
             # in the hardcoded list (the baseline)
-            results['accessibility2'] = results['accessibility']
+            results["accessibility2"] = results["accessibility"]
             return results
 
         supersearchfields_mock_get = mock.Mock()
@@ -109,20 +112,15 @@ class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
         cache.clear()
         super().tearDown()
 
-    def _add_permission(self, user, codename, group_name='Hackers'):
+    def _add_permission(self, user, codename, group_name="Hackers"):
         group = self._create_group_with_permission(codename)
         user.groups.add(group)
 
-    def _create_group_with_permission(self, codename, group_name='Group'):
-        appname = 'crashstats'
-        ct, __ = ContentType.objects.get_or_create(
-            model='',
-            app_label=appname,
-        )
+    def _create_group_with_permission(self, codename, group_name="Group"):
+        appname = "crashstats"
+        ct, __ = ContentType.objects.get_or_create(model="", app_label=appname)
         permission, __ = Permission.objects.get_or_create(
-            codename=codename,
-            name=PERMISSIONS[codename],
-            content_type=ct
+            codename=codename, name=PERMISSIONS[codename], content_type=ct
         )
         group, __ = Group.objects.get_or_create(name=group_name)
         group.permissions.add(permission)
@@ -131,11 +129,4 @@ class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
     @staticmethod
     def only_certain_columns(hits, columns):
         """Return new list where dicts only have specified keys"""
-        return [
-            dict(
-                (k, x[k])
-                for k in x
-                if k in columns
-            )
-            for x in hits
-        ]
+        return [dict((k, x[k]) for k in x if k in columns) for x in hits]

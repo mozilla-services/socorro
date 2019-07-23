@@ -10,14 +10,19 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('status', '0001_initial'),
-    ]
+    dependencies = [("status", "0001_initial")]
 
     operations = [
         migrations.AlterField(
-            model_name='statusmessage',
-            name='severity',
-            field=models.CharField(choices=[(b'info', b'Info'), (b'warning', b'Warning'), (b'critical', b'Critical')], max_length=20),
-        ),
+            model_name="statusmessage",
+            name="severity",
+            field=models.CharField(
+                choices=[
+                    (b"info", b"Info"),
+                    (b"warning", b"Warning"),
+                    (b"critical", b"Critical"),
+                ],
+                max_length=20,
+            ),
+        )
     ]

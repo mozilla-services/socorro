@@ -5,19 +5,21 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('cron', '0004_auto_20181214_1951'),
-    ]
+    dependencies = [("cron", "0004_auto_20181214_1951")]
 
     operations = [
         migrations.AlterField(
-            model_name='job',
-            name='app_name',
-            field=models.CharField(help_text='the Django command', max_length=100, unique=True),
+            model_name="job",
+            name="app_name",
+            field=models.CharField(
+                help_text="the Django command", max_length=100, unique=True
+            ),
         ),
         migrations.AlterField(
-            model_name='log',
-            name='app_name',
-            field=models.CharField(help_text='the Django command this log entry is for', max_length=100),
+            model_name="log",
+            name="app_name",
+            field=models.CharField(
+                help_text="the Django command this log entry is for", max_length=100
+            ),
         ),
     ]

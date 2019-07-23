@@ -9,11 +9,7 @@ import re
 
 from configman import RequiredConfig, Namespace, class_converter
 
-from socorro.lib import (
-    DatabaseError,
-    MissingArgumentError,
-    ResourceNotFound,
-)
+from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.supersearch import BAD_INDEX_REGEX
 from socorro.lib import datetimeutil, external_common
@@ -24,16 +20,13 @@ class Query(RequiredConfig):
 
     required_config = Namespace()
     required_config.add_option(
-        'elasticsearch_class',
-        doc='a class that implements the ES connection object',
-        default='socorro.external.es.connection_context.ConnectionContext',
-        from_string_converter=class_converter
+        "elasticsearch_class",
+        doc="a class that implements the ES connection object",
+        default="socorro.external.es.connection_context.ConnectionContext",
+        from_string_converter=class_converter,
     )
 
-    filters = [
-        ('query', None, 'json'),
-        ('indices', None, ['list', 'str']),
-    ]
+    filters = [("query", None, "json"), ("indices", None, ["list", "str"])]
 
     def __init__(self, config):
         self.config = config
@@ -48,7 +41,7 @@ class Query(RequiredConfig):
         params = external_common.parse_arguments(self.filters, kwargs)
 
         if not params.query:
-            raise MissingArgumentError('query')
+            raise MissingArgumentError("query")
 
         # Set indices.
         indices = []
@@ -59,7 +52,7 @@ class Query(RequiredConfig):
 
             index_template = self.context.get_index_template()
             indices = generate_list_of_indexes(last_week, today, index_template)
-        elif len(params.indices) == 1 and params.indices[0] == 'ALL':
+        elif len(params.indices) == 1 and params.indices[0] == "ALL":
             # If we want all indices, just do nothing.
             pass
         else:
@@ -67,8 +60,8 @@ class Query(RequiredConfig):
 
         search_args = {}
         if indices:
-            search_args['index'] = indices
-            search_args['doc_type'] = self.context.get_doctype()
+            search_args["index"] = indices
+            search_args["doc_type"] = self.context.get_doctype()
 
         connection = self.get_connection()
 
@@ -76,7 +69,9 @@ class Query(RequiredConfig):
             results = connection.search(body=json.dumps(params.query), **search_args)
         except elasticsearch.exceptions.NotFoundError as e:
             missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
-            raise ResourceNotFound("elasticsearch index '%s' does not exist" % missing_index)
+            raise ResourceNotFound(
+                "elasticsearch index '%s' does not exist" % missing_index
+            )
         except elasticsearch.exceptions.TransportError as e:
             raise DatabaseError(e)
 

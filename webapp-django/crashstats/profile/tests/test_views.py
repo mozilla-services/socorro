@@ -15,43 +15,40 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 class TestViews(BaseTestViews):
     def test_profile(self):
         def mocked_supersearch_get(**params):
-            assert '_columns' in params
-            assert '_sort' in params
-            assert 'email' in params
-            assert params['email'] == ['test@example.com']
+            assert "_columns" in params
+            assert "_sort" in params
+            assert "email" in params
+            assert params["email"] == ["test@example.com"]
 
             results = {
-                'hits': [
+                "hits": [
                     {
-                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130802',
-                        'date': '2000-01-02T00:00:00'
+                        "uuid": "1234abcd-ef56-7890-ab12-abcdef130802",
+                        "date": "2000-01-02T00:00:00",
                     },
                     {
-                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
-                        'date': '2000-01-01T00:00:00'
+                        "uuid": "1234abcd-ef56-7890-ab12-abcdef130801",
+                        "date": "2000-01-01T00:00:00",
                     },
                 ],
-                'total': 2
+                "total": 2,
             }
             return results
 
         def mocked_supersearch_get_no_data(**params):
-            assert 'email' in params
-            assert params['email'] == ['test@example.com']
+            assert "email" in params
+            assert params["email"] == ["test@example.com"]
 
-            return {
-                'hits': [],
-                'total': 0
-            }
+            return {"hits": [], "total": 0}
 
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
-        url = reverse('profile:profile')
+        url = reverse("profile:profile")
 
         # Test that the user must be signed in.
         response = self.client.get(url, follow=False)
         assert response.status_code == 302
-        assert response.url == reverse('crashstats:login') + '?next=%s' % url
+        assert response.url == reverse("crashstats:login") + "?next=%s" % url
 
         # Now log in for the remaining tests.
         user = self._login()
@@ -59,58 +56,56 @@ class TestViews(BaseTestViews):
         # Test with results and check email is there.
         response = self.client.get(url)
         assert response.status_code == 200
-        assert '1234abcd-ef56-7890-ab12-abcdef130801' in smart_text(response.content)
-        assert '1234abcd-ef56-7890-ab12-abcdef130802' in smart_text(response.content)
-        assert 'test@example.com' in smart_text(response.content)
+        assert "1234abcd-ef56-7890-ab12-abcdef130801" in smart_text(response.content)
+        assert "1234abcd-ef56-7890-ab12-abcdef130802" in smart_text(response.content)
+        assert "test@example.com" in smart_text(response.content)
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get_no_data
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get_no_data
+        )
 
         # Test with no results.
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'test@example.com' in smart_text(response.content)
-        assert 'no crash report' in smart_text(response.content)
+        assert "test@example.com" in smart_text(response.content)
+        assert "no crash report" in smart_text(response.content)
 
         # Make some permissions.
-        self._create_group_with_permission(
-            'view_pii', 'Group A'
-        )
-        group_b = self._create_group_with_permission(
-            'view_exploitability', 'Group B'
-        )
+        self._create_group_with_permission("view_pii", "Group A")
+        group_b = self._create_group_with_permission("view_exploitability", "Group B")
         user.groups.add(group_b)
-        assert not user.has_perm('crashstats.view_pii')
-        assert user.has_perm('crashstats.view_exploitability')
+        assert not user.has_perm("crashstats.view_pii")
+        assert user.has_perm("crashstats.view_exploitability")
 
         # Test permissions.
         response = self.client.get(url)
-        assert PERMISSIONS['view_pii'] in smart_text(response.content)
-        assert PERMISSIONS['view_exploitability'] in smart_text(response.content)
+        assert PERMISSIONS["view_pii"] in smart_text(response.content)
+        assert PERMISSIONS["view_exploitability"] in smart_text(response.content)
         doc = pyquery.PyQuery(response.content)
-        for row in doc('table.permissions tbody tr'):
+        for row in doc("table.permissions tbody tr"):
             cells = []
-            for td in doc('td', row):
+            for td in doc("td", row):
                 cells.append(td.text.strip())
-            if cells[0] == PERMISSIONS['view_pii']:
-                assert cells[1] == 'No'
-            elif cells[0] == PERMISSIONS['view_exploitability']:
-                assert cells[1] == 'Yes!'
+            if cells[0] == PERMISSIONS["view_pii"]:
+                assert cells[1] == "No"
+            elif cells[0] == PERMISSIONS["view_exploitability"]:
+                assert cells[1] == "Yes!"
 
         # If the user ceases to be active, this page should redirect instead
         user.is_active = False
         user.save()
         response = self.client.get(url, follow=False)
         assert response.status_code == 302
-        assert response.url == reverse('crashstats:login') + '?next=%s' % url
+        assert response.url == reverse("crashstats:login") + "?next=%s" % url
 
     def test_homepage_profile_footer(self):
         """This test isn't specifically for the profile page, because
         it ultimately tests the crashstats_base.html template. But
         that template has a link to the profile page."""
-        url = reverse('crashstats:product_home', args=('WaterWolf',))
+        url = reverse("crashstats:product_home", args=("WaterWolf",))
         response = self.client.get(url)
         assert response.status_code == 200
-        profile_url = reverse('profile:profile')
+        profile_url = reverse("profile:profile")
         assert profile_url not in smart_text(response.content)
 
         # Render again when signed in

@@ -49,7 +49,7 @@ class TestTaskManager(object):
         config.quit_on_empty_queue = False
 
         class MyTaskManager(TaskManager):
-            def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=''):
+            def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
                 try:
                     if self.count >= 2:
                         self.quit = True

@@ -11,12 +11,12 @@ import tempfile
 from configman import Namespace, RequiredConfig
 
 
-if os.uname()[0] != 'Linux':
+if os.uname()[0] != "Linux":
     # You're not on Linux! Avoid pyinotify like the plague
 
     warning_message = (
-        'SymbolLRUCache is disabled on operating systems that does not '
-        'have inotify in its kernel.'
+        "SymbolLRUCache is disabled on operating systems that does not "
+        "have inotify in its kernel."
     )
 
     class ProcessEvent(object):
@@ -31,6 +31,7 @@ if os.uname()[0] != 'Linux':
     # Warn about the fact that SymbolLRUCache is going to be borked
     # just by trying to import this.
     import warnings
+
     warnings.warn(warning_message)
 else:
     import pyinotify
@@ -46,55 +47,55 @@ class EventHandler(ProcessEvent):
     def process_IN_DELETE(self, event):
         if not event.dir:
             if self.verbosity == 1:
-                sys.stdout.write('D')
+                sys.stdout.write("D")
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.logger.debug('D  %s', event.pathname)
+                self.monitor.logger.debug("D  %s", event.pathname)
             self.monitor._remove_cached(event.pathname)
 
     def process_IN_CREATE(self, event):
         if not event.dir:
             if self.verbosity == 1:
-                sys.stdout.write('C')
+                sys.stdout.write("C")
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.logger.debug('C  %s', event.pathname)
+                self.monitor.logger.debug("C  %s", event.pathname)
             self.monitor._update_cache(event.pathname)
 
     def process_IN_MOVED_FROM(self, event):
         if not event.dir:
             if self.verbosity == 1:
-                sys.stdout.write('M')
+                sys.stdout.write("M")
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.logger.debug('M> %s', event.pathname)
+                self.monitor.logger.debug("M> %s", event.pathname)
             self.monitor._remove_cached(event.pathname)
 
     def process_IN_MOVED_TO(self, event):
         if not event.dir:
             if self.verbosity == 1:
-                sys.stdout.write('M')
+                sys.stdout.write("M")
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.logger.debug('M< %s', event.pathname)
+                self.monitor.logger.debug("M< %s", event.pathname)
             self.monitor._update_cache(event.pathname)
 
     def process_IN_OPEN(self, event):
         if not event.dir:
             if self.verbosity == 1:
-                sys.stdout.write('O')
+                sys.stdout.write("O")
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.logger.debug('O  %s', event.pathname)
+                self.monitor.logger.debug("O  %s", event.pathname)
             self.monitor._update_cache(event.pathname)
 
     def process_IN_MODIFY(self, event):
         if not event.dir:
             if self.verbosity == 1:
-                sys.stdout.write('M')
+                sys.stdout.write("M")
                 sys.stdout.flush()
             elif self.verbosity == 2:
-                self.monitor.logger.debug('M  %s', event.pathname)
+                self.monitor.logger.debug("M  %s", event.pathname)
             self.monitor._update_cache(event.pathname, update_size=True)
 
 
@@ -104,11 +105,7 @@ def from_string_to_parse_size(size_as_string):
     bytes, with the suffixes representing kilobytes, megabytes or gigabytes
     respectively.
     """
-    suffixes = {
-        'k': 1024,
-        'M': 1024 ** 2,
-        'G': 1024 ** 3,
-    }
+    suffixes = {"k": 1024, "M": 1024 ** 2, "G": 1024 ** 3}
     if not isinstance(size_as_string, str) or not size_as_string:
         raise ValueError('Bad size value: "%s"' % size_as_string)
 
@@ -123,31 +120,31 @@ def from_string_to_parse_size(size_as_string):
 
 class SymbolLRUCacheManager(RequiredConfig):
     """for cleaning up the symbols cache"""
+
     required_config = Namespace()
     required_config.add_option(
-        'symbol_cache_path',
+        "symbol_cache_path",
         doc="the cache directory to automatically remove files from",
-        default=os.path.join(tempfile.gettempdir(), 'symbols')
+        default=os.path.join(tempfile.gettempdir(), "symbols"),
     )
     required_config.add_option(
-        'symbol_cache_size',
+        "symbol_cache_size",
         doc="the maximum size of the symbols cache",
-        default='1G',
-        from_string_converter=from_string_to_parse_size
+        default="1G",
+        from_string_converter=from_string_to_parse_size,
     )
     required_config.add_option(
-        'verbosity',
-        doc="how chatty should this be? 1 - writes to stdout,"
-            " 2 - uses the logger",
+        "verbosity",
+        doc="how chatty should this be? 1 - writes to stdout," " 2 - uses the logger",
         default=0,
-        from_string_converter=int
+        from_string_converter=int,
     )
 
     def __init__(self, config, quit_check_callback=None):
         """constructor for a registration object that runs an LRU cache
        cleaner"""
         self.config = config
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
         self.directory = os.path.abspath(config.symbol_cache_path)
         self.max_size = config.symbol_cache_size
@@ -159,15 +156,15 @@ class SymbolLRUCacheManager(RequiredConfig):
         self._wm = pyinotify.WatchManager()
         self._handler = EventHandler(self, verbosity=config.verbosity)
         self._notifier = pyinotify.ThreadedNotifier(self._wm, self._handler)
-        mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE \
-            | pyinotify.IN_OPEN | pyinotify.IN_MOVED_FROM \
-            | pyinotify.IN_MOVED_TO | pyinotify.IN_MODIFY
-        self._wdd = self._wm.add_watch(
-            self.directory,
-            mask,
-            rec=True,
-            auto_add=True
+        mask = (
+            pyinotify.IN_DELETE
+            | pyinotify.IN_CREATE
+            | pyinotify.IN_OPEN
+            | pyinotify.IN_MOVED_FROM
+            | pyinotify.IN_MOVED_TO
+            | pyinotify.IN_MODIFY
         )
+        self._wdd = self._wm.add_watch(self.directory, mask, rec=True, auto_add=True)
         # Load existing files into the cache.
         self._get_existing_files(self.directory)
         self._notifier.start()
@@ -177,10 +174,10 @@ class SymbolLRUCacheManager(RequiredConfig):
         return len(self._lru)
 
     def _rm_empty_dirs(self, path):
-        '''
+        """
         Attempt to remove any empty directories that are parents of path
         and children of self.directory.
-        '''
+        """
         path = os.path.dirname(path)
         while not os.path.samefile(path, self.directory):
             if not os.listdir(path):
@@ -199,7 +196,7 @@ class SymbolLRUCacheManager(RequiredConfig):
             try:
                 size = os.stat(path).st_size
             except OSError:
-                self.logger.warning('file was not found while cleaning cache: %s', path)
+                self.logger.warning("file was not found while cleaning cache: %s", path)
                 return
 
             self.total_size += size
@@ -211,7 +208,7 @@ class SymbolLRUCacheManager(RequiredConfig):
                 os.unlink(rm_path)
                 self._rm_empty_dirs(rm_path)
                 if self.verbosity >= 2:
-                    self.logger.debug('RM %s', rm_path)
+                    self.logger.debug("RM %s", rm_path)
         self._lru[path] = size
 
     def _remove_cached(self, path):

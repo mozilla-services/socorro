@@ -16,16 +16,9 @@ from socorro.lib.datetimeutil import utc_now
 
 # Elasticsearch indices configuration.
 ES_CUSTOM_ANALYZERS = {
-    'analyzer': {
-        'semicolon_keywords': {
-            'type': 'pattern',
-            'pattern': ';',
-        },
-    }
+    "analyzer": {"semicolon_keywords": {"type": "pattern", "pattern": ";"}}
 }
-ES_QUERY_SETTINGS = {
-    'default_field': 'signature'
-}
+ES_QUERY_SETTINGS = {"default_field": "signature"}
 
 
 class ConnectionContext(RequiredConfig):
@@ -37,59 +30,59 @@ class ConnectionContext(RequiredConfig):
 
     required_config = Namespace()
     required_config.add_option(
-        'elasticsearch_urls',
-        default=['http://localhost:9200'],
-        doc='the urls to the elasticsearch instances',
+        "elasticsearch_urls",
+        default=["http://localhost:9200"],
+        doc="the urls to the elasticsearch instances",
         from_string_converter=list_converter,
-        reference_value_from='resource.elasticsearch',
+        reference_value_from="resource.elasticsearch",
     )
     required_config.add_option(
-        'elasticsearch_timeout',
+        "elasticsearch_timeout",
         default=30,
-        doc='the time in seconds before a query to elasticsearch fails',
-        reference_value_from='resource.elasticsearch',
+        doc="the time in seconds before a query to elasticsearch fails",
+        reference_value_from="resource.elasticsearch",
     )
     required_config.add_option(
-        'elasticsearch_timeout_extended',
+        "elasticsearch_timeout_extended",
         default=120,
-        doc='the time in seconds before a query to elasticsearch fails in '
-            'restricted sections',
-        reference_value_from='resource.elasticsearch',
+        doc="the time in seconds before a query to elasticsearch fails in "
+        "restricted sections",
+        reference_value_from="resource.elasticsearch",
     )
     required_config.add_option(
-        'elasticsearch_index',
-        default='socorro%Y%W',
+        "elasticsearch_index",
+        default="socorro%Y%W",
         doc=(
-            'template for generating index names--use datetime\'s strftime '
-            'format to have daily, weekly or monthly indexes'
+            "template for generating index names--use datetime's strftime "
+            "format to have daily, weekly or monthly indexes"
         ),
-        reference_value_from='resource.elasticsearch',
+        reference_value_from="resource.elasticsearch",
     )
     required_config.add_option(
-        'elasticsearch_index_regex',
-        doc='regex that matches indexes--this should match elasticsearch_index',
-        default='^socorro[0-9]{6}$',
-        reference_value_from='resource.elasticsearch',
+        "elasticsearch_index_regex",
+        doc="regex that matches indexes--this should match elasticsearch_index",
+        default="^socorro[0-9]{6}$",
+        reference_value_from="resource.elasticsearch",
     )
     required_config.add_option(
-        'retention_policy',
+        "retention_policy",
         default=26,
-        doc='number of weeks to retain an index',
-        reference_value_from='resource.elasticsearch',
+        doc="number of weeks to retain an index",
+        reference_value_from="resource.elasticsearch",
     )
     required_config.add_option(
-        'elasticsearch_doctype',
-        default='crash_reports',
-        doc='the default doctype to use in elasticsearch',
-        reference_value_from='resource.elasticsearch',
+        "elasticsearch_doctype",
+        default="crash_reports",
+        doc="the default doctype to use in elasticsearch",
+        reference_value_from="resource.elasticsearch",
     )
     required_config.add_option(
-        'elasticsearch_shards_per_index',
+        "elasticsearch_shards_per_index",
         default=10,
         doc=(
-            'number of shards to set in newly created indices. Elasticsearch '
-            'default is 5.'
-        )
+            "number of shards to set in newly created indices. Elasticsearch "
+            "default is 5."
+        ),
     )
 
     def __init__(self, config):
@@ -110,7 +103,7 @@ class ConnectionContext(RequiredConfig):
             hosts=self.config.elasticsearch_urls,
             timeout=timeout,
             connection_class=elasticsearch.connection.RequestsHttpConnection,
-            verify_certs=True
+            verify_certs=True,
         )
 
     def get_index_template(self):
@@ -143,14 +136,14 @@ class ConnectionContext(RequiredConfig):
         """Return a dictionary containing settings for an Elasticsearch index.
         """
         return {
-            'settings': {
-                'index': {
-                    'number_of_shards': self.config.elasticsearch_shards_per_index,
-                    'query': ES_QUERY_SETTINGS,
-                    'analysis': ES_CUSTOM_ANALYZERS,
-                },
+            "settings": {
+                "index": {
+                    "number_of_shards": self.config.elasticsearch_shards_per_index,
+                    "query": ES_QUERY_SETTINGS,
+                    "analysis": ES_CUSTOM_ANALYZERS,
+                }
             },
-            'mappings': mappings,
+            "mappings": mappings,
         }
 
     def create_index(self, index_name, mappings=None):
@@ -176,7 +169,7 @@ class ConnectionContext(RequiredConfig):
         except elasticsearch.exceptions.RequestError as e:
             # If this index already exists, swallow the error.
             # NOTE! This is NOT how the error looks like in ES 2.x
-            if 'IndexAlreadyExistsException' not in str(e):
+            if "IndexAlreadyExistsException" not in str(e):
                 raise
             return False
 
@@ -187,8 +180,7 @@ class ConnectionContext(RequiredConfig):
 
         status = indices_client.status()
         indices = [
-            index for index in status['indices'].keys()
-            if index_regex.match(index)
+            index for index in status["indices"].keys() if index_regex.match(index)
         ]
         indices.sort()
         return indices
@@ -211,8 +203,7 @@ class ConnectionContext(RequiredConfig):
             # strptime ignores week numbers if a day isn't specified, so we append
             # '-1' and '-%w' to specify Monday as the day.
             index_date = datetime.datetime.strptime(
-                index_name + '-1',
-                self.config.elasticsearch_index + '-%w'
+                index_name + "-1", self.config.elasticsearch_index + "-%w"
             )
             if index_date >= cutoff:
                 continue
@@ -223,8 +214,8 @@ class ConnectionContext(RequiredConfig):
         return was_deleted
 
     def refresh(self, index_name=None):
-        self.indices_client().refresh(index=index_name or '_all')
+        self.indices_client().refresh(index=index_name or "_all")
 
     def health_check(self):
         with self() as conn:
-            conn.cluster.health(wait_for_status='yellow', request_timeout=5)
+            conn.cluster.health(wait_for_status="yellow", request_timeout=5)

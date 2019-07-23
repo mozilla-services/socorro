@@ -15,15 +15,19 @@ from django.conf import settings
 
 from socorro.app.socorro_app import App
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
-from socorro.external.es.connection_context import ConnectionContext as ESConnectionContext
+from socorro.external.es.connection_context import (
+    ConnectionContext as ESConnectionContext,
+)
 from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 
 
 def get_s3_context():
     """Return an S3ConnectionContext."""
     # The class could be anything, so get the class first
-    cls_path = settings.SOCORRO_IMPLEMENTATIONS_CONFIG['resource']['boto']['resource_class']
-    module, name = cls_path.rsplit('.', 1)
+    cls_path = settings.SOCORRO_IMPLEMENTATIONS_CONFIG["resource"]["boto"][
+        "resource_class"
+    ]
+    module, name = cls_path.rsplit(".", 1)
     cls = getattr(importlib.import_module(module), name)
 
     # Now create a configuration and instantiate the class with it
@@ -34,7 +38,7 @@ def get_s3_context():
             # environment which are likely to be configman things
             settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
             environment,
-        ]
+        ],
     )
     config = cm.get_config()
     return cls(config)
@@ -43,36 +47,28 @@ def get_s3_context():
 def config_from_configman():
     """Generate a configman DotDict to pass to configman components."""
     definition_source = Namespace()
-    definition_source.namespace('logging')
+    definition_source.namespace("logging")
     definition_source.logging = App.required_config.logging
 
-    definition_source.namespace('metricscfg')
+    definition_source.namespace("metricscfg")
     definition_source.metricscfg = App.required_config.metricscfg
 
-    definition_source.namespace('elasticsearch')
+    definition_source.namespace("elasticsearch")
     definition_source.elasticsearch.add_option(
-        'elasticsearch_class',
-        default=ESConnectionContext,
+        "elasticsearch_class", default=ESConnectionContext
     )
-    definition_source.namespace('queue')
-    definition_source.add_option(
-        'crashqueue_class',
-        default=PubSubCrashQueue
-    )
-    definition_source.namespace('crashdata')
+    definition_source.namespace("queue")
+    definition_source.add_option("crashqueue_class", default=PubSubCrashQueue)
+    definition_source.namespace("crashdata")
     definition_source.crashdata.add_option(
-        'crash_data_class',
-        default=SimplifiedCrashData,
+        "crash_data_class", default=SimplifiedCrashData
     )
-    definition_source.namespace('telemetrydata')
+    definition_source.namespace("telemetrydata")
     definition_source.telemetrydata.add_option(
-        'telemetry_data_class',
-        default=TelemetryCrashData,
+        "telemetry_data_class", default=TelemetryCrashData
     )
 
     return configuration(
         definition_source=definition_source,
-        values_source_list=[
-            settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
-        ]
+        values_source_list=[settings.SOCORRO_IMPLEMENTATIONS_CONFIG],
     )

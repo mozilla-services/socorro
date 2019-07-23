@@ -6,7 +6,7 @@ from django.apps import AppConfig
 
 
 class ManageConfig(AppConfig):
-    name = 'crashstats.manage'
+    name = "crashstats.manage"
 
     def ready(self):
         # Import our admin site code so it creates the admin site and

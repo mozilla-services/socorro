@@ -31,7 +31,6 @@ DEFAULT_PIPELINE = [
     SignatureIPCMessageName(),
     SignatureParentIDNotEqualsChildID(),
     SignatureJitCategory(),
-
     # NOTE(willkg): These should always come last and in this order
     SigFixWhitespace(),
     SigTruncate(),
@@ -40,7 +39,7 @@ DEFAULT_PIPELINE = [
 
 class Result:
     def __init__(self):
-        self.signature = ''
+        self.signature = ""
         self.notes = []
         self.debug_log = []
         self.extra = {}
@@ -52,12 +51,12 @@ class Result:
     def info(self, rule, msg, *args):
         if args:
             msg = msg % args
-        self.notes.append('%s: %s' % (rule, msg))
+        self.notes.append("%s: %s" % (rule, msg))
 
     def debug(self, rule, msg, *args):
         if args:
             msg = msg % args
-        self.debug_log.append('%s: %s' % (rule, msg))
+        self.debug_log.append("%s: %s" % (rule, msg))
 
 
 class SignatureGenerator:
@@ -93,8 +92,8 @@ class SignatureGenerator:
                     self.error_handler(
                         signature_data,
                         exc_info=sys.exc_info(),
-                        extra={'rule': rule_name}
+                        extra={"rule": rule_name},
                     )
-                result.info(rule_name, 'Rule failed: %s', exc)
+                result.info(rule_name, "Rule failed: %s", exc)
 
         return result

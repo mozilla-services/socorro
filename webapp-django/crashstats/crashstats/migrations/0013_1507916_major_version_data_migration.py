@@ -9,18 +9,18 @@ from django.db import migrations
 
 
 def add_major_version(apps, schema_editor):
-    ProductVersion = apps.get_model('crashstats', 'ProductVersion')
+    ProductVersion = apps.get_model("crashstats", "ProductVersion")
 
     for pv in ProductVersion.objects.all():
         version = pv.release_version
-        major_version = version.split('.')[0]
+        major_version = version.split(".")[0]
         pv.major_version = int(major_version)
         pv.save()
 
 
 def zero_major_version(apps, schema_editor):
     # This doesn't "undo" the major version, but it does zero it out
-    ProductVersion = apps.get_model('crashstats', 'ProductVersion')
+    ProductVersion = apps.get_model("crashstats", "ProductVersion")
 
     for pv in ProductVersion.objects.all():
         pv.major_version = 0
@@ -28,10 +28,6 @@ def zero_major_version(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [
-        ('crashstats', '0012_1507916_productversion_major_version'),
-    ]
+    dependencies = [("crashstats", "0012_1507916_productversion_major_version")]
 
-    operations = [
-        migrations.RunPython(add_major_version, zero_major_version),
-    ]
+    operations = [migrations.RunPython(add_major_version, zero_major_version)]

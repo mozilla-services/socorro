@@ -24,11 +24,11 @@ from crashstats.crashstats.configman_utils import get_s3_context
 from crashstats.crashstats.models import MissingProcessedCrash
 
 
-RAW_CRASH_PREFIX_TEMPLATE = 'v2/raw_crash/%s/%s/'
-PROCESSED_CRASH_TEMPLATE = 'v1/processed_crash/%s'
+RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
+PROCESSED_CRASH_TEMPLATE = "v1/processed_crash/%s"
 
 
-metrics = markus.get_metrics('cron.verifyprocessed')
+metrics = markus.get_metrics("cron.verifyprocessed")
 
 
 def check_crashids(entropy, boto_conn, bucket_name, date):
@@ -40,7 +40,7 @@ def check_crashids(entropy, boto_conn, bucket_name, date):
     missing = []
     for key_instance in bucket.list(raw_crash_key_prefix):
         raw_crash_key = key_instance.key
-        crash_id = raw_crash_key.split('/')[-1]
+        crash_id = raw_crash_key.split("/")[-1]
 
         processed_crash_key = bucket.get_key(PROCESSED_CRASH_TEMPLATE % crash_id)
         if processed_crash_key is None:
@@ -50,21 +50,24 @@ def check_crashids(entropy, boto_conn, bucket_name, date):
 
 
 class Command(BaseCommand):
-    help = 'Verify incoming crash reports were processed'
+    help = "Verify incoming crash reports were processed"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--run-time', default='',
-            help='The day to check in YYYY-mm-dd format. Defaults to yesterday.'
+            "--run-time",
+            default="",
+            help="The day to check in YYYY-mm-dd format. Defaults to yesterday.",
         )
         parser.add_argument(
-            '--num-workers', default=20, type=int,
-            help='Number of concurrent workers to list raw_crashes.'
+            "--num-workers",
+            default=20,
+            type=int,
+            help="Number of concurrent workers to list raw_crashes.",
         )
 
     def get_entropy(self):
         """Generate all entropy combinations."""
-        chars = '0123456789abcdef'
+        chars = "0123456789abcdef"
         for x in chars:
             for y in chars:
                 for z in chars:
@@ -76,10 +79,7 @@ class Command(BaseCommand):
         boto_conn = s3_context._connect()
 
         check_crashids_for_date = partial(
-            check_crashids,
-            boto_conn=boto_conn,
-            bucket_name=bucket_name,
-            date=date,
+            check_crashids, boto_conn=boto_conn, bucket_name=bucket_name, date=date
         )
 
         missing = []
@@ -88,29 +88,35 @@ class Command(BaseCommand):
             for result in map(check_crashids_for_date, entropy):
                 missing.extend(result)
         else:
-            with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
-                for result in executor.map(check_crashids_for_date, entropy, timeout=300):
+            with concurrent.futures.ProcessPoolExecutor(
+                max_workers=num_workers
+            ) as executor:
+                for result in executor.map(
+                    check_crashids_for_date, entropy, timeout=300
+                ):
                     missing.extend(result)
 
         return list(missing)
 
     def handle_missing(self, date, missing):
         """Report crash ids for missing processed crashes."""
-        metrics.gauge('missing_processed', len(missing))
+        metrics.gauge("missing_processed", len(missing))
         if missing:
             for crash_id in missing:
-                self.stdout.write('Missing: %s' % crash_id)
+                self.stdout.write("Missing: %s" % crash_id)
 
                 try:
-                    MissingProcessedCrash.objects.create(crash_id=crash_id, is_processed=False)
+                    MissingProcessedCrash.objects.create(
+                        crash_id=crash_id, is_processed=False
+                    )
                 except IntegrityError as ie:
-                    if 'violates unique constraint' in str(ie):
+                    if "violates unique constraint" in str(ie):
                         # If there's already one, that's fine
                         pass
                     else:
                         raise
         else:
-            self.stdout.write('All crashes for %s were processed.' % date)
+            self.stdout.write("All crashes for %s were processed." % date)
 
     def check_past_missing(self):
         """Check the table for missing crashes and check to see if they exist."""
@@ -120,11 +126,9 @@ class Command(BaseCommand):
 
         crash_ids = []
 
-        crash_ids = (
-            MissingProcessedCrash.objects
-            .filter(is_processed=False)
-            .values_list('crash_id', flat=True)
-        )
+        crash_ids = MissingProcessedCrash.objects.filter(
+            is_processed=False
+        ).values_list("crash_id", flat=True)
 
         no_longer_missing = []
 
@@ -136,32 +140,32 @@ class Command(BaseCommand):
 
         updated = 0
         if no_longer_missing:
-            updated = (
-                MissingProcessedCrash.objects
-                .filter(crash_id__in=no_longer_missing)
-                .update(is_processed=True)
-            )
+            updated = MissingProcessedCrash.objects.filter(
+                crash_id__in=no_longer_missing
+            ).update(is_processed=True)
 
-        self.stdout.write('Updated %s missing crashes which have since been processed' % updated)
+        self.stdout.write(
+            "Updated %s missing crashes which have since been processed" % updated
+        )
 
     def handle(self, **options):
-        check_date_arg = options.get('run_time')
+        check_date_arg = options.get("run_time")
         if check_date_arg:
             check_date = parse_datetime(check_date_arg)
             if not check_date:
                 check_date = parse_date(check_date_arg)
             if not check_date:
-                raise CommandError('Unrecognized run_time format: %s' % check_date_arg)
+                raise CommandError("Unrecognized run_time format: %s" % check_date_arg)
         else:
             check_date = timezone.now() - datetime.timedelta(days=1)
 
-        check_date_formatted = check_date.strftime('%Y%m%d')
+        check_date_formatted = check_date.strftime("%Y%m%d")
 
         # Check and update existing missing before finding new missing things
         self.check_past_missing()
 
         # Find missing and handle them
-        missing = self.find_missing(options['num_workers'], check_date_formatted)
+        missing = self.find_missing(options["num_workers"], check_date_formatted)
         self.handle_missing(check_date_formatted, missing)
 
-        self.stdout.write('Done!')
+        self.stdout.write("Done!")

@@ -49,6 +49,7 @@ class ExpiringCache(MutableMapping):
     'something'
 
     """
+
     def __init__(self, max_size=128, default_ttl=DEFAULT_TTL):
         """
         :arg max_size: maximum number of items in the cache
@@ -56,9 +57,9 @@ class ExpiringCache(MutableMapping):
 
         """
         if max_size <= 0:
-            raise ValueError('max_size must be greater than 0')
+            raise ValueError("max_size must be greater than 0")
         if default_ttl <= 0:
-            raise ValueError('ttl must be greater than 0')
+            raise ValueError("ttl must be greater than 0")
         self._max_size = max_size
         self._default_ttl = datetime.timedelta(seconds=default_ttl)
         # Map of key -> (expire time, value)

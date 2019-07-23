@@ -38,7 +38,8 @@ default:
 	@echo ""
 	@echo "  shell            - open a shell in the app container"
 	@echo "  clean            - remove all build, test, coverage and Python artifacts"
-	@echo "  lint             - check style with flake8"
+	@echo "  lint             - lint code"
+	@echo "  lintfix          - reformat code"
 	@echo "  test             - run unit tests"
 	@echo "  testshell        - open a shell for running tests"
 	@echo "  docs             - generate Sphinx HTML documentation, including API docs"
@@ -65,6 +66,10 @@ docs: my.env .docker-build-docs
 .PHONY: lint
 lint: my.env
 	${DC} run --rm --no-deps app shell ./docker/run_lint.sh
+
+.PHONY: lintfix
+lintfix: my.env
+	${DC} run --rm --no-deps app shell ./docker/run_lint.sh --fix
 
 my.env:
 	@if [ ! -f my.env ]; \

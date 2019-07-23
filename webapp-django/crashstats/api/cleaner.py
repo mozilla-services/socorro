@@ -33,7 +33,7 @@ class Cleaner(object):
 
     """
 
-    ANY = '__any__'
+    ANY = "__any__"
 
     def __init__(self, allowlist, debug=False):
         self.allowlist = allowlist
@@ -78,7 +78,7 @@ class Cleaner(object):
                 # process. Doing this helps developers notice/remember
                 # which fields are being left out
                 if self.debug:
-                    msg = 'Skipping %r' % (key,)
+                    msg = "Skipping %r" % (key,)
                     warnings.warn(msg)
                 del data[key]
 
@@ -91,10 +91,10 @@ class Cleaner(object):
 class SmartAllowlistMatcher(object):
     def __init__(self, allowlist):
         def format(item):
-            return '^' + item.replace('*', r'[\w-]*') + '$'
+            return "^" + item.replace("*", r"[\w-]*") + "$"
 
         items = [format(x) for x in allowlist]
-        self.regex = re.compile('|'.join(items))
+        self.regex = re.compile("|".join(items))
 
     def __contains__(self, key):
         return bool(self.regex.match(key))

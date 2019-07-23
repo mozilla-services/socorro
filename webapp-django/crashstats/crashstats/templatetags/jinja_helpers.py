@@ -29,7 +29,7 @@ def truncatechars(str_, max_length):
     if len(str_) < max_length:
         return str_
     else:
-        return '%s...' % str_[:max_length - len('...')]
+        return "%s..." % str_[: max_length - len("...")]
 
 
 @library.filter
@@ -37,29 +37,26 @@ def digitgroupseparator(number):
     """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
     if not isinstance(number, int):
         return number
-    return format(number, ',')
+    return format(number, ",")
 
 
 @library.filter
-def buildid_to_date(buildid, fmt='%Y-%m-%d'):
+def buildid_to_date(buildid, fmt="%Y-%m-%d"):
     """Returns the date portion of the build id"""
     try:
-        dt = datetime.datetime.strptime(buildid[0:8], '%Y%m%d')
+        dt = datetime.datetime.strptime(buildid[0:8], "%Y%m%d")
     except (TypeError, ValueError):
-        return ''
+        return ""
 
     return jinja2.Markup(
-        '<time datetime="{}" class="jstime" data-format="{}">{}</time>'
-        .format(
-            dt.isoformat(),
-            fmt,
-            dt.strftime(fmt)
+        '<time datetime="{}" class="jstime" data-format="{}">{}</time>'.format(
+            dt.isoformat(), fmt, dt.strftime(fmt)
         )
     )
 
 
 @library.filter
-def timestamp_to_date(timestamp, fmt='%Y-%m-%d %H:%M:%S'):
+def timestamp_to_date(timestamp, fmt="%Y-%m-%d %H:%M:%S"):
     """Python datetime to a time tag with JS Date.parse-parseable format"""
     try:
         timestamp = float(timestamp)
@@ -72,21 +69,18 @@ def timestamp_to_date(timestamp, fmt='%Y-%m-%d %H:%M:%S'):
         # then becomes:
         #
         #  <span></span>
-        return ''
+        return ""
 
     dt = datetime.datetime.fromtimestamp(float(timestamp))
     return jinja2.Markup(
-        '<time datetime="{}" class="jstime" data-format="{}">{}</time>'
-        .format(
-            dt.isoformat(),
-            fmt,
-            dt.strftime(fmt)
+        '<time datetime="{}" class="jstime" data-format="{}">{}</time>'.format(
+            dt.isoformat(), fmt, dt.strftime(fmt)
         )
     )
 
 
 @library.filter
-def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
+def time_tag(dt, format="%a, %b %d %H:%M %Z", future=False):
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         try:
             dt = parse_isodate(dt)
@@ -94,9 +88,7 @@ def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
             return dt
     return jinja2.Markup(
         '<time datetime="{}" class="{}">{}</time>'.format(
-            dt.isoformat(),
-            future and 'in' or 'ago',
-            dt.strftime(format)
+            dt.isoformat(), future and "in" or "ago", dt.strftime(format)
         )
     )
 
@@ -115,25 +107,25 @@ def human_readable_iso_date(dt):
             # valid but something. E.g. 2015-10-10 15:32:07.620535
             return dt
 
-    format = '%Y-%m-%d %H:%M:%S'
+    format = "%Y-%m-%d %H:%M:%S"
     return dt.strftime(format)
 
 
 @library.filter
 def to_json(data):
-    return json.dumps(data).replace('</', '<\\/')
+    return json.dumps(data).replace("</", "<\\/")
 
 
 @library.global_function
 def show_bug_link(bug_id):
-    data = {'bug_id': bug_id, 'class': ['bug-link']}
+    data = {"bug_id": bug_id, "class": ["bug-link"]}
     tmpl = (
         '<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=%(bug_id)s" '
         'title="Find more information in Bugzilla" '
         'data-id="%(bug_id)s" '
     )
     # if available, set some data attributes on the link from our cache
-    cache_key = 'buginfo:%s' % bug_id
+    cache_key = "buginfo:%s" % bug_id
     information = cache.get(cache_key)
     if information:
         tmpl += (
@@ -142,71 +134,74 @@ def show_bug_link(bug_id):
             'data-status="%(status)s" '
         )
         data.update(information)
-        data['class'].append('bug-link-with-data')
+        data["class"].append("bug-link-with-data")
     else:
-        data['class'].append('bug-link-without-data')
+        data["class"].append("bug-link-without-data")
 
-    tmpl += (
-        'class="%(class)s">%(bug_id)s</a>'
-    )
-    data['class'] = ' '.join(data['class'])
+    tmpl += 'class="%(class)s">%(bug_id)s</a>'
+    data["class"] = " ".join(data["class"])
     return jinja2.Markup(tmpl) % data
 
 
 @library.global_function
 def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
-    url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
+    url = "https://bugzilla.mozilla.org/enter_bug.cgi"
 
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
     # `.startswith(...)` things we do don't raise an AttributeError.
-    op_sys = report.get('os_pretty_version') or report['os_name'] or ''
+    op_sys = report.get("os_pretty_version") or report["os_name"] or ""
 
     # At the time of writing, these pretty versions of the OS name
     # don't perfectly fit with the drop-down choices that Bugzilla
     # has in its OS drop-down. So we have to make some adjustments.
-    if op_sys.startswith('OS X '):
-        op_sys = 'Mac OS X'
-    elif op_sys == 'Windows 8.1':
-        op_sys = 'Windows 8'
-    elif op_sys in ('Windows Unknown', 'Windows 2000'):
-        op_sys = 'Windows'
+    if op_sys.startswith("OS X "):
+        op_sys = "Mac OS X"
+    elif op_sys == "Windows 8.1":
+        op_sys = "Windows 8"
+    elif op_sys in ("Windows Unknown", "Windows 2000"):
+        op_sys = "Windows"
 
     crashing_thread_frames = None
-    if parsed_dump.get('threads') and crashing_thread is not None:
-        crashing_thread_frames = bugzilla_thread_frames(parsed_dump['threads'][crashing_thread])
+    if parsed_dump.get("threads") and crashing_thread is not None:
+        crashing_thread_frames = bugzilla_thread_frames(
+            parsed_dump["threads"][crashing_thread]
+        )
 
-    comment = render_to_string('crashstats/bugzilla_comment.txt', {
-        'uuid': report['uuid'],
-        'java_stack_trace': report.get('java_stack_trace', None),
-        'crashing_thread_frames': crashing_thread_frames,
-    })
+    comment = render_to_string(
+        "crashstats/bugzilla_comment.txt",
+        {
+            "uuid": report["uuid"],
+            "java_stack_trace": report.get("java_stack_trace", None),
+            "crashing_thread_frames": crashing_thread_frames,
+        },
+    )
 
     kwargs = {
-        'bug_severity': 'critical',
-        'bug_type': 'defect',
-        'keywords': 'crash',
-        'product': bug_product,
-        'op_sys': op_sys,
+        "bug_severity": "critical",
+        "bug_type": "defect",
+        "keywords": "crash",
+        "product": bug_product,
+        "op_sys": op_sys,
         # NOTE(willkg): cpu_name is deprecated; switch to just cpu_arch in July 2019
-        'rep_platform': report.get('cpu_arch', report['cpu_name']),
-        'cf_crash_signature': '[@ {}]'.format(smart_str(report['signature'])),
-        'short_desc': 'Crash in [@ {}]'.format(smart_str(report['signature'])),
-        'comment': comment,
+        "rep_platform": report.get("cpu_arch", report["cpu_name"]),
+        "cf_crash_signature": "[@ {}]".format(smart_str(report["signature"])),
+        "short_desc": "Crash in [@ {}]".format(smart_str(report["signature"])),
+        "comment": comment,
     }
 
     # some special keys have to be truncated to make Bugzilla happy
-    if len(kwargs['short_desc']) > 255:
-        kwargs['short_desc'] = kwargs['short_desc'][:255 - 3] + '...'
+    if len(kwargs["short_desc"]) > 255:
+        kwargs["short_desc"] = kwargs["short_desc"][: 255 - 3] + "..."
 
     # People who are new to bugzilla automatically get the more
     # basic, "guided format". for entering bugs. This unfortunately
     # means that all the parameters we pass along gets lost when
     # the user makes it to the second page. Let's prevent that.
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=1238212
-    kwargs['format'] = '__default__'
+    kwargs["format"] = "__default__"
 
-    url += '?' + urlencode(kwargs, True)
+    url += "?" + urlencode(kwargs, True)
     return url
 
 
@@ -216,25 +211,27 @@ def bugzilla_thread_frames(thread):
 
     """
     frames = []
-    for frame in thread['frames'][:10]:  # Max 10 frames
+    for frame in thread["frames"][:10]:  # Max 10 frames
         # Source is an empty string if data isn't available
-        source = frame.get('file') or ''
-        if frame.get('line'):
-            source += ':{}'.format(frame['line'])
+        source = frame.get("file") or ""
+        if frame.get("line"):
+            source += ":{}".format(frame["line"])
 
         # Remove function arguments
-        signature = re.sub(r'\(.*\)', '', frame.get('signature', ''))
+        signature = re.sub(r"\(.*\)", "", frame.get("signature", ""))
 
-        frames.append({
-            'frame': frame.get('frame', '?'),
-            'module': frame.get('module', ''),
-            'signature': signature,
-            'source': source,
-        })
+        frames.append(
+            {
+                "frame": frame.get("frame", "?"),
+                "module": frame.get("module", ""),
+                "signature": signature,
+                "source": source,
+            }
+        )
     return frames
 
 
-BUG_RE = re.compile(r'(bug #?(\d+))')
+BUG_RE = re.compile(r"(bug #?(\d+))")
 
 
 @library.filter
@@ -251,7 +248,7 @@ def replace_bugzilla_links(text):
     return jinja2.Markup(
         BUG_RE.sub(
             r'<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=\2">\1</a>',
-            str(text)
+            str(text),
         )
     )
 
@@ -260,10 +257,8 @@ def replace_bugzilla_links(text):
 def full_url(request, *args, **kwargs):
     """Just like the `url` method of jinja, but with a scheme and host.
     """
-    return '{}://{}{}'.format(
-        request.scheme,
-        request.get_host(),
-        reverse(*args, args=kwargs.values())
+    return "{}://{}{}".format(
+        request.scheme, request.get_host(), reverse(*args, args=kwargs.values())
     )
 
 
@@ -273,7 +268,7 @@ def is_list(value):
 
 
 @library.global_function
-def show_duration(seconds, unit='seconds'):
+def show_duration(seconds, unit="seconds"):
     """Instead of just showing the integer number of seconds
     we display it nicely like::
 
@@ -281,12 +276,12 @@ def show_duration(seconds, unit='seconds'):
 
     If we can't do it, just return as is.
     """
-    template = engines['backend'].from_string(
-        '{{ seconds_str }} {{ unit }} '
-        '{% if seconds > 60 %}'
+    template = engines["backend"].from_string(
+        "{{ seconds_str }} {{ unit }} "
+        "{% if seconds > 60 %}"
         '<span class="humanized" title="{{ seconds_str }} {{ unit }}">'
-        '({{ humanized }})</span>'
-        '{% endif %}'
+        "({{ humanized }})</span>"
+        "{% endif %}"
     )
 
     try:
@@ -303,16 +298,20 @@ def show_duration(seconds, unit='seconds'):
         return seconds
 
     humanized = humanfriendly.format_timespan(seconds)
-    return mark_safe(template.render({
-        'seconds_str': format(seconds, ','),
-        'seconds': seconds,
-        'unit': unit,
-        'humanized': humanized,
-    }).strip())
+    return mark_safe(
+        template.render(
+            {
+                "seconds_str": format(seconds, ","),
+                "seconds": seconds,
+                "unit": unit,
+                "humanized": humanized,
+            }
+        ).strip()
+    )
 
 
 @library.global_function
-def show_filesize(bytes, unit='bytes'):
+def show_filesize(bytes, unit="bytes"):
     """Instead of just showing the integer number of bytes
     we display it nicely like::
 
@@ -320,12 +319,12 @@ def show_filesize(bytes, unit='bytes'):
 
     If we can't do it, just return as is.
     """
-    template = engines['backend'].from_string(
-        '{{ bytes_str }} {{ unit }} '
-        '{% if bytes > 1024 %}'
+    template = engines["backend"].from_string(
+        "{{ bytes_str }} {{ unit }} "
+        "{% if bytes > 1024 %}"
         '<span class="humanized" title="{{ bytes_str }} {{ unit }}">'
-        '({{ humanized }})</span>'
-        '{% endif %}'
+        "({{ humanized }})</span>"
+        "{% endif %}"
     )
 
     try:
@@ -342,17 +341,21 @@ def show_filesize(bytes, unit='bytes'):
         return bytes
 
     humanized = humanfriendly.format_size(bytes)
-    return mark_safe(template.render({
-        'bytes_str': format(bytes, ','),
-        'bytes': bytes,
-        'unit': unit,
-        'humanized': humanized,
-    }).strip())
+    return mark_safe(
+        template.render(
+            {
+                "bytes_str": format(bytes, ","),
+                "bytes": bytes,
+                "unit": unit,
+                "humanized": humanized,
+            }
+        ).strip()
+    )
 
 
 @library.global_function
 def booleanish_to_boolean(value):
-    return str(value).lower() in ('1', 'true', 'yes')
+    return str(value).lower() in ("1", "true", "yes")
 
 
 @library.global_function
@@ -362,15 +365,16 @@ def url(viewname, *args, **kwargs):
     Because this function is used by taking user input, (e.g. query
     string values), we have to sanitize the values.
     """
+
     def clean_argument(s):
         if isinstance(s, str):
             # First remove all proper control characters like '\n',
             # '\r' or '\t'.
-            s = ''.join(c for c in s if ord(c) >= 32)
+            s = "".join(c for c in s if ord(c) >= 32)
             # Then, if any '\' left (it might have started as '\\nn')
             # remove those too.
-            while '\\' in s:
-                s = s.replace('\\', '')
+            while "\\" in s:
+                s = s.replace("\\", "")
             return s
         return s
 
@@ -418,12 +422,12 @@ def change_query_string(context, **kwargs):
         <a href=/page>
 
     """
-    if kwargs.get('_no_base'):
-        kwargs.pop('_no_base')
-        base = ''
+    if kwargs.get("_no_base"):
+        kwargs.pop("_no_base")
+        base = ""
     else:
-        base = context['request'].META['PATH_INFO']
-    qs = parse_qs(context['request'].META['QUERY_STRING'])
+        base = context["request"].META["PATH_INFO"]
+    qs = parse_qs(context["request"].META["QUERY_STRING"])
     for key, value in kwargs.items():
         if value is None:
             # delete the parameter
@@ -435,9 +439,9 @@ def change_query_string(context, **kwargs):
     new_qs = urlencode(qs, True)
 
     # We don't like + as the encoding character for spaces. %20 is better.
-    new_qs = new_qs.replace('+', '%20')
+    new_qs = new_qs.replace("+", "%20")
     if new_qs:
-        return '%s?%s' % (base, new_qs)
+        return "%s?%s" % (base, new_qs)
     return base
 
 
@@ -454,21 +458,21 @@ def is_dangerous_cpu(cpu_arch, cpu_info):
     # These models are known to cause lots of crashes, we want to mark them
     # for ease of find by users.
     return (
-        cpu_info.startswith('AuthenticAMD family 20 model 1') or
-        cpu_info.startswith('AuthenticAMD family 20 model 2') or
-        (cpu_arch == 'amd64' and cpu_info.startswith('family 20 model 1')) or
-        (cpu_arch == 'amd64' and cpu_info.startswith('family 20 model 2'))
+        cpu_info.startswith("AuthenticAMD family 20 model 1")
+        or cpu_info.startswith("AuthenticAMD family 20 model 2")
+        or (cpu_arch == "amd64" and cpu_info.startswith("family 20 model 1"))
+        or (cpu_arch == "amd64" and cpu_info.startswith("family 20 model 2"))
     )
 
 
 @library.global_function
 def filter_featured_versions(product_versions):
-    return [pv for pv in product_versions if pv['is_featured']]
+    return [pv for pv in product_versions if pv["is_featured"]]
 
 
 @library.global_function
 def filter_not_featured_versions(product_versions):
-    return [pv for pv in product_versions if not pv['is_featured']]
+    return [pv for pv in product_versions if not pv["is_featured"]]
 
 
 @library.global_function

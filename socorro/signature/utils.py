@@ -28,58 +28,48 @@ def convert_to_crash_data(raw_crash, processed_crash):
     # We want to generate fresh signatures, so we remove the "normalized" field
     # from stack frames from the processed crash because this is essentially
     # cached data from previous processing
-    for thread in glom(processed_crash, 'json_dump.threads', default=[]):
-        for frame in thread.get('frames', []):
-            if 'normalized' in frame:
-                del frame['normalized']
+    for thread in glom(processed_crash, "json_dump.threads", default=[]):
+        for frame in thread.get("frames", []):
+            if "normalized" in frame:
+                del frame["normalized"]
 
     crash_data = {
         # JavaStackTrace or None
-        'java_stack_trace': glom(processed_crash, 'java_stack_trace', default=None),
-
+        "java_stack_trace": glom(processed_crash, "java_stack_trace", default=None),
         # int or None
-        'crashing_thread': glom(
-            processed_crash, 'json_dump.crash_info.crashing_thread', default=None
+        "crashing_thread": glom(
+            processed_crash, "json_dump.crash_info.crashing_thread", default=None
         ),
-
         # list of CStackTrace or None
-        'threads': glom(processed_crash, 'json_dump.threads', default=None),
-
+        "threads": glom(processed_crash, "json_dump.threads", default=None),
         # int or None
-        'hang_type': glom(processed_crash, 'hang_type', default=None),
-
+        "hang_type": glom(processed_crash, "hang_type", default=None),
         # text or None
-        'os': glom(processed_crash, 'json_dump.system_info.os', default=None),
-
+        "os": glom(processed_crash, "json_dump.system_info.os", default=None),
         # int or None
-        'oom_allocation_size': int_or_none(glom(raw_crash, 'OOMAllocationSize', default=None)),
-
+        "oom_allocation_size": int_or_none(
+            glom(raw_crash, "OOMAllocationSize", default=None)
+        ),
         # text or None
-        'abort_message': glom(raw_crash, 'AbortMessage', default=None),
-
+        "abort_message": glom(raw_crash, "AbortMessage", default=None),
         # text or None
-        'mdsw_status_string': glom(processed_crash, 'mdsw_status_string', default=None),
-
+        "mdsw_status_string": glom(processed_crash, "mdsw_status_string", default=None),
         # text json with "phase", "conditions" (complicated--see code) or None
-        'async_shutdown_timeout': glom(raw_crash, 'AsyncShutdownTimeout', default=None),
-
+        "async_shutdown_timeout": glom(raw_crash, "AsyncShutdownTimeout", default=None),
         # text or None
-        'jit_category': glom(processed_crash, 'classifications.jit.category', default=None),
-
+        "jit_category": glom(
+            processed_crash, "classifications.jit.category", default=None
+        ),
         # text or None
-        'ipc_channel_error': glom(raw_crash, 'ipc_channel_error', default=None),
-
+        "ipc_channel_error": glom(raw_crash, "ipc_channel_error", default=None),
         # text or None
-        'ipc_message_name': glom(raw_crash, 'IPCMessageName', default=None),
-
+        "ipc_message_name": glom(raw_crash, "IPCMessageName", default=None),
         # text
-        'moz_crash_reason': glom(processed_crash, 'moz_crash_reason', default=None),
-
+        "moz_crash_reason": glom(processed_crash, "moz_crash_reason", default=None),
         # text; comma-delimited e.g. "browser,flash1,flash2"
-        'additional_minidumps': glom(raw_crash, 'additional_minidumps', default=''),
-
+        "additional_minidumps": glom(raw_crash, "additional_minidumps", default=""),
         # pull out the original signature if there was one
-        'original_signature': glom(processed_crash, 'signature', default='')
+        "original_signature": glom(processed_crash, "signature", default=""),
     }
     return crash_data
 
@@ -98,7 +88,7 @@ def drop_bad_characters(text):
 
     """
     # Strip all non-ascii and non-printable characters
-    text = ''.join([c for c in text if c in ALLOWED_CHARS])
+    text = "".join([c for c in text if c in ALLOWED_CHARS])
     return text
 
 
@@ -118,7 +108,7 @@ def parse_source_file(source_file):
     if not source_file:
         return None
 
-    vcsinfo = source_file.split(':')
+    vcsinfo = source_file.split(":")
     if len(vcsinfo) == 4:
         # These are repositories or cloud file systems (e.g. hg, git, s3)
         vcstype, root, vcs_source_file, revision = vcsinfo
@@ -130,7 +120,7 @@ def parse_source_file(source_file):
         vcstype, vcs_source_file = vcsinfo
         return vcs_source_file
 
-    if source_file.startswith('/'):
+    if source_file.startswith("/"):
         # These are directories on OSX or Linux
         return source_file
 
@@ -159,13 +149,7 @@ def _is_exception(exceptions, before_token, after_token, token):
     return False
 
 
-def collapse(
-    function,
-    open_string,
-    close_string,
-    replacement='',
-    exceptions=None,
-):
+def collapse(function, open_string, close_string, replacement="", exceptions=None):
     """Collapses the text between two delimiters in a frame function value
 
     This collapses the text between two delimiters and either removes the text
@@ -204,7 +188,9 @@ def collapse(
 
     for i, char in enumerate(function):
         if not open_count:
-            if char == open_string and not _is_exception(exceptions, function[:i], function[i + 1:], ''):  # noqa
+            if char == open_string and not _is_exception(
+                exceptions, function[:i], function[i + 1 :], ""
+            ):
                 open_count += 1
                 open_token = [char]
             else:
@@ -220,9 +206,11 @@ def collapse(
                 open_token.append(char)
 
                 if open_count == 0:
-                    token = ''.join(open_token)
-                    if _is_exception(exceptions, function[:i], function[i + 1:], token):
-                        collapsed.append(''.join(open_token))
+                    token = "".join(open_token)
+                    if _is_exception(
+                        exceptions, function[:i], function[i + 1 :], token
+                    ):
+                        collapsed.append("".join(open_token))
                     else:
                         collapsed.append(replacement)
                     open_token = []
@@ -230,13 +218,13 @@ def collapse(
                 open_token.append(char)
 
     if open_count:
-        token = ''.join(open_token)
-        if _is_exception(exceptions, function[:i], function[i + 1:], token):
-            collapsed.append(''.join(open_token))
+        token = "".join(open_token)
+        if _is_exception(exceptions, function[:i], function[i + 1 :], token):
+            collapsed.append("".join(open_token))
         else:
             collapsed.append(replacement)
 
-    return ''.join(collapsed)
+    return "".join(collapsed)
 
 
 def drop_prefix_and_return_type(function):
@@ -264,13 +252,7 @@ def drop_prefix_and_return_type(function):
     :returns: adjusted function value
 
     """
-    DELIMITERS = {
-        '(': ')',
-        '{': '}',
-        '[': ']',
-        '<': '>',
-        '`': "'"
-    }
+    DELIMITERS = {"(": ")", "{": "}", "[": "]", "<": ">", "`": "'"}
     OPEN = DELIMITERS.keys()
     CLOSE = DELIMITERS.values()
 
@@ -296,16 +278,16 @@ def drop_prefix_and_return_type(function):
                 current.append(char)
         elif levels:
             current.append(char)
-        elif char == ' ':
-            tokens.append(''.join(current))
+        elif char == " ":
+            tokens.append("".join(current))
             current = []
         else:
             current.append(char)
 
     if current:
-        tokens.append(''.join(current))
+        tokens.append("".join(current))
 
-    while len(tokens) > 1 and tokens[-1].startswith(('(', '[clone')):
+    while len(tokens) > 1 and tokens[-1].startswith(("(", "[clone")):
         # It's possible for the function signature to have a space between
         # the function name and the parenthesized arguments or [clone ...]
         # thing. If that's the case, we join the last two tokens. We keep doing
@@ -319,6 +301,6 @@ def drop_prefix_and_return_type(function):
         #                                 ^
         #     somefunc(int arg1, int arg2) [clone .cold.111] [clone .cold.222]
         #                                 ^                 ^
-        tokens = tokens[:-2] + [' '.join(tokens[-2:])]
+        tokens = tokens[:-2] + [" ".join(tokens[-2:])]
 
     return tokens[-1]

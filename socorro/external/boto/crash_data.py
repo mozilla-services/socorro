@@ -8,7 +8,7 @@ from socorro.lib import external_common, MissingArgumentError, BadArgumentError,
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
     CrashIDNotFound,
-    TelemetryBotoS3CrashStorage
+    TelemetryBotoS3CrashStorage,
 )
 
 
@@ -30,43 +30,45 @@ class SimplifiedCrashData(BotoS3CrashStorage):
         # leaf point we want to NOT return a DotDict but just a plain
         # python dict.
         self.config.json_object_hook = dict
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid. """
         filters = [
-            ('uuid', None, str),
-            ('datatype', None, str),
-            ('name', None, str)  # only applicable if datatype == 'raw'
+            ("uuid", None, str),
+            ("datatype", None, str),
+            ("name", None, str),  # only applicable if datatype == 'raw'
         ]
         params = external_common.parse_arguments(filters, kwargs, modern=True)
 
         if not params.uuid:
-            raise MissingArgumentError('uuid')
+            raise MissingArgumentError("uuid")
 
         if not ooid.is_crash_id_valid(params.uuid):
-            raise BadArgumentError('uuid')
+            raise BadArgumentError("uuid")
 
         if not params.datatype:
-            raise MissingArgumentError('datatype')
+            raise MissingArgumentError("datatype")
 
         datatype_method_mapping = {
-            'raw': 'get_raw_dump',
-            'meta': 'get_raw_crash',
-            'processed': 'get_processed',
-            'unredacted': 'get_unredacted_processed',
+            "raw": "get_raw_dump",
+            "meta": "get_raw_crash",
+            "processed": "get_processed",
+            "unredacted": "get_unredacted_processed",
         }
         if params.datatype not in datatype_method_mapping:
             raise BadArgumentError(params.datatype)
         get = self.__getattribute__(datatype_method_mapping[params.datatype])
         try:
-            if params.datatype == 'raw':
+            if params.datatype == "raw":
                 return get(params.uuid, name=params.name)
             else:
                 return get(params.uuid)
         except CrashIDNotFound as cidnf:
-            self.logger.warning('%(datatype)s not found: %(exception)s',
-                                {'datatype': params.datatype, 'exception': cidnf})
+            self.logger.warning(
+                "%(datatype)s not found: %(exception)s",
+                {"datatype": params.datatype, "exception": cidnf},
+            )
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message
             # contains information about buckets and prefix keys.
@@ -86,19 +88,18 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid."""
-        filters = [
-            ('uuid', None, str),
-        ]
+        filters = [("uuid", None, str)]
         params = external_common.parse_arguments(filters, kwargs, modern=True)
 
         if not params.uuid:
-            raise MissingArgumentError('uuid')
+            raise MissingArgumentError("uuid")
 
         try:
             return self.get_unredacted_processed(params.uuid)
         except CrashIDNotFound as cidnf:
-            self.logger.warning('telemetry crash not found: %(exception)s',
-                                {'exception': cidnf})
+            self.logger.warning(
+                "telemetry crash not found: %(exception)s", {"exception": cidnf}
+            )
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message contains
             # information about buckets and prefix keys. Re-wrap it here so the

@@ -25,40 +25,42 @@ class MemoryReportExtraction(Rule):
             # Verify that...
             return (
                 # ... we have a pid...
-                'pid' in processed_crash['json_dump'] and
+                "pid" in processed_crash["json_dump"]
                 # ... we have a memory report...
-                bool(processed_crash['memory_report']) and
+                and bool(processed_crash["memory_report"])
                 # ... and that memory report is recognisable.
-                'version' in processed_crash['memory_report'] and
-                'reports' in processed_crash['memory_report'] and
-                'hasMozMallocUsableSize' in processed_crash['memory_report']
+                and "version" in processed_crash["memory_report"]
+                and "reports" in processed_crash["memory_report"]
+                and "hasMozMallocUsableSize" in processed_crash["memory_report"]
             )
         except KeyError:
             return False
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        pid = processed_crash['json_dump']['pid']
-        memory_report = processed_crash['memory_report']
+        pid = processed_crash["json_dump"]["pid"]
+        memory_report = processed_crash["memory_report"]
 
         try:
             measures = self._get_memory_measures(memory_report, pid)
         except ValueError as e:
-            self.logger.info('Unable to extract measurements from memory report: {}'.format(e))
+            self.logger.info(
+                "Unable to extract measurements from memory report: {}".format(e)
+            )
             return
         except KeyError as e:
             self.logger.info(
-                'Unable to extract measurements from memory report: '
-                'key {} is missing from a report'.format(e)
+                "Unable to extract measurements from memory report: "
+                "key {} is missing from a report".format(e)
             )
             return
 
-        processed_crash['memory_measures'] = measures
+        processed_crash["memory_measures"] = measures
 
     def _get_memory_measures(self, memory_report, pid):
         explicit_heap = 0
         explicit_nonheap = 0
         pid_found = False
-        pid_str = '(pid {})'.format(pid)
+        pid_str = "(pid {})".format(pid)
 
         # These ones are in the memory report.
         # Note: theses keys use dashes instead of underscores because that's
@@ -66,26 +68,26 @@ class MemoryReportExtraction(Rule):
         # consistent naming in our documents, we will rewrite them before
         # adding them to the processed_crash.
         metrics_measured = {
-            'gfx-textures': 0,
-            'ghost-windows': 0,
-            'heap-allocated': 0,
-            'host-object-urls': 0,
-            'private': 0,
-            'resident': 0,
-            'resident-unique': 0,
-            'system-heap-allocated': 0,
-            'vsize-max-contiguous': 0,
-            'vsize': 0,
+            "gfx-textures": 0,
+            "ghost-windows": 0,
+            "heap-allocated": 0,
+            "host-object-urls": 0,
+            "private": 0,
+            "resident": 0,
+            "resident-unique": 0,
+            "system-heap-allocated": 0,
+            "vsize-max-contiguous": 0,
+            "vsize": 0,
         }
 
         # These ones are derived from the memory report.
         metrics_derived = {
-            'explicit': 0,
-            'heap-overhead': 0,
-            'heap-unclassified': 0,
-            'images': 0,
-            'js-main-runtime': 0,
-            'top-none-detached': 0,
+            "explicit": 0,
+            "heap-overhead": 0,
+            "heap-unclassified": 0,
+            "images": 0,
+            "js-main-runtime": 0,
+            "top-none-detached": 0,
         }
 
         all_metrics = {}
@@ -93,23 +95,25 @@ class MemoryReportExtraction(Rule):
         all_metrics.update(metrics_derived)
 
         # Process reports
-        for report in memory_report['reports']:
-            process = report['process']
+        for report in memory_report["reports"]:
+            process = report["process"]
 
             if pid_str not in process:
                 continue
 
             pid_found = True
 
-            path = report['path']
-            kind = report['kind']
-            units = report['units']
-            amount = report['amount']
+            path = report["path"]
+            kind = report["kind"]
+            units = report["units"]
+            amount = report["amount"]
 
-            if path.startswith('explicit/'):
+            if path.startswith("explicit/"):
                 if units != UNITS_BYTES:
                     raise ValueError(
-                        'bad units for an explicit/ report: {}, {}'.format(path, str(units))
+                        "bad units for an explicit/ report: {}, {}".format(
+                            path, str(units)
+                        )
                     )
 
                 if kind == KIND_NONHEAP:
@@ -118,39 +122,36 @@ class MemoryReportExtraction(Rule):
                     explicit_heap += amount
                 else:
                     raise ValueError(
-                        'bad kind for an explicit/ report: {}, {}'.format(path, str(kind))
+                        "bad kind for an explicit/ report: {}, {}".format(
+                            path, str(kind)
+                        )
                     )
 
-                if path.startswith('explicit/images/'):
-                    all_metrics['images'] += amount
-                elif 'top(none)/detached' in path:
-                    all_metrics['top-none-detached'] += amount
-                elif path.startswith('explicit/heap-overhead/'):
-                    all_metrics['heap-overhead'] += amount
+                if path.startswith("explicit/images/"):
+                    all_metrics["images"] += amount
+                elif "top(none)/detached" in path:
+                    all_metrics["top-none-detached"] += amount
+                elif path.startswith("explicit/heap-overhead/"):
+                    all_metrics["heap-overhead"] += amount
 
-            elif path.startswith('js-main-runtime/'):
-                all_metrics['js-main-runtime'] += amount
+            elif path.startswith("js-main-runtime/"):
+                all_metrics["js-main-runtime"] += amount
 
             elif path in metrics_measured:
                 all_metrics[path] += amount
 
         if not pid_found:
-            raise ValueError('no measurements found for pid {}'.format(pid))
+            raise ValueError("no measurements found for pid {}".format(pid))
 
         # Nb: sometimes heap-unclassified is negative due to bogus measurements
         # of some kind. We just show the negative value anyway.
-        all_metrics['heap-unclassified'] = (
-            all_metrics['heap-allocated'] - explicit_heap
-        )
-        all_metrics['explicit'] = (
-            all_metrics['heap-allocated'] + explicit_nonheap
-        )
+        all_metrics["heap-unclassified"] = all_metrics["heap-allocated"] - explicit_heap
+        all_metrics["explicit"] = all_metrics["heap-allocated"] + explicit_nonheap
 
         # Replace all dashes in keys with underscores to fit our crash
         # documents' naming conventions.
         memory_measures = dict(
-            (key.replace('-', '_'), val)
-            for key, val in all_metrics.items()
+            (key.replace("-", "_"), val) for key, val in all_metrics.items()
         )
 
         return memory_measures

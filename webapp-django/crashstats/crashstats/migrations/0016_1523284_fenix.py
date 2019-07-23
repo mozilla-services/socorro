@@ -9,31 +9,23 @@
 from django.db import migrations
 
 
-PRODUCT = 'Fenix'
+PRODUCT = "Fenix"
 SORT = 5
 IS_ACTIVE = True
 
 
 def create_product(apps, schema_editor):
-    Product = apps.get_model('crashstats', 'Product')
-    Product.objects.create(
-        product_name=PRODUCT,
-        sort=SORT,
-        is_active=IS_ACTIVE
-    )
+    Product = apps.get_model("crashstats", "Product")
+    Product.objects.create(product_name=PRODUCT, sort=SORT, is_active=IS_ACTIVE)
 
 
 def delete_product(apps, schema_editor):
-    Product = apps.get_model('crashstats', 'Product')
+    Product = apps.get_model("crashstats", "Product")
     Product.objects.filter(product_name=PRODUCT).delete()
 
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0015_1463514-remove-eventlog'),
-    ]
+    dependencies = [("crashstats", "0015_1463514-remove-eventlog")]
 
-    operations = [
-        migrations.RunPython(create_product, delete_product),
-    ]
+    operations = [migrations.RunPython(create_product, delete_product)]

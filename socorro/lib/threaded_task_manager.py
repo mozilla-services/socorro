@@ -14,21 +14,16 @@ import time
 
 from configman import Namespace
 
-from socorro.lib.task_manager import (
-    default_task_func,
-    default_iterator,
-    TaskManager
-)
+from socorro.lib.task_manager import default_task_func, default_iterator, TaskManager
 
 
 class ThreadedTaskManager(TaskManager):
     """Given an iterator over a sequence of job parameters and a function,
     this class will execute the function in a set of threads."""
+
     required_config = Namespace()
     required_config.add_option(
-        'idle_delay',
-        default=7,
-        doc='the delay in seconds if no job is found'
+        "idle_delay", default=7, doc="the delay in seconds if no job is found"
     )
     # how does one choose how many threads to use?  Keep the number low if your
     # application is compute bound.  You can raise it if your app is i/o
@@ -36,9 +31,7 @@ class ThreadedTaskManager(TaskManager):
     # several values.  For Socorro, we've found that setting this value to the
     # number of processor cores in the system gives the best throughput.
     required_config.add_option(
-        'number_of_threads',
-        default=4,
-        doc='the number of threads'
+        "number_of_threads", default=4, doc="the number of threads"
     )
     # there is wisdom is setting the maximum queue size to be no more than
     # twice the number of threads.  By keeping the threads starved, the
@@ -48,14 +41,12 @@ class ThreadedTaskManager(TaskManager):
     # the queue could be lost.  Limiting the queue size insures minimal
     # damage in a worst case scenario.
     required_config.add_option(
-        'maximum_queue_size',
-        default=8,
-        doc='the maximum size of the internal queue'
+        "maximum_queue_size", default=8, doc="the maximum size of the internal queue"
     )
 
-    def __init__(self, config,
-                 job_source_iterator=default_iterator,
-                 task_func=default_task_func):
+    def __init__(
+        self, config, job_source_iterator=default_iterator, task_func=default_task_func
+    ):
         """the constructor accepts the function that will serve as the data
         source iterator and the function that the threads will execute on
         consuming the data.
@@ -84,7 +75,7 @@ class ThreadedTaskManager(TaskManager):
         threads that just sit and wait for items to appear on the queue. This
         is a non blocking call, so the executing thread is free to do other
         things while the other threads work."""
-        self.logger.debug('start')
+        self.logger.debug("start")
         # start each of the task threads.
         for x in range(self.number_of_threads):
             # each thread is given the config object as well as a reference to
@@ -94,8 +85,7 @@ class ThreadedTaskManager(TaskManager):
             self.thread_list.append(new_thread)
             new_thread.start()
         self.queuing_thread = threading.Thread(
-            name="QueuingThread",
-            target=self._queuing_thread_func
+            name="QueuingThread", target=self._queuing_thread_func
         )
         self.queuing_thread.start()
 
@@ -135,14 +125,16 @@ class ThreadedTaskManager(TaskManager):
                     self.stop()
                     break
                 except KeyboardInterrupt:
-                    self.logger.warning('We heard you the first time.  There '
-                                        'is no need for further keyboard or signal '
-                                        'interrupts.  We are waiting for the '
-                                        'worker threads to stop.  If this app '
-                                        'does not halt soon, you may have to send '
-                                        'SIGKILL (kill -9)')
+                    self.logger.warning(
+                        "We heard you the first time.  There "
+                        "is no need for further keyboard or signal "
+                        "interrupts.  We are waiting for the "
+                        "worker threads to stop.  If this app "
+                        "does not halt soon, you may have to send "
+                        "SIGKILL (kill -9)"
+                    )
 
-    def wait_for_empty_queue(self, wait_log_interval=0, wait_reason=''):
+    def wait_for_empty_queue(self, wait_log_interval=0, wait_reason=""):
         """Sit around and wait for the queue to become empty
 
         parameters:
@@ -159,9 +151,7 @@ class ThreadedTaskManager(TaskManager):
                 break
             self.quit_check()
             if wait_log_interval and not seconds % wait_log_interval:
-                self.logger.info('%s: %dsec so far',
-                                 wait_reason,
-                                 seconds)
+                self.logger.info("%s: %dsec so far", wait_reason, seconds)
                 self.quit_check()
             seconds += 1
             time.sleep(1.0)
@@ -186,7 +176,7 @@ class ThreadedTaskManager(TaskManager):
                 if waiting_func:
                     waiting_func()
             except KeyboardInterrupt:
-                self.logger.debug('quit detected by _responsive_join')
+                self.logger.debug("quit detected by _responsive_join")
                 self.quit = True
 
     def _kill_worker_threads(self):
@@ -210,30 +200,31 @@ class ThreadedTaskManager(TaskManager):
         in the iterator.  Should something go wrong with this thread, or it
         detects the quit flag, it will calmly kill its workers and then
         quit itself."""
-        self.logger.debug('_queuing_thread_func start')
+        self.logger.debug("_queuing_thread_func start")
         try:
             # May never exhaust
             for job_params in self._get_iterator():
-                self.logger.debug('received %r', job_params)
+                self.logger.debug("received %r", job_params)
                 if job_params is None:
                     if self.config.quit_on_empty_queue:
                         self.wait_for_empty_queue(
                             wait_log_interval=10,
-                            wait_reason='waiting for queue to drain'
+                            wait_reason="waiting for queue to drain",
                         )
                         raise KeyboardInterrupt
-                    self.logger.info("there is nothing to do.  Sleeping "
-                                     "for %d seconds" %
-                                     self.config.idle_delay)
+                    self.logger.info(
+                        "there is nothing to do.  Sleeping "
+                        "for %d seconds" % self.config.idle_delay
+                    )
                     self._responsive_sleep(self.config.idle_delay)
                     continue
                 self.quit_check()
                 # self.logger.debug("queuing job %s", job_params)
                 self.task_queue.put((self.task_func, job_params))
         except Exception:
-            self.logger.error('queuing jobs has failed', exc_info=True)
+            self.logger.error("queuing jobs has failed", exc_info=True)
         except KeyboardInterrupt:
-            self.logger.debug('queuingThread gets quit request')
+            self.logger.debug("queuingThread gets quit request")
         finally:
             self.logger.debug("we're quitting queuingThread")
             self._kill_worker_threads()
@@ -263,7 +254,7 @@ class TaskThread(threading.Thread):
         super().__init__()
         self.task_queue = task_queue
         self.config = config
-        self.logger = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def _get_name(self):
         return threading.currentThread().getName()
@@ -281,7 +272,7 @@ class TaskThread(threading.Thread):
                 if function is None:
                     # this allows us to watch the threads die and identify
                     # threads that may be hanging or deadlocked
-                    self.logger.info('quits')
+                    self.logger.info("quits")
                     break
                 if quit_request_detected:
                     continue
@@ -295,7 +286,7 @@ class TaskThread(threading.Thread):
                 except Exception:
                     self.logger.error("Error in processing a job", exc_info=True)
                 except KeyboardInterrupt:  # TODO: can probably go away
-                    self.logger.info('quit request detected')
+                    self.logger.info("quit request detected")
                     quit_request_detected = True
                     # Only needed if signal handler is not registered
                     # thread.interrupt_main()

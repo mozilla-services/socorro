@@ -73,16 +73,16 @@ def string_to_datetime(date):
             date = date.replace(tzinfo=UTC)
         return date
     if isinstance(date, list):
-        date = 'T'.join(date)
+        date = "T".join(date)
     if isinstance(date, str):
-        if len(date) <= len('2000-01-01'):
-            return datetime.datetime.strptime(date, '%Y-%m-%d').replace(tzinfo=UTC)
+        if len(date) <= len("2000-01-01"):
+            return datetime.datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=UTC)
         else:
             try:
                 parsed = isodate.parse_datetime(date)
             except ValueError:
                 # e.g. '2012-01-10 12:13:14Z' becomes '2012-01-10T12:13:14Z'
-                parsed = isodate.parse_datetime(re.sub(r'(\d)\s(\d)', r'\1T\2', date))
+                parsed = isodate.parse_datetime(re.sub(r"(\d)\s(\d)", r"\1T\2", date))
             if not parsed.tzinfo:
                 parsed = parsed.replace(tzinfo=UTC)
             return parsed
@@ -103,17 +103,17 @@ def date_to_string(date):
     """
     if isinstance(date, datetime.datetime):
         # Create an ISO 8601 datetime string
-        date_str = date.strftime('%Y-%m-%dT%H:%M:%S')
-        tzstr = date.strftime('%z')
+        date_str = date.strftime("%Y-%m-%dT%H:%M:%S")
+        tzstr = date.strftime("%z")
         if tzstr:
             # Yes, this is ugly. And no, I haven't found a better way to have a
             # truly ISO 8601 datetime with timezone in Python.
-            date_str = '%s%s:%s' % (date_str, tzstr[0:3], tzstr[3:5])
+            date_str = "%s%s:%s" % (date_str, tzstr[0:3], tzstr[3:5])
     elif isinstance(date, datetime.date):
         # Create an ISO 8601 date string
-        date_str = date.strftime('%Y-%m-%d')
+        date_str = date.strftime("%Y-%m-%d")
     else:
-        raise TypeError('Argument is not a date or datetime. ')
+        raise TypeError("Argument is not a date or datetime. ")
 
     return date_str
 
@@ -125,6 +125,7 @@ class JsonDTEncoder(json.JSONEncoder):
     ...
 
     """
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -138,6 +139,7 @@ class JsonDTISOEncoder(json.JSONEncoder):
     ...
 
     """
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
@@ -161,24 +163,26 @@ def timesince(d, now):
     http://web.archive.org/web/20060617175230/\
     http://blog.natbat.co.uk/archive/2003/Jun/14/time_since
     """
+
     def pluralize(a, b):
         def inner(n):
             if n == 1:
                 return a % n
             return b % n
+
         return inner
 
     def ugettext(s):
         return s
 
     chunks = (
-        (60 * 60 * 24 * 365, pluralize('%d year', '%d years')),
-        (60 * 60 * 24 * 30, pluralize('%d month', '%d months')),
-        (60 * 60 * 24 * 7, pluralize('%d week', '%d weeks')),
-        (60 * 60 * 24, pluralize('%d day', '%d days')),
-        (60 * 60, pluralize('%d hour', '%d hours')),
-        (60, pluralize('%d minute', '%d minutes')),
-        (0, pluralize('%d second', '%d seconds'))
+        (60 * 60 * 24 * 365, pluralize("%d year", "%d years")),
+        (60 * 60 * 24 * 30, pluralize("%d month", "%d months")),
+        (60 * 60 * 24 * 7, pluralize("%d week", "%d weeks")),
+        (60 * 60 * 24, pluralize("%d day", "%d days")),
+        (60 * 60, pluralize("%d hour", "%d hours")),
+        (60, pluralize("%d minute", "%d minutes")),
+        (0, pluralize("%d second", "%d seconds")),
     )
     # Convert datetime.date to datetime.datetime for comparison.
     if not isinstance(d, datetime.datetime):
@@ -211,6 +215,6 @@ def timesince(d, now):
         else:
             count2 = since - (seconds * count)
         if count2 != 0:
-            result += ugettext(', ') + name2(count2)
+            result += ugettext(", ") + name2(count2)
 
     return result

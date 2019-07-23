@@ -10,17 +10,32 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashstats', '0006_1493768-bug-associations'),
-    ]
+    dependencies = [("crashstats", "0006_1493768-bug-associations")]
 
     operations = [
         migrations.CreateModel(
-            name='Platform',
+            name="Platform",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text=b'Name of the platform', max_length=20)),
-                ('short_name', models.CharField(help_text=b'Short abbreviated name of the platform', max_length=20)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(help_text=b"Name of the platform", max_length=20),
+                ),
+                (
+                    "short_name",
+                    models.CharField(
+                        help_text=b"Short abbreviated name of the platform",
+                        max_length=20,
+                    ),
+                ),
             ],
-        ),
+        )
     ]

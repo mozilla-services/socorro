@@ -11,7 +11,7 @@ from socorro.lib import datetimeutil
 
 
 UTC = datetimeutil.UTC
-PLUS3 = isodate.tzinfo.FixedOffset(3, 0, '+03:00')
+PLUS3 = isodate.tzinfo.FixedOffset(3, 0, "+03:00")
 
 
 def test_utc_now():
@@ -19,8 +19,8 @@ def test_utc_now():
     Test datetimeutil.utc_now()
     """
     res = datetimeutil.utc_now()
-    assert res.strftime('%Z') == 'UTC'
-    assert res.strftime('%z') == '+0000'
+    assert res.strftime("%Z") == "UTC"
+    assert res.strftime("%z") == "+0000"
     assert res.tzinfo is not None
 
 
@@ -38,20 +38,20 @@ def test_string_to_datetime():
     res = datetimeutil.string_to_datetime(date)
 
     assert res == date.replace(tzinfo=UTC)
-    assert res.strftime('%Z') == 'UTC'
-    assert res.strftime('%z') == '+0000'
+    assert res.strftime("%Z") == "UTC"
+    assert res.strftime("%z") == "+0000"
 
     # YY-mm-dd date
     date = "2001-11-03"
     res = datetimeutil.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 3, tzinfo=UTC)
-    assert res.strftime('%Z') == 'UTC'  # timezone aware
+    assert res.strftime("%Z") == "UTC"  # timezone aware
 
     # and naughty YY-m-d date
     date = "2001-1-3"
     res = datetimeutil.string_to_datetime(date)
     assert res == datetime.datetime(2001, 1, 3, tzinfo=UTC)
-    assert res.strftime('%Z') == 'UTC'  # timezone aware
+    assert res.strftime("%Z") == "UTC"  # timezone aware
 
     # YY-mm-dd HH:ii:ss.S date
     date = "2001-11-30 12:34:56.123456"
@@ -73,11 +73,11 @@ def test_string_datetime_with_timezone():
     date = "2001-11-30T12:34:56Z"
     res = datetimeutil.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 30, 12, 34, 56, tzinfo=UTC)
-    assert res.strftime('%H') == '12'
+    assert res.strftime("%H") == "12"
     # because it's a timezone aware datetime
-    assert res.tzname() == 'UTC'
-    assert res.strftime('%Z') == 'UTC'
-    assert res.strftime('%z') == '+0000'
+    assert res.tzname() == "UTC"
+    assert res.strftime("%Z") == "UTC"
+    assert res.strftime("%z") == "+0000"
 
     # plus 3 hours east of Zulu means minus 3 hours on UTC
     date = "2001-11-30T12:10:56+03:00"
@@ -96,16 +96,19 @@ def test_string_datetime_with_timezone():
     assert res == datetime.datetime(2001, 11, 30, 12, 34, 56, 123456, tzinfo=UTC)
 
 
-@pytest.mark.parametrize('ts, timezone', [
-    ('2012-01-10T12:13:14', UTC),
-    ('2012-01-10T12:13:14.98765', UTC),
-    ('2012-01-10T12:13:14.98765+03:00', PLUS3),
-    ('2012-01-10T12:13:14.98765Z', UTC),
-    ('2012-01-10 12:13:14', UTC),
-    ('2012-01-10 12:13:14.98765', UTC),
-    ('2012-01-10 12:13:14.98765+03:00', PLUS3),
-    ('2012-01-10 12:13:14.98765Z', UTC),
-])
+@pytest.mark.parametrize(
+    "ts, timezone",
+    [
+        ("2012-01-10T12:13:14", UTC),
+        ("2012-01-10T12:13:14.98765", UTC),
+        ("2012-01-10T12:13:14.98765+03:00", PLUS3),
+        ("2012-01-10T12:13:14.98765Z", UTC),
+        ("2012-01-10 12:13:14", UTC),
+        ("2012-01-10 12:13:14.98765", UTC),
+        ("2012-01-10 12:13:14.98765+03:00", PLUS3),
+        ("2012-01-10 12:13:14.98765Z", UTC),
+    ],
+)
 def test_string_datetime_with_timezone_variations(ts, timezone):
     res = datetimeutil.string_to_datetime(ts)
     # NOTE(willkg): isodate.tzinfo.FixedOffset doesn't define __eq__, so we compare the
@@ -117,23 +120,23 @@ def test_string_datetime_with_timezone_variations(ts, timezone):
 def test_date_to_string():
     # Datetime with timezone
     date = datetime.datetime(2012, 1, 3, 12, 23, 34, tzinfo=UTC)
-    res_exp = '2012-01-03T12:23:34+00:00'
+    res_exp = "2012-01-03T12:23:34+00:00"
     res = datetimeutil.date_to_string(date)
     assert res == res_exp
 
     # Datetime without timezone
     date = datetime.datetime(2012, 1, 3, 12, 23, 34)
-    res_exp = '2012-01-03T12:23:34'
+    res_exp = "2012-01-03T12:23:34"
     res = datetimeutil.date_to_string(date)
     assert res == res_exp
 
     # Date (no time, no timezone)
     date = datetime.date(2012, 1, 3)
-    res_exp = '2012-01-03'
+    res_exp = "2012-01-03"
     res = datetimeutil.date_to_string(date)
     assert res == res_exp
 
 
 def test_date_to_string_fail():
     with pytest.raises(TypeError):
-        datetimeutil.date_to_string('2012-01-03')
+        datetimeutil.date_to_string("2012-01-03")

@@ -33,29 +33,26 @@ class UploadTelemetrySchema(App):
 
     """
 
-    app_name = 'upload-telemetry-schema'
-    app_version = '0.1'
-    app_description = 'Uploads JSON schema to S3 bucket for Telemetry'
-    metadata = ''
+    app_name = "upload-telemetry-schema"
+    app_version = "0.1"
+    app_description = "Uploads JSON schema to S3 bucket for Telemetry"
+    metadata = ""
 
     required_config = Namespace()
     required_config.telemetry = Namespace()
     required_config.telemetry.add_option(
-        'resource_class',
+        "resource_class",
         default=(
-            'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
+            "socorro.external.boto.connection_context.RegionalS3ConnectionContext"
         ),
-        doc=(
-            'fully qualified dotted Python classname to handle Boto '
-            'connections'
-        ),
+        doc="fully qualified dotted Python classname to handle Boto " "connections",
         from_string_converter=class_converter,
-        reference_value_from='resource.boto'
+        reference_value_from="resource.boto",
     )
     required_config.telemetry.add_option(
-        'json_filename',
-        default='crash_report.json',
-        doc="Name of the file/key we're going to upload to"
+        "json_filename",
+        default="crash_report.json",
+        doc="Name of the file/key we're going to upload to",
     )
 
     def main(self):
@@ -63,12 +60,14 @@ class UploadTelemetrySchema(App):
 
         connection = connection_context._connect()
         try:
-            bucket = connection_context._get_bucket(connection, self.config.telemetry.bucket_name)
+            bucket = connection_context._get_bucket(
+                connection, self.config.telemetry.bucket_name
+            )
         except S3ResponseError:
             # If there's no bucket--fail out here
             self.logger.error(
-                'Failure: The %s S3 bucket must be created first.',
-                self.config.telemetry.bucket_name
+                "Failure: The %s S3 bucket must be created first.",
+                self.config.telemetry.bucket_name,
             )
             return 1
 
@@ -77,7 +76,7 @@ class UploadTelemetrySchema(App):
             key = bucket.new_key(self.config.telemetry.json_filename)
         key.set_contents_from_string(CRASH_REPORT_JSON_SCHEMA_AS_STRING)
 
-        self.logger.info('Success: Schema uploaded!')
+        self.logger.info("Success: Schema uploaded!")
         return 0
 
 

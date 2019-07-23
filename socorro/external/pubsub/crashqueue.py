@@ -39,51 +39,51 @@ class PubSubCrashQueue(RequiredConfig):
 
     required_config = Namespace()
     required_config.add_option(
-        'service_account_file',
-        doc='The absolute path to the JSON service account credentials file.',
-        reference_value_from='resource.pubsub'
+        "service_account_file",
+        doc="The absolute path to the JSON service account credentials file.",
+        reference_value_from="resource.pubsub",
     )
     required_config.add_option(
-        'project_id',
-        doc='The Google Compute Platform project_id.',
-        reference_value_from='resource.pubsub'
+        "project_id",
+        doc="The Google Compute Platform project_id.",
+        reference_value_from="resource.pubsub",
     )
     required_config.add_option(
-        'standard_topic_name',
-        doc='The topic name for the standard queue.',
-        reference_value_from='resource.pubsub'
+        "standard_topic_name",
+        doc="The topic name for the standard queue.",
+        reference_value_from="resource.pubsub",
     )
     required_config.add_option(
-        'standard_subscription_name',
-        doc='The subscription name for the standard queue.',
-        reference_value_from='resource.pubsub'
+        "standard_subscription_name",
+        doc="The subscription name for the standard queue.",
+        reference_value_from="resource.pubsub",
     )
     required_config.add_option(
-        'priority_topic_name',
-        doc='The topic name for the priority queue.',
-        reference_value_from='resource.pubsub'
+        "priority_topic_name",
+        doc="The topic name for the priority queue.",
+        reference_value_from="resource.pubsub",
     )
     required_config.add_option(
-        'priority_subscription_name',
-        doc='The subscription name for the priority queue.',
-        reference_value_from='resource.pubsub'
+        "priority_subscription_name",
+        doc="The subscription name for the priority queue.",
+        reference_value_from="resource.pubsub",
     )
     required_config.add_option(
-        'reprocessing_topic_name',
-        doc='The topic name for the reprocessing queue.',
-        reference_value_from='resource.pubsub'
+        "reprocessing_topic_name",
+        doc="The topic name for the reprocessing queue.",
+        reference_value_from="resource.pubsub",
     )
     required_config.add_option(
-        'reprocessing_subscription_name',
-        doc='The subscription name for the reprocessing queue.',
-        reference_value_from='resource.pubsub'
+        "reprocessing_subscription_name",
+        doc="The subscription name for the reprocessing queue.",
+        reference_value_from="resource.pubsub",
     )
 
-    def __init__(self, config, namespace='', quit_check_callback=None):
+    def __init__(self, config, namespace="", quit_check_callback=None):
         self.config = config
         self.quit_check_callback = quit_check_callback
 
-        if os.environ.get('PUBSUB_EMULATOR_HOST', ''):
+        if os.environ.get("PUBSUB_EMULATOR_HOST", ""):
             self.subscriber = pubsub_v1.SubscriberClient()
         else:
             self.subscriber = pubsub_v1.SubscriberClient.from_service_account_file(
@@ -107,7 +107,7 @@ class PubSubCrashQueue(RequiredConfig):
 
     def ack_crash(self, sub_path, ack_id):
         self.subscriber.acknowledge(sub_path, [ack_id])
-        logger.debug('ack %s from %s', ack_id, sub_path)
+        logger.debug("ack %s from %s", ack_id, sub_path)
 
     def close(self):
         pass
@@ -120,11 +120,7 @@ class PubSubCrashQueue(RequiredConfig):
         ``finished_func`` when it's done processing the crash.
 
         """
-        sub_paths = [
-            self.priority_path,
-            self.standard_path,
-            self.reprocessing_path,
-        ]
+        sub_paths = [self.priority_path, self.standard_path, self.reprocessing_path]
 
         while True:
             msgs = 0
@@ -133,7 +129,7 @@ class PubSubCrashQueue(RequiredConfig):
                     response = self.subscriber.pull(
                         sub_path,
                         max_messages=PUBSUB_MAX_MESSAGES,
-                        return_immediately=True
+                        return_immediately=True,
                     )
                 except DeadlineExceeded:
                     # If we exceeded the timeout, treat it as if there was
@@ -143,15 +139,19 @@ class PubSubCrashQueue(RequiredConfig):
                 if response.received_messages:
                     msgs += 1
                     for msg in response.received_messages:
-                        crash_id = msg.message.data.decode('utf-8')
-                        logger.debug('got %s from %s', crash_id, sub_path)
-                        if crash_id == 'test':
+                        crash_id = msg.message.data.decode("utf-8")
+                        logger.debug("got %s from %s", crash_id, sub_path)
+                        if crash_id == "test":
                             # Ack and drop any test crash ids
                             self.ack_crash(sub_path, msg.ack_id)
                             continue
                         yield (
                             (crash_id,),
-                            {'finished_func': partial(self.ack_crash, sub_path, msg.ack_id)}
+                            {
+                                "finished_func": partial(
+                                    self.ack_crash, sub_path, msg.ack_id
+                                )
+                            },
                         )
             if msgs == 0:
                 # There's nothing to process, so return
@@ -165,22 +165,22 @@ class PubSubCrashQueue(RequiredConfig):
 
     def publish(self, queue, crash_ids):
         """Publish crash ids to specified queue."""
-        assert queue in ['standard', 'priority', 'reprocessing']
+        assert queue in ["standard", "priority", "reprocessing"]
 
-        if os.environ.get('PUBSUB_EMULATOR_HOST', ''):
+        if os.environ.get("PUBSUB_EMULATOR_HOST", ""):
             publisher = pubsub_v1.PublisherClient()
         else:
             publisher = pubsub_v1.PublisherClient.from_service_account_file(
                 self.config.service_account_file
             )
         project_id = self.config.project_id
-        topic_name = self.config['%s_topic_name' % queue]
+        topic_name = self.config["%s_topic_name" % queue]
         topic_path = publisher.topic_path(project_id, topic_name)
 
         # Queue up the batch
         futures = []
         for crash_id in crash_ids:
-            futures.append(publisher.publish(topic_path, data=crash_id.encode('utf-8')))
+            futures.append(publisher.publish(topic_path, data=crash_id.encode("utf-8")))
 
         # Wait for everything in this group to get sent out
         for future in futures:

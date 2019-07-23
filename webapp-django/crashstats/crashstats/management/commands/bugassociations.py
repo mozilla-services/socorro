@@ -26,12 +26,12 @@ from socorro.lib.requestslib import session_with_retries
 # or had their crash_signature field change. Only return the two fields that
 # interest us, the id and the crash_signature text.
 BUGZILLA_PARAMS = {
-    'chfieldfrom': '%s',
-    'chfieldto': 'Now',
-    'chfield': ['[Bug creation]', 'cf_crash_signature'],
-    'include_fields': ['id', 'cf_crash_signature'],
+    "chfieldfrom": "%s",
+    "chfieldto": "Now",
+    "chfield": ["[Bug creation]", "cf_crash_signature"],
+    "include_fields": ["id", "cf_crash_signature"],
 }
-BUGZILLA_BASE_URL = 'https://bugzilla.mozilla.org/rest/bug'
+BUGZILLA_BASE_URL = "https://bugzilla.mozilla.org/rest/bug"
 
 
 def find_signatures(content):
@@ -50,13 +50,13 @@ def find_signatures(content):
         return set()
 
     signatures = set()
-    parts = content.split('[@')
+    parts = content.split("[@")
 
     # NOTE(willkg): Because we use split, the first item in the list is always
     # a non-signature--so skip it.
     for part in parts[1:]:
         try:
-            last_bracket = part.rindex(']')
+            last_bracket = part.rindex("]")
             signature = part[:last_bracket].strip()
             signatures.add(signature)
         except ValueError:
@@ -67,19 +67,20 @@ def find_signatures(content):
 
 
 class Command(BaseCommand):
-    help = 'Updates Socorro\'s knowledge of which bugs cover which crash signatures'
+    help = "Updates Socorro's knowledge of which bugs cover which crash signatures"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--last-success', default='',
+            "--last-success",
+            default="",
             help=(
-                'The start of the window to look at in YYYY-mm-dd format. Defaults to '
-                'now minus one day.'
-            )
+                "The start of the window to look at in YYYY-mm-dd format. Defaults to "
+                "now minus one day."
+            ),
         )
 
     def handle(self, **options):
-        start_date_arg = options.get('last_success')
+        start_date_arg = options.get("last_success")
         if not start_date_arg:
             # Default to now minus a day
             start_date = timezone.now() - datetime.timedelta(days=1)
@@ -90,9 +91,11 @@ class Command(BaseCommand):
                 # Try to parse it as a date
                 start_date = parse_date(start_date_arg)
             if not start_date:
-                raise CommandError('Unrecognized last_success format: %s' % start_date_arg)
+                raise CommandError(
+                    "Unrecognized last_success format: %s" % start_date_arg
+                )
 
-        start_date_formatted = start_date.strftime('%Y-%m-%d')
+        start_date_formatted = start_date.strftime("%Y-%m-%d")
 
         # Fetch recent relevant changes and iterate over them updating our
         # data set
@@ -100,7 +103,7 @@ class Command(BaseCommand):
             self.update_bug_data(bug_id, signature_set)
 
     def update_bug_data(self, bug_id, signature_set):
-        self.stdout.write('bug %s: %s' % (bug_id, signature_set))
+        self.stdout.write("bug %s: %s" % (bug_id, signature_set))
 
         # If there's no associated signatures, delete everything for this bug id
         if not signature_set:
@@ -109,32 +112,33 @@ class Command(BaseCommand):
 
         # Remove existing signature associations with this bug
         existing_signatures = list(
-            BugAssociation.objects
-            .filter(bug_id=bug_id)
-            .values_list('signature', flat=True)
+            BugAssociation.objects.filter(bug_id=bug_id).values_list(
+                "signature", flat=True
+            )
         )
 
         # Remove associations that no longer exist
         for signature in existing_signatures:
             if signature not in signature_set:
-                BugAssociation.objects.filter(bug_id=bug_id, signature=signature).delete()
-                self.stdout.write('association removed: %s - "%s"' % (bug_id, signature))
+                BugAssociation.objects.filter(
+                    bug_id=bug_id, signature=signature
+                ).delete()
+                self.stdout.write(
+                    'association removed: %s - "%s"' % (bug_id, signature)
+                )
 
         # Add new associations
         for signature in signature_set:
             if signature not in existing_signatures:
-                BugAssociation.objects.create(
-                    bug_id=bug_id,
-                    signature=signature
-                )
+                BugAssociation.objects.create(bug_id=bug_id, signature=signature)
                 self.stdout.write('association added: %s - "%s"' % (bug_id, signature))
 
     def _iterator(self, start_date):
-        self.stdout.write('Working on %s to now' % start_date)
+        self.stdout.write("Working on %s to now" % start_date)
         # Fetch all the bugs that have been created or had the crash_signature
         # field changed since start_date
         payload = BUGZILLA_PARAMS.copy()
-        payload['chfieldfrom'] = start_date
+        payload["chfieldfrom"] = start_date
 
         # Use a 30-second timeout because Bugzilla is slow sometimes
         session = session_with_retries(default_timeout=30.0)
@@ -144,8 +148,8 @@ class Command(BaseCommand):
         results = r.json()
 
         # Yield each one as a (bug_id, set of signatures)
-        for report in results['bugs']:
+        for report in results["bugs"]:
             yield (
-                int(report['id']),
-                find_signatures(report.get('cf_crash_signature', ''))
+                int(report["id"]),
+                find_signatures(report.get("cf_crash_signature", "")),
             )

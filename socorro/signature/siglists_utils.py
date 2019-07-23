@@ -14,12 +14,13 @@ from pkg_resources import resource_stream
 # grow much, and if it does, we should find a better solution for handling
 # these special values.
 _SPECIAL_EXTENDED_VALUES = {
-    'signature_sentinels': [
+    "signature_sentinels": [
         (
-            'mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
-            lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x  # noqa
-        ),
-    ],
+            "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)",
+            lambda x: "CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)"
+            in x,  # noqa
+        )
+    ]
 }
 
 
@@ -33,24 +34,20 @@ def _get_file_content(source):
     Remove empty lines and comments (lines starting with a '#').
 
     """
-    filepath = os.path.join('siglists', source + '.txt')
+    filepath = os.path.join("siglists", source + ".txt")
 
     lines = []
     with resource_stream(__name__, filepath) as f:
         for i, line in enumerate(f):
-            line = line.decode('utf-8', 'strict').strip()
-            if not line or line.startswith('#'):
+            line = line.decode("utf-8", "strict").strip()
+            if not line or line.startswith("#"):
                 continue
 
             try:
                 re.compile(line)
             except Exception as ex:
                 raise BadRegularExpressionLineError(
-                    'Regex error: {} in file {} at line {}'.format(
-                        str(ex),
-                        filepath,
-                        i
-                    )
+                    "Regex error: {} in file {} at line {}".format(str(ex), filepath, i)
                 )
 
             lines.append(line)
@@ -61,7 +58,7 @@ def _get_file_content(source):
     return tuple(lines)
 
 
-IRRELEVANT_SIGNATURE_RE = _get_file_content('irrelevant_signature_re')
-PREFIX_SIGNATURE_RE = _get_file_content('prefix_signature_re')
-SIGNATURE_SENTINELS = _get_file_content('signature_sentinels')
-SIGNATURES_WITH_LINE_NUMBERS_RE = _get_file_content('signatures_with_line_numbers_re')
+IRRELEVANT_SIGNATURE_RE = _get_file_content("irrelevant_signature_re")
+PREFIX_SIGNATURE_RE = _get_file_content("prefix_signature_re")
+SIGNATURE_SENTINELS = _get_file_content("signature_sentinels")
+SIGNATURES_WITH_LINE_NUMBERS_RE = _get_file_content("signatures_with_line_numbers_re")

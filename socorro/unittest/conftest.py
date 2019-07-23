@@ -48,7 +48,7 @@ def caplogpp(caplog):
     """Fix logger propagation values, return caplog fixture, and unfix when done."""
     changed_loggers = []
     for logger in logging.Logger.manager.loggerDict.values():
-        if getattr(logger, 'propagate', True) is False:
+        if getattr(logger, "propagate", True) is False:
             logger.propagate = True
             changed_loggers.append(logger)
 

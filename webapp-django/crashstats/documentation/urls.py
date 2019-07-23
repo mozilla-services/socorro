@@ -7,36 +7,16 @@ from django.conf.urls import url
 from crashstats.documentation import views
 
 
-app_name = 'documentation'
+app_name = "documentation"
 urlpatterns = [
+    url(r"^supersearch/$", views.supersearch_home, name="supersearch_home"),
     url(
-        r'^supersearch/$',
-        views.supersearch_home,
-        name='supersearch_home',
-    ),
-    url(
-        r'^supersearch/examples/$',
+        r"^supersearch/examples/$",
         views.supersearch_examples,
-        name='supersearch_examples',
+        name="supersearch_examples",
     ),
-    url(
-        r'^supersearch/api/$',
-        views.supersearch_api,
-        name='supersearch_api',
-    ),
-    url(
-        r'^memory_dump_access/$',
-        views.memory_dump_access,
-        name='memory_dump_access',
-    ),
-    url(
-        r'^products/$',
-        views.products,
-        name='products',
-    ),
-    url(
-        r'^$',
-        views.home,
-        name='home',
-    ),
+    url(r"^supersearch/api/$", views.supersearch_api, name="supersearch_api"),
+    url(r"^memory_dump_access/$", views.memory_dump_access, name="memory_dump_access"),
+    url(r"^products/$", views.products, name="products"),
+    url(r"^$", views.home, name="home"),
 ]
