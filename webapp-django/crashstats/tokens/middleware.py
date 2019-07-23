@@ -38,11 +38,11 @@ class APIAuthenticationMiddleware(object):
         # AuthenticationMiddleware is required so that request.user exists.
         if not hasattr(request, "user"):
             raise ImproperlyConfigured(
-                "The API Authenication middleware requires the"
-                " authentication middleware to be installed. Edit your"
-                " MIDDLEWARE setting to insert"
-                " 'django.contrib.auth.middleware.AuthenticationMiddleware'"
-                " before the RemoteUserMiddleware class."
+                "The API Authenication middleware requires the "
+                "authentication middleware to be installed. Edit your "
+                "MIDDLEWARE setting to insert "
+                "'django.contrib.auth.middleware.AuthenticationMiddleware' "
+                "before the RemoteUserMiddleware class."
             )
 
         key = request.META.get("HTTP_AUTH_TOKEN")

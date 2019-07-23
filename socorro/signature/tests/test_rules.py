@@ -72,7 +72,7 @@ class TestCSignatureTool:
         assert (
             exp_signatures_with_line_numbers_re.pattern
             == s.signatures_with_line_numbers_re.pattern
-        )  # noqa
+        )
 
         assert fixup_space.pattern == s.fixup_space.pattern
         assert fixup_comma.pattern == s.fixup_comma.pattern

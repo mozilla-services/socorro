@@ -276,8 +276,10 @@ class SuperSearchFields(SuperSearchFieldsData):
         except elasticsearch.exceptions.ElasticsearchException as e:
             raise BadArgumentError(
                 "storage_mapping",
-                msg="Indexing existing data in Elasticsearch failed with the "
-                "new mapping. Error is: %s" % str(e),
+                msg=(
+                    "Indexing existing data in Elasticsearch failed with the "
+                    "new mapping. Error is: %s" % str(e)
+                ),
             )
         finally:
             try:

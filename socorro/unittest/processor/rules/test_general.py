@@ -38,45 +38,51 @@ canonical_standard_raw_crash = DotDict(
         "submitted_timestamp": "2012-05-08T23:26:33.454482+00:00",
         "URL": "http://www.mozilla.com",
         "timestamp": 1336519593.454627,
-        "Notes": "AdapterVendorID: 0x1002, AdapterDeviceID: 0x7280, "
-        "AdapterSubsysID: 01821043, "
-        "AdapterDriverVersion: 8.593.100.0\nD3D10 Layers? D3D10 "
-        "Layers- D3D9 Layers? D3D9 Layers- ",
+        "Notes": (
+            "AdapterVendorID: 0x1002, AdapterDeviceID: 0x7280, "
+            "AdapterSubsysID: 01821043, "
+            "AdapterDriverVersion: 8.593.100.0\nD3D10 Layers? D3D10 "
+            "Layers- D3D9 Layers? D3D9 Layers- "
+        ),
         "CrashTime": "1336519554",
-        "Winsock_LSP": "MSAFD Tcpip [TCP/IPv6] : 2 : 1 :  \n "
-        "MSAFD Tcpip [UDP/IPv6] : 2 : 2 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "MSAFD Tcpip [RAW/IPv6] : 2 : 3 :  \n "
-        "MSAFD Tcpip [TCP/IP] : 2 : 1 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "MSAFD Tcpip [UDP/IP] : 2 : 2 :  \n "
-        "MSAFD Tcpip [RAW/IP] : 2 : 3 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP TCPv6 : 2 : 1 :  \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP TCP : 2 : 1 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP UDPv6 : 2 : 2 :  \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP UDP : 2 : 2 : "
-        "%SystemRoot%\\system32\\mswsock.dll",
+        "Winsock_LSP": (
+            "MSAFD Tcpip [TCP/IPv6] : 2 : 1 :  \n "
+            "MSAFD Tcpip [UDP/IPv6] : 2 : 2 : "
+            "%SystemRoot%\\system32\\mswsock.dll \n "
+            "MSAFD Tcpip [RAW/IPv6] : 2 : 3 :  \n "
+            "MSAFD Tcpip [TCP/IP] : 2 : 1 : "
+            "%SystemRoot%\\system32\\mswsock.dll \n "
+            "MSAFD Tcpip [UDP/IP] : 2 : 2 :  \n "
+            "MSAFD Tcpip [RAW/IP] : 2 : 3 : "
+            "%SystemRoot%\\system32\\mswsock.dll \n "
+            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+            "\u0443\u0441\u043b\u0443\u0433 RSVP TCPv6 : 2 : 1 :  \n "
+            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+            "\u0443\u0441\u043b\u0443\u0433 RSVP TCP : 2 : 1 : "
+            "%SystemRoot%\\system32\\mswsock.dll \n "
+            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+            "\u0443\u0441\u043b\u0443\u0433 RSVP UDPv6 : 2 : 2 :  \n "
+            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+            "\u0443\u0441\u043b\u0443\u0433 RSVP UDP : 2 : 2 : "
+            "%SystemRoot%\\system32\\mswsock.dll"
+        ),
         "FramePoisonBase": "00000000f0de0000",
         "AvailablePhysicalMemory": "2227773440",
         "FramePoisonSize": "65536",
         "StartupTime": "1336499438",
-        "Add-ons": "adblockpopups@jessehakanen.net:0.3,"
-        "dmpluginff%40westbyte.com:1%2C4.8,"
-        "firebug@software.joehewitt.com:1.9.1,"
-        "killjasmin@pierros14.com:2.4,"
-        "support@surfanonymous-free.com:1.0,"
-        "uploader@adblockfilters.mozdev.org:2.1,"
-        "{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}:20111107,"
-        "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}:2.0.3,"
-        "anttoolbar@ant.com:2.4.6.4,"
-        "{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0,"
-        "elemhidehelper@adblockplus.org:1.2.1",
+        "Add-ons": (
+            "adblockpopups@jessehakanen.net:0.3,"
+            "dmpluginff%40westbyte.com:1%2C4.8,"
+            "firebug@software.joehewitt.com:1.9.1,"
+            "killjasmin@pierros14.com:2.4,"
+            "support@surfanonymous-free.com:1.0,"
+            "uploader@adblockfilters.mozdev.org:2.1,"
+            "{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}:20111107,"
+            "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}:2.0.3,"
+            "anttoolbar@ant.com:2.4.6.4,"
+            "{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0,"
+            "elemhidehelper@adblockplus.org:1.2.1"
+        ),
         "BuildID": "20120420145725",
         "SecondsSinceLastCrash": "86985",
         "ProductName": "Firefox",

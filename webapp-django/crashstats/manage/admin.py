@@ -151,10 +151,10 @@ def debug_view(request):
     with connection.cursor() as cursor:
         cursor.execute(
             """
-        SELECT c.relname
-        FROM pg_catalog.pg_class c
-        WHERE c.relkind = 'r'
-        """
+            SELECT c.relname
+            FROM pg_catalog.pg_class c
+            WHERE c.relkind = 'r'
+            """
         )
         tables = cursor.fetchall()
     for tablename in sorted(tables):

@@ -359,7 +359,7 @@ class PolyStorageError(Exception, collections.MutableSequence):
         self.exceptions.append(sys.exc_info())
 
     def has_exceptions(self):
-        """Boolean opposite of is_empty""" ""
+        """Boolean opposite of is_empty"""
         return bool(self.exceptions)
 
     def __len__(self):

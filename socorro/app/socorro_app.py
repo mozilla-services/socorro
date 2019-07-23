@@ -174,7 +174,7 @@ class App(RequiredConfig):
             application_config = Namespace()
             application_config.add_option(
                 "application",
-                doc=("the fully qualified classname of the app to run"),
+                doc="the fully qualified classname of the app to run",
                 default=cls_to_pypath(cls),
                 # the following setting means this option will NOT be
                 # commented out when configman generates a config file

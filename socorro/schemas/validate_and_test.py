@@ -105,7 +105,7 @@ def run(no_crashes, *urls):
         print(r.url)
         processed_crash = r.json()
 
-        processor.save_raw_and_processed(raw_crash, (), processed_crash, uuid)  # dumps
+        processor.save_raw_and_processed(raw_crash, (), processed_crash, uuid)
         log_all_keys(processor.combined)
 
         jsonschema.validate(processor.combined, schema)
@@ -115,12 +115,12 @@ def run(no_crashes, *urls):
     keys_not_in_crashes = set(all_schema_types.keys()) - all_keys
     if keys_not_in_crashes:
         print(
-            len(keys_not_in_crashes),
-            "keys in JSON Schema, but never in any of the tested crashes:",
+            "%s keys in JSON Schema, but never in any of the tested crashes:"
+            % len(keys_not_in_crashes)
         )
-        print("  ", "KEY".ljust(60), "TYPE(S)")
+        print("  %s%s" % ("KEY".ljust(60), "TYPE(S)"))
         for k in sorted(keys_not_in_crashes):
-            print("  ", k.ljust(60), all_schema_types[k])
+            print("  %s%s" % (k.ljust(60), all_schema_types[k]))
 
 
 def main():

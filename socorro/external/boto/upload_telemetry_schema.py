@@ -45,7 +45,7 @@ class UploadTelemetrySchema(App):
         default=(
             "socorro.external.boto.connection_context.RegionalS3ConnectionContext"
         ),
-        doc=("fully qualified dotted Python classname to handle Boto " "connections"),
+        doc="fully qualified dotted Python classname to handle Boto " "connections",
         from_string_converter=class_converter,
         reference_value_from="resource.boto",
     )

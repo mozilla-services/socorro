@@ -141,26 +141,26 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         self.es_context.refresh()
 
         # A term that exists.
-        res = self.api.get(product="WaterWolf")  # has terms
+        res = self.api.get(product="WaterWolf")
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["product"] == "WaterWolf"
 
         # Not a term that exists.
-        res = self.api.get(product="!WaterWolf")  # does not have terms
+        res = self.api.get(product="!WaterWolf")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
         assert res["hits"][0]["product"] == "NightTrain"
 
         # A term that does not exist.
-        res = self.api.get(product="EarthRacoon")  # has terms
+        res = self.api.get(product="EarthRacoon")
 
         assert res["total"] == 0
 
         # A phrase instead of a term.
-        res = self.api.get(app_notes="that I used", _columns=["app_notes"])  # has terms
+        res = self.api.get(app_notes="that I used", _columns=["app_notes"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -180,7 +180,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         self.es_context.refresh()
 
         # Test the "contains" operator.
-        res = self.api.get(signature="~js")  # contains
+        res = self.api.get(signature="~js")
 
         assert res["total"] == 3
         assert len(res["hits"]) == 3
@@ -193,7 +193,8 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert "js" in facet["term"]
             assert facet["count"] == 1
 
-        res = self.api.get(signature="!~js")  # does not contain
+        # Does not contain
+        res = self.api.get(signature="!~js")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -207,7 +208,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Test the "starts with" operator.
-        res = self.api.get(signature="^js")  # starts with
+        res = self.api.get(signature="^js")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -220,7 +221,8 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["term"].startswith("js")
             assert facet["count"] == 1
 
-        res = self.api.get(signature="!^js")  # does not start with
+        # Does not start with
+        res = self.api.get(signature="!^js")
 
         assert res["total"] == 3
         assert len(res["hits"]) == 3
@@ -234,7 +236,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Test the "ends with" operator.
-        res = self.api.get(signature="$browser")  # ends with
+        res = self.api.get(signature="$browser")
 
         # Those operators are case-sensitive, so here we expect only 1 result.
         assert res["total"] == 1
@@ -248,7 +250,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "count": 1,
         }
 
-        res = self.api.get(signature="$rowser")  # ends with
+        res = self.api.get(signature="$rowser")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -261,7 +263,8 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["term"].endswith("rowser")
             assert facet["count"] == 1
 
-        res = self.api.get(signature="!$rowser")  # does not end with
+        # Does not end with
+        res = self.api.get(signature="!$rowser")
 
         assert res["total"] == 3
         assert len(res["hits"]) == 3
@@ -275,17 +278,17 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Test the "regex" operator.
-        res = self.api.get(signature="@mozilla::.*::function")  # regex
+        res = self.api.get(signature="@mozilla::.*::function")
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["signature"] == "mozilla::js::function"
 
-        res = self.api.get(signature='@f.."(bar)"')  # regex
+        res = self.api.get(signature='@f.."(bar)"')
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["signature"] == "foo(bar)"
 
-        res = self.api.get(signature="!@mozilla::.*::function")  # regex
+        res = self.api.get(signature="!@mozilla::.*::function")
         assert res["total"] == 4
         assert len(res["hits"]) == 4
         for hit in res["hits"]:
@@ -298,15 +301,14 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         self.es_context.refresh()
 
         # Test the "has terms" operator.
-        res = self.api.get(build_id="2000", _columns=["build_id"])  # has terms
+        res = self.api.get(build_id="2000", _columns=["build_id"])
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["build_id"] == 2000
 
-        res = self.api.get(
-            build_id="!2000", _columns=["build_id"]  # does not have terms
-        )
+        # Does not have terms
+        res = self.api.get(build_id="!2000", _columns=["build_id"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -314,16 +316,14 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert hit["build_id"] != 2000
 
         # Test the "greater than" operator.
-        res = self.api.get(build_id=">2000", _columns=["build_id"])  # greater than
+        res = self.api.get(build_id=">2000", _columns=["build_id"])
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["build_id"] == 2001
 
         # Test the "greater than or equal" operator.
-        res = self.api.get(
-            build_id=">=2000", _columns=["build_id"]  # greater than or equal
-        )
+        res = self.api.get(build_id=">=2000", _columns=["build_id"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -331,16 +331,14 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert hit["build_id"] >= 2000
 
         # Test the "lower than" operator.
-        res = self.api.get(build_id="<2000", _columns=["build_id"])  # lower than
+        res = self.api.get(build_id="<2000", _columns=["build_id"])
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["build_id"] == 1999
 
         # Test the "lower than or equal" operator.
-        res = self.api.get(
-            build_id="<=2000", _columns=["build_id"]  # lower than or equal
-        )
+        res = self.api.get(build_id="<=2000", _columns=["build_id"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -362,25 +360,21 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         )
         self.index_crash(
             processed_crash={"date_processed": self.now},
-            raw_crash={
-                # Missing value should also be considered as "false".
-            },
+            # Missing value should also be considered as "false".
+            raw_crash={},
         )
         self.es_context.refresh()
 
         # Test the "has terms" operator.
-        res = self.api.get(
-            accessibility="__true__", _columns=["accessibility"]  # is true
-        )
+        res = self.api.get(accessibility="__true__", _columns=["accessibility"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
         for hit in res["hits"]:
             assert hit["accessibility"]
 
-        res = self.api.get(
-            accessibility="!__true__", _columns=["accessibility"]  # is false
-        )
+        # Is not true
+        res = self.api.get(accessibility="!__true__", _columns=["accessibility"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2

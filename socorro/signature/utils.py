@@ -190,7 +190,7 @@ def collapse(function, open_string, close_string, replacement="", exceptions=Non
         if not open_count:
             if char == open_string and not _is_exception(
                 exceptions, function[:i], function[i + 1 :], ""
-            ):  # noqa
+            ):
                 open_count += 1
                 open_token = [char]
             else:
