@@ -775,3 +775,48 @@ class SignatureGeneratorRule(Rule):
         processor_meta["processor_notes"].extend(ret.notes)
         # NOTE(willkg): this picks up proto_signature
         processed_crash.update(ret.extra)
+
+
+class PHCRule(Rule):
+    """Performs PHC-related annotation processing.
+
+    PHC stands for probabilistic heap checker. It adds a set of annotations
+    that need to be adjusted so as to be searchable and usable in Crash Stats.
+
+    Bug #1523278.
+
+    """
+
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return "PHCKind" in raw_crash
+
+    def action(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        # Add PHCKind which is a string
+        processed_crash["phc_kind"] = raw_crash["PHCKind"]
+
+        # Convert PHCBaseAddress from decimal to hex and add to processed crash
+        if "PHCBaseAddress" in raw_crash:
+            try:
+                phc_base_address = hex(int(raw_crash["PHCBaseAddress"]))
+                processed_crash["phc_base_address"] = phc_base_address
+            except ValueError:
+                pass
+
+        # Add PHCUsableSize which is an integer
+        if "PHCUsableSize" in raw_crash:
+            try:
+                processed_crash["phc_usable_size"] = int(raw_crash["PHCUsableSize"])
+            except ValueError:
+                pass
+
+        # FIXME(willkg): We should symbolicate PHCAllocStack and PHCFreeStack and
+        # put the symbolicated stacks in a new field.
+        # See bug #1523278.
+
+        # Add PHCAllocStack which is a comma-separated list of integers
+        if "PHCAllocStack" in raw_crash:
+            processed_crash["phc_alloc_stack"] = raw_crash["PHCAllocStack"]
+
+        # Add PHCFreeStack which is a comma-separated list of integers
+        if "PHCFreeStack" in raw_crash:
+            processed_crash["phc_free_stack"] = raw_crash["PHCFreeStack"]

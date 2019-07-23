@@ -93,7 +93,7 @@
           </ul>
 
           <div id="details" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-            <table class="record data-table vertical">
+            <table class="record data-table vertical hardwrapped">
               <tbody>
 
                 {# Crash report metadata #}
@@ -447,6 +447,39 @@
                   </tr>
                 {% endif %}
 
+                {% if 'phc_kind' in report and (request.user.has_perm('crashstats.view_pii') or your_crash) %}
+                  <tr title="{{ fields_desc['processed_crash.phc_kind'] }}">
+                    <th scope="row">PHC Kind</th>
+                    <td>
+                      {{ report.phc_kind }}
+                    </td>
+                  </tr>
+                  <tr title="{{ fields_desc['processed_crash.phc_usable_size'] }}">
+                    <th scope="row">PHC Usable Size</th>
+                    <td>
+                      {{ report.phc_usable_size }}
+                    </td>
+                  </tr>
+                  <tr title="{{ fields_desc['processed_crash.phc_base_address'] }}">
+                    <th scope="row">PHC Base Address</th>
+                    <td>
+                      {{ report.phc_base_address }}
+                    </td>
+                  </tr>
+                  <tr title="{{ fields_desc['processed_crash.phc_alloc_stack'] }}">
+                    <th scope="row">PHC Alloc Stack</th>
+                    <td>
+                      {{ report.phc_alloc_stack }}
+                    </td>
+                  </tr>
+                  <tr title="{{ fields_desc['processed_crash.phc_free_stack'] }}">
+                    <th scope="row">PHC Free Stack</th>
+                    <td>
+                      {{ report.phc_free_stack }}
+                    </td>
+                  </tr>
+		            {% endif %}
+
                 {% if 'memory_measures' in report %}
                   {% if 'explicit' in report.memory_measures %}
                     <tr title="{{ fields_desc['processed_crash.memory_measures.explicit'] }}">
@@ -703,7 +736,7 @@
           <!-- /details -->
 
           <div id="metadata" class="ui-tabs-hide">
-            <table class="record data-table vertical">
+            <table class="record data-table vertical hardwrapped">
               <tbody>
                 {% for key in raw_keys %}
                   <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
