@@ -42,6 +42,7 @@ from socorro.processor.rules.mozilla import (
     MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
+    PHCRule,
     PluginContentURL,
     PluginRule,
     PluginUserComment,
@@ -205,6 +206,7 @@ class ProcessorPipeline(RequiredConfig):
             AddonsRule(),
             DatesAndTimesRule(),
             OutOfMemoryBinaryRule(),
+            PHCRule(),
             JavaProcessRule(),
             MozCrashReasonRule(),
             # post processing of the processed crash

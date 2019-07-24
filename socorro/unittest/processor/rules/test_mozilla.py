@@ -9,6 +9,7 @@ import json
 from configman.dotdict import DotDict
 from mock import call, Mock, patch
 import requests_mock
+import pytest
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.lib.util import dotdict_to_dict
@@ -24,6 +25,7 @@ from socorro.processor.rules.mozilla import (
     MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
+    PHCRule,
     PluginContentURL,
     PluginRule,
     PluginUserComment,
@@ -1505,3 +1507,61 @@ class TestSignatureGeneratorRule:
         assert mock_get_hub.return_value.capture_exception.call_args_list == [
             call(error=(Exception, exc_value, WHATEVER))
         ]
+
+
+class TestPHCRule:
+    def test_predicate(self):
+        rule = PHCRule()
+        assert rule.predicate({}, (), {}, {}) is False
+
+    @pytest.mark.parametrize(
+        "base_address, expected",
+        [(None, None), ("", None), ("foo", None), ("10", "0xa"), ("100", "0x64")],
+    )
+    def test_phc_base_address(self, base_address, expected):
+        raw_crash = {"PHCKind": "FreedPage"}
+        if base_address is not None:
+            raw_crash["PHCBaseAddress"] = base_address
+
+        rule = PHCRule()
+        processed_crash = {}
+        rule.action(raw_crash, (), processed_crash, {})
+        if expected is None:
+            assert "phc_base_address" not in processed_crash
+        else:
+            assert processed_crash["phc_base_address"] == expected
+
+    @pytest.mark.parametrize(
+        "usable_size, expected", [(None, None), ("", None), ("foo", None), ("10", 10)]
+    )
+    def test_phc_usable_size(self, usable_size, expected):
+        raw_crash = {"PHCKind": "FreedPage"}
+        if usable_size is not None:
+            raw_crash["PHCUsableSize"] = usable_size
+
+        rule = PHCRule()
+        processed_crash = {}
+        rule.action(raw_crash, (), processed_crash, {})
+        if expected is None:
+            assert "phc_usable_size" not in processed_crash
+        else:
+            assert processed_crash["phc_usable_size"] == expected
+
+    def test_copied_values(self):
+        raw_crash = {
+            "PHCKind": "FreedPage",
+            "PHCUsableSize": "8",
+            "PHCBaseAddress": "10",
+            "PHCAllocStack": "100,200",
+            "PHCFreeStack": "300,400",
+        }
+        rule = PHCRule()
+        processed_crash = {}
+        rule.action(raw_crash, (), processed_crash, {})
+        assert processed_crash == {
+            "phc_kind": "FreedPage",
+            "phc_usable_size": 8,
+            "phc_base_address": "0xa",
+            "phc_alloc_stack": "100,200",
+            "phc_free_stack": "300,400",
+        }

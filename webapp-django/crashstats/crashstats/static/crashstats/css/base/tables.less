@@ -45,8 +45,6 @@ table {
     tbody {
         background-color: @white;
         tr {
-
-
             &.truncated-frame {
                 background-color: @jsonview-prop;
                 a {
@@ -64,7 +62,6 @@ table {
             }
         }
     }
-
 
     &.captioned-data-table {
         margin: 1rem;
@@ -118,6 +115,12 @@ table {
         th {
             border: 1px solid @black;
             font-weight: bold;
+        }
+    }
+
+    &.hardwrapped {
+        td {
+            overflow-wrap: anywhere;
         }
     }
 
