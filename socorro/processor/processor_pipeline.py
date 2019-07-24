@@ -81,7 +81,7 @@ class ProcessorPipeline(RequiredConfig):
         "command_line",
         doc="template for the command to invoke the external program; uses Python format syntax",
         default=(
-            "timeout -s KILL {kill_timeout} {command_pathname} "
+            "timeout --signal KILL {kill_timeout} {command_pathname} "
             "--raw-json {raw_crash_pathname} "
             "{symbols_urls} "
             "--symbols-cache {symbol_cache_path} "
@@ -91,7 +91,7 @@ class ProcessorPipeline(RequiredConfig):
     )
     required_config.breakpad.add_option(
         "kill_timeout",
-        doc="amount of time to let mdsw run before declaring it hung",
+        doc="amount of time in seconds to let mdsw run before declaring it hung",
         default=600,
     )
     required_config.breakpad.add_option(
