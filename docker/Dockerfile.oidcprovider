@@ -6,3 +6,7 @@
 FROM mozillaparsys/oidc_testprovider
 
 COPY ./docker/config/oidcprovider-fixtures.json /code/fixtures.json
+RUN mkdir --parents /code/oidcprovider/management/commands/
+RUN touch /code/oidcprovider/management/__init__.py
+RUN touch /code/oidcprovider/management/commands/__init__.py
+COPY ./docker/oidcprovider/createuser.py /code/oidcprovider/management/commands/createuser.py
