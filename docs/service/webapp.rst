@@ -31,31 +31,35 @@ Creating a superuser
 --------------------
 
 If you want to do anything in the webapp admin, you'll need to create a
-superuser.
+superuser in the Crash Stats webapp and a OIDC account to authenticate
+against in the oidcprovider service container.
 
-Run this::
+Let's use these credentials:
 
-  $ docker-compose run app shell ./webapp-django/manage.py makesuperuser email@example.com
+* username: willkg
+* password: foo
+* email: willkg@example.com
 
+This creates an account in the oidcprovider service container::
 
-You can do this as many times as you like.
+  $ docker-compose up -d oidcprovider
+  $ docker-compose exec oidcprovider /code/manage.py createuser willkg foo willkg@example.com
 
+This creates a superuser account in the Crash Stats webapp corresponding to the account
+we created in the oidcprovider service container::
 
-Setting up the webapp for OpenID Connect Login
-----------------------------------------------
+  $ docker-compose run app shell ./webapp-django/manage.py makesuperuser willkg@example.com
 
-A test OpenID Connect (OIDC) provider is served from the container
-``oidcprovider``, and is available at http://oidcprovider.127.0.0.1.nip.io:8080.
+Feel free to use different credentials.
 
-When logging in with ``oidcprovider``, use the "Sign up" workflow to create a
-fake account:
+.. Note::
 
-* Username: A non-email username
-* Email: Matches your Socorro account email
-* Password: Any password
+   You will have to recreate both of these accounts any time you do something
+   that recreates the postgres db or restarts the oidcprovider service
+   container.
 
-The OIDC user is stored in the ``oidcprovider`` docker container, and will need
-to be recreated on restart.
+   Best to put account creationg in a shell script so you can recreate both
+   accounts easily.
 
 
 Permissions
