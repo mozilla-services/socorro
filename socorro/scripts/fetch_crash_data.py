@@ -47,7 +47,9 @@ def create_dir_if_needed(d):
         os.makedirs(d)
 
 
-def fetch_crash(host, fetchdumps, fetchprocessed, outputdir, api_token, crash_id):
+def fetch_crash(
+    host, fetchraw, fetchdumps, fetchprocessed, outputdir, api_token, crash_id
+):
     """Fetch crash data and save to correct place on the file system
 
     http://antenna.readthedocs.io/en/latest/architecture.html#aws-s3-file-hierarchy
@@ -60,31 +62,32 @@ def fetch_crash(host, fetchdumps, fetchprocessed, outputdir, api_token, crash_id
 
     session = session_with_retries()
 
-    # Fetch raw crash metadata
-    print("Fetching raw %s" % crash_id)
-    resp = session.get(
-        host + "/api/RawCrash/",
-        params={"crash_id": crash_id, "format": "meta"},
-        headers=headers,
-    )
+    if fetchraw:
+        # Fetch raw crash metadata
+        print("Fetching raw %s" % crash_id)
+        resp = session.get(
+            host + "/api/RawCrash/",
+            params={"crash_id": crash_id, "format": "meta"},
+            headers=headers,
+        )
 
-    # Handle 404 and 403 so we can provide the user more context
-    if resp.status_code == 404:
-        raise CrashDoesNotExist(crash_id)
-    if api_token and resp.status_code == 403:
-        raise BadAPIToken(resp.json().get("error", "No error provided"))
+        # Handle 404 and 403 so we can provide the user more context
+        if resp.status_code == 404:
+            raise CrashDoesNotExist(crash_id)
+        if api_token and resp.status_code == 403:
+            raise BadAPIToken(resp.json().get("error", "No error provided"))
 
-    # Raise an error for any other non-200 response
-    resp.raise_for_status()
+        # Raise an error for any other non-200 response
+        resp.raise_for_status()
 
-    # Save raw crash to file system
-    raw_crash = resp.json()
-    fn = os.path.join(
-        outputdir, "v2", "raw_crash", crash_id[0:3], "20" + crash_id[-6:], crash_id
-    )
-    create_dir_if_needed(os.path.dirname(fn))
-    with open(fn, "w") as fp:
-        json.dump(raw_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
+        # Save raw crash to file system
+        raw_crash = resp.json()
+        fn = os.path.join(
+            outputdir, "v2", "raw_crash", crash_id[0:3], "20" + crash_id[-6:], crash_id
+        )
+        create_dir_if_needed(os.path.dirname(fn))
+        with open(fn, "w") as fp:
+            json.dump(raw_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
 
     if fetchdumps:
         # Fetch dumps
@@ -167,6 +170,14 @@ def main(argv=None):
         help="host to pull crash data from; this needs to match SOCORRO_API_TOKEN value",
     )
     parser.add_argument(
+        "--raw",
+        "--no-raw",
+        dest="fetchraw",
+        action=FlagAction,
+        default=True,
+        help="whether or not to save raw crash data",
+    )
+    parser.add_argument(
         "--dumps",
         "--no-dumps",
         dest="fetchdumps",
@@ -196,6 +207,10 @@ def main(argv=None):
     else:
         args = parser.parse_args(argv)
 
+    if args.fetchdumps and not args.fetchraw:
+        print("You cannot fetch dumps without also fetching the raw crash. Exiting.")
+        return 1
+
     # Validate outputdir and exit if it doesn't exist or isn't a directory
     outputdir = args.outputdir
     if os.path.exists(outputdir) and not os.path.isdir(outputdir):
@@ -217,6 +232,7 @@ def main(argv=None):
         print("Working on %s..." % crash_id)
         fetch_crash(
             host=args.host,
+            fetchraw=args.fetchraw,
             fetchdumps=args.fetchdumps,
             fetchprocessed=args.fetchprocessed,
             outputdir=outputdir,
