@@ -39,6 +39,7 @@ from socorro.processor.rules.mozilla import (
     ExploitablityRule,
     FlashVersionRule,
     JavaProcessRule,
+    ModulesInStackRule,
     MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
@@ -218,6 +219,7 @@ class ProcessorPipeline(RequiredConfig):
             FlashVersionRule(),
             OSPrettyVersionRule(),
             TopMostFilesRule(),
+            ModulesInStackRule(),
             ThemePrettyNameRule(),
             MemoryReportExtraction(),
             # generate signature now that we've done all the processing it depends on

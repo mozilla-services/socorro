@@ -527,6 +527,59 @@ class TopMostFilesRule(Rule):
                 return
 
 
+class ModulesInStackRule(Rule):
+    """
+    Adds value with semi-colon separated set of "module/debugid" strings for
+    all the modules that show up in the stack of the crashing thread.
+    """
+
+    # Filenames should contain A-Za-z0-9_. and that's it.
+    BAD_FILENAME_CHARACTERS = re.compile(r"[^a-z0-9_\.]", re.IGNORECASE)
+
+    # Debug ids are hex strings
+    BAD_DEBUGID_CHARACTERS = re.compile(r"[^a-f0-9]", re.IGNORECASE)
+
+    def format_module(self, item):
+        filename = item.get("filename", "")
+        filename = self.BAD_FILENAME_CHARACTERS.sub("", filename)
+
+        debugid = item.get("debug_id", "")
+        debugid = self.BAD_DEBUGID_CHARACTERS.sub("", debugid)
+
+        return f"{filename}/{debugid}"
+
+    def predicate(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        return "json_dump" in processed_crash
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        json_dump = processed_crash["json_dump"]
+        try:
+            crashing_thread = json_dump["crash_info"]["crashing_thread"]
+        except KeyError:
+            # If there is no crashing thread, then there's nothing to do.
+            return
+
+        try:
+            stack = json_dump["threads"][crashing_thread]["frames"]
+        except (KeyError, IndexError):
+            # If those things aren't in the raw crash, then this rule doesn't
+            # have anything to do.
+            return
+
+        module_to_module_info = {
+            item["filename"]: self.format_module(item)
+            for item in json_dump.get("modules", [])
+            if "filename" in item
+        }
+
+        modules_in_stack = {
+            module_to_module_info.get(frame.get("module")) for frame in stack
+        }
+        modules_in_stack = sorted(module for module in modules_in_stack if module)
+        if modules_in_stack:
+            processed_crash["modules_in_stack"] = ";".join(modules_in_stack)
+
+
 class BetaVersionRule(Rule):
     #: Hold at most this many items in cache; items are a key and a value
     #: both of which are short strings, so this doesn't take much memory

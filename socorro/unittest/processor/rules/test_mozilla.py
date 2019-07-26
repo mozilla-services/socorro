@@ -22,6 +22,7 @@ from socorro.processor.rules.mozilla import (
     ExploitablityRule,
     FlashVersionRule,
     JavaProcessRule,
+    ModulesInStackRule,
     MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
@@ -1097,6 +1098,91 @@ class TestTopMostFilesRule(object):
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
+
+
+class TestModulesInStackRule(object):
+    def test_basic(self):
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = DotDict(
+            {
+                "json_dump": {
+                    "modules": [
+                        {"filename": "libxul.dll", "debug_id": "ABCDEF"},
+                        {"filename": "libnss3.dll", "debug_id": "012345"},
+                        {"filename": "mozglue.dll", "debug_id": "ABC345"},
+                    ],
+                    "crash_info": {"crashing_thread": 0},
+                    "threads": [
+                        {
+                            "frames": [
+                                {"module": "libxul.dll"},
+                                {"module": "mozglue.dll"},
+                            ]
+                        }
+                    ],
+                }
+            }
+        )
+
+        processor_meta = get_basic_processor_meta()
+
+        rule = ModulesInStackRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert (
+            processed_crash["modules_in_stack"]
+            == "libxul.dll/ABCDEF;mozglue.dll/ABC345"
+        )
+
+    @pytest.mark.parametrize(
+        "processed_crash",
+        [
+            {},
+            {"json_dump": {}},
+            {"json_dump": {"crash_info": {}}},
+            {"json_dump": {"crash_info": {"crashing_thread": 0}}},
+            {"json_dump": {"crash_info": {"crashing_thread": 10}, "threads": []}},
+            {"json_dump": {"crash_info": {"crashing_thread": 0}, "threads": [{}]}},
+            {
+                "json_dump": {
+                    "crash_info": {"crashing_thread": 0},
+                    "threads": [{"frames": []}],
+                }
+            },
+            {
+                "modules": [],
+                "json_dump": {
+                    "crash_info": {"crashing_thread": 0},
+                    "threads": [{"frames": [{"module": "libxul.so"}]}],
+                },
+            },
+        ],
+    )
+    def test_missing_things(self, processed_crash):
+        processor_meta = get_basic_processor_meta()
+        rule = ModulesInStackRule()
+
+        rule.act({}, {}, processed_crash, processor_meta)
+        assert "modules_in_stack" not in processed_crash
+
+    @pytest.mark.parametrize(
+        "item, expected",
+        [
+            ({}, "/"),
+            ({"filename": "libxul.so"}, "libxul.so/"),
+            ({"debug_id": "ABCDEF"}, "/ABCDEF"),
+            ({"filename": "libxul.so", "debug_id": "ABCDEF"}, "libxul.so/ABCDEF"),
+            (
+                {"filename": "libxul_2.dll", "debug_id": "ABCDEF0123456789"},
+                "libxul_2.dll/ABCDEF0123456789",
+            ),
+            ({"filename": " l\nib (foo)", "debug_id": "this is bad"}, "libfoo/bad"),
+        ],
+    )
+    def test_format_module(self, item, expected):
+        rule = ModulesInStackRule()
+        assert rule.format_module(item) == expected
 
 
 class TestBetaVersionRule(object):

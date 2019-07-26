@@ -2730,6 +2730,20 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
+    "modules_in_stack": {
+        "data_validation_type": "str",
+        "description": "Set of module/debugid strings that show up in stack of the crashing thread.",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "modules_in_stack",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "modules_in_stack",
+        "namespace": "processed_crash",
+        "permissions_needed": [],
+        "query_type": "string",
+        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
+    },
     "moz_crash_reason": {
         "data_validation_type": "str",
         "description": (
