@@ -393,6 +393,23 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"type": "long"},
     },
+    "bug_1541161": {
+        "data_validation_type": "str",
+        "description": (
+            "Dump JS Stack in case loadinfo is null within "
+            "NewChannelFromURIWithProxyFlagsInternal()."
+        ),
+        "form_field_choices": None,
+        "has_full_version": False,
+        "in_database_name": "Bug_1541161",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "bug_1541161",
+        "namespace": "raw_crash",
+        "permissions_needed": ["crashstats.view_pii"],
+        "query_type": "string",
+        "storage_mapping": None,
+    },
     "Comments": {
         "data_validation_type": "enum",
         "description": "",
