@@ -251,13 +251,13 @@ entrypoints==0.3 \
 websocket_client==0.56.0 \
     --hash=sha256:1151d5fb3a62dc129164292e1227655e4bbc5dd5340a5165dfae61128ec50aa9 \
     --hash=sha256:1fd5520878b68b84b5748bb30e592b10d0a91529d5383f74f4964e72b297fd3a
-grpc-google-iam-v1==0.11.4 \
-    --hash=sha256:5009e831dcec22f3ff00e89405249d6a838d1449a46ac8224907aa5b0e0b1aec
-google-api-core==1.13.0 \
-    --hash=sha256:72a1c8966bdbd70a72de32760368aec399fe6a5c2a6675d9476cb9ae27046de7 \
-    --hash=sha256:f45d74aef41e1de49ceadebf382e1291ddcbe431a8b533aff8a1140a35531465
-googleapis-common-protos==1.5.9 \
-    --hash=sha256:627ec53fab43d06c1b5c950e217fa9819e169daf753111a7f244e94bf8fb3384
+grpc-google-iam-v1==0.12.3 \
+    --hash=sha256:0bfb5b56f648f457021a91c0df0db4934b6e0c300bd0f2de2333383fe958aa72
+google-api-core==1.14.2 \
+    --hash=sha256:2c23fbc81c76b941ffb71301bb975ed66a610e9b03f918feacd1ed59cf43a6ec \
+    --hash=sha256:b2b91107bcc3b981633c89602b46451f6474973089febab3ee51c49cb7ae6a1f
+googleapis-common-protos==1.6.0 \
+    --hash=sha256:e61b8ed5e36b976b487c6e7b15f31bb10c7a0ca7bd5c0e837f4afab64b53a0c6
 google-auth==1.6.3 \
     --hash=sha256:0f7c6a64927d34c1a474da92cfc59e552a5d3b940d3266606c6a28b72888b9e4 \
     --hash=sha256:20705f6803fd2c4d1cc2dcb0df09d4dfcb9a7d51fd59e94a3a28231fd93119ed
