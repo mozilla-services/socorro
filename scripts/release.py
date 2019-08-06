@@ -13,11 +13,12 @@ both.
 This requires Python 3 to run.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 6a6ca14d8fc142e3e86d9ac72283ce209edcd1b1
+sha: 92c8800fdb9fbd7e3b52c51a880260f3b456be39
 
 """
 
 import argparse
+import configparser
 import datetime
 import json
 import os
@@ -28,10 +29,51 @@ from urllib.request import urlopen
 from urllib.parse import urlencode
 
 
-GITHUB_API = "https://api.github.com/"
-GITHUB_USER = "mozilla-services"
+DESCRIPTION = """
+release.py makes it easier to create deploy bugs and push tags to trigger
+deploys. For help, see: https://github.com/willkg/socorro-release/
+"""
 
+GITHUB_API = "https://api.github.com/"
 BZ_URL = "https://bugzilla.mozilla.org/enter_bug.cgi"
+
+DEFAULT_CONFIG = {
+    # Bugzilla product and component to write new bugs in
+    "bugzilla_product": "",
+    "bugzilla_component": "",
+    # GitHub user and project name
+    "github_user": "",
+    "github_project": "",
+}
+
+LINE = "=" * 80
+
+
+def get_config():
+    """Generates configuration.
+
+    This tries to pull from the [tool:release] section of a setup.cfg in the
+    working directory. If that doesn't exist, then it uses defaults.
+
+    :returns: configuration dict
+
+    """
+    my_config = dict(DEFAULT_CONFIG)
+
+    if not os.path.exists("setup.cfg"):
+        return my_config
+
+    config = configparser.ConfigParser()
+    config.read("setup.cfg")
+
+    if "tool:release" not in config:
+        return my_config
+
+    config = config["tool:release"]
+    for key in my_config.keys():
+        my_config[key] = config.get(key, "")
+
+    return my_config
 
 
 def fetch(url, is_json=True):
@@ -48,8 +90,8 @@ def fetch(url, is_json=True):
     return data
 
 
-def fetch_history_from_github(owner, repo, from_tag):
-    url = f"{GITHUB_API}repos/{owner}/{repo}/compare/{from_tag}...master"
+def fetch_history_from_github(owner, repo, from_rev):
+    url = f"{GITHUB_API}repos/{owner}/{repo}/compare/{from_rev}...master"
     return fetch(url)
 
 
@@ -58,11 +100,18 @@ def check_output(cmdline, **kwargs):
     return subprocess.check_output(args, **kwargs).decode("utf-8").strip()
 
 
-def get_remote_name():
+def get_remote_name(github_user):
     """Figures out the right remote to use
 
     People name the git remote differently, so this figures out which one to
     use.
+
+    :arg str github_user: the github user for the remote name to use
+
+    :returns: the name of the remote
+
+    :raises Exception: if it can't figure out the remote name for the specified
+        user
 
     """
     # Figure out remote to push tag to
@@ -70,13 +119,14 @@ def get_remote_name():
 
     for line in remote_output.splitlines():
         line = line.split("\t")
-        if "mozilla-services" in line[1]:
+        if f":{github_user}/" in line[1]:
             return line[0]
 
-    raise Exception("Can't figure out remote name for mozilla-services.")
+    raise Exception(f"Can't figure out remote name for {github_user}.")
 
 
 def make_tag(bug_number, remote_name, tag_name, commits_since_tag):
+    """Tags a release."""
     message = "\n".join(commits_since_tag)
 
     if bug_number:
@@ -86,37 +136,33 @@ def make_tag(bug_number, remote_name, tag_name, commits_since_tag):
     # Print out new tag information
     print(">>> New tag: %s" % tag_name)
     print(">>> Tag message:")
-    print("=" * 80)
+    print(LINE)
     print(message)
-    print("=" * 80)
+    print(LINE)
 
     # Create tag
-    input('>>> Ready to tag "{}"? Ctrl-c to cancel'.format(tag_name))
+    input(f">>> Ready to tag {tag_name}? Ctrl-c to cancel")
     print(">>> Creating tag...")
     subprocess.check_call(["git", "tag", "-s", tag_name, "-m", message])
 
     # Push tag
-    input('>>> Ready to push to remote "{}"? Ctrl-c to cancel'.format(remote_name))
+    input(f">>> Ready to push to remote {remote_name}? Ctrl-c to cancel")
     print(">>> Pushing...")
     subprocess.check_call(["git", "push", "--tags", remote_name, tag_name])
 
 
 def make_bug(
-    remote_name,
-    project_name,
-    tag_name,
-    commits_since_tag,
-    bugzilla_product,
-    bugzilla_component,
+    github_project, tag_name, commits_since_tag, bugzilla_product, bugzilla_component
 ):
-    summary = f"{project_name} deploy: {tag_name}"
+    """Creates a bug."""
+    summary = f"{github_project} deploy: {tag_name}"
     print(">>> Creating deploy bug...")
     print(">>> Summary")
     print(summary)
     print()
 
     description = [
-        f"We want to do a deploy for `{project_name}` tagged `{tag_name}`.",
+        f"We want to do a deploy for `{github_project}` tagged `{tag_name}`.",
         "",
         "It consists of the following:",
         "",
@@ -128,42 +174,41 @@ def make_bug(
     print(description)
     print()
 
-    bz_params = {
-        "bug_type": "task",
-        "comment": description,
-        "form_name": "enter_bug",
-        "short_desc": summary,
-    }
-
     if bugzilla_product:
+        bz_params = {
+            "bug_type": "task",
+            "comment": description,
+            "form_name": "enter_bug",
+            "short_desc": summary,
+        }
+
         bz_params["product"] = bugzilla_product
         if bugzilla_component:
             bz_params["component"] = bugzilla_component
 
-    bugzilla_link = BZ_URL + "?" + urlencode(bz_params)
-    print(">>> Link to create bug (may not work if it's sufficiently long)")
-    print(bugzilla_link)
+        bugzilla_link = BZ_URL + "?" + urlencode(bz_params)
+        print(">>> Link to create bug (may not work if it's sufficiently long)")
+        print(bugzilla_link)
 
 
 def run():
-    parser = argparse.ArgumentParser()
+    config = get_config()
+
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    for key, val in config.items():
+        key = key.replace("_", "-")
+        parser.add_argument(f"--{key}", default=val)
+
     subparsers = parser.add_subparsers(dest="cmd")
     subparsers.required = True
 
-    make_bug_parser = subparsers.add_parser("make-bug", help="Make a deploy bug")
-    make_bug_parser.add_argument(
-        "--product", default="", help="The Bugzilla product to set in the bug"
-    )
-    make_bug_parser.add_argument(
-        "--component", default="", help="The Bugzilla component to set in the bug"
-    )
-
+    subparsers.add_parser("make-bug", help="Make a deploy bug")
     make_tag_parser = subparsers.add_parser("make-tag", help="Make a tag and push it")
     make_tag_parser.add_argument(
-        "--with-bug", dest="bug", help="Bug for this deploy if any"
+        "--with-bug", dest="bug", help="Bug for this deploy if any."
     )
     make_tag_parser.add_argument(
-        "--with-tag", dest="tag", help="Tag to use; defaults to figuring out the tag"
+        "--with-tag", dest="tag", help="Tag to use; defaults to figuring out the tag."
     )
 
     args = parser.parse_args()
@@ -184,12 +229,16 @@ def run():
         )
         return 1
 
-    # Figure out the project name; for now we're cheating and using the
-    # current directory
-    project_name = os.path.basename(os.getcwd())
+    github_project = args.github_project
+    github_user = args.github_user
 
-    # Figure out the remote name for mozilla-services fork
-    remote_name = get_remote_name()
+    if not github_project or not github_user:
+        print(
+            "github_project and github_user are required. Either set them in "
+            "setup.cfg or specify them as command line arguments."
+        )
+        return 1
+    remote_name = get_remote_name(github_user)
 
     # Get existing git tags from remote
     check_output(f"git pull {remote_name} master --tags", stderr=subprocess.STDOUT)
@@ -198,17 +247,21 @@ def run():
     last_tag = check_output(
         "git for-each-ref --sort=-taggerdate --count=1 --format %(tag) refs/tags"
     )
-    last_tag_message = check_output(f'git tag -l --format="%(contents)" {last_tag}')
-    print(f">>> Last tag was: {last_tag}")
-    print(">>> Message:")
-    print("=" * 80)
-    print(last_tag_message)
-    print("=" * 80)
+    if last_tag:
+        last_tag_message = check_output(f'git tag -l --format="%(contents)" {last_tag}')
+        print(f">>> Last tag was: {last_tag}")
+        print(">>> Message:")
+        print(LINE)
+        print(last_tag_message)
+        print(LINE)
 
-    resp = fetch_history_from_github(GITHUB_USER, project_name, last_tag)
-    if resp["status"] != "ahead":
-        print("Nothing to deploy! (%s)" % resp["status"])
-        return
+        resp = fetch_history_from_github(github_user, github_project, last_tag)
+        if resp["status"] != "ahead":
+            print(f"Nothing to deploy! {resp['status']}")
+            return
+    else:
+        first_commit = check_output("git rev-list --max-parents=0 HEAD")
+        resp = fetch_history_from_github(github_user, github_project, first_commit)
 
     commits_since_tag = []
     for commit in resp["commits"]:
@@ -248,15 +301,16 @@ def run():
 
     if args.cmd == "make-bug":
         make_bug(
-            remote_name,
-            project_name,
+            github_project,
             tag_name,
             commits_since_tag,
-            args.product,
-            args.component,
+            args.bugzilla_product,
+            args.bugzilla_component,
         )
+
     elif args.cmd == "make-tag":
         make_tag(args.bug, remote_name, tag_name, commits_since_tag)
+
     else:
         parser.print_help()
         return 1
