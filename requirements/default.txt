@@ -161,9 +161,9 @@ django-npm==1.0.0 \
 markus==1.2.0 \
     --hash=sha256:86bbeb16de1b1920d291c81a39b7a7c61c94b665cd8d10c6b69c994ce4fd5bcc \
     --hash=sha256:9bce7bd152578703a8e4aa5a765c7c0d94bcdd69f7bc5e42d29b893e3abf2e5a
-awscli==1.16.209 \
-    --hash=sha256:68dbc2170b7b9c87cbe1ca9f6b3a68ca07172cef77fa2d48295d08e19ddbe7af \
-    --hash=sha256:6b4491d2e2e5676f530c290899602ed03711f3ec9a5305edd130e0ab6bbf7423
+awscli==1.16.230 \
+    --hash=sha256:2ac5d76c637946b381875920bfe0e0f33b5b47ec81cfa3d0a5ea91b8d9cb8d23 \
+    --hash=sha256:839cd18a752c333d9b1347b99eafa408cb41f301ffc95e96c7a54519d05fe996
 moto==1.3.13 \
     --hash=sha256:95d48d8ebaad47fb5bb4233854cf1cf8523ec5307d50eb1e4017ce10f1960b66
 mozilla-django-oidc==1.2.2 \
