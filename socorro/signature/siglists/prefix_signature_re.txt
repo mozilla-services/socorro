@@ -259,6 +259,8 @@ _VEC_memzero
 .*WaitFor
 wcslen
 wcsrtombs
+# NOTE(willkg): continue past wayland symbols
+wl_(array|proxy)_.*
 __wrap_realloc
 WSARecv
 WSASend
