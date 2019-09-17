@@ -91,7 +91,7 @@ _MD_
 memcmp
 __memcmp16
 memcpy
-__memcpy_sse2_unaligned_erms
+__memcpy.*
 memmove
 _platform_memmove\$VARIANT\$
 __platform_memmove\$VARIANT\$
