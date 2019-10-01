@@ -184,9 +184,9 @@ libgravatar==0.2.3 \
 dockerflow==2019.9.0 \
     --hash=sha256:2d66cf55c68a02f5e5c4b65bd6a7a3398de8d1b473ac09a8b314d562bad6f43e \
     --hash=sha256:887cd21b4bcdead6f66628dc9879ed5f14eccb038732e68f90e4f476ce714e1c
-google-cloud-pubsub==1.0.0 \
-    --hash=sha256:a052a67c3f0ae86716626ab0a3b83fdb0613df86d69aece43f905bf04672caf2 \
-    --hash=sha256:a922cd96474b0acbb1d03aa50e1db782800c5bb3e2731bc0feb93816d547ab17
+google-cloud-pubsub==1.0.2 \
+    --hash=sha256:12ff565ef00e4ca19d2ae26ae4515070094ba857d7c7024370dbed81fc7d58ab \
+    --hash=sha256:afb08eb558f3e4d836e6f77443f81555d6921ffc888c7c3085acd1205fba6e8c
 sentry-sdk==0.11.2 \
     --hash=sha256:528f936118679e9a52dacb96bfefe20acb5d63e0797856c64a582cc3c2bc1f9e \
     --hash=sha256:b4edcb1296fee107439345d0f8b23432b8732b7e28407f928367d0a4a36301a9
