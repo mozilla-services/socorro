@@ -158,9 +158,9 @@ pytest-django==3.5.1 \
     --hash=sha256:4adfe5fb3ed47f0ba55506dd3daf688b1f74d5e69148c10ad2dd2f79f40c0d62
 django-npm==1.0.0 \
     --hash=sha256:2e6bba65e728fa18b9db3c8dc0d4490b70cb7f43bacf60eb3654d7dcb6424272
-markus==1.2.0 \
-    --hash=sha256:86bbeb16de1b1920d291c81a39b7a7c61c94b665cd8d10c6b69c994ce4fd5bcc \
-    --hash=sha256:9bce7bd152578703a8e4aa5a765c7c0d94bcdd69f7bc5e42d29b893e3abf2e5a
+markus==2.0.0 \
+    --hash=sha256:0080cee440426ae6e55c6e6130eba6f60e63715def77b7fda751310aacb63a4c \
+    --hash=sha256:a1c0da25166d8126d52bfa23b8258d1700b99ceb5d260d781e71cbd38020f078
 awscli==1.16.230 \
     --hash=sha256:2ac5d76c637946b381875920bfe0e0f33b5b47ec81cfa3d0a5ea91b8d9cb8d23 \
     --hash=sha256:839cd18a752c333d9b1347b99eafa408cb41f301ffc95e96c7a54519d05fe996
