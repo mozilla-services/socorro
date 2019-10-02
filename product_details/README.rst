@@ -55,4 +55,4 @@ expire, but after that you should be able to see the changes in production.
 Questions
 =========
 
-If you have any questions, please ask in ``#breakpad`` on ``irc.mozilla.org``.
+If you have any questions, please ask in ``#breakpad`` on Mozilla Slack.

@@ -13,7 +13,6 @@ Mozilla's crash analysis tool is hosted at
 :Documentation: https://socorro.readthedocs.io/
 :Documentation: https://crash-stats.mozilla.org/documentation/
 :Mailing list: https://lists.mozilla.org/listinfo/tools-socorro
-:IRC: `<irc://irc.mozilla.org/breakpad>`_
 :New bugs: https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
 :View all bugs: https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro
 

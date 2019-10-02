@@ -69,8 +69,8 @@ need to do the following first:
 We can't assign bugs to you until you've done at least those two
 steps.
 
-If you need help, let us know by `asking on IRC or sending an email to the
-mailing list <https://socorro.readthedocs.io/en/latest/#project-info>`_.
+If you need help, let us know by `sending an email to the mailing list
+<https://socorro.readthedocs.io/en/latest/#project-info>`_.
 
 
 Conventions

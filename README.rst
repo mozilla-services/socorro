@@ -54,5 +54,4 @@ https://lists.mozilla.org/listinfo/tools-socorro
 
 Please help each other.
 
-Devs hang out in the Socorro/Breakpad IRC channel:
-`<irc://irc.mozilla.org/breakpad>`_
+Crash Stats engineers hang out in the ``#breakpad`` channel on Mozilla Slack.
