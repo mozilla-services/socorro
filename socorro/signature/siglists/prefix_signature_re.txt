@@ -17,8 +17,6 @@ alloc::raw_vec::capacity_overflow
 _alloca_probe
 __android_log_assert
 arena_
-avx::memset16
-avx::memset32
 BaseAllocator
 BaseGetNamedObjectDirectory
 __clear_cache
@@ -136,7 +134,6 @@ MOZ_CrashOOL
 MOZ_CrashPrintf
 msvcr120\.dll@0x
 \<name omitted\>
-neon::memset32
 NP_Shutdown
 (NS_)?(Lossy)?(Copy|Append|Convert).*UTF
 nsACString_internal::Assign
@@ -183,7 +180,6 @@ PLDHashTable::
 PL_
 port_
 PORT_
-portable::memset32
 _PR_
 PR_
 .*ProcessNextEvent
@@ -211,9 +207,6 @@ send
 setjmp
 sigblock
 sigprocmask
-sk_memset32
-sk_memset32_dither
-SK_OPTS_NS::memset32
 SocketAccept
 SocketAcceptRead
 SocketAvailable
@@ -233,8 +226,6 @@ SocketSync
 SocketTransmitFile
 SocketWrite
 SocketWritev
-sse2::memset32
-sse2::memsetT<T>
 ssl_
 SSL_
 std::alloc::rust_oom
@@ -282,3 +273,27 @@ mozilla::MakeUnique<.*>
 
 # Always continue for .dll files
 .*\.dll
+
+# platform-specific memset implementations
+avx::memset16
+avx::memset32
+neon::memset32
+portable::memset32
+sk_memset32
+sk_memset32_dither
+SK_OPTS_NS::memset32
+sse2::memset32
+sse2::memsetT<T>
+
+# platform-specific strcmp implementations
+__strcmp_avx2
+__strcmp_sse2_unaligned
+__strcmp_ssse3
+__GI_strcmp
+__GI___strcmp_ssse3
+_platform_strcmp
+lstrcmpA
+lstrcmpW
+lstrcmpiA
+lstrcmpiW
+wstrcmp
