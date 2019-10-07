@@ -205,7 +205,10 @@ class CSignatureTool(SignatureTool):
         module_offset=None,
         offset=None,
         normalized=None,
-        **kwargs,  # eat any extra kwargs passed in
+        # eat any extra kwargs passed in
+        # fmt: off
+        **kwargs
+        # fmt: on
     ):
         """Normalizes a single frame
 
