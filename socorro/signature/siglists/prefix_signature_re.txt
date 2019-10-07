@@ -284,3 +284,16 @@ sk_memset32_dither
 SK_OPTS_NS::memset32
 sse2::memset32
 sse2::memsetT<T>
+
+# platform-specific strcmp implementations
+__strcmp_avx2
+__strcmp_sse2_unaligned
+__strcmp_ssse3
+__GI_strcmp
+__GI___strcmp_ssse3
+_platform_strcmp
+lstrcmpA
+lstrcmpW
+lstrcmpiA
+lstrcmpiW
+wstrcmp
