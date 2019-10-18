@@ -27,6 +27,7 @@ CFRelease
 chunk_alloc
 chunk_recycle
 _chkstk
+__chk_fail
 CleanupPerAppKey
 ConditionVariableFallback::wait\(.*\)
 core::option::expect_failed
@@ -45,13 +46,17 @@ EtwEventEnabled
 extent_
 fastcopy_I
 fastzero_I
+__fdelt_warn
 _files_getaddrinfo
 .*free
+__fortify_fail
 free_impl
+__fsetlocking
 CCGraphBuilder::NoteXPCOMChild
 gfxPlatform::Init
 getanswer
 gkrust_shared::oom_hook::hook
+gsignal
 HandleInvalidParameter
 HeapFree
 huge_dalloc
@@ -228,6 +233,7 @@ SocketWrite
 SocketWritev
 ssl_
 SSL_
+__stack_chk_fail
 std::alloc::rust_oom
 std::_Allocate
 std::_Hash<T>::
