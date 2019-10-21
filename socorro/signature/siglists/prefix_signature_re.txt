@@ -16,6 +16,8 @@ alloc::oom::oom
 alloc::raw_vec::capacity_overflow
 _alloca_probe
 __android_log_assert
+__assert_fail
+__assert_fail_base
 arena_
 BaseAllocator
 BaseGetNamedObjectDirectory
@@ -46,10 +48,12 @@ EtwEventEnabled
 extent_
 fastcopy_I
 fastzero_I
+__fdelt_chk
 __fdelt_warn
 _files_getaddrinfo
 .*free
 __fortify_fail
+__fortify_fail_abort
 free_impl
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
@@ -87,6 +91,7 @@ JS_NewStringCopyZ
 KiUserExceptionDispatcher
 kill
 __libc_android_abort
+__libc_message
 libobjc.A.dylib@0x1568.
 (libxul\.so|xul\.dll|XUL)@0x
 LL_
@@ -246,6 +251,7 @@ ssl3_
 strchr
 strcmp
 strcpy
+__strcpy_chk
 .*strdup
 StringBeginsWith
 StringEndsWith
