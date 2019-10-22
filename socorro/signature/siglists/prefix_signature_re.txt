@@ -80,7 +80,6 @@ JNI_GetCreatedJavaVM
 js::AutoCompartment::AutoCompartment
 js::AutoEnterOOMUnsafeRegion::crash
 js::detail::HashTable<.*>::
-mozilla::detail::HashTable<.*>::
 js::HashSet<.*>::
 js::HashMap<.*>::
 js::LifoAlloc::getOrCreateChunk
@@ -114,6 +113,9 @@ moz_free
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::
 mozilla::detail::ConditionVariableImpl::
+mozilla::detail::HashTable<.*>::
+mozilla::MozPromise<T>::ThenCommand<T>::Track
+mozilla::MozPromise<T>::ThenInternal
 SleepConditionVariableCS
 SleepConditionVariableSRW
 mozilla::TimeStamp::Now
