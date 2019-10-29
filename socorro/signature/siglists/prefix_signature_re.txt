@@ -9,6 +9,9 @@
 .*CrashAtUnhandlableOOM
 Abort
 .*abort
+__aeabi_memcpy4
+__aeabi_memcpy
+__aeabi_memmove
 .*alloc_impl
 Allocator<T>::malloc
 alloc::oom::default_oom_handler
@@ -44,6 +47,7 @@ __delayLoadHelper2
 dlmalloc
 dlmalloc_trim
 dvm
+__entry_from_strcat_in_strcpy
 EtwEventEnabled
 extent_
 fastcopy_I
@@ -57,8 +61,12 @@ __fortify_fail_abort
 free_impl
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
-gfxPlatform::Init
 getanswer
+GetTickCount64
+gfxPlatform::Init
+__GI___strlen_sse2
+__GI_memcpy
+__GI_strlen
 gkrust_shared::oom_hook::hook
 gsignal
 HandleInvalidParameter
@@ -87,6 +95,7 @@ JSAutoCompartment::JSAutoCompartment
 JS_DHashTableEnumerate
 JS_DHashTableOperate
 JS_NewStringCopyZ
+js_strlen
 KiUserExceptionDispatcher
 kill
 __libc_android_abort
@@ -94,14 +103,27 @@ __libc_message
 libobjc.A.dylib@0x1568.
 (libxul\.so|xul\.dll|XUL)@0x
 LL_
+lstrcatA
+lstrlenA
 malloc
 mbrtoc32
 _MD_
 memcmp
+__memcmp_avx2_movbe
+__memcmp_ia32
+__memcmp_sse2
+__memcmp_sse4_1
+__memcmp_ssse3
 __memcmp16
+_platform_memcmp
+__platform_memcmp
 memcpy
 __memcpy.*
 memmove
+__memmove_avx_unaligned_erms
+__memmove_avx_unaligned
+__memmove_ssse3_back
+__memmove_ssse3
 _platform_memmove\$VARIANT\$
 __platform_memmove\$VARIANT\$
 memset
@@ -119,7 +141,6 @@ mozilla::MozPromise<T>::ThenInternal
 SleepConditionVariableCS
 SleepConditionVariableSRW
 mozilla::TimeStamp::Now
-GetTickCount64
 mozilla::detail::MutexImpl::
 mozilla::detail::nsStringRepr::First
 mozilla::detail::nsStringRepr::Last
@@ -153,8 +174,10 @@ nsAString_internal::Assign
 nsACString_internal::BeginWriting
 nsAString_internal::BeginWriting
 nsACString_internal::SetCapacity
+nsCRT::strcmp
 nsTArrayInfallibleAllocator
 NS_strcmp
+NS_strlen
 nsBaseHashtable<.*>::
 nsClassHashtable<.*>::
 nsCOMPtr
@@ -186,6 +209,7 @@ objc_exception_throw
 objc_msgSend
 objc_release
 operator new
+o_strcat_s
 <.*>::operator()
 pages_commit
 PLDHashTable::
@@ -258,6 +282,9 @@ __strcpy_chk
 StringBeginsWith
 StringEndsWith
 strlen
+__strlen_avx2
+__strlen_sse2_bsf
+_platform_strlen
 strncpy
 strzcmp16
 strstr
@@ -274,6 +301,7 @@ _VEC_memzero
 .*WaitFor
 wcslen
 wcsrtombs
+wcscpy_s
 # NOTE(willkg): continue past wayland symbols
 wl_(array|proxy)_.*
 __wrap_realloc
@@ -302,9 +330,11 @@ sse2::memsetT<T>
 # platform-specific strcmp implementations
 __strcmp_avx2
 __strcmp_sse2_unaligned
+__strcmp_sse4_2
 __strcmp_ssse3
 __GI_strcmp
 __GI___strcmp_ssse3
+g_strcmp0
 _platform_strcmp
 lstrcmpA
 lstrcmpW
