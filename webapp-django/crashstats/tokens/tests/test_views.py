@@ -79,7 +79,7 @@ class TestViews(BaseTestViews):
         user = self._login()
         response = self.client.post(url, {"notes": " Some notes "})
         assert response.status_code == 302
-        token, = models.Token.objects.all()
+        (token,) = models.Token.objects.all()
         assert token.notes == "Some notes"
         assert token.permissions.all().count() == 0
         token.delete()
@@ -105,7 +105,7 @@ class TestViews(BaseTestViews):
             url, {"notes": " Some notes ", "permissions": [p1.pk, p3.pk]}
         )
         assert response.status_code == 302
-        token, = models.Token.objects.active().filter(user=user)
+        (token,) = models.Token.objects.active().filter(user=user)
         assert set(token.permissions.all()) == set([p1, p3])
 
         # this should be listed on the home page now
