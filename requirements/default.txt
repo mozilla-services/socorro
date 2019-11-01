@@ -91,9 +91,9 @@ python-decouple==3.1 \
 dj-database-url==0.5.0 \
     --hash=sha256:851785365761ebe4994a921b433062309eb882fedd318e1b0fcecc607ed02da9 \
     --hash=sha256:4aeaeb1f573c74835b0686a2b46b85990571159ffc21aa57ecd4d1e1cb334163
-datadog==0.30.0 \
-    --hash=sha256:07c053e39c6509023d69bc2f3b8e3d5d101b4e75baf2da2b9fc707391c3e773d \
-    --hash=sha256:bbfd8c3a13e87b9c15fb982dff269b983ad9fb5ab610e7f17d92b0bc001fbe0f
+datadog==0.31.0 \
+    --hash=sha256:4989c12d163983000dd9190308db5579b2b1a69ac592d01b695d9c0b4d59bcff \
+    --hash=sha256:62152a363863c579c3fe83a191d573ad51c79b6421bd45d235a76408e95d8bcd
 freezegun==0.3.12 \
     --hash=sha256:2a4d9c8cd3c04a201e20c313caf8b6338f1cfa4cda43f46a94cc4a9fd13ea5e7 \
     --hash=sha256:edfdf5bc6040969e6ed2e36eafe277963bdc8b7c01daeda96c5c8594576c9390
