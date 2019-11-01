@@ -187,9 +187,9 @@ dockerflow==2019.10.0 \
 google-cloud-pubsub==1.0.2 \
     --hash=sha256:12ff565ef00e4ca19d2ae26ae4515070094ba857d7c7024370dbed81fc7d58ab \
     --hash=sha256:afb08eb558f3e4d836e6f77443f81555d6921ffc888c7c3085acd1205fba6e8c
-sentry-sdk==0.12.2 \
-    --hash=sha256:2529ab6f93914d01bcd80b1b16c15a025902350ab19af2033aa5ff797c1600ad \
-    --hash=sha256:ab16b539c40cc18e3dcfec99d0d3fff16337a050eaf79d4503ef2b73af9a7d9e
+sentry-sdk==0.13.1 \
+    --hash=sha256:cf4b0f8401f4d146e6b8c5579b24397273126c9a0576fa7eb9581ad27b330f13 \
+    --hash=sha256:f6e850f304382d87c5c52c01db8c0004d2ced6a0b073df2f2257168cf31b31aa
 black==19.10b0 \
     --hash=sha256:1b30e59be925fafc1ee4565e5e08abef6b03fe455102883820fe5ee2e4734e0b \
     --hash=sha256:c2edb73a08e9e0e6f65a0e6af18b059b8b1cdd5bef997d7a0b181df93dc81539
