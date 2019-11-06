@@ -37,8 +37,6 @@ google_breakpad::ReceivePort::WaitForMessage
 KiFastSystemCallRet
 libandroid_runtime\.so@0x
 libbinder\.so@0x
-libc\.so(\.\d+)?@0x
-libc-\d+\.\d+(\.\d+)?\.so@0x
 libEGL\.so@
 libdvm\.so\s*@\s*0x
 libgui\.so@0x
