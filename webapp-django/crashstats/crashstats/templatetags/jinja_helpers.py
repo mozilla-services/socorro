@@ -178,7 +178,6 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
     )
 
     kwargs = {
-        "bug_severity": "critical",
         "bug_type": "defect",
         "keywords": "crash",
         "product": bug_product,
