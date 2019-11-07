@@ -115,12 +115,9 @@ django-jinja==2.4.1 \
 humanfriendly==4.18 \
     --hash=sha256:23057b10ad6f782e7bc3a20e3cb6768ab919f619bbdc0dd75691121bbde5591d \
     --hash=sha256:33ee8ceb63f1db61cce8b5c800c531e1a61023ac5488ccde2ba574a85be00a85
-# cfn-lint and aws-sam-translator require ~=2.6, check in July 2019
-# https://github.com/aws-cloudformation/cfn-python-lint/issues/905
-# https://github.com/awslabs/serverless-application-model/issues/922
-jsonschema==2.6.0 \
-    --hash=sha256:000e68abd33c972a5248544925a0cae7d1125f9bf6c58280d37546b946769a08 \
-    --hash=sha256:6ff5f3180870836cae40f06fa10419f557208175f13ad7bc26caa77beb1f6e02 # pyup: ~=2.6
+jsonschema==3.1.1 \
+    --hash=sha256:2fa0684276b6333ff3c0b1b27081f4b2305f0a36cf702a23db50edb141893c3f \
+    --hash=sha256:94c0a13b4a0616458b42529091624e66700a17f847453e52279e35509a5b7631
 requests-mock==1.7.0 \
     --hash=sha256:510df890afe08d36eca5bb16b4aa6308a6f85e3159ad3013bac8b9de7bd5a010 \
     --hash=sha256:88d3402dd8b3c69a9e4f9d3a73ad11b15920c6efd36bc27bf1f701cf4a8e4646
@@ -161,9 +158,9 @@ django-npm==1.0.0 \
 markus==2.1.0 \
     --hash=sha256:3408818d4d78ca0f4085c6ea32b02f4b3d2a2520b169ddec3167b50f0b7c700d \
     --hash=sha256:bfa276c69b25006e37449eed447bc27105bf6f26c9ca27d01ddefbd1077b44ea
-awscli==1.16.271 \
-    --hash=sha256:968991b6b8a75ffbb02acb567efe8901134a45fe9e4b52c740bfb408829039f2 \
-    --hash=sha256:c7884535acecd2bdad8ee24387203e931f2dd016315d457e805ef807c999ca19
+awscli==1.16.276 \
+    --hash=sha256:6ae2d5bcce2e16906ad34bee99f3ba3d7a1633c8f0f53ef97e7575499b5a88eb \
+    --hash=sha256:6c63da10a322f1245f90df99b549074d97b08f0e6f69d8ce7f06330b4822b792
 moto==1.3.13 \
     --hash=sha256:95d48d8ebaad47fb5bb4233854cf1cf8523ec5307d50eb1e4017ce10f1960b66
 mozilla-django-oidc==1.2.2 \
