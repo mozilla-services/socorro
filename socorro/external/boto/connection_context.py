@@ -33,7 +33,7 @@ class JSONISOEncoder(json.JSONEncoder):
         raise NotImplementedError("Don't know about {0!r}".format(obj))
 
 
-class ConnectionContextBase(RequiredConfig):
+class S3ConnectionContext(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         "access_key",
@@ -69,11 +69,18 @@ class ConnectionContextBase(RequiredConfig):
         default="",
         reference_value_from="resource.boto",
     )
+    required_config.add_option(
+        "calling_format",
+        doc="fully qualified python path to the boto calling format function",
+        default="boto.s3.connection.SubdomainCallingFormat",
+        from_string_converter=class_converter,
+        reference_value_from="resource.boto",
+        likely_to_be_changed=True,
+    )
 
     RETRYABLE_EXCEPTIONS = (
         socket.timeout,
         boto.exception.PleaseRetryException,
-        boto.exception.ResumableTransferDisposition,
         boto.exception.ResumableUploadException,
     )
 
@@ -83,6 +90,8 @@ class ConnectionContextBase(RequiredConfig):
         self.ResponseError = (boto.exception.StorageResponseError, KeyNotFound)
         self._bucket_cache = {}
         self.metrics = markus.get_metrics(config.boto_metrics_prefix)
+        self._connect_to_endpoint = boto.connect_s3
+        self._calling_format = config.calling_format
 
     def _connect(self):
         try:
@@ -92,8 +101,12 @@ class ConnectionContextBase(RequiredConfig):
             return self.connection
 
     def _get_credentials(self):
-        """Returns credentials for creating the connection"""
-        raise NotImplementedError
+        return {
+            "aws_access_key_id": self.config.access_key,
+            "aws_secret_access_key": self.config.secret_access_key,
+            "is_secure": True,
+            "calling_format": self._calling_format(),
+        }
 
     def _get_datestamp(self, crashid):
         """Retrieves datestamp from a crashid or raises an exception"""
@@ -227,39 +240,6 @@ class ConnectionContextBase(RequiredConfig):
     @contextlib.contextmanager
     def __call__(self):
         yield self
-
-    def force_reconnect(self):
-        pass
-
-    def is_retryable_exception(self, exc):
-        return isinstance(exc, self.RETRYABLE_EXCEPTIONS)
-
-
-class S3ConnectionContext(ConnectionContextBase):
-    """This derived class includes the specifics for connection to S3"""
-
-    required_config = Namespace()
-    required_config.add_option(
-        "calling_format",
-        doc="fully qualified python path to the boto calling format function",
-        default="boto.s3.connection.SubdomainCallingFormat",
-        from_string_converter=class_converter,
-        reference_value_from="resource.boto",
-        likely_to_be_changed=True,
-    )
-
-    def __init__(self, config, quit_check_callback=None):
-        super().__init__(config)
-        self._connect_to_endpoint = boto.connect_s3
-        self._calling_format = config.calling_format
-
-    def _get_credentials(self):
-        return {
-            "aws_access_key_id": self.config.access_key,
-            "aws_secret_access_key": self.config.secret_access_key,
-            "is_secure": True,
-            "calling_format": self._calling_format(),
-        }
 
 
 class RegionalS3ConnectionContext(S3ConnectionContext):

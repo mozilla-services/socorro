@@ -4,7 +4,6 @@
 
 import json
 
-import mock
 from moto import mock_s3_deprecated
 import pytest
 
@@ -35,14 +34,13 @@ class TestSimplifiedCrashData(object):
 
     @mock_s3_deprecated
     def test_get_processed_not_found(self, boto_helper):
-        with mock.patch("socorro.lib.transaction.BACKOFF_TIMES", [0]):
-            boto_helper.get_or_create_bucket("crashstats")
+        boto_helper.get_or_create_bucket("crashstats")
 
-            boto_s3_store = self.get_s3_store()
-            with pytest.raises(CrashIDNotFound):
-                boto_s3_store.get(
-                    uuid="0bba929f-8721-460c-dead-a43c20071027", datatype="processed"
-                )
+        boto_s3_store = self.get_s3_store()
+        with pytest.raises(CrashIDNotFound):
+            boto_s3_store.get(
+                uuid="0bba929f-8721-460c-dead-a43c20071027", datatype="processed"
+            )
 
     @mock_s3_deprecated
     def test_get_raw_dump(self, boto_helper):
@@ -61,27 +59,25 @@ class TestSimplifiedCrashData(object):
 
     @mock_s3_deprecated
     def test_get_raw_dump_not_found(self, boto_helper):
-        with mock.patch("socorro.lib.transaction.BACKOFF_TIMES", [0]):
-            boto_helper.get_or_create_bucket("crashstats")
+        boto_helper.get_or_create_bucket("crashstats")
 
-            boto_s3_store = self.get_s3_store()
+        boto_s3_store = self.get_s3_store()
 
-            with pytest.raises(CrashIDNotFound):
-                boto_s3_store.get(
-                    uuid="0bba929f-8721-460c-dead-a43c20071027", datatype="raw"
-                )
+        with pytest.raises(CrashIDNotFound):
+            boto_s3_store.get(
+                uuid="0bba929f-8721-460c-dead-a43c20071027", datatype="raw"
+            )
 
     @mock_s3_deprecated
     def test_get_raw_crash_not_found(self, boto_helper):
-        with mock.patch("socorro.lib.transaction.BACKOFF_TIMES", [0]):
-            boto_helper.get_or_create_bucket("crashstats")
+        boto_helper.get_or_create_bucket("crashstats")
 
-            boto_s3_store = self.get_s3_store()
+        boto_s3_store = self.get_s3_store()
 
-            with pytest.raises(CrashIDNotFound):
-                boto_s3_store.get(
-                    uuid="0bba929f-8721-460c-dead-a43c20071027", datatype="meta"
-                )
+        with pytest.raises(CrashIDNotFound):
+            boto_s3_store.get(
+                uuid="0bba929f-8721-460c-dead-a43c20071027", datatype="meta"
+            )
 
     @mock_s3_deprecated
     def test_bad_arguments(self):
