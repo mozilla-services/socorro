@@ -9,7 +9,6 @@ depending on what happened.
 """
 
 from contextlib import contextmanager
-import time
 
 
 @contextmanager
