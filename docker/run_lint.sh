@@ -29,8 +29,4 @@ else
     echo ">>> eslint (js)"
     cd /app/webapp-django
     /webapp-frontend-deps/node_modules/.bin/eslint .
-
-    echo ">>> pip check"
-    cd /app
-    pip check --disable-pip-version-check
 fi
