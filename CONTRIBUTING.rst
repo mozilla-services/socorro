@@ -17,9 +17,7 @@ All bugs are tracked in `<https://bugzilla.mozilla.org/>`_.
 
 Write up a new bug:
 
-https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro
-
-There are multiple components to choose. If in doubt use ``General``.
+https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General
 
 If you want to do work for which there is no bug, it's best to write up a bug
 first. Maybe the ensuing conversation can save you the time and trouble
@@ -86,18 +84,19 @@ All Python code files should have an MPL v2 header at the top::
   # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-Python code should follow PEP-8.
+We use `black <https://black.readthedocs.io/en/stable/>`_ to reformat Python
+code.
 
-Max line length is 100 characters.
-
-4-space indentation.
-
-To run the linter, do::
+To lint the code::
 
   $ make lint
 
 
 If you hit issues, use ``# noqa``.
+
+To run the reformatter::
+
+  $ make lintfix
 
 
 HTML conventions
@@ -117,16 +116,10 @@ If in doubt, see https://github.com/mozilla-services/socorro/blob/master/.editor
 Git conventions
 ---------------
 
-First line is a summary of the commit. It should start with one of the following::
+First line is a summary of the commit. It should start with::
 
   bug nnnnnnn: summary
 
-which will trigger the auto-closer to add a comment to the bug when this is merged
-into the master branch, or::
-
-  fix bug nnnnnnn: summary
-
-which will do that and also close the bug.
 
 After that, the commit should explain *why* the changes are being made and any
 notes that future readers should know for context or be aware of.
@@ -135,7 +128,7 @@ notes that future readers should know for context or be aware of.
 Migrations
 ==========
 
-Database migrations (django)
+Database migrations (Django)
 ----------------------------
 
 We use Django's ORM and thus we do database migrations using Django's
