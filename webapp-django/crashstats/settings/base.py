@@ -588,21 +588,8 @@ SOCORRO_CONFIG = {
             "access_key": config("resource.boto.access_key", None),
             "bucket_name": config("resource.boto.bucket_name", "crashstats"),
             "region": config("resource.boto.region", "us-west-2"),
-            "prefix": config("resource.boto.prefix", ""),
-            # NOTE(willkg): In the local dev environment, we need to use a
-            # HostPortS3ConnectionContext which requires these additional configuration bits. The
-            # defaults are taken from the config sections of the relevant classes.
-            "resource_class": config(
-                "resource.boto.resource_class",
-                "socorro.external.boto.connection_context.RegionalS3ConnectionContext",
-            ),
-            "host": config("resource.boto.host", None),
-            "port": config("resource.boto.port", None),
-            "secure": config("resource.boto.secure", True),
-            "calling_format": config(
-                "resource.boto.calling_format",
-                "boto.s3.connection.OrdinaryCallingFormat",
-            ),
+            "resource_class": "socorro.external.boto.connection_context.S3Connection",
+            "endpoint_url": config("resource.boto.endpoint_url", None),
         },
         "pubsub": {
             "service_account_file": config(

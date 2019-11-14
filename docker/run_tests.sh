@@ -10,6 +10,7 @@
 # services have been launched. It depends on:
 #
 # * elasticsearch
+# * localstack-s3
 # * postgresql
 # * pubsub
 
@@ -34,6 +35,7 @@ echo ">>> wait for services"
 urlwait "${DATABASE_URL}" 10
 urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
+urlwait "${CRASHSTORAGE_ENDPOINT_URL}" 10
 
 echo ">>> build pubsub things and db things"
 # Clear Pub/Sub for tests

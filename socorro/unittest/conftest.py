@@ -6,10 +6,12 @@
 pytest plugins for socorro/unittest/ and webapp-django/ test suites.
 """
 
+import io
 import logging
+import os
 
-import boto
-from boto.exception import StorageResponseError
+import boto3
+from botocore.client import ClientError, Config
 from markus.testing import MetricsMock
 import pytest
 import requests_mock
@@ -58,7 +60,7 @@ def caplogpp(caplog):
         logger.propagate = False
 
 
-class BotoHelper(object):
+class BotoHelper:
     """Helper class inspired by Boto's S3 API.
 
     The goal here is to automate repetitive things in a convenient way, but
@@ -66,46 +68,78 @@ class BotoHelper(object):
 
     """
 
-    def get_or_create_bucket(self, bucket_name):
-        """Gets or creates the crashstats bucket"""
-        conn = boto.connect_s3()
+    def __init__(self):
+        self._buckets_seen = set()
+
+    def get_client(self):
+        session = boto3.session.Session(
+            aws_access_key_id=os.environ.get("resource.boto.access_key"),
+            aws_secret_access_key=os.environ.get("secrets.boto.secret_access_key"),
+        )
+        client = session.client(
+            service_name="s3",
+            config=Config(s3={"addressing_style": "path"}),
+            endpoint_url=os.environ.get("resource.boto.endpoint_url"),
+        )
+        return client
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        conn = self.get_client()
+        for bucket in self._buckets_seen:
+            # Delete any objects in the bucket
+            resp = conn.list_objects(Bucket=bucket)
+            for obj in resp.get("Contents", []):
+                key = obj["Key"]
+                conn.delete_object(Bucket=bucket, Key=key)
+
+            # Then delete the bucket
+            conn.delete_bucket(Bucket=bucket)
+
+    def create_bucket(self, bucket_name):
+        """Create specified bucket if it doesn't exist."""
+        conn = self.get_client()
         try:
-            bucket = conn.get_bucket(bucket_name)
-        except StorageResponseError:
-            conn.create_bucket(bucket_name)
-            bucket = conn.get_bucket(bucket_name)
-        return bucket
+            conn.head_bucket(Bucket=bucket_name)
+        except ClientError:
+            conn.create_bucket(Bucket=bucket_name)
+        self._buckets_seen.add(bucket_name)
 
-    def set_contents_from_string(self, bucket_name, key, value):
-        """Puts an object into the specified bucket"""
-        bucket = self.get_or_create_bucket(bucket_name)
-        key_object = bucket.new_key(key)
-        key_object.set_contents_from_string(value)
+    def upload_fileobj(self, bucket_name, key, data):
+        """Puts an object into the specified bucket."""
+        conn = self.get_client()
+        self.create_bucket(bucket_name)
+        conn.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=key)
 
-    def get_contents_as_string(self, bucket_name, key):
+    def download_fileobj(self, bucket_name, key):
         """Fetches an object from the specified bucket"""
-        bucket = self.get_or_create_bucket(bucket_name)
-        key_object = bucket.get_key(key)
-        if key_object is None:
-            return None
-        return key_object.get_contents_as_string()
+        conn = self.get_client()
+        self.create_bucket(bucket_name)
+        resp = conn.get_object(Bucket=bucket_name, Key=key)
+        return resp["Body"].read()
 
     def list(self, bucket_name):
-        """Lists contents of bucket and returns keys as strings"""
-        bucket = self.get_or_create_bucket(bucket_name)
-        return [key.key for key in bucket.list()]
+        """Return list of keys for objects in bucket."""
+        conn = self.get_client()
+        self.create_bucket(bucket_name)
+        resp = conn.list_objects(Bucket=bucket_name)
+        return [obj["Key"] for obj in resp["Contents"]]
 
 
-@pytest.fixture
+@pytest.yield_fixture
 def boto_helper():
-    """BotoHelper() for automating repetitive tasks in S3 setup.
+    """Returns a BotoHelper for automating repetitive tasks in S3 setup.
 
     Provides:
 
-    * ``get_or_create_bucket(bucket_name)``
-    * ``set_contents_from_string(bucket_name, key, value)``
-    * ``get_contents_as_string(bucket_name, key)``
+    * ``get_client()``
+    * ``create_bucket(bucket_name)``
+    * ``upload_fileobj(bucket_name, key, value)``
+    * ``download_fileobj(bucket_name, key)``
     * ``list(bucket_name)``
 
     """
-    return BotoHelper()
+    with BotoHelper() as boto_helper:
+        yield boto_helper
