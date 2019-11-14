@@ -44,7 +44,8 @@ RUN cd /webapp-frontend-deps/ && npm install
 # Install Socorro Python requirements
 COPY ./requirements /app/requirements
 RUN pip install -U 'pip>=8' && \
-    pip install --no-cache-dir -r requirements/default.txt -c requirements/constraints.txt
+    pip install --no-cache-dir -r requirements/default.txt -c requirements/constraints.txt && \
+    pip check --disable-pip-version-check
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
