@@ -341,6 +341,10 @@ BZAPI_BASE_URL = config("BZAPI_BASE_URL", "https://bugzilla.mozilla.org/rest")
 # Base URL for Buildhub
 BUILDHUB_BASE_URL = "https://buildhub.moz.tools/"
 
+ELASTICSEARCH_URLS = config(
+    "resource.elasticsearch.elasticsearch_urls", "http://localhost:9200", cast=Csv()
+)
+
 # The index schema used in our elasticsearch databases, used in the
 # Super Search Custom Query page.
 ELASTICSEARCH_INDEX_SCHEMA = config(
@@ -582,9 +586,7 @@ SOCORRO_CONFIG = {
             # in the implementation itself.
             # We repeat them here so it becomes super easy to override
             # from the way we set settings for the webapp.
-            "elasticsearch_urls": config(
-                "ELASTICSEARCH_URLS", "http://localhost:9200", cast=Csv()
-            ),
+            "elasticsearch_urls": ELASTICSEARCH_URLS,
             "elasticsearch_index": ELASTICSEARCH_INDEX_SCHEMA,
             "elasticsearch_index_regex": config(
                 "resource.elasticsearch.elasticsearch_index_regex", "^socorro[0-9]{6}$"
@@ -631,7 +633,7 @@ SOCORRO_CONFIG = {
             ),
         },
     },
-    "telemetrydata": {"bucket_name": config("TELEMETRY_BUCKET_NAME", None)},
+    "telemetrydata": {"bucket_name": config("destination.telemetry.bucket_name", None)},
 }
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
