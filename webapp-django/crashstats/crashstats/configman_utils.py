@@ -24,9 +24,7 @@ from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 def get_s3_context():
     """Return an S3ConnectionContext."""
     # The class could be anything, so get the class first
-    cls_path = settings.SOCORRO_IMPLEMENTATIONS_CONFIG["resource"]["boto"][
-        "resource_class"
-    ]
+    cls_path = settings.SOCORRO_CONFIG["resource"]["boto"]["resource_class"]
     module, name = cls_path.rsplit(".", 1)
     cls = getattr(importlib.import_module(module), name)
 
@@ -36,7 +34,7 @@ def get_s3_context():
         values_source_list=[
             # We prefer the webapp's configuration over things in the
             # environment which are likely to be configman things
-            settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
+            settings.SOCORRO_CONFIG,
             environment,
         ],
     )
@@ -70,5 +68,5 @@ def config_from_configman():
 
     return configuration(
         definition_source=definition_source,
-        values_source_list=[settings.SOCORRO_IMPLEMENTATIONS_CONFIG],
+        values_source_list=[settings.SOCORRO_CONFIG],
     )

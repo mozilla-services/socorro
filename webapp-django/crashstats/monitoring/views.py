@@ -90,7 +90,7 @@ def dockerflow_heartbeat(request):
     cache.delete(cache_key)
 
     # Do a really basic Elasticsearch query
-    es_settings = settings.SOCORRO_IMPLEMENTATIONS_CONFIG["resource"]["elasticsearch"]
+    es_settings = settings.SOCORRO_CONFIG["resource"]["elasticsearch"]
     es = elasticsearch.Elasticsearch(
         hosts=es_settings["elasticsearch_urls"],
         timeout=30,

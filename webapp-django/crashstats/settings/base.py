@@ -572,7 +572,7 @@ if not implementations_database_url:
 implementations_config = dj_database_url.parse(implementations_database_url)
 
 # Config for when the models pull directly from socorro.external classes.
-SOCORRO_IMPLEMENTATIONS_CONFIG = {
+SOCORRO_CONFIG = {
     "secrets": {
         "boto": {"secret_access_key": config("secrets.boto.secret_access_key", None)}
     },
