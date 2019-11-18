@@ -341,6 +341,10 @@ BZAPI_BASE_URL = config("BZAPI_BASE_URL", "https://bugzilla.mozilla.org/rest")
 # Base URL for Buildhub
 BUILDHUB_BASE_URL = "https://buildhub.moz.tools/"
 
+ELASTICSEARCH_URLS = config(
+    "resource.elasticsearch.elasticsearch_urls", "http://localhost:9200", cast=Csv()
+)
+
 # The index schema used in our elasticsearch databases, used in the
 # Super Search Custom Query page.
 ELASTICSEARCH_INDEX_SCHEMA = config(
@@ -554,14 +558,6 @@ GOOGLE_ANALYTICS_ID = config("GOOGLE_ANALYTICS_ID", None)
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)
 
-
-# Credentials for being able to make an S3 connection
-AWS_ACCESS_KEY = config("AWS_ACCESS_KEY", None)
-AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", None)
-AWS_HOST = config("AWS_HOST", None)
-AWS_PORT = config("AWS_PORT", 0, cast=int)
-AWS_SECURE = config("AWS_SECURE", True, cast=bool)
-
 # This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the
 # implementation classes will use the config coming from `DATABASE_URL`.
 # For local development you might want to connect to different databases
@@ -572,7 +568,7 @@ if not implementations_database_url:
 implementations_config = dj_database_url.parse(implementations_database_url)
 
 # Config for when the models pull directly from socorro.external classes.
-SOCORRO_IMPLEMENTATIONS_CONFIG = {
+SOCORRO_CONFIG = {
     "secrets": {
         "boto": {"secret_access_key": config("secrets.boto.secret_access_key", None)}
     },
@@ -582,9 +578,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             # in the implementation itself.
             # We repeat them here so it becomes super easy to override
             # from the way we set settings for the webapp.
-            "elasticsearch_urls": config(
-                "ELASTICSEARCH_URLS", "http://localhost:9200", cast=Csv()
-            ),
+            "elasticsearch_urls": ELASTICSEARCH_URLS,
             "elasticsearch_index": ELASTICSEARCH_INDEX_SCHEMA,
             "elasticsearch_index_regex": config(
                 "resource.elasticsearch.elasticsearch_index_regex", "^socorro[0-9]{6}$"
@@ -631,7 +625,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             ),
         },
     },
-    "telemetrydata": {"bucket_name": config("TELEMETRY_BUCKET_NAME", None)},
+    "telemetrydata": {"bucket_name": config("destination.telemetry.bucket_name", None)},
 }
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
