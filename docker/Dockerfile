@@ -18,7 +18,10 @@ FROM socorro_image_base as socorro_breakpad
 WORKDIR /mdsw/
 
 # Install some helpful debugging things
-RUN apt-get -y install gdb vim
+RUN apt-get update && apt-get install -y \
+    gdb \
+    vim \
+&& rm -rf /var/lib/apt/lists/*
 
 # Build breakpad client and stackwalker binaries
 COPY ./scripts/build-breakpad.sh /mdsw/scripts/

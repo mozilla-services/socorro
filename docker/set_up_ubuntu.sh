@@ -67,3 +67,6 @@ EOF
 
 # Remove this bashrc so it doesn't override the global one we created
 rm /home/app/.bashrc
+
+# Clean up apt cache
+rm -rf /var/lib/apt/lists/*
