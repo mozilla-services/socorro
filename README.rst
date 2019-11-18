@@ -10,11 +10,11 @@ displaying crash reports from clients using the `Breakpad libraries
 Support
 =======
 
-This is a very Mozilla-specific product. We do not currently have the capacity
-to support external users.
+This is a Mozilla-specific product. We do not currently have the capacity to
+support external users.
 
 If you are looking to use Socorro for your product, maybe you want to consider
-alternatives:
+this non-exhaustive list of alternatives:
 
 * run your own: `electron/mini-breakpad-server
   <https://github.com/electron/mini-breakpad-server>`_
@@ -34,14 +34,13 @@ Installation
 ============
 
 Documentation about installing Socorro is available on ReadTheDocs:
-`<https://socorro.readthedocs.io/en/latest>`_
+`<https://socorro.readthedocs.io/>`_
 
 
 Releases
 ========
 
-We use continuous development, so we release quite often. See our list of
-releases:
+We use continuous development and we release often. See our list of releases:
 
 https://github.com/mozilla-services/socorro/releases
 
