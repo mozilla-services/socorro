@@ -558,14 +558,6 @@ GOOGLE_ANALYTICS_ID = config("GOOGLE_ANALYTICS_ID", None)
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)
 
-
-# Credentials for being able to make an S3 connection
-AWS_ACCESS_KEY = config("AWS_ACCESS_KEY", None)
-AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", None)
-AWS_HOST = config("AWS_HOST", None)
-AWS_PORT = config("AWS_PORT", 0, cast=int)
-AWS_SECURE = config("AWS_SECURE", True, cast=bool)
-
 # This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the
 # implementation classes will use the config coming from `DATABASE_URL`.
 # For local development you might want to connect to different databases
