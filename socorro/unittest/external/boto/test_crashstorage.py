@@ -56,36 +56,6 @@ class TestBotoS3CrashStorage:
         )
         assert json.loads(dump_names) == []
 
-    def test_save_raw_crash_no_dumps_existing_bucket(self, boto_helper):
-        boto_s3_store = self.get_s3_store()
-        bucket = boto_s3_store.conn.bucket
-        boto_helper.create_bucket(bucket)
-
-        # Run save_raw_crash
-        boto_s3_store.save_raw_crash(
-            {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            # This is an empty set of dumps--no dumps!
-            MemoryDumpsMapping(),
-            "0bba929f-8721-460c-dead-a43c20071027",
-        )
-
-        # Verify the raw_crash made it to the right place and has the right contents
-        raw_crash = boto_helper.download_fileobj(
-            bucket_name=bucket,
-            key="/v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
-        )
-
-        assert json.loads(raw_crash) == {
-            "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
-        }
-
-        # Verify dump_names made it to the right place and has the right contents
-        dump_names = boto_helper.download_fileobj(
-            bucket_name=bucket,
-            key="/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
-        )
-        assert json.loads(dump_names) == []
-
     def test_save_raw_crash_with_dumps(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
