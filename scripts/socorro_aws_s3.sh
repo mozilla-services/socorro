@@ -59,6 +59,4 @@ fi
 
 AWSOPTIONS="--endpoint-url=${AWS_ENDPOINT_URL}"
 
-echo "S3 container bucket is ${AWS_BUCKET}"
-
 HOME=/tmp aws ${AWSOPTIONS} s3 $@
