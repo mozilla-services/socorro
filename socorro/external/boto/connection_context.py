@@ -156,7 +156,6 @@ class S3Connection(RequiredConfig):
             ClientError
         ],
         wait_time_generator=wait_times_access,
-        sleep_function=time.sleep,
         module_logger=logger,
     )
     def save_file(self, path, data):
