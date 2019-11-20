@@ -66,10 +66,13 @@ class BotoHelper:
     The goal here is to automate repetitive things in a convenient way, but
     be inspired by the existing Boto S3 API.
 
+    When used in a context, this will clean up any buckets created.
+
     """
 
     def __init__(self):
-        self._buckets_seen = set()
+        self._buckets_seen = None
+        self.conn = self.get_client()
 
     def get_client(self):
         session = boto3.session.Session(
@@ -84,47 +87,45 @@ class BotoHelper:
         return client
 
     def __enter__(self):
+        self._buckets_seen = set()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        conn = self.get_client()
         for bucket in self._buckets_seen:
             # Delete any objects in the bucket
-            resp = conn.list_objects(Bucket=bucket)
+            resp = self.conn.list_objects(Bucket=bucket)
             for obj in resp.get("Contents", []):
                 key = obj["Key"]
-                conn.delete_object(Bucket=bucket, Key=key)
+                self.conn.delete_object(Bucket=bucket, Key=key)
 
             # Then delete the bucket
-            conn.delete_bucket(Bucket=bucket)
+            self.conn.delete_bucket(Bucket=bucket)
+        self._buckets_seen = None
 
     def create_bucket(self, bucket_name):
         """Create specified bucket if it doesn't exist."""
-        conn = self.get_client()
         try:
-            conn.head_bucket(Bucket=bucket_name)
+            self.conn.head_bucket(Bucket=bucket_name)
         except ClientError:
-            conn.create_bucket(Bucket=bucket_name)
-        self._buckets_seen.add(bucket_name)
+            self.conn.create_bucket(Bucket=bucket_name)
+        if self._buckets_seen is not None:
+            self._buckets_seen.add(bucket_name)
 
     def upload_fileobj(self, bucket_name, key, data):
         """Puts an object into the specified bucket."""
-        conn = self.get_client()
         self.create_bucket(bucket_name)
-        conn.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=key)
+        self.conn.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=key)
 
     def download_fileobj(self, bucket_name, key):
         """Fetches an object from the specified bucket"""
-        conn = self.get_client()
         self.create_bucket(bucket_name)
-        resp = conn.get_object(Bucket=bucket_name, Key=key)
+        resp = self.conn.get_object(Bucket=bucket_name, Key=key)
         return resp["Body"].read()
 
     def list(self, bucket_name):
         """Return list of keys for objects in bucket."""
-        conn = self.get_client()
         self.create_bucket(bucket_name)
-        resp = conn.list_objects(Bucket=bucket_name)
+        resp = self.conn.list_objects(Bucket=bucket_name)
         return [obj["Key"] for obj in resp["Contents"]]
 
 
