@@ -74,7 +74,7 @@ def build_keys(name_of_thing, crashid):
         entropy = crashid[:3]
         date = get_datestamp(crashid).strftime("%Y%m%d")
         return [
-            "/v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s"
+            "v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s"
             % {
                 "nameofthing": name_of_thing,
                 "entropy": entropy,
@@ -87,12 +87,12 @@ def build_keys(name_of_thing, crashid):
         # Crash data from the TelemetryBotoS3CrashStorage
         date = get_datestamp(crashid).strftime("%Y%m%d")
         return [
-            "/v1/%(nameofthing)s/%(date)s/%(crashid)s"
+            "v1/%(nameofthing)s/%(date)s/%(crashid)s"
             % {"nameofthing": name_of_thing, "date": date, "crashid": crashid}
         ]
 
     return [
-        "/v1/%(nameofthing)s/%(crashid)s"
+        "v1/%(nameofthing)s/%(crashid)s"
         % {"nameofthing": name_of_thing, "crashid": crashid}
     ]
 

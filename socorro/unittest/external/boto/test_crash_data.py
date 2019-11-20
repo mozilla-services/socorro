@@ -23,7 +23,7 @@ class TestSimplifiedCrashData:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
             data=json.dumps({"foo": "bar"}).encode("utf-8"),
         )
 
@@ -49,7 +49,7 @@ class TestSimplifiedCrashData:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/dump/0bba929f-8721-460c-dead-a43c20071027",
             data=b"\xa0",
         )
 
@@ -104,7 +104,7 @@ class TestTelemetryCrashData:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
             data=json.dumps({"foo": "bar"}).encode("utf-8"),
         )
 

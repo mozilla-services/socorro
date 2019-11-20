@@ -25,8 +25,8 @@ from crashstats.crashstats.configman_utils import get_s3_context
 from crashstats.crashstats.models import MissingProcessedCrash
 
 
-RAW_CRASH_PREFIX_TEMPLATE = "/v2/raw_crash/%s/%s/"
-PROCESSED_CRASH_TEMPLATE = "/v1/processed_crash/%s"
+RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
+PROCESSED_CRASH_TEMPLATE = "v1/processed_crash/%s"
 
 # Number of seconds until we decide a worker has stalled
 WORKER_TIMEOUT = 10 * 60

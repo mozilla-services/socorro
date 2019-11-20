@@ -732,7 +732,7 @@ class TestCrashVerify:
         uuid = create_new_ooid()
         crash_data = {"submitted_timestamp": "2018-03-14-09T22:21:18.646733+00:00"}
 
-        raw_crash_key = "/v2/raw_crash/%s/20%s/%s" % (uuid[0:3], uuid[-6:], uuid)
+        raw_crash_key = "v2/raw_crash/%s/20%s/%s" % (uuid[0:3], uuid[-6:], uuid)
         boto_helper.upload_fileobj(
             bucket_name=bucket,
             key=raw_crash_key,
@@ -769,7 +769,7 @@ class TestCrashVerify:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/processed_crash/%s" % uuid,
+            key="v1/processed_crash/%s" % uuid,
             data=json.dumps(crash_data).encode("utf-8"),
         )
 
@@ -803,7 +803,7 @@ class TestCrashVerify:
 
         boto_helper.upload_fileobj(
             bucket_name="telemetry-test",
-            key="/v1/crash_report/20%s/%s" % (uuid[-6:], uuid),
+            key="v1/crash_report/20%s/%s" % (uuid[-6:], uuid),
             data=json.dumps(crash_data).encode("utf-8"),
         )
 

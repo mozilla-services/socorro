@@ -65,12 +65,12 @@ class TestVerifyProcessed:
         for crashid in crashids:
             boto_helper.upload_fileobj(
                 bucket_name=BUCKET_NAME,
-                key="/v2/raw_crash/%s/%s/%s" % (crashid[0:3], TODAY, crashid),
+                key="v2/raw_crash/%s/%s/%s" % (crashid[0:3], TODAY, crashid),
                 data=b"test",
             )
             boto_helper.upload_fileobj(
                 bucket_name=BUCKET_NAME,
-                key="/v1/processed_crash/%s" % crashid,
+                key="v1/processed_crash/%s" % crashid,
                 data=b"test",
             )
 
@@ -89,12 +89,12 @@ class TestVerifyProcessed:
         crashid_1 = "000" + create_new_ooid()[3:]
         boto_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
-            key="/v2/raw_crash/%s/%s/%s" % (crashid_1[0:3], TODAY, crashid_1),
+            key="v2/raw_crash/%s/%s/%s" % (crashid_1[0:3], TODAY, crashid_1),
             data=b"test",
         )
         boto_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
-            key="/v1/processed_crash/%s" % crashid_1,
+            key="v1/processed_crash/%s" % crashid_1,
             data=b"test",
         )
 
@@ -102,7 +102,7 @@ class TestVerifyProcessed:
         crashid_2 = "000" + create_new_ooid()[3:]
         boto_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
-            key="/v2/raw_crash/%s/%s/%s" % (crashid_2[0:3], TODAY, crashid_2),
+            key="v2/raw_crash/%s/%s/%s" % (crashid_2[0:3], TODAY, crashid_2),
             data=b"test",
         )
 

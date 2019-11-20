@@ -41,7 +41,7 @@ class TestBotoS3CrashStorage:
         # contents
         raw_crash = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key="v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
         )
 
         assert json.loads(raw_crash) == {
@@ -52,7 +52,7 @@ class TestBotoS3CrashStorage:
         # contents
         dump_names = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert json.loads(dump_names) == []
 
@@ -73,7 +73,7 @@ class TestBotoS3CrashStorage:
         # Verify the raw_crash made it to the right place and has the right contents
         raw_crash = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key="v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
         )
 
         assert json.loads(raw_crash) == {
@@ -84,19 +84,19 @@ class TestBotoS3CrashStorage:
         # contents
         dump_names = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert sorted(json.loads(dump_names)) == ["dump", "flash_dump"]
 
         # Verify dumps
         dump = boto_helper.download_fileobj(
-            bucket_name=bucket, key="/v1/dump/0bba929f-8721-460c-dead-a43c20071027",
+            bucket_name=bucket, key="v1/dump/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert dump == b"fake dump"
 
         flash_dump = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert flash_dump == b"fake flash dump"
 
@@ -117,7 +117,7 @@ class TestBotoS3CrashStorage:
         # right contents
         processed_crash = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert json.loads(processed_crash) == {
             "uuid": "0bba929f-8721-460c-dead-a43c20071027",
@@ -144,7 +144,7 @@ class TestBotoS3CrashStorage:
         # Verify processed crash is saved
         processed_crash = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert json.loads(processed_crash) == {
             "signature": "now_this_is_a_signature",
@@ -153,7 +153,7 @@ class TestBotoS3CrashStorage:
         }
         # Verify nothing else got saved
         assert boto_helper.list(bucket_name=bucket) == [
-            "/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027"
+            "v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027"
         ]
 
     def test_get_raw_crash(self, boto_helper):
@@ -165,7 +165,7 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v2/raw_crash/936/20120408/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v2/raw_crash/936/20120408/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=dict_to_str(raw_crash).encode("utf-8"),
         )
 
@@ -187,7 +187,7 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b"this is a raw dump",
         )
 
@@ -210,7 +210,7 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b"this is a raw dump",
         )
 
@@ -227,7 +227,7 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b"this is a raw dump",
         )
 
@@ -243,22 +243,22 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'["dump", "flash_dump", "city_dump"]',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'this is "dump", the first one',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'this is "flash_dump", the second one',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'this is "city_dump", the last one',
         )
 
@@ -284,22 +284,22 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'["dump", "flash_dump", "city_dump"]',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'this is "dump", the first one',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'this is "flash_dump", the second one',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=b'this is "city_dump", the last one',
         )
 
@@ -347,7 +347,7 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/processed_crash/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v1/processed_crash/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=dict_to_str(processed_crash).encode("utf-8"),
         )
 
@@ -395,7 +395,7 @@ class TestTelemetryBotoS3CrashStorage:
         # contents
         crash_data = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="/v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert json.loads(crash_data) == {
             "platform": "Linux",
@@ -417,7 +417,7 @@ class TestTelemetryBotoS3CrashStorage:
         # Save the data to S3 so we have something to get
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="/v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
             data=json.dumps(crash_data).encode("utf-8"),
         )
 
