@@ -422,7 +422,7 @@ class TestTelemetryBotoS3CrashStorage:
         )
 
         # Get the crash and assert it's the same data
-        data = boto_s3_store.get_unredacted_crash_report(
+        data = boto_s3_store.get_unredacted_processed(
             crash_id="0bba929f-8721-460c-dead-a43c20071027"
         )
         assert data == crash_data

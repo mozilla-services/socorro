@@ -254,8 +254,8 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     def get_unredacted_processed(self, crash_id):
         """Get the processed crash."""
+        path = build_keys("processed_crash", crash_id)[0]
         try:
-            path = build_keys("processed_crash", crash_id)[0]
             processed_crash_as_string = self.conn.load_file(path)
             return json.loads(
                 processed_crash_as_string, object_hook=self.config.json_object_hook
@@ -313,16 +313,17 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         crash_report = json_schema_reducer.make_reduced_dict(
             CRASH_REPORT_JSON_SCHEMA, crash_report
         )
-        self._save_crash_report(crash_report)
 
-    def _save_crash_report(self, crash_report):
+        self.save_processed(crash_report)
+
+    def save_processed(self, processed_crash):
         """Save a crash report to the S3 bucket."""
-        crash_id = crash_report["uuid"]
-        data = dict_to_str(crash_report).encode("utf-8")
+        crash_id = processed_crash["uuid"]
+        data = dict_to_str(processed_crash).encode("utf-8")
         path = build_keys("crash_report", crash_id)[0]
         self.conn.save_file(path, data)
 
-    def get_unredacted_crash_report(self, crash_id):
+    def get_unredacted_processed(self, crash_id):
         """Get a crash report from the S3 bucket."""
         path = build_keys("crash_report", crash_id)[0]
         try:

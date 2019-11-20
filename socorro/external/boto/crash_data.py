@@ -95,7 +95,7 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
             raise MissingArgumentError("uuid")
 
         try:
-            return self.get_unredacted_crash_report(params.uuid)
+            return self.get_unredacted_processed(params.uuid)
         except CrashIDNotFound as cidnf:
             self.logger.warning(
                 "telemetry crash not found: %(exception)s", {"exception": cidnf}
