@@ -14,6 +14,7 @@ import datetime
 from functools import partial
 
 import markus
+from more_itertools import chunked
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.utils import IntegrityError
@@ -27,33 +28,42 @@ from crashstats.crashstats.models import MissingProcessedCrash
 RAW_CRASH_PREFIX_TEMPLATE = "/v2/raw_crash/%s/%s/"
 PROCESSED_CRASH_TEMPLATE = "/v1/processed_crash/%s"
 
+# Number of seconds until we decide a worker has stalled
+WORKER_TIMEOUT = 10 * 60
+
 
 metrics = markus.get_metrics("cron.verifyprocessed")
 
 
-def check_crashids(entropy, date):
+def check_crashids(entropy_chunk, date):
     """Checks crash ids for a given entropy and date."""
     s3_context = get_s3_context()
     bucket = s3_context.config.bucket_name
-    s3_client = s3_context.build_client()
-
-    raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (entropy, date)
+    s3_client = s3_context.client
 
     missing = []
-    paginator = s3_client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
+    for entropy in entropy_chunk:
+        raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (entropy, date)
 
-    for page in page_iterator:
-        for item in page.get("Contents", []):
-            raw_crash_key = item["Key"]
-            crash_id = raw_crash_key.split("/")[-1]
+        paginator = s3_client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
 
-            try:
-                s3_client.get_object(
-                    Bucket=bucket, Key=PROCESSED_CRASH_TEMPLATE % crash_id
-                )
-            except s3_client.exceptions.NoSuchKey:
-                missing.append(crash_id)
+        for page in page_iterator:
+            for item in page.get("Contents", []):
+                raw_crash_key = item["Key"]
+                crash_id = raw_crash_key.split("/")[-1]
+
+                try:
+                    s3_client.head_object(
+                        Bucket=bucket, Key=PROCESSED_CRASH_TEMPLATE % crash_id
+                    )
+                except s3_client.exceptions.ClientError as exc:
+                    # If we got back a 404: Not Found, then the processed crash isn't
+                    # there. If we got something else back, re-raise it.
+                    if "404" in str(exc):
+                        missing.append(crash_id)
+                    else:
+                        raise
 
     return missing
 
@@ -86,16 +96,16 @@ class Command(BaseCommand):
         check_crashids_for_date = partial(check_crashids, date=date)
 
         missing = []
-        entropy = self.get_entropy()
+        entropy_chunked = chunked(self.get_entropy(), 5)
         if num_workers == 1:
-            for result in map(check_crashids_for_date, entropy):
+            for result in map(check_crashids_for_date, entropy_chunked):
                 missing.extend(result)
         else:
             with concurrent.futures.ProcessPoolExecutor(
                 max_workers=num_workers
             ) as executor:
                 for result in executor.map(
-                    check_crashids_for_date, entropy, timeout=300
+                    check_crashids_for_date, entropy_chunked, timeout=WORKER_TIMEOUT
                 ):
                     missing.extend(result)
 
