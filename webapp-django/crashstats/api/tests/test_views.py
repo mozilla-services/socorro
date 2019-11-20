@@ -692,6 +692,12 @@ class TestCrashVerify:
             mock_ss.return_value.get.side_effect = mocked_supersearch_get
             yield
 
+    def create_s3_buckets(self, boto_helper):
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        boto_helper.create_bucket(bucket)
+        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
+        boto_helper.create_bucket(telemetry_bucket)
+
     def test_bad_uuid(self, client):
         url = reverse("api:crash_verify")
 
@@ -701,10 +707,7 @@ class TestCrashVerify:
         assert data == {"error": "unknown crash id"}
 
     def test_elastcsearch_has_crash(self, boto_helper, client):
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
-        boto_helper.create_bucket(telemetry_bucket)
+        self.create_s3_buckets(boto_helper)
 
         uuid = create_new_ooid()
 
@@ -724,14 +727,12 @@ class TestCrashVerify:
         }
 
     def test_raw_crash_has_crash(self, boto_helper, client):
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
-        boto_helper.create_bucket(telemetry_bucket)
+        self.create_s3_buckets(boto_helper)
 
         uuid = create_new_ooid()
         crash_data = {"submitted_timestamp": "2018-03-14-09T22:21:18.646733+00:00"}
 
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
         raw_crash_key = "v2/raw_crash/%s/20%s/%s" % (uuid[0:3], uuid[-6:], uuid)
         boto_helper.upload_fileobj(
             bucket_name=bucket,
@@ -755,10 +756,7 @@ class TestCrashVerify:
         }
 
     def test_processed_has_crash(self, boto_helper, client):
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
-        boto_helper.create_bucket(telemetry_bucket)
+        self.create_s3_buckets(boto_helper)
 
         uuid = create_new_ooid()
         crash_data = {
@@ -767,6 +765,7 @@ class TestCrashVerify:
             "completeddatetime": "2018-03-14 10:56:50.902884",
         }
 
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
         boto_helper.upload_fileobj(
             bucket_name=bucket,
             key="v1/processed_crash/%s" % uuid,
@@ -789,10 +788,7 @@ class TestCrashVerify:
         }
 
     def test_telemetry_has_crash(self, boto_helper, client):
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
-        boto_helper.create_bucket(telemetry_bucket)
+        self.create_s3_buckets(boto_helper)
 
         uuid = create_new_ooid()
         crash_data = {
@@ -801,8 +797,9 @@ class TestCrashVerify:
             "uuid": uuid,
         }
 
+        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
         boto_helper.upload_fileobj(
-            bucket_name="telemetry-test",
+            bucket_name=telemetry_bucket,
             key="v1/crash_report/20%s/%s" % (uuid[-6:], uuid),
             data=json.dumps(crash_data).encode("utf-8"),
         )
