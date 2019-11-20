@@ -30,7 +30,7 @@ def wait_time_generator():
         yield i
 
 
-class CrashidMissingDatestamp(Exception):
+class CrashIDMissingDatestamp(Exception):
     """Indicates the crash id is invalid and missing a datestamp."""
 
     pass
@@ -39,13 +39,15 @@ class CrashidMissingDatestamp(Exception):
 def get_datestamp(crashid):
     """Parses out datestamp from a crashid.
 
-    :raises CrashidMissingDatestamp: if the crash id has no datestamp at the end
+    :returns: datetime
+
+    :raises CrashIDMissingDatestamp: if the crash id has no datestamp at the end
 
     """
     datestamp = date_from_ooid(crashid)
     if datestamp is None:
         # We should never hit this situation unless the crashid is not valid
-        raise CrashidMissingDatestamp("%s is missing datestamp" % crashid)
+        raise CrashIDMissingDatestamp("%s is missing datestamp" % crashid)
     return datestamp
 
 
@@ -63,7 +65,7 @@ def build_keys(name_of_thing, crashid):
 
     :returns: list of keys to try in order
 
-    :raises CrashidMissingDatestamp: if the crash id is missing a datestamp at the
+    :raises CrashIDMissingDatestamp: if the crash id is missing a datestamp at the
         end
 
     """
@@ -199,7 +201,13 @@ class BotoS3CrashStorage(CrashStorageBase):
         self.save_processed(processed_crash)
 
     def get_raw_crash(self, crash_id):
-        """Get the raw crash file for the given crash id."""
+        """Get the raw crash file for the given crash id.
+
+        :returns: DotDict
+
+        :raises CrashIDNotFound: if the crash doesn't exist
+
+        """
         try:
             path = build_keys("raw_crash", crash_id)[0]
             raw_crash_as_string = self.conn.load_file(path)
@@ -210,7 +218,13 @@ class BotoS3CrashStorage(CrashStorageBase):
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
     def get_raw_dump(self, crash_id, name=None):
-        """Get a specified dump file for the given crash id."""
+        """Get a specified dump file for the given crash id.
+
+        :returns: dump as bytes
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
         try:
             if name in (None, "", "upload_file_minidump"):
                 name = "dump"
@@ -224,6 +238,8 @@ class BotoS3CrashStorage(CrashStorageBase):
         """Get all the dump files for a given crash id.
 
         :returns MemoryDumpsMapping:
+
+        :raises CrashIDNotFound: if file does not exist
 
         """
         try:
@@ -239,11 +255,16 @@ class BotoS3CrashStorage(CrashStorageBase):
                 dumps[dump_name] = self.conn.load_file(path)
             return dumps
         except self.conn.KeyNotFound as x:
-            # FIXME--different errors
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
     def get_raw_dumps_as_files(self, crash_id):
-        """Get the dump files for given crash id and save them to tmp."""
+        """Get the dump files for given crash id and save them to tmp.
+
+        :returns: dict of dumpname -> file path
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
         in_memory_dumps = self.get_raw_dumps(crash_id)
         # convert our native memory dump mapping into a file dump mapping.
         return in_memory_dumps.as_file_dumps_mapping(
@@ -253,7 +274,13 @@ class BotoS3CrashStorage(CrashStorageBase):
         )
 
     def get_unredacted_processed(self, crash_id):
-        """Get the processed crash."""
+        """Get the processed crash.
+
+        :returns: DotDict
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
         path = build_keys("processed_crash", crash_id)[0]
         try:
             processed_crash_as_string = self.conn.load_file(path)
@@ -261,7 +288,6 @@ class BotoS3CrashStorage(CrashStorageBase):
                 processed_crash_as_string, object_hook=self.config.json_object_hook
             )
         except self.conn.KeyNotFound as x:
-            # FIXME--different errors
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
 
@@ -324,7 +350,13 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         self.conn.save_file(path, data)
 
     def get_unredacted_processed(self, crash_id):
-        """Get a crash report from the S3 bucket."""
+        """Get a crash report from the S3 bucket.
+
+        :returns: DotDict
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
         path = build_keys("crash_report", crash_id)[0]
         try:
             crash_report_as_str = self.conn.load_file(path)
