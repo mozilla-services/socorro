@@ -32,11 +32,11 @@ class TestThreadedTaskManager(object):
         try:
             ttm.start()
             time.sleep(0.2)
-            assert ttm.queuing_thread.isAlive(), "the queing thread is not running"
+            assert ttm.queuing_thread.is_alive(), "the queing thread is not running"
             assert len(ttm.thread_list) == 1, "where's the worker thread?"
-            assert ttm.thread_list[0].isAlive(), "the worker thread is stillborn"
+            assert ttm.thread_list[0].is_alive(), "the worker thread is stillborn"
             ttm.stop()
-            assert not ttm.queuing_thread.isAlive(), "the queuing thread did not stop"
+            assert not ttm.queuing_thread.is_alive(), "the queuing thread did not stop"
         except Exception:
             # we got threads to join
             ttm.wait_for_completion()

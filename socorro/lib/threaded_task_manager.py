@@ -171,7 +171,7 @@ class ThreadedTaskManager(TaskManager):
         while True:
             try:
                 thread.join(1.0)
-                if not thread.isAlive():
+                if not thread.is_alive():
                     break
                 if waiting_func:
                     waiting_func()
