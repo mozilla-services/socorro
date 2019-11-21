@@ -2,13 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import datetime
 import json
 import logging
 
 from configman import Namespace
 from configman.converters import class_converter
+from configman.dotdict import DotDict
 import json_schema_reducer
-from future.utils import iteritems
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -16,7 +17,8 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.external.es.super_search_fields import SuperSearchFieldsData
-from socorro.lib.util import retry
+from socorro.lib.ooid import date_from_ooid
+from socorro.lib.util import dotdict_to_dict
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
 
@@ -28,13 +30,103 @@ def wait_time_generator():
         yield i
 
 
+class CrashIDMissingDatestamp(Exception):
+    """Indicates the crash id is invalid and missing a datestamp."""
+
+    pass
+
+
+def get_datestamp(crashid):
+    """Parses out datestamp from a crashid.
+
+    :returns: datetime
+
+    :raises CrashIDMissingDatestamp: if the crash id has no datestamp at the end
+
+    """
+    datestamp = date_from_ooid(crashid)
+    if datestamp is None:
+        # We should never hit this situation unless the crashid is not valid
+        raise CrashIDMissingDatestamp("%s is missing datestamp" % crashid)
+    return datestamp
+
+
+def build_keys(name_of_thing, crashid):
+    """Builds a list of s3 pseudo-filenames
+
+    When using keys for saving a crash, always use the first one given.
+
+    When using keys for loading a crash, try each key in order. This lets us change our
+    key scheme and continue to access things saved using the old key.
+
+    :arg name_of_thing: the kind of thing we're building a filename for; e.g.
+        "raw_crash"
+    :arg crashid: the crash id for the thing being stored
+
+    :returns: list of keys to try in order
+
+    :raises CrashIDMissingDatestamp: if the crash id is missing a datestamp at the
+        end
+
+    """
+    if name_of_thing == "raw_crash":
+        # Insert the first 3 chars of the crashid providing some entropy
+        # earlier in the key so that consecutive s3 requests get
+        # distributed across multiple s3 partitions
+        entropy = crashid[:3]
+        date = get_datestamp(crashid).strftime("%Y%m%d")
+        return [
+            "v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s"
+            % {
+                "nameofthing": name_of_thing,
+                "entropy": entropy,
+                "date": date,
+                "crashid": crashid,
+            }
+        ]
+
+    elif name_of_thing == "crash_report":
+        # Crash data from the TelemetryBotoS3CrashStorage
+        date = get_datestamp(crashid).strftime("%Y%m%d")
+        return [
+            "v1/%(nameofthing)s/%(date)s/%(crashid)s"
+            % {"nameofthing": name_of_thing, "date": date, "crashid": crashid}
+        ]
+
+    return [
+        "v1/%(nameofthing)s/%(crashid)s"
+        % {"nameofthing": name_of_thing, "crashid": crashid}
+    ]
+
+
+class JSONISOEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.date):
+            return obj.isoformat()
+        raise NotImplementedError("Don't know about {0!r}".format(obj))
+
+
+def dict_to_str(a_mapping):
+    if isinstance(a_mapping, DotDict):
+        a_mapping = dotdict_to_dict(a_mapping)
+    return json.dumps(a_mapping, cls=JSONISOEncoder)
+
+
+def list_to_str(a_list):
+    return json.dumps(list(a_list))
+
+
+def str_to_list(a_string):
+    return json.loads(a_string)
+
+
 class BotoS3CrashStorage(CrashStorageBase):
     """Saves and loads crash data to S3"""
 
     required_config = Namespace()
     required_config.add_option(
         "resource_class",
-        default="socorro.external.boto.connection_context.RegionalS3ConnectionContext",
+        default="socorro.external.boto.connection_context.S3Connection",
         doc="fully qualified dotted Python classname to handle Boto connections",
         from_string_converter=class_converter,
         reference_value_from="resource.boto",
@@ -61,55 +153,46 @@ class BotoS3CrashStorage(CrashStorageBase):
         super().__init__(
             config, namespace=namespace, quit_check_callback=quit_check_callback
         )
-        self.connection_source = config.resource_class(config)
+        self.conn = config.resource_class(config)
 
-        # Function for calling a function retriably
-        self.retryable = retry(
-            retryable_exceptions=self.connection_source.RETRYABLE_EXCEPTIONS,
-            wait_time_generator=wait_time_generator,
-            module_logger=LOGGER,
-        )
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        """Save raw crash data to S3 bucket.
 
-    @staticmethod
-    def do_save_raw_crash(conn, raw_crash, dumps, crash_id):
+        A raw crash consists of the raw crash annotations and all the dumps that came in
+        the crash report. We need to save the raw crash file, a dump names file listing
+        the dumps that came in the crash report, and then each of the dumps.
+
+        """
         if dumps is None:
             dumps = MemoryDumpsMapping()
 
-        raw_crash_data = conn._convert_mapping_to_string(raw_crash).encode("utf-8")
-        conn.submit(crash_id, "raw_crash", raw_crash_data)
+        path = build_keys("raw_crash", crash_id)[0]
+        raw_crash_data = dict_to_str(raw_crash).encode("utf-8")
+        self.conn.save_file(path, raw_crash_data)
 
-        dump_names_data = conn._convert_list_to_string(dumps.keys()).encode("utf-8")
-        conn.submit(crash_id, "dump_names", dump_names_data)
+        path = build_keys("dump_names", crash_id)[0]
+        dump_names_data = list_to_str(dumps.keys()).encode("utf-8")
+        self.conn.save_file(path, dump_names_data)
 
         # We don't know what type of dumps mapping we have. We do know,
         # however, that by calling the memory_dump_mapping method, we will get
         # a MemoryDumpMapping which is exactly what we need.
         dumps = dumps.as_memory_dumps_mapping()
-        for dump_name, dump in iteritems(dumps):
+        for dump_name, dump in dumps.items():
             if dump_name in (None, "", "upload_file_minidump"):
                 dump_name = "dump"
-            conn.submit(crash_id, dump_name, dump)
-
-    def save_raw_crash(self, raw_crash, dumps, crash_id):
-        """Save raw_crash, dump_names, and dumps."""
-        retryable_save = self.retryable(self.do_save_raw_crash)
-        with self.connection_source() as conn:
-            retryable_save(conn, raw_crash=raw_crash, dumps=dumps, crash_id=crash_id)
-
-    @staticmethod
-    def do_save_processed(conn, processed_crash):
-        crash_id = processed_crash["uuid"]
-        data = conn._convert_mapping_to_string(processed_crash).encode("utf-8")
-        conn.submit(crash_id, "processed_crash", data)
+            path = build_keys(dump_name, crash_id)[0]
+            self.conn.save_file(path, dump)
 
     def save_processed(self, processed_crash):
-        """Save processed_crash."""
-        retryable_save = self.retryable(self.do_save_processed)
-        with self.connection_source() as conn:
-            retryable_save(conn, processed_crash=processed_crash)
+        """Save the processed crash file."""
+        crash_id = processed_crash["uuid"]
+        data = dict_to_str(processed_crash).encode("utf-8")
+        path = build_keys("processed_crash", crash_id)[0]
+        self.conn.save_file(path, data)
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        """Save processed_crash.
+        """Save raw and processed crash files.
 
         NOTE(willkg): This doesn't save any of the raw crash bits because that
         messes up the original data we got from the crash reporter. bug #866973
@@ -117,60 +200,71 @@ class BotoS3CrashStorage(CrashStorageBase):
         """
         self.save_processed(processed_crash)
 
-    @staticmethod
-    def do_get_raw_crash(conn, crash_id, json_object_hook):
-        try:
-            raw_crash_as_string = conn.fetch(crash_id, "raw_crash")
-            return json.loads(raw_crash_as_string, object_hook=json_object_hook)
-        except conn.ResponseError as x:
-            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
-
     def get_raw_crash(self, crash_id):
-        """Retrieve a raw_crash."""
-        retryable_get = self.retryable(self.do_get_raw_crash)
-        with self.connection_source() as conn:
-            return retryable_get(
-                conn, crash_id=crash_id, json_object_hook=self.config.json_object_hook
-            )
+        """Get the raw crash file for the given crash id.
 
-    @staticmethod
-    def do_get_raw_dump(conn, crash_id, name=None):
+        :returns: DotDict
+
+        :raises CrashIDNotFound: if the crash doesn't exist
+
+        """
         try:
-            if name in (None, "", "upload_file_minidump"):
-                name = "dump"
-            a_dump = conn.fetch(crash_id, name)
-            return a_dump
-        except conn.ResponseError as x:
+            path = build_keys("raw_crash", crash_id)[0]
+            raw_crash_as_string = self.conn.load_file(path)
+            return json.loads(
+                raw_crash_as_string, object_hook=self.config.json_object_hook
+            )
+        except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
     def get_raw_dump(self, crash_id, name=None):
-        """Retrieve a single dump file by name."""
-        retryable_get = self.retryable(self.do_get_raw_dump)
-        with self.connection_source() as conn:
-            return retryable_get(conn, crash_id=crash_id, name=name)
+        """Get a specified dump file for the given crash id.
 
-    @staticmethod
-    def do_get_raw_dumps(conn, crash_id):
+        :returns: dump as bytes
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
         try:
-            dump_names_as_string = conn.fetch(crash_id, "dump_names")
-            dump_names = conn._convert_string_to_list(dump_names_as_string)
+            if name in (None, "", "upload_file_minidump"):
+                name = "dump"
+            path = build_keys(name, crash_id)[0]
+            a_dump = self.conn.load_file(path)
+            return a_dump
+        except self.conn.KeyNotFound as x:
+            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
+
+    def get_raw_dumps(self, crash_id):
+        """Get all the dump files for a given crash id.
+
+        :returns MemoryDumpsMapping:
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
+        try:
+            path = build_keys("dump_names", crash_id)[0]
+            dump_names_as_string = self.conn.load_file(path)
+            dump_names = str_to_list(dump_names_as_string)
 
             dumps = MemoryDumpsMapping()
             for dump_name in dump_names:
                 if dump_name in (None, "", "upload_file_minidump"):
                     dump_name = "dump"
-                dumps[dump_name] = conn.fetch(crash_id, dump_name)
+                path = build_keys(dump_name, crash_id)[0]
+                dumps[dump_name] = self.conn.load_file(path)
             return dumps
-        except conn.ResponseError as x:
+        except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
-    def get_raw_dumps(self, crash_id):
-        """Fetch raw dumps as a MemoryDumpsMapping."""
-        retryable_get = self.retryable(self.do_get_raw_dumps)
-        with self.connection_source() as conn:
-            return retryable_get(conn, crash_id=crash_id)
-
     def get_raw_dumps_as_files(self, crash_id):
+        """Get the dump files for given crash id and save them to tmp.
+
+        :returns: dict of dumpname -> file path
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
         in_memory_dumps = self.get_raw_dumps(crash_id)
         # convert our native memory dump mapping into a file dump mapping.
         return in_memory_dumps.as_file_dumps_mapping(
@@ -179,21 +273,22 @@ class BotoS3CrashStorage(CrashStorageBase):
             self.config.dump_file_suffix,
         )
 
-    @staticmethod
-    def do_get_unredacted_processed(conn, crash_id, json_object_hook):
-        try:
-            processed_crash_as_string = conn.fetch(crash_id, "processed_crash")
-            return json.loads(processed_crash_as_string, object_hook=json_object_hook)
-        except conn.ResponseError as x:
-            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
-
     def get_unredacted_processed(self, crash_id):
-        """Fetch unredacted processed_crash."""
-        retryable_get = self.retryable(self.do_get_unredacted_processed)
-        with self.connection_source() as conn:
-            return retryable_get(
-                conn, crash_id=crash_id, json_object_hook=self.config.json_object_hook
+        """Get the processed crash.
+
+        :returns: DotDict
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
+        path = build_keys("processed_crash", crash_id)[0]
+        try:
+            processed_crash_as_string = self.conn.load_file(path)
+            return json.loads(
+                processed_crash_as_string, object_hook=self.config.json_object_hook
             )
+        except self.conn.KeyNotFound as x:
+            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
 
 class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
@@ -209,6 +304,12 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         self._all_fields = SuperSearchFieldsData().get()
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """Save the raw and processed crash data.
+
+        For Telemetry, we combine the raw and processed crash data into a "crash report"
+        which we save to an S3 bucket for the Telemetry system to pick up later.
+
+        """
         crash_report = {}
 
         # TODO Opportunity of optimization: We could inspect
@@ -238,20 +339,29 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         crash_report = json_schema_reducer.make_reduced_dict(
             CRASH_REPORT_JSON_SCHEMA, crash_report
         )
+
         self.save_processed(crash_report)
 
-    @staticmethod
-    def do_save_processed(conn, processed_crash):
-        """Overriding this to change "name of thing" to crash_report"""
+    def save_processed(self, processed_crash):
+        """Save a crash report to the S3 bucket."""
         crash_id = processed_crash["uuid"]
-        data = conn._convert_mapping_to_string(processed_crash).encode("utf-8")
-        conn.submit(crash_id, "crash_report", data)
+        data = dict_to_str(processed_crash).encode("utf-8")
+        path = build_keys("crash_report", crash_id)[0]
+        self.conn.save_file(path, data)
 
-    @staticmethod
-    def do_get_unredacted_processed(conn, crash_id, json_object_hook):
-        """Overriding this to change "name of thing" to crash_report"""
+    def get_unredacted_processed(self, crash_id):
+        """Get a crash report from the S3 bucket.
+
+        :returns: DotDict
+
+        :raises CrashIDNotFound: if file does not exist
+
+        """
+        path = build_keys("crash_report", crash_id)[0]
         try:
-            processed_crash_as_string = conn.fetch(crash_id, "crash_report")
-            return json.loads(processed_crash_as_string, object_hook=json_object_hook)
-        except conn.ResponseError as x:
+            crash_report_as_str = self.conn.load_file(path)
+            return json.loads(
+                crash_report_as_str, object_hook=self.config.json_object_hook
+            )
+        except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))

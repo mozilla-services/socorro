@@ -14,6 +14,7 @@ import datetime
 from functools import partial
 
 import markus
+from more_itertools import chunked
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.utils import IntegrityError
@@ -27,24 +28,42 @@ from crashstats.crashstats.models import MissingProcessedCrash
 RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
 PROCESSED_CRASH_TEMPLATE = "v1/processed_crash/%s"
 
+# Number of seconds until we decide a worker has stalled
+WORKER_TIMEOUT = 10 * 60
+
 
 metrics = markus.get_metrics("cron.verifyprocessed")
 
 
-def check_crashids(entropy, boto_conn, bucket_name, date):
+def check_crashids(entropy_chunk, date):
     """Checks crash ids for a given entropy and date."""
-    bucket = boto_conn.get_bucket(bucket_name)
-
-    raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (entropy, date)
+    s3_context = get_s3_context()
+    bucket = s3_context.config.bucket_name
+    s3_client = s3_context.client
 
     missing = []
-    for key_instance in bucket.list(raw_crash_key_prefix):
-        raw_crash_key = key_instance.key
-        crash_id = raw_crash_key.split("/")[-1]
+    for entropy in entropy_chunk:
+        raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (entropy, date)
 
-        processed_crash_key = bucket.get_key(PROCESSED_CRASH_TEMPLATE % crash_id)
-        if processed_crash_key is None:
-            missing.append(crash_id)
+        paginator = s3_client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
+
+        for page in page_iterator:
+            for item in page.get("Contents", []):
+                raw_crash_key = item["Key"]
+                crash_id = raw_crash_key.split("/")[-1]
+
+                try:
+                    s3_client.head_object(
+                        Bucket=bucket, Key=PROCESSED_CRASH_TEMPLATE % crash_id
+                    )
+                except s3_client.exceptions.ClientError as exc:
+                    # If we got back a 404: Not Found, then the processed crash isn't
+                    # there. If we got something else back, re-raise it.
+                    if exc.response["Error"]["Code"] == "404":
+                        missing.append(crash_id)
+                    else:
+                        raise
 
     return missing
 
@@ -74,25 +93,19 @@ class Command(BaseCommand):
                     yield x + y + z
 
     def find_missing(self, num_workers, date):
-        s3_context = get_s3_context()
-        bucket_name = s3_context.config.bucket_name
-        boto_conn = s3_context._connect()
-
-        check_crashids_for_date = partial(
-            check_crashids, boto_conn=boto_conn, bucket_name=bucket_name, date=date
-        )
+        check_crashids_for_date = partial(check_crashids, date=date)
 
         missing = []
-        entropy = self.get_entropy()
+        entropy_chunked = chunked(self.get_entropy(), 5)
         if num_workers == 1:
-            for result in map(check_crashids_for_date, entropy):
+            for result in map(check_crashids_for_date, entropy_chunked):
                 missing.extend(result)
         else:
             with concurrent.futures.ProcessPoolExecutor(
                 max_workers=num_workers
             ) as executor:
                 for result in executor.map(
-                    check_crashids_for_date, entropy, timeout=300
+                    check_crashids_for_date, entropy_chunked, timeout=WORKER_TIMEOUT
                 ):
                     missing.extend(result)
 
@@ -122,7 +135,7 @@ class Command(BaseCommand):
         """Check the table for missing crashes and check to see if they exist."""
         s3_context = get_s3_context()
         bucket_name = s3_context.config.bucket_name
-        boto_conn = s3_context._connect()
+        s3_client = s3_context.build_client()
 
         crash_ids = []
 
@@ -133,7 +146,7 @@ class Command(BaseCommand):
         no_longer_missing = []
 
         for crash_id in crash_ids:
-            bucket = boto_conn.get_bucket(bucket_name)
+            bucket = s3_client.get_bucket(bucket_name)
             processed_crash_key = bucket.get_key(PROCESSED_CRASH_TEMPLATE % crash_id)
             if processed_crash_key is not None:
                 no_longer_missing.append(crash_id)

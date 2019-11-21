@@ -5,7 +5,7 @@
 import datetime
 import os
 
-from moto import mock_s3_deprecated
+from django.conf import settings
 
 from crashstats.crashstats.models import MissingProcessedCrash
 from crashstats.crashstats.management.commands.verifyprocessed import Command
@@ -14,6 +14,12 @@ from socorro.lib.ooid import create_new_ooid
 
 TODAY = datetime.datetime.now().strftime("%Y%m%d")
 BUCKET_NAME = os.environ.get("resource.boto.bucket_name")
+
+
+def get_small_entropy(self):
+    """Returns small entropy so we're not spending ages cycling through things."""
+    for item in ["000", "111", "222"]:
+        yield item
 
 
 class TestVerifyProcessed:
@@ -32,61 +38,72 @@ class TestVerifyProcessed:
         assert entropy[0] == "000"
         assert entropy[-1] == "fff"
 
-    @mock_s3_deprecated
-    def test_no_crashes(self, boto_helper):
+    def test_no_crashes(self, boto_helper, monkeypatch):
         """Verify no crashes in bucket result in no missing crashes."""
-        boto_helper.get_or_create_bucket(BUCKET_NAME)
+        monkeypatch.setattr(Command, "get_entropy", get_small_entropy)
+
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        boto_helper.create_bucket(bucket)
+
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    @mock_s3_deprecated
-    def test_no_missing_crashes(self, boto_helper):
+    def test_no_missing_crashes(self, boto_helper, monkeypatch):
         """Verify raw crashes with processed crashes result in no missing crashes."""
-        boto_helper.get_or_create_bucket(BUCKET_NAME)
+        monkeypatch.setattr(Command, "get_entropy", get_small_entropy)
 
-        # Create a couple raw and processed crashes
-        crashids = [create_new_ooid(), create_new_ooid(), create_new_ooid()]
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        boto_helper.create_bucket(bucket)
+
+        # Create a few raw and processed crashes
+        crashids = [
+            "000" + create_new_ooid()[3:],
+            "000" + create_new_ooid()[3:],
+            "000" + create_new_ooid()[3:],
+        ]
         for crashid in crashids:
-            boto_helper.set_contents_from_string(
+            boto_helper.upload_fileobj(
                 bucket_name=BUCKET_NAME,
-                key="/v2/raw_crash/%s/%s/%s" % (crashid[0:3], TODAY, crashid),
-                value="test",
+                key="v2/raw_crash/%s/%s/%s" % (crashid[0:3], TODAY, crashid),
+                data=b"test",
             )
-            boto_helper.set_contents_from_string(
+            boto_helper.upload_fileobj(
                 bucket_name=BUCKET_NAME,
-                key="/v1/processed_crash/%s" % crashid,
-                value="test",
+                key="v1/processed_crash/%s" % crashid,
+                data=b"test",
             )
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    @mock_s3_deprecated
-    def test_missing_crashes(self, boto_helper):
+    def test_missing_crashes(self, boto_helper, monkeypatch):
         """Verify it finds a missing crash."""
-        boto_helper.get_or_create_bucket(BUCKET_NAME)
+        monkeypatch.setattr(Command, "get_entropy", get_small_entropy)
+
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        boto_helper.create_bucket(bucket)
 
         # Create a raw and processed crash
-        crashid_1 = create_new_ooid()
-        boto_helper.set_contents_from_string(
+        crashid_1 = "000" + create_new_ooid()[3:]
+        boto_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
-            key="/v2/raw_crash/%s/%s/%s" % (crashid_1[0:3], TODAY, crashid_1),
-            value="test",
+            key="v2/raw_crash/%s/%s/%s" % (crashid_1[0:3], TODAY, crashid_1),
+            data=b"test",
         )
-        boto_helper.set_contents_from_string(
+        boto_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
-            key="/v1/processed_crash/%s" % crashid_1,
-            value="test",
+            key="v1/processed_crash/%s" % crashid_1,
+            data=b"test",
         )
 
         # Create a raw crash
-        crashid_2 = create_new_ooid()
-        boto_helper.set_contents_from_string(
+        crashid_2 = "000" + create_new_ooid()[3:]
+        boto_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
-            key="/v2/raw_crash/%s/%s/%s" % (crashid_2[0:3], TODAY, crashid_2),
-            value="test",
+            key="v2/raw_crash/%s/%s/%s" % (crashid_2[0:3], TODAY, crashid_2),
+            data=b"test",
         )
 
         cmd = Command()

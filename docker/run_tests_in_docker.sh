@@ -27,7 +27,7 @@ TESTIMAGE="local/socorro_app"
 
 # Start services in background (this is idempotent)
 echo "Starting services needed by tests in the background..."
-${DC} up -d elasticsearch postgresql pubsub statsd
+${DC} up -d elasticsearch localstack-s3 postgresql pubsub statsd
 
 # If we're running a shell, then we start up a test container with . mounted
 # to /app.

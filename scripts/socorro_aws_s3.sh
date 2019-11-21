@@ -32,8 +32,7 @@ function getenv {
     python -c "import os; print(os.environ['$1'])"
 }
 
-AWS_HOST="$(getenv 'resource.boto.host')"
-AWS_PORT="$(getenv 'resource.boto.port')"
+AWS_ENDPOINT_URL="$(getenv 'resource.boto.endpoint_url')"
 AWS_ACCESS_KEY_ID="$(getenv 'resource.boto.access_key')"
 AWS_SECRET_ACCESS_KEY="$(getenv 'secrets.boto.secret_access_key')"
 AWS_BUCKET="$(getenv 'resource.boto.bucket_name')"
@@ -58,8 +57,6 @@ aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}
 EOF
 fi
 
-AWSOPTIONS="--endpoint-url=http://${AWS_HOST}:${AWS_PORT}/"
-
-echo "S3 container bucket is ${AWS_BUCKET}"
+AWSOPTIONS="--endpoint-url=${AWS_ENDPOINT_URL}"
 
 HOME=/tmp aws ${AWSOPTIONS} s3 $@

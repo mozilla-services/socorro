@@ -4,7 +4,6 @@
 
 import sys
 
-from boto.exception import S3ResponseError
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -42,10 +41,8 @@ class UploadTelemetrySchema(App):
     required_config.telemetry = Namespace()
     required_config.telemetry.add_option(
         "resource_class",
-        default=(
-            "socorro.external.boto.connection_context.RegionalS3ConnectionContext"
-        ),
-        doc="fully qualified dotted Python classname to handle Boto " "connections",
+        default="socorro.external.boto.connection_context.S3Connection",
+        doc="fully qualified dotted Python classname to handle Boto connections",
         from_string_converter=class_converter,
         reference_value_from="resource.boto",
     )
@@ -56,26 +53,9 @@ class UploadTelemetrySchema(App):
     )
 
     def main(self):
-        connection_context = self.config.telemetry.resource_class(self.config.telemetry)
-
-        connection = connection_context._connect()
-        try:
-            bucket = connection_context._get_bucket(
-                connection, self.config.telemetry.bucket_name
-            )
-        except S3ResponseError:
-            # If there's no bucket--fail out here
-            self.logger.error(
-                "Failure: The %s S3 bucket must be created first.",
-                self.config.telemetry.bucket_name,
-            )
-            return 1
-
-        key = bucket.get_key(self.config.telemetry.json_filename)
-        if not key:
-            key = bucket.new_key(self.config.telemetry.json_filename)
-        key.set_contents_from_string(CRASH_REPORT_JSON_SCHEMA_AS_STRING)
-
+        path = self.config.telemetry.json_filename
+        conn = self.config.telemetry.resource_class(self.config.telemetry)
+        conn.save_file(path, CRASH_REPORT_JSON_SCHEMA_AS_STRING)
         self.logger.info("Success: Schema uploaded!")
         return 0
 

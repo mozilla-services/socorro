@@ -15,7 +15,6 @@ from django.utils.encoding import smart_text
 
 from markus.testing import MetricsMock
 import mock
-from moto import mock_s3_deprecated
 import pyquery
 import pytest
 
@@ -42,10 +41,9 @@ from crashstats.supersearch.models import (
 )
 from crashstats.tokens.models import Token
 from socorro.lib.ooid import create_new_ooid
-from socorro.unittest.conftest import BotoHelper
 
 
-class TestDedentLeft(object):
+class TestDedentLeft:
     def test_dedent_left(self):
         from crashstats.api.views import dedent_left
 
@@ -666,7 +664,7 @@ class TestViews(BaseTestViews):
         assert json.loads(response.content) is True
 
 
-class TestCrashVerify(object):
+class TestCrashVerify:
     def setup_method(self):
         cache.clear()
 
@@ -694,6 +692,12 @@ class TestCrashVerify(object):
             mock_ss.return_value.get.side_effect = mocked_supersearch_get
             yield
 
+    def create_s3_buckets(self, boto_helper):
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        boto_helper.create_bucket(bucket)
+        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
+        boto_helper.create_bucket(telemetry_bucket)
+
     def test_bad_uuid(self, client):
         url = reverse("api:crash_verify")
 
@@ -702,8 +706,9 @@ class TestCrashVerify(object):
         data = json.loads(resp.content)
         assert data == {"error": "unknown crash id"}
 
-    @mock_s3_deprecated
-    def test_elastcsearch_has_crash(self, client):
+    def test_elastcsearch_has_crash(self, boto_helper, client):
+        self.create_s3_buckets(boto_helper)
+
         uuid = create_new_ooid()
 
         with self.supersearch_returns_crashes([uuid]):
@@ -721,18 +726,18 @@ class TestCrashVerify(object):
             "s3_telemetry_crash": False,
         }
 
-    @mock_s3_deprecated
-    def test_raw_crash_has_crash(self, client):
+    def test_raw_crash_has_crash(self, boto_helper, client):
+        self.create_s3_buckets(boto_helper)
+
         uuid = create_new_ooid()
         crash_data = {"submitted_timestamp": "2018-03-14-09T22:21:18.646733+00:00"}
 
-        boto_helper = BotoHelper()
-        raw_crash_key = "/v2/raw_crash/%s/20%s/%s" % (uuid[0:3], uuid[-6:], uuid)
-        boto_helper.get_or_create_bucket("crashstats-test")
-        boto_helper.set_contents_from_string(
-            bucket_name="crashstats-test",
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        raw_crash_key = "v2/raw_crash/%s/20%s/%s" % (uuid[0:3], uuid[-6:], uuid)
+        boto_helper.upload_fileobj(
+            bucket_name=bucket,
             key=raw_crash_key,
-            value=json.dumps(crash_data),
+            data=json.dumps(crash_data).encode("utf-8"),
         )
 
         with self.supersearch_returns_crashes([]):
@@ -750,8 +755,9 @@ class TestCrashVerify(object):
             "s3_telemetry_crash": False,
         }
 
-    @mock_s3_deprecated
-    def test_processed_has_crash(self, client):
+    def test_processed_has_crash(self, boto_helper, client):
+        self.create_s3_buckets(boto_helper)
+
         uuid = create_new_ooid()
         crash_data = {
             "signature": "[@signature]",
@@ -759,12 +765,11 @@ class TestCrashVerify(object):
             "completeddatetime": "2018-03-14 10:56:50.902884",
         }
 
-        boto_helper = BotoHelper()
-        boto_helper.get_or_create_bucket("crashstats-test")
-        boto_helper.set_contents_from_string(
-            bucket_name="crashstats-test",
-            key="/v1/processed_crash/%s" % uuid,
-            value=json.dumps(crash_data),
+        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        boto_helper.upload_fileobj(
+            bucket_name=bucket,
+            key="v1/processed_crash/%s" % uuid,
+            data=json.dumps(crash_data).encode("utf-8"),
         )
 
         with self.supersearch_returns_crashes([]):
@@ -782,8 +787,9 @@ class TestCrashVerify(object):
             "s3_telemetry_crash": False,
         }
 
-    @mock_s3_deprecated
-    def test_telemetry_has_crash(self, client):
+    def test_telemetry_has_crash(self, boto_helper, client):
+        self.create_s3_buckets(boto_helper)
+
         uuid = create_new_ooid()
         crash_data = {
             "platform": "Linux",
@@ -791,12 +797,11 @@ class TestCrashVerify(object):
             "uuid": uuid,
         }
 
-        boto_helper = BotoHelper()
-        boto_helper.get_or_create_bucket("telemetry-test")
-        boto_helper.set_contents_from_string(
-            bucket_name="telemetry-test",
-            key="/v1/crash_report/20%s/%s" % (uuid[-6:], uuid),
-            value=json.dumps(crash_data),
+        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
+        boto_helper.upload_fileobj(
+            bucket_name=telemetry_bucket,
+            key="v1/crash_report/20%s/%s" % (uuid[-6:], uuid),
+            data=json.dumps(crash_data).encode("utf-8"),
         )
 
         with self.supersearch_returns_crashes([]):
