@@ -8,7 +8,7 @@ import random
 import time
 
 import boto3
-from botocore.client import ClientError, Config
+from botocore.client import ClientError
 from configman import Namespace, RequiredConfig
 
 from socorro.lib.util import retry
@@ -140,9 +140,6 @@ class S3Connection(RequiredConfig):
         kwargs = {
             "service_name": "s3",
             "region_name": self.config.region,
-            # NOTE(willkg): We use path-style because that lets us have dots in
-            # our bucket names and use SSL.
-            "config": Config(s3={"addressing_style": "path"}),
         }
         if self.config.endpoint_url:
             kwargs["endpoint_url"] = self.config.endpoint_url
