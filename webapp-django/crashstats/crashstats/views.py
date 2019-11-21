@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
 import json
 
 from django import http
@@ -21,13 +20,6 @@ from crashstats.crashstats import forms, models, utils
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
 from socorro.external.crashstorage_base import CrashIDNotFound
-
-
-# To prevent running in to a known Python bug
-# (http://bugs.python.org/issue7980)
-# we, here at "import time" (as opposed to run time) make use of time.strptime
-# at least once
-datetime.datetime.strptime("2013-07-15 10:00:00", "%Y-%m-%d %H:%M:%S")
 
 
 def ratelimit_blocked(request, exception):

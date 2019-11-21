@@ -1,4 +1,4 @@
-FROM python:3.6.8-slim-stretch
+FROM python:3.7.5-slim-stretch@sha256:3ba71ca1cd4d44626a4fccd74d96671e3a57d450c813c6fa3c09ca92620c18ff
 
 ARG groupid=10001
 ARG userid=10001

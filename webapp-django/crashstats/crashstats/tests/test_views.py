@@ -35,6 +35,7 @@ _SAMPLE_META = {
     "Comments": "this is a comment",
 }
 
+
 _SAMPLE_UNREDACTED = {
     "client_crash_date": "2012-06-11T06:08:45",
     "signature": "FakeSignature1",
@@ -346,7 +347,7 @@ class TestViews(BaseTestViews):
         # Test with a signature.
         response = self.client.get(url, {"query": "moz"})
         assert response.status_code == 302
-        target = reverse("supersearch:search") + "?signature=%7Emoz"
+        target = reverse("supersearch:search") + "?signature=~moz"
         assert response["location"].endswith(target)
 
         # Test with a crash_id.

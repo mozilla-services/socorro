@@ -5,7 +5,7 @@ This folder contains lists that are used to configure the C signature generation
 process. Each ``.txt`` file contains a list of signatures or regex matching
 signatures, that are used at various steps of our algorithm. Regular expressions
 use the `Python syntax
-<https://docs.python.org/2/library/re.html#regular-expression-syntax>`_.
+<https://docs.python.org/3.7/library/re.html#regular-expression-syntax>`_.
 
 
 Signature Generation Algorithm

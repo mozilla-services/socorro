@@ -155,7 +155,7 @@ class TestCrashStorageBase(object):
             )
             assert (
                 str(x)
-                == "hell,NameError('dwight',),KeyError('wilma',),AttributeError('sarita',)"
+                == "hell,NameError('dwight'),KeyError('wilma'),AttributeError('sarita')"
             )
 
             x[0] = x[1]
@@ -174,7 +174,7 @@ class TestCrashStorageBase(object):
                 p.gather_current_exception()
             raise p
         except PolyStorageError as x:
-            assert str(x) == "NameError('dwight',),KeyError('wilma',)"
+            assert str(x) == "NameError('dwight'),KeyError('wilma')"
 
     def test_poly_crash_storage(self):
         n = Namespace()
