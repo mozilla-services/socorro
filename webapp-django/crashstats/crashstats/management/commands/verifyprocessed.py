@@ -60,7 +60,7 @@ def check_crashids(entropy_chunk, date):
                 except s3_client.exceptions.ClientError as exc:
                     # If we got back a 404: Not Found, then the processed crash isn't
                     # there. If we got something else back, re-raise it.
-                    if "404" in str(exc):
+                    if exc.response["Error"]["Code"] == "404":
                         missing.append(crash_id)
                     else:
                         raise

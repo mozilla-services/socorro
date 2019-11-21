@@ -8,10 +8,6 @@ set -e
 
 # Deletes and recreates S3 bucket used for crash storage
 
-# FIXME(willkg): Pull bucket names from environment
-# resource.boto.bucket_name
-# resource.boto.telemetry_bucket_name
-
 # First convert configman environment vars which have bad identifiers to ones
 # that don't
 function getenv {
