@@ -177,8 +177,6 @@ nsACString_internal::BeginWriting
 nsAString_internal::BeginWriting
 nsACString_internal::SetCapacity
 -\[NSApplication _crashOnException:\]
-__62\+\[CATransaction NS_setFlushesWithDisplayLink\]_block_invoke
-__37\+\[NSDisplayCycle currentDisplayCyclei\]_block_invoke.31
 nsCRT::strcmp
 nsTArrayInfallibleAllocator
 NS_strcmp
