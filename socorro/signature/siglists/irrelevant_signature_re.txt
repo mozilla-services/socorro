@@ -73,6 +73,7 @@ NtWaitForAlertByThreadId
 nvmap@0x
 objc_begin_catch
 objc_msgLookupSuper2
+objc_terminate
 org\.mozilla\.f.*-\d\.apk@0x
 panic_abort::
 PR_WaitCondVar
