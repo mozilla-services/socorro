@@ -176,6 +176,7 @@ nsAString_internal::Assign
 nsACString_internal::BeginWriting
 nsAString_internal::BeginWriting
 nsACString_internal::SetCapacity
+-\[NSApplication _crashOnException:\]
 nsCRT::strcmp
 nsTArrayInfallibleAllocator
 NS_strcmp
