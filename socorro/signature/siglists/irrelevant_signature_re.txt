@@ -17,6 +17,7 @@ core\.odex@0x
 core::panicking::
 CrashReporter::TerminateHandler
 CrashStatsLogForwarder::CrashAction
+__cxa_rethrow
 __cxa_throw
 _CxxThrowException
 dalvik-heap
