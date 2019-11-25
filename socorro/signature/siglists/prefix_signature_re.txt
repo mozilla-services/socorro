@@ -208,6 +208,7 @@ nsTHashtable<.*>::
 nsTSubstring<.*>::Assign
 nsThread::Shutdown
 NtUser
+objc_exception_rethrow
 objc_exception_throw
 objc_addExceptionHandler
 objc_msgSend
