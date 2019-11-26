@@ -307,6 +307,7 @@ TouchBadMemory
 # so best to keep it in the prefix list where the frame is added to
 # the signature rather than dropped
 trunc
+__ulock_wait
 vcruntime140\.dll@0x
 _VEC_memcpy
 _VEC_memzero
