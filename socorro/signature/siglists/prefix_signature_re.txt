@@ -308,6 +308,7 @@ TouchBadMemory
 # the signature rather than dropped
 trunc
 __ulock_wait
+__unlink
 vcruntime140\.dll@0x
 _VEC_memcpy
 _VEC_memzero
