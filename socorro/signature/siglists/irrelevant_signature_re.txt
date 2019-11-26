@@ -17,6 +17,7 @@ core\.odex@0x
 core::panicking::
 CrashReporter::TerminateHandler
 CrashStatsLogForwarder::CrashAction
+__cxa_rethrow
 __cxa_throw
 _CxxThrowException
 dalvik-heap
@@ -72,6 +73,7 @@ NtWaitForAlertByThreadId
 nvmap@0x
 objc_begin_catch
 objc_msgLookupSuper2
+objc_terminate
 org\.mozilla\.f.*-\d\.apk@0x
 panic_abort::
 PR_WaitCondVar
@@ -89,6 +91,7 @@ SleepConditionVariableSRW
 std::_Atomic_fetch_add_4
 std::panicking::
 std::__terminate
+std::terminate
 system@framework@.*\.jar@classes\.dex@0x
 ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
 WaitForSingleObjectExImplementation
