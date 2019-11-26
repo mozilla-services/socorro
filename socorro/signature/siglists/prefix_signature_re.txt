@@ -45,6 +45,7 @@ core::slice::slice_index_order_fail
 core::str::slice_error_fail
 CrashInJS
 CreateFileMappingA
+__cxxabiv1::failed_throw
 __delayLoadHelper2
 dlmalloc
 dlmalloc_trim
