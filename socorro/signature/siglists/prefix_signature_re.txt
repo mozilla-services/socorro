@@ -213,6 +213,7 @@ objc_exception_throw
 objc_addExceptionHandler
 objc_msgSend
 objc_release
+objc_retain
 operator new
 o_strcat_s
 <.*>::operator()
