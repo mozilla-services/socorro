@@ -24,6 +24,8 @@ __assert_fail_base
 arena_
 BaseAllocator
 BaseGetNamedObjectDirectory
+CALayerRelease
+CALayerRetain
 __clear_cache
 .*calloc
 cert_
@@ -213,6 +215,7 @@ objc_exception_throw
 objc_addExceptionHandler
 objc_msgSend
 objc_release
+objc_retain
 operator new
 o_strcat_s
 <.*>::operator()
@@ -226,6 +229,7 @@ PR_
 .*ProcessNextEvent
 __psynch_cvwait
 _pthread_cond_wait
+pthread_cond_signal_thread_np
 pthread_mutex_lock
 __pthread_kill
 __pthread_mutex_lock
