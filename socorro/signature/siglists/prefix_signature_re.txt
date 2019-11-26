@@ -45,6 +45,7 @@ core::slice::slice_index_order_fail
 core::str::slice_error_fail
 CrashInJS
 CreateFileMappingA
+__cxxabiv1::failed_throw
 __delayLoadHelper2
 dlmalloc
 dlmalloc_trim
@@ -160,6 +161,7 @@ mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame
 mozilla::ipc::RPCChannel::EnteredCxxStack
 mozilla::ipc::RPCChannel::Send
 mozilla::ipc::WriteIPDLParam
+mozilla::ipc::IPDLParamTraits<T>::Write
 mozilla::layers::CompositorD3D11::Failed
 mozilla::layers::CompositorD3D11::HandleError
 mozilla::SpinEventLoopUntil<T>
@@ -249,6 +251,7 @@ SEC_.*Item
 seckey_
 SECKEY_
 __security_check_cookie
+__semwait_signal
 send
 setjmp
 sigblock
@@ -305,6 +308,9 @@ TouchBadMemory
 # so best to keep it in the prefix list where the frame is added to
 # the signature rather than dropped
 trunc
+__ulock_wait
+__unlink
+unlink
 vcruntime140\.dll@0x
 _VEC_memcpy
 _VEC_memzero
