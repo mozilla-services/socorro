@@ -24,6 +24,7 @@ __assert_fail_base
 arena_
 BaseAllocator
 BaseGetNamedObjectDirectory
+CALayerRetain
 __clear_cache
 .*calloc
 cert_
