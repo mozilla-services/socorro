@@ -8,6 +8,7 @@ from ..utils import (
     collapse,
     drop_bad_characters,
     drop_prefix_and_return_type,
+    parse_crashid,
     parse_source_file,
 )
 
@@ -250,3 +251,26 @@ def test_collapse(function, expected):
 )
 def test_drop_prefix_and_return_type(function, expected):
     assert drop_prefix_and_return_type(function) == expected
+
+
+@pytest.mark.parametrize(
+    "item, expected",
+    [
+        ("", None),
+        ("foo", None),
+        (
+            "0b794045-87ec-4649-9ce1-73ec10191120",
+            "0b794045-87ec-4649-9ce1-73ec10191120",
+        ),
+        (
+            "bp-0b794045-87ec-4649-9ce1-73ec10191120",
+            "0b794045-87ec-4649-9ce1-73ec10191120",
+        ),
+        (
+            "https://crash-stats.mozilla.org/report/index/0b794045-87ec-4649-9ce1-73ec10191120",
+            "0b794045-87ec-4649-9ce1-73ec10191120",
+        ),
+    ],
+)
+def test_parse_crashid(item, expected):
+    assert parse_crashid(item) == expected
