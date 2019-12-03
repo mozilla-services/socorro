@@ -14,6 +14,7 @@ __aeabi_memcpy
 __aeabi_memmove
 .*alloc_impl
 Allocator<T>::malloc
+AllocInfo::Get<T>
 alloc::oom::default_oom_handler
 alloc::oom::oom
 alloc::raw_vec::capacity_overflow
