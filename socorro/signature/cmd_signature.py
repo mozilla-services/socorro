@@ -10,7 +10,7 @@ import sys
 import requests
 
 from .generator import SignatureGenerator
-from .utils import convert_to_crash_data
+from .utils import convert_to_crash_data, parse_crashid
 
 
 DESCRIPTION = """
@@ -160,7 +160,7 @@ def main(argv=None):
 
     with outputter() as out:
         for crash_id in crashids_iterable:
-            crash_id = crash_id.strip()
+            crash_id = parse_crashid(crash_id.strip())
 
             resp = fetch("/RawCrash/", crash_id, api_token)
             if resp.status_code == 404:
