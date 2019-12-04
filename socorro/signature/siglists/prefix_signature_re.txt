@@ -138,6 +138,7 @@ MessageLoop::PostTask
 mozalloc_abort
 mozalloc_handle_oom
 moz_free
+moz_malloc_size_of
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::
 mozilla::detail::ConditionVariableImpl::
