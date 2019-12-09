@@ -62,6 +62,7 @@ _files_getaddrinfo
 .*free
 __fortify_fail
 __fortify_fail_abort
+___forwarding___
 free_impl
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
