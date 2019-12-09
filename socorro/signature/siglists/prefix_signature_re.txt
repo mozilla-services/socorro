@@ -63,6 +63,7 @@ _files_getaddrinfo
 __fortify_fail
 __fortify_fail_abort
 ___forwarding___
+__forwarding_prep_0___
 free_impl
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
