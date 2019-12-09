@@ -184,6 +184,7 @@ nsAString_internal::BeginWriting
 nsACString_internal::SetCapacity
 -\[NSApplication _crashOnException:\]
 nsCRT::strcmp
+-\[NSObject doesNotRecognizeSelector:\]
 nsTArrayInfallibleAllocator
 NS_strcmp
 NS_strlen
