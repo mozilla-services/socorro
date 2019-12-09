@@ -62,6 +62,8 @@ _files_getaddrinfo
 .*free
 __fortify_fail
 __fortify_fail_abort
+___forwarding___
+__forwarding_prep_0___
 free_impl
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
@@ -184,6 +186,7 @@ nsAString_internal::BeginWriting
 nsACString_internal::SetCapacity
 -\[NSApplication _crashOnException:\]
 nsCRT::strcmp
+-\[NSObject doesNotRecognizeSelector:\]
 nsTArrayInfallibleAllocator
 NS_strcmp
 NS_strlen
