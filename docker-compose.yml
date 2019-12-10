@@ -176,6 +176,18 @@ services:
     ports:
       - "4572:4572"
 
+  # https://hub.docker.com/r/localstack/localstack/
+  # localstack running a fake sqs
+  localstack-sqs:
+    image: localstack/localstack:0.10.5
+    environment:
+      - SERVICES=sqs:4576
+      - DEFAULT_REGION=us-east-1
+      - HOSTNAME=localstack-sqs
+      - HOSTNAME_EXTERNAL=localstack-sqs
+    ports:
+      - "4576:4576"
+
   # https://hub.docker.com/_/memcached/
   memcached:
     image: memcached:1.5.1

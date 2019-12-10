@@ -94,6 +94,7 @@ COMMANDS = [
             'db': import_path('socorro.scripts.db.main'),
             'es': import_path('socorro.scripts.es.main'),
             'pubsub': import_path('socorro.scripts.pubsub.main'),
+            'sqs': import_path('socorro.scripts.sqs_cli.main'),
         }
     ),
     Group(

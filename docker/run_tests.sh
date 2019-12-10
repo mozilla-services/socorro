@@ -20,22 +20,28 @@ set -v -e -x
 echo ">>> set up environment"
 # Set up environment variables
 
-# NOTE(willkg): This has to be "database_url" all lowercase because configman.
-DATABASE_URL=${database_url:-"postgres://postgres:aPassword@postgresql:5432/socorro_test"}
+# First convert configman environment vars which have bad identifiers to ones
+# that don't
+function getenv {
+    python -c "import os; print(os.environ['$1'])"
+}
 
-# NOTE(willkg): This has to be "elasticsearch_url" all lowercase because configman.
-ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
+DATABASE_URL="${DATABASE_URL:-'postgres://postgres:aPassword@postgresql:5432/socorro_test'}"
+PUBSUB_EMULATOR_HOST="${PUBSUB_EMULATOR_HOST:-pubsub:5010}"
+ELASTICSEARCH_URL="$(getenv 'resource.elasticsearch.elasticsearch_urls')"
+S3_ENDPOINT_URL="$(getenv 'resource.boto.s3_endpoint_url')"
+SQS_ENDPOINT_URL="$(getenv 'resource.boto.sqs_endpoint_url')"
 
 export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
 PYTHON="$(which python)"
 
-echo ">>> wait for services"
-# Wait for postgres and elasticsearch services to be ready
+echo ">>> wait for services to be ready"
 urlwait "${DATABASE_URL}" 10
 urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
-urlwait "${CRASHSTORAGE_ENDPOINT_URL}" 10
+urlwait "${S3_ENDPOINT_URL}" 10
+urlwait "${SQS_ENDPOINT_URL}" 10
 
 echo ">>> build pubsub things and db things"
 # Clear Pub/Sub for tests
