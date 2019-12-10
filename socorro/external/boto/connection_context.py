@@ -95,10 +95,10 @@ class S3Connection(RequiredConfig):
         reference_value_from="resource.boto",
     )
     required_config.add_option(
-        "endpoint_url",
+        "s3_endpoint_url",
         doc=(
-            "endpoint_url to connect to; None if you are connecting to AWS. For "
-            "example, ``http://localhost:4569/``."
+            "endpoint url to connect to; None if you are connecting to AWS. For "
+            "example, ``http://localhost:4572/``."
         ),
         default="",
         reference_value_from="resource.boto",
@@ -141,8 +141,8 @@ class S3Connection(RequiredConfig):
             "service_name": "s3",
             "region_name": self.config.region,
         }
-        if self.config.endpoint_url:
-            kwargs["endpoint_url"] = self.config.endpoint_url
+        if self.config.s3_endpoint_url:
+            kwargs["endpoint_url"] = self.config.s3_endpoint_url
 
         return session.client(**kwargs)
 

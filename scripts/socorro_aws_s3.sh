@@ -32,7 +32,7 @@ function getenv {
     python -c "import os; print(os.environ['$1'])"
 }
 
-AWS_ENDPOINT_URL="$(getenv 'resource.boto.endpoint_url')"
+AWS_ENDPOINT_URL="$(getenv 'resource.boto.s3_endpoint_url')"
 AWS_ACCESS_KEY_ID="$(getenv 'resource.boto.access_key')"
 AWS_SECRET_ACCESS_KEY="$(getenv 'secrets.boto.secret_access_key')"
 AWS_BUCKET="$(getenv 'resource.boto.bucket_name')"

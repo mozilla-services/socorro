@@ -82,7 +82,7 @@ class BotoHelper:
         client = session.client(
             service_name="s3",
             config=Config(s3={"addressing_style": "path"}),
-            endpoint_url=os.environ.get("resource.boto.endpoint_url"),
+            endpoint_url=os.environ.get("resource.boto.s3_endpoint_url"),
         )
         return client
 

@@ -589,7 +589,7 @@ SOCORRO_CONFIG = {
             "bucket_name": config("resource.boto.bucket_name", "crashstats"),
             "region": config("resource.boto.region", "us-west-2"),
             "resource_class": "socorro.external.boto.connection_context.S3Connection",
-            "endpoint_url": config("resource.boto.endpoint_url", None),
+            "s3_endpoint_url": config("resource.boto.s3_endpoint_url", None),
         },
         "pubsub": {
             "service_account_file": config(
