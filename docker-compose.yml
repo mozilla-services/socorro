@@ -165,15 +165,16 @@ services:
       - POSTGRES_DB=breakpad
 
   # https://hub.docker.com/r/localstack/localstack/
-  # localstack running a fake S3
+  # localstack running a fake AWS S3
   localstack-s3:
-    image: localstack/localstack:0.8.10
+    image: localstack/localstack:0.10.5
     environment:
-      - SERVICES=s3:5000
+      - SERVICES=s3:4572
       - DEFAULT_REGION=us-west-2
       - HOSTNAME=localstack-s3
+      - HOSTNAME_EXTERNAL=localstack-s3
     ports:
-      - "5000:5000"
+      - "4572:4572"
 
   # https://hub.docker.com/_/memcached/
   memcached:
