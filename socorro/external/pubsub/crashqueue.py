@@ -6,10 +6,11 @@ from functools import partial
 import logging
 import os
 
-from configman import Namespace, RequiredConfig
+from configman import Namespace
 from google.cloud import pubsub_v1
 from google.api_core.exceptions import DeadlineExceeded
 
+from socorro.external.crashqueue_base import CrashQueueBase
 
 # Maximum number of messages to pull from a Pub/Sub topic in a single pull
 # request
@@ -19,7 +20,7 @@ PUBSUB_MAX_MESSAGES = 5
 logger = logging.getLogger(__name__)
 
 
-class PubSubCrashQueue(RequiredConfig):
+class PubSubCrashQueue(CrashQueueBase):
     """Crash queue that uses Pub/Sub.
 
     This requires three Pub/Sub topics:
@@ -80,8 +81,7 @@ class PubSubCrashQueue(RequiredConfig):
     )
 
     def __init__(self, config, namespace="", quit_check_callback=None):
-        self.config = config
-        self.quit_check_callback = quit_check_callback
+        super().__init__(config, namespace, quit_check_callback)
 
         if os.environ.get("PUBSUB_EMULATOR_HOST", ""):
             self.subscriber = pubsub_v1.SubscriberClient()
@@ -108,9 +108,6 @@ class PubSubCrashQueue(RequiredConfig):
     def ack_crash(self, sub_path, ack_id):
         self.subscriber.acknowledge(sub_path, [ack_id])
         logger.debug("ack %s from %s", ack_id, sub_path)
-
-    def close(self):
-        pass
 
     def __iter__(self):
         """Return iterator over crash ids from Pub/Sub.
@@ -156,12 +153,6 @@ class PubSubCrashQueue(RequiredConfig):
             if msgs == 0:
                 # There's nothing to process, so return
                 return
-
-    def new_crashes(self):
-        return self.__iter__()
-
-    def __call__(self):
-        return self.__iter__()
 
     def publish(self, queue, crash_ids):
         """Publish crash ids to specified queue."""

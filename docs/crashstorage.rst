@@ -1,11 +1,56 @@
-.. _elasticsearch-chapter:
+.. _crashstorage-chapter:
 
-============================
-Crash storage: Elasticsearch
-============================
+======================================
+Crash storage: API and Implementations
+======================================
 
-Features
-========
+Documentation of our CrashStorage API. This attempts to provide a complete
+picture of all the crash storage classes that are provided by Socorro.
+
+Connection contexts are a connection Factory in the form of a Functor that
+returns thinly wrapped connections to the resource.
+
+Reasons we have ``connection_context``:
+
+* wrapper for use with ``with``
+* pooled connection context - connections held on to, doesn't log out
+* to make threading easier to manage
+
+
+Contents:
+
+.. contents::
+   :local:
+
+
+socorro.external.crashstorage_base
+==================================
+
+Base class that defines the crash storage API. You implement this when you want
+to plug into any of the Socorro backend components.
+
+Base class:
+
+* `CrashStorageBase`: Defines ``save_raw_and_processed()``, ``get_raw()``, etc.
+
+CrashStorage containers for aggregating multiple crash storage implementations:
+
+* `PolyCrashStorage`: Container for other crash storage systems.
+
+Helper for PolyCrashStore:
+
+* `PolyCrashStorageError`: Exception for `PolyCrashStorage`.
+
+How we use these:
+
+We use `CrashStorageBase` in our ``socorro/external`` crash storage
+implementations. We use `PolyCrashStorage` (and related containers) as a way to
+fork "streams of crashes" into different storage engines. Also, the
+`CrashStorage` containers can contain each other!
+
+
+socorro.external.es: Elasticsearch
+==================================
 
 Socorro uses Elasticsearch as a back-end for several search and report features
 in the web app:
@@ -23,15 +68,7 @@ in the web app:
 * **Profile pages** show the recent crash reports that contain the user's email
   address.
 
-
-Supported versions of Elasticsearch
-===================================
-
 Socorro currently requires Elasticsearch version 1.4.
-
-
-Configuration
-=============
 
 You can see Elasticsearch common options by passing ``--help`` to the
 processor app and looking at the ``resource.elasticsearch`` options like
@@ -96,7 +133,7 @@ passed week.
 
 
 Super Search fields
-===================
+-------------------
 
 Super Search, and thus all the features based on it, is powered by a master list
 of fields that tells it what data to expose and how to expose it. That list
@@ -105,15 +142,7 @@ contains data about each field from Elasticsearch that can be manipulated.
 The list is managed in code in ``socorro/external/es/super_search_fields.py``
 as a dict of ``name`` -> ``properties``.
 
-
-Names
------
-
 The name of a field is exposed in the Super Search API. This must be unique.
-
-
-Properties
-----------
 
 Here is an explanation of each properties of a field:
 
@@ -200,3 +229,49 @@ field.
 
 See `Elasticsearch 1.4 mapping documentation
 <https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping.html>`_.
+
+
+socorro.external.fs: File system
+================================
+
+**socorro.external.fs.crashstorage**
+
+Implements Radix Tree storage of crashes in a filesystem.
+
+Use cases:
+
+* For Mozilla use by the collectors.
+* For other users, you can use this class as your primary storage instead of S3.
+  Be sure to implement this in collectors, crashmovers, processors and
+  middleware (depending on which components you use in your configuration).
+
+.. Note::
+
+   Because of the slowness of deleting directories created by on-disk, non-SSD
+   storage, the collectors do not unlink directories over time. For many
+   environments, you will need to periodically unlink directories, possibly by
+   entirely wiping out partitions, rather than using `find` or some other UNIX
+   utility to delete.
+
+Classes:
+
+* `FSPermanentStorage` - Doesn't have a queueing mechanism. Processors can
+  use these for local storage that doesn't require any knowledge of queueing.
+  Backwards compatible with `socorro.external.filesystem` (aka the 2009 system).
+
+
+socorro.external.boto: AWS S3
+=============================
+
+The collector saves raw crash data to Amazon S3.
+
+The processor loads raw crash data from Amazon S3, processes it, and then saves
+the processed crash data back to Amazon S3.
+
+All of this is done in a single S3 bucket.
+
+The "directory" hierarchy of that bucket looks like this:
+
+* ``{prefix}/v2/{name_of_thing}/{entropy}/{date}/{id}``: Raw crash data.
+* ``{prefix}/v1/{name_of_thing}/{id}``: Processed crash data, dumps, dump_names,
+  and other things.
