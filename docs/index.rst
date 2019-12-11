@@ -46,7 +46,8 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    flows/*
    stackwalk
    schemas
-   crashstorage/*
+   crashstorage
+   crashqueue
    tests/*
    socorro_app
    deploy

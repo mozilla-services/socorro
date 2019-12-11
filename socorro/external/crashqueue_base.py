@@ -1,0 +1,46 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""This is the base of the crashqueue API for consuming and publishing
+crash ids from queues for processing.
+"""
+
+from configman import Namespace, RequiredConfig
+
+
+class CrashQueueBase(RequiredConfig):
+    """Base class for crash queue classes."""
+
+    required_config = Namespace()
+
+    def __init__(self, config, namespace="", quit_check_callback=None):
+        self.config = config
+        self.namespace = namespace
+        if quit_check_callback:
+            self.quit_check = quit_check_callback
+        else:
+            self.quit_check = lambda: False
+
+    def close(self):
+        pass
+
+    def __iter__(self):
+        """Return iterator over crash ids for processing.
+
+        Each returned crash is a ``(crash_id, {kwargs})`` tuple with
+        ``finished_func`` as the only key in ``kwargs``. The caller should call
+        ``finished_func`` when it's done processing the crash.
+
+        """
+        pass
+
+    def new_crashes(self):
+        return self.__iter__()
+
+    def __call__(self):
+        return self.__iter__()
+
+    def publish(self, queue, crash_ids):
+        """Publish crash ids to specified queue."""
+        assert queue in ["standard", "priority", "reprocessing"]

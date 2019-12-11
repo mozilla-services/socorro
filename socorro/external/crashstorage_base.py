@@ -149,7 +149,7 @@ class CrashIDNotFound(Exception):
 
 
 class CrashStorageBase(RequiredConfig):
-    """the base class for all crash storage classes"""
+    """Base class for all crash storage classes."""
 
     required_config = Namespace()
     required_config.add_option(
