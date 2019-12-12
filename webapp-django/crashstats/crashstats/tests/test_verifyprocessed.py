@@ -127,3 +127,37 @@ class TestVerifyProcessed:
         assert "Missing: %s" % crash_ids[1] in captured.out
 
         assert crash_ids == list(self.fetch_crashids())
+
+    def test_past_missing_still_missing(self, capsys, db):
+        # Create a MissingProcessedCrash row, but don't put the processed crash in the
+        # bucket. After check_past_missing() runs, the MissingProcessedCrash should
+        # still have is_processed=False.
+        crash_id = create_new_ooid()
+        mpe = MissingProcessedCrash(crash_id=crash_id, is_processed=False)
+        mpe.save()
+
+        cmd = Command()
+        cmd.check_past_missing()
+
+        mpe = MissingProcessedCrash.objects.get(crash_id=crash_id)
+        assert mpe.is_processed is False
+
+    def test_past_missing_no_longer_missing(self, capsys, db, boto_helper):
+        # Create a MissingProcessedCrash row and put the processed crash in the S3
+        # bucket. After check_past_missing() runs, the MissingProcessedCrash should
+        # have is_processed=True.
+        crash_id = create_new_ooid()
+        mpe = MissingProcessedCrash(crash_id=crash_id, is_processed=False)
+        mpe.save()
+
+        boto_helper.upload_fileobj(
+            bucket_name=BUCKET_NAME,
+            key="v1/processed_crash/%s" % crash_id,
+            data=b"test",
+        )
+
+        cmd = Command()
+        cmd.check_past_missing()
+
+        mpe = MissingProcessedCrash.objects.get(crash_id=crash_id)
+        assert mpe.is_processed is True

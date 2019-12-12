@@ -146,10 +146,13 @@ class Command(BaseCommand):
         no_longer_missing = []
 
         for crash_id in crash_ids:
-            bucket = s3_client.get_bucket(bucket_name)
-            processed_crash_key = bucket.get_key(PROCESSED_CRASH_TEMPLATE % crash_id)
-            if processed_crash_key is not None:
+            try:
+                key = PROCESSED_CRASH_TEMPLATE % crash_id
+                s3_client.head_object(Bucket=bucket_name, Key=key)
                 no_longer_missing.append(crash_id)
+            except s3_client.exceptions.ClientError as exc:
+                if exc.response["Error"]["Code"] != "404":
+                    raise
 
         updated = 0
         if no_longer_missing:
