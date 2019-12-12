@@ -23,6 +23,7 @@ from socorro.external.es.crashstorage import (
     truncate_keyword_field_values,
 )
 from socorro.lib.datetimeutil import string_to_datetime
+from socorro.lib.ooid import create_new_ooid
 from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWithConfig
 
 
@@ -598,12 +599,14 @@ class TestESCrashStorage(ElasticsearchTestCase):
             if "bogus-field" in kwargs["body"]["processed_crash"]:
                 raise elasticsearch.exceptions.TransportError(
                     400,
-                    "RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:"
-                    "9300]][indices:data/write/index]]; nested: "
-                    "MapperParsingException[failed to parse "
-                    "[processed_crash.bogus-field]]; nested: "
-                    "NumberFormatException[For input string: "
-                    '"18446744073709480735"]; ',
+                    (
+                        "RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:"
+                        "9300]][indices:data/write/index]]; nested: "
+                        "MapperParsingException[failed to parse "
+                        "[processed_crash.bogus-field]]; nested: "
+                        "NumberFormatException[For input string: "
+                        '"18446744073709480735"]; '
+                    ),
                 )
 
             return True
@@ -626,6 +629,64 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 "foo": "bar",
             },
             "raw_crash": {},
+        }
+        es_class_mock().index.assert_called_with(
+            index=self.config.elasticsearch.elasticsearch_index,
+            doc_type=self.config.elasticsearch.elasticsearch_doctype,
+            body=expected_doc,
+            id=crash_id,
+        )
+
+    @mock.patch("elasticsearch.client")
+    @mock.patch("elasticsearch.Elasticsearch")
+    def test_indexing_unknown_property_field(self, es_class_mock, es_client_mock):
+        """Test an index attempt that fails because of an unknown property.
+
+        Expected behavior is to remove that field and retry indexing.
+
+        """
+        es_storage = ESCrashStorage(config=self.config)
+
+        crash_id = create_new_ooid()
+        raw_crash = {"uuid": crash_id}
+        processed_crash = {
+            "date_processed": "2019-12-11 10:56:41.558922",
+            "bogus-field": {"key": {"nested_key": "val"}},
+        }
+
+        def mock_index(*args, **kwargs):
+            if "bogus-field" in kwargs["body"]["processed_crash"]:
+                raise elasticsearch.exceptions.TransportError(
+                    400,
+                    (
+                        "RemoteTransportException[[Madam Slay]"
+                        "[inet[/172.31.22.181:9300]][indices:data/write/index]]; "
+                        "nested: MapperParsingException"
+                        "[failed to parse [processed_crash.bogus-field]]; "
+                        "nested: "
+                        "ElasticsearchIllegalArgumentException[unknown property [key]]"
+                    ),
+                )
+
+            return True
+
+        es_class_mock().index.side_effect = mock_index
+
+        # Submit crash and verify.
+        es_storage.save_raw_and_processed(
+            raw_crash=raw_crash,
+            dumps=None,
+            processed_crash=processed_crash,
+            crash_id=crash_id,
+        )
+
+        expected_doc = {
+            "crash_id": crash_id,
+            "removed_fields": "processed_crash.bogus-field",
+            "processed_crash": {
+                "date_processed": string_to_datetime("2019-12-11 10:56:41.558922"),
+            },
+            "raw_crash": {"uuid": crash_id},
         }
         es_class_mock().index.assert_called_with(
             index=self.config.elasticsearch.elasticsearch_index,

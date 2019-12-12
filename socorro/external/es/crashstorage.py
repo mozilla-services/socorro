@@ -201,6 +201,7 @@ class ESCrashStorage(CrashStorageBase):
     # have been tested with Elasticsearch 1.4.
     field_name_string_error_re = re.compile(r"field=\"([\w\-.]+)\"")
     field_name_number_error_re = re.compile(r"\[failed to parse \[([\w\-.]+)]]")
+    field_name_unknown_property_error_re = field_name_number_error_re
 
     def __init__(self, config, namespace="", quit_check_callback=None):
         super().__init__(
@@ -335,12 +336,29 @@ class ESCrashStorage(CrashStorageBase):
                     matches = self.field_name_string_error_re.findall(e.error)
                     if matches:
                         field_name = matches[0]
+                        self.metrics.incr(
+                            "indexerror", tags=["error:maxbyteslengthexceeded"]
+                        )
+
                 elif "NumberFormatException" in e.error:
                     # This is caused by a number that is either too big for
                     # Elasticsearch or just not a number.
                     matches = self.field_name_number_error_re.findall(e.error)
                     if matches:
                         field_name = matches[0]
+                        self.metrics.incr(
+                            "indexerror", tags=["error:numberformatexception"]
+                        )
+
+                elif "unknown property" in e.error:
+                    # This is caused by field values that are nested for a field where a
+                    # previously indexed value was a string. For example, the processor
+                    # first indexes ModuleSignatureInfo value as a string, then tries to
+                    # index ModuleSignatureInfo as a nested dict.
+                    matches = self.field_name_unknown_property_error_re.findall(e.error)
+                    if matches:
+                        field_name = matches[0]
+                        self.metrics.incr("indexerror", tags=["error:unknownproperty"])
 
                 if not field_name:
                     # We are unable to parse which field to remove, we cannot
@@ -351,6 +369,7 @@ class ESCrashStorage(CrashStorageBase):
                         e,
                         exc_info=True,
                     )
+                    self.metrics.incr("indexerror", tags=["error:unhandled"])
                     raise
 
                 if field_name.endswith(".full"):
