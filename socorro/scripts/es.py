@@ -12,6 +12,7 @@ import datetime
 
 from configman import ConfigurationManager
 from configman.environment import environment
+from elasticsearch_dsl import Search
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.connection_context import ConnectionContext
@@ -68,6 +69,18 @@ def cmd_list():
         print("No indices.")
 
 
+def cmd_list_crashids(index):
+    """List crashids for index."""
+    es_conn = get_conn()
+    with es_conn() as conn:
+        search = Search(using=conn, index=index, doc_type=es_conn.get_doctype(),)
+        search = search.fields("processed_crash.uuid")
+        results = search.execute()
+        print("Crashids in %s:" % index)
+        for hit in results:
+            print(hit["processed_crash.uuid"][0])
+
+
 def cmd_delete(indices):
     """Delete indices."""
     conn = get_conn()
@@ -99,6 +112,11 @@ def main(argv=None):
 
     subparsers.add_parser("list", help="list indices")
 
+    list_crashids = subparsers.add_parser(
+        "list_crashids", help="list crashids for an index"
+    )
+    list_crashids.add_argument("index", help="Index to list")
+
     delete_parser = subparsers.add_parser("delete", help="delete indices")
     delete_parser.add_argument("index", nargs="*", help="Indices to delete")
 
@@ -109,6 +127,9 @@ def main(argv=None):
 
     if args.cmd == "list":
         return cmd_list()
+
+    if args.cmd == "list_crashids":
+        return cmd_list_crashids(args.index)
 
     if args.cmd == "delete":
         return cmd_delete(args.index)
