@@ -6,15 +6,23 @@
 pytest plugins for socorro/unittest/ and webapp-django/ test suites.
 """
 
+import datetime
 import io
 import logging
 import os
 
 import boto3
 from botocore.client import ClientError, Config
+from configman import ConfigurationManager
+from configman.environment import environment
 from markus.testing import MetricsMock
 import pytest
 import requests_mock
+
+from socorro.external.es.connection_context import (
+    ConnectionContext as ESConnectionContext,
+)
+from socorro.lib.datetimeutil import utc_now
 
 
 @pytest.fixture
@@ -144,3 +152,26 @@ def boto_helper():
     """
     with BotoHelper() as boto_helper:
         yield boto_helper
+
+
+@pytest.fixture
+def es_conn():
+    """Create an Elasticsearch ConnectionContext and clean up indices afterwards.
+
+    This uses defaults and configuration from the environment.
+
+    """
+    manager = ConfigurationManager(
+        ESConnectionContext.get_required_config(), values_source_list=[environment]
+    )
+    conn = ESConnectionContext(manager.get_config())
+
+    # Create two indexes--this week and last week
+    template = conn.config.elasticsearch_index
+    conn.create_index(utc_now().strftime(template))
+    conn.create_index((utc_now() - datetime.timedelta(weeks=1)).strftime(template))
+    conn.refresh()
+
+    yield conn
+    for index in conn.get_indices():
+        conn.delete_index(index)
