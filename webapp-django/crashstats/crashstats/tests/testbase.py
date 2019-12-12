@@ -35,7 +35,6 @@ class DjangoTestCase(django.test.TestCase):
 
         for klass in classes_with_implementation:
             self._mockeries[klass] = klass.implementation
-
             klass.implementation = mock.MagicMock()
             # The class name is used by the internal caching that guards
             # for repeated calls with the same parameter.
@@ -43,9 +42,9 @@ class DjangoTestCase(django.test.TestCase):
             # string 'MagicMock' in it no matter which class it came from.
             klass.implementation().__class__.__name__ = klass.__name__
 
-    def undo_implementation_mock(self, cls):
+    def undo_implementation_mock(self, klass):
         """Undoes a single implementation mock."""
-        cls.implementation = self._mockeries[cls]
+        klass.implementation = self._mockeries[klass]
 
     def tearDown(self):
         for klass in classes_with_implementation:

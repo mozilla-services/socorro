@@ -168,6 +168,8 @@ class SuperSearchUnredacted(SuperSearch):
 
     API_ALLOWLIST = get_api_allowlist(include_all_fields=True)
 
+    implementation = supersearch.SuperSearch
+
     def __init__(self):
         self.all_fields = SuperSearchFields().get()
 
