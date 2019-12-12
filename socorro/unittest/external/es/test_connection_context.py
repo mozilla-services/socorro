@@ -15,8 +15,11 @@ from socorro.lib.datetimeutil import utc_now
 
 class TestConnectionContext:
     def test_create_index(self, es_conn):
-        # Verify there are no indices first
-        assert list(es_conn.get_indices()) == []
+        # Delete any existing indices first
+        for index in es_conn.get_indices():
+            es_conn.delete_index(index)
+        es_conn.refresh()
+        es_conn.health_check()
 
         template = es_conn.get_index_template()
         now = utc_now()
@@ -40,6 +43,12 @@ class TestConnectionContext:
         assert index_name not in list(es_conn.get_indices())
 
     def test_delete_old_indices(self, es_conn):
+        # Delete any existing indices first
+        for index in es_conn.get_indices():
+            es_conn.delete_index(index)
+        es_conn.refresh()
+        es_conn.health_check()
+
         # Create an index > retention_policy
         template = es_conn.get_index_template()
         now = utc_now()
@@ -56,4 +65,5 @@ class TestConnectionContext:
 
         # Now delete all expired indices and make sure current is still there
         es_conn.delete_expired_indices()
+        es_conn.health_check()
         assert list(es_conn.get_indices()) == [current_index_name]

@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """
-This command verifies that all the incoming crash reports for a specified day
-were processed. It does this by listing the raw crash files for the day, then
-checking to see if each of those raw crash files have corresponding processed
-crash files.
+This command verifies that all the incoming crash reports for the day before the
+specified day were processed. It does this by listing the raw crash files for the day,
+then checking to see if each of those raw crash files have corresponding processed crash
+files.
 """
 
 import concurrent.futures
@@ -23,6 +23,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 
 from crashstats.crashstats.configman_utils import get_s3_context
 from crashstats.crashstats.models import MissingProcessedCrash
+from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
@@ -35,11 +36,45 @@ WORKER_TIMEOUT = 10 * 60
 metrics = markus.get_metrics("cron.verifyprocessed")
 
 
+def is_in_s3(s3_client, bucket, crash_id):
+    """Is the processed crash in S3."""
+    try:
+        key = PROCESSED_CRASH_TEMPLATE % crash_id
+        s3_client.head_object(Bucket=bucket, Key=key)
+    except s3_client.exceptions.ClientError as exc:
+        # If we got back a 404: Not Found, then the processed crash isn't
+        # there. If we got something else back, re-raise it.
+        if exc.response["Error"]["Code"] == "404":
+            return False
+        else:
+            raise
+    return True
+
+
+def is_in_elasticsearch(supersearch, crash_id):
+    """Is the processed crash in Elasticsearch."""
+    params = {
+        "uuid": crash_id,
+        "_results_number": 1,
+        "_columns": ["uuid"],
+        "_facets": [],
+        "_facets_size": 0,
+    }
+    search_results = supersearch.get(**params)
+
+    # If the search came up with nothing, then the processed crash isn't there.
+    if len(search_results["hits"]) == 0:
+        return False
+    return True
+
+
 def check_crashids(entropy_chunk, date):
     """Checks crash ids for a given entropy and date."""
     s3_context = get_s3_context()
     bucket = s3_context.config.bucket_name
     s3_client = s3_context.client
+
+    supersearch = SuperSearchUnredacted()
 
     missing = []
     for entropy in entropy_chunk:
@@ -52,18 +87,11 @@ def check_crashids(entropy_chunk, date):
             for item in page.get("Contents", []):
                 raw_crash_key = item["Key"]
                 crash_id = raw_crash_key.split("/")[-1]
+                if not is_in_s3(s3_client, bucket, crash_id):
+                    missing.append(crash_id)
 
-                try:
-                    s3_client.head_object(
-                        Bucket=bucket, Key=PROCESSED_CRASH_TEMPLATE % crash_id
-                    )
-                except s3_client.exceptions.ClientError as exc:
-                    # If we got back a 404: Not Found, then the processed crash isn't
-                    # there. If we got something else back, re-raise it.
-                    if exc.response["Error"]["Code"] == "404":
-                        missing.append(crash_id)
-                    else:
-                        raise
+                elif not is_in_elasticsearch(supersearch, crash_id):
+                    missing.append(crash_id)
 
     return missing
 
@@ -134,8 +162,10 @@ class Command(BaseCommand):
     def check_past_missing(self):
         """Check the table for missing crashes and check to see if they exist."""
         s3_context = get_s3_context()
-        bucket_name = s3_context.config.bucket_name
+        bucket = s3_context.config.bucket_name
         s3_client = s3_context.build_client()
+
+        supersearch = SuperSearchUnredacted()
 
         crash_ids = []
 
@@ -146,13 +176,9 @@ class Command(BaseCommand):
         no_longer_missing = []
 
         for crash_id in crash_ids:
-            try:
-                key = PROCESSED_CRASH_TEMPLATE % crash_id
-                s3_client.head_object(Bucket=bucket_name, Key=key)
-                no_longer_missing.append(crash_id)
-            except s3_client.exceptions.ClientError as exc:
-                if exc.response["Error"]["Code"] != "404":
-                    raise
+            if is_in_s3(s3_client, bucket, crash_id):
+                if is_in_elasticsearch(supersearch, crash_id):
+                    no_longer_missing.append(crash_id)
 
         updated = 0
         if no_longer_missing:
@@ -173,9 +199,15 @@ class Command(BaseCommand):
             if not check_date:
                 raise CommandError("Unrecognized run_time format: %s" % check_date_arg)
         else:
-            check_date = timezone.now() - datetime.timedelta(days=1)
+            check_date = timezone.now()
+
+        # Look at the previous day because we want to look at a whole day.
+        check_date = check_date - datetime.timedelta(days=1)
 
         check_date_formatted = check_date.strftime("%Y%m%d")
+        self.stdout.write(
+            "Checking for missing processed crashes for: %s" % check_date_formatted
+        )
 
         # Check and update existing missing before finding new missing things
         self.check_past_missing()

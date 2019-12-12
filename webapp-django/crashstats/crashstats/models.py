@@ -418,7 +418,6 @@ class SocorroCommon(object):
 
         implementation_method = getattr(implementation, method)
         result = implementation_method(**params)
-
         if cache_key:
             cache.set(cache_key, result, self.cache_seconds)
 
@@ -694,6 +693,7 @@ class ProcessedCrash(SocorroMiddleware):
 
 
 class UnredactedCrash(ProcessedCrash):
+    implementation = SimplifiedCrashData
     defaults = {"datatype": "unredacted"}
 
     API_REQUIRED_PERMISSIONS = ("crashstats.view_exploitability", "crashstats.view_pii")

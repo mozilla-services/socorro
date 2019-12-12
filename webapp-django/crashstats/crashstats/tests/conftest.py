@@ -15,7 +15,6 @@ from django.core.cache import cache
 from crashstats.crashstats.models import Product
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.crashstats.tests.testbase import DjangoTestCase
-from crashstats.supersearch.models import SuperSearchFields
 from socorro.external.es.super_search_fields import FIELDS
 
 
@@ -36,7 +35,7 @@ class Response(object):
         return self.raw
 
 
-class ProductVersionsMixin(object):
+class ProductVersionsMixin:
     """Mixin for DjangoTestCase tests to create products and versions
 
     This creates products.
@@ -86,12 +85,9 @@ class ProductVersionsMixin(object):
         self.mock_gvfp.return_value = versions
 
 
-class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
+class SuperSearchFieldsMock:
     def setUp(self):
         super().setUp()
-
-        # Tests assume and require a non-persistent cache backend
-        assert "LocMemCache" in settings.CACHES["default"]["BACKEND"]
 
         def mocked_supersearchfields(**params):
             results = copy.deepcopy(FIELDS)
@@ -101,12 +97,23 @@ class BaseTestViews(ProductVersionsMixin, DjangoTestCase):
             results["accessibility2"] = results["accessibility"]
             return results
 
-        supersearchfields_mock_get = mock.Mock()
-        supersearchfields_mock_get.side_effect = mocked_supersearchfields
-        SuperSearchFields.get = supersearchfields_mock_get
+        self.mock_ssf_get_patcher = mock.patch(
+            "crashstats.supersearch.models.SuperSearchFields.get"
+        )
+        self.mock_ssf_fields_get = self.mock_ssf_get_patcher.start()
+        self.mock_ssf_fields_get.side_effect = mocked_supersearchfields
 
-        # This will make sure the cache is pre-populated
-        SuperSearchFields().get()
+    def tearDown(self):
+        self.mock_ssf_get_patcher.stop()
+        super().tearDown()
+
+
+class BaseTestViews(ProductVersionsMixin, SuperSearchFieldsMock, DjangoTestCase):
+    def setUp(self):
+        super().setUp()
+
+        # Tests assume and require a non-persistent cache backend
+        assert "LocMemCache" in settings.CACHES["default"]["BACKEND"]
 
     def tearDown(self):
         cache.clear()
