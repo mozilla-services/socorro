@@ -170,7 +170,7 @@ def es_conn():
     template = conn.config.elasticsearch_index
     conn.create_index(utc_now().strftime(template))
     conn.create_index((utc_now() - datetime.timedelta(weeks=1)).strftime(template))
-    conn.refresh()
+    conn.health_check()
 
     yield conn
     for index in conn.get_indices():

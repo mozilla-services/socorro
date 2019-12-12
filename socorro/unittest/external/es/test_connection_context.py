@@ -47,6 +47,7 @@ class TestConnectionContext:
         for index in es_conn.get_indices():
             es_conn.delete_index(index)
         es_conn.refresh()
+        es_conn.health_check()
 
         # Create an index > retention_policy
         template = es_conn.get_index_template()
