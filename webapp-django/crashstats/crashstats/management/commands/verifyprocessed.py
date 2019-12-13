@@ -31,7 +31,10 @@ RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
 PROCESSED_CRASH_TEMPLATE = "v1/processed_crash/%s"
 
 # Number of seconds until we decide a worker has stalled
-WORKER_TIMEOUT = 10 * 60
+WORKER_TIMEOUT = 15 * 60
+
+# Number of entropy items to pass to a check_crashids subprocess
+CHUNK_SIZE = 4
 
 
 metrics = markus.get_metrics("cron.verifyprocessed")
@@ -129,7 +132,7 @@ class Command(BaseCommand):
         check_crashids_for_date = partial(check_crashids, date=date)
 
         missing = []
-        entropy_chunked = chunked(self.get_entropy(), 5)
+        entropy_chunked = chunked(self.get_entropy(), CHUNK_SIZE)
         if num_workers == 1:
             for result in map(check_crashids_for_date, entropy_chunked):
                 missing.extend(result)
