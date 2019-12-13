@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand
 from crashstats.crashstats.configman_utils import get_s3_context
 from crashstats.crashstats.management.commands.verifyprocessed import (
     is_in_s3,
-    is_in_elasticsearch,
+    check_elasticsearch,
 )
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.models import MissingProcessedCrash
@@ -38,7 +38,8 @@ class Command(BaseCommand):
 
         for crash_id in crash_ids:
             if is_in_s3(s3_client, bucket, crash_id):
-                if is_in_elasticsearch(supersearch, crash_id):
+                missing = check_elasticsearch(supersearch, crash_id)
+                if not missing:
                     no_longer_missing.append(crash_id)
 
         updated = 0

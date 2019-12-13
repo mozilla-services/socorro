@@ -55,25 +55,29 @@ def is_in_s3(s3_client, bucket, crash_id):
     return True
 
 
-def is_in_elasticsearch(supersearch, crash_id):
-    """Is the processed crash in Elasticsearch."""
-    crash_date = date_from_ooid(crash_id)
+def check_elasticsearch(supersearch, crash_ids):
+    """Checks Elasticsearch and returns list of missing crash ids.
+
+    Crash ids should all be on the same day.
+
+    """
+    crash_ids = [crash_ids] if isinstance(crash_ids, str) else crash_ids
+    crash_date = date_from_ooid(crash_ids[0])
     start_date = crash_date.strftime("%Y-%m-%d")
     end_date = (crash_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
     params = {
-        "uuid": crash_id,
+        "uuid": crash_ids,
         "date": [">=%s" % start_date, "<=%s" % end_date],
-        "_results_number": 1,
+        "_results_number": len(crash_ids),
         "_columns": ["uuid"],
         "_facets": [],
         "_facets_size": 0,
     }
     search_results = supersearch.get(**params)
 
-    # If the search came up with nothing, then the processed crash isn't there.
-    if len(search_results["hits"]) == 0:
-        return False
-    return True
+    crash_ids_in_es = [hit["uuid"] for hit in search_results["hits"]]
+    return set(crash_ids) - set(crash_ids_in_es)
 
 
 def check_crashids(entropy_chunk, date):
@@ -92,16 +96,25 @@ def check_crashids(entropy_chunk, date):
         page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
 
         for page in page_iterator:
-            for item in page.get("Contents", []):
-                raw_crash_key = item["Key"]
-                crash_id = raw_crash_key.split("/")[-1]
+            # NOTE(willkg): Keys look like /v2/raw_crash/ENTRPOY/DATE/CRASHID
+            crash_ids = [
+                item["Key"].split("/")[-1] for item in page.get("Contents", [])
+            ]
+
+            if not crash_ids:
+                continue
+
+            # Check S3 first
+            for crash_id in crash_ids:
                 if not is_in_s3(s3_client, bucket, crash_id):
                     missing.append(crash_id)
 
-                elif not is_in_elasticsearch(supersearch, crash_id):
-                    missing.append(crash_id)
+            # Check Elasticsearch in batches
+            for crash_ids_batch in chunked(crash_ids, 100):
+                missing_in_es = check_elasticsearch(supersearch, crash_ids_batch)
+                missing.extend(missing_in_es)
 
-    return missing
+    return list(set(missing))
 
 
 class Command(BaseCommand):
