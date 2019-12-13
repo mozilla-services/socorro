@@ -117,8 +117,6 @@ class Command(BaseCommand):
         logger.info("about to run %s", cmd)
 
         now = timezone.now()
-        log_run = True
-        exc_type = exc_value = exc_tb = None
         start_time = None
         run_time = None
 
@@ -149,10 +147,19 @@ class Command(BaseCommand):
 
                     logger.info("successfully ran %s on %s", cmd, run_time)
                     last_success = run_time
+
                     self._remember_success(cmd, last_success, end_time - start_time)
 
+                    # Log each backfill task as a successful completion so that if
+                    # one of them fails, we start at the failure date rather than
+                    # all the way back at the beginning.
+                    self._log_run(
+                        cmd, seconds, job_spec.get("time"), run_time, now,
+                    )
+
             except OngoingJobError:
-                log_run = False
+                # Catch and raise this so it doesn't get handled by the Exception
+                # handling
                 raise
 
             except Exception:
@@ -168,19 +175,16 @@ class Command(BaseCommand):
                 self._remember_failure(
                     cmd, end_time - start_time, exc_type, exc_value, exc_tb
                 )
-
-            finally:
-                if log_run:
-                    self._log_run(
-                        cmd,
-                        seconds,
-                        job_spec.get("time"),
-                        run_time,
-                        now,
-                        exc_type,
-                        exc_value,
-                        exc_tb,
-                    )
+                self._log_run(
+                    cmd,
+                    seconds,
+                    job_spec.get("time"),
+                    run_time,
+                    now,
+                    exc_type,
+                    exc_value,
+                    exc_tb,
+                )
 
     def _run_job(self, job_spec, *cmd_args, **cmd_kwargs):
         """Run job with specified args."""
@@ -237,7 +241,15 @@ class Command(BaseCommand):
         raise OngoingJobError("%s: %s" % (job.app_name, job.ongoing))
 
     def _log_run(
-        self, cmd, seconds, time_, last_success, now, exc_type, exc_value, exc_tb
+        self,
+        cmd,
+        seconds,
+        time_,
+        last_success,
+        now,
+        exc_type=None,
+        exc_value=None,
+        exc_tb=None,
     ):
         job = Job.objects.get_or_create(app_name=cmd)[0]
 
