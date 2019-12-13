@@ -49,6 +49,12 @@ JOBS = [
         "backfill": True,
     },
     {
+        # Check past missing crashes and update status daily at 3:00am
+        "cmd": "updatemissing",
+        "frequency": "1d",
+        "time": "03:00",
+    },
+    {
         # Scrape archive.mozilla.org for productversion data every hour
         "cmd": "archivescraper",
         "frequency": "1h",

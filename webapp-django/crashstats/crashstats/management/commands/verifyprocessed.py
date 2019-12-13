@@ -164,37 +164,6 @@ class Command(BaseCommand):
         else:
             self.stdout.write("All crashes for %s were processed." % date)
 
-    def check_past_missing(self):
-        """Check the table for missing crashes and check to see if they exist."""
-        s3_context = get_s3_context()
-        bucket = s3_context.config.bucket_name
-        s3_client = s3_context.build_client()
-
-        supersearch = SuperSearchUnredacted()
-
-        crash_ids = []
-
-        crash_ids = MissingProcessedCrash.objects.filter(
-            is_processed=False
-        ).values_list("crash_id", flat=True)
-
-        no_longer_missing = []
-
-        for crash_id in crash_ids:
-            if is_in_s3(s3_client, bucket, crash_id):
-                if is_in_elasticsearch(supersearch, crash_id):
-                    no_longer_missing.append(crash_id)
-
-        updated = 0
-        if no_longer_missing:
-            updated = MissingProcessedCrash.objects.filter(
-                crash_id__in=no_longer_missing
-            ).update(is_processed=True)
-
-        self.stdout.write(
-            "Updated %s missing crashes which have since been processed" % updated
-        )
-
     def handle(self, **options):
         check_date_arg = options.get("run_time")
         if check_date_arg:
@@ -214,10 +183,7 @@ class Command(BaseCommand):
             "Checking for missing processed crashes for: %s" % check_date_formatted
         )
 
-        # Check and update existing missing before finding new missing things
-        self.check_past_missing()
-
-        # Find missing and handle them
+        # Find new missing crashes.
         missing = self.find_missing(options["num_workers"], check_date_formatted)
         self.handle_missing(check_date_formatted, missing)
 
