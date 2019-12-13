@@ -24,6 +24,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 from crashstats.crashstats.configman_utils import get_s3_context
 from crashstats.crashstats.models import MissingProcessedCrash
 from crashstats.supersearch.models import SuperSearchUnredacted
+from socorro.lib.ooid import date_from_ooid
 
 
 RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
@@ -53,8 +54,12 @@ def is_in_s3(s3_client, bucket, crash_id):
 
 def is_in_elasticsearch(supersearch, crash_id):
     """Is the processed crash in Elasticsearch."""
+    crash_date = date_from_ooid(crash_id)
+    start_date = crash_date.strftime("%Y-%m-%d")
+    end_date = (crash_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     params = {
         "uuid": crash_id,
+        "date": [">=%s" % start_date, "<=%s" % end_date],
         "_results_number": 1,
         "_columns": ["uuid"],
         "_facets": [],
