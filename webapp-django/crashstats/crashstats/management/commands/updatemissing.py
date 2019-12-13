@@ -6,8 +6,6 @@
 This command checks known missing crashes to see if they've since been processed.
 """
 
-import markus
-
 from django.core.management.base import BaseCommand
 
 from crashstats.crashstats.configman_utils import get_s3_context
@@ -17,13 +15,6 @@ from crashstats.crashstats.management.commands.verifyprocessed import (
 )
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.models import MissingProcessedCrash
-
-
-# Number of seconds until we decide a worker has stalled
-WORKER_TIMEOUT = 10 * 60
-
-
-metrics = markus.get_metrics("cron.verifyprocessed")
 
 
 class Command(BaseCommand):
