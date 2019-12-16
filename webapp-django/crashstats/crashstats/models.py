@@ -20,7 +20,6 @@ from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.utils.encoding import iri_to_uri
 
-from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import BadArgumentError
 from socorro.lib.requestslib import session_with_retries
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
