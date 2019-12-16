@@ -20,7 +20,6 @@ from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.utils.encoding import iri_to_uri
 
-from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import BadArgumentError
 from socorro.lib.requestslib import session_with_retries
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
@@ -227,23 +226,6 @@ class MissingProcessedCrash(models.Model):
 
     def report_url(self):
         return reverse("crashstats:report_index", args=(self.crash_id,))
-
-    def check_processed(self):
-        """Check whether this crash id was processed.
-
-        :returns: True, False, or a str of the exception.
-
-        """
-        processed_api = ProcessedCrash()
-        try:
-            processed_api.get(
-                crash_id=self.crash_id, dont_cache=True, refresh_cache=True
-            )
-            return True
-        except CrashIDNotFound:
-            return False
-        except Exception as exc:
-            return str(exc)
 
     class Meta:
         verbose_name = "missing processed crash"
