@@ -153,7 +153,6 @@ class MissingProcessedCrashAdmin(admin.ModelAdmin):
         "created",
         "collected_date",
         "is_processed",
-        "check_processed",
         "report_url_linked",
     ]
     actions = [process_crashes]

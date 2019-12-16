@@ -228,23 +228,6 @@ class MissingProcessedCrash(models.Model):
     def report_url(self):
         return reverse("crashstats:report_index", args=(self.crash_id,))
 
-    def check_processed(self):
-        """Check whether this crash id was processed.
-
-        :returns: True, False, or a str of the exception.
-
-        """
-        processed_api = ProcessedCrash()
-        try:
-            processed_api.get(
-                crash_id=self.crash_id, dont_cache=True, refresh_cache=True
-            )
-            return True
-        except CrashIDNotFound:
-            return False
-        except Exception as exc:
-            return str(exc)
-
     class Meta:
         verbose_name = "missing processed crash"
         verbose_name_plural = "missing processed crashes"
