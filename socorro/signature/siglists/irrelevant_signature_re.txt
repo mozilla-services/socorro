@@ -58,6 +58,8 @@ mozilla::CondVar::Wait
 mozilla::detail::ConditionVariableImpl
 mozilla::gfx::Log<
 mozilla::ipc::RPCChannel::Call
+mozilla::ipc::WriteIPDLParam
+mozilla::ipc::IPDLParamTraits<T>::Write
 mozilla::ThreadEventQueue
 nsEventQueue::GetEvent
 _NSRaiseError
