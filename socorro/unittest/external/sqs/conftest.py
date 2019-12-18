@@ -8,10 +8,6 @@ import pytest
 from socorro.unittest.external.sqs import get_sqs_config
 
 
-# Socorro uses three queues. Each is implemented as a SQS queue.
-QUEUES = ["standard", "priority", "reprocessing"]
-
-
 class SQSHelper:
     """Helper class for setting up, tearing down, and publishing to Pub/Sub.
 
