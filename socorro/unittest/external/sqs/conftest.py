@@ -5,7 +5,7 @@
 import boto3
 import pytest
 
-from socorro.unittest.external.sqs import get_sqs_config
+from socorro.unittest.external.sqs import get_sqs_config, VISIBILITY_TIMEOUT
 
 
 class SQSHelper:
@@ -55,7 +55,10 @@ class SQSHelper:
         self.teardown_queues()
 
     def create_queue(self, queue_name):
-        self.client.create_queue(QueueName=queue_name)
+        self.client.create_queue(
+            QueueName=queue_name,
+            Attributes={"VisibilityTimeout": str(VISIBILITY_TIMEOUT)},
+        )
         self._queues.append(queue_name)
 
     def get_published_crashids(self, queue):

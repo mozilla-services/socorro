@@ -8,10 +8,7 @@ import pytest
 
 from socorro.external.sqs.crashqueue import SQSCrashQueue
 from socorro.lib.ooid import create_new_ooid
-from socorro.unittest.external.sqs import get_sqs_config
-
-
-VISIBILITY_DEADLINE = 2
+from socorro.unittest.external.sqs import get_sqs_config, VISIBILITY_TIMEOUT
 
 
 class TestSQSCrashQueue:
@@ -61,8 +58,7 @@ class TestSQSCrashQueue:
         for args, kwargs in new_crashes:
             kwargs["finished_func"]()
 
-        # Wait beyond the ack deadline in the grossest way possible
-        time.sleep(VISIBILITY_DEADLINE + 1)
+        time.sleep(VISIBILITY_TIMEOUT + 1)
 
         # Now call it again and make sure we get nothing back
         new_crashes = list(crash_queue.new_crashes())

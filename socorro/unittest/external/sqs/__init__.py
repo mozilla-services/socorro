@@ -7,6 +7,10 @@ from configman import ConfigurationManager, environment
 from socorro.external.sqs.crashqueue import SQSCrashQueue
 
 
+# Visibility timeout for the AWS SQS queue in seconds
+VISIBILITY_TIMEOUT = 1
+
+
 def get_sqs_config():
     sqs_config = SQSCrashQueue.get_required_config()
     config_manager = ConfigurationManager(
