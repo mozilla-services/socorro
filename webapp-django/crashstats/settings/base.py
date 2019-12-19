@@ -567,6 +567,12 @@ if not implementations_database_url:
     implementations_database_url = database_url
 implementations_config = dj_database_url.parse(implementations_database_url)
 
+# The CrashQueueBase class to use for submitting priority and reprocessing
+# requests
+CRASHQUEUE = config(
+    "queue.crashqueue_class", "socorro.external.pubsub.crashqueue.PubSubCrashQueue"
+)
+
 # Config for when the models pull directly from socorro.external classes.
 SOCORRO_CONFIG = {
     "secrets": {

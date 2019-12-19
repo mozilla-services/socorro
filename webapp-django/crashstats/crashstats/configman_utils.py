@@ -12,13 +12,13 @@ from configman import ConfigurationManager, configuration, Namespace
 from configman.environment import environment
 
 from django.conf import settings
+from django.utils.module_loading import import_string
 
 from socorro.app.socorro_app import App
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.external.es.connection_context import (
     ConnectionContext as ESConnectionContext,
 )
-from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 
 
 def get_s3_context():
@@ -56,7 +56,9 @@ def config_from_configman():
         "elasticsearch_class", default=ESConnectionContext
     )
     definition_source.namespace("queue")
-    definition_source.add_option("crashqueue_class", default=PubSubCrashQueue)
+    definition_source.add_option(
+        "crashqueue_class", default=import_string(settings.CRASHQUEUE)
+    )
     definition_source.namespace("crashdata")
     definition_source.crashdata.add_option(
         "crash_data_class", default=SimplifiedCrashData
