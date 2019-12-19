@@ -105,6 +105,7 @@ services:
       - my.env
     depends_on:
       - localstack-s3
+      - localstack-sqs
       - pubsub
       - statsd
     expose:
