@@ -590,6 +590,12 @@ SOCORRO_CONFIG = {
             "region": config("resource.boto.region", "us-west-2"),
             "resource_class": "socorro.external.boto.connection_context.S3Connection",
             "s3_endpoint_url": config("resource.boto.s3_endpoint_url", None),
+
+            # SQS things
+            "sqs_endpoint_url": config("resource.boto.sqs_endpoint_url", None),
+            "standard_queue": config("resource.boto.standard_queue", None),
+            "priority_queue": config("resource.boto.priority_queue", None),
+            "reprocessing_queue": config("resource.boto.reprocessing_queue", None),
         },
         "pubsub": {
             "service_account_file": config(
