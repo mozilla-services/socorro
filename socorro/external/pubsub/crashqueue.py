@@ -12,7 +12,7 @@ from google.api_core.exceptions import DeadlineExceeded
 
 from socorro.external.crashqueue_base import CrashQueueBase
 
-# Maximum number of messages to pull from a Pub/Sub topic in a single pull
+# Maximum number of messages to pull from a Google Pub/Sub topic in a single pull
 # request
 PUBSUB_MAX_MESSAGES = 5
 
@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class PubSubCrashQueue(CrashQueueBase):
-    """Crash queue that uses Pub/Sub.
+    """Crash queue that uses Google Pub/Sub.
 
-    This requires three Pub/Sub topics:
+    This requires three Google Pub/Sub topics:
 
     * **standard topic**: processing incoming crashes from the collector
     * **priority topic**: processing crashes right now because someone/something
@@ -110,7 +110,7 @@ class PubSubCrashQueue(CrashQueueBase):
         logger.debug("ack %s from %s", ack_id, sub_path)
 
     def __iter__(self):
-        """Return iterator over crash ids from Pub/Sub.
+        """Return iterator over crash ids from Google Pub/Sub.
 
         Each returned crash is a ``(crash_id, {kwargs})`` tuple with
         ``finished_func`` as the only key in ``kwargs``. The caller should call

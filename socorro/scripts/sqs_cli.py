@@ -87,11 +87,11 @@ def list_messages(ctx, queue):
         click.echo("Queue %s is empty." % queue)
 
 
-@sqs_group.command("send_message")
+@sqs_group.command("publish")
 @click.argument("queue")
 @click.argument("message")
 @click.pass_context
-def send_message(ctx, queue, message):
+def publish(ctx, queue, message):
     """Add a message to a queue."""
     conn = get_client()
     try:
@@ -139,6 +139,15 @@ def create(ctx, queue):
     click.echo("Queue %s created." % queue)
 
 
+@sqs_group.command("create-all")
+@click.pass_context
+def create_all(ctx):
+    """Create SQS queues related to processing."""
+    ctx.invoke(create, queue=os.environ["resource.boto.standard_queue"])
+    ctx.invoke(create, queue=os.environ["resource.boto.priority_queue"])
+    ctx.invoke(create, queue=os.environ["resource.boto.reprocessing_queue"])
+
+
 @sqs_group.command("delete")
 @click.argument("queue")
 @click.pass_context
@@ -159,6 +168,15 @@ def delete(ctx, queue):
     queue_url = resp["QueueUrl"]
     conn.delete_queue(QueueUrl=queue_url)
     click.echo("Queue %s deleted." % queue)
+
+
+@sqs_group.command("delete-all")
+@click.pass_context
+def delete_all(ctx):
+    """Delete SQS queues related to processing."""
+    ctx.invoke(delete, queue=os.environ["resource.boto.standard_queue"])
+    ctx.invoke(delete, queue=os.environ["resource.boto.priority_queue"])
+    ctx.invoke(delete, queue=os.environ["resource.boto.reprocessing_queue"])
 
 
 def main(argv=None):

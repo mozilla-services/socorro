@@ -19,11 +19,11 @@ from django.db import models
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.utils.encoding import iri_to_uri
+from django.utils.module_loading import import_string
 
 from socorro.lib import BadArgumentError
 from socorro.lib.requestslib import session_with_retries
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
-from socorro.external.pubsub.crashqueue import PubSubCrashQueue
 
 from crashstats.crashstats.configman_utils import config_from_configman
 
@@ -1035,7 +1035,7 @@ class Reprocessing(SocorroMiddleware):
     permission.
     """
 
-    implementation = PubSubCrashQueue
+    implementation = import_string(settings.CRASHQUEUE)
 
     API_REQUIRED_PERMISSIONS = ("crashstats.reprocess_crashes",)
 
@@ -1057,7 +1057,7 @@ class Reprocessing(SocorroMiddleware):
 class PriorityJob(SocorroMiddleware):
     """Submit crash ids to priority queue."""
 
-    implementation = PubSubCrashQueue
+    implementation = import_string(settings.CRASHQUEUE)
 
     required_params = (("crash_ids", list),)
 
