@@ -11,6 +11,7 @@ import sys
 from configman import Namespace
 from configman.converters import class_converter
 from configman.dotdict import DotDict
+import markus
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
@@ -96,6 +97,9 @@ CONFIG_DEFAULTS = {
 }
 
 
+METRICS = markus.get_metrics("processor")
+
+
 class ProcessorApp(FetchTransformSaveApp):
     """Configman app that transforms raw crashes into processed crashes."""
 
@@ -153,6 +157,7 @@ class ProcessorApp(FetchTransformSaveApp):
             # and then let the caller deal with it
             raise
 
+    @METRICS.timer_decorator("process_crash")
     def _transform(self, crash_id):
         """Transform a raw crash into a process crash.
 
