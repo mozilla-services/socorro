@@ -66,7 +66,7 @@ class TestFetchTransformSaveApp(object):
                     yield ((x,), {})
 
         class FakeQueue(object):
-            def __init__(self, config, namespace="", quit_check_callback=None):
+            def __init__(self, config, namespace=""):
                 pass
 
             def new_crashes(self):
@@ -76,7 +76,7 @@ class TestFetchTransformSaveApp(object):
                     yield crash_id
 
         class FakeStorageSource(object):
-            def __init__(self, config, namespace="", quit_check_callback=None):
+            def __init__(self, config, namespace=""):
                 self.store = DotDict(
                     {
                         "1234": DotDict(
@@ -109,7 +109,7 @@ class TestFetchTransformSaveApp(object):
                 self.number_of_close_calls += 1
 
         class FakeStorageDestination(object):
-            def __init__(self, config, namespace="", quit_check_callback=None):
+            def __init__(self, config, namespace=""):
                 self.store = DotDict()
                 self.dumps = DotDict()
                 self.number_of_close_calls = 0
@@ -177,7 +177,7 @@ class TestFetchTransformSaveApp(object):
                         yield None
 
         class FakeStorageDestination(object):
-            def __init__(self, config, quit_check_callback):
+            def __init__(self, config):
                 self.store = DotDict()
                 self.dumps = DotDict()
 
@@ -233,7 +233,7 @@ class TestFetchTransformSaveApp(object):
 
     def test_no_source(self):
         class FakeStorageDestination(object):
-            def __init__(self, config, quit_check_callback):
+            def __init__(self, config):
                 self.store = DotDict()
                 self.dumps = DotDict()
 
@@ -267,7 +267,7 @@ class TestFetchTransformSaveApp(object):
 
     def test_no_destination(self):
         class FakeStorageSource(object):
-            def __init__(self, config, quit_check_callback):
+            def __init__(self, config):
                 self.store = DotDict(
                     {
                         "1234": DotDict(

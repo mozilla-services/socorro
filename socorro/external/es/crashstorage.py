@@ -240,10 +240,8 @@ class ESCrashStorage(CrashStorageBase):
     field_name_number_error_re = re.compile(r"\[failed to parse \[([\w\-.]+)]]")
     field_name_unknown_property_error_re = field_name_number_error_re
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
-        super().__init__(
-            config, namespace=namespace, quit_check_callback=quit_check_callback
-        )
+    def __init__(self, config, namespace=""):
+        super().__init__(config, namespace=namespace)
 
         self.es_context = self.config.elasticsearch.elasticsearch_class(
             config=self.config.elasticsearch

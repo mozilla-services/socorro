@@ -149,10 +149,8 @@ class BotoS3CrashStorage(CrashStorageBase):
         from_string_converter=class_converter,
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
-        super().__init__(
-            config, namespace=namespace, quit_check_callback=quit_check_callback
-        )
+    def __init__(self, config, namespace=""):
+        super().__init__(config, namespace=namespace)
         self.conn = config.resource_class(config)
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):

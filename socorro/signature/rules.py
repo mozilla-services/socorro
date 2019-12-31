@@ -58,7 +58,7 @@ class Rule(object):
         return True
 
 
-class SignatureTool(object):
+class SignatureTool:
     """Stack walking signature generator base class
 
     This defines the interface for classes that take a stack and generate a
@@ -67,9 +67,6 @@ class SignatureTool(object):
     Subclasses should implement the ``_do_generate`` method.
 
     """
-
-    def __init__(self, quit_check_callback=None):
-        self.quit_check_callback = quit_check_callback
 
     def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=" | "):
         signature, notes, debug_notes = self._do_generate(
@@ -93,8 +90,8 @@ class CSignatureTool(SignatureTool):
 
     hang_prefixes = {-1: "hang", 1: "chromehang"}
 
-    def __init__(self, quit_check_callback=None):
-        super(CSignatureTool, self).__init__(quit_check_callback)
+    def __init__(self):
+        super(CSignatureTool, self).__init__()
 
         self.irrelevant_signature_re = re.compile(
             "|".join(siglists_utils.IRRELEVANT_SIGNATURE_RE)

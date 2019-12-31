@@ -235,7 +235,7 @@ class ProcessorApp(FetchTransformSaveApp):
         super()._setup_source_and_destination()
         if self.config.companion_process.companion_class:
             self.companion_process = self.config.companion_process.companion_class(
-                self.config.companion_process, self.quit_check
+                self.config.companion_process
             )
         else:
             self.companion_process = None
@@ -246,9 +246,7 @@ class ProcessorApp(FetchTransformSaveApp):
         # while the threaded_task_manager processes crashes.
         self.waiting_func = None
 
-        self.processor = self.config.processor.processor_class(
-            self.config.processor, quit_check_callback=self.quit_check
-        )
+        self.processor = self.config.processor.processor_class(self.config.processor)
 
     def close(self):
         """Clean up the processor on shutdown."""

@@ -80,8 +80,8 @@ class PubSubCrashQueue(CrashQueueBase):
         reference_value_from="resource.pubsub",
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
-        super().__init__(config, namespace, quit_check_callback)
+    def __init__(self, config, namespace=""):
+        super().__init__(config, namespace)
 
         if os.environ.get("PUBSUB_EMULATOR_HOST", ""):
             self.subscriber = pubsub_v1.SubscriberClient()
