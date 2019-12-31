@@ -18,7 +18,6 @@ JOBS = [
     {
         # Audit hackers group every week
         "cmd": "auditgroups",
-        "cmd_args": ["--persist"],
         "frequency": "7d",
         "time": "05:00",
     },

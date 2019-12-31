@@ -42,10 +42,8 @@ class Command(BaseCommand):
     help = "Audits Django groups and removes inactive users."
 
     def add_arguments(self, parser):
-        # FIXME(willkg): change this to default to False after we've tested
-        # it.
         parser.add_argument(
-            "--persist", action="store_true", help="persists recommended changes to db"
+            "--dry-run", action="store_true", help="Whether or not to do a dry run."
         )
 
     def is_employee_or_exception(self, user):
@@ -58,7 +56,7 @@ class Command(BaseCommand):
 
         return False
 
-    def audit_hackers_group(self, persist=False):
+    def audit_hackers_group(self, dryrun=True):
         # Figure out the cutoff date for inactivity
         cutoff = timezone.now() - datetime.timedelta(days=365)
 
@@ -100,7 +98,7 @@ class Command(BaseCommand):
         # Log or remove the users that have been marked
         for user, reason in users_to_remove:
             self.stdout.write("Removing: %s (%s)" % (user.email, reason))
-            if persist is True:
+            if dryrun is False:
                 hackers_group.user_set.remove(user)
 
                 # Toss a LogEntry in so we can keep track of when people get
@@ -118,7 +116,7 @@ class Command(BaseCommand):
         self.stdout.write("Total removed: %s" % len(users_to_remove))
 
     def handle(self, **options):
-        persist = options["persist"]
-        if not persist:
+        dryrun = options["dry_run"]
+        if dryrun:
             self.stdout.write("Dry run--this is what we think should happen.")
-        self.audit_hackers_group(persist)
+        self.audit_hackers_group(dryrun=dryrun)
