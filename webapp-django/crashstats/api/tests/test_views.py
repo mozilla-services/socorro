@@ -632,9 +632,11 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_Reprocessing(self):
+        crash_id = create_new_ooid()
+
         def mocked_publish(queue, crash_ids):
             assert queue == "reprocessing"
-            assert crash_ids == ["xxxx"]
+            assert crash_ids == [crash_id]
             return True
 
         Reprocessing.implementation().publish = mocked_publish
@@ -643,7 +645,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 403
 
-        params = {"crash_ids": "xxxx"}
+        params = {"crash_ids": crash_id}
         response = self.client.get(url, params, HTTP_AUTH_TOKEN="somecrap")
         assert response.status_code == 403
 

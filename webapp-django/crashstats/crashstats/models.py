@@ -22,6 +22,7 @@ from django.utils.encoding import iri_to_uri
 from django.utils.module_loading import import_string
 
 from socorro.lib import BadArgumentError
+from socorro.lib.ooid import is_crash_id_valid
 from socorro.lib.requestslib import session_with_retries
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 
@@ -1048,6 +1049,10 @@ class Reprocessing(SocorroMiddleware):
         crash_ids = data["crash_ids"]
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
+        # If one of them isn't a crash id, raise a 400.
+        for crash_id in crash_ids:
+            if not is_crash_id_valid(crash_id):
+                raise BadArgumentError("Crash id '%s' is not valid." % crash_id)
         return self.get_implementation().publish(
             queue="reprocessing", crash_ids=crash_ids
         )

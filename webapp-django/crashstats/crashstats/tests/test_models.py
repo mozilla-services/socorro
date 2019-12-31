@@ -16,6 +16,7 @@ from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.lib import BadArgumentError
+from socorro.lib.ooid import create_new_ooid
 from socorro.unittest.external.pubsub import get_config_manager, PubSubHelper
 
 
@@ -509,10 +510,15 @@ class TestMiddlewareModels(DjangoTestCase):
             api = models.Reprocessing()
 
             with pubsub_helper as helper:
-                api.post(crash_ids="some-crash-id")
+                crash_id = create_new_ooid()
+                api.post(crash_ids=crash_id)
 
                 crash_ids = helper.get_crash_ids("reprocessing")
-                assert crash_ids == ["some-crash-id"]
+                assert crash_ids == [crash_id]
+
+            # Now try an invalid crash id
+            with pytest.raises(BadArgumentError):
+                api.post(crash_ids="some-crash-id")
 
     def test_PriorityJob(self):
         # This test runs against the Pub/Sub emulator, so undo the mock to let
