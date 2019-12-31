@@ -21,6 +21,7 @@ from socorro.external.es.crashstorage import (
     RawCrashRedactor,
     reconstitute_datetimes,
     truncate_keyword_field_values,
+    truncate_string_field_values,
 )
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.lib.ooid import create_new_ooid
@@ -878,11 +879,11 @@ class Test_truncate_keyword_field_values:
             ({"key": None}, {"key": None}),
             ({"key": 1}, {"key": 1}),
             # Second-level values are left alone
-            ({"key": {"key": "a" * 10001}}, {"key": {"key": "a" * 10001}}),
+            ({"key": {"key": "a" * 10_001}}, {"key": {"key": "a" * 10_001}}),
             # Top-level, str values are truncated if > 10,000 characters
-            ({"key": "a" * 9999}, {"key": "a" * 9999}),
-            ({"key": "a" * 10000}, {"key": "a" * 10000}),
-            ({"key": "a" * 10001}, {"key": "a" * 10000}),
+            ({"key": "a" * 9_999}, {"key": "a" * 9_999}),
+            ({"key": "a" * 10_000}, {"key": "a" * 10_000}),
+            ({"key": "a" * 10_001}, {"key": "a" * 10_000}),
         ],
     )
     def test_truncate_keyword_field_values(self, data, expected):
@@ -918,10 +919,62 @@ class Test_truncate_keyword_field_values:
         missing data.
 
         """
-        original_data = {"key": "a" * 10001}
+        original_data = {"key": "a" * 10_001}
         data = deepcopy(original_data)
 
         truncate_keyword_field_values(fields, data)
+        assert original_data == data
+
+
+class Test_truncate_string_field_values:
+    @pytest.mark.parametrize(
+        "data, expected",
+        [
+            # Top-level, non-str values are left alone
+            ({"key": None}, {"key": None}),
+            ({"key": 1}, {"key": 1}),
+            # Second-level values are left alone
+            ({"key": {"key": "a" * 32_767}}, {"key": {"key": "a" * 32_767}}),
+            # Top-level, str values are truncated if > 32,766 characters
+            ({"key": "a" * 32_765}, {"key": "a" * 32_765}),
+            ({"key": "a" * 32_766}, {"key": "a" * 32_766}),
+            ({"key": "a" * 32_767}, {"key": "a" * 32_766}),
+        ],
+    )
+    def test_truncate_string_field_values(self, data, expected):
+        fields = {
+            "key": {"in_database_name": "key", "storage_mapping": {"type": "string"},}
+        }
+
+        # Note: data is modified in place
+        truncate_string_field_values(fields, data)
+        assert data == expected
+
+    @pytest.mark.parametrize(
+        "fields",
+        [
+            # No in_database_name leaves data unchanged
+            {"key": {"storage_mapping": {"type": "string"}}},
+            # Wrong in_database_name leaves data unchanged
+            {
+                "key": {
+                    "in_database_name": "different_key",
+                    "storage_mapping": {"type": "string"},
+                }
+            },
+        ],
+    )
+    def test_fields_handling(self, fields):
+        """Verify truncation only occurs if all requirements are true
+
+        This also verifies that access of FIELDS handles edge cases like
+        missing data.
+
+        """
+        original_data = {"key": "a" * 32_767}
+        data = deepcopy(original_data)
+
+        truncate_string_field_values(fields, data)
         assert original_data == data
 
 

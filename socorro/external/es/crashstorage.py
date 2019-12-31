@@ -17,7 +17,10 @@ from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
 
 
 # Maximum size in characters for a keyword field value
-MAX_KEYWORD_FIELD_VALUE_SIZE = 10000
+MAX_KEYWORD_FIELD_VALUE_SIZE = 10_000
+
+# Maximum size in utf-8 encoded characters for a string field value
+MAX_STRING_FIELD_VALUE_SIZE = 32_766
 
 
 def reconstitute_datetimes(processed_crash):
@@ -74,10 +77,10 @@ _ANALYZER_TO_FIELDS_MAP = {}
 def get_fields_by_analyzer(fields, analyzer):
     """Returns the fields in fields that have the specified analyzer
 
-    Note: This "hashes" the fields argument by using `id`. I think this is fine
-    because fields doesn't change between runs and it's not mutated in-place.
-    We're hashing it sufficiently often that it's faster to use `id` than
-    a more computationally intensive hash of a large data structure.
+    Note: This "hashes" the fields argument by using `id`. I think this is fine because
+    fields don't change between runs and it's not mutated in-place. We're hashing it
+    sufficiently often that it's faster to use `id` than a more computationally
+    intensive hash of a large data structure.
 
     :arg dict fields: dict of field information mapped as field name to
         properties
@@ -138,8 +141,7 @@ def remove_bad_keys(data):
 
 
 def truncate_keyword_field_values(fields, data):
-    """Truncates values of keyword fields greater than MAX_KEYWORD_FIELD_VALUE_SIZE
-    characters
+    """Truncates keyword field values greater than MAX_KEYWORD_FIELD_VALUE_SIZE length
 
     Note: This modifies the data dict in-place and only looks at the top level.
 
@@ -158,8 +160,43 @@ def truncate_keyword_field_values(fields, data):
         if isinstance(value, str) and len(value) > MAX_KEYWORD_FIELD_VALUE_SIZE:
             data[field_name] = value[:MAX_KEYWORD_FIELD_VALUE_SIZE]
 
-            # FIXME(willkg): When we get metrics throughout the processor, we should
-            # keep track of this with an .incr().
+
+def truncate_string_field_values(fields, data):
+    """Truncates string field values greater than MAX_STRING_FIELD_VALUE_SIZE length
+
+    Note: This modifies the data dict in-place and only looks at the top level.
+
+    :arg dict fields: the super search fields schema
+    :arg dict data: the data to look through
+
+    """
+    string_fields = [
+        field
+        for field in fields.values()
+        if (field.get("storage_mapping") or {}).get("type", "") == "string"
+    ]
+
+    for field in string_fields:
+        field_name = field.get("in_database_name")
+        if not field_name:
+            continue
+        value = data.get(field_name)
+        if not isinstance(value, str):
+            continue
+
+        new_value = value
+
+        # First truncate down to MAX_STRING_FIELD_VALUE_SIZE
+        if len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
+            new_value = new_value[:MAX_STRING_FIELD_VALUE_SIZE]
+
+        # If the utf-8 encoded bytes is still larger, whittle off unicode
+        # characters until it fits
+        while len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
+            new_value = new_value[:-1]
+
+        if value != new_value:
+            data[field_name] = new_value
 
 
 POSSIBLE_TRUE_VALUES = [1, "1", "true", True]
@@ -243,7 +280,9 @@ class ESCrashStorage(CrashStorageBase):
 
         # Truncate values that are too long
         truncate_keyword_field_values(FIELDS, raw_crash)
+        truncate_string_field_values(FIELDS, raw_crash)
         truncate_keyword_field_values(FIELDS, processed_crash)
+        truncate_string_field_values(FIELDS, processed_crash)
 
         # Convert pseudo-boolean values to boolean values
         convert_booleans(FIELDS, raw_crash)
