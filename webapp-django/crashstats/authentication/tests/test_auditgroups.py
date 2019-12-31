@@ -33,7 +33,7 @@ class TestAuditGroupsCommand(object):
         assert hackers_group.user_set.count() == 1
 
         buffer = StringIO()
-        call_command("auditgroups", persist=True, stdout=buffer)
+        call_command("auditgroups", dry_run=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert "Removing: bob@mozilla.com (!is_active)" in buffer.getvalue()
 
@@ -48,7 +48,7 @@ class TestAuditGroupsCommand(object):
         bob.save()
 
         buffer = StringIO()
-        call_command("auditgroups", persist=True, stdout=buffer)
+        call_command("auditgroups", dry_run=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert (
             "Removing: bob@mozilla.com (inactive 366d, no tokens)" in buffer.getvalue()
@@ -63,7 +63,7 @@ class TestAuditGroupsCommand(object):
         bob.save()
 
         buffer = StringIO()
-        call_command("auditgroups", persist=True, stdout=buffer)
+        call_command("auditgroups", dry_run=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == []
         assert (
             "Removing: bob@example.com (not employee or exception)" in buffer.getvalue()
@@ -81,7 +81,7 @@ class TestAuditGroupsCommand(object):
         policyexception.save()
 
         buffer = StringIO()
-        call_command("auditgroups", persist=True, stdout=buffer)
+        call_command("auditgroups", dry_run=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ["bob@example.com"]
         assert "Removing:" not in buffer.getvalue()
 
@@ -97,7 +97,7 @@ class TestAuditGroupsCommand(object):
         token.save()
 
         buffer = StringIO()
-        call_command("auditgroups", persist=True, stdout=buffer)
+        call_command("auditgroups", dry_run=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ["bob@mozilla.com"]
         assert (
             "SKIP: bob@mozilla.com (inactive 366d, but has active tokens: 1)"
@@ -113,11 +113,11 @@ class TestAuditGroupsCommand(object):
         bob.save()
 
         buffer = StringIO()
-        call_command("auditgroups", persist=True, stdout=buffer)
+        call_command("auditgroups", dry_run=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ["bob@mozilla.com"]
         assert "Removing:" not in buffer.getvalue()
 
-    def test_persist_false(self, db):
+    def test_dry_run_true(self, db):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@mozilla.com")
@@ -128,10 +128,11 @@ class TestAuditGroupsCommand(object):
         assert hackers_group.user_set.count() == 1
 
         buffer = StringIO()
-        call_command("auditgroups", persist=False, stdout=buffer)
+        call_command("auditgroups", dry_run=True, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ["bob@mozilla.com"]
         assert (
             "Removing: bob@mozilla.com (inactive 366d, no tokens)" in buffer.getvalue()
         )
 
+        # Since it's a dry-run, it didn't *actually* do anything.
         assert hackers_group.user_set.count() == 1
