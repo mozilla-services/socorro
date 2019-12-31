@@ -118,7 +118,7 @@ class TestBugzillaSubmitURL(object):
         default = {
             "signature": "$&#;deadbeef",
             "uuid": "00000000-0000-0000-0000-000000000000",
-            "cpu_name": "x86",
+            "cpu_arch": "x86",
             "os_name": None,
         }
         return dict(default, **overrides)

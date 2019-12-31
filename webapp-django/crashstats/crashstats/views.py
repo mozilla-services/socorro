@@ -113,17 +113,6 @@ def report_index(request, crash_id, default_context=None):
         context["raw_stackwalker_output"] = "No dump available"
         parsed_dump = {}
 
-    # NOTE(willkg): pull cpu count from parsed_dump if it's not in report;
-    # remove in July 2019
-    if "cpu_count" not in context["report"]:
-        context["report"]["cpu_count"] = parsed_dump.get("system_info", {}).get(
-            "cpu_count"
-        )
-    # NOTE(willkg): "cpu_name" is deprecated, but populate "cpu_arch" if
-    # cpu_arch is empty; remove in July 2019.
-    if "cpu_arch" not in context["report"]:
-        context["report"]["cpu_arch"] = context["report"]["cpu_name"]
-
     context["crashing_thread"] = parsed_dump.get("crash_info", {}).get(
         "crashing_thread"
     )

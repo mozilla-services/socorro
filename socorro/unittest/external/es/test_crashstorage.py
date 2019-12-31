@@ -43,7 +43,7 @@ a_processed_crash = {
     "client_crash_date": "2012-04-08 10:52:42.0",
     "completeddatetime": "2012-04-08 10:56:50.902884",
     "cpu_info": "None | 0",
-    "cpu_name": "arm",
+    "cpu_arch": "arm",
     "crashedThread": 8,
     "date_processed": "2012-04-08 10:56:41.558922",
     "dump": "...",
