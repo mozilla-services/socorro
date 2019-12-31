@@ -943,7 +943,7 @@ class Test_truncate_string_field_values:
     )
     def test_truncate_string_field_values(self, data, expected):
         fields = {
-            "key": {"in_database_name": "key", "storage_mapping": {"type": "string"},}
+            "key": {"in_database_name": "key", "storage_mapping": {"type": "string"}}
         }
 
         # Note: data is modified in place
