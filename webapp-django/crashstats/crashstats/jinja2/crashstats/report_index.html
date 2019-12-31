@@ -338,12 +338,11 @@
                   <td>{{ report.address }}</td>
                 </tr>
                 {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
-                  {# FIXME(willkg): switch this to java_stack_trace_raw after January 2020 #}
-                  {% if report.java_stack_trace_full %}
-                    <tr title="{{ fields_desc['processed_crash.java_stack_trace_full'] }}">
-                      <th scope="row">Java Stack Trace (Full)</th>
+                  {% if report.java_stack_trace_raw %}
+                    <tr title="{{ fields_desc['processed_crash.java_stack_trace_raw'] }}">
+                      <th scope="row">Java Stack Trace (Raw)</th>
                       <td>
-                        <pre>{{ report.java_stack_trace_full }}</pre>
+                        <pre>{{ report.java_stack_trace_raw }}</pre>
                       </td>
                     </tr>
                   {% endif %}

@@ -219,8 +219,6 @@ class JavaProcessRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         # This can contain PII in the exception message
         processed_crash["java_stack_trace_raw"] = raw_crash["JavaStackTrace"]
-        # FIXME(willkg): Remove java_stack_trace_full after January 2020.
-        processed_crash["java_stack_trace_full"] = raw_crash["JavaStackTrace"]
 
         try:
             java_exception = javautil.parse_java_stack_trace(
