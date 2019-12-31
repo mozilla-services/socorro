@@ -48,11 +48,6 @@ def respond_to_SIGTERM(signal_number, frame, target=None):
     """
     if target:
         target.logger.info("detected SIGTERM")
-        # by setting the quit flag to true, any calls to the 'quit_check'
-        # method that is so liberally passed around in this framework will
-        # result in raising the quit exception.  The current quit exception
-        # is KeyboardInterrupt
-        target.task_manager.quit = True
     else:
         raise KeyboardInterrupt
 
@@ -92,13 +87,6 @@ class TaskManager(RequiredConfig):
         self.quit = False
         self.logger.debug("TaskManager finished init")
 
-    def quit_check(self):
-        """this is the polling function that the threads periodically look at.
-        If they detect that the quit flag is True, then a KeyboardInterrupt
-        is raised which will result in the threads dying peacefully"""
-        if self.quit:
-            raise KeyboardInterrupt
-
     def _get_iterator(self):
         """The iterator passed in can take several forms: a class that can be
         instantiated and then iterated over; a function that when called
@@ -132,10 +120,8 @@ class TaskManager(RequiredConfig):
         to KeyboardInterrupt out of a long sleep()."""
 
         for x in range(int(seconds)):
-            self.quit_check()
             if wait_log_interval and not x % wait_log_interval:
                 self.logger.info("%s: %dsec of %dsec", wait_reason, x, seconds)
-                self.quit_check()
             time.sleep(1.0)
 
     def blocking_start(self, waiting_func=None):
@@ -149,7 +135,6 @@ class TaskManager(RequiredConfig):
             # May never exhaust
             for job_params in self._get_iterator():
                 self.logger.debug("received %r", job_params)
-                self.quit_check()
                 if job_params is None:
                     if self.config.quit_on_empty_queue:
                         raise KeyboardInterrupt
@@ -159,7 +144,6 @@ class TaskManager(RequiredConfig):
                     )
                     self._responsive_sleep(self.config.idle_delay)
                     continue
-                self.quit_check()
                 try:
                     args, kwargs = job_params
                 except ValueError:

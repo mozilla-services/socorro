@@ -14,13 +14,9 @@ class CrashQueueBase(RequiredConfig):
 
     required_config = Namespace()
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
+    def __init__(self, config, namespace=""):
         self.config = config
         self.namespace = namespace
-        if quit_check_callback:
-            self.quit_check = quit_check_callback
-        else:
-            self.quit_check = lambda: False
 
     def close(self):
         pass

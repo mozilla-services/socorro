@@ -148,24 +148,10 @@ class ProcessorPipeline(RequiredConfig):
         default="https://crash-stats.mozilla.org/api/VersionString",
     )
 
-    def __init__(self, config, rules=None, quit_check_callback=None):
+    def __init__(self, config, rules=None):
         super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
-        # the quit checks are components of a system of callbacks used
-        # primarily by the TaskManager system.  This is the system that
-        # controls the execution model.  If the ThreadedTaskManager is in use,
-        # these callbacks just check the ThreadedTaskManager task manager's
-        # quit flag.  If they detect a quit condition, they raise an exception
-        # that causes the thread to shut down.  For the GreenletTaskMangager,
-        # using cooperative multitasking, the callbacks do the 'yield' to
-        # allow another green thread to take over.
-        # It is perfectly acceptable to hook into this callback system to
-        # accomplish any task that needs be done periodically.
-        if quit_check_callback:
-            self.quit_check = quit_check_callback
-        else:
-            self.quit_check = lambda: False
 
         self.rules = rules or self.get_ruleset(config)
         for rule in self.rules:
@@ -248,7 +234,6 @@ class ProcessorPipeline(RequiredConfig):
             self.config.processor_name,
             self.__class__.__name__,
         ]
-        processor_meta_data.quit_check = self.quit_check
         processor_meta_data.processor = self
         processor_meta_data.config = self.config
 
@@ -271,10 +256,6 @@ class ProcessorPipeline(RequiredConfig):
 
         crash_id = raw_crash["uuid"]
 
-        # quit_check calls ought to be scattered around the code to allow
-        # the processor to be responsive to requests to shut down.
-        self.quit_check()
-
         start_time = self.logger.info("starting transform for crash: %s", crash_id)
         processor_meta_data.started_timestamp = start_time
 
@@ -295,8 +276,6 @@ class ProcessorPipeline(RequiredConfig):
                     "rule %s failed: %s"
                     % (rule.__class__.__name__, exc.__class__.__name__)
                 )
-
-            self.quit_check()
 
         # The crash made it through the processor rules with no exceptions
         # raised, call it a success

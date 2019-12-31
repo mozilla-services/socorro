@@ -159,24 +159,16 @@ class CrashStorageBase(RequiredConfig):
         reference_value_from="resource.redactor",
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
+    def __init__(self, config, namespace=""):
         """base class constructor
 
         parameters:
             config - a configman dot dict holding configuration information
             namespace - namespace for this crashstorage instance. Used for
                         metrics prefixes and logging.
-            quit_check_callback - a function to be called periodically during
-                                  long running operations.  It should check
-                                  whatever the client app uses to detect a
-                                  quit request and raise a KeyboardInterrupt.
-                                  All derived classes should be prepared to
-                                  shut down cleanly on getting such an
-                                  exception from a call to this function
 
         instance varibles:
             self.config - a reference to the config mapping
-            self.quit_check - a reference to the quit detecting callback
             self.logger - convience shortcut to the logger in the config
             self.exceptions_eligible_for_retry - a collection of non-fatal
                     exceptions that can be raised by a given storage
@@ -186,10 +178,6 @@ class CrashStorageBase(RequiredConfig):
         """
         self.config = config
         self.namespace = namespace
-        if quit_check_callback:
-            self.quit_check = quit_check_callback
-        else:
-            self.quit_check = lambda: False
         self.exceptions_eligible_for_retry = ()
         self.redactor = config.redactor_class(config)
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
@@ -473,14 +461,12 @@ class PolyCrashStorage(CrashStorageBase):
         likely_to_be_changed=True,
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
+    def __init__(self, config, namespace=""):
         """instantiate all the subordinate crashstorage instances
 
         parameters:
             config - a configman dot dict holding configuration information
             namespace - namespace for this crashstorage
-            quit_check_callback - a function to be called periodically during
-                                  long running operations.
 
         instance variables:
             self.storage_namespaces - the list of the namespaces in which the
@@ -488,7 +474,7 @@ class PolyCrashStorage(CrashStorageBase):
             self.stores - instances of the subordinate crash stores
 
         """
-        super().__init__(config, namespace, quit_check_callback)
+        super().__init__(config, namespace)
         self.storage_namespaces = config.storage_namespaces
         self.stores = DotDict()
         for storage_namespace in self.storage_namespaces:
@@ -498,9 +484,7 @@ class PolyCrashStorage(CrashStorageBase):
             self.stores[storage_namespace] = config[
                 storage_namespace
             ].crashstorage_class(
-                config[storage_namespace],
-                namespace=absolute_namespace,
-                quit_check_callback=quit_check_callback,
+                config[storage_namespace], namespace=absolute_namespace,
             )
 
     def close(self):
@@ -534,7 +518,6 @@ class PolyCrashStorage(CrashStorageBase):
             crash_id - the id of the crash to use"""
         storage_exception = PolyStorageError()
         for a_store in self.stores.values():
-            self.quit_check()
             try:
                 a_store.save_raw_crash(raw_crash, dumps, crash_id)
             except Exception as x:
@@ -551,7 +534,6 @@ class PolyCrashStorage(CrashStorageBase):
             processed_crash - a mapping containing the processed crash"""
         storage_exception = PolyStorageError()
         for a_store in self.stores.values():
-            self.quit_check()
             try:
                 a_store.save_processed(processed_crash)
             except Exception as x:
@@ -566,7 +548,6 @@ class PolyCrashStorage(CrashStorageBase):
         storage_exception = PolyStorageError()
 
         for a_store in self.stores.values():
-            self.quit_check()
             try:
                 actual_store = getattr(a_store, "wrapped_object", a_store)
 
@@ -606,13 +587,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         from_string_converter=class_converter,
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
-        super().__init__(
-            config, namespace=namespace, quit_check_callback=quit_check_callback
-        )
-        self.wrapped_crashstore = config.wrapped_crashstore(
-            config, namespace=namespace, quit_check_callback=quit_check_callback
-        )
+    def __init__(self, config, namespace=""):
+        super().__init__(config, namespace=namespace)
+        self.wrapped_crashstore = config.wrapped_crashstore(config, namespace=namespace)
         self.tag = config.benchmark_tag
         self.start_timer = datetime.datetime.now
         self.end_timer = datetime.datetime.now
@@ -706,7 +683,7 @@ class MetricsEnabledBase(RequiredConfig):
         from_string_converter=str_to_list,
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
+    def __init__(self, config, namespace=""):
         self.config = config
         self.metrics = markus.get_metrics(self.config.metrics_prefix)
 
@@ -739,13 +716,9 @@ class MetricsBenchmarkingWrapper(MetricsEnabledBase):
         from_string_converter=class_converter,
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
-        super().__init__(
-            config, namespace=namespace, quit_check_callback=quit_check_callback
-        )
-        self.wrapped_object = config.wrapped_object_class(
-            config, namespace=namespace, quit_check_callback=quit_check_callback
-        )
+    def __init__(self, config, namespace=""):
+        super().__init__(config, namespace=namespace)
+        self.wrapped_object = config.wrapped_object_class(config, namespace=namespace)
 
     def close(self):
         self.wrapped_object.close()

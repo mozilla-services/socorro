@@ -149,10 +149,8 @@ class ThreadedTaskManager(TaskManager):
         while True:
             if self.task_queue.empty():
                 break
-            self.quit_check()
             if wait_log_interval and not seconds % wait_log_interval:
                 self.logger.info("%s: %dsec so far", wait_reason, seconds)
-                self.quit_check()
             seconds += 1
             time.sleep(1.0)
 
@@ -218,7 +216,6 @@ class ThreadedTaskManager(TaskManager):
                     )
                     self._responsive_sleep(self.config.idle_delay)
                     continue
-                self.quit_check()
                 # self.logger.debug("queuing job %s", job_params)
                 self.task_queue.put((self.task_func, job_params))
         except Exception:

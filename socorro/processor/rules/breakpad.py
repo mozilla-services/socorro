@@ -258,9 +258,6 @@ class BreakpadStackwalkerRule2015(Rule):
             raw_crash, raw_crash.uuid
         ) as raw_crash_pathname:
             for dump_name in raw_dumps.keys():
-                if processor_meta.quit_check:
-                    processor_meta.quit_check()
-
                 # this rule is only interested in dumps targeted for the
                 # minidump stackwalker external program.  As of the writing
                 # of this code, there is one other dump type.  The only way

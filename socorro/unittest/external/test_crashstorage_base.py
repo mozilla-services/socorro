@@ -26,8 +26,8 @@ class A(CrashStorageBase):
     required_config.add_option("x", default=1)
     required_config.add_option("y", default=2)
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
-        super().__init__(config, namespace, quit_check_callback)
+    def __init__(self, config, namespace=""):
+        super().__init__(config, namespace)
         self.raw_crash_count = 0
 
     def save_raw_crash(self, raw_crash, dump):
@@ -58,10 +58,6 @@ class MutatingProcessedCrashCrashStorage(CrashStorageBase):
         del processed_crash["foo"]
 
 
-def fake_quit_check():
-    return False
-
-
 class TestCrashStorageBase(object):
     def test_basic_crashstorage(self):
         required_config = Namespace()
@@ -80,7 +76,7 @@ class TestCrashStorageBase(object):
         )
 
         with config_manager.context() as config:
-            crashstorage = CrashStorageBase(config, quit_check_callback=fake_quit_check)
+            crashstorage = CrashStorageBase(config)
             crashstorage.save_raw_crash({}, "payload", "ooid")
             crashstorage.save_processed({})
             with pytest.raises(NotImplementedError):
@@ -112,7 +108,7 @@ class TestCrashStorageBase(object):
             def open_function(*args, **kwargs):
                 return values.pop(0)
 
-            crashstorage = MyCrashStorage(config, quit_check_callback=fake_quit_check)
+            crashstorage = MyCrashStorage(config)
 
             with mock.patch("socorro.external.crashstorage_base.open") as open_mock:
                 open_mock.return_value = mock.MagicMock()
@@ -409,14 +405,10 @@ class TestBench(object):
         )
 
         with config_manager.context() as config:
-            crashstorage = BenchmarkingCrashStorage(
-                config, namespace="", quit_check_callback=fake_quit_check
-            )
+            crashstorage = BenchmarkingCrashStorage(config, namespace="")
             crashstorage.start_timer = lambda: 0
             crashstorage.end_timer = lambda: 1
-            fake_crash_store.assert_called_with(
-                config, namespace="", quit_check_callback=fake_quit_check
-            )
+            fake_crash_store.assert_called_with(config, namespace="")
 
             crashstorage.save_raw_crash({}, "payload", "ooid")
             crashstorage.wrapped_crashstore.save_raw_crash.assert_called_with(

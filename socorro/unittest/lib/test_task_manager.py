@@ -52,7 +52,7 @@ class TestTaskManager(object):
             def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
                 try:
                     if self.count >= 2:
-                        self.quit = True
+                        raise KeyboardInterrupt
                     self.count += 1
                 except AttributeError:
                     self.count = 0

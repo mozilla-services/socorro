@@ -141,8 +141,8 @@ class SQSCrashQueue(CrashQueueBase):
         reference_value_from="resource.boto",
     )
 
-    def __init__(self, config, namespace="", quit_check_callback=None):
-        super().__init__(config, namespace, quit_check_callback)
+    def __init__(self, config, namespace=""):
+        super().__init__(config, namespace)
 
         self.client = self.build_client()
         self.standard_queue_url = self.get_queue_url(self.config.standard_queue)
