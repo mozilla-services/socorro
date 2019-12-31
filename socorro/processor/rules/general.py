@@ -60,10 +60,6 @@ class CPUInfoRule(Rule):
         processed_crash["cpu_arch"] = glom(
             processed_crash, "json_dump.system_info.cpu_arch", default=""
         )
-        # NOTE(willkg): "cpu_name" is deprecated and we can remove it in July 2019
-        processed_crash["cpu_name"] = glom(
-            processed_crash, "json_dump.system_info.cpu_arch", default=""
-        )
 
         # This is the CPU info of the machine the product was running on
         processed_crash["cpu_info"] = glom(

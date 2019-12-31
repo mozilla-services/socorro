@@ -1566,23 +1566,6 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "short"},
     },
-    # NOTE(willkg): We need to populate the processed_crash.cpu_arch field in ES
-    # documents so we can stop using the processed_crash.cpu_name value for
-    # the "cpu_arch" field; remove in July 2019
-    "dump_cpu_arch": {
-        "data_validation_type": "enum",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "cpu_arch",
-        "is_exposed": False,
-        "is_returned": False,
-        "name": "dump_cpu_arch",
-        "namespace": "processed_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
-    },
     "cpu_arch": {
         "data_validation_type": "enum",
         "description": (
@@ -1591,9 +1574,7 @@ FIELDS = {
         ),
         "form_field_choices": [],
         "has_full_version": False,
-        # NOTE(willkg): this uses "cpu_name" to search on, but that's deprecated;
-        # switch to "cpu_arch" after July 2019
-        "in_database_name": "cpu_name",
+        "in_database_name": "cpu_arch",
         "is_exposed": True,
         "is_returned": True,
         "name": "cpu_arch",

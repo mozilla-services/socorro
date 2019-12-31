@@ -308,7 +308,7 @@ class JitCrashCategorizeRule(Rule):
         if (
             processed_crash.product != "Firefox"
             or not processed_crash.os_name.startswith("Windows")
-            or processed_crash.cpu_name != "x86"
+            or processed_crash.cpu_arch != "x86"
         ):
             # we don't want any of these
             return False

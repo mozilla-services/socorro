@@ -421,7 +421,7 @@ class TestJitCrashCategorizeRule(object):
         processed_crash = DotDict()
         processed_crash.product = "Firefox"
         processed_crash.os_name = "Windows 386"
-        processed_crash.cpu_name = "x86"
+        processed_crash.cpu_arch = "x86"
         processed_crash.signature = "EnterBaseline"
         processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"not_module": "not-a-module"}),
@@ -448,7 +448,7 @@ class TestJitCrashCategorizeRule(object):
         base_processed_crash = DotDict()
         base_processed_crash.product = "Firefox"
         base_processed_crash.os_name = "Windows 386"
-        base_processed_crash.cpu_name = "x86"
+        base_processed_crash.cpu_arch = "x86"
         base_processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"not_module": "not-a-module"}),
             DotDict({"module": "a-module"}),
@@ -484,7 +484,7 @@ class TestJitCrashCategorizeRule(object):
         processed_crash = DotDict()
         processed_crash.product = "Firefox"
         processed_crash.os_name = "Windows 386"
-        processed_crash.cpu_name = "x86"
+        processed_crash.cpu_arch = "x86"
         processed_crash.signature = "EnterBaseline"
         processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"not_module": "not-a-module"}),
@@ -510,7 +510,7 @@ class TestJitCrashCategorizeRule(object):
         processed_crash = DotDict()
         processed_crash.product = "Firefox"
         processed_crash.os_name = "MS-DOS"
-        processed_crash.cpu_name = "x86"
+        processed_crash.cpu_arch = "x86"
         processed_crash.signature = "EnterBaseline"
         processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"not_module": "not-a-module"}),
@@ -535,7 +535,7 @@ class TestJitCrashCategorizeRule(object):
         processed_crash = DotDict()
         processed_crash.product = "Firefrenzy"
         processed_crash.os_name = "Windows NT"
-        processed_crash.cpu_name = "x86"
+        processed_crash.cpu_arch = "x86"
         processed_crash.signature = "EnterBaseline"
         processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"not_module": "not-a-module"}),
@@ -560,7 +560,7 @@ class TestJitCrashCategorizeRule(object):
         processed_crash = DotDict()
         processed_crash.product = "Firefox"
         processed_crash.os_name = "Windows NT"
-        processed_crash.cpu_name = "VAX 750"
+        processed_crash.cpu_arch = "VAX 750"
         processed_crash.signature = "EnterBaseline"
         processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"not_module": "not-a-module"}),
@@ -585,7 +585,7 @@ class TestJitCrashCategorizeRule(object):
         processed_crash = DotDict()
         processed_crash.product = "Firefox"
         processed_crash.os_name = "Windows NT"
-        processed_crash.cpu_name = "x86"
+        processed_crash.cpu_arch = "x86"
         processed_crash.signature = "this-is-not-a-JIT-signature"
         processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"not_module": "not-a-module"}),
@@ -610,7 +610,7 @@ class TestJitCrashCategorizeRule(object):
         processed_crash = DotDict()
         processed_crash.product = "Firefox"
         processed_crash.os_name = "Windows NT"
-        processed_crash.cpu_name = "x86"
+        processed_crash.cpu_arch = "x86"
         processed_crash.signature = "EnterBaseline"
         processed_crash["json_dump.crashing_thread.frames"] = [
             DotDict({"module": "a-module"}),
@@ -633,7 +633,7 @@ class TestJitCrashCategorizeRule(object):
             {
                 "product": "Firefox",
                 "os_name": "Windows NT",
-                "cpu_name": "x86",
+                "cpu_arch": "x86",
                 "signature": "EnterBaseline",
             }
         )
@@ -646,7 +646,7 @@ class TestJitCrashCategorizeRule(object):
             {
                 "product": "Firefox",
                 "os_name": "Windows NT",
-                "cpu_name": "x86",
+                "cpu_arch": "x86",
                 "signature": "EnterBaseline",
                 # No "crashing_thread" key
                 "json_dump": {},
@@ -661,7 +661,7 @@ class TestJitCrashCategorizeRule(object):
             {
                 "product": "Firefox",
                 "os_name": "Windows NT",
-                "cpu_name": "x86",
+                "cpu_arch": "x86",
                 "signature": "EnterBaseline",
                 "json_dump": {
                     # No "frames" key
@@ -678,7 +678,7 @@ class TestJitCrashCategorizeRule(object):
             {
                 "product": "Firefox",
                 "os_name": "Windows NT",
-                "cpu_name": "x86",
+                "cpu_arch": "x86",
                 "signature": "EnterBaseline",
                 "json_dump": {
                     "crashing_thread": {

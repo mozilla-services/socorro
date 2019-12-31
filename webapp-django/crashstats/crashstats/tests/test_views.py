@@ -57,7 +57,7 @@ _SAMPLE_UNREDACTED = {
     "os_pretty_version": "OS X 10.11",
     "last_crash": 371342,
     "date_processed": "2012-06-11T06:08:44",
-    "cpu_name": "amd64",
+    "cpu_arch": "amd64",
     "cpu_info": "AuthenticAMD family 20 model 2 stepping 0 | 2 ",
     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
     "address": "0x8",
