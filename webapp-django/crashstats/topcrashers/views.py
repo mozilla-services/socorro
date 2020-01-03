@@ -27,7 +27,7 @@ def datetime_to_build_id(date):
 
 
 def get_topcrashers_stats(**kwargs):
-    """Return the results of a search. """
+    """Return the results of a search."""
     params = kwargs
     range_type = params.pop("_range_type")
     dates = get_date_boundaries(params)
@@ -59,7 +59,8 @@ def get_topcrashers_stats(**kwargs):
     search_results = api.get(**params)
 
     signatures_stats = []
-    if search_results["total"] > 0:
+    total_results = search_results["total"]
+    if total_results > 0:
         # Run the same query but for the previous date range, so we can
         # compare the rankings and show rank changes.
         delta = (dates[1] - dates[0]) * 2
@@ -91,7 +92,7 @@ def get_topcrashers_stats(**kwargs):
                     previous_signature=previous_signature,
                 )
             )
-    return signatures_stats
+    return total_results, signatures_stats
 
 
 @pass_default_context
@@ -191,7 +192,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         "start_date": end_date - datetime.timedelta(days=days),
     }
 
-    topcrashers_stats = get_topcrashers_stats(
+    total_number_of_crashes, topcrashers_stats = get_topcrashers_stats(
         product=product,
         version=versions,
         platform=os_name,
@@ -207,14 +208,16 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     count_of_included_crashes = 0
     signatures = []
 
+    # Get signatures and count of included crashes to show
     for topcrashers_stats_item in topcrashers_stats[: int(result_count)]:
         signatures.append(topcrashers_stats_item.signature_term)
         count_of_included_crashes += topcrashers_stats_item.num_crashes
 
     context["number_of_crashes"] = count_of_included_crashes
     context["total_percentage"] = len(topcrashers_stats) and (
-        100.0 * count_of_included_crashes / len(topcrashers_stats)
+        100.0 * count_of_included_crashes / total_number_of_crashes
     )
+    context["total_number_of_crashes"] = total_number_of_crashes
 
     # Get augmented bugs data.
     bugs = defaultdict(list)
@@ -266,7 +269,6 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context["report"] = "topcrasher"
     context["possible_days"] = possible_days
     context["total_crashing_signatures"] = len(signatures)
-    context["total_number_of_crashes"] = len(topcrashers_stats)
     context["process_type_values"] = []
     for option in settings.PROCESS_TYPES:
         if option == "all":
