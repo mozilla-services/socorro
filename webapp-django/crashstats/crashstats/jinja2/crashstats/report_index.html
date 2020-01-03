@@ -77,12 +77,10 @@
             <li class="ui-state-default ui-corner-top">
               <a href="#extensions" class="ui-tabs-anchor"><span>Extensions</span></a>
             </li>
-            {% if raw.TelemetryEnvironment %}
-              <li class="ui-state-default ui-corner-top">
-                <a href="#telemetryenvironment" class="ui-tabs-anchor"><span>Telemetry Environment</span></a>
-              </li>
-            {% endif %}
-            <li class="ui-state-default ui-corner-top correlations hidden">
+            <li class="ui-state-default ui-corner-top">
+              <a href="#telemetryenvironment" class="ui-tabs-anchor"><span>Telemetry Environment</span></a>
+            </li>
+            <li class="ui-state-default ui-corner-top">
               <a href="#correlation" class="ui-tabs-anchor"><span>Correlations</span></a>
             </li>
             {% if request.user.has_perm('crashstats.reprocess_crashes') %}
@@ -867,15 +865,17 @@
           </div>
           <!-- /extensions -->
 
-          {% if raw.TelemetryEnvironment %}
-            <div id="telemetryenvironment" class="ui-tabs-hide">
+          <div id="telemetryenvironment" class="ui-tabs-hide">
+            {% if raw.TelemetryEnvironment %}
               {# Remember, raw.TelemetryEnvironment is a string.
-                 jQuery will automatically convert it a map upon accessing it.
+                 jQuery will automatically convert it to a map upon accessing it.
                  Safe to include because jinja will escape anything in it. #}
               <div id="telemetryenvironment-json" data-telemetryenvironment="{{ raw.TelemetryEnvironment }}"></div>
-            </div>
-            <!-- /telemetryenvironment -->
-          {% endif %}
+            {% else %}
+              <p>No telemetry environment data available.</p>
+            {% endif %}
+          </div>
+          <!-- /telemetryenvironment -->
 
           <div id="correlation" class="ui-tabs-hide">
             <h3></h3>
