@@ -117,14 +117,15 @@ $(document).ready(function() {
   var product = container.data('product');
 
   window.correlations.getCorrelations(signature, channel, product).then(function(results) {
+    $('#correlation h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
+
     if (!Array.isArray(results)) {
+      $('#correlation pre').text('No correlation data available.');
       return;
     }
 
     var content = results.join('\n');
 
-    $('li.correlations').show();
-    $('#correlation h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
     $('#correlation pre')
       .empty()
       .text(content);
