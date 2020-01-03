@@ -82,3 +82,12 @@ class TestCronrun:
             call_command("cronrun")
 
         assert Job.objects.all().count() == len(JOBS)
+
+    def test_run_all_with_ongoingjoberror(self, db):
+        """Verify jobs can kick up OngoingJobError."""
+        mock_path = "crashstats.cron.management.commands.cronrun.call_command"
+        with mock.patch(mock_path) as mock_call_command:
+            mock_call_command.side_effect = OngoingJobError("test")
+            call_command("cronrun")
+
+        assert Job.objects.all().count() == len(JOBS)
