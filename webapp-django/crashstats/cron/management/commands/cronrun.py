@@ -80,7 +80,12 @@ class Command(BaseCommand):
     def cmd_run_all(self):
         logger.info("Running all jobs...")
         for job_spec in JOBS:
-            self._run_one(job_spec, cmd_args=job_spec.get("cmd_args", []))
+            try:
+                self._run_one(job_spec, cmd_args=job_spec.get("cmd_args", []))
+            except OngoingJobError:
+                # If the job is already running somehow, then move on
+                logger.error("OngoingJobError: %s", job_spec.get("cmd", "no command"))
+                pass
         return 0
 
     def cmd_run_one(self, description, force=False, cmd_args=None):
