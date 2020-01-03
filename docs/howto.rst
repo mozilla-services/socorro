@@ -67,10 +67,11 @@ For more complex crash sets, pass a search URL to generate the list::
     app@socorro:app$ cat crashids | socorro-cmd reprocess
 
 
-Processing requests for PII access
-==================================
+Processing requests for memory dumps and private user data access
+=================================================================
 
-People file bugs in Bugzilla asking to be granted access to PII using
+People file bugs in Bugzilla asking to be granted access to memory dumps
+and private user data using
 `these instructions <https://crash-stats.mozilla.org/documentation/memory_dump_access/>`_.
 
 Process for handling those:
@@ -99,8 +100,9 @@ Then wait for those needinfos to be filled. Once that's done:
 
 Then reply in the bug something like this::
 
-    You have access to PII on Crash Stats. You might have to log out and log
-    back in again. Let us know if you have any problems!
+    You have access to memory dumps and private user data on Crash Stats. You
+    might have to log out and log back in again. Let us know if you have any
+    problems!
 
     Thank you!
 

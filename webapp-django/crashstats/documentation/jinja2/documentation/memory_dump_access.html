@@ -1,15 +1,19 @@
 {% extends "documentation/docs_base.html" %}
 
-{% block doc_title %}Memory Dump Access{% endblock %}
+{% block doc_title %}Memory Dump and Private User Data Access{% endblock %}
 
 {% block doc_content %}
   <div class="body">
-    <h1 id="policy">Access to memory dumps</h1>
+    <h1 id="policy">Access to memory dumps and private user data</h1>
     <p>
       Crash reports include memory dumps which contain sensitive information
       and is not publicly available on Crash Stats. Memory dumps are important
-      for diagnosing and debugging issues. As such, users can request access
-      to memory dumps in order to debug issues.
+      for diagnosing and debugging issues. Further, crash reports may also
+      contain private user data such as the user's email address and comments
+      if they provided any. As such, users can request access to memory dumps
+      and private user data information in order to debug issues.
+    </p>
+    <p>
     </p>
     <p>
       Anyone with access to memory dumps and private data agrees to the following:
@@ -28,9 +32,9 @@
 
 The most recent copy of this agreement is at: https://crash-stats.mozilla.org/documentation/memory_dump_access/</pre>
 
-    <h1 id="requestaccess">How to request memory dump access</h1>
+    <h1 id="requestaccess">How to request access to memory dumps and private user data</h1>
     <p>
-      To request access to memory dumps, please:
+      To request access to memory dumps and private user data, please:
     </p>
     <ol>
       <li>Log into <a href="https://crash-stats.mozilla.org/">Crash Stats</a>
