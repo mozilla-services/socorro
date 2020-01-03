@@ -603,14 +603,20 @@ static ModuleCertMap GetModuleCertMap(const Json::Value& raw_root)
   ModuleCertMap result;
 
   const Json::Value& infoString = raw_root["ModuleSignatureInfo"];
-  if (!infoString || !infoString.isString()) {
+  if (!infoString) {
     return result;
   }
 
   Json::Value info;
-  Json::Reader reader;
-  if (!reader.parse(infoString.asString(), info, false)) {
-    return result;
+  if (infoString.isString()) {
+    // If ModuleSignatureInfo is a string, then parse it
+    Json::Reader reader;
+    if (!reader.parse(infoString.asString(), info, false)) {
+      return result;
+    }
+  } else {
+    // If ModuleSignatureInfo is not a string, then assume it's a Json::Value
+    info = infoString;
   }
 
   Json::Value::Members certs = info.getMemberNames();
