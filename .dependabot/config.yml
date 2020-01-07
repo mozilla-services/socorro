@@ -1,0 +1,9 @@
+version: 1
+update_configs:
+  - package_manager: "python"
+    directory: "/"
+    update_schedule: "monthly"
+
+  - package_manager: "docker"
+    directory: "/docker"
+    update_schedule: "monthly"
