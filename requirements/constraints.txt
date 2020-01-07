@@ -140,8 +140,8 @@ s3transfer==0.2.1 \
 jmespath==0.9.4 \
     --hash=sha256:3720a4b1bd659dd2eecad0666459b9788813e032b83e7ba58578e48254e0a0e6 \
     --hash=sha256:bde2aef6f44302dfb30320115b17d030798de8c4110e28d5cf6cf91a7a31074c
-jsondiff==1.1.2 \
-    --hash=sha256:7e18138aecaa4a8f3b7ac7525b8466234e6378dd6cae702b982c9ed851d2ae21
+jsondiff==1.2.0 \
+    --hash=sha256:34941bc431d10aa15828afe1cbb644977a114e75eef6cc74fb58951312326303
 aws-xray-sdk==2.4.2 \
     --hash=sha256:75cbce8c777b7d8055719ee1a0db6043e53c44e8f1a62a956bd84db87c4a4c7c \
     --hash=sha256:ce4adb60fe67ebe91f2fc57d5067b4e44df6e233652987be4fb2e549688cf9fe
