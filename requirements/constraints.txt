@@ -224,9 +224,9 @@ responses==0.10.6 \
 atomicwrites==1.3.0 \
     --hash=sha256:03472c30eb2c5d1ba9227e4c2ca66ab8287fbfbbda3888aa93dc2e28fc6811b4 \
     --hash=sha256:75a9445bac02d8d058d5e1fe689654ba5a6556a1dfd8ce6ec55a0ed79866cfa6
-josepy==1.1.0 \
-    --hash=sha256:1309a25aac3caeff5239729c58ff9b583f7d022ffdb1553406ddfc8e5b52b76e \
-    --hash=sha256:fb5c62c77d26e04df29cb5ecd01b9ce69b6fcc9e521eb1ca193b7faa2afa7086
+josepy==1.2.0 \
+    --hash=sha256:8ea15573203f28653c00f4ac0142520777b1c59d9eddd8da3f256c6ba3cac916 \
+    --hash=sha256:9cec9a839fe9520f0420e4f38e7219525daccce4813296627436fe444cd002d3
 pyOpenSSL==19.0.0 \
     --hash=sha256:aeca66338f6de19d1aa46ed634c3b9ae519a64b458f8468aec688e7e3c20f200 \
     --hash=sha256:c727930ad54b10fc157015014b666f2d8b41f70c0d03e83ab67624fd3dd5d1e6
