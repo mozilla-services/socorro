@@ -317,9 +317,9 @@ cachetools==3.1.0 \
 sqlparse==0.3.0 \
     --hash=sha256:40afe6b8d4b1117e7dff5504d7a8ce07d9a1b15aeeade8a2d10f130a834f8177 \
     --hash=sha256:7c3dca29c022744e95b547e867cee89f4fce4373f3549ccd8797d8eb52cdb873
-cfn-lint==0.24.8 \
-    --hash=sha256:1df76ac8c7bd6c9d9d1e70d5081e3ed30757e60ae4dbf9d1af957d6c04ada8b8 \
-    --hash=sha256:5aa1540ee9a7efc23ebe54a22f1a505766a4bb44f64a0f4fe79574a156a9b43e
+cfn-lint==0.26.2 \
+    --hash=sha256:55cd5fa150db7e6109bb2a659f7de0096ffec893a628ad1b1db9d87170f60021 \
+    --hash=sha256:5449313b5f176024bd5fd6ebe69ce986a2d9b8a9d6a147b2d442c8d9fa99a6c5
 aws-sam-translator==1.15.1 \
     --hash=sha256:11c62c00f37b57c39a55d7a29d93f4704a88549c29a6448ebc953147173fbe85
 jsonpatch==1.23 \
