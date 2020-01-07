@@ -1,4 +1,4 @@
-FROM google/cloud-sdk:237.0.0-alpine
+FROM google/cloud-sdk:274.0.1-alpine
 
 # Install Java and a pubsub-emulator
 RUN apk --update add openjdk8-jre
