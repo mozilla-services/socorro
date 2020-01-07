@@ -5,5 +5,5 @@ update_configs:
     update_schedule: "monthly"
 
   - package_manager: "docker"
-    directory: "/"
+    directory: "/docker"
     update_schedule: "monthly"
