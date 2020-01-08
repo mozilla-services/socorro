@@ -33,6 +33,7 @@ from socorro.processor.rules.memory_report_extraction import MemoryReportExtract
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
+    ConvertModuleSignatureInfoRule,
     DatesAndTimesRule,
     EnvironmentRule,
     ESRVersionRewrite,
@@ -168,6 +169,8 @@ class ProcessorPipeline(RequiredConfig):
         return [
             # fix the raw crash removing null characters
             DeNullRule(),
+            # fix ModuleSignatureInfo if it needs fixing
+            ConvertModuleSignatureInfoRule(),
             # rules to change the internals of the raw crash
             ProductRewrite(),
             ESRVersionRewrite(),

@@ -29,6 +29,27 @@ from socorro.signature.utils import convert_to_crash_data
 MAXINT = 9223372036854775807
 
 
+class ConvertModuleSignatureInfoRule(Rule):
+    """Make ModuleSignatureInfo to a string.
+
+    For a while, crash reports submitted as a JSON blob had ModuleSignatureInfo appended
+    to the end of them as an object. This JSON-encodes that object so that it's always a
+    JSON-encoded string. That way, the rest of the processor doesn't have to handle both
+    cases. Bug #1607806.
+
+    """
+
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return "ModuleSignatureInfo" in raw_crash and not isinstance(
+            raw_crash["ModuleSignatureInfo"], str
+        )
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        info = raw_crash["ModuleSignatureInfo"]
+        info = json.dumps(info)
+        raw_crash["ModuleSignatureInfo"] = info
+
+
 class ProductRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.product = raw_crash.get("ProductName", "")

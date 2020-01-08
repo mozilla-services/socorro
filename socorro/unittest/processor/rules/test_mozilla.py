@@ -16,6 +16,7 @@ from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
+    ConvertModuleSignatureInfoRule,
     DatesAndTimesRule,
     ESRVersionRewrite,
     EnvironmentRule,
@@ -161,6 +162,41 @@ canonical_processed_crash = DotDict(
         }
     }
 )
+
+
+class TestConvertModuleSignatureInfoRule:
+    def test_no_value(self):
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = ConvertModuleSignatureInfoRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert raw_crash == {}
+        assert processed_crash == {}
+
+    def test_string_value(self):
+        raw_crash = {"ModuleSignatureInfo": "{}"}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = ConvertModuleSignatureInfoRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert raw_crash == {"ModuleSignatureInfo": "{}"}
+        assert processed_crash == {}
+
+    def test_object_value(self):
+        raw_crash = {"ModuleSignatureInfo": {"foo": "bar"}}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = ConvertModuleSignatureInfoRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert raw_crash == {"ModuleSignatureInfo": '{"foo": "bar"}'}
+        assert processed_crash == {}
 
 
 class TestProductRule(object):
