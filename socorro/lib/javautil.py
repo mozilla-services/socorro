@@ -98,11 +98,7 @@ def parse_java_stack_trace(text):
                 stage = ADDITIONAL
 
         elif stage is ADDITIONAL:
-            # Verify this has a tab at the beginning of the line
-            if line[0] != "\t":
-                raise MalformedJavaStackTrace("additional line missing tab")
-
-            # Drop first tab from the line
-            new_exc.additional.append(line[1:])
+            # Append all the rest of the stack trace as is
+            new_exc.additional.append(line)
 
     return new_exc
