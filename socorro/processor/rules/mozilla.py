@@ -9,6 +9,7 @@ import re
 import time
 from urllib.parse import unquote_plus
 
+from configman.dotdict import DotDict
 import markus
 
 from socorro.lib import javautil
@@ -18,6 +19,7 @@ from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import UTC, datetime_from_isodate_string
 from socorro.lib.ooid import date_from_ooid
 from socorro.lib.requestslib import session_with_retries
+from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
@@ -46,8 +48,11 @@ class ConvertModuleSignatureInfoRule(Rule):
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         info = raw_crash["ModuleSignatureInfo"]
-        info = json.dumps(info)
-        raw_crash["ModuleSignatureInfo"] = info
+        if isinstance(info, DotDict):
+            # Sometimes the value is a DotDict which json.dumps doesn't work with so
+            # convert it to a dict first
+            info = dotdict_to_dict(info)
+        raw_crash["ModuleSignatureInfo"] = json.dumps(info)
 
 
 class ProductRule(Rule):

@@ -19,7 +19,7 @@ def dotdict_to_dict(sdotdict):
 
     def _dictify(thing):
         if isinstance(thing, collections.Mapping):
-            return dict([(key, _dictify(val)) for key, val in thing.items()])
+            return {key: _dictify(val) for key, val in thing.items()}
         elif isinstance(thing, str):
             # NOTE(willkg): Need to do this because strings are sequences but
             # we don't want to convert them into lists in the next clause

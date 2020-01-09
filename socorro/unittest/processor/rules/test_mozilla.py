@@ -166,7 +166,7 @@ canonical_processed_crash = DotDict(
 
 class TestConvertModuleSignatureInfoRule:
     def test_no_value(self):
-        raw_crash = {}
+        raw_crash = DotDict()
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -177,7 +177,7 @@ class TestConvertModuleSignatureInfoRule:
         assert processed_crash == {}
 
     def test_string_value(self):
-        raw_crash = {"ModuleSignatureInfo": "{}"}
+        raw_crash = DotDict({"ModuleSignatureInfo": "{}"})
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -188,6 +188,17 @@ class TestConvertModuleSignatureInfoRule:
         assert processed_crash == {}
 
     def test_object_value(self):
+        raw_crash = DotDict({"ModuleSignatureInfo": {"foo": "bar"}})
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = ConvertModuleSignatureInfoRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert raw_crash == {"ModuleSignatureInfo": '{"foo": "bar"}'}
+        assert processed_crash == {}
+
+    def test_object_value_with_dict(self):
         raw_crash = {"ModuleSignatureInfo": {"foo": "bar"}}
         raw_dumps = {}
         processed_crash = {}
