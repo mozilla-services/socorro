@@ -87,6 +87,7 @@ RtlSleepConditionVariableSRW
 _sigtramp
 __sigtramp
 schedule_class_load
+_security_check_cookie
 SkyLight
 SleepConditionVariableCS
 SleepConditionVariableSRW
