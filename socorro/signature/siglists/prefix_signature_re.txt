@@ -235,6 +235,7 @@ PR_
 .*ProcessNextEvent
 __psynch_cvwait
 _pthread_cond_wait
+__pthread_cond_wait
 pthread_cond_signal_thread_np
 pthread_mutex_lock
 __pthread_kill
