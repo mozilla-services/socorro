@@ -52,3 +52,4 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    socorro_app
    deploy
    howto
+   spec_crashreport
