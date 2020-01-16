@@ -32,8 +32,7 @@ and specify the multipart/form-data boundary.
 The content length of the crash report must be set. The value is the length
 of the body.
 
-If the HTTP body is gzip compressed, then the ``Content-Encoding`` must be
-set to ``gzip``.
+The ``Content-Encoding`` may be set to ``gzip`` if the HTTP body is gzipped.
 
 
 Crash report HTTP body
