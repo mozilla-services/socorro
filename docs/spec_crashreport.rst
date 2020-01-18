@@ -80,11 +80,14 @@ Annotations as single JSON-encoded value
 
 3. The ``Content-Type`` must be ``application/json``.
 
-4. The value of this field must a JSON-encoded string of crash report
-   annotations.
+4. The value of this field must a JSON-encoded string of all of the crash
+   report annotations.
 
-   Each annotation value must be a string. If the value is an object, it must
-   be JSON-encoded.
+   Annotation keys and values must be strings.
+
+   If the annotation value is an object, it must be a JSON-encoded string.
+   Because the annotation value is a JSON-encoded string and it's in a
+   JSON-encoded string, quotes must be escaped in the final field value.
 
 5. There must be only one of this field.
 
@@ -93,7 +96,7 @@ Example::
    Content-Disposition: form-data; name="extra"
    Content-Type: application/json
 
-   {"ProductName":"Firefox","Version":"1.0"}
+   {"ProductName":"Firefox","Version":"1.0","TelemetryEnvironment":"{\"build\":{\"applicationName\":\"Firefox\",\"version\":\"72.0.1\",\"vendor\":\"Mozilla\"}}"}
 
 
 .. Note::
