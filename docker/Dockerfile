@@ -7,7 +7,7 @@ ARG userid=10001
 WORKDIR /app/
 RUN groupadd --gid $groupid app && \
     useradd -g app --uid $userid --shell /usr/sbin/nologin --create-home app && \
-    chown app.app /app/
+    chown app:app /app/
 
 # Install OS-level things
 COPY ./docker/set_up_ubuntu.sh /tmp/
@@ -36,7 +36,7 @@ COPY ./minidump-stackwalk/ /mdsw/minidump-stackwalk/
 RUN STACKWALKDIR=/stackwalk SRCDIR=/mdsw /mdsw/scripts/build-stackwalker.sh
 
 # Let app own /mdsw and /stackwalk so it's easier to debug later
-RUN chown -R app.app /mdsw /stackwalk
+RUN chown -R app:app /mdsw /stackwalk
 
 
 FROM socorro_image_base
