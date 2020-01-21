@@ -7,13 +7,14 @@ This is a specification for the format for submitting crash reports.
 .. contents::
    :local:
 
-crash report: v0
-================
 
-v0 refers to whatever we had prior to when we moved crash annotations into a
-single JSON-encoded field in `bug 1420363
-<https://bugzilla.mozilla.org/show_bug.cgi?id=1420363>`_. That work landed in
-December 2019 and is in Firefox 73.
+crash report specification
+==========================
+
+History:
+
+* 2020-01-15: Initial writing
+* 2020-01-17: Add specifying annotations as a single JSON-encoded value.
 
 
 Submitting a crash report
@@ -52,13 +53,13 @@ either an annotation or a binary like a minidump.
       https://tools.ietf.org/html/rfc7578
 
 
-Annotation fields
-~~~~~~~~~~~~~~~~~
+Annotations as key/values in multipart/form-data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. The ``Content-Displosition`` must be ``form-data``.
+1. The ``Content-Disposition`` must be ``form-data``.
 
 2. The ``Content-Disposition`` must specify a ``name``. This is the annotation
-   name. It must be in ASCII.
+   name. The value must be in ASCII.
 
 3. The value of this field is the annotation value. It is always a string.
 
@@ -67,6 +68,48 @@ Example::
    Content-Disposition: form-data; name="AddonsShouldHaveBlockedE10s"
 
    1
+
+
+Annotations as single JSON-encoded value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. The ``Content-Disposition`` must be ``form-data``.
+
+2. The ``Content-Disposition`` must specify a ``name``. The value should
+   be ``extra``. The value must be in ASCII.
+
+3. The ``Content-Type`` must be ``application/json``.
+
+4. The value of this field must a JSON-encoded string of all of the crash
+   report annotations.
+
+   Annotation keys and values must be strings.
+
+   If the annotation value is an object, it must be a JSON-encoded string.
+   Because the annotation value is a JSON-encoded string and it's in a
+   JSON-encoded string, quotes must be escaped in the final field value.
+
+5. There must be only one of this field.
+
+Example::
+
+   Content-Disposition: form-data; name="extra"
+   Content-Type: application/json
+
+   {"ProductName":"Firefox","Version":"1.0","TelemetryEnvironment":"{\"build\":{\"applicationName\":\"Firefox\",\"version\":\"72.0.1\",\"vendor\":\"Mozilla\"}}"}
+
+
+.. Note::
+
+   You must do either a JSON-encoded value for all annotations or specify each
+   annotation as a multipart/form-data item. You can't do both.
+
+
+.. versionadded:: 2020-01-17
+
+   This was added in `bug 1420363
+   <https://bugzilla.mozilla.org/show_bug.cgi?id=1420363>`_. That work landed
+   in December 2019 and is in Firefox 73.
 
 
 Binary fields
@@ -117,6 +160,14 @@ return an HTTP status code of 200 with a body specifying the crash id::
 For example::
 
    CrashID=bp-d101d046-638f-42e0-902d-bd245c200115
+
+
+.. Note::
+
+   It's possible for a crash report to be accepted by the collector, but be
+   malformed in some way. For example, if one of the annotation values was
+   ``null``. The processor has rules that will fix these issues and add
+   processor notes for what it fixed.
 
 
 Rejected because of throttling rule
@@ -181,6 +232,11 @@ Non-exhaustive list of reasons the crash report could be malformed:
 ``no_annotations``
    The crash report has been parsed, but there were no annotations in it.
 
+``has_json_and_kv``
+   The crash report encodes annotations in ``multipart/form-data`` as well as
+   in the extra JSON-encoded string. It should have either one or the
+   other--not both.
+
 
 The crash reporter client shouldn't try to send a malformed crash report again.
 
@@ -215,3 +271,41 @@ Example with HTTP headers and body::
 
    000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
    --------------------------c4ae5238f12b6c82--
+
+
+Example with HTTP headers and body using JSON-encoded value for annotations::
+
+   POST /submit HTTP/1.1
+   Host: xyz.example.com
+   User-Agent: Breakpad/1.0 (Linux)
+   Accept: */*
+   Content-Length: 659
+   Content-Type: multipart/form-data; boundary=------------------------c4ae5238f12b6c82
+
+   --------------------------c4ae5238f12b6c82
+   Content-Disposition: form-data; name="extra"
+   Content-Type: application/json
+
+   {"ProductName":"Firefox","Version":"1.0","BuildID":"20160728203720"}
+   --------------------------c4ae5238f12b6c82
+   Content-Disposition: form-data; name="upload_file_minidump"; filename="6da3499e-f6ae-22d6-1e1fdac8-16464a16.dmp"
+   Content-Type: application/octet-stream
+
+   000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+   --------------------------c4ae5238f12b6c82--
+
+
+How to debug crash report submission
+====================================
+
+1. When the crash reporter submits the crash report to Socorro, what is
+   the status code that it gets back? What is the HTTP response body?
+
+2. If you search for the crash id that Socorro returns, are there processor
+   notes indicating problems?
+
+
+If neither of those sets of questions are fruitful, please ask in one of our
+channels.
+
+https://github.com/mozilla-services/socorro/blob/master/README.rst

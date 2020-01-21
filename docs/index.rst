@@ -8,13 +8,23 @@ Mozilla's crash analysis tool is hosted at
 `<https://crash-stats.mozilla.org/>`_.
 
 
-:Free software: Mozilla Public License version 2.0
-:Code: https://github.com/mozilla-services/socorro/ and https://github.com/mozilla-services/antenna
-:Documentation: https://socorro.readthedocs.io/
-:Documentation: https://crash-stats.mozilla.org/documentation/
-:Mailing list: https://lists.mozilla.org/listinfo/tools-socorro
-:New bugs: https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
-:View all bugs: https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro
+===============  ==============================================================================
+Free software    Mozilla Public License version 2.0
+---------------  ------------------------------------------------------------------------------
+Socorro code     https://github.com/mozilla-services/socorro/
+---------------  ------------------------------------------------------------------------------
+Antenna code     https://github.com/mozilla-services/antenna
+---------------  ------------------------------------------------------------------------------
+Documentation    https://socorro.readthedocs.io/
+---------------  ------------------------------------------------------------------------------
+Documentation    https://crash-stats.mozilla.org/documentation/
+---------------  ------------------------------------------------------------------------------
+Mailing list     https://lists.mozilla.org/listinfo/tools-socorro
+---------------  ------------------------------------------------------------------------------
+New bugs         https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
+---------------  ------------------------------------------------------------------------------
+View all bugs    https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro
+===============  ==============================================================================
 
 
 .. toctree::
@@ -45,11 +55,22 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    service/*
    flows/*
    stackwalk
-   schemas
    crashstorage
    crashqueue
    tests/*
    socorro_app
    deploy
    howto
+
+
+Specifications and schemas.
+
+.. toctree::
+   :caption: Specifications
+   :numbered:
+   :includehidden:
+   :maxdepth: 1
+   :glob:
+
    spec_crashreport
+   schemas
