@@ -8,12 +8,12 @@ TelemetryClientId field.
 
 Usage:
 
-    python 1610520/es_tcid.py > crashids.txt
+    python scripts/1610520/es_tcid.py > crashids.txt
 
 It prints some lines with a "#" to make it easier to see what it did. To
 remove those, do:
 
-    python 1610520/es_tcid.py | grep -v "#" > crashids.txt
+    python scripts/1610520/es_tcid.py | grep -v "#" > crashids.txt
 
 """
 

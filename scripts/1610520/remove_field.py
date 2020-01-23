@@ -8,7 +8,7 @@ fields from the raw crash file in S3 and the document in Elasticsearch.
 
 Usage:
 
-    python 1610520/remove_field.py CRASHIDSFILE FIELD [FIELD...]
+    python scripts/1610520/remove_field.py CRASHIDSFILE FIELD [FIELD...]
 
 """
 
@@ -167,7 +167,7 @@ def fix_data(crashids, fields):
             # If this throws an exception, print it out and move on. Then we'll finish
             # all the fixing for the first pass and can address the problematic crash
             # reports in a second pass.
-            logger.exception("COUGH")
+            logger.exception("Exception thrown with %s" % crashid)
 
 
 def main():
