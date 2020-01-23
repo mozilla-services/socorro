@@ -34,9 +34,6 @@ from socorro.lib.ooid import date_from_ooid
 from socorro.lib.util import retry
 
 
-# Total number of workers (processes) to run
-MAX_WORKERS = 20
-
 # Number of seconds until we decide a worker has stalled
 WORKER_TIMEOUT = 15 * 60
 
@@ -160,6 +157,10 @@ def main():
         "--parallel", action="store_true", help="Whether to run in parallel."
     )
     parser.add_argument(
+        "--max-workers", type=int, dest="maxworkers", default=20,
+        help="Number of processes to run in parallel."
+    )
+    parser.add_argument(
         "crashidsfile", nargs=1, help="Path to the file with crashids in it."
     )
     parser.add_argument(
@@ -182,13 +183,13 @@ def main():
     crashids_chunked = chunked(crashids, CHUNK_SIZE)
     fix_data_with_fields = partial(fix_data, fields=args.field)
 
-    print("# num workers: %s" % MAX_WORKERS)
+    print("# num workers: %s" % args.maxworkers)
     if not args.parallel:
         print("# Running single-process.")
         list(map(fix_data_with_fields, crashids_chunked))
     else:
         print("# Running multi-process.")
-        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=args.maxworkers) as executor:
             executor.map(fix_data_with_fields, crashids_chunked, timeout=WORKER_TIMEOUT)
 
     print("# Done!")
