@@ -88,14 +88,11 @@ def fix_data_in_s3(fields, bucket, s3_client, crash_data):
     """Fix data in raw_crash file in S3."""
     crashid = crash_data["crashid"]
 
-    path = (
-        "v2/raw_crash/%(entropy)s/%(date)s/%(crashid)s"
-        % {
-            "entropy": crashid[:3],
-            "date": date_from_ooid(crashid).strftime("%Y%m%d"),
-            "crashid": crashid
-        }
-    )
+    path = "v2/raw_crash/%(entropy)s/%(date)s/%(crashid)s" % {
+        "entropy": crashid[:3],
+        "date": date_from_ooid(crashid).strftime("%Y%m%d"),
+        "crashid": crashid,
+    }
     resp = s3_client.get_object(Bucket=bucket, Key=path)
     raw_crash_as_string = resp["Body"].read()
     data = json.loads(raw_crash_as_string)
@@ -107,7 +104,9 @@ def fix_data_in_s3(fields, bucket, s3_client, crash_data):
 
     if should_save:
         s3_client.upload_fileobj(
-            Fileobj=io.BytesIO(dict_to_str(data).encode("utf-8")), Bucket=bucket, Key=path
+            Fileobj=io.BytesIO(dict_to_str(data).encode("utf-8")),
+            Bucket=bucket,
+            Key=path,
         )
         print("# s3: fixed raw crash")
     else:
@@ -141,9 +140,7 @@ def fix_data_in_es(fields, es_conn, crash_data):
                 del document["raw_crash"][field]
 
         if should_save:
-            conn.index(
-                index=index, doc_type=doc_type, body=document, id=document_id
-            )
+            conn.index(index=index, doc_type=doc_type, body=document, id=document_id)
             print("# es: fixed document")
         else:
             print("# es: document was fine")
@@ -178,15 +175,16 @@ def main():
         "--parallel", action="store_true", help="Whether to run in parallel."
     )
     parser.add_argument(
-        "--max-workers", type=int, dest="maxworkers", default=20,
-        help="Number of processes to run in parallel."
+        "--max-workers",
+        type=int,
+        dest="maxworkers",
+        default=20,
+        help="Number of processes to run in parallel.",
     )
     parser.add_argument(
         "crashidsfile", nargs=1, help="Path to the file with crashids in it."
     )
-    parser.add_argument(
-        "field", nargs="+", help="Fields to remove."
-    )
+    parser.add_argument("field", nargs="+", help="Fields to remove.")
 
     args = parser.parse_args()
     crashidsfile = args.crashidsfile[0]
@@ -204,7 +202,9 @@ def main():
         list(map(fix_data_with_fields, crashids_chunked))
     else:
         print("# Running multi-process.")
-        with concurrent.futures.ProcessPoolExecutor(max_workers=args.maxworkers) as executor:
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=args.maxworkers
+        ) as executor:
             executor.map(fix_data_with_fields, crashids_chunked, timeout=WORKER_TIMEOUT)
 
     print("# Done!")
