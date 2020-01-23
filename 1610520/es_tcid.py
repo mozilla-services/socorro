@@ -24,7 +24,7 @@ from elasticsearch_dsl import Search
 from socorro.external.es.connection_context import ConnectionContext
 
 
-def get_conn():
+def get_es_conn():
     # Create a configuration manager that will only check the environment for
     # configuration and not command line parameters
 
@@ -36,7 +36,7 @@ def get_conn():
 
 
 def cmd_list_crashids():
-    es_conn = get_conn()
+    es_conn = get_es_conn()
     indices = es_conn.get_indices()
 
     print("# %s indexes." % len(indices))
