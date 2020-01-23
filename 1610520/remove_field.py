@@ -24,6 +24,7 @@ import sys
 from botocore.client import ClientError
 from configman import ConfigurationManager
 from configman.environment import environment
+from elasticsearch.exceptions import ConnectionError
 from elasticsearch_dsl import Search
 from more_itertools import chunked
 
@@ -62,9 +63,19 @@ def get_es_conn():
     return ConnectionContext(config)
 
 
+def crashid_generator(fn):
+    """Lazily yield crash ids."""
+    with open(fn, "r") as fp:
+        for line in fp:
+            line = line.strip()
+            if line.startswith("#"):
+                continue
+            yield json.loads(line)
+
+
 def wait_times_access():
     """Return generator for wait times between failed load/save attempts."""
-    for i in [1, 1, 1, 1, 1]:
+    for i in [5, 5, 5, 5, 5]:
         yield i
 
 
@@ -73,8 +84,10 @@ def wait_times_access():
     wait_time_generator=wait_times_access,
     module_logger=logger,
 )
-def fix_data_in_s3(fields, bucket, s3_client, crashid):
+def fix_data_in_s3(fields, bucket, s3_client, crash_data):
     """Fix data in raw_crash file in S3."""
+    crashid = crash_data["crashid"]
+
     path = (
         "v2/raw_crash/%(entropy)s/%(date)s/%(crashid)s"
         % {
@@ -101,11 +114,19 @@ def fix_data_in_s3(fields, bucket, s3_client, crashid):
         print("# s3: raw crash was fine")
 
 
-def fix_data_in_es(fields, es_conn, crashid):
+@retry(
+    retryable_exceptions=[ConnectionError],
+    wait_time_generator=wait_times_access,
+    module_logger=logger,
+)
+def fix_data_in_es(fields, es_conn, crash_data):
     """Fix document in Elasticsearch."""
+    crashid = crash_data["crashid"]
+    index = crash_data["index"]
+
     doc_type = es_conn.get_doctype()
     with es_conn() as conn:
-        search = Search(using=conn, doc_type=doc_type)
+        search = Search(using=conn, index=index, doc_type=doc_type)
         search = search.filter("term", **{"processed_crash.uuid": crashid})
         results = search.execute().to_dict()
         result = results["hits"]["hits"][0]
@@ -173,13 +194,7 @@ def main():
         print("File %s does not exist." % crashidsfile)
         return 1
 
-    with open(crashidsfile, "r") as fp:
-        lines = fp.readlines()
-
-    # Remove whitespace and lines that start with "#"
-    crashids = [line.strip() for line in lines if not line.startswith("#")]
-    print("# Total crash ids to fix: %s" % len(crashids))
-
+    crashids = crashid_generator(crashidsfile)
     crashids_chunked = chunked(crashids, CHUNK_SIZE)
     fix_data_with_fields = partial(fix_data, fields=args.field)
 

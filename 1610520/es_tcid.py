@@ -17,6 +17,8 @@ remove those, do:
 
 """
 
+import json
+
 from configman import ConfigurationManager
 from configman.environment import environment
 from elasticsearch_dsl import Search
@@ -50,7 +52,9 @@ def cmd_list_crashids():
             search = search.fields(["processed_crash.uuid"])
             results = search.scan()
             for hit in results:
-                print(hit["processed_crash.uuid"][0])
+                print(json.dumps(
+                    {"crashid": hit["processed_crash.uuid"][0], "index": index}
+                ))
                 total += 1
 
     print("# total found %d" % total)
