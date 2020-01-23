@@ -30,7 +30,6 @@ from more_itertools import chunked
 from socorro.external.boto.connection_context import S3Connection
 from socorro.external.boto.crashstorage import dict_to_str
 from socorro.external.es.connection_context import ConnectionContext
-from socorro.lib.datetimeutil import JsonDTEncoder
 from socorro.lib.ooid import date_from_ooid
 from socorro.lib.util import retry
 
@@ -116,9 +115,6 @@ def fix_data_in_es(fields, es_conn, crashid):
         index = result["_index"]
         document_id = result["_id"]
         document = result["_source"]
-
-        with open("es_%s.json" % crashid, "w") as fp:
-            fp.write(json.dumps(document, cls=JsonDTEncoder))
 
         should_save = False
         for field in fields:
