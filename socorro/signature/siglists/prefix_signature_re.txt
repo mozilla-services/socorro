@@ -260,6 +260,7 @@ seckey_
 SECKEY_
 __semwait_signal
 send
+servo_arc::Arc<T>::drop_slow
 setjmp
 sigblock
 sigprocmask
