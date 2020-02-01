@@ -258,9 +258,9 @@ websocket_client==0.57.0 \
     --hash=sha256:d735b91d6d1692a6a181f2a8c9e0238e5f6373356f561bb9dc4c7af36f452010
 grpc-google-iam-v1==0.12.3 \
     --hash=sha256:0bfb5b56f648f457021a91c0df0db4934b6e0c300bd0f2de2333383fe958aa72
-google-api-core==1.15.0 \
-    --hash=sha256:9006e1641599345056cc690a934e1262107c78d969d72cf96412f6db5d32147f \
-    --hash=sha256:2d661c8d650a1df5805d0e360121cb55c55d8bd29f858fa62cbe943e59ce89f7
+google-api-core==1.16.0 \
+    --hash=sha256:859f7392676761f2b160c6ee030c3422135ada4458f0948c5690a6a7c8d86294 \
+    --hash=sha256:92e962a087f1c4b8d1c5c88ade1c1dfd550047dcffb320c57ef6a534a20403e2
 googleapis-common-protos==1.6.0 \
     --hash=sha256:e61b8ed5e36b976b487c6e7b15f31bb10c7a0ca7bd5c0e837f4afab64b53a0c6
 google-auth==1.10.0 \
