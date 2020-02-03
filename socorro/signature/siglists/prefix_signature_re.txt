@@ -67,6 +67,8 @@ __forwarding_prep_0___
 free_impl
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
+Gecko_FinalizeCString
+Gecko_SetLengthCString
 getanswer
 GetTickCount64
 gfxPlatform::Init
