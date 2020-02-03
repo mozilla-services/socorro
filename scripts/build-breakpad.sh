@@ -15,7 +15,7 @@ set -v -e -x
 
 # Build the revision used in the snapshot unless otherwise specified.
 # Update this if you update the snapshot!
-: BREAKPAD_REV         "${BREAKPAD_REV:=4d550cceca107f36c4bc1ea1126b7d32cc50f424}"
+: BREAKPAD_REV         "${BREAKPAD_REV:=216cea7bca53fa441a3ee0d0f5fd339a3a894224}"
 
 export MAKEFLAGS
 MAKEFLAGS=-j$(getconf _NPROCESSORS_ONLN)
@@ -31,7 +31,7 @@ cd ..
 
 # Breakpad will rely on a bunch of stuff from depot_tools, like fetch
 # so we just put it on the path
-# see  https://chromium.googlesource.com/breakpad/breakpad/+/master/#Getting-started-from-master
+# see https://chromium.googlesource.com/breakpad/breakpad/+/master/#Getting-started-from-master
 export PATH
 PATH=$(pwd)/depot_tools:$PATH
 
