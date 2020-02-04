@@ -341,9 +341,9 @@ cfn-lint==0.27.3 \
     --hash=sha256:ee027f955a42da596e0f1068e05d40253ff7c76cd64ada8fdd4d72bae1e25ba2
 aws-sam-translator==1.20.1 \
     --hash=sha256:ddf61fdabc94a66ca0a3e7d042d6a0e508bc45bd128c86fb02af0c87a59ac79e
-jsonpatch==1.24 \
-    --hash=sha256:83f29a2978c13da29bfdf89da9d65542d62576479caf215df19632d7dc04c6e6 \
-    --hash=sha256:cbb72f8bf35260628aea6b508a107245f757d1ec839a19c34349985e2c05645a
+jsonpatch==1.25 \
+    --hash=sha256:cc3a7241010a1fd3f50145a3b33be2c03c1e679faa19934b628bb07d0f64819e \
+    --hash=sha256:ddc0f7628b8bfdd62e3cbfbc24ca6671b0b6265b50d186c2cf3659dc0f78fd6a
 jsonpointer==2.0 \
     --hash=sha256:c192ba86648e05fdae4f08a17ec25180a9aef5008d973407b581798a83975362 \
     --hash=sha256:ff379fa021d1b81ab539f5ec467c7745beb1a5671463f9dcc2b2d458bd361c1e
