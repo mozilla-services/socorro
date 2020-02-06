@@ -836,16 +836,14 @@ class SignatureIPCChannelError(Rule):
 
     def action(self, crash_data, result):
         if crash_data.get("additional_minidumps") == "browser":
-            new_sig = "IPCError-browser | {}"
+            new_sig = "IPCError-browser | {} | {}"
         else:
-            new_sig = "IPCError-content | {}"
-        new_sig = new_sig.format(crash_data["ipc_channel_error"][:100])
-
-        result.info(
-            self.name,
-            'Signature replaced with an IPC Channel Error, was: "%s"',
-            result.signature,
+            new_sig = "IPCError-content | {} | {}"
+        new_sig = new_sig.format(
+            crash_data["ipc_channel_error"][:100], result.signature
         )
+
+        result.info(self.name, "IPC Channel Error prepended")
         result.set_signature(self.name, new_sig)
         return True
 

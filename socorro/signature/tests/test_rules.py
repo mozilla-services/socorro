@@ -1417,30 +1417,33 @@ class TestSignatureIPCChannelError:
     def test_action_success(self):
         rule = rules.SignatureIPCChannelError()
 
-        crash_data = {"ipc_channel_error": "ipc" * 50}
+        channel_error = "ipc" * 50
+        original_signature = "foo::bar"
+
+        crash_data = {"ipc_channel_error": channel_error}
         result = generator.Result()
-        result.signature = "foo::bar"
+        result.signature = original_signature
 
         action_result = rule.action(crash_data, result)
         assert action_result is True
-        expected = "IPCError-content | {}".format(("ipc" * 50)[:100])
+        expected = "IPCError-content | {} | {}".format(
+            channel_error[:100], original_signature
+        )
         assert result.signature == expected
-        assert result.notes == [
-            'SignatureIPCChannelError: Signature replaced with an IPC Channel Error, was: "foo::bar"'  # noqa
-        ]
+        assert result.notes == ["SignatureIPCChannelError: IPC Channel Error prepended"]
 
         # Now test with a browser crash.
         crash_data["additional_minidumps"] = "browser"
         result = generator.Result()
-        result.signature = "foo::bar"
+        result.signature = original_signature
 
         action_result = rule.action(crash_data, result)
         assert action_result is True
 
-        assert result.signature == "IPCError-browser | {}".format(("ipc" * 50)[:100])
-        assert result.notes == [
-            'SignatureIPCChannelError: Signature replaced with an IPC Channel Error, was: "foo::bar"'  # noqa
-        ]
+        assert result.signature == "IPCError-browser | {} | {}".format(
+            channel_error[:100], original_signature
+        )
+        assert result.notes == ["SignatureIPCChannelError: IPC Channel Error prepended"]
 
 
 class TestSignatureShutdownTimeout:
