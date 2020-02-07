@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from io import StringIO
+from unittest import mock
 
-import mock
 import pytest
 
 from django.contrib.auth.models import User

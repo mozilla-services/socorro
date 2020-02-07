@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from unittest import mock
+
 from configman import Namespace, command_line, ConfigFileFutureProxy
 from configman.dotdict import DotDict
-import mock
 import pytest
 
 from socorro.app.socorro_app import App

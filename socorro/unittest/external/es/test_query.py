@@ -3,9 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from unittest import mock
 
 import elasticsearch
-import mock
 import pytest
 
 from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound

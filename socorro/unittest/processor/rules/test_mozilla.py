@@ -5,9 +5,9 @@
 import copy
 from io import BytesIO
 import json
+from unittest import mock
 
 from configman.dotdict import DotDict
-from mock import call, Mock, patch
 import requests_mock
 import pytest
 
@@ -723,7 +723,9 @@ class TestOutOfMemoryBinaryRule(object):
     def test_extract_memory_info(self):
         processor_meta = get_basic_processor_meta()
 
-        with patch("socorro.processor.rules.mozilla.gzip.open") as mocked_gzip_open:
+        with mock.patch(
+            "socorro.processor.rules.mozilla.gzip.open"
+        ) as mocked_gzip_open:
             ret = json.dumps({"mysterious": ["awesome", "memory"]})
             mocked_gzip_open.return_value = BytesIO(ret.encode("utf-8"))
             rule = OutOfMemoryBinaryRule()
@@ -742,8 +744,10 @@ class TestOutOfMemoryBinaryRule(object):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch("socorro.processor.rules.mozilla.gzip.open") as mocked_gzip_open:
-            opened = Mock()
+        with mock.patch(
+            "socorro.processor.rules.mozilla.gzip.open"
+        ) as mocked_gzip_open:
+            opened = mock.Mock()
             opened.read.return_value = json.dumps({"some": "notveryshortpieceofjson"})
 
             def gzip_open(filename, mode):
@@ -778,7 +782,9 @@ class TestOutOfMemoryBinaryRule(object):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch("socorro.processor.rules.mozilla.gzip.open") as mocked_gzip_open:
+        with mock.patch(
+            "socorro.processor.rules.mozilla.gzip.open"
+        ) as mocked_gzip_open:
             mocked_gzip_open.side_effect = IOError
             rule = OutOfMemoryBinaryRule()
 
@@ -804,8 +810,10 @@ class TestOutOfMemoryBinaryRule(object):
         processed_crash = DotDict()
         processor_meta = get_basic_processor_meta()
 
-        with patch("socorro.processor.rules.mozilla.gzip.open") as mocked_gzip_open:
-            with patch(
+        with mock.patch(
+            "socorro.processor.rules.mozilla.gzip.open"
+        ) as mocked_gzip_open:
+            with mock.patch(
                 "socorro.processor.rules.mozilla.json.loads"
             ) as mocked_json_loads:
                 mocked_json_loads.side_effect = ValueError
@@ -839,7 +847,7 @@ class TestOutOfMemoryBinaryRule(object):
                 assert processor_notes == []
                 return "mysterious-awesome-memory"
 
-        with patch("socorro.processor.rules.mozilla.temp_file_context"):
+        with mock.patch("socorro.processor.rules.mozilla.temp_file_context"):
             rule = MyOutOfMemoryBinaryRule()
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert processed_crash.memory_report == "mysterious-awesome-memory"
@@ -1607,8 +1615,8 @@ class TestSignatureGeneratorRule:
             "SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed"  # noqa
         ]
 
-    @patch("socorro.lib.sentry_client.get_hub")
-    @patch("socorro.lib.sentry_client.is_enabled", return_value=True)
+    @mock.patch("socorro.lib.sentry_client.get_hub")
+    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=True)
     def test_rule_fail_and_capture_error(self, client_enabled, mock_get_hub):
         exc_value = Exception("Cough")
 
@@ -1638,7 +1646,7 @@ class TestSignatureGeneratorRule:
 
         # Make sure captureExeption was called with the right args.
         assert mock_get_hub.return_value.capture_exception.call_args_list == [
-            call(error=(Exception, exc_value, WHATEVER))
+            mock.call(error=(Exception, exc_value, WHATEVER))
         ]
 
 

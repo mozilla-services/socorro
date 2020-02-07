@@ -3,9 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import time
+from unittest import mock
 
 from configman.dotdict import DotDict
-from mock import Mock
 
 from socorro.lib.threaded_task_manager import ThreadedTaskManager, default_task_func
 
@@ -104,7 +104,7 @@ class TestThreadedTaskManager(object):
 
         tm = ThreadedTaskManager(config, task_func=task_func)
 
-        waiting_func = Mock()
+        waiting_func = mock.Mock()
 
         tm.blocking_start(waiting_func=waiting_func)
         assert len(calls) == 10

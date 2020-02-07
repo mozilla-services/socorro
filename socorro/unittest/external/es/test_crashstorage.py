@@ -3,11 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from copy import deepcopy
+from unittest import mock
 
 from configman.dotdict import DotDict
 import elasticsearch
 from markus.testing import MetricsMock
-import mock
 import pytest
 
 from socorro.external.crashstorage_base import Redactor
