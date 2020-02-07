@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
+from unittest import mock
 
-import mock
 import pytest
 
 from socorro.scripts import FallbackToPipeAction, FlagAction

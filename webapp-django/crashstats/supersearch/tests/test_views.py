@@ -4,9 +4,9 @@
 
 import json
 import re
+from unittest import mock
 from urllib.parse import quote
 
-import mock
 import pyquery
 
 from django.conf import settings

@@ -4,8 +4,8 @@
 
 import random
 from urllib.parse import urlparse, parse_qs
+from unittest import mock
 
-import mock
 import pytest
 
 from django.core.cache import cache

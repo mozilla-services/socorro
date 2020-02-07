@@ -4,8 +4,7 @@
 
 import copy
 import json
-
-import mock
+from unittest import mock
 
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission

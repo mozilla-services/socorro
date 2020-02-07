@@ -6,8 +6,8 @@
 import importlib
 import json
 import re
+from unittest import mock
 
-import mock
 import pytest
 
 # NOTE(willkg): We do this so that we can extract signature generation into its

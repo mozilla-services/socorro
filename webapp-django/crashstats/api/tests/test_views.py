@@ -5,6 +5,7 @@
 from collections import Iterable
 import contextlib
 import json
+from unittest import mock
 
 from django.core.cache import cache
 from django.contrib.auth.models import User, Permission
@@ -14,7 +15,6 @@ from django.urls import reverse
 from django.utils.encoding import smart_text
 
 from markus.testing import MetricsMock
-import mock
 import pyquery
 import pytest
 

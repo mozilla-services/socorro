@@ -7,8 +7,8 @@
 import copy
 import json
 import re
+from unittest import mock
 
-import mock
 import pyquery
 
 from django.conf import settings

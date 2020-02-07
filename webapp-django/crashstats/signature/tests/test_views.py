@@ -4,8 +4,8 @@
 
 import json
 from urllib.parse import quote
+from unittest import mock
 
-import mock
 import pyquery
 
 from django.urls import reverse

@@ -3,8 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import importlib
-
-import mock
+from unittest import mock
 
 from . import WHATEVER
 

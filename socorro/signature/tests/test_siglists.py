@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import importlib
+from unittest import mock
 
-import mock
 from pkg_resources import resource_stream
 import pytest
 

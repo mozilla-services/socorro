@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from textwrap import dedent
+from unittest import mock
 
-import mock
 from pygments.formatters import HtmlFormatter
 
 from django.urls import reverse
