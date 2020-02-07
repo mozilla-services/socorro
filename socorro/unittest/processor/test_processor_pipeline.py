@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from unittest import mock
+
 from configman import ConfigurationManager
 from configman.dotdict import DotDict
-from mock import MagicMock, Mock, patch
 
 from socorro.processor.processor_pipeline import ProcessorPipeline
 from socorro.processor.rules.general import CPUInfoRule, OSInfoRule
@@ -23,13 +24,13 @@ class TestProcessorPipeline(object):
             values_source_list=[],
         )
         config = cm.get_config()
-        config.database_class = Mock()
-        config.sentry = Mock()
+        config.database_class = mock.Mock()
+        config.sentry = mock.Mock()
         config.processor_name = "dwight"
         return config
 
-    @patch("socorro.lib.sentry_client.get_hub", side_effect=Exception("fail"))
-    @patch("socorro.lib.sentry_client.is_enabled", return_value=False)
+    @mock.patch("socorro.lib.sentry_client.get_hub", side_effect=Exception("fail"))
+    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=False)
     def test_rule_error_sentry_disabled(self, is_enabled, mock_get_hub):
         config = self.get_config()
 
@@ -47,8 +48,8 @@ class TestProcessorPipeline(object):
         )
         mock_get_hub.assert_not_called()
 
-    @patch("socorro.lib.sentry_client.get_hub")
-    @patch("socorro.lib.sentry_client.is_enabled", return_value=True)
+    @mock.patch("socorro.lib.sentry_client.get_hub")
+    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=True)
     def test_rule_error_sentry_enabled(self, is_enabled, mock_get_hub):
         config = self.get_config()
         captured_exceptions = []  # a global
@@ -57,7 +58,7 @@ class TestProcessorPipeline(object):
             captured_exceptions.append(error[1])
             return "someidentifier"
 
-        hub = MagicMock()
+        hub = mock.MagicMock()
 
         def mock_Hub():
             hub.capture_exception.side_effect = mock_capture_exception
@@ -90,7 +91,7 @@ class TestProcessorPipeline(object):
         )
 
         p = ProcessorPipeline(self.get_config(), rules=[CPUInfoRule(), OSInfoRule()])
-        with patch("socorro.processor.processor_pipeline.utc_now") as faked_utcnow:
+        with mock.patch("socorro.processor.processor_pipeline.utc_now") as faked_utcnow:
             faked_utcnow.return_value = "2015-01-01T00:00:00"
             processed_crash = p.process_crash(raw_crash, raw_dumps, processed_crash)
 

@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+from unittest import mock
 
-from mock import Mock
 import pytest
 
 from socorro.processor.symbol_cache_manager import (
@@ -16,7 +16,7 @@ from socorro.processor.symbol_cache_manager import (
 @pytest.mark.skipif(os.uname()[0] != "Linux", reason="only run if on Linux")
 class TestEventHandler(object):
     def test_init(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
         # the call to be tested
         handler = EventHandler(mocked_monitor, 17)
@@ -25,9 +25,9 @@ class TestEventHandler(object):
         assert handler.monitor is mocked_monitor
 
     def test_process_IN_DELETE_1(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = True
         event.pathname = "hello"
 
@@ -38,9 +38,9 @@ class TestEventHandler(object):
         assert mocked_monitor._remove_cached.call_count == 0
 
     def test_process_IN_DELETE_2(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = False
         event.pathname = "hello"
 
@@ -51,9 +51,9 @@ class TestEventHandler(object):
         mocked_monitor._remove_cached.called_once_with(event.pathname)
 
     def test_process_IN_CREATE_1(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = True
         event.pathname = "hello"
 
@@ -64,9 +64,9 @@ class TestEventHandler(object):
         assert mocked_monitor._update_cache.call_count == 0
 
     def test_process_IN_CREATE_2(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = False
         event.pathname = "hello"
 
@@ -77,9 +77,9 @@ class TestEventHandler(object):
         mocked_monitor._update_cache.called_once_with(event.pathname)
 
     def test_process_IN_MOVED_TO_1(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = True
         event.pathname = "hello"
 
@@ -90,9 +90,9 @@ class TestEventHandler(object):
         assert mocked_monitor._remove_cached.call_count == 0
 
     def test_process_IN_MOVED_TO_2(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = False
         event.pathname = "hello"
 
@@ -103,9 +103,9 @@ class TestEventHandler(object):
         mocked_monitor._remove_cached.called_once_with(event.pathname)
 
     def test_process_IN_OPEN_1(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = True
         event.pathname = "hello"
 
@@ -116,9 +116,9 @@ class TestEventHandler(object):
         assert mocked_monitor._remove_cached.call_count == 0
 
     def test_process_IN_OPEN_2(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = False
         event.pathname = "hello"
 
@@ -129,9 +129,9 @@ class TestEventHandler(object):
         mocked_monitor._remove_cached.called_once_with(event.pathname)
 
     def test_process_IN_MODIFY_1(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = True
         event.pathname = "hello"
 
@@ -142,9 +142,9 @@ class TestEventHandler(object):
         assert mocked_monitor._remove_cached.call_count == 0
 
     def test_process_IN_MODIFY_2(self):
-        mocked_monitor = Mock()
+        mocked_monitor = mock.Mock()
 
-        event = Mock()
+        event = mock.Mock()
         event.dir = False
         event.pathname = "hello"
 

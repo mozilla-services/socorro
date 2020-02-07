@@ -4,9 +4,9 @@
 
 import os
 import shutil
+from unittest import mock
 
 from configman import ConfigurationManager
-from mock import Mock
 import pytest
 
 from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMapping
@@ -29,7 +29,7 @@ class TestFSPermanentStorage(object):
         shutil.rmtree(self.fsrts.config.fs_root)
 
     def _common_config_setup(self):
-        mock_logging = Mock()
+        mock_logging = mock.Mock()
         required_config = FSPermanentStorage.get_required_config()
         required_config.add_option("logger", default=mock_logging)
         config_manager = ConfigurationManager(

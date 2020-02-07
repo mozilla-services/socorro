@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from unittest import mock
 
 from configman.dotdict import DotDict
-from mock import Mock, MagicMock
 import pytest
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
@@ -20,22 +20,22 @@ class TestFetchTransformSaveApp(object):
                 self.the_list = []
 
             def _setup_source_and_destination(self):
-                self.queue = Mock()
+                self.queue = mock.Mock()
 
                 def get_crashids():
                     for x in range(5):
                         yield ((x,), {})
 
                 self.queue.new_crashes = get_crashids
-                self.source = Mock()
-                self.destination = Mock()
+                self.source = mock.Mock()
+                self.destination = mock.Mock()
 
             def transform(self, anItem):
                 self.the_list.append(anItem)
 
         config = DotDict(
             {
-                "logger": MagicMock(),
+                "logger": mock.MagicMock(),
                 "number_of_threads": 2,
                 "maximum_queue_size": 2,
                 "queue": DotDict({"crashqueue_class": None}),
@@ -44,7 +44,7 @@ class TestFetchTransformSaveApp(object):
                 "producer_consumer": DotDict(
                     {
                         "producer_consumer_class": TaskManager,
-                        "logger": MagicMock(),
+                        "logger": mock.MagicMock(),
                         "number_of_threads": 1,
                         "maximum_queue_size": 1,
                         "quit_on_empty_queue": True,
@@ -123,7 +123,7 @@ class TestFetchTransformSaveApp(object):
 
         config = DotDict(
             {
-                "logger": MagicMock(),
+                "logger": mock.MagicMock(),
                 "number_of_threads": 2,
                 "maximum_queue_size": 2,
                 "queue": DotDict({"crashqueue_class": FakeQueue}),
@@ -132,7 +132,7 @@ class TestFetchTransformSaveApp(object):
                 "producer_consumer": DotDict(
                     {
                         "producer_consumer_class": ThreadedTaskManager,
-                        "logger": MagicMock(),
+                        "logger": mock.MagicMock(),
                         "number_of_threads": 1,
                         "maximum_queue_size": 1,
                     }
@@ -154,7 +154,7 @@ class TestFetchTransformSaveApp(object):
         assert destination.number_of_close_calls == 1
 
     def test_queue_iterator(self):
-        faked_finished_func = Mock()
+        faked_finished_func = mock.Mock()
 
         class FakeQueue(object):
             def __init__(self):
@@ -187,7 +187,7 @@ class TestFetchTransformSaveApp(object):
 
         config = DotDict(
             {
-                "logger": MagicMock(),
+                "logger": mock.MagicMock(),
                 "number_of_threads": 2,
                 "maximum_queue_size": 2,
                 "queue": DotDict({"crashqueue_class": FakeQueue}),
@@ -196,7 +196,7 @@ class TestFetchTransformSaveApp(object):
                 "producer_consumer": DotDict(
                     {
                         "producer_consumer_class": ThreadedTaskManager,
-                        "logger": MagicMock(),
+                        "logger": mock.MagicMock(),
                         "number_of_threads": 1,
                         "maximum_queue_size": 1,
                     }
@@ -243,7 +243,7 @@ class TestFetchTransformSaveApp(object):
 
         config = DotDict(
             {
-                "logger": MagicMock(),
+                "logger": mock.MagicMock(),
                 "number_of_threads": 2,
                 "maximum_queue_size": 2,
                 "queue": DotDict({"crashqueue_class": None}),
@@ -252,7 +252,7 @@ class TestFetchTransformSaveApp(object):
                 "producer_consumer": DotDict(
                     {
                         "producer_consumer_class": ThreadedTaskManager,
-                        "logger": MagicMock(),
+                        "logger": mock.MagicMock(),
                         "number_of_threads": 1,
                         "maximum_queue_size": 1,
                     }
@@ -297,7 +297,7 @@ class TestFetchTransformSaveApp(object):
 
         config = DotDict(
             {
-                "logger": MagicMock(),
+                "logger": mock.MagicMock(),
                 "number_of_threads": 2,
                 "maximum_queue_size": 2,
                 "queue": DotDict({"crashqueue_class": None}),
@@ -306,7 +306,7 @@ class TestFetchTransformSaveApp(object):
                 "producer_consumer": DotDict(
                     {
                         "producer_consumer_class": ThreadedTaskManager,
-                        "logger": MagicMock(),
+                        "logger": mock.MagicMock(),
                         "number_of_threads": 1,
                         "maximum_queue_size": 1,
                     }

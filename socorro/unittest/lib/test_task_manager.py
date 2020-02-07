@@ -2,8 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from unittest import mock
+
 from configman.dotdict import DotDict
-from mock import Mock
 
 from socorro.lib.task_manager import TaskManager, default_task_func
 
@@ -57,9 +58,9 @@ class TestTaskManager(object):
                 except AttributeError:
                     self.count = 0
 
-        tm = MyTaskManager(config, task_func=Mock())
+        tm = MyTaskManager(config, task_func=mock.Mock())
 
-        waiting_func = Mock()
+        waiting_func = mock.Mock()
 
         tm.blocking_start(waiting_func=waiting_func)
 
@@ -71,9 +72,9 @@ class TestTaskManager(object):
         config.idle_delay = 1
         config.quit_on_empty_queue = True
 
-        tm = TaskManager(config, task_func=Mock())
+        tm = TaskManager(config, task_func=mock.Mock())
 
-        waiting_func = Mock()
+        waiting_func = mock.Mock()
 
         tm.blocking_start(waiting_func=waiting_func)
 
