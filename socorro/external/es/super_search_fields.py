@@ -2192,7 +2192,7 @@ FIELDS = {
         "namespace": "raw_crash",
         "permissions_needed": [],
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "ipc_system_error": {
         "data_validation_type": "int",
