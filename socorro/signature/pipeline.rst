@@ -62,7 +62,7 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
 
 7. Rule: SignatureIPCChannelError
    
-   Replaces the signature with IPC channel error.
+   Prepends signature with IPCError-browser or IPCError-content and error message.
 
 8. Rule: SignatureIPCMessageName
    
