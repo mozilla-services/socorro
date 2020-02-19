@@ -829,7 +829,7 @@ class SignatureJitCategory(Rule):
 
 
 class SignatureIPCChannelError(Rule):
-    """Replaces the signature with IPC channel error."""
+    """Prepends signature with IPCError-browser or IPCError-content and error message."""
 
     def predicate(self, crash_data, result):
         return bool(crash_data.get("ipc_channel_error"))
