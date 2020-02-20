@@ -53,6 +53,7 @@ _mach_msg_trap
 mnt@asec@org\.mozilla\.f.*-\d@pkg\.apk@classes\.dex@0x
 MOZ_Assert
 MOZ_Crash
+mozglue_static::panic_hook
 mozcrt19.dll@0x
 mozilla::CondVar::Wait
 mozilla::detail::ConditionVariableImpl
@@ -84,6 +85,7 @@ rtc::FatalMessage
 RtlpAdjustHeapLookasideDepth
 RtlSleepConditionVariableCS
 RtlSleepConditionVariableSRW
+RustMozCrash
 _sigtramp
 __sigtramp
 schedule_class_load

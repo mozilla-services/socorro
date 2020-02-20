@@ -38,6 +38,7 @@ _chkstk
 __chk_fail
 CleanupPerAppKey
 ConditionVariableFallback::wait\(.*\)
+core::ops::function::Fn::call<T>
 core::option::expect_failed
 core::ptr::drop_in_place
 core::ptr::real_drop_in_place
