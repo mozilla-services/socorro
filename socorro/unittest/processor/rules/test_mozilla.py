@@ -1384,90 +1384,100 @@ class TestBetaVersionRule(object):
         assert processor_meta.processor_notes == []
 
 
-class TestOsPrettyName(object):
-    def test_everything_we_hoped_for(self):
+class TestOsPrettyName:
+    @pytest.mark.parametrize(
+        "os_name, os_version, expected",
+        [
+            # Known windows version
+            ("Windows NT", "10.0.11.7600", "Windows 10"),
+            # Unknown windows version
+            ("Windows NT", "15.2", "Windows Unknown"),
+            # A valid version of Mac OS X
+            ("Mac OS X", "10.18.324", "OS X 10.18"),
+            # An invalid version of Mac OS X
+            ("Mac OS X", "12.1", "OS X Unknown"),
+            # Generic Linux
+            ("Linux", "0.0.12.13", "Linux"),
+        ],
+    )
+    def test_everything_we_hoped_for(self, os_name, os_version, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-
         processor_meta = get_basic_processor_meta()
 
         rule = OSPrettyVersionRule()
 
-        # A known Windows version.
-        processed_crash = DotDict()
-        processed_crash.os_name = "Windows NT"
-        processed_crash.os_version = "10.0.11.7600"
+        processed_crash = {"os_name": os_name, "os_version": os_version}
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] == "Windows 10"
+        assert processed_crash["os_pretty_version"] == expected
 
-        # An unknown Windows version.
-        processed_crash = DotDict()
-        processed_crash.os_name = "Windows NT"
-        processed_crash.os_version = "15.2"
+    def test_lsb_release(self):
+        # If this is Linux and there's data in json_dump.lsb_release.description,
+        # use that
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processor_meta = get_basic_processor_meta()
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] == "Windows Unknown"
+        rule = OSPrettyVersionRule()
 
-        # A valid version of Mac OS X.
-        processed_crash = DotDict()
-        processed_crash.os_name = "Mac OS X"
-        processed_crash.os_version = "10.18.324"
-
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] == "OS X 10.18"
-
-        # An invalid version of Mac OS X.
-        processed_crash = DotDict()
-        processed_crash.os_name = "Mac OS X"
-        processed_crash.os_version = "12.1"
+        processed_crash = {
+            "os_name": "Linux",
+            "os_version": "0.0.0 Linux etc",
+            "json_dump": {"lsb_release": {"description": "Ubuntu 18.04 LTS"}},
+        }
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] == "OS X Unknown"
+        assert processed_crash["os_pretty_version"] == "Ubuntu 18.04 LTS"
 
-        # Any version of Linux.
-        processed_crash = DotDict()
-        processed_crash.os_name = "Linux"
-        processed_crash.os_version = "0.0.12.13"
+    @pytest.mark.parametrize(
+        "os_name, os_version, expected",
+        [
+            ("Linux", None, "Linux"),
+            (None, None, None),
+            ("Windows NT", "NaN", "Windows NT"),
+        ],
+    )
+    def test_junk_data(self, os_name, os_version, expected):
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processor_meta = get_basic_processor_meta()
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] == "Linux"
+        rule = OSPrettyVersionRule()
 
         # Now try some bogus processed_crashes.
-        processed_crash = DotDict()
-        processed_crash.os_name = "Lunix"
-        processed_crash.os_version = None
+        processed_crash = {}
+        if os_name is not None:
+            processed_crash["os_name"] = os_name
+        if os_version is not None:
+            processed_crash["os_version"] = os_version
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] == "Lunix"
+        assert processed_crash["os_pretty_version"] == expected
 
-        processed_crash = DotDict()
-        processed_crash.os_name = None
-        processed_crash.os_version = None
+    def test_dotdict(self):
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processor_meta = get_basic_processor_meta()
 
+        rule = OSPrettyVersionRule()
+
+        processed_crash = DotDict(
+            {"os_name": "Windows NT", "os_version": "10.0.11.7600"}
+        )
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
+        assert processed_crash["os_pretty_version"] == "Windows 10"
+
+    def test_none(self):
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = OSPrettyVersionRule()
+
+        processed_crash = {"os_name": None, "os_version": None}
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash["os_pretty_version"] is None
-
-        processed_crash = DotDict()
-
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] is None
-
-        processed_crash = DotDict()
-        processed_crash.os_name = "Windows NT"
-        processed_crash.os_version = "NaN"
-
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-        assert "os_pretty_version" in processed_crash
-        assert processed_crash["os_pretty_version"] == "Windows NT"
 
 
 class TestThemePrettyNameRule(object):

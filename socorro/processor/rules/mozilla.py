@@ -10,6 +10,7 @@ import time
 from urllib.parse import unquote_plus
 
 from configman.dotdict import DotDict
+from glom import glom
 import markus
 
 from socorro.lib import javautil
@@ -727,9 +728,16 @@ class BetaVersionRule(Rule):
 
 
 class OSPrettyVersionRule(Rule):
-    """This rule attempts to extract the most useful, singular, human
-    understandable field for operating system version. This should always be
-    attempted.
+    """Populate os_pretty_version with most readable operating system version string.
+
+    This rule attempts to extract the most useful, singular, human understandable field
+    for operating system version. This should always be attempted.
+
+    For Windows, this is a lookup against a map.
+
+    For Mac OSX, this pulls from os_name and os_version.
+
+    For Linux, this uses json_dump.lsb_release.description if it's available.
 
     """
 
@@ -758,33 +766,40 @@ class OSPrettyVersionRule(Rule):
             # This data is bogus or isn't there, there's nothing we can do.
             return True
 
-        # at this point, os_name is the best info we have
+        # At this point, os_name is the best info we have
         processed_crash["os_pretty_version"] = pretty_name
 
-        if not processed_crash.get("os_version"):
+        os_version = processed_crash.get("os_version") or ""
+        if not os_version:
             # The version number is missing, there's nothing more to do.
             return True
 
-        version_split = processed_crash.os_version.split(".")
-
+        version_split = os_version.split(".")
         if len(version_split) < 2:
             # The version number is invalid, there's nothing more to do.
             return
 
+        os_name = processed_crash.get("os_name") or ""
         major_version = int(version_split[0])
         minor_version = int(version_split[1])
 
-        if processed_crash.os_name.lower().startswith("windows"):
+        if os_name.lower().startswith("windows"):
             processed_crash["os_pretty_version"] = self.WINDOWS_VERSIONS.get(
                 "%s.%s" % (major_version, minor_version), "Windows Unknown"
             )
             return
 
-        if processed_crash.os_name == "Mac OS X":
+        elif os_name == "Mac OS X":
             if major_version >= 10 and major_version < 11 and minor_version >= 0:
                 pretty_name = "OS X %s.%s" % (major_version, minor_version)
             else:
                 pretty_name = "OS X Unknown"
+
+        elif os_name == "Linux":
+            pretty_name = (
+                glom(processed_crash, "json_dump.lsb_release.description", default="")
+                or pretty_name
+            )
 
         processed_crash["os_pretty_version"] = pretty_name
 
