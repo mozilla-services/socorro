@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,7 +10,7 @@ fields from the raw crash file in S3 and the document in Elasticsearch.
 
 Usage:
 
-    python scripts/1610520/remove_field.py CRASHIDSFILE FIELD [FIELD...]
+    python scripts/remove_field.py CRASHIDSFILE FIELD [FIELD...]
 
 """
 
