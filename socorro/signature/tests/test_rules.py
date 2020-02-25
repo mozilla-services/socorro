@@ -1414,7 +1414,7 @@ class TestSignatureIPCChannelError:
         result = generator.Result()
         assert rule.predicate(crash_data, result) is True
 
-    def test_action_success(self):
+    def test_regular_ipcchannelerror(self):
         rule = rules.SignatureIPCChannelError()
 
         channel_error = "ipc" * 50
@@ -1426,11 +1426,11 @@ class TestSignatureIPCChannelError:
 
         action_result = rule.action(crash_data, result)
         assert action_result is True
-        expected = "IPCError-content | {} | {}".format(
-            channel_error[:100], original_signature
-        )
+        expected = "IPCError-content | {}".format(channel_error[:100])
         assert result.signature == expected
-        assert result.notes == ["SignatureIPCChannelError: IPC Channel Error prepended"]
+        assert result.notes == [
+            "SignatureIPCChannelError: IPC Channel Error stomped on signature"
+        ]
 
         # Now test with a browser crash.
         crash_data["additional_minidumps"] = "browser"
@@ -1440,8 +1440,27 @@ class TestSignatureIPCChannelError:
         action_result = rule.action(crash_data, result)
         assert action_result is True
 
-        assert result.signature == "IPCError-browser | {} | {}".format(
-            channel_error[:100], original_signature
+        assert result.signature == "IPCError-browser | {}".format(channel_error[:100])
+        assert result.notes == [
+            "SignatureIPCChannelError: IPC Channel Error stomped on signature"
+        ]
+
+    def test_shutdownkill(self):
+        rule = rules.SignatureIPCChannelError()
+
+        original_signature = "foo::bar"
+        crash_data = {
+            "ipc_channel_error": "ShutDownKill",
+            "additional_minidumps": "browser",
+        }
+        result = generator.Result()
+        result.signature = original_signature
+
+        action_result = rule.action(crash_data, result)
+        assert action_result is True
+
+        assert result.signature == "IPCError-browser | ShutDownKill | {}".format(
+            original_signature
         )
         assert result.notes == ["SignatureIPCChannelError: IPC Channel Error prepended"]
 
