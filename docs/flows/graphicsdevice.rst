@@ -43,8 +43,17 @@ The data is stored in the ``crashstats.GraphicsDevice`` Django model. This is th
 Where the data comes from
 =========================
 
-Data is added to the table manually using the Crash Stats Django admin. See the
-admin page for details.
+Data is added to the table manually using the Crash Stats Django admin.
+
+1. Log into Crash Stats.
+2. Go to the admin.
+3. Click on Management Pages -> Graphics Devices
+4. Upload a new file from `PCI ID repository <https://pci-ids.ucw.cz/>`_.
+
+The function for parsing that file is `pci_ids__parse_graphics_device_iterable`
+at:
+
+https://github.com/mozilla-services/socorro/blob/master/webapp-django/crashstats/manage/utils.py#L21
 
 
 What uses this data
@@ -54,3 +63,6 @@ Pages in the webapp that use this data:
 
 * report view
 * signature summary
+
+They convert the hex codes in the crash reports to human-friendly labels
+in the table.
