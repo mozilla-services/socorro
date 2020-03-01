@@ -108,9 +108,9 @@ pyinotify==0.9.6 ; sys_platform == 'linux' or sys_platform == 'linux2' \
 django-jinja==2.6.0 \
     --hash=sha256:4e3e97d7b40669926a9517eb4522cd98dce2e32dcba908aad156810b74744148 \
     --hash=sha256:7459985c25ddb6584c6bab345761c8c5557713448e6fbb322af1b6dd7f5512bd
-humanfriendly==4.18 \
-    --hash=sha256:23057b10ad6f782e7bc3a20e3cb6768ab919f619bbdc0dd75691121bbde5591d \
-    --hash=sha256:33ee8ceb63f1db61cce8b5c800c531e1a61023ac5488ccde2ba574a85be00a85
+humanfriendly==7.1.1 \
+    --hash=sha256:a9a41074c24dc5d6486e8784dc8f057fec8b963217e941c25fb7c7c383a4a1c1 \
+    --hash=sha256:5e5c2b82fb58dcea413b48ab2a7381baa5e246d47fe94241d7d83724c11c0565
 jsonschema==3.2.0 \
     --hash=sha256:4e5b3cf8216f577bee9ce139cbe72eca3ea4f292ec60928ff24758ce626cd163 \
     --hash=sha256:c8a85b28d377cc7737e46e2d9f2b4f44ee3c0e1deac6bf46ddefc7187d30797a
