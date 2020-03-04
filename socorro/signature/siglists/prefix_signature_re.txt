@@ -145,6 +145,7 @@ mozalloc_handle_oom
 moz_free
 moz_malloc_size_of
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
+mozilla::CheckCheckedUnsafePtrs<T>::Check
 mozilla::CondVar::
 mozilla::detail::ConditionVariableImpl::
 mozilla::detail::HashTable<.*>::
@@ -157,6 +158,7 @@ mozilla::TimeStamp::Now
 mozilla::detail::MutexImpl::
 mozilla::detail::nsStringRepr::First
 mozilla::detail::nsStringRepr::Last
+mozilla::detail::SupportCheckedUnsafePtrImpl<T>::~SupportCheckedUnsafePtrImpl
 mozilla::ipc::LogicError
 mozilla::ipc::MessageChannel::AssertWorkerThread
 mozilla::ipc::MessageChannel::Call
