@@ -108,7 +108,7 @@ def s3_delete(crashid):
     key = "v2/raw_crash/%(entropy)s/%(date)s/%(crashid)s" % {
         "entropy": crashid[0:3],
         "date": "20" + crashid[-6:],
-        "crashid": crashid
+        "crashid": crashid,
     }
     obj = s3_fetch_object(s3_client, bucket, key)
     if obj:
@@ -132,7 +132,7 @@ def s3_delete(crashid):
                 dump_name = "dump"
             key = "v1/%(dump_name)s/%(crashid)s" % {
                 "dump_name": dump_name,
-                "crashid": crashid
+                "crashid": crashid,
             }
 
             # If the dump is not there, that's fine; but if deleting the dump kicks up
@@ -180,9 +180,7 @@ def es_fetch_document(es_conn, crashid):
             if hits:
                 return results["hits"]["hits"][0]
         except Exception:
-            logger.exception(
-                "ERROR: es: when fetching %s %s" % (doc_type, crashid)
-            )
+            logger.exception("ERROR: es: when fetching %s %s" % (doc_type, crashid))
 
     print("es: not found: %s %s" % (doc_type, crashid))
 
