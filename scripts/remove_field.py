@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """
-Given a set of crash reports via a file and a list of fields to remove, removes the
+Given a set of crash report ids via a file and a list of fields to remove, removes the
 fields from the raw crash file in S3 and the document in Elasticsearch.
 
 Usage:
