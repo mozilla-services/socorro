@@ -19,9 +19,15 @@ all crash storage:
 
   * crash report document
 
+Notes:
+
+1. This **deletes** crash data permanently. Once deleted, this data can't be undeleted.
+2. This doesn't delete any data from cache. Caches will expire data eventually.
+
+
 Usage:
 
-    python scripts/delete_crash_data.py CRASHIDSFILE
+    python scripts/permadelete_crash_data.py CRASHIDSFILE
 
 """
 
@@ -178,7 +184,7 @@ def es_fetch_document(es_conn, crashid):
             results = search.execute().to_dict()
             hits = results["hits"]["hits"]
             if hits:
-                return results["hits"]["hits"][0]
+                return hits[0]
         except Exception:
             logger.exception("ERROR: es: when fetching %s %s" % (doc_type, crashid))
 
@@ -208,7 +214,7 @@ def es_delete(crashid):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Delete crash report data from crash storage."
+        description="Permanently deletes crash report data from crash storage."
     )
     parser.add_argument(
         "crashidsfile", nargs=1, help="Path to the file with crashids in it."
