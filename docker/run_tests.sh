@@ -11,8 +11,8 @@
 #
 # * elasticsearch
 # * localstack-s3
+# * localstack-sqs
 # * postgresql
-# * pubsub
 
 # Failures should cause setup to fail
 set -v -e -x
@@ -27,7 +27,6 @@ function getenv {
 }
 
 DATABASE_URL="${DATABASE_URL:-'postgres://postgres:aPassword@postgresql:5432/socorro_test'}"
-PUBSUB_EMULATOR_HOST="${PUBSUB_EMULATOR_HOST:-pubsub:5010}"
 ELASTICSEARCH_URL="$(getenv 'resource.elasticsearch.elasticsearch_urls')"
 S3_ENDPOINT_URL="$(getenv 'resource.boto.s3_endpoint_url')"
 SQS_ENDPOINT_URL="$(getenv 'resource.boto.sqs_endpoint_url')"
@@ -38,15 +37,13 @@ PYTHON="$(which python)"
 
 echo ">>> wait for services to be ready"
 urlwait "${DATABASE_URL}" 10
-urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
 urlwait "${S3_ENDPOINT_URL}" 10
 urlwait "${SQS_ENDPOINT_URL}" 10
 
-echo ">>> build pubsub things and db things"
-# Clear Pub/Sub for tests
-./socorro-cmd pubsub delete
-./socorro-cmd pubsub create
+echo ">>> build sqs things and db things"
+# Clear SQS for tests
+./socorro-cmd sqs delete-all
 
 # Set up socorro_test db
 ./socorro-cmd db drop || true

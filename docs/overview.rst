@@ -33,7 +33,7 @@ The crash ingestion pipeline that we have at Mozilla looks like this:
          rank=same;
 
          s3raw [shape=tab, label="S3 (Raw)", style=filled, fillcolor=gray];
-         pubsub [shape=tab, label="PubSub", style=filled, fillcolor=gray];
+         sqs [shape=tab, label="SQS", style=filled, fillcolor=gray];
       }
 
       processor [shape=rect, label="processor"];
@@ -58,9 +58,9 @@ The crash ingestion pipeline that we have at Mozilla looks like this:
 
       client -> collector [label="HTTP"];
       collector -> s3raw [label="save raw"];
-      collector -> pubsub [label="publish"];
+      collector -> sqs [label="publish"];
 
-      pubsub -> processor [label="crash id"];
+      sqs -> processor [label="crash id"];
       s3raw -> processor [label="load raw"];
       postgres -> processor [label="betaversionrule"];
       processor -> { s3processed, elasticsearch, s3telemetry } [label="save processed"];

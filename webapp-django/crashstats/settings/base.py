@@ -570,7 +570,7 @@ implementations_config = dj_database_url.parse(implementations_database_url)
 # The CrashQueueBase class to use for submitting priority and reprocessing
 # requests
 CRASHQUEUE = config(
-    "queue.crashqueue_class", "socorro.external.pubsub.crashqueue.PubSubCrashQueue"
+    "queue.crashqueue_class", "socorro.external.sqs.crashqueue.SQSCrashQueue"
 )
 
 # Config for when the models pull directly from socorro.external classes.
@@ -592,8 +592,9 @@ SOCORRO_CONFIG = {
         },
         "boto": {
             "access_key": config("resource.boto.access_key", None),
-            "bucket_name": config("resource.boto.bucket_name", "crashstats"),
             "region": config("resource.boto.region", "us-west-2"),
+            # S3 things
+            "bucket_name": config("resource.boto.bucket_name", "crashstats"),
             "resource_class": "socorro.external.boto.connection_context.S3Connection",
             "s3_endpoint_url": config("resource.boto.s3_endpoint_url", None),
             # SQS things
@@ -601,26 +602,6 @@ SOCORRO_CONFIG = {
             "standard_queue": config("resource.boto.standard_queue", None),
             "priority_queue": config("resource.boto.priority_queue", None),
             "reprocessing_queue": config("resource.boto.reprocessing_queue", None),
-        },
-        "pubsub": {
-            "service_account_file": config(
-                "resource.pubsub.service_account_file", None
-            ),
-            "project_id": config("resource.pubsub.project_id", None),
-            "standard_topic_name": config("resource.pubsub.standard_topic_name", None),
-            "standard_subscription_name": config(
-                "resource.pubsub.standard_subscription_name", None
-            ),
-            "priority_topic_name": config("resource.pubsub.priority_topic_name", None),
-            "priority_subscription_name": config(
-                "resource.pubsub.priority_subscription_name", None
-            ),
-            "reprocessing_topic_name": config(
-                "resource.pubsub.reprocessing_topic_name", None
-            ),
-            "reprocessing_subscription_name": config(
-                "resource.pubsub.reprocessing_subscription_name", None
-            ),
         },
     },
     "telemetrydata": {"bucket_name": config("destination.telemetry.bucket_name", None)},

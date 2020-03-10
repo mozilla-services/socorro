@@ -20,10 +20,6 @@ set -e
 /app/socorro-cmd es delete
 /app/socorro-cmd es create
 
-# Delete and create Pub/Sub topics and subscriptions
-/app/socorro-cmd pubsub delete
-/app/socorro-cmd pubsub create
-
 # Delete and create SQS queues
 /app/socorro-cmd sqs delete-all
 /app/socorro-cmd sqs create-all

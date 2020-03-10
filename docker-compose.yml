@@ -27,8 +27,8 @@ services:
     depends_on:
       - statsd
       - localstack-s3
+      - localstack-sqs
       - elasticsearch
-      - pubsub
     command: ["processor"]
     volumes:
       - .:/app
@@ -56,9 +56,9 @@ services:
     depends_on:
       - statsd
       - localstack-s3
+      - localstack-sqs
       - postgresql
       - elasticsearch
-      - pubsub
       - memcached
       - oidcprovider
     links:
@@ -106,7 +106,6 @@ services:
     depends_on:
       - localstack-s3
       - localstack-sqs
-      - pubsub
       - statsd
     expose:
       - 8000
@@ -141,18 +140,6 @@ services:
     ports:
       - "9201:9200"
       - "9301:9300"
-
-  # Google Pub/Sub emulator
-  pubsub:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.pubsub
-    environment:
-      # This should match docker/config/local_dev.env value
-      - PUBSUB_PROJECT_ID=local_dev_socorro
-      - PUBSUB_PORT=5010
-    ports:
-      - "5010:5010"
 
   # https://hub.docker.com/_/postgres/
   postgresql:

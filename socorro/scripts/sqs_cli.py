@@ -11,6 +11,7 @@
 # Usage: socorro-cmd sqs [SUBCOMMAND]
 
 import os
+import sys
 import time
 
 import boto3
@@ -89,10 +90,10 @@ def list_messages(ctx, queue):
 
 @sqs_group.command("publish")
 @click.argument("queue")
-@click.argument("message")
+@click.argument("crashids", nargs=-1)
 @click.pass_context
-def publish(ctx, queue, message):
-    """Add a message to a queue."""
+def publish(ctx, queue, crashids):
+    """Publishes crash ids to a queue."""
     conn = get_client()
     try:
         resp = conn.get_queue_url(QueueName=queue)
@@ -101,8 +102,19 @@ def publish(ctx, queue, message):
         click.echo("Queue %s does not exist.")
         return
 
-    conn.send_message(QueueUrl=queue_url, MessageBody=message)
-    click.echo("Message sent.")
+    # Pull crash ids from stdin if there are any
+    if not crashids and not sys.stdin.isatty():
+        crashids = list(click.get_text_stream("stdin").readlines())
+
+    if not crashids:
+        raise click.BadParameter(
+            "No crashids provided.", ctx=ctx, param="crashids", param_hint="crashids"
+        )
+
+    for crashid in crashids:
+        crashid = crashid.rstrip()
+        conn.send_message(QueueUrl=queue_url, MessageBody=crashid)
+        click.echo("Published: %s" % crashid)
 
 
 @sqs_group.command("list_queues")
