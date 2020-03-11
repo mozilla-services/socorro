@@ -21,9 +21,7 @@ from socorro.lib.util import dotdict_to_dict
 
 CONFIG_DEFAULTS = {
     "always_ignore_mismatches": True,
-    "queue": {
-        "crashqueue_class": "socorro.external.pubsub.crashqueue.PubSubCrashQueue"
-    },
+    "queue": {"crashqueue_class": "socorro.external.sqs.crashqueue.SQSCrashQueue"},
     "source": {
         "benchmark_tag": "BotoBenchmarkRead",
         "crashstorage_class": "socorro.external.crashstorage_base.BenchmarkingCrashStorage",

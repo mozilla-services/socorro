@@ -20,14 +20,14 @@ socorro.external.crashqueue_base
 * `CrashQueueBase` defines the API for crash queue classes.
 
 
-socorro.external.pubsub
+socorro.external.sqs
 =======================
 
-**socorro.external.pubsub.crashqueue**
+**socorro.external.sqs.crashqueue**
 
 Classes:
 
-* `PubSubCrashQueue`: Handles pulling crash ids from Google Pub/Sub
-  subscriptions for processing.
+* `SQSCrashQueue`: Handles pulling crash ids from AWS SQS queues
+  for processing.
 
-  Also handles publishing crash ids to Google Pub/Sub topics.
+  Also handles publishing crash ids to AWS SQS queues.

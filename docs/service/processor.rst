@@ -36,7 +36,7 @@ you give it something to process.
 
 In order to process something, you first need to acquire raw crash data, put the
 data in the S3 container in the appropriate place, then you need to add the
-crash id to the normal Pub/Sub topic.
+crash id to the AWS SQS standard queue.
 
 We have helper scripts for these steps.
 
@@ -82,7 +82,7 @@ process_crashes.sh
 ------------------
 
 You can use the ``scripts/process_crashes.sh`` script which will fetch crash
-data, sync it with the S3 bucket, and publish the crash ids to Pub/Sub
+data, sync it with the S3 bucket, and publish the crash ids to AWS SQS queue
 for processing. If you have access to memory dumps and use a valid
 `API token`_, then memory dumps will be fetched for processing as well.
 
@@ -212,27 +212,28 @@ Since this is just a wrapper, you can get help:
    app@socorro:/app$ scripts/socorro_aws_s3.sh help
 
 
-pubsub
-------
+AWS SQS
+-------
 
-This script can manipulate the Pub/Sub emulator and also publish crash ids
-to Pub/Sub topics.
+This script can manipulate the AWS SQS emulator and also publish crash ids
+AWS SQS queues.
 
-Typically, you'd use this to publish crash ids to the normal Pub/Sub topic for
+Typically, you'd use this to publish crash ids to the AWS SQS standard queue for
 processing.
 
 For example:
 
 .. code-block:: shell
 
-   app@socorro:/app$ socorro-cmd pubsub publish ed35821d-3af5-4fe9-bfa3-dc4dc0181128
+   app@socorro:/app$ socorro-cmd sqs publish local_dev_standard \
+       ed35821d-3af5-4fe9-bfa3-dc4dc0181128
 
 
 For help:
 
 .. code-block:: shell
 
-   app@socorro:/app$ socorro-cmd pubsub publish --help
+   app@socorro:/app$ socorro-cmd sqs publish --help
 
 
 .. Note::
@@ -265,7 +266,7 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
 
   # Add all the crash ids to the queue
-  app@socorro:/app$ cat crashids.txt | socorro-cmd pubsub publish
+  app@socorro:/app$ cat crashids.txt | socorro-cmd sqs publish local_dev_standard
 
   # Then exit the container
   app@socorro:/app$ exit
@@ -292,4 +293,4 @@ To run Antenna in the Socorro local dev environment, do::
 It will listen on ``http://localhost:8888/`` for incoming crashes from a
 breakpad crash reporter. It will save crash data to the ``dev_bucket`` in the
 local S3 which is where the processor looks for it. It will publish
-the crash ids to the Pub/Sub normal topic.
+the crash ids to the AWS SQS standard queue.

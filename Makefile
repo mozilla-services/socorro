@@ -33,7 +33,7 @@ default:
 	@echo ""
 	@echo "  build            - build docker containers"
 	@echo "  run              - run processor and webapp"
-	@echo "  runservices      - run service containers (postgres, pubsub, etc)"
+	@echo "  runservices      - run service containers (postgres, sqs, etc)"
 	@echo "  stop             - stop all service containers"
 	@echo ""
 	@echo "  shell            - open a shell in the app container"
@@ -125,7 +125,7 @@ run: my.env
 
 .PHONY: runservices
 runservices: my.env
-	${DC} up -d statsd postgresql memcached localstack-s3 localstack-sqs elasticsearch pubsub
+	${DC} up -d statsd postgresql memcached localstack-s3 localstack-sqs elasticsearch
 
 .PHONY: stop
 stop: my.env

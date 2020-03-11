@@ -28,7 +28,6 @@
         "jquery",
         "postgresql",
         "puppet",
-        "python",
-        "pubsub"
+        "python"
     ]
 }

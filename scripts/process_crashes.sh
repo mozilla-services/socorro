@@ -51,7 +51,7 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 ./scripts/socorro_aws_s3.sh ls --recursive s3://dev_bucket/
 
 # Add crash ids to queue
-./socorro-cmd pubsub publish $@
+./socorro-cmd sqs publish local_dev_standard $@
 
 # Print urls to make it easier to look at them
 for crashid in "$@"

@@ -17,7 +17,7 @@ from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.lib import BadArgumentError
 from socorro.lib.ooid import create_new_ooid
-from socorro.unittest.external.pubsub import get_config_manager, PubSubHelper
+from socorro.unittest.external.sqs import get_sqs_config, SQSHelper
 
 
 class TestGraphicsDevices(DjangoTestCase):
@@ -500,38 +500,36 @@ class TestMiddlewareModels(DjangoTestCase):
         assert info
 
     def test_Reprocessing(self):
-        # This test runs against the Pub/Sub emulator, so undo the mock to let
+        # This test runs against the AWS SQS emulator, so undo the mock to let
         # that work.
         self.undo_implementation_mock(models.Reprocessing)
 
-        config_manager = get_config_manager()
-        with config_manager.context() as config:
-            pubsub_helper = PubSubHelper(config)
-            api = models.Reprocessing()
+        config = get_sqs_config()
+        sqs_helper = SQSHelper(config)
+        api = models.Reprocessing()
 
-            with pubsub_helper as helper:
-                crash_id = create_new_ooid()
-                api.post(crash_ids=crash_id)
+        with sqs_helper as helper:
+            crash_id = create_new_ooid()
+            api.post(crash_ids=crash_id)
 
-                crash_ids = helper.get_crash_ids("reprocessing")
-                assert crash_ids == [crash_id]
+            crash_ids = helper.get_published_crashids("reprocessing")
+            assert crash_ids == [crash_id]
 
-            # Now try an invalid crash id
-            with pytest.raises(BadArgumentError):
-                api.post(crash_ids="some-crash-id")
+        # Now try an invalid crash id
+        with pytest.raises(BadArgumentError):
+            api.post(crash_ids="some-crash-id")
 
     def test_PriorityJob(self):
-        # This test runs against the Pub/Sub emulator, so undo the mock to let
+        # This test runs against the AWS SQS emulator, so undo the mock to let
         # that work.
         self.undo_implementation_mock(models.PriorityJob)
 
-        config_manager = get_config_manager()
-        with config_manager.context() as config:
-            pubsub_helper = PubSubHelper(config)
-            api = models.PriorityJob()
+        config = get_sqs_config()
+        sqs_helper = SQSHelper(config)
+        api = models.PriorityJob()
 
-            with pubsub_helper as helper:
-                api.post(crash_ids="some-crash-id")
+        with sqs_helper as helper:
+            api.post(crash_ids="some-crash-id")
 
-                crash_ids = helper.get_crash_ids("priority")
-                assert crash_ids == ["some-crash-id"]
+            crash_ids = helper.get_published_crashids("priority")
+            assert crash_ids == ["some-crash-id"]
