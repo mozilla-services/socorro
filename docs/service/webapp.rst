@@ -1,38 +1,36 @@
 .. _webapp-chapter:
 
-===========================
-Service: Crash Stats Webapp
-===========================
-
-Running the webapp
 ==================
+Crash Stats Webapp
+==================
+
+Code is in ``webapp-django/``.
+
+Run script is ``/app/docker/run_webapp.sh``.
+
+
+Configuration
+=============
+
+FIXME
+
+
+Running in a local dev environment
+==================================
 
 To run the webapp, do::
 
   $ docker-compose up webapp
 
-
-That will bring up all the services the webapp requires to run and start the
-webapp using the ``/app/docker/run_webapp.sh`` script.
-
 To ease debugging, you can run a shell in the container::
 
   $ docker-compose run --service-ports webapp shell
 
-
 Then you can start and stop the webapp, adjust files, and debug.
 
-
-
-Setting up authentication and a superuser
-=========================================
-
-Creating a superuser
---------------------
-
 If you want to do anything in the webapp admin, you'll need to create a
-superuser in the Crash Stats webapp and a OIDC account to authenticate
-against in the oidcprovider service container.
+superuser in the Crash Stats webapp and a OIDC account to authenticate against
+in the oidcprovider service container.
 
 Let's use these credentials:
 
@@ -45,8 +43,8 @@ This creates an account in the oidcprovider service container::
   $ docker-compose up -d oidcprovider
   $ docker-compose exec oidcprovider /code/manage.py createuser willkg foo willkg@example.com
 
-This creates a superuser account in the Crash Stats webapp corresponding to the account
-we created in the oidcprovider service container::
+This creates a superuser account in the Crash Stats webapp corresponding to the
+account we created in the oidcprovider service container::
 
   $ docker-compose run app shell ./webapp-django/manage.py makesuperuser willkg@example.com
 
@@ -87,6 +85,7 @@ the database in a "post-migrate" signal handler.
 
 Static Assets
 =============
+
 In the development environment, the ``STATIC_ROOT`` is set to
 ``/tmp/crashstats-static/`` rather than ``/app/webapp-django/static``.
 The process in the container creates files with the uid 10001, and Linux users
@@ -119,8 +118,9 @@ in a ``docker-compose.override.yml`` file:
           # Persist the static files folder
           - ./static:/tmp/crashstats-static
 
+
 Production-style Assets
------------------------
+=======================
 
 When you run ``docker-compose up webapp`` in the local development environment,
 it starts the web app using Django's ``runserver`` command. ``DEBUG=True`` is
@@ -152,3 +152,15 @@ served instead.
 
 Because static assets are compiled, if you change JS or CSS files, you'll need
 to re-run ``./manage.py collectstatic``.
+
+
+Running in a server environment
+===============================
+
+Add configuration to ``webapp.env`` file.
+
+Run the docker image using the ``webapp`` command. Something like this::
+
+    docker run \
+        --env-file=webapp.env \
+        mozilla/socorro_app webapp

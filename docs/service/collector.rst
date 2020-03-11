@@ -1,13 +1,14 @@
 .. _collector-chapter:
 
-==================
-Service: Collector
-==================
+=========
+Collector
+=========
 
 The collector's job is to collect incoming crash reports, generate crash ids,
-and save that data to S3 as soon as possible.
+save that data to AWS S3 as soon as possible, and publish a crash report id
+to AWS SQS for processing.
 
-"Antenna" is the name of the collector that we're using now.
+Antenna is the name of the collector that we're using now.
 
-For more information on Antenna, see the `Antenna docs
+For more information on running and configuring Antenna, see the `Antenna docs
 <https://antenna.readthedocs.io/>`_.
