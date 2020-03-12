@@ -1,6 +1,6 @@
-===========================
-Specification: Crash report
-===========================
+==========================================
+Specification: Crash report payload format
+==========================================
 
 This is a specification for the format for submitting crash reports.
 

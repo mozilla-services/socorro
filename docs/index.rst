@@ -2,41 +2,42 @@
 Socorro - Crash ingestion pipeline
 ==================================
 
-Socorro is a set of components for collecting, processing, and analyzing crash
-data. It is used by Mozilla for analyzing crash data for Mozilla products.
-Mozilla's crash analysis tool is hosted at
-`<https://crash-stats.mozilla.org/>`_.
+Socorro is crash ingestion pipeline consisting of services for collecting,
+processing, and analyzing crash data. It is used by Mozilla. Mozilla's crash
+analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
+
+* Free software: Mozilla Public License version 2.0
+* Socorro (processor/webapp/cron jobs)
+
+  * Code: https://github.com/mozilla-services/socorro/
+  * Documentation: https://socorro.readthedocs.io/
+  * User documentation: https://crash-stats.mozilla.org/documentation/
+  * Bugs: `Report a Socorro bug <https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General>`_
+
+* Antenna (collector)
+
+  * Code: https://github.com/mozilla-services/antenna/
+  * Documentation: https://antenna.readthedocs.io/
+  * Bugs: `Report an Antenna bug <https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=Antenna>`_
+
+* Mailing list: https://lists.mozilla.org/listinfo/tools-socorro
+* Chat: `#breakpad:mozilla.org <https://riot.im/app/#/room/#general:mozilla.org>`_
 
 
-===============  ==============================================================================
-Free software    Mozilla Public License version 2.0
----------------  ------------------------------------------------------------------------------
-Socorro code     https://github.com/mozilla-services/socorro/
----------------  ------------------------------------------------------------------------------
-Antenna code     https://github.com/mozilla-services/antenna
----------------  ------------------------------------------------------------------------------
-Documentation    https://socorro.readthedocs.io/
----------------  ------------------------------------------------------------------------------
-Documentation    https://crash-stats.mozilla.org/documentation/
----------------  ------------------------------------------------------------------------------
-Mailing list     https://lists.mozilla.org/listinfo/tools-socorro
----------------  ------------------------------------------------------------------------------
-New bugs         https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro
----------------  ------------------------------------------------------------------------------
-View all bugs    https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro
-===============  ==============================================================================
+.. Note::
+
+   This is a very Mozilla-specific product. We do not currently have the
+   capacity to support non-Mozilla uses.
 
 
 .. toctree::
-   :caption: Socorro/Crash Stats for users
-   :numbered:
+   :caption: For Socorro/Crash Stats Users
    :includehidden:
    :maxdepth: 1
-   :glob:
 
    overview
    signaturegeneration
-   topcrashersbysignature
+   reprocessing
 
 
 Crash Stats site documentation covering API docs, getting access to memory dumps,
@@ -44,33 +45,25 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
 
 
 .. toctree::
-   :caption: Developers
-   :numbered:
+   :caption: For Socorro Developers and Ops
    :includehidden:
    :maxdepth: 1
-   :glob:
 
    localdevenvironment
    contributing
-   service/*
-   flows/*
+   service/index
+   flows/index
    stackwalk
    crashstorage
    crashqueue
-   tests/*
-   socorro_app
-   deploy
+   tests/system_checklist
    howto
 
 
-Specifications and schemas.
-
 .. toctree::
-   :caption: Specifications
-   :numbered:
+   :caption: Specifications and Resources
    :includehidden:
    :maxdepth: 1
-   :glob:
 
    spec_crashreport
    schemas

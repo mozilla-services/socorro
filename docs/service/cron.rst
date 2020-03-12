@@ -1,23 +1,21 @@
 .. _cron-chapter:
 
-===================
-Service: Crontabber
-===================
+==========
+Crontabber
+==========
 
 Socorro requires that certain upkeep jobs run periodically. For this, we have
 a ``cronrun`` Django command that runs Django commands at scheduled times.
 
 Job configuration is in ``webapp-django/crashstats/cron/__init__.py``.
 
+Code is in ``webapp-django/crashstats/cron/``.
 
-What runs cronrun?
-==================
-
-There's a crontabber node that runs the Django ``cronrun`` command every
-5 minutes.
+Run script is ``/app/docker/run_crontabber.sh``. This is an infinite loop that
+runs the ``manage.py cronrun`` command every 5 minutes.
 
 
-How does it work?
+manage.py cronrun
 =================
 
 ``cronrun`` can run any Django command at scheduled times. It supports several
@@ -37,14 +35,13 @@ features:
 5. Logging: All stdout is send to the logger.
 
 
-Helper commands
-===============
+manage.py cronrun helper commands
+=================================
 
 All commands are accessed in a shell in the app container. For example::
 
     $ make shell
     app@socorro:/app$ webapp-django/manage.py cronrun --help
-
 
 **cronrun**
     Runs any scheduled jobs that need to be run.
@@ -57,3 +54,30 @@ All commands are accessed in a shell in the app container. For example::
 
 **cronmarksuccess**
     Marks specified jobs as successful.
+
+
+Configuration
+=============
+
+``cronrun`` is a Django management command, so it's configured the same as
+the webapp.
+
+
+Running in a local dev environment
+==================================
+
+To run the processor in the local dev environment, do::
+
+  $ docker-compose up crontabber
+
+
+Running in a server environment
+===============================
+
+Use the same configuration as the webapp with a ``webapp.env`` file.
+
+Run the docker image using the ``crontabber`` command. Something like this::
+
+    docker run \
+        --env-file=webapp.env \
+        mozilla/socorro_app crontabber

@@ -61,7 +61,7 @@ clean:
 
 .PHONY: docs
 docs: my.env .docker-build-docs
-	${DC} run --rm docs ./docker/run_build_docs.sh
+	${DC} run --rm --user ${SOCORRO_UID} docs ./docker/run_build_docs.sh
 
 .PHONY: lint
 lint: my.env
