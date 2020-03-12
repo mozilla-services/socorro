@@ -34,7 +34,6 @@ analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
    :caption: For Socorro/Crash Stats Users
    :includehidden:
    :maxdepth: 1
-   :glob:
 
    overview
    signaturegeneration
@@ -49,7 +48,6 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    :caption: For Socorro Developers and Ops
    :includehidden:
    :maxdepth: 1
-   :glob:
 
    localdevenvironment
    contributing
@@ -58,7 +56,7 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    stackwalk
    crashstorage
    crashqueue
-   tests/*
+   tests/system_checklist
    howto
 
 
@@ -66,8 +64,6 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    :caption: Specifications and Resources
    :includehidden:
    :maxdepth: 1
-   :glob:
 
-   breakpad
    spec_crashreport
    schemas

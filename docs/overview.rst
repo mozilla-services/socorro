@@ -115,6 +115,10 @@ If the user presses "Send crash report", then the crash reporter sends the
 crash report as a multipart/form-data payload via an HTTP POST to the
 collector.
 
+At Mozilla, this is a bit complicated because each product and platform has
+different breakpad client bits and crash reporters and is spread out across a
+bunch of repositories.
+
 .. seealso::
 
    **Breakpad overview**
@@ -124,68 +128,8 @@ collector.
      https://antenna.readthedocs.io/en/latest/breakpad_reporting.html
 
 
-At Mozilla, this is a bit complicated because each product and platform has
-different breakpad client bits and crash reporters and is spread out
-across a bunch of repositories.
-
-
-Firefox
-~~~~~~~
-
-Windows:
-
-Crash reporter client code: https://dxr.mozilla.org/mozilla-central/source/toolkit/crashreporter/client/
-
-The submission code in the client is here:
-https://dxr.mozilla.org/mozilla-central/rev/8d0aadfe7da782d415363880008b4ca027686137/toolkit/crashreporter/client/crashreporter_win.cpp#391
-
-which calls into Breakpad code here:
-https://dxr.mozilla.org/mozilla-central/rev/8d0aadfe7da782d415363880008b4ca027686137/toolkit/crashreporter/google-breakpad/src/common/windows/http_upload.cc#65
-
-which uses WinINet APIs to do most of the hard work. If you look near the
-bottom of that function you can see that it does require a HTTP 200 response
-code for success, but it doesn't look like it cares about the response
-content-type.
-
-MacOS:
-
-For OS X the submission code is here:
-https://dxr.mozilla.org/mozilla-central/rev/8d0aadfe7da782d415363880008b4ca027686137/toolkit/crashreporter/client/crashreporter_osx.mm#555
-
-It uses Cocoa APIs to do the real work. It also checks for HTTP status 200 for success.
-
-Linux:
-
-For Linux the submission code is here:
-https://dxr.mozilla.org/mozilla-central/rev/8d0aadfe7da782d415363880008b4ca027686137/toolkit/crashreporter/client/crashreporter_gtk_common.cpp#190
-
-which calls into Breakpad code here:
-https://dxr.mozilla.org/mozilla-central/rev/8d0aadfe7da782d415363880008b4ca027686137/toolkit/crashreporter/google-breakpad/src/common/linux/http_upload.cc#57
-
-which calls into libcurl to do the work. It's a little hard for me to read,
-but it sets CURLOPT_FAILONERROR, which says it will only fail if the server
-returns a HTTP response code of 400 or higher, I believe.
-
-For content crashes:
-
-For the in-browser case, the submission code is here:
-https://dxr.mozilla.org/mozilla-central/rev/8d0aadfe7da782d415363880008b4ca027686137/toolkit/crashreporter/CrashSubmit.jsm#253
-
-It uses XMLHttpRequest to submit, and it checks for HTTP status 200. I do
-note that it uses `responseText` on the XHR, so I'd have to read the XHR
-spec to see if that would break if the content-type of the response changed.
-
-
-Firefox for Android
-~~~~~~~~~~~~~~~~~~~
-
-For Android the submission code is here:
-https://dxr.mozilla.org/mozilla-central/rev/8d0aadfe7da782d415363880008b4ca027686137/mobile/android/base/java/org/mozilla/gecko/CrashReporter.java#356
-
-which uses Java APIs. The Android client *does* gzip-compress the request
-body, and it also looks like it checks for HTTP 200
-(HttpURLConnection.HTTP_OK).
-
+   **Crash reporter documentation**
+     https://firefox-source-docs.mozilla.org/toolkit/crashreporter/crashreporter/index.html
 
 
 Collected by the Collector
