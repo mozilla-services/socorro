@@ -16,6 +16,8 @@ COPY ./docs/requirements.txt /tmp
 RUN pip install -U 'pip>=8' && \
     pip install -r /tmp/requirements.txt
 
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONPATH /app
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
+
+USER app
