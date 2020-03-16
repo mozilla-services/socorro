@@ -55,7 +55,7 @@ popd
 # Run tests
 "${PYTEST}"
 
-# Collect static and then run py.test in the webapp
+# Collect static and then run pytest in the webapp
 pushd webapp-django
 ${PYTHON} manage.py collectstatic --noinput
 "${PYTEST}"
