@@ -187,13 +187,18 @@ def truncate_string_field_values(fields, data):
         new_value = value
 
         # First truncate down to MAX_STRING_FIELD_VALUE_SIZE
-        if len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
-            new_value = new_value[:MAX_STRING_FIELD_VALUE_SIZE]
+        try:
+            if len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
+                new_value = new_value[:MAX_STRING_FIELD_VALUE_SIZE]
 
-        # If the utf-8 encoded bytes is still larger, whittle off unicode
-        # characters until it fits
-        while len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
-            new_value = new_value[:-1]
+            # If the utf-8 encoded bytes is still larger, whittle off unicode
+            # characters until it fits
+            while len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
+                new_value = new_value[:-1]
+        except UnicodeEncodeError:
+            # If we hit a UnicodeEncodeError converting the unicode to utf-8, then the
+            # string value is likely junk and we don't want it in Elasticsearch.
+            new_value = "BAD DATA"
 
         if value != new_value:
             data[field_name] = new_value
