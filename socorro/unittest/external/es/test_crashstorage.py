@@ -939,6 +939,11 @@ class Test_truncate_string_field_values:
             ({"key": "a" * 32_765}, {"key": "a" * 32_765}),
             ({"key": "a" * 32_766}, {"key": "a" * 32_766}),
             ({"key": "a" * 32_767}, {"key": "a" * 32_766}),
+            # Bad Unicode values shouldn't throw an exception
+            (
+                {"key": b"hi \xc3there".decode("utf-8", "surrogateescape")},
+                {"key": "BAD DATA"},
+            ),
         ],
     )
     def test_truncate_string_field_values(self, data, expected):
