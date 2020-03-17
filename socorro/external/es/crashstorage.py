@@ -270,9 +270,8 @@ class ESCrashStorage(CrashStorageBase):
 
         return index
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        """Save raw and processed crash data to Elasticsearch"""
-
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash report to Elasticsearch"""
         # Massage the crash such that the date_processed field is formatted
         # in the fashion of our established mapping.
         reconstitute_datetimes(processed_crash)
@@ -296,7 +295,7 @@ class ESCrashStorage(CrashStorageBase):
         self.capture_crash_metrics(raw_crash, processed_crash)
 
         crash_document = {
-            "crash_id": crash_id,
+            "crash_id": processed_crash["uuid"],
             "processed_crash": processed_crash,
             "raw_crash": raw_crash,
         }
@@ -488,12 +487,12 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         # This crash storage mutates the crash, so we mark it as such.
         return True
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+    def save_processed_crash(self, raw_crash, processed_crash):
         """This is the only write mechanism that is actually employed in normal usage"""
         self.redactor.redact(processed_crash)
         self.raw_crash_redactor.redact(raw_crash)
 
-        super().save_raw_and_processed(raw_crash, dumps, processed_crash, crash_id)
+        super().save_processed_crash(raw_crash, processed_crash)
 
 
 class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
@@ -533,7 +532,7 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         reference_value_from="resource.redactor",
     )
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+    def save_processed_crash(self, raw_crash, processed_crash):
         """This is the only write mechanism that is actually employed in normal usage"""
         # Replace the `json_dump` with a subset.
         json_dump = processed_crash.get("json_dump", {})
@@ -542,4 +541,4 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         }
         processed_crash["json_dump"] = redacted_json_dump
 
-        super().save_raw_and_processed(raw_crash, dumps, processed_crash, crash_id)
+        super().save_processed_crash(raw_crash, processed_crash)

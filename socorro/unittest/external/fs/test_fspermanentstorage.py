@@ -52,15 +52,15 @@ class TestFSPermanentStorage(object):
         )
 
     def _make_processed_test_crash(self):
-        self.fsrts.save_processed(
-            {"uuid": self.CRASH_ID_2, "test": "TEST", "email": "should not exist"}
+        self.fsrts.save_processed_crash(
+            {}, {"uuid": self.CRASH_ID_2, "test": "TEST", "email": "should not exist"}
         )
 
     def test_save_raw_crash(self):
         self._make_test_crash()
         assert os.path.exists(self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1))
 
-    def test_save_processed(self):
+    def test_save_processed_crash(self):
         self._make_processed_test_crash()
         assert os.path.exists(
             os.path.join(

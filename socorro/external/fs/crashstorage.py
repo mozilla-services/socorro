@@ -171,17 +171,6 @@ class FSPermanentStorage(CrashStorageBase):
                 with open(os.sep.join([parent_dir, fn]), "wb") as f:
                     f.write(contents)
 
-    def save_processed(self, processed_crash):
-        crash_id = processed_crash["uuid"]
-        processed_crash = processed_crash.copy()
-        f = BytesIO()
-        with closing(gzip.GzipFile(mode="wb", fileobj=f)) as fz:
-            data = json.dumps(processed_crash, cls=JsonDTISOEncoder)
-            fz.write(data.encode("utf-8"))
-        self._save_files(
-            crash_id, {crash_id + self.config.jsonz_file_suffix: f.getvalue()}
-        )
-
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         if dumps is None:
             dumps = MemoryDumpsMapping()
@@ -197,6 +186,17 @@ class FSPermanentStorage(CrashStorageBase):
             }
         )
         self._save_files(crash_id, files)
+
+    def save_processed_crash(self, raw_crash, processed_crash):
+        crash_id = processed_crash["uuid"]
+        processed_crash = processed_crash.copy()
+        f = BytesIO()
+        with closing(gzip.GzipFile(mode="wb", fileobj=f)) as fz:
+            data = json.dumps(processed_crash, cls=JsonDTISOEncoder)
+            fz.write(data.encode("utf-8"))
+        self._save_files(
+            crash_id, {crash_id + self.config.jsonz_file_suffix: f.getvalue()}
+        )
 
     def get_raw_crash(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)

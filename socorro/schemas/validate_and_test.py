@@ -25,8 +25,8 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
         print(r.url)
         self._all_fields = r.json()
 
-    def save_processed(self, crash):
-        self.combined = crash
+    def save_processed_crash(self, raw_crash, processed_crash):
+        self.combined = super().save_processed_crash(raw_crash, processed_crash)
 
 
 def run(no_crashes, *urls):
@@ -105,7 +105,7 @@ def run(no_crashes, *urls):
         print(r.url)
         processed_crash = r.json()
 
-        processor.save_raw_and_processed(raw_crash, (), processed_crash, uuid)
+        processor.save_processed_crash(raw_crash, processed_crash)
         log_all_keys(processor.combined)
 
         jsonschema.validate(processor.combined, schema)

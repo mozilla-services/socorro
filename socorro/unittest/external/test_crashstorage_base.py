@@ -45,7 +45,7 @@ class B(A):
 
 
 class NonMutatingProcessedCrashCrashStorage(CrashStorageBase):
-    def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
+    def save_processed_crash(self, raw_crash, processed_crash):
         # This is sort of a lie, but we lie so that we can verify the code went
         # through the right path.
         del processed_crash["foo"]
@@ -55,7 +55,7 @@ class MutatingProcessedCrashCrashStorage(CrashStorageBase):
     def is_mutator(self):
         return True
 
-    def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
+    def save_processed_crash(self, raw_crash, processed_crash):
         del processed_crash["foo"]
 
 
@@ -79,7 +79,6 @@ class TestCrashStorageBase(object):
         with config_manager.context() as config:
             crashstorage = CrashStorageBase(config)
             crashstorage.save_raw_crash({}, "payload", "ooid")
-            crashstorage.save_processed({})
             with pytest.raises(NotImplementedError):
                 crashstorage.get_raw_crash("ooid")
 
@@ -207,21 +206,18 @@ class TestCrashStorageBase(object):
             processed_crash = {"ooid": "", "product": 17}
             for v in poly_store.stores.values():
                 v.save_raw_crash = mock.Mock()
-                v.save_processed = mock.Mock()
+                v.save_processed_crash = mock.Mock()
                 v.close = mock.Mock()
 
             poly_store.save_raw_crash(raw_crash, dump, "")
             for v in poly_store.stores.values():
                 v.save_raw_crash.assert_called_once_with(raw_crash, dump, "")
 
-            poly_store.save_processed(processed_crash)
+            poly_store.save_processed_crash(raw_crash, processed_crash)
             for v in poly_store.stores.values():
-                v.save_processed.assert_called_once_with(processed_crash)
-
-            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, "n")
-            for v in poly_store.stores.values():
-                v.save_raw_crash.assert_called_with(raw_crash, dump, "n")
-                v.save_processed.assert_called_with(processed_crash)
+                v.save_processed_crash.assert_called_once_with(
+                    raw_crash, processed_crash
+                )
 
             raw_crash = {"ooid": "oaeu"}
             dump = "5432"
@@ -230,8 +226,8 @@ class TestCrashStorageBase(object):
             expected = Exception("this is messed up")
             poly_store.stores["A2"].save_raw_crash = mock.Mock()
             poly_store.stores["A2"].save_raw_crash.side_effect = expected
-            poly_store.stores["B"].save_processed = mock.Mock()
-            poly_store.stores["B"].save_processed.side_effect = expected
+            poly_store.stores["B"].save_processed_crash = mock.Mock()
+            poly_store.stores["B"].save_processed_crash.side_effect = expected
 
             with pytest.raises(PolyStorageError):
                 poly_store.save_raw_crash(raw_crash, dump, "")
@@ -240,17 +236,10 @@ class TestCrashStorageBase(object):
                 v.save_raw_crash.assert_called_with(raw_crash, dump, "")
 
             with pytest.raises(PolyStorageError):
-                poly_store.save_processed(processed_crash)
+                poly_store.save_processed_crash(raw_crash, processed_crash)
 
             for v in poly_store.stores.values():
-                v.save_processed.assert_called_with(processed_crash)
-
-            with pytest.raises(PolyStorageError):
-                poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, "n")
-
-            for v in poly_store.stores.values():
-                v.save_raw_crash.assert_called_with(raw_crash, dump, "n")
-                v.save_processed.assert_called_with(processed_crash)
+                v.save_processed_crash.assert_called_with(raw_crash, processed_crash)
 
             poly_store.stores["B"].close.side_effect = Exception
             with pytest.raises(PolyStorageError):
@@ -273,15 +262,14 @@ class TestCrashStorageBase(object):
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
             raw_crash = {"ooid": "12345"}
-            dump = "12345"
             processed_crash = {"foo": "bar"}
 
             poly_store = config.storage(config)
-            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, "n")
+            poly_store.save_processed_crash(raw_crash, processed_crash)
 
             # It's important to be aware that the only thing
             # MutatingProcessedCrashCrashStorage class does, in its
-            # save_raw_and_processed() is that it deletes a key called
+            # save_processed_crash() is that it deletes a key called
             # 'foo'.
             # This test makes sure that the dict processed_crash here
             # is NOT affected.
@@ -305,12 +293,11 @@ class TestCrashStorageBase(object):
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
             raw_crash = {"ooid": "12345"}
-            dump = "12345"
             processed_crash = {"foo": "bar"}
 
             poly_store = config.storage(config)
 
-            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, "n")
+            poly_store.save_processed_crash(raw_crash, processed_crash)
             # We have a crashstorage that says it's not mutating, but deletes a
             # key so that we can verify that the code went down the right path
             # in the processor.
@@ -330,7 +317,6 @@ class TestCrashStorageBase(object):
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
             raw_crash = {"ooid": "12345"}
-            dump = "12345"
             processed_crash = {
                 "foo": DotDict({"other": "thing"}),
                 "bar": DotDict({"something": "else"}),
@@ -338,7 +324,7 @@ class TestCrashStorageBase(object):
 
             poly_store = config.storage(config)
 
-            poly_store.save_raw_and_processed(raw_crash, dump, processed_crash, "n")
+            poly_store.save_processed_crash(raw_crash, processed_crash)
             assert processed_crash["foo"]["other"] == "thing"
             assert processed_crash["bar"]["something"] == "else"
 
@@ -418,16 +404,11 @@ class TestBench(object):
             assert "test save_raw_crash 1" in [rec.message for rec in caplogpp.records]
             caplogpp.clear()
 
-            crashstorage.save_processed({})
-            crashstorage.wrapped_crashstore.save_processed.assert_called_with({})
-            assert "test save_processed 1" in [rec.message for rec in caplogpp.records]
-            caplogpp.clear()
-
-            crashstorage.save_raw_and_processed({}, "payload", {}, "ooid")
-            crashstorage.wrapped_crashstore.save_raw_and_processed.assert_called_with(
-                {}, "payload", {}, "ooid"
+            crashstorage.save_processed_crash({}, {})
+            crashstorage.wrapped_crashstore.save_processed_crash.assert_called_with(
+                {}, {}
             )
-            assert "test save_raw_and_processed 1" in [
+            assert "test save_processed_crash 1" in [
                 rec.message for rec in caplogpp.records
             ]
             caplogpp.clear()

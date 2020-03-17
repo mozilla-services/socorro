@@ -230,36 +230,17 @@ class CrashStorageBase(RequiredConfig):
             crash_id - the crash key to use for this crash"""
         self.save_raw_crash(raw_crash, dumps.as_memory_dumps_mapping(), crash_id)
 
-    def save_processed(self, processed_crash):
-        """this method saves the processed_crash and must be overridden in
-        anything that chooses to implement it.
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash to crash storage
 
-        Why is does this base implementation just silently do nothing rather
-        than raise a NotImplementedError?  Implementations of crashstorage
-        are not required to implement the entire api.  Some may save only
-        processed crashes but may be bundled (see the PolyCrashStorage class)
-        with other crashstorage implementations.  Rather than having a non-
-        implenting class raise an exeception that would derail the other
-        bundled operations, the non-implementing storageclass will just
-        quietly do nothing.
+        Saves a processed crash to crash storage. This includes the raw crash
+        data in case the crash storage combines the two.
 
-        parameters:
-            processed_crash - a mapping containing the processed crash"""
-        pass
+        :param raw_crash: the raw crash data (no dumps)
+        :param processed_crash: the processed crash data
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        """Mainly for the convenience and efficiency of the processor,
-        this unified method combines saving both raw and processed crashes.
-
-        parameters:
-            raw_crash - a mapping containing the raw crash meta data. It is
-                        often saved as a json file, but here it is in the form
-                        of a dict.
-            dumps - a dict of dump name keys and binary blob values
-            processed_crash - a mapping containing the processed crash
-            crash_id - the crash key to use for this crash"""
-        self.save_raw_crash(raw_crash, dumps, crash_id)
-        self.save_processed(processed_crash)
+        """
+        raise NotImplementedError("save_processed_crash not implemented")
 
     def get_raw_crash(self, crash_id):
         """the default implementation of fetching a raw_crash
@@ -526,43 +507,28 @@ class PolyCrashStorage(CrashStorageBase):
         if storage_exception.has_exceptions():
             raise storage_exception
 
-    def save_processed(self, processed_crash):
-        """iterate through the subordinate crash stores saving the
-        processed_crash to each of the.
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash to all crashstorage destinations
 
-        parameters:
-            processed_crash - a mapping containing the processed crash"""
+        :param raw_crash: the raw crash data
+        :param processed_crash: the processed crash data
+
+        """
         storage_exception = PolyStorageError()
-        for a_store in self.stores.values():
-            try:
-                a_store.save_processed(processed_crash)
-            except Exception as x:
-                self.logger.error(
-                    "%s failure: %s", a_store.__class__, str(x), exc_info=True
-                )
-                storage_exception.gather_current_exception()
-        if storage_exception.has_exceptions():
-            raise storage_exception
-
-    def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
-        storage_exception = PolyStorageError()
-
         for a_store in self.stores.values():
             try:
                 actual_store = getattr(a_store, "wrapped_object", a_store)
-
                 if hasattr(actual_store, "is_mutator") and actual_store.is_mutator():
-                    my_processed_crash = copy.deepcopy(processed_crash)
                     my_raw_crash = copy.deepcopy(raw_crash)
+                    my_processed_crash = copy.deepcopy(processed_crash)
                 else:
-                    my_processed_crash = processed_crash
                     my_raw_crash = raw_crash
+                    my_processed_crash = processed_crash
 
-                a_store.save_raw_and_processed(
-                    my_raw_crash, dump, my_processed_crash, crash_id
-                )
+                a_store.save_processed_crash(my_raw_crash, my_processed_crash)
             except Exception:
                 store_class = getattr(a_store, "wrapped_object", a_store.__class__)
+                crash_id = processed_crash.get("uuid", "NONE")
                 self.logger.error(
                     "%r failed (crash id: %s)", store_class, crash_id, exc_info=True
                 )
@@ -605,21 +571,11 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         end_time = self.end_timer()
         self.logger.debug("%s save_raw_crash %s", self.tag, end_time - start_time)
 
-    def save_processed(self, processed_crash):
+    def save_processed_crash(self, raw_crash, processed_crash):
         start_time = self.start_timer()
-        self.wrapped_crashstore.save_processed(processed_crash)
+        self.wrapped_crashstore.save_processed_crash(raw_crash, processed_crash)
         end_time = self.end_timer()
-        self.logger.debug("%s save_processed %s", self.tag, end_time - start_time)
-
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        start_time = self.start_timer()
-        self.wrapped_crashstore.save_raw_and_processed(
-            raw_crash, dumps, processed_crash, crash_id
-        )
-        end_time = self.end_timer()
-        self.logger.debug(
-            "%s save_raw_and_processed %s", self.tag, end_time - start_time
-        )
+        self.logger.debug("%s save_processed_crash %s", self.tag, end_time - start_time)
 
     def get_raw_crash(self, crash_id):
         start_time = self.start_timer()
@@ -678,7 +634,7 @@ class MetricsEnabledBase(RequiredConfig):
     )
     required_config.add_option(
         "active_list",
-        default="save_raw_and_processed,act",
+        default="save_processed_crash,act",
         doc="a comma delimeted list of counters that are enabled",
         from_string_converter=str_to_list,
     )
