@@ -166,11 +166,9 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         """Test indexing a crash document."""
         es_storage = ESCrashStorage(config=self.config)
 
-        es_storage.save_raw_and_processed(
+        es_storage.save_processed_crash(
             raw_crash=deepcopy(a_raw_crash),
-            dumps=None,
             processed_crash=deepcopy(a_processed_crash),
-            crash_id=a_processed_crash["uuid"],
         )
 
         # Ensure that the document was indexed by attempting to retreive it.
@@ -190,11 +188,9 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
 
         es_storage = ESCrashStorage(config=self.config)
 
-        es_storage.save_raw_and_processed(
+        es_storage.save_processed_crash(
             raw_crash=deepcopy(a_raw_crash_with_bad_keys),
-            dumps=None,
             processed_crash=deepcopy(a_processed_crash),
-            crash_id=a_processed_crash["uuid"],
         )
 
         # Ensure that the document was indexed by attempting to retreive it.
@@ -259,11 +255,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # it entirely we are ensuring that ES doesn't actually get touched.
         es_storage._submit_crash_to_elasticsearch = mock.Mock()
 
-        es_storage.save_raw_and_processed(
+        es_storage.save_processed_crash(
             raw_crash=deepcopy(a_raw_crash),
-            dumps=None,
             processed_crash=deepcopy(a_processed_crash),
-            crash_id=a_processed_crash["uuid"],
         )
 
         # Ensure that the indexing function is only called once.
@@ -280,11 +274,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage = ESCrashStorage(config=self.config)
-        es_storage.save_raw_and_processed(
+        es_storage.save_processed_crash(
             raw_crash=deepcopy(a_raw_crash),
-            dumps=None,
             processed_crash=deepcopy(a_processed_crash),
-            crash_id=crash_id,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -337,11 +329,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
-        es_storage.save_raw_and_processed(
+        es_storage.save_processed_crash(
             raw_crash=deepcopy(a_raw_crash),
-            dumps=None,
             processed_crash=deepcopy(a_processed_crash),
-            crash_id=crash_id,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -397,11 +387,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
-        es_storage.save_raw_and_processed(
+        es_storage.save_processed_crash(
             raw_crash=deepcopy(a_raw_crash),
-            dumps=None,
             processed_crash=deepcopy(a_processed_crash),
-            crash_id=crash_id,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -457,11 +445,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
-        es_storage.save_raw_and_processed(
-            raw_crash=deepcopy(raw_crash),
-            dumps=None,
-            processed_crash=deepcopy(a_processed_crash),
-            crash_id=crash_id,
+        es_storage.save_processed_crash(
+            raw_crash=deepcopy(raw_crash), processed_crash=deepcopy(a_processed_crash),
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -505,7 +490,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # Submit a crash and ensure that it failed.
         with pytest.raises(Exception):
-            es_storage.save_raw_and_processed(
+            es_storage.save_processed_crash(
                 raw_crash=deepcopy(a_raw_crash),
                 dumps=None,
                 processed_crsah=deepcopy(a_processed_crash),
@@ -529,6 +514,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "date_processed": "2012-04-08 10:56:41.558922",
             "bogus-field": "some bogus value",
             "foo": "bar",
+            "uuid": crash_id,
         }
 
         def mock_index(*args, **kwargs):
@@ -555,11 +541,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_class_mock().index.side_effect = mock_index
 
         # Submit a crash and ensure that it succeeds.
-        es_storage.save_raw_and_processed(
-            raw_crash=deepcopy(raw_crash),
-            dumps=None,
-            processed_crash=deepcopy(processed_crash),
-            crash_id=crash_id,
+        es_storage.save_processed_crash(
+            raw_crash=deepcopy(raw_crash), processed_crash=deepcopy(processed_crash),
         )
 
         expected_doc = {
@@ -568,6 +551,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "processed_crash": {
                 "date_processed": string_to_datetime("2012-04-08 10:56:41.558922"),
                 "foo": "bar",
+                "uuid": crash_id,
             },
             "raw_crash": {},
         }
@@ -594,6 +578,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "date_processed": "2012-04-08 10:56:41.558922",
             "bogus-field": 1234567890,
             "foo": "bar",
+            "uuid": crash_id,
         }
 
         def mock_index(*args, **kwargs):
@@ -615,11 +600,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_class_mock().index.side_effect = mock_index
 
         # Submit a crash and ensure that it succeeds.
-        es_storage.save_raw_and_processed(
-            raw_crash=deepcopy(raw_crash),
-            dumps=None,
-            processed_crash=deepcopy(processed_crash),
-            crash_id=crash_id,
+        es_storage.save_processed_crash(
+            raw_crash=deepcopy(raw_crash), processed_crash=deepcopy(processed_crash),
         )
 
         expected_doc = {
@@ -628,6 +610,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "processed_crash": {
                 "date_processed": string_to_datetime("2012-04-08 10:56:41.558922"),
                 "foo": "bar",
+                "uuid": crash_id,
             },
             "raw_crash": {},
         }
@@ -653,6 +636,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         processed_crash = {
             "date_processed": "2019-12-11 10:56:41.558922",
             "bogus-field": {"key": {"nested_key": "val"}},
+            "uuid": crash_id,
         }
 
         def mock_index(*args, **kwargs):
@@ -674,11 +658,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_class_mock().index.side_effect = mock_index
 
         # Submit crash and verify.
-        es_storage.save_raw_and_processed(
-            raw_crash=raw_crash,
-            dumps=None,
-            processed_crash=processed_crash,
-            crash_id=crash_id,
+        es_storage.save_processed_crash(
+            raw_crash=raw_crash, processed_crash=processed_crash,
         )
 
         expected_doc = {
@@ -686,6 +667,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "removed_fields": "processed_crash.bogus-field",
             "processed_crash": {
                 "date_processed": string_to_datetime("2019-12-11 10:56:41.558922"),
+                "uuid": crash_id,
             },
             "raw_crash": {"uuid": crash_id},
         }
@@ -706,9 +688,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         """
         es_storage = ESCrashStorage(config=self.config)
 
-        crash_id = a_processed_crash["uuid"]
         raw_crash = {}
-        processed_crash = {"date_processed": "2012-04-08 10:56:41.558922"}
+        processed_crash = {
+            "uuid": "9d8e7127-9d98-4d92-8ab1-065982200317",
+            "date_processed": "2012-04-08 10:56:41.558922",
+        }
 
         # Test with an error from which a field name cannot be extracted.
         def mock_index_unparsable_error(*args, **kwargs):
@@ -724,11 +708,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_class_mock().index.side_effect = mock_index_unparsable_error
 
         with pytest.raises(elasticsearch.exceptions.TransportError):
-            es_storage.save_raw_and_processed(
+            es_storage.save_processed_crash(
                 raw_crash=deepcopy(raw_crash),
-                dumps=None,
                 processed_crash=deepcopy(processed_crash),
-                crash_id=crash_id,
             )
 
         # Test with an error that we do not handle.
@@ -740,11 +722,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_class_mock().index.side_effect = mock_index_unhandled_error
 
         with pytest.raises(elasticsearch.exceptions.TransportError):
-            es_storage.save_raw_and_processed(
+            es_storage.save_processed_crash(
                 raw_crash=deepcopy(raw_crash),
-                dumps=None,
                 processed_crash=deepcopy(processed_crash),
-                crash_id=crash_id,
             )
 
     def test_crash_size_capture(self):
@@ -754,11 +734,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
             es_storage._submit_crash_to_elasticsearch = mock.Mock()
 
-            es_storage.save_raw_and_processed(
+            es_storage.save_processed_crash(
                 raw_crash=deepcopy(a_raw_crash),
-                dumps=None,
                 processed_crash=deepcopy(a_processed_crash),
-                crash_id=a_processed_crash["uuid"],
             )
 
             # NOTE(willkg): The sizes of these json documents depend on what's

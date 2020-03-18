@@ -31,7 +31,8 @@ to plug into any of the Socorro backend components.
 
 Base class:
 
-* `CrashStorageBase`: Defines ``save_raw_and_processed()``, ``get_raw()``, etc.
+* `CrashStorageBase`: Defines ``save_processed_crash()``, ``get_raw_crash()``,
+  etc.
 
 CrashStorage containers for aggregating multiple crash storage implementations:
 

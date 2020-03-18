@@ -94,7 +94,7 @@ Checklist
 
       To check for errors grep for "ERRORS".
 
-    * Check Datadog "processor.save_raw_and_processed" for appropriate
+    * Check Datadog "processor.save_processed_crash" for appropriate
       environment.
 
       localdev: Check the logging in the console
@@ -104,13 +104,13 @@ Checklist
     Is the processor saving to ES? S3?
 
     * Check Datadog
-      "processor.es.ESCrashStorageRedactedJsonDump.save_raw_and_processed.avg"
+      "processor.es.ESCrashStorageRedactedJsonDump.save_processed_crash.avg"
 
       stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
       prod: https://app.datadoghq.com/dash/65215/socorro-prod
 
     * Check Datadog
-      "processor.s3.BotoS3CrashStorage.save_raw_and_processed" for
+      "processor.s3.BotoS3CrashStorage.save_processed_crash" for
       appropriate environment.
 
       stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf

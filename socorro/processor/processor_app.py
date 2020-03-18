@@ -33,7 +33,7 @@ CONFIG_DEFAULTS = {
         # a crash storage config.
         "storage_namespaces": ",".join(["s3", "elasticsearch", "statsd", "telemetry"]),
         "s3": {
-            "active_list": "save_raw_and_processed",
+            "active_list": "save_processed_crash",
             "benchmark_tag": "BotoBenchmarkWrite",
             "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
             "metrics_prefix": "processor.s3",
@@ -41,7 +41,7 @@ CONFIG_DEFAULTS = {
             "wrapped_object_class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
         },
         "elasticsearch": {
-            "active_list": "save_raw_and_processed",
+            "active_list": "save_processed_crash",
             "benchmark_tag": "BotoBenchmarkWrite",
             "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
             "es_redactor": {
@@ -61,12 +61,12 @@ CONFIG_DEFAULTS = {
             ),
         },
         "statsd": {
-            "active_list": "save_raw_and_processed",
+            "active_list": "save_processed_crash",
             "crashstorage_class": "socorro.external.crashstorage_base.MetricsCounter",
             "metrics_prefix": "processor",
         },
         "telemetry": {
-            "active_list": "save_raw_and_processed",
+            "active_list": "save_processed_crash",
             "bucket_name": "org-mozilla-telemetry-crashes",
             "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
             "metrics_prefix": "processor.telemetry",
@@ -196,19 +196,12 @@ class ProcessorApp(FetchTransformSaveApp):
                 raw_crash, dumps, processed_crash
             )
 
-            # Convert the raw and processed crashes from DotDict into Python standard data
-            # structures
+            # Convert the raw and processed crashes from DotDict into Python standard
+            # data structures
             raw_crash = dotdict_to_dict(raw_crash)
             processed_crash = dotdict_to_dict(processed_crash)
 
-            # bug 866973 - save_raw_and_processed() instead of just save_processed().
-            # The raw crash may have been modified by the processor rules. The
-            # individual crash storage implementations may choose to honor re-saving
-            # the raw_crash or not.
-
-            self.destination.save_raw_and_processed(
-                raw_crash, None, processed_crash, crash_id
-            )
+            self.destination.save_processed_crash(raw_crash, processed_crash)
             self.logger.info("saved - %s", crash_id)
         except PolyStorageError as poly_storage_error:
             # Capture and log the exceptions raised by storage backends

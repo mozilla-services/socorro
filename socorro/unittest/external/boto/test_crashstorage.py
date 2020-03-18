@@ -100,45 +100,18 @@ class TestBotoS3CrashStorage:
         )
         assert flash_dump == b"fake flash dump"
 
-    def test_save_processed(self, boto_helper):
+    def test_save_processed_crash(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
 
-        boto_s3_store.save_processed(
-            {
-                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-                "completeddatetime": "2012-04-08 10:56:50.902884",
-                "signature": "now_this_is_a_signature",
-            }
-        )
-
-        # Verify the processed crash was put in the right place and has the
-        # right contents
-        processed_crash = boto_helper.download_fileobj(
-            bucket_name=bucket,
-            key="v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
-        )
-        assert json.loads(processed_crash) == {
-            "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-            "completeddatetime": "2012-04-08 10:56:50.902884",
-            "signature": "now_this_is_a_signature",
-        }
-
-    def test_save_raw_and_processed(self, boto_helper):
-        boto_s3_store = self.get_s3_store()
-        bucket = boto_s3_store.conn.bucket
-        boto_helper.create_bucket(bucket)
-
-        boto_s3_store.save_raw_and_processed(
+        boto_s3_store.save_processed_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            None,
             {
                 "uuid": "0bba929f-8721-460c-dead-a43c20071027",
                 "completeddatetime": "2012-04-08 10:56:50.902884",
                 "signature": "now_this_is_a_signature",
             },
-            "0bba929f-8721-460c-dead-a43c20071027",
         )
 
         # Verify processed crash is saved
@@ -373,22 +346,20 @@ class TestTelemetryBotoS3CrashStorage:
             config=get_config(TelemetryBotoS3CrashStorage)
         )
 
-    def test_save_raw_and_processed(self, boto_helper):
+    def test_save_processed_crash(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
 
-        # Run save_raw_and_processed
-        boto_s3_store.save_raw_and_processed(
+        # Run save_processed_crash
+        boto_s3_store.save_processed_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            None,
             {
                 "uuid": "0bba929f-8721-460c-dead-a43c20071027",
                 "completeddatetime": "2012-04-08 10:56:50.902884",
                 "signature": "now_this_is_a_signature",
                 "os_name": "Linux",
             },
-            "0bba929f-8721-460c-dead-a43c20071027",
         )
 
         # Get the crash data we just saved from the bucket and verify it's

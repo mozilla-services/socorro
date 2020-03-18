@@ -2,9 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""This is the base of the crashstorage system - a unified interfaces for
-saving, fetching and iterating over raw crashes, dumps and processed crashes.
-"""
+"""Base classes for crashstorage system."""
 
 import datetime
 import collections
@@ -160,30 +158,25 @@ class CrashStorageBase(RequiredConfig):
     )
 
     def __init__(self, config, namespace=""):
-        """base class constructor
+        """Initializer
 
-        parameters:
-            config - a configman dot dict holding configuration information
-            namespace - namespace for this crashstorage instance. Used for
-                        metrics prefixes and logging.
+        :param config: configman DotDict holding configuration information
+        :param namespace: namespace for this crashstorage instance; used
+            for metrics prefixes and logging
 
-        instance varibles:
-            self.config - a reference to the config mapping
-            self.logger - convience shortcut to the logger in the config
-            self.exceptions_eligible_for_retry - a collection of non-fatal
-                    exceptions that can be raised by a given storage
-                    implementation.  This may be fetched by a client of the
-                    crashstorge so that it can determine if it can try a failed
-                    storage operation again.
         """
         self.config = config
         self.namespace = namespace
+
+        # Collection of non-fatal exceptions that can be raised by a given storage
+        # implementation. This may be fetched by a client of the crashstorge so that it
+        # can determine if it can try a failed storage operation again.
         self.exceptions_eligible_for_retry = ()
         self.redactor = config.redactor_class(config)
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def close(self):
-        """some implementations may need explicit closing."""
+        """Close resources used by this crashstorage."""
         pass
 
     def is_mutator(self):
@@ -195,108 +188,75 @@ class CrashStorageBase(RequiredConfig):
         return False
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        """this method that saves  both the raw_crash and the dump, must be
-        overridden in any implementation.
+        """Save raw crash data.
 
-        Why is does this base implementation just silently do nothing rather
-        than raise a NotImplementedError?  Implementations of crashstorage
-        are not required to implement the entire api.  Some may save only
-        processed crashes but may be bundled (see the PolyCrashStorage class)
-        with other crashstorage implementations.  Rather than having a non-
-        implenting class raise an exeception that would derail the other
-        bundled operations, the non-implementing storageclass will just
-        quietly do nothing.
+        :param raw_crash: Mapping containing the raw crash meta data. It is often saved
+            as a json file, but here it is in the form of a dict.
+        :param dumps: A dict of dump name keys and binary blob values.
+        :param crash_id: the crash report id
 
-        parameters:
-            raw_crash - a mapping containing the raw crash meta data.  It is
-                        often saved as a json file, but here it is in the form
-                        of a dict.
-            dumps - a dict of dump name keys and binary blob values
-            crash_id - the crash key to use for this crash"""
+        """
         pass
 
-    def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
-        """this method that saves  both the raw_crash and the dump and must be
-        overridden in any implementation that wants a different behavior.  It
-        assumes that the dumps are in the form of paths to files and need to
-        be converted to memory_dumps
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash to crash storage
 
-        parameters:
-            raw_crash - a mapping containing the raw crash meta data.  It is
-                        often saved as a json file, but here it is in the form
-                        of a dict.
-            dumps - a dict of dump name keys and paths to file system locations
-                    for the dump data
-            crash_id - the crash key to use for this crash"""
-        self.save_raw_crash(raw_crash, dumps.as_memory_dumps_mapping(), crash_id)
+        Saves a processed crash to crash storage. This includes the raw crash
+        data in case the crash storage combines the two.
 
-    def save_processed(self, processed_crash):
-        """this method saves the processed_crash and must be overridden in
-        anything that chooses to implement it.
+        :param raw_crash: the raw crash data (no dumps)
+        :param processed_crash: the processed crash data
 
-        Why is does this base implementation just silently do nothing rather
-        than raise a NotImplementedError?  Implementations of crashstorage
-        are not required to implement the entire api.  Some may save only
-        processed crashes but may be bundled (see the PolyCrashStorage class)
-        with other crashstorage implementations.  Rather than having a non-
-        implenting class raise an exeception that would derail the other
-        bundled operations, the non-implementing storageclass will just
-        quietly do nothing.
-
-        parameters:
-            processed_crash - a mapping containing the processed crash"""
-        pass
-
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        """Mainly for the convenience and efficiency of the processor,
-        this unified method combines saving both raw and processed crashes.
-
-        parameters:
-            raw_crash - a mapping containing the raw crash meta data. It is
-                        often saved as a json file, but here it is in the form
-                        of a dict.
-            dumps - a dict of dump name keys and binary blob values
-            processed_crash - a mapping containing the processed crash
-            crash_id - the crash key to use for this crash"""
-        self.save_raw_crash(raw_crash, dumps, crash_id)
-        self.save_processed(processed_crash)
+        """
+        raise NotImplementedError("save_processed_crash not implemented")
 
     def get_raw_crash(self, crash_id):
-        """the default implementation of fetching a raw_crash
+        """Fetch raw crash
 
-        parameters:
-           crash_id - the id of a raw crash to fetch"""
+        :param crash_id: crash report id for data to fetch
+
+        :returns: DotDict of raw crash data
+
+        """
         raise NotImplementedError("get_raw_crash is not implemented")
 
     def get_raw_dump(self, crash_id, name=None):
-        """the default implementation of fetching a dump
+        """Fetch dump for a raw crash
 
-        parameters:
-           crash_id - the id of a dump to fetch
-           name - the name of the dump to fetch"""
+        :param crash_id: crash report id
+        :param name: name of dump to fetch
+
+        :returns: dump as bytes
+
+        """
         raise NotImplementedError("get_raw_dump is not implemented")
 
     def get_raw_dumps(self, crash_id):
-        """the default implementation of fetching all the dumps
+        """Fetch all dumps for a crash report
 
-        parameters:
-           crash_id - the id of a dump to fetch"""
+        :param crash_id: crash report id
+
+        :returns: MemoryDumpsMapping of dumps
+
+        """
         raise NotImplementedError("get_raw_dumps is not implemented")
 
     def get_raw_dumps_as_files(self, crash_id):
-        """the default implementation of fetching all the dumps as files on
-        a file system somewhere.  returns a list of pathnames.
+        """Fetch all dumps for a crash report and save as files.
 
-        parameters:
-           crash_id - the id of a dump to fetch"""
+        :param crash_id: crash report id
+
+        :returns: dict of dumpname -> file path
+
+        """
         raise NotImplementedError("get_raw_dumps is not implemented")
 
     def get_processed(self, crash_id):
-        """the default implementation of fetching a processed_crash.  This
-        method should not be overridden in subclasses unless the intent is to
-        alter the redaction process.
+        """Fetch processed crash.
 
-        :arg crash_id: the id of a processed_crash to fetch
+        :arg crash_id: crash report id
+
+        :returns: DotDict
 
         """
         processed_crash = self.get_unredacted_processed(crash_id)
@@ -304,31 +264,22 @@ class CrashStorageBase(RequiredConfig):
         return processed_crash
 
     def get_unredacted_processed(self, crash_id):
-        """the implementation of fetching a processed_crash with no redaction
+        """Fetch processed crash with no redaction
 
-        parameters:
-           crash_id - the id of a processed_crash to fetch"""
+        :param crash_id: crash report id
+
+        :returns: DotDict
+
+        """
         raise NotImplementedError("get_unredacted_processed is not implemented")
 
     def remove(self, crash_id):
-        """delete a crash from storage
+        """Delete crash report data from storage
 
-        parameters:
-           crash_id - the id of a crash to fetch"""
-        raise NotImplementedError("remove is not implemented")
+        :param crash_id: crash report id
 
-    def new_crashes(self):
-        """a generator handing out a sequence of crash_ids of crashes that are
-        considered to be new.  Each implementation can interpret the concept
-        of "new" in an implementation specific way.  To be useful, derived
-        class ought to override this method.
         """
-        return []
-
-    def ack_crash(self, crash_id):
-        """overridden by subclasses that must acknowledge a successful use of
-        an item pulled from the 'new_crashes' generator. """
-        return crash_id
+        raise NotImplementedError("remove is not implemented")
 
 
 class PolyStorageError(Exception, collections.MutableSequence):
@@ -424,18 +375,16 @@ class StorageNamespaceList(collections.Sequence):
 
 
 class PolyCrashStorage(CrashStorageBase):
-    """a crashstorage implementation that encapsulates a collection of other
-    crashstorage instances.  Any save operation applied to an instance of this
-    class will be applied to all the crashstorge in the collection.
+    """Crashstorage pipeline for multiple crashstorage destinations
 
-    This class is useful for 'save' operations only.  It does not implement
-    the 'get' operations.
+    This class is useful for "save" operations only--it does not implement the "get"
+    operations.
 
-    The contained crashstorage instances are specified in the configuration.
-    Each key in the `storage_namespaces`` config option will be used to create
-    a crashstorage instance that this saves to. The keys are namespaces in the
-    config, and any options defined under those namespaces will be isolated
-    within the config passed to the crashstorage instance. For example:
+    The contained crashstorage instances are specified in the configuration.  Each key
+    in the ``storage_namespaces`` config option will be used to create a crashstorage
+    instance that this saves to. The keys are namespaces in the config, and any options
+    defined under those namespaces will be isolated within the config passed to the
+    crashstorage instance. For example:
 
     .. code-block:: ini
         destination.crashstorage_namespaces=postgres,s3
@@ -446,10 +395,11 @@ class PolyCrashStorage(CrashStorageBase):
         destination.s3.crashstorage_class=module.path.S3Storage
         destination.s3.my.config=S3
 
-    With this config, there are two crashstorage instances this class will
-    create: one for Postgres, and one for S3. The PostgresStorage instance will
-    see the ``my.config`` option as being set to "Postgres", while the S3Storage
-    instance will see ``my.config`` set to "S3".
+    With this config, there are two crashstorage instances this class will create: one
+    for Postgres, and one for S3. The PostgresStorage instance will see the
+    ``my.config`` option as being set to "Postgres", while the S3Storage instance will
+    see ``my.config`` set to "S3".
+
     """
 
     required_config = Namespace()
@@ -462,20 +412,17 @@ class PolyCrashStorage(CrashStorageBase):
     )
 
     def __init__(self, config, namespace=""):
-        """instantiate all the subordinate crashstorage instances
+        """Instantiate all the subordinate crashstorage instances
 
-        parameters:
-            config - a configman dot dict holding configuration information
-            namespace - namespace for this crashstorage
-
-        instance variables:
-            self.storage_namespaces - the list of the namespaces in which the
-                                      subordinate instances are stored.
-            self.stores - instances of the subordinate crash stores
+        :param config: configman DotDict holding configuration information
+        :param namespace: namespace for this crashstorage instance; used
+            for metrics prefixes and logging
 
         """
         super().__init__(config, namespace)
+        # The list of the namespaces in which the subordinate instances are stored.
         self.storage_namespaces = config.storage_namespaces
+        # Instances of the subordinate crash stores.
         self.stores = DotDict()
         for storage_namespace in self.storage_namespaces:
             absolute_namespace = ".".join(
@@ -488,16 +435,13 @@ class PolyCrashStorage(CrashStorageBase):
             )
 
     def close(self):
-        """iterate through the subordinate crash stores and close them.
-        Even though the classes are closed in sequential order, all are
-        assured to close even if an earlier one raises an exception.  When all
-        are closed, any exceptions that were raised are reraised in a
-        PolyStorageError
+        """Close resources used by crashstorage instances.
 
-        raises:
-          PolyStorageError - an exception container holding a list of the
-                             exceptions raised by the subordinate storage
-                             systems"""
+        :raises PolyStorageError: An exception container holding a list of the
+            exceptions raised by the subordinate storage
+            systems.
+
+        """
         storage_exception = PolyStorageError()
         for a_store in self.stores.values():
             try:
@@ -509,13 +453,13 @@ class PolyCrashStorage(CrashStorageBase):
             raise storage_exception
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        """iterate through the subordinate crash stores saving the raw_crash
-        and the dump to each of them.
+        """Save raw crash to all crashstorage destinations.
 
-        parameters:
-            raw_crash - the meta data mapping
-            dumps - a mapping of dump name keys to dump binary values
-            crash_id - the id of the crash to use"""
+        :param raw_crash: the raw crash data
+        :param dumps: mapping of dump name keys -> dump binary
+        :param crash_id: the crash report id
+
+        """
         storage_exception = PolyStorageError()
         for a_store in self.stores.values():
             try:
@@ -526,43 +470,28 @@ class PolyCrashStorage(CrashStorageBase):
         if storage_exception.has_exceptions():
             raise storage_exception
 
-    def save_processed(self, processed_crash):
-        """iterate through the subordinate crash stores saving the
-        processed_crash to each of the.
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash to all crashstorage destinations
 
-        parameters:
-            processed_crash - a mapping containing the processed crash"""
+        :param raw_crash: the raw crash data
+        :param processed_crash: the processed crash data
+
+        """
         storage_exception = PolyStorageError()
-        for a_store in self.stores.values():
-            try:
-                a_store.save_processed(processed_crash)
-            except Exception as x:
-                self.logger.error(
-                    "%s failure: %s", a_store.__class__, str(x), exc_info=True
-                )
-                storage_exception.gather_current_exception()
-        if storage_exception.has_exceptions():
-            raise storage_exception
-
-    def save_raw_and_processed(self, raw_crash, dump, processed_crash, crash_id):
-        storage_exception = PolyStorageError()
-
         for a_store in self.stores.values():
             try:
                 actual_store = getattr(a_store, "wrapped_object", a_store)
-
                 if hasattr(actual_store, "is_mutator") and actual_store.is_mutator():
-                    my_processed_crash = copy.deepcopy(processed_crash)
                     my_raw_crash = copy.deepcopy(raw_crash)
+                    my_processed_crash = copy.deepcopy(processed_crash)
                 else:
-                    my_processed_crash = processed_crash
                     my_raw_crash = raw_crash
+                    my_processed_crash = processed_crash
 
-                a_store.save_raw_and_processed(
-                    my_raw_crash, dump, my_processed_crash, crash_id
-                )
+                a_store.save_processed_crash(my_raw_crash, my_processed_crash)
             except Exception:
                 store_class = getattr(a_store, "wrapped_object", a_store.__class__)
+                crash_id = processed_crash.get("uuid", "NONE")
                 self.logger.error(
                     "%r failed (crash id: %s)", store_class, crash_id, exc_info=True
                 )
@@ -605,21 +534,11 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         end_time = self.end_timer()
         self.logger.debug("%s save_raw_crash %s", self.tag, end_time - start_time)
 
-    def save_processed(self, processed_crash):
+    def save_processed_crash(self, raw_crash, processed_crash):
         start_time = self.start_timer()
-        self.wrapped_crashstore.save_processed(processed_crash)
+        self.wrapped_crashstore.save_processed_crash(raw_crash, processed_crash)
         end_time = self.end_timer()
-        self.logger.debug("%s save_processed %s", self.tag, end_time - start_time)
-
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        start_time = self.start_timer()
-        self.wrapped_crashstore.save_raw_and_processed(
-            raw_crash, dumps, processed_crash, crash_id
-        )
-        end_time = self.end_timer()
-        self.logger.debug(
-            "%s save_raw_and_processed %s", self.tag, end_time - start_time
-        )
+        self.logger.debug("%s save_processed_crash %s", self.tag, end_time - start_time)
 
     def get_raw_crash(self, crash_id):
         start_time = self.start_timer()
@@ -678,7 +597,7 @@ class MetricsEnabledBase(RequiredConfig):
     )
     required_config.add_option(
         "active_list",
-        default="save_raw_and_processed,act",
+        default="save_processed_crash,act",
         doc="a comma delimeted list of counters that are enabled",
         from_string_converter=str_to_list,
     )

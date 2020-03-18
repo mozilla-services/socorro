@@ -182,21 +182,12 @@ class BotoS3CrashStorage(CrashStorageBase):
             path = build_keys(dump_name, crash_id)[0]
             self.conn.save_file(path, dump)
 
-    def save_processed(self, processed_crash):
+    def save_processed_crash(self, raw_crash, processed_crash):
         """Save the processed crash file."""
         crash_id = processed_crash["uuid"]
         data = dict_to_str(processed_crash).encode("utf-8")
         path = build_keys("processed_crash", crash_id)[0]
         self.conn.save_file(path, data)
-
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        """Save raw and processed crash files.
-
-        NOTE(willkg): This doesn't save any of the raw crash bits because that
-        messes up the original data we got from the crash reporter. bug #866973
-
-        """
-        self.save_processed(processed_crash)
 
     def get_raw_crash(self, crash_id):
         """Get the raw crash file for the given crash id.
@@ -301,8 +292,8 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         super().__init__(config, *args, **kwargs)
         self._all_fields = SuperSearchFieldsData().get()
 
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
-        """Save the raw and processed crash data.
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash data.
 
         For Telemetry, we combine the raw and processed crash data into a "crash report"
         which we save to an S3 bucket for the Telemetry system to pick up later.
@@ -338,12 +329,8 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
             CRASH_REPORT_JSON_SCHEMA, crash_report
         )
 
-        self.save_processed(crash_report)
-
-    def save_processed(self, processed_crash):
-        """Save a crash report to the S3 bucket."""
-        crash_id = processed_crash["uuid"]
-        data = dict_to_str(processed_crash).encode("utf-8")
+        crash_id = crash_report["uuid"]
+        data = dict_to_str(crash_report).encode("utf-8")
         path = build_keys("crash_report", crash_id)[0]
         self.conn.save_file(path, data)
 

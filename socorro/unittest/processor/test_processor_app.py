@@ -79,21 +79,21 @@ class TestProcessorApp(object):
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
 
-        fake_raw_crash = DotDict()
+        fake_raw_crash = DotDict({"raw": "1"})
         mocked_get_raw_crash = mock.Mock(return_value=fake_raw_crash)
         pa.source.get_raw_crash = mocked_get_raw_crash
 
-        fake_dump = {"upload_file_minidump": "fake_dump_TEMPORARY.dump"}
-        mocked_get_raw_dumps_as_files = mock.Mock(return_value=fake_dump)
+        fake_dumps = {"upload_file_minidump": "fake_dump_TEMPORARY.dump"}
+        mocked_get_raw_dumps_as_files = mock.Mock(return_value=fake_dumps)
         pa.source.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
 
-        fake_processed_crash = DotDict()
+        fake_processed_crash = DotDict({"uuid": "9d8e7127-9d98-4d92-8ab1-065982200317"})
         mocked_get_unredacted_processed = mock.Mock(return_value=fake_processed_crash)
         pa.source.get_unredacted_processed = mocked_get_unredacted_processed
 
-        mocked_process_crash = mock.Mock(return_value=7)
+        mocked_process_crash = mock.Mock(return_value=DotDict({"processed": "1"}))
         pa.processor.process_crash = mocked_process_crash
-        pa.destination.save_processed = mock.Mock()
+        pa.destination.save_processed_crash = mock.Mock()
         finished_func = mock.Mock()
         patch_path = "socorro.processor.processor_app.os.unlink"
         with mock.patch(patch_path) as mocked_unlink:
@@ -103,10 +103,10 @@ class TestProcessorApp(object):
         mocked_unlink.assert_called_with("fake_dump_TEMPORARY.dump")
         pa.source.get_raw_crash.assert_called_with(17)
         pa.processor.process_crash.assert_called_with(
-            fake_raw_crash, fake_dump, fake_processed_crash
+            fake_raw_crash, fake_dumps, fake_processed_crash
         )
-        pa.destination.save_raw_and_processed.assert_called_with(
-            fake_raw_crash, None, 7, 17
+        pa.destination.save_processed_crash.assert_called_with(
+            {"raw": "1"}, {"processed": "1"}
         )
         assert finished_func.call_count == 1
 
@@ -147,14 +147,12 @@ class TestProcessorApp(object):
         pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
         pa.source.get_raw_dumps_as_files.return_value = {}
 
-        def mocked_save_raw_and_processed(*args, **kwargs):
+        def mocked_save_processed_crash(*args, **kwargs):
             exception = PolyStorageError()
             exception.exceptions.append(NameError("waldo"))
             raise exception
 
-        pa.destination.save_raw_and_processed.side_effect = (
-            mocked_save_raw_and_processed
-        )
+        pa.destination.save_processed_crash.side_effect = mocked_save_processed_crash
 
         # The important thing is that this is the exception that
         # is raised and not something from the sentry error handling.
@@ -176,7 +174,7 @@ class TestProcessorApp(object):
         mock_hub.capture_exception.return_value = "someidentifier"
         mock_get_hub.return_value = mock_hub
 
-        # Set up a processor and mock out .save_raw_and_processed() with multiple
+        # Set up a processor and mock out .save_processed_crash() with multiple
         # errors
         config = self.get_standard_config()
         pa = ProcessorApp(config)
@@ -187,7 +185,7 @@ class TestProcessorApp(object):
         expected_exception = PolyStorageError()
         expected_exception.exceptions.append(NameError("waldo"))
         expected_exception.exceptions.append(AssertionError(False))
-        pa.destination.save_raw_and_processed.side_effect = expected_exception
+        pa.destination.save_processed_crash.side_effect = expected_exception
 
         # The important thing is that this is the exception that is raised and
         # not something from the sentry error handling
@@ -213,7 +211,7 @@ class TestProcessorApp(object):
         mock_hub.capture_exception.side_effect = RuntimeError("should not be called")
         mock_get_hub.return_value = mock_hub
 
-        # Set up a processor and mock .save_raw_and_processed() to raise an exception
+        # Set up a processor and mock .save_processed_crash() to raise an exception
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
@@ -221,7 +219,7 @@ class TestProcessorApp(object):
         pa.source.get_raw_dumps_as_files.return_value = {}
 
         expected_exception = ValueError("simulated error")
-        pa.destination.save_raw_and_processed.side_effect = expected_exception
+        pa.destination.save_processed_crash.side_effect = expected_exception
 
         # Run .transform() and make sure it raises the ValueError
         with pytest.raises(ValueError):
@@ -276,7 +274,7 @@ class TestProcessorApp(object):
         mock_hub.capture_exception.side_effect = ValueError("sentry error")
         mock_get_hub.return_value = mock_hub
 
-        # Set up processor and mock .save_raw_and_processed() to raise an exception
+        # Set up processor and mock .save_processed_crash() to raise an exception
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
@@ -288,7 +286,7 @@ class TestProcessorApp(object):
         expected_exception = PolyStorageError()
         expected_exception.exceptions.append(first_exc_info)
         expected_exception.exceptions.append(second_exc_info)
-        pa.destination.save_raw_and_processed.side_effect = expected_exception
+        pa.destination.save_processed_crash.side_effect = expected_exception
 
         # Make sure the PolyStorageError is raised and not the error from
         # .captureException()
