@@ -55,9 +55,7 @@ class FSPermanentStorage(CrashStorageBase):
 
         root/20071025/name/0b/ba/92/9f/
 
-    This storage does not implement ``new_crashes``, but is able to store
-    processed crashes. Used alone, it is intended to store only processed
-    crashes.
+    Used alone, it is intended to store only processed crashes.
 
     """
 

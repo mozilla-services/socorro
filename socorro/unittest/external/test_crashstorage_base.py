@@ -15,7 +15,6 @@ from socorro.external.crashstorage_base import (
     Redactor,
     BenchmarkingCrashStorage,
     MemoryDumpsMapping,
-    FileDumpsMapping,
     MetricsCounter,
     MetricsBenchmarkingWrapper,
 )
@@ -91,35 +90,7 @@ class TestCrashStorageBase(object):
             with pytest.raises(NotImplementedError):
                 crashstorage.remove("ooid")
 
-            assert crashstorage.new_crashes() == []
             crashstorage.close()
-
-        with config_manager.context() as config:
-
-            class MyCrashStorage(CrashStorageBase):
-                def save_raw_crash(self, raw_crash, dumps, crash_id):
-                    assert crash_id == "fake_id"
-                    assert raw_crash == "fake raw crash"
-                    assert sorted(dumps.keys()) == sorted(["one", "two", "three"])
-                    assert sorted(dumps.values()) == sorted(["eins", "zwei", "drei"])
-
-            values = ["eins", "zwei", "drei"]
-
-            def open_function(*args, **kwargs):
-                return values.pop(0)
-
-            crashstorage = MyCrashStorage(config)
-
-            with mock.patch("socorro.external.crashstorage_base.open") as open_mock:
-                open_mock.return_value = mock.MagicMock()
-                open_mock.return_value.__enter__.return_value.read.side_effect = (
-                    open_function
-                )
-                crashstorage.save_raw_crash_with_file_dumps(
-                    "fake raw crash",
-                    FileDumpsMapping({"one": "eins", "two": "zwei", "three": "drei"}),
-                    "fake_id",
-                )
 
     def test_polyerror(self):
         p = PolyStorageError("hell")
