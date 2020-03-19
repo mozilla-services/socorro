@@ -342,17 +342,11 @@ def enhance_raw(raw_crash):
             raw_crash["AdapterDeviceName"] = result[1]
 
 
-#: Number of days to look at for versions in crash reports. This is set
-#: for two months. If we haven't gotten a crash report for some version in
-#: two months, then seems like that version isn't active.
-VERSIONS_WINDOW_DAYS = 60
-
-
 def get_versions_for_product(product="Firefox", use_cache=True):
     """Returns list of recent version strings for specified product
 
     This looks at the crash reports submitted for this product over
-    VERSIONS_WINDOW_DAYS days and returns the versinos of those crash reports.
+    VERSIONS_WINDOW_DAYS days and returns the versions of those crash reports.
 
     If SuperSearch returns an error, this returns an empty list.
 
@@ -376,47 +370,47 @@ def get_versions_for_product(product="Firefox", use_cache=True):
     now = timezone.now()
 
     # Find versions for specified product in crash reports reported in the last
-    # 6 months and use a big _facets_size so that it picks up versions that
-    # have just been released that don't have many crash reports, yet
+    # VERSIONS_WINDOW_DAYS days and use a big _facets_size so that it picks up versions
+    # that have just been released that don't have many crash reports, yet
+    window = settings.VERSIONS_WINDOW_DAYS
     params = {
         "product": product,
         "_results_number": 0,
         "_facets": "version",
         "_facets_size": 1000,
         "date": [
-            ">=" + (now - datetime.timedelta(days=VERSIONS_WINDOW_DAYS)).isoformat(),
+            ">=" + (now - datetime.timedelta(days=window)).isoformat(),
             "<" + now.isoformat(),
         ],
     }
 
     # Since we're caching the results of the search plus additional work done,
-    # we don't need to cache the fetch
+    # we don't want to cache the fetch
     ret = api.get(**params, dont_cache=True)
     if "facets" not in ret or "version" not in ret["facets"]:
         return []
 
     # Get versions from facet, drop junk, and sort the final list
-    betas = set()
-    versions = []
+    versions = set()
     for item in ret["facets"]["version"]:
+        if item["count"] < settings.VERSIONS_COUNT_THRESHOLD:
+            continue
+
         version = item["term"]
         try:
             # This generates the sort key but also parses the version to
             # make sure it's a valid looking version
-            versions.append((generate_version_key(version), version))
+            versions.add((generate_version_key(version), version))
 
             # Add X.Yb to betas set
             if "b" in version:
                 beta_version = version[: version.find("b") + 1]
-                betas.add(beta_version)
+                versions.add((generate_version_key(beta_version), beta_version))
         except VersionParseError:
             pass
 
-    # Add the (sortkey, X.Yb) to the list
-    versions.extend([(generate_version_key(beta), beta) for beta in betas])
-
     # Sort by sortkey and then drop the sortkey
-    versions.sort(key=lambda v: v[0], reverse=True)
+    versions = sorted(versions, key=lambda v: v[0], reverse=True)
     versions = [v[1] for v in versions]
 
     if use_cache:
@@ -476,18 +470,19 @@ def get_version_context_for_product(product):
 
     versions = get_versions_for_product(product, use_cache=False)
 
-    # If this product has manually maintained featured versions, use that.
     featured_versions = get_manually_maintained_featured_versions(product)
     if featured_versions is not None:
+        # If this product has manually maintained featured versions, use that. Make
+        # sure featured versions are in the versions list and re-sort.
         for featured_version in featured_versions:
             if featured_version not in versions:
                 versions.insert(0, featured_version)
         versions.sort(key=lambda v: generate_version_key(v), reverse=True)
 
     else:
-        # Map of major version (int) -> list of (key (str), versions (str)) so
-        # we can get the most recent version of the last three majors which
-        # we'll assume are "featured versions"
+        # Map of major version (int) -> list of (key (str), versions (str)) so we can
+        # get the most recent version of the last three major versions which we'll
+        # assume are "featured versions".
         major_to_versions = OrderedDict()
         for version in versions:
             # In figuring for featured versions, we don't want to include the
