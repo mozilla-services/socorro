@@ -74,7 +74,7 @@ def parse_java_stack_trace(text):
             # Append lines to the message until one of them starts with
             # a tab.
             next_line = lines.peek(None)
-            while next_line and not next_line.startswith("\tat "):
+            while next_line is not None and not next_line.startswith("\tat "):
                 msg = msg + "\n" + next(lines)
                 next_line = lines.peek(None)
 

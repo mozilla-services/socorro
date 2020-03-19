@@ -141,6 +141,26 @@ def test_parse_unindented_caused_by():
     ]
 
 
+EXC_MSG_WITH_PARENS = """\
+Exception: Error(
+
+General Error: "No subscriptions created yet.")
+\tat org.File.function(RustError.kt:4)
+"""
+
+
+def test_parenthesized_msg():
+    """Parse an exception with a exception message in parentheses."""
+    java_exc = javautil.parse_java_stack_trace(EXC_MSG_WITH_PARENS)
+    assert java_exc.exception_class == "Exception"
+    assert (
+        java_exc.exception_message
+        == 'Error(\n\nGeneral Error: "No subscriptions created yet.")'
+    )
+    assert java_exc.stack == ["at org.File.function(RustError.kt:4)"]
+    assert java_exc.additional == []
+
+
 @pytest.mark.parametrize(
     "text",
     [
