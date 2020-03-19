@@ -53,4 +53,5 @@ https://lists.mozilla.org/listinfo/tools-socorro
 
 Please help each other.
 
-Crash Stats engineers hang out in the ``#breakpad`` channel on Mozilla Slack.
+Crash Stats engineers hang out in `#breakpad:mozilla.org
+<https://riot.im/app/#/room/#breakpad:mozilla.org>`_

@@ -21,7 +21,7 @@ analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
   * Bugs: `Report an Antenna bug <https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=Antenna>`_
 
 * Mailing list: https://lists.mozilla.org/listinfo/tools-socorro
-* Chat: `#breakpad:mozilla.org <https://riot.im/app/#/room/#general:mozilla.org>`_
+* Chat: `#breakpad:mozilla.org <https://riot.im/app/#/room/#breakpad:mozilla.org>`_
 
 
 .. Note::
