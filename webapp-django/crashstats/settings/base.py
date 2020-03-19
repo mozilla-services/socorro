@@ -659,4 +659,13 @@ CSP_REPORT_URI = ("/__cspreport__",)
 # This is the number of versions to display if a particular product
 # has no 'featured versions'. Then we use the active versions, but capped
 # up to this number.
-NUMBER_OF_FEATURED_VERSIONS = config("NUMBER_OF_FEATURED_VERSIONS", 4)
+NUMBER_OF_FEATURED_VERSIONS = config("NUMBER_OF_FEATURED_VERSIONS", 4, cast=int)
+
+# Number of days to look at for versions in crash reports. This is set
+# for two months. If we haven't gotten a crash report for some version in
+# two months, then seems like that version isn't active.
+VERSIONS_WINDOW_DAYS = config("VERSIONS_WINDOW_DAYS", 60, cast=int)
+
+# Minimum number of crash reports in the VERSIONS_WINDOW_DAYS to be
+# considered as a valid version.
+VERSIONS_COUNT_THRESHOLD = config("VERSIONS_COUNT_THRESHOLD", 50, cast=int)

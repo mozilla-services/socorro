@@ -342,12 +342,6 @@ def enhance_raw(raw_crash):
             raw_crash["AdapterDeviceName"] = result[1]
 
 
-#: Number of days to look at for versions in crash reports. This is set
-#: for two months. If we haven't gotten a crash report for some version in
-#: two months, then seems like that version isn't active.
-VERSIONS_WINDOW_DAYS = 60
-
-
 def get_versions_for_product(product="Firefox", use_cache=True):
     """Returns list of recent version strings for specified product
 
@@ -376,15 +370,16 @@ def get_versions_for_product(product="Firefox", use_cache=True):
     now = timezone.now()
 
     # Find versions for specified product in crash reports reported in the last
-    # VERSIONS_WINDOWS_DAYS days and use a big _facets_size so that it picks up versions
+    # VERSIONS_WINDOW_DAYS days and use a big _facets_size so that it picks up versions
     # that have just been released that don't have many crash reports, yet
+    window = settings.VERSIONS_WINDOW_DAYS
     params = {
         "product": product,
         "_results_number": 0,
         "_facets": "version",
         "_facets_size": 1000,
         "date": [
-            ">=" + (now - datetime.timedelta(days=VERSIONS_WINDOW_DAYS)).isoformat(),
+            ">=" + (now - datetime.timedelta(days=window)).isoformat(),
             "<" + now.isoformat(),
         ],
     }
@@ -398,6 +393,9 @@ def get_versions_for_product(product="Firefox", use_cache=True):
     # Get versions from facet, drop junk, and sort the final list
     versions = set()
     for item in ret["facets"]["version"]:
+        if item["count"] < settings.VERSIONS_COUNT_THRESHOLD:
+            continue
+
         version = item["term"]
         try:
             # This generates the sort key but also parses the version to
