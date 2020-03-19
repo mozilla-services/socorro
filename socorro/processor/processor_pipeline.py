@@ -25,6 +25,7 @@ from socorro.processor.rules.breakpad import (
 )
 from socorro.processor.rules.general import (
     CPUInfoRule,
+    DeNoneRule,
     DeNullRule,
     IdentifierRule,
     OSInfoRule,
@@ -167,8 +168,9 @@ class ProcessorPipeline(RequiredConfig):
 
         """
         return [
-            # fix the raw crash removing null characters
+            # fix the raw crash removing null characters and Nones
             DeNullRule(),
+            DeNoneRule(),
             # fix ModuleSignatureInfo if it needs fixing
             ConvertModuleSignatureInfoRule(),
             # rules to change the internals of the raw crash

@@ -3,8 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from glom import glom
+import markus
 
 from socorro.processor.rules.base import Rule
+
+
+METRICS = markus.get_metrics("processor")
 
 
 class DeNullRule(Rule):
@@ -12,9 +16,6 @@ class DeNullRule(Rule):
 
     Sometimes crash reports come in with junk data. This removes the egregious
     junk that causes downstream processing and storage problems.
-
-    NOTE(willkg): While this changes the raw crash, that raw crash should never
-    get saved back to storage, so this doesn't overwrite the original material.
 
     """
 
@@ -37,14 +38,43 @@ class DeNullRule(Rule):
         return s
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        had_nulls = False
+
         # Go through the raw crash and de-null keys and values
-        for key, val in raw_crash.items():
+        for key, val in list(raw_crash.items()):
             new_key = self.de_null(key)
             if key != new_key:
+                had_nulls = True
                 del raw_crash[key]
 
             new_val = self.de_null(val)
-            raw_crash[new_key] = new_val
+            if val != new_val:
+                had_nulls = True
+                raw_crash[new_key] = new_val
+
+        if had_nulls:
+            METRICS.incr("denullrule.has_nulls")
+
+
+class DeNoneRule(Rule):
+    """Removes keys that have None values
+
+    Sometimes crash reports can have None values. That's unhelpful and usually
+    a bug in the crash reporter. This removes keys have None values.
+
+    """
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        had_nones = False
+
+        # Remove keys that have None values
+        for key, val in list(raw_crash.items()):
+            if val is None:
+                had_nones = True
+                del raw_crash[key]
+
+        if had_nones:
+            METRICS.incr("denonerule.had_nones")
 
 
 class IdentifierRule(Rule):
