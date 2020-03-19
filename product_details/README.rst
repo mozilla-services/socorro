@@ -55,4 +55,5 @@ expire, but after that you should be able to see the changes in production.
 Questions
 =========
 
-If you have any questions, please ask in ``#breakpad`` on Mozilla Slack.
+If you have any questions, please ask in
+`#breakpad:mozilla.org <https://riot.im/app/#/room/#breakpad:mozilla.org>`_.
