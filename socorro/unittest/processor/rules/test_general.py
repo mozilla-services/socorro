@@ -9,6 +9,7 @@ import pytest
 
 from socorro.processor.rules.general import (
     CPUInfoRule,
+    DeNoneRule,
     DeNullRule,
     IdentifierRule,
     OSInfoRule,
@@ -110,7 +111,31 @@ canonical_processed_crash = DotDict(
 )
 
 
-class TestDeNullRule(object):
+class TestDeNoneRule:
+    @pytest.mark.parametrize(
+        "raw_crash, expected",
+        [
+            ({}, {}),
+            ({"foo": "bar"}, {"foo": "bar"}),
+            ({"foo": None}, {}),
+            ({"foo": "bar", "baz": None}, {"foo": "bar"}),
+        ],
+    )
+    def test_denone(self, raw_crash, expected):
+        rule = DeNoneRule()
+        rule.action(raw_crash, None, {}, {})
+        assert raw_crash == expected
+
+    def test_denone_with_dotdict(self):
+        raw_crash = DotDict({"foo": "bar", "baz": None})
+        expected = DotDict({"foo": "bar"})
+
+        rule = DeNoneRule()
+        rule.action(raw_crash, None, {}, {})
+        assert raw_crash == expected
+
+
+class TestDeNullRule:
     @pytest.mark.parametrize(
         "data, expected",
         [
