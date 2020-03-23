@@ -44,6 +44,7 @@
             data-results-url="{{ url('supersearch:search_results') }}"
             data-custom-url="{{ url('supersearch:search_custom') }}"
             data-public-api-url="{{ url('api:model_wrapper', 'SuperSearch') }}"
+            data-no-csrf
       >
         <div class="form-controls">
           {% if request.user.has_perm('crashstats.run_custom_queries') %}
