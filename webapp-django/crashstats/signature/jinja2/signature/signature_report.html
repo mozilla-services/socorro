@@ -44,6 +44,7 @@
       <form method="get" action="{{ url('signature:signature_report') }}"
             data-fields-url="{{ url('supersearch:search_fields') }}?{{ make_query_string(exclude=['signature', 'date']) }}"
             data-signature="{{ signature }}"
+            data-no-csrf
       >
         <div class="form-controls">
           <button class="new-line">New line</button>

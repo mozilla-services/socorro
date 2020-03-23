@@ -23,7 +23,7 @@
     <div class="page-header">
       {% include "header_title.html" %}
 
-      <form id="simple_search" method="get" action="{{ url('crashstats:quick_search') }}">
+      <form id="simple_search" method="get" action="{{ url('crashstats:quick_search') }}" data-no-csrf>
         <label for="q" class="visually-hidden">Search</label>
         <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
         <input type="submit" class="hidden">
