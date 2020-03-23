@@ -68,6 +68,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", "", cast=Csv())
 ROOT_URLCONF = "crashstats.urls"
 
 INSTALLED_APPS = (
+    "whitenoise.runserver_nostatic",
     "pipeline",
     "django.contrib.contenttypes",
     "django.contrib.auth",
@@ -669,3 +670,8 @@ VERSIONS_WINDOW_DAYS = config("VERSIONS_WINDOW_DAYS", 60, cast=int)
 # Minimum number of crash reports in the VERSIONS_WINDOW_DAYS to be
 # considered as a valid version.
 VERSIONS_COUNT_THRESHOLD = config("VERSIONS_COUNT_THRESHOLD", 50, cast=int)
+
+# Prevents whitenoise from adding "Access-Control-Allow-Origin: *" header for static
+# files. If we ever switch to hosting static assets on a CDN, we'll want to remove
+# this.
+WHITENOISE_ALLOW_ALL_ORIGINS = False
