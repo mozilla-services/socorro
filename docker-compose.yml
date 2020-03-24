@@ -26,8 +26,7 @@ services:
       - my.env
     depends_on:
       - statsd
-      - localstack-s3
-      - localstack-sqs
+      - localstack
       - elasticsearch
     command: ["processor"]
     volumes:
@@ -55,8 +54,7 @@ services:
       - my.env
     depends_on:
       - statsd
-      - localstack-s3
-      - localstack-sqs
+      - localstack
       - postgresql
       - elasticsearch
       - memcached
@@ -104,8 +102,7 @@ services:
       - docker/config/never_on_a_server.env
       - my.env
     depends_on:
-      - localstack-s3
-      - localstack-sqs
+      - localstack
       - statsd
     expose:
       - 8000
@@ -153,27 +150,16 @@ services:
       - POSTGRES_DB=breakpad
 
   # https://hub.docker.com/r/localstack/localstack/
-  # localstack running a fake AWS S3
-  localstack-s3:
-    image: localstack/localstack:0.10.5
+  # localstack running a fake AWS S3 and SQS
+  localstack:
+    image: localstack/localstack:0.10.8
     environment:
-      - SERVICES=s3:4572
-      - DEFAULT_REGION=us-west-2
-      - HOSTNAME=localstack-s3
-      - HOSTNAME_EXTERNAL=localstack-s3
+      - SERVICES=s3:4572,sqs:4576
+      - DEFAULT_REGION=us-east-1
+      - HOSTNAME=localstack
+      - HOSTNAME_EXTERNAL=localstack
     ports:
       - "4572:4572"
-
-  # https://hub.docker.com/r/localstack/localstack/
-  # localstack running a fake sqs
-  localstack-sqs:
-    image: localstack/localstack:0.10.5
-    environment:
-      - SERVICES=sqs:4576
-      - DEFAULT_REGION=us-east-1
-      - HOSTNAME=localstack-sqs
-      - HOSTNAME_EXTERNAL=localstack-sqs
-    ports:
       - "4576:4576"
 
   # https://hub.docker.com/_/memcached/

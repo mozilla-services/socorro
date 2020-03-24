@@ -125,7 +125,7 @@ run: my.env
 
 .PHONY: runservices
 runservices: my.env
-	${DC} up -d statsd postgresql memcached localstack-s3 localstack-sqs elasticsearch
+	${DC} up -d statsd postgresql memcached localstack elasticsearch
 
 .PHONY: stop
 stop: my.env

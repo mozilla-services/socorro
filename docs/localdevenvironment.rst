@@ -499,10 +499,10 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   # "crashdata" directory on the host
   app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
 
-  # Create a dev_bucket in localstack-s3
+  # Create a dev_bucket in localstack s3
   app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev_bucket/
 
-  # Copy that data from the host into the localstack-s3 container
+  # Copy that data from the host into the localstack s3 container
   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
 
   # Add all the crash ids to the queue

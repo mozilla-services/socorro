@@ -10,8 +10,7 @@
 # services have been launched. It depends on:
 #
 # * elasticsearch
-# * localstack-s3
-# * localstack-sqs
+# * localstack
 # * postgresql
 
 # Failures should cause setup to fail
