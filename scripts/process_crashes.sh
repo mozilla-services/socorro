@@ -46,12 +46,12 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 ./socorro-cmd fetch_crash_data "${DATADIR}" $@
 
 # Make the bucket and sync contents
-./scripts/socorro_aws_s3.sh mb s3://dev_bucket/
-./scripts/socorro_aws_s3.sh cp --recursive "${DATADIR}" s3://dev_bucket/
-./scripts/socorro_aws_s3.sh ls --recursive s3://dev_bucket/
+./scripts/socorro_aws_s3.sh mb s3://dev-bucket/
+./scripts/socorro_aws_s3.sh cp --recursive "${DATADIR}" s3://dev-bucket/
+./scripts/socorro_aws_s3.sh ls --recursive s3://dev-bucket/
 
 # Add crash ids to queue
-./socorro-cmd sqs publish local_dev_standard $@
+./socorro-cmd sqs publish local-dev-standard $@
 
 # Print urls to make it easier to look at them
 for crashid in "$@"
