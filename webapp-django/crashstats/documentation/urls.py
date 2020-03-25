@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.conf.urls import url
+from django.shortcuts import redirect
 
 from crashstats.documentation import views
 
@@ -17,6 +18,11 @@ urlpatterns = [
     ),
     url(r"^supersearch/api/$", views.supersearch_api, name="supersearch_api"),
     url(r"^memory_dump_access/$", views.memory_dump_access, name="memory_dump_access"),
-    url(r"^products/$", views.products, name="products"),
+    url(
+        r"^products/$",
+        lambda request: redirect(
+            "https://socorro.readthedocs.io/en/latest/products.html"
+        ),
+    ),
     url(r"^$", views.home, name="home"),
 ]

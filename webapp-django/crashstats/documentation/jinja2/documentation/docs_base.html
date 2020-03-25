@@ -6,6 +6,12 @@
   </li>
 {% endmacro %}
 
+{% macro external_navlink(link_url, link_name) %}
+  <li>
+    <a href="{{ link_url }}">{{ link_name }}</a>
+  </li>
+{% endmacro %}
+
 {% block site_css %}
   {{ super() }}
   {% stylesheet 'documentation' %}
@@ -32,11 +38,11 @@
           <ul class="options">
             {{ navlink(url('documentation:home'), 'Home') }}
             {{ navlink(url('documentation:memory_dump_access'), 'Memory Dump and Private User Data Access') }}
-            {{ navlink(url('documentation:products'), 'Products') }}
             {{ navlink(url('api:documentation'), 'API Reference') }}
             {{ navlink(url('documentation:supersearch_home'), 'Super Search') }}
             {{ navlink(url('documentation:supersearch_examples'), 'Super Search Examples') }}
             {{ navlink(url('documentation:supersearch_api'), 'Super Search API') }}
+            {{ external_navlink('https://socorro.readthedocs.io/', 'More docs') }}
           </ul>
         </nav>
       </div>

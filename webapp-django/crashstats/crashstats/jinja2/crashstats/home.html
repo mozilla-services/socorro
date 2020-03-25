@@ -7,9 +7,9 @@
         <a class="product" href="{{ url('crashstats:product_home', product=product_name) }}">{{ product_name }}</a>
       {% endfor %}
     </div>
-    <p>
-      Want to see your Mozilla product here? <a href="{{ url('documentation:products') }}">Follow
-      the new product guide.</a>
-    </p>
+    <div class="tip">
+      Want to see your Mozilla product here?
+      <a href="https://socorro.readthedocs.io/en/latest/products.html">See our product documentation.</a>
+    </div>
   </div>
 {% endblock %}
