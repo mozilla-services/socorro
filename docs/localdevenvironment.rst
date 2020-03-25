@@ -424,25 +424,25 @@ scripts/socorro_aws_s3.sh
 This script is a convenience wrapper around the aws cli s3 subcommand that uses
 Socorro environment variables to set the credentials and endpoint.
 
-For example, this creates an S3 bucket named ``dev_bucket``:
+For example, this creates an S3 bucket named ``dev-bucket``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+   app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev-bucket/
 
 
-This copies the contents of ``./testdata`` into the ``dev_bucket``:
+This copies the contents of ``./testdata`` into the ``dev-bucket``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./testdata s3://dev_bucket/
+   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./testdata s3://dev-bucket/
 
 
 This lists the contents of the bucket:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/socorro_aws_s3.sh ls s3://dev_bucket/
+   app@socorro:/app$ scripts/socorro_aws_s3.sh ls s3://dev-bucket/
 
 
 Since this is just a wrapper, you can get help:
@@ -465,7 +465,7 @@ For example:
 
 .. code-block:: shell
 
-   app@socorro:/app$ socorro-cmd sqs publish local_dev_standard \
+   app@socorro:/app$ socorro-cmd sqs publish local-dev-standard \
        ed35821d-3af5-4fe9-bfa3-dc4dc0181128
 
 
@@ -499,14 +499,14 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   # "crashdata" directory on the host
   app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
 
-  # Create a dev_bucket in localstack s3
-  app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+  # Create a dev-bucket in localstack s3
+  app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev-bucket/
 
   # Copy that data from the host into the localstack s3 container
-  app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev_bucket/
+  app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev-bucket/
 
   # Add all the crash ids to the queue
-  app@socorro:/app$ cat crashids.txt | socorro-cmd sqs publish local_dev_standard
+  app@socorro:/app$ cat crashids.txt | socorro-cmd sqs publish local-dev-standard
 
   # Then exit the container
   app@socorro:/app$ exit
@@ -531,7 +531,7 @@ To run Antenna in the Socorro local dev environment, do::
 
 
 It will listen on ``http://localhost:8888/`` for incoming crashes from a
-breakpad crash reporter. It will save crash data to the ``dev_bucket`` in the
+breakpad crash reporter. It will save crash data to the ``dev-bucket`` in the
 local S3 which is where the processor looks for it. It will publish the crash
 ids to the AWS SQS standard queue.
 

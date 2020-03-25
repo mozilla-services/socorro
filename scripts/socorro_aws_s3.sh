@@ -12,19 +12,19 @@ set -e
 #
 # make bucket
 #
-#     scripts/socorro_aws_s3.sh mb s3://dev_bucket/
+#     scripts/socorro_aws_s3.sh mb s3://dev-bucket/
 #
 # list bucket
 #
-#     scripts/socorro_aws_s3.sh ls s3://dev_bucket/
+#     scripts/socorro_aws_s3.sh ls s3://dev-bucket/
 #
 # copy files into s3 container
 #
-#     scripts/socorro_aws_s3.sh cp --recursive ./my_s3_root/ s3://dev_bucket/
+#     scripts/socorro_aws_s3.sh cp --recursive ./my_s3_root/ s3://dev-bucket/
 #
 # sync local directory and s3 container
 #
-#     scripts/socorro_aws_s3.sh sync ./my_s3_root/ s3://dev_bucket/
+#     scripts/socorro_aws_s3.sh sync ./my_s3_root/ s3://dev-bucket/
 
 # First convert configman environment vars which have bad identifiers to ones
 # that don't
