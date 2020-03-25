@@ -314,6 +314,7 @@ _platform_strlen
 strncpy
 strzcmp16
 strstr
+syscall
 __swrite
 TlsGetValue
 TouchBadMemory
