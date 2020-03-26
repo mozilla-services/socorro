@@ -21,6 +21,7 @@ from socorro.processor.rules.mozilla import (
     ESRVersionRewrite,
     EnvironmentRule,
     ExploitablityRule,
+    FenixVersionRewriteRule,
     FlashVersionRule,
     JavaProcessRule,
     ModulesInStackRule,
@@ -886,7 +887,49 @@ class TestProductRewriteRule(object):
         ]
 
 
-class TestESRVersionRewrite(object):
+class TestFenixVersionRewriteRule:
+    @pytest.mark.parametrize(
+        "product, version, expected",
+        [
+            # Change this
+            ("Fenix", "Nightly 200312 12:12", True),
+            # Don't change these
+            ("Fenix", "1.0", False),
+            ("Firefox", "75.0", False),
+            ("Firefox", "Nightly 75.0", False),
+        ],
+    )
+    def test_predicate(self, product, version, expected):
+        raw_crash = {
+            "ProductName": product,
+            "Version": version,
+        }
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = FenixVersionRewriteRule()
+        ret = rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert ret == expected
+
+    def test_act(self):
+        raw_crash = {
+            "ProductName": "Fenix",
+            "Version": "Nightly 200315 05:05",
+        }
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = FenixVersionRewriteRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert raw_crash["Version"] == "0.0a1"
+        assert processor_meta.processor_notes == [
+            "Changed version from 'Nightly 200315 05:05' to 0.0a1"
+        ]
+
+
+class TestESRVersionRewrite:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.ReleaseChannel = "esr"

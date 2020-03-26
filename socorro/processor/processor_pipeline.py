@@ -39,6 +39,7 @@ from socorro.processor.rules.mozilla import (
     EnvironmentRule,
     ESRVersionRewrite,
     ExploitablityRule,
+    FenixVersionRewriteRule,
     FlashVersionRule,
     JavaProcessRule,
     ModulesInStackRule,
@@ -175,6 +176,7 @@ class ProcessorPipeline(RequiredConfig):
             ConvertModuleSignatureInfoRule(),
             # rules to change the internals of the raw crash
             ProductRewrite(),
+            FenixVersionRewriteRule(),
             ESRVersionRewrite(),
             PluginContentURL(),
             PluginUserComment(),
