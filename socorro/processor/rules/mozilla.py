@@ -377,6 +377,28 @@ class ProductRewrite(Rule):
             raw_crash["OriginalProductName"] = original_product_name
 
 
+class FenixVersionRewriteRule(Rule):
+    """Fix 'Nightly YYMMDD HH:MM' version values to '0.0a1'
+
+    This allows nightlies for Fenix to group in Crash Stats. We can probably ditch this
+    at some point when we're not getting crash reports that have this version structure.
+
+    Bug #1624911
+
+    """
+
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return raw_crash.get("ProductName") == "Fenix" and (
+            raw_crash.get("Version") or ""
+        ).startswith("Nightly ")
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processor_meta.processor_notes.append(
+            "Changed version from %r to 0.0a1" % raw_crash.get("Version")
+        )
+        raw_crash["Version"] = "0.0a1"
+
+
 class ESRVersionRewrite(Rule):
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return raw_crash.get("ReleaseChannel", "") == "esr"
