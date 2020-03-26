@@ -20,7 +20,11 @@ def main(args):
     )
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--timeout", type=int, default=10, help="Wait timeout")
-    parser.add_argument("--codes", default="200", help="Comma-separated list of valid HTTP response codes")
+    parser.add_argument(
+        "--codes",
+        default="200",
+        help="Comma-separated list of valid HTTP response codes",
+    )
     parser.add_argument("url", help="URL to test")
 
     parsed = parser.parse_args(args)
@@ -28,7 +32,10 @@ def main(args):
     ok_codes = [int(code.strip()) for code in parsed.codes.split(",")]
 
     if parsed.verbose:
-        print("Testing %s for %s with timeout %d..." % (parsed.url, repr(ok_codes), parsed.timeout))
+        print(
+            "Testing %s for %s with timeout %d..."
+            % (parsed.url, repr(ok_codes), parsed.timeout)
+        )
 
     socket.setdefaulttimeout(1)
 
