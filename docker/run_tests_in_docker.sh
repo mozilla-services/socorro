@@ -25,9 +25,11 @@ SOCORRO_GID=${SOCORRO_GID:-"10001"}
 BASEIMAGENAME="python:3.7.6-slim-stretch"
 TESTIMAGE="local/socorro_app"
 
-# Start services in background (this is idempotent)
+# Start services in background (this is idempotent)--make sure to start
+# localstack first since it needs some extra time
 echo "Starting services needed by tests in the background..."
-${DC} up -d elasticsearch localstack postgresql statsd
+${DC} up -d localstack
+${DC} up -d elasticsearch postgresql statsd
 
 # If we're running a shell, then we start up a test container with . mounted
 # to /app.
