@@ -49,7 +49,7 @@ def main(args):
                     sys.exit(0)
                 last_fail = "HTTP status code: %s" % resp.code
         except urllib.error.URLError as error:
-            if error.code in ok_codes:
+            if hasattr(error, "code") and error.code in ok_codes:
                 sys.exit(0)
             last_fail = "URLError: %s" % error
 
