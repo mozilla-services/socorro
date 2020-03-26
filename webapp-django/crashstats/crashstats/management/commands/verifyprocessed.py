@@ -63,13 +63,15 @@ def check_elasticsearch(supersearch, crash_ids):
     """
     crash_ids = [crash_ids] if isinstance(crash_ids, str) else crash_ids
     crash_date = date_from_ooid(crash_ids[0])
-    start_date = crash_date.strftime("%Y-%m-%d")
-    end_date = (crash_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # The datestamp in the crashid doesn't match the processed date sometimes especially
+    # when the crash came in at the end of the day.
+    start_date = (crash_date - datetime.timedelta(days=5)).strftime("%Y-%m-%d")
+    end_date = (crash_date + datetime.timedelta(days=5)).strftime("%Y-%m-%d")
 
     params = {
         "uuid": crash_ids,
         "date": [">=%s" % start_date, "<=%s" % end_date],
-        "_results_number": len(crash_ids),
         "_columns": ["uuid"],
         "_facets": [],
         "_facets_size": 0,
