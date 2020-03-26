@@ -456,7 +456,7 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         default="socorro.external.crashstorage_base.Redactor",
         from_string_converter=class_converter,
     )
-    required_config.add_option(
+    required_config.es_redactor.add_option(
         name="forbidden_keys",
         doc="a list of keys not allowed in a redacted processed crash",
         default=(
@@ -520,7 +520,7 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         default="socorro.external.crashstorage_base.Redactor",
         from_string_converter=class_converter,
     )
-    required_config.add_option(
+    required_config.es_redactor.add_option(
         name="forbidden_keys",
         doc="a list of keys not allowed in a redacted processed crash",
         default=(

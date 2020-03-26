@@ -47,6 +47,10 @@ CONFIG_DEFAULTS = {
             "es_redactor": {
                 "forbidden_keys": ", ".join(
                     [
+                        # NOTE(willkg): "java_stack_trace_full" messes the Elasticsearch
+                        # crashstorage up and causes errors. We can remove it in
+                        # August 2020. Bug #1619638
+                        "java_stack_trace_full",
                         "memory_report",
                         "upload_file_minidump_browser.json_dump",
                         "upload_file_minidump_flash1.json_dump",
