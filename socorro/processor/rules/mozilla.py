@@ -388,9 +388,8 @@ class FenixVersionRewriteRule(Rule):
     """
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return raw_crash.get("ProductName") == "Fenix" and (
-            raw_crash.get("Version") or ""
-        ).startswith("Nightly ")
+        is_nightly = (raw_crash.get("Version") or "").startswith("Nightly ")
+        return raw_crash.get("ProductName") == "Fenix" and is_nightly
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processor_meta.processor_notes.append(
