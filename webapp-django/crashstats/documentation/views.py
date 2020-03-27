@@ -40,13 +40,6 @@ def memory_dump_access(request, default_context=None):
 
 
 @pass_default_context
-def products(request, default_context=None):
-    context = default_context or {}
-
-    return render(request, "documentation/products.html", context)
-
-
-@pass_default_context
 def supersearch_home(request, default_context=None):
     context = default_context or {}
     return render(request, "documentation/supersearch/home.html", context)

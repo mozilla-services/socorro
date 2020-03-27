@@ -37,6 +37,9 @@ Keys:
     This affects the listed featured versions on the product home page and the
     "Current Versions" drop down navigation menu in the Crash Stats website.
 
+    If this is not set, Crash Stats calculates the featured versions based on
+    the crash reports that have been submitted.
+
 
 How to update product details files
 ===================================
