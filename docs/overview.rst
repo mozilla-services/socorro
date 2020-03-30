@@ -316,7 +316,4 @@ Telemetry (External system)
 Socorro exports a subset of crash data to Telemetry where it can be queried. It's in
 the ``socorro_crash`` dataset.
 
-.. seealso::
-
-   **Telemetry docs**
-     https://docs-origin.telemetry.mozilla.org/datasets/other/socorro_crash/reference.html
+See :ref:`telemetry-chapter` for more details.

@@ -39,6 +39,7 @@ analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
    signaturegeneration
    reprocessing
    products
+   telemetry_socorro_crash
 
 
 Crash Stats site documentation covering API docs, getting access to memory dumps,
