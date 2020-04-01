@@ -258,8 +258,8 @@ sqlparse==0.3.1 \
 cfn-lint==0.29.2 \
     --hash=sha256:4a94c93fc64ecfd4602d9c2b71d8c622906f6d74f87f37393de4a9516ab36459 \
     --hash=sha256:b41018ad7a49ec4ad07cb00646e2c052dd024db99281111cf53cbb90f72d6104
-aws-sam-translator==1.21.0 \
-    --hash=sha256:320a341d659580ad04e79c46fc93f50996363745a0c2728f9cd025ad78c43e36
+aws-sam-translator==1.22.0 \
+    --hash=sha256:3ba6a821eda29ca8ea1306e27a8135256d6136f1b0b29c6cbf9a107dfd1c2dd9
 jsonpatch==1.25 \
     --hash=sha256:cc3a7241010a1fd3f50145a3b33be2c03c1e679faa19934b628bb07d0f64819e \
     --hash=sha256:ddc0f7628b8bfdd62e3cbfbc24ca6671b0b6265b50d186c2cf3659dc0f78fd6a
