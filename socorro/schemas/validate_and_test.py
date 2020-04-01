@@ -6,6 +6,7 @@
 
 import json
 import os
+import sys
 from urllib.parse import urlparse
 
 import jsonschema
@@ -18,51 +19,68 @@ API_BASE = "https://crash-stats.mozilla.org/api/{}/"
 HERE = os.path.dirname(__file__)
 
 
+class MockConn:
+    def __init__(self):
+        self.last_path = None
+        self.last_data = None
+
+    def save_file(self, path, data):
+        self.last_path = path
+
+        # We have to convert the data from bytes back to a dict so we can check it
+        self.last_data = json.loads(data)
+
+
 class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
     def __init__(self):
         # Deliberately not doing anything fancy with config. So no super call.
-        r = requests.get(API_BASE.format("SuperSearchFields"))
-        print(r.url)
-        self._all_fields = r.json()
+        resp = requests.get(API_BASE.format("SuperSearchFields"))
+        print(resp.url)
+        self._all_fields = resp.json()
+        self.conn = MockConn()
 
-    def save_processed_crash(self, raw_crash, processed_crash):
-        self.combined = super().save_processed_crash(raw_crash, processed_crash)
+    def get_last_data(self):
+        return self.conn.last_data
 
 
 def run(no_crashes, *urls):
+    # Load the schema validator and validate the schema
     file_path = os.path.join(HERE, "crash_report.json")
     with open(file_path) as f:
         schema = json.load(f)
     jsonschema.Draft4Validator.check_schema(schema)
     print("{} is a valid JSON schema".format(file_path))
 
+    # Fetch crash report data from a Super Search URL
     print("Fetching data...")
     uuids = []
-    for url in urls:
-        assert "://" in url, url
+    if urls:
+        for url in urls:
+            assert "://" in url, url
 
-        # To make it easy for people, if someone pastes the URL
-        # of a regular SuperSearch page (and not the API URL), then
-        # automatically convert it for them.
-        parsed = urlparse(url)
-        if parsed.path == "/search/":
-            parsed = parsed._replace(path="/api/SuperSearch/")
-            parsed = parsed._replace(fragment=None)
-            url = parsed.geturl()
-        r = requests.get(
-            url,
-            params={
-                "_columns": ["uuid"],
-                "_facets_size": 0,
-                "_results_number": no_crashes,
-            },
-        )
-        search = r.json()
-        if not search["total"]:
-            print("Warning! {} returned 0 UUIDs".format(url))
-        uuids.extend([x["uuid"] for x in search["hits"] if x["uuid"] not in uuids])
-    if not urls:
-        r = requests.get(
+            # To make it easy for people, if someone pastes the URL
+            # of a regular SuperSearch page (and not the API URL), then
+            # automatically convert it for them.
+            parsed = urlparse(url)
+            if parsed.path == "/search/":
+                parsed = parsed._replace(path="/api/SuperSearch/")
+                parsed = parsed._replace(fragment=None)
+                url = parsed.geturl()
+            resp = requests.get(
+                url,
+                params={
+                    "_columns": ["uuid"],
+                    "_facets_size": 0,
+                    "_results_number": no_crashes,
+                },
+            )
+            search = resp.json()
+            if not search["total"]:
+                print("Warning! {} returned 0 UUIDs".format(url))
+            uuids.extend([x["uuid"] for x in search["hits"] if x["uuid"] not in uuids])
+
+    else:
+        resp = requests.get(
             API_BASE.format("SuperSearch"),
             params={
                 "product": "Firefox",
@@ -71,10 +89,10 @@ def run(no_crashes, *urls):
                 "_results_number": no_crashes,
             },
         )
-        search = r.json()
+        search = resp.json()
         uuids = [x["uuid"] for x in search["hits"]]
 
-    processor = MockedTelemetryBotoS3CrashStorage()
+    crashstorage = MockedTelemetryBotoS3CrashStorage()
 
     all_keys = set()
 
@@ -98,17 +116,19 @@ def run(no_crashes, *urls):
 
     print("Testing {} random recent crash reports".format(len(uuids)))
     for uuid in uuids:
-        r = requests.get(API_BASE.format("RawCrash"), params={"crash_id": uuid})
-        print(r.url)
-        raw_crash = r.json()
-        r = requests.get(API_BASE.format("ProcessedCrash"), params={"crash_id": uuid})
-        print(r.url)
-        processed_crash = r.json()
+        resp = requests.get(API_BASE.format("RawCrash"), params={"crash_id": uuid})
+        print(resp.url)
+        raw_crash = resp.json()
+        resp = requests.get(
+            API_BASE.format("ProcessedCrash"), params={"crash_id": uuid}
+        )
+        print(resp.url)
+        processed_crash = resp.json()
 
-        processor.save_processed_crash(raw_crash, processed_crash)
-        log_all_keys(processor.combined)
-
-        jsonschema.validate(processor.combined, schema)
+        crashstorage.save_processed_crash(raw_crash, processed_crash)
+        crash_report = crashstorage.get_last_data()
+        log_all_keys(crash_report)
+        jsonschema.validate(crash_report, schema)
 
     print("\nDone testing, all crash reports passed.\n")
 
@@ -141,6 +161,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())
