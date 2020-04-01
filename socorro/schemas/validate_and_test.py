@@ -39,8 +39,7 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
         self._all_fields = resp.json()
         self.conn = MockConn()
 
-    def save_processed_crash(self, raw_crash, processed_crash):
-        super().save_processed_crash(raw_crash, processed_crash)
+    def get_last_data(self):
         return self.conn.last_data
 
 
@@ -126,7 +125,8 @@ def run(no_crashes, *urls):
         print(resp.url)
         processed_crash = resp.json()
 
-        crash_report = crashstorage.save_processed_crash(raw_crash, processed_crash)
+        crashstorage.save_processed_crash(raw_crash, processed_crash)
+        crash_report = crashstorage.get_last_data()
         log_all_keys(crash_report)
         jsonschema.validate(crash_report, schema)
 
