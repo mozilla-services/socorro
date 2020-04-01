@@ -707,9 +707,14 @@ class BetaVersionRule(Rule):
         return real_version
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        # Beta and aurora versions send the wrong version in the crash report,
-        # so we need to fix them
-        return processed_crash.get("release_channel", "").lower() in ("beta", "aurora")
+        # Beta and aurora versions send the wrong version in the crash report for
+        # certain products
+        product = processed_crash.get("product", "")
+        release_channel = processed_crash.get("release_channel", "")
+        return product.lower() in self.SUPPORTED_PRODUCTS and release_channel.lower() in (
+            "beta",
+            "aurora",
+        )
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         product = processed_crash.get("product", "").strip().lower()

@@ -1283,11 +1283,38 @@ class TestModulesInStackRule(object):
         assert rule.format_module(item) == expected
 
 
-class TestBetaVersionRule(object):
+class TestBetaVersionRule:
     API_URL = "http://example.com/api/VersionString"
 
     def build_rule(self):
         return BetaVersionRule(version_string_api=self.API_URL)
+
+    @pytest.mark.parametrize(
+        "product, channel, expected",
+        [
+            ("Firefox", "beta", True),
+            ("Fennec", "beta", True),
+            ("FennecAndroid", "beta", True),
+            # Unsupported products and channels yield false
+            ("Firefox", "nightly", False),
+            ("Fenix", "beta", False),
+        ],
+    )
+    def test_predicate(self, product, channel, expected):
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = {
+            "product": product,
+            "release_channel": channel,
+            "version": "3.0",
+            "build": "20001001101010",
+        }
+        processor_meta = get_basic_processor_meta()
+        rule = self.build_rule()
+        assert (
+            rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta)
+            == expected
+        )
 
     def test_beta_channel_known_version(self):
         # Beta channel with known version gets converted correctly
