@@ -1479,6 +1479,27 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
+    "collector_notes": {
+        "data_validation_type": "str",
+        "description": (
+            "Notes of the Socorro collector, contains information about the report "
+            "during collection."
+        ),
+        "form_field_choices": [],
+        "has_full_version": True,
+        "in_database_name": "collector_notes",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "collector_notes",
+        "namespace": "raw_crash",
+        "permissions_needed": [],
+        "query_type": "string",
+        "storage_mapping": {
+            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
+            "index": "analyzed",
+            "type": "string",
+        },
+    },
     "completeddatetime": {
         "data_validation_type": "enum",
         "description": "",

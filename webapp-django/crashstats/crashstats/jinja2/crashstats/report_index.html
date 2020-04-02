@@ -628,6 +628,14 @@
 
                 {# Notes #}
 
+                {% if raw.collector_notes %}
+                  <tr title="{{ fields_desc['raw_crash.collector_notes'] }}">
+                    <th scope="row">Collector Notes</th>
+                    <td>
+                      <pre>{{ raw.collector_notes|join("\n") }}</pre>
+                    </td>
+                  </tr>
+                {% endif %}
                 {% if report.app_notes %}
                   <tr title="{{ fields_desc['processed_crash.app_notes'] }}">
                     <th scope="row">App Notes</th>
@@ -640,7 +648,7 @@
                   <tr title="{{ fields_desc['processed_crash.processor_notes'] }}">
                     <th scope="row">Processor Notes</th>
                     <td>
-                      <code>{{ report.processor_notes }}</code>
+                      <pre>{{ report.processor_notes }}</pre>
                     </td>
                   </tr>
                 {% endif %}
