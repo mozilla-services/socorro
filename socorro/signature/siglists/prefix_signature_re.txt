@@ -9,6 +9,8 @@
 .*CrashAtUnhandlableOOM
 Abort
 .*abort
+__abi_WinRTraiseCOMException
+__abi_WinRTraiseException
 __aeabi_memcpy4
 __aeabi_memcpy
 __aeabi_memmove
