@@ -20,7 +20,6 @@ CrashStatsLogForwarder::CrashAction
 __cxa_rethrow
 __cxa_throw
 _CxxThrowException
-CxxThrowException
 dalvik-heap
 dalvik-jit-code-cache
 dalvik-LinearAlloc

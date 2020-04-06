@@ -50,6 +50,7 @@ core::str::slice_error_fail
 CrashInJS
 CreateFileMappingA
 __cxxabiv1::failed_throw
+CxxThrowException
 __delayLoadHelper2
 dlmalloc
 dlmalloc_trim
