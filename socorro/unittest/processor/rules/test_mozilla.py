@@ -35,6 +35,7 @@ from socorro.processor.rules.mozilla import (
     ProductRewrite,
     ProductRule,
     SignatureGeneratorRule,
+    SubmittedFromInfobarFixRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
@@ -211,7 +212,39 @@ class TestConvertModuleSignatureInfoRule:
         assert processed_crash == {}
 
 
-class TestProductRule(object):
+class TestSubmittedFromInfobarFixRule:
+    @pytest.mark.parametrize(
+        "value, expected", [(True, True), ("true", True), ("1", False)]
+    )
+    def test_predicate(self, value, expected):
+        raw_crash = {"SubmittedFromInfobar": value}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule = SubmittedFromInfobarFixRule()
+        ret = rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert ret == expected
+
+    def test_predicate_with_not_there(self):
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule = SubmittedFromInfobarFixRule()
+        ret = rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert ret is False
+
+    def test_action(self):
+        raw_crash = {"SubmittedFromInfobar": "true"}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule = SubmittedFromInfobarFixRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert raw_crash == {"SubmittedFromInfobar": "1"}
+
+
+class TestProductRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}

@@ -35,10 +35,10 @@ MAXINT = 9223372036854775807
 class ConvertModuleSignatureInfoRule(Rule):
     """Make ModuleSignatureInfo to a string.
 
-    For a while, crash reports submitted as a JSON blob had ModuleSignatureInfo appended
-    to the end of them as an object. This JSON-encodes that object so that it's always a
-    JSON-encoded string. That way, the rest of the processor doesn't have to handle both
-    cases. Bug #1607806.
+    For a while, crash reports with annotations submitted as a JSON blob had
+    ModuleSignatureInfo appended to the end of them as an object. This JSON-encodes that
+    object so that the value is always a JSON-encoded string. That way, the rest of the
+    processor doesn't have to handle both cases. Bug #1607806
 
     """
 
@@ -54,6 +54,26 @@ class ConvertModuleSignatureInfoRule(Rule):
             # convert it to a dict first
             info = dotdict_to_dict(info)
         raw_crash["ModuleSignatureInfo"] = json.dumps(info)
+
+
+class SubmittedFromInfobarFixRule(Rule):
+    """Fix SubmittedFromInfobar annotation values to "1"
+
+    SubmittedFromInfobar value was "true", but it should be "1". For crash reports
+    with annotations submitted as a JSON blob, the value is not true (JSON bool true).
+    This fixes both of those to "1" which is what the value should be. Bug #1626048
+
+    Crash reports with annotations submitted as a JSON blob.
+
+    """
+
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return "SubmittedFromInfobar" in raw_crash and raw_crash[
+            "SubmittedFromInfobar"
+        ] in ("true", True)
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        raw_crash["SubmittedFromInfobar"] = "1"
 
 
 class ProductRule(Rule):
