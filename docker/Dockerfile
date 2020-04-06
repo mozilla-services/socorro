@@ -1,4 +1,4 @@
-FROM python:3.7.6-slim-stretch@sha256:687c74e7fa67c4fdbfe520a2be1b12455703c9a04ee11d1a7b827e9f26081b4f as socorro_image_base
+FROM python:3.7.7-slim-stretch@sha256:4e437e97b01b4209de3e8af3d132b7198a7fd7e27cea634cf33afc0e246be7c1 as socorro_image_base
 
 # Set up user and group
 ARG groupid=10001
