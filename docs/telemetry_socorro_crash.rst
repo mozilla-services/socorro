@@ -19,13 +19,21 @@ Adding fields to telemetry.socorro_crash
 ========================================
 
 `Open up a bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=General&op_sys=All&product=Socorro&rep_platform=All&short_desc=please%20add%20FIELDNAME%20to%20telemetry.socorro_crash>`_
-if you want a field added to ``telemetry.socorro_crash``.
-We will add it to the schema.
+to add new fields to ``telemetry.socorro_crash``.
+
+Fields that are crash report annotations should be documented in
+`<https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
+
+If fields come from crash report annotations and haven't been documented, then
+we may ask you to document them before we can proceed.
 
 .. Note::
 
-   Fields can only be added--they can't be changed. When adding a new field,
-   data cannot be backfilled.
+   Fields can only be added--they can't be changed.
+
+.. Note::
+
+   When adding a new field, data cannot be backfilled.
 
 
 Things to know
