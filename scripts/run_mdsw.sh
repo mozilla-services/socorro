@@ -20,7 +20,7 @@ function getenv {
 }
 
 DATADIR=./crashdata_mdsw_tmp
-STACKWALKER="$(getenv 'processor.breakpad.command_pathname')"
+STACKWALKER="$(getenv 'processor.command_pathname')"
 
 if [[ $# -eq 0 ]]; then
     if [ -t 0 ]; then
@@ -33,7 +33,7 @@ if [[ $# -eq 0 ]]; then
     set -- ${@:-$(</dev/stdin)}
 fi
 
-mkdir "${DATADIR}" || echo "${DATADIR} already exists."
+mkdir "${DATADIR}" || true
 
 for CRASHID in "$@"
 do
