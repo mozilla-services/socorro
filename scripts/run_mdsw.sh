@@ -33,7 +33,7 @@ if [[ $# -eq 0 ]]; then
     set -- ${@:-$(</dev/stdin)}
 fi
 
-mkdir "${DATADIR}" || echo "${DATADIR} already exists."
+mkdir "${DATADIR}" || true
 
 for CRASHID in "$@"
 do
