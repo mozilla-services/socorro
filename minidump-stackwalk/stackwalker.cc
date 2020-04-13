@@ -156,7 +156,7 @@ static string lower(const string& s) {
 }
 
 static string stripquotes(const string& s) {
-  if (s.size() > 2 && s.front() == '"' && s.back() == '"') {
+  if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
     return s.substr(1, s.size() - 2);
   }
   return s;
@@ -908,11 +908,17 @@ static void ConvertLSBReleaseToJSON(const string& lsb_release,
   Json::Value lsb(Json::objectValue);
   for (string& line : split(lsb_release, '\n')) {
     vector<string> bits = split(line, '=');
-    if (bits.size() != 2 || !startswith(bits[0], "DISTRIB_")) {
-        continue;
+    if (bits.size() == 2) {
+      if ((bits[0] == "DISTRIB_ID") || (bits[0] == "ID")) {
+        lsb["id"] = stripquotes(bits[1]);
+      } else if ((bits[0] == "DISTRIB_RELEASE") || (bits[0] == "VERSION_ID")) {
+        lsb["release"] = stripquotes(bits[1]);
+      } else if ((bits[0] == "DISTRIB_CODENAME") || (bits[0] == "VERSION_CODENAME")) {
+        lsb["codename"] = stripquotes(bits[1]);
+      } else if ((bits[0] == "DISTRIB_DESCRIPTION") || (bits[0] == "PRETTY_NAME")) {
+        lsb["description"] = stripquotes(bits[1]);
+      }
     }
-    string key = lower(bits[0].substr(8));
-    lsb[key] = stripquotes(bits[1]);
   }
 
   root["lsb_release"] = lsb;
