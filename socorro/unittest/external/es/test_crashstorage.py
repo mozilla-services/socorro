@@ -742,12 +742,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
             # NOTE(willkg): The sizes of these json documents depend on what's
             # in them. If we changed a_processed_crash and a_raw_crash, then
             # these numbers will change.
-            assert mm.has_record(
-                "histogram", stat="processor.es.raw_crash_size", value=27
-            )
-            assert mm.has_record(
-                "histogram", stat="processor.es.processed_crash_size", value=1738
-            )
+            mm.assert_histogram("processor.es.raw_crash_size", value=27)
+            mm.assert_histogram("processor.es.processed_crash_size", value=1738)
 
     def test_index_data_capture(self):
         """Verify we capture index data in ES crashstorage"""
@@ -774,22 +770,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
                     crash_id=None,
                 )
 
-            assert (
-                len(
-                    mm.filter_records(
-                        stat="processor.es.index", tags=["outcome:successful"]
-                    )
-                )
-                == 1
-            )
-            assert (
-                len(
-                    mm.filter_records(
-                        stat="processor.es.index", tags=["outcome:failed"]
-                    )
-                )
-                == 1
-            )
+            mm.assert_histogram_once("processor.es.index", tags=["outcome:successful"])
+            mm.assert_histogram_once("processor.es.index", tags=["outcome:failed"])
 
 
 class Test_get_fields_by_analyzer(object):

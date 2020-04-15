@@ -6,7 +6,7 @@
 
 from copy import deepcopy
 
-from markus.testing import INCR, MetricsMock
+from markus.testing import MetricsMock
 import pytest
 
 from crashstats.sentrylib import (
@@ -33,9 +33,7 @@ class TestSentrySanitizer:
         with pytest.raises(RuntimeError), MetricsMock() as metrics_mock:
             sanitizer({}, {})
 
-        assert metrics_mock.has_record(
-            fun_name=INCR, stat="webapp.sentry.before_send_exception", value=1
-        )
+        metrics_mock.assert_incr(stat="webapp.sentry.before_send_exception", value=1)
 
 
 class TestSanitizeSQLQueryCrumb:
