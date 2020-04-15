@@ -41,11 +41,8 @@ def metricsmock():
         def test_something(metricsmock):
             with metricsmock as mm:
                 # do stuff
-                assert mm.has_record(
-                    'incr',
-                    stat='some.stat',
-                    value=1
-                )
+                mm.assert_incr("some.stat", value=1)
+
 
     https://markus.readthedocs.io/en/latest/testing.html
 

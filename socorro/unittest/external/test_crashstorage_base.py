@@ -442,8 +442,7 @@ class TestMetricsCounter(object):
             counter.run()
             counter.walk()
 
-        assert len(mm.get_records()) == 1
-        assert mm.has_record("incr", stat="phil.run", value=1)
+        mm.assert_incr_once("phil.run", value=1)
 
 
 class TestMetricsBenchmarkingWrapper(object):
@@ -469,9 +468,7 @@ class TestMetricsBenchmarkingWrapper(object):
             mbw.run()
             mbw.walk()
 
-        # Assert that the timing call occurred
-        assert len(mm.get_records()) == 1
-        assert mm.has_record("timing", stat="phil.Phil.run")
+        mm.assert_timing_once("phil.Phil.run")
 
         # Assert that the wrapped crash storage class .run() and .walk() were
         # called on the instance

@@ -136,12 +136,7 @@ class TestViews(BaseTestViews):
         with MetricsMock() as metrics_mock:
             response = self.client.get(url, {"product": "good"})
         assert response.status_code == 200
-        assert metrics_mock.has_record(
-            fun_name="incr",
-            stat="webapp.api.pageview",
-            value=1,
-            tags=["endpoint:apiNoOp"],
-        )
+        metrics_mock.assert_incr("webapp.api.pageview", tags=["endpoint:apiNoOp"])
 
     def test_param_exceptions(self):
         # missing required parameter
