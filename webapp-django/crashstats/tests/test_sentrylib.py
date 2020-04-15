@@ -33,7 +33,7 @@ class TestSentrySanitizer:
         with pytest.raises(RuntimeError), MetricsMock() as metrics_mock:
             sanitizer({}, {})
 
-        metrics_mock.assert_incr(stat="webapp.sentry.before_send_exception", value=1)
+        metrics_mock.assert_incr("webapp.sentry.before_send_exception", value=1)
 
 
 class TestSanitizeSQLQueryCrumb:

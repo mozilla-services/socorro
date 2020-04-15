@@ -321,7 +321,7 @@ class TestBreakpadTransformRule2015(object):
 
             mm.assert_incr(
                 "processor.breakpadstackwalkerrule.run",
-                tags=["outcome:success", "exitcode:0"]
+                tags=["outcome:success", "exitcode:0"],
             )
 
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
@@ -346,10 +346,8 @@ class TestBreakpadTransformRule2015(object):
             assert processed_crash.success is False
             assert processor_meta.processor_notes == ["MDSW timeout (SIGKILL)"]
 
-            assert mm.has_record(
-                "incr",
-                stat="processor.breakpadstackwalkerrule.run",
-                value=1,
+            mm.assert_incr(
+                "processor.breakpadstackwalkerrule.run",
                 tags=["outcome:fail", "exitcode:124"],
             )
 
