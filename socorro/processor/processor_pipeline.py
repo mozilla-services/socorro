@@ -53,6 +53,7 @@ from socorro.processor.rules.mozilla import (
     ProductRewrite,
     ProductRule,
     SignatureGeneratorRule,
+    SubmittedFromInfobarFixRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
@@ -174,6 +175,8 @@ class ProcessorPipeline(RequiredConfig):
             DeNoneRule(),
             # fix ModuleSignatureInfo if it needs fixing
             ConvertModuleSignatureInfoRule(),
+            # fix SubmittedFromInfobar value
+            SubmittedFromInfobarFixRule(),
             # rules to change the internals of the raw crash
             ProductRewrite(),
             FenixVersionRewriteRule(),
