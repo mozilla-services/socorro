@@ -4,11 +4,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# Usage: python socorro/schemas/validate_and_test.py
+
 import json
 import os
-import sys
 from urllib.parse import urlparse
 
+import click
 import jsonschema
 import requests
 
@@ -35,7 +37,7 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
     def __init__(self):
         # Deliberately not doing anything fancy with config. So no super call.
         resp = requests.get(API_BASE.format("SuperSearchFields"))
-        print(resp.url)
+        click.echo("resp.url %s" % resp.url)
         self._all_fields = resp.json()
         self.conn = MockConn()
 
@@ -43,20 +45,32 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
         return self.conn.last_data
 
 
-def run(no_crashes, *urls):
+@click.command()
+@click.option(
+    "--crashes-per-url",
+    default=20,
+    type=int,
+    help="number of crashes to download per supersearch url",
+)
+@click.argument("url", required=False)
+@click.pass_context
+def validate_and_test(ctx, crashes_per_url, url):
     # Load the schema validator and validate the schema
     file_path = os.path.join(HERE, "crash_report.json")
     with open(file_path) as f:
         schema = json.load(f)
     jsonschema.Draft4Validator.check_schema(schema)
-    print("{} is a valid JSON schema".format(file_path))
+    click.echo("%s is a valid JSON schema." % file_path)
 
     # Fetch crash report data from a Super Search URL
-    print("Fetching data...")
+    click.echo("Fetching data...")
     uuids = []
-    if urls:
-        for url in urls:
-            assert "://" in url, url
+    if url:
+        for this_url in url:
+            if "://" not in this_url:
+                raise click.BadParameter(
+                    "url %s has no ://." % this_url, param="url", param_hint="url"
+                )
 
             # To make it easy for people, if someone pastes the URL
             # of a regular SuperSearch page (and not the API URL), then
@@ -71,12 +85,12 @@ def run(no_crashes, *urls):
                 params={
                     "_columns": ["uuid"],
                     "_facets_size": 0,
-                    "_results_number": no_crashes,
+                    "_results_number": crashes_per_url,
                 },
             )
             search = resp.json()
             if not search["total"]:
-                print("Warning! {} returned 0 UUIDs".format(url))
+                click.echo("Warning! %s returned 0 UUIDs." % url)
             uuids.extend([x["uuid"] for x in search["hits"] if x["uuid"] not in uuids])
 
     else:
@@ -86,7 +100,7 @@ def run(no_crashes, *urls):
                 "product": "Firefox",
                 "_columns": ["uuid"],
                 "_facets_size": 0,
-                "_results_number": no_crashes,
+                "_results_number": crashes_per_url,
             },
         )
         search = resp.json()
@@ -114,15 +128,15 @@ def run(no_crashes, *urls):
 
     log_all_schema_keys(schema)
 
-    print("Testing {} random recent crash reports".format(len(uuids)))
+    click.echo("Testing %s random recent crash reports." % len(uuids))
     for uuid in uuids:
         resp = requests.get(API_BASE.format("RawCrash"), params={"crash_id": uuid})
-        print(resp.url)
+        click.echo("resp.url %s" % resp.url)
         raw_crash = resp.json()
         resp = requests.get(
             API_BASE.format("ProcessedCrash"), params={"crash_id": uuid}
         )
-        print(resp.url)
+        click.echo("resp.url %s" % resp.url)
         processed_crash = resp.json()
 
         crashstorage.save_processed_crash(raw_crash, processed_crash)
@@ -130,35 +144,18 @@ def run(no_crashes, *urls):
         log_all_keys(crash_report)
         jsonschema.validate(crash_report, schema)
 
-    print("\nDone testing, all crash reports passed.\n")
+    click.echo("Done testing, all crash reports passed.")
 
     keys_not_in_crashes = set(all_schema_types.keys()) - all_keys
     if keys_not_in_crashes:
-        print(
+        click.echo(
             "%s keys in JSON Schema, but never in any of the tested crashes:"
             % len(keys_not_in_crashes)
         )
-        print("  %s%s" % ("KEY".ljust(60), "TYPE(S)"))
+        click.echo("  %s%s" % ("KEY".ljust(60), "TYPE(S)"))
         for k in sorted(keys_not_in_crashes):
-            print("  %s%s" % (k.ljust(60), all_schema_types[k]))
-
-
-def main():
-    import argparse
-
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument(
-        "--crashes-per-url",
-        "-n",
-        help="Number of crashes to download per SuperSearch URL",
-        default=20,
-    )
-    argparser.add_argument(
-        "urls", help="SuperSearch API URL(s) to use instead of the default", nargs="*"
-    )
-    args = argparser.parse_args()
-    run(args.crashes_per_url, *args.urls)
+            click.echo("  %s%s" % (k.ljust(60), all_schema_types[k]))
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    validate_and_test()
