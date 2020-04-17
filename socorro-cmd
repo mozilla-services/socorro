@@ -94,7 +94,7 @@ COMMANDS = [
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
             'db': import_path('socorro.scripts.db.db_group'),
-            'es': import_path('socorro.scripts.es.main'),
+            'es': import_path('socorro.scripts.es.es_group'),
             'sqs': import_path('socorro.scripts.sqs_cli.main'),
         }
     ),

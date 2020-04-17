@@ -7,21 +7,15 @@ Elasticsearch manipulation script for deleting and creating Elasticsearch
 indices.
 """
 
-import argparse
 import datetime
 
+import click
 from configman import ConfigurationManager
 from configman.environment import environment
 from elasticsearch_dsl import Search
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.connection_context import ConnectionContext
-from socorro.scripts import WrappedTextHelpFormatter
-
-
-DESCRIPTION = "Create and delete Elasticsearch indices"
-
-EPILOG = "Requires Elasticsearch configuration to be set in environment."
 
 
 def get_conn():
@@ -35,7 +29,27 @@ def get_conn():
     return ConnectionContext(config)
 
 
-def cmd_create(weeks_past, weeks_future):
+@click.group()
+def es_group():
+    """Create and delete Elasticsearch indices.
+
+    Requires Elasticsearch configuration to be set in environment.
+
+    """
+
+
+@es_group.command("create")
+@click.option(
+    "--weeks-future",
+    type=int,
+    default=2,
+    help="Number of weeks in the future to create.",
+)
+@click.option(
+    "--weeks-past", type=int, default=2, help="Number of weeks in the future to create."
+)
+@click.pass_context
+def cmd_create(ctx, weeks_future, weeks_past):
     """Create recent indices."""
     conn = get_conn()
 
@@ -52,84 +66,59 @@ def cmd_create(weeks_past, weeks_future):
     for index_name in index_names:
         was_created = conn.create_index(index_name)
         if was_created:
-            print("Index %s was created." % index_name)
+            click.echo("Index %s was created." % index_name)
         else:
-            print("Index %s already existed." % index_name)
+            click.echo("Index %s already existed." % index_name)
 
 
-def cmd_list():
+@es_group.command("list")
+@click.pass_context
+def cmd_list(ctx):
     """List indices."""
     conn = get_conn()
     indices = conn.get_indices()
     if indices:
-        print("Indices:")
+        click.echo("Indices:")
         for index in indices:
-            print("   %s" % index)
+            click.echo("   %s" % index)
     else:
-        print("No indices.")
+        click.echo("No indices.")
 
 
-def cmd_list_crashids(index):
+@es_group.command("list_crashids")
+@click.argument("index", nargs=1)
+@click.pass_context
+def cmd_list_crashids(ctx, index):
     """List crashids for index."""
     es_conn = get_conn()
     with es_conn() as conn:
         search = Search(using=conn, index=index, doc_type=es_conn.get_doctype(),)
         search = search.fields("processed_crash.uuid")
         results = search.execute()
-        print("Crashids in %s:" % index)
+        click.echo("Crashids in %s:" % index)
         for hit in results:
-            print(hit["processed_crash.uuid"][0])
+            click.echo(hit["processed_crash.uuid"][0])
 
 
-def cmd_delete(indices):
+@es_group.command("delete")
+@click.argument("index", required=False)
+@click.pass_context
+def cmd_delete(ctx, index):
     """Delete indices."""
     conn = get_conn()
-    indices = conn.get_indices()
-    if indices:
-        for index_name in conn.get_indices():
-            conn.delete_index(index_name)
-            print("Deleted index: %s" % index_name)
+    if index:
+        indices_to_delete = index
     else:
-        print("No indices to delete.")
+        indices_to_delete = conn.get_indices()
+
+    if not indices_to_delete:
+        click.echo("No indices to delete.")
+        return
+
+    for index_name in indices_to_delete:
+        conn.delete_index(index_name)
+        click.echo("Deleted index: %s" % index_name)
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(
-        formatter_class=WrappedTextHelpFormatter,
-        description=DESCRIPTION.strip(),
-        epilog=EPILOG.strip(),
-    )
-    subparsers = parser.add_subparsers(dest="cmd")
-    subparsers.required = True
-
-    create_parser = subparsers.add_parser("create", help="create indices")
-    create_parser.add_argument(
-        "--future", type=int, default=2, help="Number of weeks in the future to create."
-    )
-    create_parser.add_argument(
-        "--past", type=int, default=2, help="Number of weeks in the future to create."
-    )
-
-    subparsers.add_parser("list", help="list indices")
-
-    list_crashids = subparsers.add_parser(
-        "list_crashids", help="list crashids for an index"
-    )
-    list_crashids.add_argument("index", help="Index to list")
-
-    delete_parser = subparsers.add_parser("delete", help="delete indices")
-    delete_parser.add_argument("index", nargs="*", help="Indices to delete")
-
-    args = parser.parse_args()
-
-    if args.cmd == "create":
-        return cmd_create(args.past, args.future)
-
-    if args.cmd == "list":
-        return cmd_list()
-
-    if args.cmd == "list_crashids":
-        return cmd_list_crashids(args.index)
-
-    if args.cmd == "delete":
-        return cmd_delete(args.index)
+if __name__ == "__main__":
+    es_group()
