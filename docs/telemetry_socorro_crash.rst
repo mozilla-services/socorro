@@ -18,14 +18,12 @@ Please see the `telemetry.socorro_crash documentation
 Adding fields to telemetry.socorro_crash
 ========================================
 
-`Open up a bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=General&op_sys=All&product=Socorro&rep_platform=All&short_desc=please%20add%20FIELDNAME%20to%20telemetry.socorro_crash>`_
+`File a bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=General&op_sys=All&product=Socorro&rep_platform=All&short_desc=please%20add%20FIELDNAME%20to%20telemetry.socorro_crash>`_
 to add new fields to ``telemetry.socorro_crash``.
 
-Fields that are crash report annotations should be documented in
-`<https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
-
-If fields come from crash report annotations and haven't been documented, then
-we may ask you to document them before we can proceed.
+If the crash report annotations and haven't been documented, then we may ask
+you to document them before we proceed. See :ref:`annotations-chapter` for
+details.
 
 .. Note::
 

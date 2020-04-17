@@ -41,6 +41,7 @@ analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
    products
    telemetry_socorro_crash
    correlations
+   annotations
 
 
 Crash Stats site documentation covering API docs, getting access to memory dumps,

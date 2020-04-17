@@ -77,6 +77,8 @@ Other annotations
 For other annotations, refer to
 `<https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
 
+For adding new annotations see :ref:`annotations-chapter`.
+
 
 Collection of crash report data
 ===============================
