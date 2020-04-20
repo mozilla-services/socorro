@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from collections import OrderedDict
 import hashlib
 from urllib.parse import urlparse
 
@@ -130,42 +129,3 @@ def graphics_devices(request):
     context["title"] = "Graphics devices"
     context["upload_form"] = upload_form
     return render(request, "admin/graphics_devices.html", context)
-
-
-@superuser_required
-def debug_view(request):
-    """This view is for ephemeral debugging of issues"""
-    context = {}
-
-    # Map of key -> val that will get displayed in a big table in the debug
-    # view in the order they were inserted
-    debug_info = OrderedDict()
-
-    # Add IP address related headers to figure out rate-limiting issues. #1475993
-    for meta_header in ["HTTP_X_FORWARDED_FOR", "REMOTE_ADDR", "HTTP_X_REAL_IP"]:
-        debug_info['request.META["' + meta_header + '"]'] = request.META.get(
-            meta_header, "none"
-        )
-
-    # Add table counts for all non-pg tables
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT c.relname
-            FROM pg_catalog.pg_class c
-            WHERE c.relkind = 'r'
-            """
-        )
-        tables = cursor.fetchall()
-    for tablename in sorted(tables):
-        tablename = tablename[0]
-        if tablename.startswith(("pg_", "sql_", "lock")):
-            continue
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT count(*) FROM %s" % tablename)
-            debug_info["%s count" % tablename] = cursor.fetchone()[0]
-
-    context["debug_info"] = debug_info
-    context["title"] = "Debug information"
-
-    return render(request, "admin/debug_view.html", context)

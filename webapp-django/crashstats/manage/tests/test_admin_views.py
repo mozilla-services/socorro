@@ -176,14 +176,3 @@ class TestGraphicsDevices(SiteAdminTestViews):
                 "vendor_name": "Silicon Image, Inc. (Wrong ID)",
             },
         ]
-
-
-class TestDebugView(SiteAdminTestViews):
-    def test_view_loads(self):
-        """Tests that the page loads--doesn't verify any information"""
-        url = reverse("siteadmin:debug_view")
-        response = self.client.get(url)
-        assert response.status_code == 302
-
-        self._login()
-        self.client.get(url)
