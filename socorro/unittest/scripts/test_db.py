@@ -4,11 +4,11 @@
 
 from click.testing import CliRunner
 
-from socorro.schemas.validate_and_test import validate_and_test
+from socorro.scripts.db import db_group
 
 
 def test_it_runs():
     """Test whether the module loads and spits out help."""
     runner = CliRunner()
-    result = runner.invoke(validate_and_test, ["--help"])
+    result = runner.invoke(db_group, ["--help"])
     assert result.exit_code == 0

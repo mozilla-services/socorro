@@ -21,6 +21,8 @@ import sys
 import textwrap
 import types
 
+import click
+
 from socorro.app.socorro_app import App
 
 
@@ -91,8 +93,8 @@ COMMANDS = [
             'upload_telemetry_schema': import_path(
                 'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
             ),
-            'db': import_path('socorro.scripts.db.main'),
-            'es': import_path('socorro.scripts.es.main'),
+            'db': import_path('socorro.scripts.db.db_group'),
+            'es': import_path('socorro.scripts.es.es_group'),
             'sqs': import_path('socorro.scripts.sqs_cli.main'),
         }
     ),
@@ -121,6 +123,11 @@ def import_and_run(app):
     # If the app is a main function, we run it as is
     if isinstance(app, types.FunctionType):
         sys.exit(app(sys.argv[1:]))
+
+    # If the app is a click app, then run it; click apps exit on their
+    # own
+    if isinstance(app, click.core.Group):
+        app()
 
     # If the app is a Socorro App, we run it using the Socorro App main
     if issubclass(app, App):
