@@ -425,8 +425,10 @@ class TestViews(BaseTestViews):
         assert _SAMPLE_UNREDACTED["user_comments"] not in content
         assert _SAMPLE_META["Email"] not in content
         assert _SAMPLE_META["URL"] not in content
-        assert "You need to be signed in to download raw dumps." in content
-        assert "You need to be signed in to view unredacted crashes." in content
+        assert (
+            "You need to be signed in to download raw crash data and minidump files."
+            in content
+        )
         # Should not be able to see sensitive key from stackwalker JSON
         assert "&#34;sensitive&#34;" not in content
         assert "&#34;exploitability&#34;" not in content
