@@ -72,7 +72,7 @@
               <a href="#modules" class="ui-tabs-anchor"><span>Modules</span></a>
             </li>
             <li class="ui-state-default ui-corner-top">
-              <a href="#rawdump" class="ui-tabs-anchor"><span>Raw Dump</span></a>
+              <a href="#rawdump" class="ui-tabs-anchor"><span>Raw Data and Minidumps</span></a>
             </li>
             <li class="ui-state-default ui-corner-top">
               <a href="#extensions" class="ui-tabs-anchor"><span>Extensions</span></a>
@@ -825,21 +825,18 @@
           <div id="rawdump" class="ui-tabs-hide">
             <div class="code">{{ raw_stackwalker_output }}</div>
 
-            <h3>Download the Raw Dump</h3>
+            <h3>Download Raw Crash Data and Minidumps</h3>
             {% if request.user.has_perm('crashstats.view_rawdump') %}
+              <p>
+                {{ sensitive_warning(your_crash) }}
+              </p>
               {% for url in raw_dump_urls %}
                 <p><a href="{{ url }}">{{ url }}</a></p>
               {% endfor %}
-            {% else %}
-              <p>You need to be signed in to download raw dumps.</p>
-            {% endif %}
-
-            <h3>View the Unredacted Crash</h3>
-            {% if request.user.has_perm('crashstats.view_rawdump') %}
               {% set unredacted_url = url('api:model_wrapper', model_name='UnredactedCrash') + '?' + make_query_string(crash_id=report.uuid) %}
               <p><a href="{{ unredacted_url }}" target="_blank">{{ unredacted_url }}</a></p>
             {% else %}
-              <p>You need to be signed in to view unredacted crashes.</p>
+            <p>You need to be signed in to download raw crash data and minidump files.</p>
             {% endif %}
           </div>
           <!-- /rawdump -->
