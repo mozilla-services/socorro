@@ -16,10 +16,7 @@ from socorro.processor.rules.breakpad import (
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
-
-
-def get_basic_processor_meta():
-    return {"processor_notes": []}
+from socorro.unittest.processor import get_basic_processor_meta
 
 
 example_uuid = "00000000-0000-0000-0000-000002140504"

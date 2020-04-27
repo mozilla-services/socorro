@@ -14,6 +14,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
+from socorro.unittest.processor import get_basic_processor_meta
 
 
 canonical_standard_raw_crash = {
@@ -104,10 +105,6 @@ canonical_processed_crash = {
         }
     }
 }
-
-
-def get_basic_processor_meta():
-    return {"processor_notes": []}
 
 
 class TestDeNoneRule:
