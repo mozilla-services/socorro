@@ -11,6 +11,7 @@ import subprocess
 import threading
 
 from configman.dotdict import DotDict
+import glom
 import markus
 
 from socorro.lib.util import dotdict_to_dict
@@ -19,34 +20,25 @@ from socorro.processor.rules.base import Rule
 
 class CrashingThreadRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        try:
-            processed_crash.crashedThread = processed_crash["json_dump"]["crash_info"][
-                "crashing_thread"
-            ]
-        except KeyError:
-            processed_crash.crashedThread = None
-            processor_meta.processor_notes.append(
+        processed_crash["crashedThread"] = glom.glom(
+            processed_crash, "json_dump.crash_info.crashing_thread", default=None
+        )
+        if processed_crash["crashedThread"] is None:
+            processor_meta["processor_notes"].append(
                 "MDSW did not identify the crashing thread"
             )
 
-        try:
-            processed_crash.truncated = processed_crash["json_dump"]["crashing_thread"][
-                "frames_truncated"
-            ]
-        except KeyError:
-            processed_crash.truncated = False
+        processed_crash["truncated"] = glom.glom(
+            processed_crash, "json_dump.crashing_thread.frames_truncated", default=False
+        )
 
-        try:
-            processed_crash.address = processed_crash["json_dump"]["crash_info"][
-                "address"
-            ]
-        except KeyError:
-            processed_crash.address = None
+        processed_crash["address"] = glom.glom(
+            processed_crash, "json_dump.crash_info.address", default=None
+        )
 
-        try:
-            processed_crash.reason = processed_crash["json_dump"]["crash_info"]["type"]
-        except KeyError:
-            processed_crash.reason = None
+        processed_crash["reason"] = glom.glom(
+            processed_crash, "json_dump.crash_info.type", default=None
+        )
 
 
 class MinidumpSha256Rule(Rule):
@@ -57,23 +49,6 @@ class MinidumpSha256Rule(Rule):
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash["minidump_sha256_hash"] = raw_crash["MinidumpSha256Hash"]
-
-
-def dot_save(a_mapping, key, value):
-    if "." not in key or isinstance(a_mapping, DotDict):
-        a_mapping[key] = value
-        return
-
-    # FIXME(willkg): Replace this with glom
-    current_mapping = a_mapping
-    key_parts = key.split(".")
-    for key_fragment in key_parts[:-1]:
-        try:
-            current_mapping = current_mapping[key_fragment]
-        except KeyError:
-            current_mapping[key_fragment] = {}
-            current_mapping = current_mapping[key_fragment]
-    current_mapping[key_parts[-1]] = value
 
 
 def execute_external_process(
@@ -169,7 +144,7 @@ class BreakpadStackwalkerRule2015(Rule):
             self.logger.error(
                 '%s non-json output: "%s"' % (command_pathname, data[:100])
             )
-            processor_meta.processor_notes.append(
+            processor_meta["processor_notes"].append(
                 "%s output failed in json: %s" % (command_pathname, x)
             )
         return {}
@@ -186,7 +161,7 @@ class BreakpadStackwalkerRule2015(Rule):
 
         if not isinstance(output, Mapping):
             msg = "MDSW produced unexpected output: %s (%s)" % str(output)[:20]
-            processor_meta.processor_notes.append(msg)
+            processor_meta["processor_notes"].append(msg)
             self.logger.warning(msg + " (%s)" % crash_id)
             output = {}
 
@@ -207,7 +182,7 @@ class BreakpadStackwalkerRule2015(Rule):
 
         if return_code == 124:
             msg = "MDSW timeout (SIGKILL)"
-            processor_meta.processor_notes.append(msg)
+            processor_meta["processor_notes"].append(msg)
             self.logger.warning(msg + " (%s)" % crash_id)
 
         elif return_code != 0 or not stackwalker_data.success:
@@ -220,7 +195,7 @@ class BreakpadStackwalkerRule2015(Rule):
             if return_code == -6:
                 msg = msg + " (SIGABRT)"
 
-            processor_meta.processor_notes.append(msg)
+            processor_meta["processor_notes"].append(msg)
             self.logger.warning(msg + " (%s)" % crash_id)
 
         return stackwalker_data, return_code
@@ -252,10 +227,10 @@ class BreakpadStackwalkerRule2015(Rule):
         crash_id = raw_crash["uuid"]
 
         if "additional_minidumps" not in processed_crash:
-            processed_crash.additional_minidumps = []
+            processed_crash["additional_minidumps"] = []
 
         with self._temp_raw_crash_json_file(
-            raw_crash, raw_crash.uuid
+            raw_crash, raw_crash["uuid"]
         ) as raw_crash_pathname:
             for dump_name in raw_dumps.keys():
                 # this rule is only interested in dumps targeted for the
@@ -285,7 +260,7 @@ class BreakpadStackwalkerRule2015(Rule):
                 if dump_name == self.dump_field:
                     processed_crash.update(stackwalker_data)
                 else:
-                    processed_crash.additional_minidumps.append(dump_name)
+                    processed_crash["additional_minidumps"].append(dump_name)
                     processed_crash[dump_name] = stackwalker_data
 
 
@@ -303,35 +278,34 @@ class JitCrashCategorizeRule(Rule):
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (
-            processed_crash.product != "Firefox"
-            or not processed_crash.os_name.startswith("Windows")
-            or processed_crash.cpu_arch != "x86"
+            processed_crash.get("product", "") != "Firefox"
+            or not processed_crash.get("os_name", "").startswith("Windows")
+            or processed_crash.get("cpu_arch", "") != "x86"
         ):
             # we don't want any of these
             return False
 
-        frames = (
-            processed_crash.get("json_dump", {})
-            .get("crashing_thread", {})
-            .get("frames", [])
+        frames = glom.glom(
+            processed_crash, "json_dump.crashing_thread.frames", default=[]
         )
         if frames and frames[0].get("module", False):
             # there is a module at the top of the stack, we don't want this
             return False
 
+        signature = processed_crash.get("signature", "")
         return (
-            processed_crash.signature.endswith("EnterBaseline")
-            or processed_crash.signature.endswith("EnterIon")
-            or processed_crash.signature.endswith("js::jit::FastInvoke")
-            or processed_crash.signature.endswith("js::jit::IonCannon")
-            or processed_crash.signature.endswith("js::irregexp::ExecuteCode<T>")
+            signature.endswith("EnterBaseline")
+            or signature.endswith("EnterIon")
+            or signature.endswith("js::jit::FastInvoke")
+            or signature.endswith("js::jit::IonCannon")
+            or signature.endswith("js::irregexp::ExecuteCode<T>")
         )
 
     def _interpret_output(self, fp, processor_meta, command_pathname):
         try:
             result = fp.read()
         except IOError as x:
-            processor_meta.processor_notes.append(
+            processor_meta["processor_notes"].append(
                 "%s unable to read external command output: %s" % (command_pathname, x)
             )
             return ""
@@ -356,7 +330,12 @@ class JitCrashCategorizeRule(Rule):
             interpret_output=self._interpret_output,
         )
 
-        dot_save(processed_crash, "classifications.jit.category", output)
-        dot_save(
-            processed_crash, "classifications.jit.category_return_code", return_code
+        glom.assign(
+            processed_crash, "classifications.jit.category", val=output, missing=dict
+        )
+        glom.assign(
+            processed_crash,
+            "classifications.jit.category_return_code",
+            val=return_code,
+            missing=dict,
         )
