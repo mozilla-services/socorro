@@ -215,7 +215,9 @@ class TestCPUInfoRule(object):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash["cpu_arch"] == "x86"
-        assert processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
+        assert (
+            processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
+        )
         assert processed_crash["cpu_count"] == 4
 
         # raw crash should be unchanged
