@@ -21,13 +21,14 @@ class TestMemoryReportExtraction(object):
     def test_predicate_success(self):
         rule = MemoryReportExtraction()
 
-        processed_crash = {}
-        processed_crash["memory_report"] = {
-            "reports": [],
-            "version": "",
-            "hasMozMallocUsableSize": "",
+        processed_crash = {
+            "memory_report": {
+                "reports": [],
+                "version": "",
+                "hasMozMallocUsableSize": "",
+            },
+            "json_dump": {"pid": 42},
         }
-        processed_crash["json_dump"] = {"pid": 42}
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         assert predicate_result
@@ -53,9 +54,10 @@ class TestMemoryReportExtraction(object):
 
         memory_report = get_example_file_data("bad_unrecognizable.json")
 
-        processed_crash = {}
-        processed_crash["memory_report"] = memory_report
-        processed_crash["json_dump"] = {"pid": 11620}
+        processed_crash = {
+            "memory_report": memory_report,
+            "json_dump": {"pid": 11620},
+        }
 
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         assert not predicate_result
@@ -65,9 +67,10 @@ class TestMemoryReportExtraction(object):
 
         memory_report = get_example_file_data("good.json")
 
-        processed_crash = {}
-        processed_crash["memory_report"] = memory_report
-        processed_crash["json_dump"] = {"pid": 11620}
+        processed_crash = {
+            "memory_report": memory_report,
+            "json_dump": {"pid": 11620},
+        }
         rule.action({}, {}, processed_crash, {})
 
         assert "memory_measures" in processed_crash
@@ -125,9 +128,10 @@ class TestMemoryReportExtraction(object):
 
         memory_report = get_example_file_data("bad_kind.json")
 
-        processed_crash = {}
-        processed_crash["memory_report"] = memory_report
-        processed_crash["json_dump"] = {"pid": 11620}
+        processed_crash = {
+            "memory_report": memory_report,
+            "json_dump": {"pid": 11620},
+        }
         rule.action({}, {}, processed_crash, {})
 
         assert "memory_measures" not in processed_crash
@@ -145,9 +149,10 @@ class TestMemoryReportExtraction(object):
 
         memory_report = get_example_file_data("bad_units.json")
 
-        processed_crash = {}
-        processed_crash["memory_report"] = memory_report
-        processed_crash["json_dump"] = {"pid": 11620}
+        processed_crash = {
+            "memory_report": memory_report,
+            "json_dump": {"pid": 11620},
+        }
         rule.action({}, {}, processed_crash, {})
 
         assert "memory_measures" not in processed_crash
@@ -165,9 +170,10 @@ class TestMemoryReportExtraction(object):
 
         memory_report = get_example_file_data("good.json")
 
-        processed_crash = {}
-        processed_crash["memory_report"] = memory_report
-        processed_crash["json_dump"] = {"pid": 12345}
+        processed_crash = {
+            "memory_report": memory_report,
+            "json_dump": {"pid": 12345},
+        }
         rule.action({}, {}, processed_crash, {})
 
         assert "memory_measures" not in processed_crash
@@ -185,9 +191,10 @@ class TestMemoryReportExtraction(object):
 
         memory_report = get_example_file_data("bad_missing_key.json")
 
-        processed_crash = {}
-        processed_crash["memory_report"] = memory_report
-        processed_crash["json_dump"] = {"pid": 11620}
+        processed_crash = {
+            "memory_report": memory_report,
+            "json_dump": {"pid": 11620},
+        }
         rule.action({}, {}, processed_crash, {})
 
         assert "memory_measures" not in processed_crash
