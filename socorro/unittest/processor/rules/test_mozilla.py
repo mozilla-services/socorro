@@ -7,12 +7,10 @@ from io import BytesIO
 import json
 from unittest import mock
 
-from configman.dotdict import DotDict
 import requests_mock
 import pytest
 
 from socorro.lib.datetimeutil import datetime_from_isodate_string
-from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
@@ -41,134 +39,129 @@ from socorro.processor.rules.mozilla import (
     UserDataRule,
 )
 from socorro.signature.generator import SignatureGenerator
-from socorro.unittest import WHATEVER
 from socorro.unittest.processor import get_basic_processor_meta
 
 
-canonical_standard_raw_crash = DotDict(
-    {
-        "uuid": "00000000-0000-0000-0000-000002140504",
-        "InstallTime": "1335439892",
-        "AdapterVendorID": "0x1002",
-        "TotalVirtualMemory": "4294836224",
-        "Comments": "why did my browser crash?  #fail",
-        "Theme": "classic/1.0",
-        "Version": "12.0",
-        "Email": "noreply@mozilla.com",
-        "Vendor": "Mozilla",
-        "EMCheckCompatibility": "true",
-        "Throttleable": "1",
-        "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-        "buildid": "20120420145725",
-        "AvailablePageFile": "10641510400",
-        "version": "12.0",
-        "AdapterDeviceID": "0x7280",
-        "ReleaseChannel": "release",
-        "submitted_timestamp": "2012-05-08T23:26:33.454482+00:00",
-        "URL": "http://www.mozilla.com",
-        "timestamp": 1336519593.454627,
-        "Notes": (
-            "AdapterVendorID: 0x1002, AdapterDeviceID: 0x7280, "
-            "AdapterSubsysID: 01821043, "
-            "AdapterDriverVersion: 8.593.100.0\nD3D10 Layers? D3D10 "
-            "Layers- D3D9 Layers? D3D9 Layers- "
-        ),
-        "CrashTime": "1336519554",
-        "Winsock_LSP": (
-            "MSAFD Tcpip [TCP/IPv6] : 2 : 1 :  \n "
-            "MSAFD Tcpip [UDP/IPv6] : 2 : 2 : "
-            "%SystemRoot%\\system32\\mswsock.dll \n "
-            "MSAFD Tcpip [RAW/IPv6] : 2 : 3 :  \n "
-            "MSAFD Tcpip [TCP/IP] : 2 : 1 : "
-            "%SystemRoot%\\system32\\mswsock.dll \n "
-            "MSAFD Tcpip [UDP/IP] : 2 : 2 :  \n "
-            "MSAFD Tcpip [RAW/IP] : 2 : 3 : "
-            "%SystemRoot%\\system32\\mswsock.dll \n "
-            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-            "\u0443\u0441\u043b\u0443\u0433 RSVP TCPv6 : 2 : 1 :  \n "
-            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-            "\u0443\u0441\u043b\u0443\u0433 RSVP TCP : 2 : 1 : "
-            "%SystemRoot%\\system32\\mswsock.dll \n "
-            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-            "\u0443\u0441\u043b\u0443\u0433 RSVP UDPv6 : 2 : 2 :  \n "
-            "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-            "\u0443\u0441\u043b\u0443\u0433 RSVP UDP : 2 : 2 : "
-            "%SystemRoot%\\system32\\mswsock.dll"
-        ),
-        "FramePoisonBase": "00000000f0de0000",
-        "AvailablePhysicalMemory": "2227773440",
-        "FramePoisonSize": "65536",
-        "StartupTime": "1336499438",
-        "Add-ons": (
-            "adblockpopups@jessehakanen.net:0.3,"
-            "dmpluginff%40westbyte.com:1%2C4.8,"
-            "firebug@software.joehewitt.com:1.9.1,"
-            "killjasmin@pierros14.com:2.4,"
-            "support@surfanonymous-free.com:1.0,"
-            "uploader@adblockfilters.mozdev.org:2.1,"
-            "{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}:20111107,"
-            "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}:2.0.3,"
-            "anttoolbar@ant.com:2.4.6.4,"
-            "{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0,"
-            "elemhidehelper@adblockplus.org:1.2.1"
-        ),
-        "BuildID": "20120420145725",
-        "SecondsSinceLastCrash": "86985",
-        "ProductName": "Firefox",
-        "legacy_processing": 0,
-        "AvailableVirtualMemory": "3812708352",
-        "SystemMemoryUsePercentage": "48",
-        "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-        "Distributor": "Mozilla",
-        "Distributor_version": "12.0",
-    }
-)
+canonical_standard_raw_crash = {
+    "uuid": "00000000-0000-0000-0000-000002140504",
+    "InstallTime": "1335439892",
+    "AdapterVendorID": "0x1002",
+    "TotalVirtualMemory": "4294836224",
+    "Comments": "why did my browser crash?  #fail",
+    "Theme": "classic/1.0",
+    "Version": "12.0",
+    "Email": "noreply@mozilla.com",
+    "Vendor": "Mozilla",
+    "EMCheckCompatibility": "true",
+    "Throttleable": "1",
+    "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+    "buildid": "20120420145725",
+    "AvailablePageFile": "10641510400",
+    "version": "12.0",
+    "AdapterDeviceID": "0x7280",
+    "ReleaseChannel": "release",
+    "submitted_timestamp": "2012-05-08T23:26:33.454482+00:00",
+    "URL": "http://www.mozilla.com",
+    "timestamp": 1336519593.454627,
+    "Notes": (
+        "AdapterVendorID: 0x1002, AdapterDeviceID: 0x7280, "
+        "AdapterSubsysID: 01821043, "
+        "AdapterDriverVersion: 8.593.100.0\nD3D10 Layers? D3D10 "
+        "Layers- D3D9 Layers? D3D9 Layers- "
+    ),
+    "CrashTime": "1336519554",
+    "Winsock_LSP": (
+        "MSAFD Tcpip [TCP/IPv6] : 2 : 1 :  \n "
+        "MSAFD Tcpip [UDP/IPv6] : 2 : 2 : "
+        "%SystemRoot%\\system32\\mswsock.dll \n "
+        "MSAFD Tcpip [RAW/IPv6] : 2 : 3 :  \n "
+        "MSAFD Tcpip [TCP/IP] : 2 : 1 : "
+        "%SystemRoot%\\system32\\mswsock.dll \n "
+        "MSAFD Tcpip [UDP/IP] : 2 : 2 :  \n "
+        "MSAFD Tcpip [RAW/IP] : 2 : 3 : "
+        "%SystemRoot%\\system32\\mswsock.dll \n "
+        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+        "\u0443\u0441\u043b\u0443\u0433 RSVP TCPv6 : 2 : 1 :  \n "
+        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+        "\u0443\u0441\u043b\u0443\u0433 RSVP TCP : 2 : 1 : "
+        "%SystemRoot%\\system32\\mswsock.dll \n "
+        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+        "\u0443\u0441\u043b\u0443\u0433 RSVP UDPv6 : 2 : 2 :  \n "
+        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
+        "\u0443\u0441\u043b\u0443\u0433 RSVP UDP : 2 : 2 : "
+        "%SystemRoot%\\system32\\mswsock.dll"
+    ),
+    "FramePoisonBase": "00000000f0de0000",
+    "AvailablePhysicalMemory": "2227773440",
+    "FramePoisonSize": "65536",
+    "StartupTime": "1336499438",
+    "Add-ons": (
+        "adblockpopups@jessehakanen.net:0.3,"
+        "dmpluginff%40westbyte.com:1%2C4.8,"
+        "firebug@software.joehewitt.com:1.9.1,"
+        "killjasmin@pierros14.com:2.4,"
+        "support@surfanonymous-free.com:1.0,"
+        "uploader@adblockfilters.mozdev.org:2.1,"
+        "{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}:20111107,"
+        "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}:2.0.3,"
+        "anttoolbar@ant.com:2.4.6.4,"
+        "{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0,"
+        "elemhidehelper@adblockplus.org:1.2.1"
+    ),
+    "BuildID": "20120420145725",
+    "SecondsSinceLastCrash": "86985",
+    "ProductName": "Firefox",
+    "legacy_processing": 0,
+    "AvailableVirtualMemory": "3812708352",
+    "SystemMemoryUsePercentage": "48",
+    "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+    "Distributor": "Mozilla",
+    "Distributor_version": "12.0",
+}
 
-canonical_processed_crash = DotDict(
-    {
-        "json_dump": {
-            "sensitive": {"exploitability": "high"},
-            "modules": [
-                {
-                    "end_addr": "0x12e6000",
-                    "filename": "plugin-container.exe",
-                    "version": "26.0.0.5084",
-                    "debug_id": "8385BD80FD534F6E80CF65811735A7472",
-                    "debug_file": "plugin-container.pdb",
-                    "base_addr": "0x12e0000",
-                },
-                {
-                    "end_addr": "0x12e6000",
-                    "filename": "plugin-container.exe",
-                    "version": "26.0.0.5084",
-                    "debug_id": "8385BD80FD534F6E80CF65811735A7472",
-                    "debug_file": "plugin-container.pdb",
-                    "base_addr": "0x12e0000",
-                },
-                {
-                    "end_addr": "0x12e6000",
-                    "filename": "FlashPlayerPlugin9_1_3_08.exe",
-                    "debug_id": "8385BD80FD534F6E80CF65811735A7472",
-                    "debug_file": "plugin-container.pdb",
-                    "base_addr": "0x12e0000",
-                },
-                {
-                    "end_addr": "0x12e6000",
-                    "filename": "plugin-container.exe",
-                    "version": "26.0.0.5084",
-                    "debug_id": "8385BD80FD534F6E80CF65811735A7472",
-                    "debug_file": "plugin-container.pdb",
-                    "base_addr": "0x12e0000",
-                },
-            ],
-        }
+canonical_processed_crash = {
+    "json_dump": {
+        "sensitive": {"exploitability": "high"},
+        "modules": [
+            {
+                "end_addr": "0x12e6000",
+                "filename": "plugin-container.exe",
+                "version": "26.0.0.5084",
+                "debug_id": "8385BD80FD534F6E80CF65811735A7472",
+                "debug_file": "plugin-container.pdb",
+                "base_addr": "0x12e0000",
+            },
+            {
+                "end_addr": "0x12e6000",
+                "filename": "plugin-container.exe",
+                "version": "26.0.0.5084",
+                "debug_id": "8385BD80FD534F6E80CF65811735A7472",
+                "debug_file": "plugin-container.pdb",
+                "base_addr": "0x12e0000",
+            },
+            {
+                "end_addr": "0x12e6000",
+                "filename": "FlashPlayerPlugin9_1_3_08.exe",
+                "debug_id": "8385BD80FD534F6E80CF65811735A7472",
+                "debug_file": "plugin-container.pdb",
+                "base_addr": "0x12e0000",
+            },
+            {
+                "end_addr": "0x12e6000",
+                "filename": "plugin-container.exe",
+                "version": "26.0.0.5084",
+                "debug_id": "8385BD80FD534F6E80CF65811735A7472",
+                "debug_file": "plugin-container.pdb",
+                "base_addr": "0x12e0000",
+            },
+        ],
     }
-)
+}
 
 
 class TestConvertModuleSignatureInfoRule:
     def test_no_value(self):
-        raw_crash = DotDict()
+        raw_crash = {}
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -179,7 +172,7 @@ class TestConvertModuleSignatureInfoRule:
         assert processed_crash == {}
 
     def test_string_value(self):
-        raw_crash = DotDict({"ModuleSignatureInfo": "{}"})
+        raw_crash = {"ModuleSignatureInfo": "{}"}
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -190,7 +183,7 @@ class TestConvertModuleSignatureInfoRule:
         assert processed_crash == {}
 
     def test_object_value(self):
-        raw_crash = DotDict({"ModuleSignatureInfo": {"foo": "bar"}})
+        raw_crash = {"ModuleSignatureInfo": {"foo": "bar"}}
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -248,145 +241,145 @@ class TestProductRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ProductRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.product == "Firefox"
-        assert processed_crash.version == "12.0"
-        assert processed_crash.productid == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-        assert processed_crash.release_channel == "release"
-        assert processed_crash.build == "20120420145725"
+        assert processed_crash["product"] == "Firefox"
+        assert processed_crash["version"] == "12.0"
+        assert processed_crash["productid"] == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+        assert processed_crash["release_channel"] == "release"
+        assert processed_crash["build"] == "20120420145725"
 
     def test_stuff_missing(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash.Version
-        del raw_crash.Distributor
-        del raw_crash.Distributor_version
-        del raw_crash.ReleaseChannel
+        del raw_crash["Version"]
+        del raw_crash["Distributor"]
+        del raw_crash["Distributor_version"]
+        del raw_crash["ReleaseChannel"]
 
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ProductRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.product == "Firefox"
-        assert processed_crash.version == ""
-        assert processed_crash.productid == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-        assert processed_crash.release_channel == ""
-        assert processed_crash.build == "20120420145725"
+        assert processed_crash["product"] == "Firefox"
+        assert processed_crash["version"] == ""
+        assert processed_crash["productid"] == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+        assert processed_crash["release_channel"] == ""
+        assert processed_crash["build"] == "20120420145725"
 
 
-class TestUserDataRule(object):
+class TestUserDataRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = UserDataRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.url == "http://www.mozilla.com"
-        assert processed_crash.user_comments == "why did my browser crash?  #fail"
-        assert processed_crash.email == "noreply@mozilla.com"
-        assert processed_crash.user_id == ""
+        assert processed_crash["url"] == "http://www.mozilla.com"
+        assert processed_crash["user_comments"] == "why did my browser crash?  #fail"
+        assert processed_crash["email"] == "noreply@mozilla.com"
+        assert processed_crash["user_id"] == ""
 
     def test_stuff_missing(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash.URL
-        del raw_crash.Comments
-        del raw_crash.Email
+        del raw_crash["URL"]
+        del raw_crash["Comments"]
+        del raw_crash["Email"]
 
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = UserDataRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.url is None
-        assert processed_crash.user_comments is None
-        assert processed_crash.email is None
+        assert processed_crash["url"] is None
+        assert processed_crash["user_comments"] is None
+        assert processed_crash["email"] is None
 
 
-class TestEnvironmentRule(object):
+class TestEnvironmentRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = EnvironmentRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.app_notes == raw_crash.Notes
+        assert processed_crash["app_notes"] == raw_crash["Notes"]
 
     def test_stuff_missing(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash.Notes
+        del raw_crash["Notes"]
 
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = EnvironmentRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.app_notes == ""
+        assert processed_crash["app_notes"] == ""
 
 
-class TestPluginRule(object):
+class TestPluginRule:
     def test_plugin_hang(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.PluginHang = 1
-        raw_crash.Hang = 0
-        raw_crash.ProcessType = "plugin"
-        raw_crash.PluginFilename = "x.exe"
-        raw_crash.PluginName = "X"
-        raw_crash.PluginVersion = "0.0"
+        raw_crash["PluginHang"] = 1
+        raw_crash["Hang"] = 0
+        raw_crash["ProcessType"] = "plugin"
+        raw_crash["PluginFilename"] = "x.exe"
+        raw_crash["PluginName"] = "X"
+        raw_crash["PluginVersion"] = "0.0"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = PluginRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.hangid == "fake-00000000-0000-0000-0000-000002140504"
-        assert processed_crash.hang_type == -1
-        assert processed_crash.process_type == "plugin"
-        assert processed_crash.PluginFilename == "x.exe"
-        assert processed_crash.PluginName == "X"
-        assert processed_crash.PluginVersion == "0.0"
+        assert processed_crash["hangid"] == "fake-00000000-0000-0000-0000-000002140504"
+        assert processed_crash["hang_type"] == -1
+        assert processed_crash["process_type"] == "plugin"
+        assert processed_crash["PluginFilename"] == "x.exe"
+        assert processed_crash["PluginName"] == "X"
+        assert processed_crash["PluginVersion"] == "0.0"
 
     def test_browser_hang(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.Hang = 1
-        raw_crash.ProcessType = "browser"
+        raw_crash["Hang"] = 1
+        raw_crash["ProcessType"] = "browser"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = PluginRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.hangid is None
-        assert processed_crash.hang_type == 1
-        assert processed_crash.process_type == "browser"
+        assert processed_crash["hangid"] is None
+        assert processed_crash["hang_type"] == 1
+        assert processed_crash["process_type"] == "browser"
         assert "PluginFilename" not in processed_crash
         assert "PluginName" not in processed_crash
         assert "PluginVersion" not in processed_crash
 
 
-class TestAddonsRule(object):
+class TestAddonsRule:
     def test_action_nothing_unexpected(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule()
@@ -409,40 +402,40 @@ class TestAddonsRule(object):
             "{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0",
             "elemhidehelper@adblockplus.org:1.2.1",
         ]
-        assert processed_crash.addons == expected_addon_list
-        assert processed_crash.addons_checked
+        assert processed_crash["addons"] == expected_addon_list
+        assert processed_crash["addons_checked"] is True
 
     def test_action_colon_in_addon_version(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["Add-ons"] = "adblockpopups@jessehakanen.net:0:3:1"
         raw_crash["EMCheckCompatibility"] = "Nope"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule()
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected_addon_list = ["adblockpopups@jessehakanen.net:0:3:1"]
-        assert processed_crash.addons == expected_addon_list
-        assert not processed_crash.addons_checked
+        assert processed_crash["addons"] == expected_addon_list
+        assert processed_crash["addons_checked"] is False
 
     def test_action_addon_is_nonsense(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["Add-ons"] = "naoenut813teq;mz;<[`19ntaotannn8999anxse `"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         addons_rule = AddonsRule()
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected_addon_list = ["naoenut813teq;mz;<[`19ntaotannn8999anxse `:NO_VERSION"]
-        assert processed_crash.addons == expected_addon_list
-        assert processed_crash.addons_checked
+        assert processed_crash["addons"] == expected_addon_list
+        assert processed_crash["addons_checked"] is True
 
 
-class TestDatesAndTimesRule(object):
+class TestDatesAndTimesRule:
     def test_get_truncate_or_warn(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         processor_notes = []
@@ -463,7 +456,7 @@ class TestDatesAndTimesRule(object):
         assert ret == "2012-05-08T23:26:33.454482+00:00"
         assert processor_notes == ["WARNING: raw_crash missing terrible_timestamp"]
 
-        raw_crash.submitted_timestamp = 17
+        raw_crash["submitted_timestamp"] = 17
         processor_notes = []
         ret = DatesAndTimesRule._get_truncate_or_warn(
             raw_crash,
@@ -486,182 +479,202 @@ class TestDatesAndTimesRule(object):
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 1336519554
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
         expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == 1079662
-        assert processed_crash.uptime == 20116
-        assert processed_crash.last_crash == 86985
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1079662
+        assert processed_crash["uptime"] == 20116
+        assert processed_crash["last_crash"] == 86985
 
     def test_bad_timestamp(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.timestamp = "hi there"
+        raw_crash["timestamp"] = "hi there"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 1336519554
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
         expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == 1079662
-        assert processed_crash.uptime == 20116
-        assert processed_crash.last_crash == 86985
-        assert processor_meta.processor_notes == ['non-integer value of "timestamp"']
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1079662
+        assert processed_crash["uptime"] == 20116
+        assert processed_crash["last_crash"] == 86985
+        assert processor_meta["processor_notes"] == ['non-integer value of "timestamp"']
 
     def test_bad_timestamp_and_no_crash_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.timestamp = "hi there"
-        del raw_crash.CrashTime
+        raw_crash["timestamp"] = "hi there"
+        del raw_crash["CrashTime"]
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 0
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 0
         expected = datetime_from_isodate_string("1970-01-01 00:00:00+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == -1335439892
-        assert processed_crash.uptime == 0
-        assert processed_crash.last_crash == 86985
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == -1335439892
+        assert processed_crash["uptime"] == 0
+        assert processed_crash["last_crash"] == 86985
 
         expected = [
             'non-integer value of "timestamp"',
             "WARNING: raw_crash missing CrashTime",
         ]
-        assert processor_meta.processor_notes == expected
+        assert processor_meta["processor_notes"] == expected
 
     def test_no_startup_time_bad_timestamp(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.timestamp = "hi there"
-        del raw_crash.StartupTime
+        raw_crash["timestamp"] = "hi there"
+        del raw_crash["StartupTime"]
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 1336519554
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
         expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == 1079662
-        assert processed_crash.uptime == 0
-        assert processed_crash.last_crash == 86985
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1079662
+        assert processed_crash["uptime"] == 0
+        assert processed_crash["last_crash"] == 86985
 
         expected = ['non-integer value of "timestamp"']
-        assert processor_meta.processor_notes == expected
+        assert processor_meta["processor_notes"] == expected
 
     def test_no_startup_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash.StartupTime
+        del raw_crash["StartupTime"]
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 1336519554
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
         expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == 1079662
-        assert processed_crash.uptime == 0
-        assert processed_crash.last_crash == 86985
-        assert processor_meta.processor_notes == []
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1079662
+        assert processed_crash["uptime"] == 0
+        assert processed_crash["last_crash"] == 86985
+        assert processor_meta["processor_notes"] == []
 
     def test_bad_startup_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.StartupTime = "feed the goats"
+        raw_crash["StartupTime"] = "feed the goats"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 1336519554
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
         expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == 1079662
-        assert processed_crash.uptime == 1336519554
-        assert processed_crash.last_crash == 86985
-        assert processor_meta.processor_notes == ['non-integer value of "StartupTime"']
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1079662
+        assert processed_crash["uptime"] == 1336519554
+        assert processed_crash["last_crash"] == 86985
+        assert processor_meta["processor_notes"] == [
+            'non-integer value of "StartupTime"'
+        ]
 
     def test_bad_install_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.InstallTime = "feed the goats"
+        raw_crash["InstallTime"] = "feed the goats"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 1336519554
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
         expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == 1336519554
-        assert processed_crash.uptime == 20116
-        assert processed_crash.last_crash == 86985
-        assert processor_meta.processor_notes == ['non-integer value of "InstallTime"']
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1336519554
+        assert processed_crash["uptime"] == 20116
+        assert processed_crash["last_crash"] == 86985
+        assert processor_meta["processor_notes"] == [
+            'non-integer value of "InstallTime"'
+        ]
 
     def test_bad_seconds_since_last_crash(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.SecondsSinceLastCrash = "feed the goats"
+        raw_crash["SecondsSinceLastCrash"] = "feed the goats"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash.submitted_timestamp)
-        assert processed_crash.submitted_timestamp == expected
-        assert processed_crash.date_processed == processed_crash.submitted_timestamp
-        assert processed_crash.crash_time == 1336519554
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
         expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash.client_crash_date == expected
-        assert processed_crash.install_age == 1079662
-        assert processed_crash.uptime == 20116
-        assert processed_crash.last_crash is None
-        assert processor_meta.processor_notes == [
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1079662
+        assert processed_crash["uptime"] == 20116
+        assert processed_crash["last_crash"] is None
+        assert processor_meta["processor_notes"] == [
             'non-integer value of "SecondsSinceLastCrash"'
         ]
 
 
-class TestJavaProcessRule(object):
+class TestJavaProcessRule:
     def test_everything_we_hoped_for(self):
         raw_crash = {
             "JavaStackTrace": (
@@ -705,10 +718,10 @@ class TestJavaProcessRule(object):
         assert processed_crash["java_stack_trace"] == "malformed"
 
         # Make sure there's a note in the notes about it
-        assert "malformed java stack trace" in processor_meta.processor_notes[0]
+        assert "malformed java stack trace" in processor_meta["processor_notes"][0]
 
 
-class TestMozCrashReasonRule(object):
+class TestMozCrashReasonRule:
     def test_no_mozcrashreason(self):
         raw_crash = {}
         raw_dumps = {}
@@ -753,7 +766,7 @@ class TestMozCrashReasonRule(object):
             }
 
 
-class TestOutOfMemoryBinaryRule(object):
+class TestOutOfMemoryBinaryRule:
     def test_extract_memory_info(self):
         processor_meta = get_basic_processor_meta()
 
@@ -766,16 +779,16 @@ class TestOutOfMemoryBinaryRule(object):
             # Stomp on the value to make it easier to test with
             rule.MAX_SIZE_UNCOMPRESSED = 1024
             memory = rule._extract_memory_info(
-                "a_pathname", processor_meta.processor_notes
+                "a_pathname", processor_meta["processor_notes"]
             )
             mocked_gzip_open.assert_called_with("a_pathname", "rb")
             assert memory == {"mysterious": ["awesome", "memory"]}
 
     def test_extract_memory_info_too_big(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         raw_dumps = {"memory_report": "a_pathname"}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         with mock.patch(
@@ -795,25 +808,25 @@ class TestOutOfMemoryBinaryRule(object):
             rule.MAX_SIZE_UNCOMPRESSED = 5
 
             memory = rule._extract_memory_info(
-                "a_pathname", processor_meta.processor_notes
+                "a_pathname", processor_meta["processor_notes"]
             )
             expected_error_message = (
                 "Uncompressed memory info too large %d (max: %s)"
                 % (35, rule.MAX_SIZE_UNCOMPRESSED)
             )
             assert memory == {"ERROR": expected_error_message}
-            assert processor_meta.processor_notes == [expected_error_message]
+            assert processor_meta["processor_notes"] == [expected_error_message]
             opened.close.assert_called_with()
 
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert "memory_report" not in processed_crash
-            assert processed_crash.memory_report_error == expected_error_message
+            assert processed_crash["memory_report_error"] == expected_error_message
 
     def test_extract_memory_info_with_trouble(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         raw_dumps = {"memory_report": "a_pathname"}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         with mock.patch(
@@ -823,25 +836,25 @@ class TestOutOfMemoryBinaryRule(object):
             rule = OutOfMemoryBinaryRule()
 
             memory = rule._extract_memory_info(
-                "a_pathname", processor_meta.processor_notes
+                "a_pathname", processor_meta["processor_notes"]
             )
             assert memory["ERROR"] == "error in gzip for a_pathname: OSError()"
-            assert processor_meta.processor_notes == [
+            assert processor_meta["processor_notes"] == [
                 "error in gzip for a_pathname: OSError()"
             ]
 
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
             assert "memory_report" not in processed_crash
             assert (
-                processed_crash.memory_report_error
+                processed_crash["memory_report_error"]
                 == "error in gzip for a_pathname: OSError()"
             )
 
     def test_extract_memory_info_with_json_trouble(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         raw_dumps = {"memory_report": "a_pathname"}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         with mock.patch(
@@ -854,24 +867,24 @@ class TestOutOfMemoryBinaryRule(object):
 
                 rule = OutOfMemoryBinaryRule()
                 memory = rule._extract_memory_info(
-                    "a_pathname", processor_meta.processor_notes
+                    "a_pathname", processor_meta["processor_notes"]
                 )
                 mocked_gzip_open.assert_called_with("a_pathname", "rb")
                 assert memory == {"ERROR": "error in json for a_pathname: ValueError()"}
                 expected = ["error in json for a_pathname: ValueError()"]
-                assert processor_meta.processor_notes == expected
+                assert processor_meta["processor_notes"] == expected
                 mocked_gzip_open.return_value.close.assert_called_with()
 
                 rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
                 assert "memory_report" not in processed_crash
                 expected = "error in json for a_pathname: ValueError()"
-                assert processed_crash.memory_report_error == expected
+                assert processed_crash["memory_report_error"] == expected
 
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         raw_dumps = {"memory_report": "a_pathname"}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         class MyOutOfMemoryBinaryRule(OutOfMemoryBinaryRule):
@@ -884,13 +897,13 @@ class TestOutOfMemoryBinaryRule(object):
         with mock.patch("socorro.processor.rules.mozilla.temp_file_context"):
             rule = MyOutOfMemoryBinaryRule()
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-            assert processed_crash.memory_report == "mysterious-awesome-memory"
+            assert processed_crash["memory_report"] == "mysterious-awesome-memory"
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = OutOfMemoryBinaryRule()
@@ -899,23 +912,23 @@ class TestOutOfMemoryBinaryRule(object):
         assert "memory_report" not in processed_crash
 
 
-class TestProductRewriteRule(object):
+class TestProductRewriteRule:
     def test_product_map_rewrite(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["ProductName"] = "Fennec"
         raw_crash["ProductID"] = "{aa3c5121-dab2-40e2-81ca-7ea25febc110}"
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ProductRewrite()
         rule.act(raw_crash, {}, processed_crash, processor_meta)
 
-        assert raw_crash.ProductName == "FennecAndroid"
-        assert raw_crash.OriginalProductName == "Fennec"
+        assert raw_crash["ProductName"] == "FennecAndroid"
+        assert raw_crash["OriginalProductName"] == "Fennec"
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
-        assert processor_meta.processor_notes == [
+        assert processed_crash == {}
+        assert processor_meta["processor_notes"] == [
             "Rewriting ProductName from 'Fennec' to 'FennecAndroid'"
         ]
 
@@ -957,7 +970,7 @@ class TestFenixVersionRewriteRule:
         rule = FenixVersionRewriteRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert raw_crash["Version"] == "0.0a1"
-        assert processor_meta.processor_notes == [
+        assert processor_meta["processor_notes"] == [
             "Changed version from 'Nightly 200315 05:05' to 0.0a1"
         ]
 
@@ -965,121 +978,121 @@ class TestFenixVersionRewriteRule:
 class TestESRVersionRewrite:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.ReleaseChannel = "esr"
+        raw_crash["ReleaseChannel"] = "esr"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert raw_crash.Version == "12.0esr"
+        assert raw_crash["Version"] == "12.0esr"
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
+        assert processed_crash == {}
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.ReleaseChannel = "not_esr"
+        raw_crash["ReleaseChannel"] = "not_esr"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert raw_crash.Version == "12.0"
+        assert raw_crash["Version"] == "12.0"
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
+        assert processed_crash == {}
 
     def test_this_is_really_broken(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.ReleaseChannel = "esr"
-        del raw_crash.Version
+        raw_crash["ReleaseChannel"] = "esr"
+        del raw_crash["Version"]
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert "Version" not in raw_crash
-        assert processor_meta.processor_notes == [
+        assert processor_meta["processor_notes"] == [
             '"Version" missing from esr release raw_crash'
         ]
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
+        assert processed_crash == {}
 
 
-class TestPluginContentURL(object):
+class TestPluginContentURL:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.PluginContentURL = "http://mozilla.com"
-        raw_crash.URL = "http://google.com"
+        raw_crash["PluginContentURL"] = "http://mozilla.com"
+        raw_crash["URL"] = "http://google.com"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = PluginContentURL()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert raw_crash.URL == "http://mozilla.com"
+        assert raw_crash["URL"] == "http://mozilla.com"
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
+        assert processed_crash == {}
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.URL = "http://google.com"
+        raw_crash["URL"] = "http://google.com"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = PluginContentURL()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert raw_crash.URL == "http://google.com"
+        assert raw_crash["URL"] == "http://google.com"
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
+        assert processed_crash == {}
 
 
-class TestPluginUserComment(object):
+class TestPluginUserComment:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.PluginUserComment = "I hate it when this happens"
-        raw_crash.Comments = "I wrote something here, too"
+        raw_crash["PluginUserComment"] = "I hate it when this happens"
+        raw_crash["Comments"] = "I wrote something here, too"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = PluginUserComment()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert raw_crash.Comments == "I hate it when this happens"
+        assert raw_crash["Comments"] == "I hate it when this happens"
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
+        assert processed_crash == {}
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash.Comments = "I wrote something here"
+        raw_crash["Comments"] = "I wrote something here"
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = PluginUserComment()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert raw_crash.Comments == "I wrote something here"
+        assert raw_crash["Comments"] == "I wrote something here"
 
         # processed_crash should be unchanged
-        assert processed_crash == DotDict()
+        assert processed_crash == {}
 
 
-class TestExploitablityRule(object):
+class TestExploitablityRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -1089,7 +1102,7 @@ class TestExploitablityRule(object):
         rule = ExploitablityRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.exploitability == "high"
+        assert processed_crash["exploitability"] == "high"
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
@@ -1097,19 +1110,19 @@ class TestExploitablityRule(object):
     def test_this_is_not_the_crash_you_are_looking_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ExploitablityRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.exploitability == "unknown"
+        assert processed_crash["exploitability"] == "unknown"
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
 
 
-class TestFlashVersionRule(object):
+class TestFlashVersionRule:
     def test_get_flash_version(self):
         rule = FlashVersionRule()
 
@@ -1163,18 +1176,18 @@ class TestFlashVersionRule(object):
         rule = FlashVersionRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.flash_version == "9.1.3.08"
+        assert processed_crash["flash_version"] == "9.1.3.08"
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
 
 
-class TestTopMostFilesRule(object):
+class TestTopMostFilesRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
-        processed_crash.json_dump = {
+        processed_crash = {}
+        processed_crash["json_dump"] = {
             "crash_info": {"crashing_thread": 0},
             "crashing_thread": {
                 "frames": [
@@ -1190,7 +1203,7 @@ class TestTopMostFilesRule(object):
         rule = TopMostFilesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.topmost_filenames == "wilma.cpp"
+        assert processed_crash["topmost_filenames"] == "wilma.cpp"
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
@@ -1199,13 +1212,13 @@ class TestTopMostFilesRule(object):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         expected_raw_crash = copy.deepcopy(raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = TopMostFilesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.topmost_filenames is None
+        assert processed_crash["topmost_filenames"] is None
 
         # raw_crash should be unchanged
         assert raw_crash == expected_raw_crash
@@ -1213,8 +1226,8 @@ class TestTopMostFilesRule(object):
     def test_missing_key_2(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
-        processed_crash.json_dump = {
+        processed_crash = {}
+        processed_crash["json_dump"] = {
             "crashing_thread": {
                 "frames": [{"filename": "dwight.dll"}, {"filename": "wilma.cpp"}]
             }
@@ -1225,36 +1238,29 @@ class TestTopMostFilesRule(object):
         rule = TopMostFilesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        assert processed_crash.topmost_filenames is None
+        assert processed_crash["topmost_filenames"] is None
 
         # raw_crash should be unchanged
         assert raw_crash == canonical_standard_raw_crash
 
 
-class TestModulesInStackRule(object):
+class TestModulesInStackRule:
     def test_basic(self):
         raw_crash = {}
         raw_dumps = {}
-        processed_crash = DotDict(
-            {
-                "json_dump": {
-                    "modules": [
-                        {"filename": "libxul.dll", "debug_id": "ABCDEF"},
-                        {"filename": "libnss3.dll", "debug_id": "012345"},
-                        {"filename": "mozglue.dll", "debug_id": "ABC345"},
-                    ],
-                    "crash_info": {"crashing_thread": 0},
-                    "threads": [
-                        {
-                            "frames": [
-                                {"module": "libxul.dll"},
-                                {"module": "mozglue.dll"},
-                            ]
-                        }
-                    ],
-                }
+        processed_crash = {
+            "json_dump": {
+                "modules": [
+                    {"filename": "libxul.dll", "debug_id": "ABCDEF"},
+                    {"filename": "libnss3.dll", "debug_id": "012345"},
+                    {"filename": "mozglue.dll", "debug_id": "ABC345"},
+                ],
+                "crash_info": {"crashing_thread": 0},
+                "threads": [
+                    {"frames": [{"module": "libxul.dll"}, {"module": "mozglue.dll"}]}
+                ],
             }
-        )
+        }
 
         processor_meta = get_basic_processor_meta()
 
@@ -1369,7 +1375,7 @@ class TestBetaVersionRule:
             )
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash["version"] == "3.0b1"
-        assert processor_meta.processor_notes == []
+        assert processor_meta["processor_notes"] == []
 
     def test_release_channel(self):
         """Release channel doesn't trigger rule"""
@@ -1388,7 +1394,7 @@ class TestBetaVersionRule:
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash["version"] == "2.0"
-        assert len(processor_meta.processor_notes) == 0
+        assert processor_meta["processor_notes"] == []
 
     def test_nightly_channel(self):
         """Nightly channel doesn't trigger rule"""
@@ -1407,7 +1413,7 @@ class TestBetaVersionRule:
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash["version"] == "5.0a1"
-        assert processor_meta.processor_notes == []
+        assert processor_meta["processor_notes"] == []
 
     def test_bad_buildid(self):
         """Invalid buildids don't cause errors"""
@@ -1432,7 +1438,7 @@ class TestBetaVersionRule:
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash["version"] == "5.0b0"
-        assert processor_meta.processor_notes == [
+        assert processor_meta["processor_notes"] == [
             "release channel is beta but no version data was found - "
             'added "b0" suffix to version number'
         ]
@@ -1458,7 +1464,7 @@ class TestBetaVersionRule:
             rule.action(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         assert processed_crash["version"] == "3.0.1b0"
-        assert processor_meta.processor_notes == [
+        assert processor_meta["processor_notes"] == [
             "release channel is beta but no version data was found - "
             'added "b0" suffix to version number'
         ]
@@ -1484,7 +1490,7 @@ class TestBetaVersionRule:
             )
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash["version"] == "3.0b1"
-        assert processor_meta.processor_notes == []
+        assert processor_meta["processor_notes"] == []
 
 
 class TestOsPrettyName:
@@ -1565,9 +1571,7 @@ class TestOsPrettyName:
 
         rule = OSPrettyVersionRule()
 
-        processed_crash = DotDict(
-            {"os_name": "Windows NT", "os_version": "10.0.11.7600"}
-        )
+        processed_crash = {"os_name": "Windows NT", "os_version": "10.0.11.7600"}
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         assert processed_crash["os_pretty_version"] == "Windows 10"
 
@@ -1583,13 +1587,13 @@ class TestOsPrettyName:
         assert processed_crash["os_pretty_version"] is None
 
 
-class TestThemePrettyNameRule(object):
+class TestThemePrettyNameRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
-        processed_crash.addons = [
+        processed_crash["addons"] = [
             "adblockpopups@jessehakanen.net:0.3",
             "dmpluginff@westbyte.com:1,4.8",
             "firebug@software.joehewitt.com:1.9.1",
@@ -1607,9 +1611,7 @@ class TestThemePrettyNameRule(object):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         # the raw crash & raw_dumps should not have changed
-        assert dotdict_to_dict(raw_crash) == dotdict_to_dict(
-            canonical_standard_raw_crash
-        )
+        assert raw_crash == canonical_standard_raw_crash
         assert raw_dumps == {}
 
         expected_addon_list = [
@@ -1625,10 +1627,10 @@ class TestThemePrettyNameRule(object):
             "{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme):12.0",
             "elemhidehelper@adblockplus.org:1.2.1",
         ]
-        assert processed_crash.addons == expected_addon_list
+        assert processed_crash["addons"] == expected_addon_list
 
     def test_missing_key(self):
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = ThemePrettyNameRule()
@@ -1638,12 +1640,12 @@ class TestThemePrettyNameRule(object):
         assert res is False
 
         # Test with empty list.
-        processed_crash.addons = []
+        processed_crash["addons"] = []
         res = rule.predicate({}, {}, processed_crash, processor_meta)
         assert res is False
 
         # Test with key missing from list.
-        processed_crash.addons = [
+        processed_crash["addons"] = [
             "adblockpopups@jessehakanen.net:0.3",
             "dmpluginff@westbyte.com:1,4.8",
         ]
@@ -1653,10 +1655,10 @@ class TestThemePrettyNameRule(object):
     def test_with_malformed_addons_field(self):
         rule = ThemePrettyNameRule()
 
-        processed_crash = DotDict()
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
-        processed_crash.addons = [
+        processed_crash["addons"] = [
             "addon_with_no_version",
             "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
             "elemhidehelper@adblockplus.org:1.2.1",
@@ -1668,37 +1670,35 @@ class TestThemePrettyNameRule(object):
             "{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme)",
             "elemhidehelper@adblockplus.org:1.2.1",
         ]
-        assert processed_crash.addons == expected_addon_list
+        assert processed_crash["addons"] == expected_addon_list
 
 
 class TestSignatureGeneratorRule:
     def test_signature(self):
         rule = SignatureGeneratorRule()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        processed_crash = DotDict(
-            {
-                "json_dump": {
-                    "crash_info": {"crashing_thread": 0},
-                    "crashing_thread": 0,
-                    "threads": [
-                        {
-                            "frames": [
-                                {
-                                    "frame": 0,
-                                    "function": "Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>",
-                                    "file": "foo.cpp",
-                                },
-                                {
-                                    "frame": 1,
-                                    "function": "std::something::something",
-                                    "file": "foo.rs",
-                                },
-                            ]
-                        }
-                    ],
-                }
+        processed_crash = {
+            "json_dump": {
+                "crash_info": {"crashing_thread": 0},
+                "crashing_thread": 0,
+                "threads": [
+                    {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "function": "Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>",
+                                "file": "foo.cpp",
+                            },
+                            {
+                                "frame": 1,
+                                "function": "std::something::something",
+                                "file": "foo.rs",
+                            },
+                        ]
+                    }
+                ],
             }
-        )
+        }
         processor_meta = get_basic_processor_meta()
 
         rule.action(raw_crash, {}, processed_crash, processor_meta)
@@ -1733,7 +1733,7 @@ class TestSignatureGeneratorRule:
     def test_rule_fail_and_capture_error(self, client_enabled, mock_get_hub):
         exc_value = Exception("Cough")
 
-        class BadRule(object):
+        class BadRule:
             def predicate(self, raw_crash, processed_crash):
                 raise exc_value
 
@@ -1759,7 +1759,7 @@ class TestSignatureGeneratorRule:
 
         # Make sure captureExeption was called with the right args.
         assert mock_get_hub.return_value.capture_exception.call_args_list == [
-            mock.call(error=(Exception, exc_value, WHATEVER))
+            mock.call(error=(Exception, exc_value, mock.ANY))
         ]
 
 

@@ -9,7 +9,6 @@ import pytest
 
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.processor.processor_app import ProcessorApp
-from socorro.unittest import WHATEVER
 
 
 def sequencer(*args):
@@ -254,7 +253,7 @@ class TestProcessorApp(object):
 
         # Assert that the processor sent something to Sentry
         assert mock_hub.capture_exception.call_args_list == [
-            mock.call(error=(ValueError, expected_exception, WHATEVER))
+            mock.call(error=(ValueError, expected_exception, mock.ANY))
         ]
 
         # Assert that the logger logged the appropriate thing
@@ -296,11 +295,11 @@ class TestProcessorApp(object):
         # Assert logs for failing to process crash
         expected = [
             # Logs for failed Sentry reporting for first exception
-            ("Unable to report error with Sentry", WHATEVER),
+            ("Unable to report error with Sentry", mock.ANY),
             ("Sentry DSN is not configured and an exception happened", None),
             ("Exception occurred", first_exc_info),
             # Logs for failed Sentry reporting for second exception
-            ("Unable to report error with Sentry", WHATEVER),
+            ("Unable to report error with Sentry", mock.ANY),
             ("Sentry DSN is not configured and an exception happened", None),
             ("Exception occurred", second_exc_info),
             # Log for failing to process or save the crash

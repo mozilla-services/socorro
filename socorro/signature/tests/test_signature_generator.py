@@ -5,7 +5,6 @@
 import importlib
 from unittest import mock
 
-from . import WHATEVER
 
 # NOTE(willkg): We do this so that we can extract signature generation into its
 # own namespace as an external library. This allows the tests to run if it's in
@@ -57,7 +56,7 @@ class TestSignatureGenerator:
         assert error_handler.call_args_list == [
             mock.call(
                 {"uuid": "ou812"},
-                exc_info=(Exception, exc_value, WHATEVER),
+                exc_info=(Exception, exc_value, mock.ANY),
                 extra={"rule": "BadRule"},
             )
         ]

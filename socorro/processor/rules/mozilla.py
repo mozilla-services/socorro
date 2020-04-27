@@ -78,27 +78,26 @@ class SubmittedFromInfobarFixRule(Rule):
 
 class ProductRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.product = raw_crash.get("ProductName", "")
-        processed_crash.version = raw_crash.get("Version", "")
-        processed_crash.productid = raw_crash.get("ProductID", "")
-        processed_crash.release_channel = raw_crash.get("ReleaseChannel", "")
+        processed_crash["product"] = raw_crash.get("ProductName", "")
+        processed_crash["version"] = raw_crash.get("Version", "")
+        processed_crash["productid"] = raw_crash.get("ProductID", "")
+        processed_crash["release_channel"] = raw_crash.get("ReleaseChannel", "")
         # redundant, but I want to exactly match old processors.
-        processed_crash.ReleaseChannel = raw_crash.get("ReleaseChannel", "")
-        processed_crash.build = raw_crash.get("BuildID", "")
+        processed_crash["ReleaseChannel"] = raw_crash.get("ReleaseChannel", "")
+        processed_crash["build"] = raw_crash.get("BuildID", "")
 
 
 class UserDataRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.url = raw_crash.get("URL", None)
-        processed_crash.user_comments = raw_crash.get("Comments", None)
-        processed_crash.email = raw_crash.get("Email", None)
-        # processed_crash.user_id = raw_crash.get('UserID', '')
-        processed_crash.user_id = ""
+        processed_crash["url"] = raw_crash.get("URL", None)
+        processed_crash["user_comments"] = raw_crash.get("Comments", None)
+        processed_crash["email"] = raw_crash.get("Email", None)
+        processed_crash["user_id"] = ""
 
 
 class EnvironmentRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.app_notes = raw_crash.get("Notes", "")
+        processed_crash["app_notes"] = raw_crash.get("Notes", "")
 
 
 class PluginRule(Rule):  # Hangs are here
@@ -108,9 +107,9 @@ class PluginRule(Rule):  # Hangs are here
         except ValueError:
             plugin_hang_as_int = 0
         if plugin_hang_as_int:
-            processed_crash.hangid = "fake-" + raw_crash.uuid
+            processed_crash["hangid"] = "fake-" + raw_crash["uuid"]
         else:
-            processed_crash.hangid = raw_crash.get("HangID", None)
+            processed_crash["hangid"] = raw_crash.get("HangID", None)
 
         # the processed_crash.hang_type has the following meaning:
         #    hang_type == -1 is a plugin hang
@@ -122,25 +121,25 @@ class PluginRule(Rule):  # Hangs are here
         except ValueError:
             hang_as_int = 0
         if hang_as_int:
-            processed_crash.hang_type = 1
+            processed_crash["hang_type"] = 1
         elif plugin_hang_as_int:
-            processed_crash.hang_type = -1
+            processed_crash["hang_type"] = -1
         elif processed_crash.hangid:
-            processed_crash.hang_type = -1
+            processed_crash["hang_type"] = -1
         else:
-            processed_crash.hang_type = 0
+            processed_crash["hang_type"] = 0
 
-        processed_crash.process_type = raw_crash.get("ProcessType", None)
+        processed_crash["process_type"] = raw_crash.get("ProcessType", None)
 
-        if not processed_crash.process_type:
+        if not processed_crash["process_type"]:
             return
 
-        if processed_crash.process_type == "plugin":
+        if processed_crash["process_type"] == "plugin":
             # Bug#543776 We actually will are relaxing the non-null policy...
             # a null filename, name, and version is OK. We'll use empty strings
-            processed_crash.PluginFilename = raw_crash.get("PluginFilename", "")
-            processed_crash.PluginName = raw_crash.get("PluginName", "")
-            processed_crash.PluginVersion = raw_crash.get("PluginVersion", "")
+            processed_crash["PluginFilename"] = raw_crash.get("PluginFilename", "")
+            processed_crash["PluginName"] = raw_crash.get("PluginName", "")
+            processed_crash["PluginVersion"] = raw_crash.get("PluginVersion", "")
 
 
 class AddonsRule(Rule):
@@ -155,20 +154,20 @@ class AddonsRule(Rule):
         return addon if ":" in addon else addon + ":NO_VERSION"
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.addons_checked = None
+        processed_crash["addons_checked"] = None
 
         # it's okay to not have EMCheckCompatibility
         if "EMCheckCompatibility" in raw_crash:
-            addons_checked_txt = raw_crash.EMCheckCompatibility.lower()
-            processed_crash.addons_checked = False
+            addons_checked_txt = raw_crash["EMCheckCompatibility"].lower()
+            processed_crash["addons_checked"] = False
             if addons_checked_txt == "true":
-                processed_crash.addons_checked = True
+                processed_crash["addons_checked"] = True
 
         original_addon_str = raw_crash.get("Add-ons", "")
         if not original_addon_str:
-            processed_crash.addons = []
+            processed_crash["addons"] = []
         else:
-            processed_crash.addons = [
+            processed_crash["addons"] = [
                 unquote_plus(self._get_formatted_addon(x))
                 for x in original_addon_str.split(",")
             ]
@@ -192,19 +191,19 @@ class DatesAndTimesRule(Rule):
             return default
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processor_notes = processor_meta.processor_notes
+        processor_notes = processor_meta["processor_notes"]
 
-        processed_crash.submitted_timestamp = raw_crash.get(
-            "submitted_timestamp", date_from_ooid(raw_crash.uuid)
+        processed_crash["submitted_timestamp"] = raw_crash.get(
+            "submitted_timestamp", date_from_ooid(raw_crash["uuid"])
         )
-        if isinstance(processed_crash.submitted_timestamp, str):
-            processed_crash.submitted_timestamp = datetime_from_isodate_string(
-                processed_crash.submitted_timestamp
+        if isinstance(processed_crash["submitted_timestamp"], str):
+            processed_crash["submitted_timestamp"] = datetime_from_isodate_string(
+                processed_crash["submitted_timestamp"]
             )
-        processed_crash.date_processed = processed_crash.submitted_timestamp
+        processed_crash["date_processed"] = processed_crash["submitted_timestamp"]
         # defaultCrashTime: must have crashed before date processed
         submitted_timestamp_as_epoch = int(
-            time.mktime(processed_crash.submitted_timestamp.timetuple())
+            time.mktime(processed_crash["submitted_timestamp"].timetuple())
         )
         try:
             # the old name for crash time
@@ -223,10 +222,10 @@ class DatesAndTimesRule(Rule):
         except ValueError:
             crash_time = 0
             processor_notes.append(
-                'non-integer value of "CrashTime" (%s)' % raw_crash.CrashTime
+                'non-integer value of "CrashTime" (%s)' % raw_crash["CrashTime"]
             )
 
-        processed_crash.crash_time = crash_time
+        processed_crash["crash_time"] = crash_time
         if crash_time == submitted_timestamp_as_epoch:
             processor_notes.append("client_crash_date is unknown")
         # StartupTime: must have started up some time before crash
@@ -241,13 +240,13 @@ class DatesAndTimesRule(Rule):
         except ValueError:
             installTime = 0
             processor_notes.append('non-integer value of "InstallTime"')
-        processed_crash.client_crash_date = datetime.datetime.fromtimestamp(
+        processed_crash["client_crash_date"] = datetime.datetime.fromtimestamp(
             crash_time, UTC
         )
-        processed_crash.install_age = crash_time - installTime
-        processed_crash.uptime = max(0, crash_time - startupTime)
+        processed_crash["install_age"] = crash_time - installTime
+        processed_crash["uptime"] = max(0, crash_time - startupTime)
         try:
-            last_crash = int(raw_crash.SecondsSinceLastCrash)
+            last_crash = int(raw_crash["SecondsSinceLastCrash"])
         except (KeyError, TypeError, ValueError):
             last_crash = None
             processor_notes.append('non-integer value of "SecondsSinceLastCrash"')
@@ -256,7 +255,7 @@ class DatesAndTimesRule(Rule):
             processor_notes.append(
                 '"SecondsSinceLastCrash" larger than MAXINT - set to NULL'
             )
-        processed_crash.last_crash = last_crash
+        processed_crash["last_crash"] = last_crash
 
 
 class JavaProcessRule(Rule):
@@ -273,7 +272,7 @@ class JavaProcessRule(Rule):
             )
             java_stack_trace = java_exception.to_public_string()
         except javautil.MalformedJavaStackTrace:
-            processor_meta.processor_notes.append(
+            processor_meta["processor_notes"].append(
                 "JavaProcessRule: malformed java stack trace"
             )
             java_stack_trace = "malformed"
@@ -326,8 +325,7 @@ class OutOfMemoryBinaryRule(Rule):
         return "memory_report" in raw_dumps
 
     def _extract_memory_info(self, dump_pathname, processor_notes):
-        """Extract and return the JSON data from the .json.gz memory report.
-        file"""
+        """Extract and return the JSON data from the .json.gz memory report"""
 
         def error_out(error_message):
             processor_notes.append(error_message)
@@ -364,13 +362,14 @@ class OutOfMemoryBinaryRule(Rule):
         pathname = raw_dumps["memory_report"]
         with temp_file_context(pathname):
             memory_report = self._extract_memory_info(
-                dump_pathname=pathname, processor_notes=processor_meta.processor_notes
+                dump_pathname=pathname,
+                processor_notes=processor_meta["processor_notes"],
             )
 
             if isinstance(memory_report, dict) and memory_report.get("ERROR"):
-                processed_crash.memory_report_error = memory_report["ERROR"]
+                processed_crash["memory_report_error"] = memory_report["ERROR"]
             else:
-                processed_crash.memory_report = memory_report
+                processed_crash["memory_report"] = memory_report
 
 
 class ProductRewrite(Rule):
@@ -389,7 +388,7 @@ class ProductRewrite(Rule):
         # If we made any product name changes, persist them and keep the
         # original one so we can look at things later
         if product_name != original_product_name:
-            processor_meta.processor_notes.append(
+            processor_meta["processor_notes"].append(
                 "Rewriting ProductName from %r to %r"
                 % (original_product_name, product_name)
             )
@@ -412,7 +411,7 @@ class FenixVersionRewriteRule(Rule):
         return raw_crash.get("ProductName") == "Fenix" and is_nightly
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processor_meta.processor_notes.append(
+        processor_meta["processor_notes"].append(
             "Changed version from %r to 0.0a1" % raw_crash.get("Version")
         )
         raw_crash["Version"] = "0.0a1"
@@ -426,7 +425,7 @@ class ESRVersionRewrite(Rule):
         try:
             raw_crash["Version"] += "esr"
         except KeyError:
-            processor_meta.processor_notes.append(
+            processor_meta["processor_notes"].append(
                 '"Version" missing from esr release raw_crash'
             )
 
@@ -456,12 +455,14 @@ class PluginUserComment(Rule):
 class ExploitablityRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
-            processed_crash.exploitability = processed_crash["json_dump"]["sensitive"][
-                "exploitability"
-            ]
+            processed_crash["exploitability"] = processed_crash["json_dump"][
+                "sensitive"
+            ]["exploitability"]
         except KeyError:
-            processed_crash.exploitability = "unknown"
-            processor_meta.processor_notes.append("exploitability information missing")
+            processed_crash["exploitability"] = "unknown"
+            processor_meta["processor_notes"].append(
+                "exploitability information missing"
+            )
 
 
 class FlashVersionRule(Rule):
@@ -539,7 +540,7 @@ class FlashVersionRule(Rule):
         return None
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.flash_version = ""
+        processed_crash["flash_version"] = ""
         flash_version = None
 
         modules = processed_crash.get("json_dump", {}).get("modules", [])
@@ -550,9 +551,9 @@ class FlashVersionRule(Rule):
                     break
 
         if flash_version:
-            processed_crash.flash_version = flash_version
+            processed_crash["flash_version"] = flash_version
         else:
-            processed_crash.flash_version = "[blank]"
+            processed_crash["flash_version"] = "[blank]"
 
 
 class TopMostFilesRule(Rule):
@@ -572,16 +573,18 @@ class TopMostFilesRule(Rule):
     """
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.topmost_filenames = None
+        processed_crash["topmost_filenames"] = None
         try:
-            crashing_thread = processed_crash.json_dump["crash_info"]["crashing_thread"]
-            stack_frames = processed_crash.json_dump["threads"][crashing_thread][
+            crashing_thread = processed_crash["json_dump"]["crash_info"][
+                "crashing_thread"
+            ]
+            stack_frames = processed_crash["json_dump"]["threads"][crashing_thread][
                 "frames"
             ]
         except KeyError as x:
             # guess we don't have frames or crashing_thread or json_dump
             # we have to give up
-            processor_meta.processor_notes.append(
+            processor_meta["processor_notes"].append(
                 "no 'topmost_file' name because '%s' is missing" % x
             )
             return
@@ -589,7 +592,7 @@ class TopMostFilesRule(Rule):
         for a_frame in stack_frames:
             source_filename = a_frame.get("file", None)
             if source_filename:
-                processed_crash.topmost_filenames = source_filename
+                processed_crash["topmost_filenames"] = source_filename
                 return
 
 
@@ -767,7 +770,7 @@ class BetaVersionRule(Rule):
         # No real version, but this is an aurora or beta crash report, so we
         # tack on "b0" to make it match the channel
         processed_crash["version"] += "b0"
-        processor_meta.processor_notes.append(
+        processor_meta["processor_notes"].append(
             'release channel is %s but no version data was found - added "b0" '
             "suffix to version number" % release_channel
         )
@@ -884,7 +887,7 @@ class ThemePrettyNameRule(Rule):
         return False
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        addons = processed_crash.addons
+        addons = processed_crash["addons"]
 
         for index, addon in enumerate(addons):
             if ":" in addon:
