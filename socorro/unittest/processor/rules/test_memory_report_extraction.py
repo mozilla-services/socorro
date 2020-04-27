@@ -17,7 +17,7 @@ def get_example_file_data(filename):
         return json.loads(f.read())
 
 
-class TestMemoryReportExtraction(object):
+class TestMemoryReportExtraction:
     def test_predicate_success(self):
         rule = MemoryReportExtraction()
 
