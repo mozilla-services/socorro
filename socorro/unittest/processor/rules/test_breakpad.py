@@ -202,9 +202,9 @@ class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
 
 class TestCrashingThreadRule(object):
     def test_everything_we_hoped_for(self):
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
-        processed_crash = {"json_dump": copy.copy(canonical_stackwalker_output)}
+        processed_crash = {"json_dump": copy.deepcopy(canonical_stackwalker_output)}
         processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule()
@@ -213,7 +213,7 @@ class TestCrashingThreadRule(object):
         assert processed_crash["crashedThread"] == 0
 
     def test_stuff_missing(self):
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = {"json_dump": {}}
         processor_meta = get_basic_processor_meta()
@@ -279,7 +279,7 @@ class TestBreakpadTransformRule2015(object):
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         rule = self.build_rule()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -307,7 +307,7 @@ class TestBreakpadTransformRule2015(object):
     def test_stackwalker_fails(self, mocked_subprocess_module):
         rule = self.build_rule()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -334,7 +334,7 @@ class TestBreakpadTransformRule2015(object):
     def test_stackwalker_fails_2(self, mocked_subprocess_module):
         rule = self.build_rule()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -393,7 +393,7 @@ class TestJitCrashCategorizeRule(object):
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         rule = self.build_rule()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
@@ -422,7 +422,7 @@ class TestJitCrashCategorizeRule(object):
     def test_success_all_types_of_signatures(self, mocked_subprocess_module):
         rule = self.build_rule()
 
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         base_processed_crash = {
             "product": "Firefox",
@@ -449,7 +449,7 @@ class TestJitCrashCategorizeRule(object):
             "Small | js::irregexp::ExecuteCode<T>",
         ]
         for signature in signatures:
-            processed_crash = copy.copy(base_processed_crash)
+            processed_crash = copy.deepcopy(base_processed_crash)
             processed_crash["signature"] = signature
             rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
@@ -464,7 +464,7 @@ class TestJitCrashCategorizeRule(object):
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
     def test_subprocess_fail(self, mocked_subprocess_module):
         rule = self.build_rule()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
@@ -492,7 +492,7 @@ class TestJitCrashCategorizeRule(object):
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
     def test_wrong_os(self, mocked_subprocess_module):
         rule = self.build_rule()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
@@ -519,7 +519,7 @@ class TestJitCrashCategorizeRule(object):
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
     def test_wrong_product(self, mocked_subprocess_module):
         rule = self.build_rule()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefrenzy",
@@ -546,7 +546,7 @@ class TestJitCrashCategorizeRule(object):
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
     def test_wrong_cpu(self, mocked_subprocess_module):
         rule = self.build_rule()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
@@ -573,7 +573,7 @@ class TestJitCrashCategorizeRule(object):
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
     def test_wrong_signature(self, mocked_subprocess_module):
         rule = self.build_rule()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
@@ -600,7 +600,7 @@ class TestJitCrashCategorizeRule(object):
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
     def test_module_on_stack_top(self, mocked_subprocess_module):
         rule = self.build_rule()
-        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
