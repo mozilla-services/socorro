@@ -10,7 +10,6 @@ import shlex
 import subprocess
 import threading
 
-from configman.dotdict import DotDict
 import glom
 import markus
 
@@ -165,17 +164,17 @@ class BreakpadStackwalkerRule2015(Rule):
             self.logger.warning(msg + " (%s)" % crash_id)
             output = {}
 
-        stackwalker_data = DotDict()
-        stackwalker_data.json_dump = output
-        stackwalker_data.mdsw_return_code = return_code
-
-        stackwalker_data.mdsw_status_string = output.get("status", "unknown error")
-        stackwalker_data.success = stackwalker_data.mdsw_status_string == "OK"
+        stackwalker_data = {
+            "json_dump": output,
+            "mdsw_return_code": return_code,
+            "mdsw_status_string": output.get("status", "unknown error"),
+            "success": output.get("status", "") == "OK",
+        }
 
         self.metrics.incr(
             "run",
             tags=[
-                "outcome:%s" % ("success" if stackwalker_data.success else "fail"),
+                "outcome:%s" % ("success" if stackwalker_data["success"] else "fail"),
                 "exitcode:%s" % return_code,
             ],
         )
@@ -185,10 +184,10 @@ class BreakpadStackwalkerRule2015(Rule):
             processor_meta["processor_notes"].append(msg)
             self.logger.warning(msg + " (%s)" % crash_id)
 
-        elif return_code != 0 or not stackwalker_data.success:
+        elif return_code != 0 or not stackwalker_data["success"]:
             msg = "MDSW failed with %s: %s" % (
                 return_code,
-                stackwalker_data.mdsw_status_string,
+                stackwalker_data["mdsw_status_string"],
             )
             # subprocess.Popen with shell=False returns negative exit codes
             # where the number is the signal that got kicked up
