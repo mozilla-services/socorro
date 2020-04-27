@@ -265,6 +265,13 @@ class BreakpadStackwalkerRule2015(Rule):
 
 
 class JitCrashCategorizeRule(Rule):
+    """Categorizes JIT crashes.
+
+    NOTE(willkg): This needs to run after BreakpadStackwalkerRule2015 and
+    SignatureGenerationRule.
+
+    """
+
     def __init__(self, dump_field, command_pathname, command_line, kill_timeout):
         super().__init__()
         self.dump_field = dump_field
