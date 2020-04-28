@@ -30,6 +30,4 @@ def get_basic_config():
 
 
 def get_basic_processor_meta():
-    processor_meta = DotDict()
-    processor_meta.processor_notes = []
-    return processor_meta
+    return {"processor_notes": []}

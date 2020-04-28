@@ -16,10 +16,7 @@ from socorro.processor.rules.breakpad import (
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
-
-
-def get_basic_processor_meta():
-    return {"processor_notes": []}
+from socorro.unittest.processor import get_basic_processor_meta
 
 
 example_uuid = "00000000-0000-0000-0000-000002140504"
@@ -200,7 +197,7 @@ class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
         yield "%s.json" % raw_crash["uuid"]
 
 
-class TestCrashingThreadRule(object):
+class TestCrashingThreadRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -227,7 +224,7 @@ class TestCrashingThreadRule(object):
         ]
 
 
-class TestMinidumpSha256HashRule(object):
+class TestMinidumpSha256HashRule:
     def test_hash_not_in_raw_crash(self):
         raw_crash = {}
         raw_dumps = {}
@@ -260,7 +257,7 @@ canonical_external_output = {"key": "value"}
 canonical_external_output_str = json.dumps(canonical_external_output)
 
 
-class TestBreakpadTransformRule2015(object):
+class TestBreakpadTransformRule2015:
     def build_rule(self):
         pprcb = ProcessorPipeline.required_config.breakpad
 
@@ -379,7 +376,7 @@ class TestBreakpadTransformRule2015(object):
         mocked_unlink.reset_mock()
 
 
-class TestJitCrashCategorizeRule(object):
+class TestJitCrashCategorizeRule:
     def build_rule(self):
         pprcj = ProcessorPipeline.required_config.jit
         return JitCrashCategorizeRule(

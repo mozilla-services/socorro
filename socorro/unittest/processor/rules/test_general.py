@@ -14,6 +14,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
+from socorro.unittest.processor import get_basic_processor_meta
 
 
 canonical_standard_raw_crash = {
@@ -106,10 +107,6 @@ canonical_processed_crash = {
 }
 
 
-def get_basic_processor_meta():
-    return {"processor_notes": []}
-
-
 class TestDeNoneRule:
     @pytest.mark.parametrize(
         "raw_crash, expected",
@@ -174,7 +171,7 @@ class TestDeNullRule:
         assert raw_crash == DotDict({"key1": "val1", "key2": b"val2", "key3": "val3"})
 
 
-class TestIdentifierRule(object):
+class TestIdentifierRule:
     def test_everything_we_hoped_for(self):
         uuid = "00000000-0000-0000-0000-000002140504"
         raw_crash = {"uuid": uuid}
@@ -202,7 +199,7 @@ class TestIdentifierRule(object):
         assert processed_crash == {}
 
 
-class TestCPUInfoRule(object):
+class TestCPUInfoRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
@@ -262,7 +259,7 @@ class TestCPUInfoRule(object):
         assert raw_crash == {}
 
 
-class TestOSInfoRule(object):
+class TestOSInfoRule:
     def test_everything_we_hoped_for(self):
         raw_crash = {}
         processed_crash = {
