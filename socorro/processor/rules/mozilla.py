@@ -111,7 +111,7 @@ class PluginRule(Rule):  # Hangs are here
         else:
             processed_crash["hangid"] = raw_crash.get("HangID", None)
 
-        # the processed_crash.hang_type has the following meaning:
+        # the processed_crash["hang_type"] has the following meaning:
         #    hang_type == -1 is a plugin hang
         #    hang_type ==  1 is a browser hang
         #    hang_type ==  0 is not a hang at all, but a normal crash
@@ -124,7 +124,7 @@ class PluginRule(Rule):  # Hangs are here
             processed_crash["hang_type"] = 1
         elif plugin_hang_as_int:
             processed_crash["hang_type"] = -1
-        elif processed_crash.hangid:
+        elif processed_crash["hangid"]:
             processed_crash["hang_type"] = -1
         else:
             processed_crash["hang_type"] = 0
