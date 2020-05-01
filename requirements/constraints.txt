@@ -143,9 +143,9 @@ jmespath==0.9.5 \
     --hash=sha256:cca55c8d153173e21baa59983015ad0daf603f9cb799904ff057bfb8ff8dc2d9
 jsondiff==1.2.0 \
     --hash=sha256:34941bc431d10aa15828afe1cbb644977a114e75eef6cc74fb58951312326303
-aws-xray-sdk==2.4.3 \
-    --hash=sha256:612dba6efc3704ef224ac0747b05488b8aad94e71be3ece4edbc051189d50482 \
-    --hash=sha256:263a38f3920d9dc625e3acb92e6f6d300f4250b70f538bd009ce6e485676ab74
+aws-xray-sdk==2.5.0 \
+    --hash=sha256:ae57baeb175993bdbf31f83843e2c0958dd5aa8cb691ab5628aafb6ccc78a0fc \
+    --hash=sha256:8dfa785305fc8dc720d8d4c2ec6a58e85e467ddc3a53b1506a2ed8b5801c8fc7
 Werkzeug==1.0.1 \
     --hash=sha256:2de2a5db0baeae7b2d2664949077c2ac63fbd16d98da0ff71837f7d1dea3fd43 \
     --hash=sha256:6c80b1e5ad3665290ea39320b91e1be1e0d5f60652b964a3070216de83d2e47c
