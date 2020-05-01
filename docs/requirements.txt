@@ -22,9 +22,9 @@ imagesize==1.2.0 \
 Babel==2.8.0 \
     --hash=sha256:d670ea0b10f8b723672d3a6abeb87b565b244da220d76b4dba1b66269ec152d4 \
     --hash=sha256:1aac2ae2d0d8ea368fa90906567f5c08463d98ade155c0c4bfedd6a0f7160e38
-sphinxcontrib-websupport==1.2.1 \
-    --hash=sha256:69364896eae5d1145d82b6ee09f66d597099ef8069615e2888921ec48005470f \
-    --hash=sha256:545f5da4bd7757e82b8a23ce3af9500c6ffeedbcb13429fca436ad1e80bd10cf
+sphinxcontrib-websupport==1.2.2 \
+    --hash=sha256:c155cfa18e8b7c832b3cac0a2d41810ebacd26b26ba9624cd2f42c3496dad04b \
+    --hash=sha256:33c0db6c0635b9dc3e72629b7278ca3b9fa24c156eeeaf1674be8f268831d951
 packaging==20.3 \
     --hash=sha256:82f77b9bee21c1bafbf35a84905d604d5d1223801d639cf3ed140bd651c08752 \
     --hash=sha256:3c292b474fda1671ec57d46d739d072bfd495a4f51ad01a055121d81e952b7a3
