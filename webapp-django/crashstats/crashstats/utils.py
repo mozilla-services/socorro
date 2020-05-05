@@ -397,9 +397,17 @@ def get_versions_for_product(product="Firefox", use_cache=True):
             continue
 
         version = item["term"]
+
+        # Bug #1622932 is about something submitting crash reports with a version of
+        # 1024 which is clearly junk, but it messes everything up; this is hacky,
+        # but let's just drop those explicitly and push off thinking about a better
+        # way of doing all of this until later
+        if version.startswith("1024"):
+            continue
+
         try:
-            # This generates the sort key but also parses the version to
-            # make sure it's a valid looking version
+            # This generates the sort key but also parses the version to make sure it's
+            # a valid looking version
             versions.add((generate_version_key(version), version))
 
             # Add X.Yb to betas set
