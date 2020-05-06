@@ -82,7 +82,6 @@ a_processed_crash = {
     "uptime": 170,
     "url": "http://embarasing.example.com",
     "user_comments": None,
-    "user_id": None,
     "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
     "version": "13.0a1",
     "upload_file_minidump_flash1": {
@@ -742,8 +741,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
             # NOTE(willkg): The sizes of these json documents depend on what's
             # in them. If we changed a_processed_crash and a_raw_crash, then
             # these numbers will change.
+            mm.print_records()
             mm.assert_histogram("processor.es.raw_crash_size", value=27)
-            mm.assert_histogram("processor.es.processed_crash_size", value=1738)
+            mm.assert_histogram("processor.es.processed_crash_size", value=1721)
 
     def test_index_data_capture(self):
         """Verify we capture index data in ES crashstorage"""
