@@ -311,7 +311,6 @@ class TestRedactor(object):
         # these keys do not survive redaction
         d["url"] = "http://very.embarassing.com"
         d["email"] = ("lars@fake.com",)
-        d["user_id"] = "3333"
         d["exploitability"] = "yep"
         d["json_dump.sensitive"] = 22
         d["upload_file_minidump_flash1.json_dump.sensitive"] = 33

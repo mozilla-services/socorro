@@ -287,7 +287,6 @@ class TestUserDataRule:
         assert processed_crash["url"] == "http://www.mozilla.com"
         assert processed_crash["user_comments"] == "why did my browser crash?  #fail"
         assert processed_crash["email"] == "noreply@mozilla.com"
-        assert processed_crash["user_id"] == ""
 
     def test_stuff_missing(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
