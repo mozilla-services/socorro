@@ -23,7 +23,7 @@ from django.utils.functional import cached_property
 
 from crashstats.crashstats import models
 import crashstats.supersearch.models as supersearch_models
-from socorro.lib.versionutil import generate_version_key, VersionParseError
+from socorro.lib.versionutil import generate_semver, VersionParseError
 
 
 logger = logging.getLogger(__name__)
@@ -408,12 +408,12 @@ def get_versions_for_product(product="Firefox", use_cache=True):
         try:
             # This generates the sort key but also parses the version to make sure it's
             # a valid looking version
-            versions.add((generate_version_key(version), version))
+            versions.add((generate_semver(version), version))
 
             # Add X.Yb to betas set
             if "b" in version:
                 beta_version = version[: version.find("b") + 1]
-                versions.add((generate_version_key(beta_version), beta_version))
+                versions.add((generate_semver(beta_version), beta_version))
         except VersionParseError:
             pass
 
@@ -485,7 +485,7 @@ def get_version_context_for_product(product):
         for featured_version in featured_versions:
             if featured_version not in versions:
                 versions.insert(0, featured_version)
-        versions.sort(key=lambda v: generate_version_key(v), reverse=True)
+        versions.sort(key=lambda v: generate_semver(v), reverse=True)
 
     else:
         # Map of major version (int) -> list of (key (str), versions (str)) so we can
@@ -510,7 +510,7 @@ def get_version_context_for_product(product):
         # for each major version. Since versions were sorted when we went through
         # them, the most recent one is in index 0.
         featured_versions = [values[0] for values in major_to_versions.values()]
-        featured_versions.sort(key=lambda v: generate_version_key(v), reverse=True)
+        featured_versions.sort(key=lambda v: generate_semver(v), reverse=True)
         featured_versions = featured_versions[:3]
 
     # Generate the version data the context needs

@@ -2,88 +2,80 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import semver
+
 
 class VersionParseError(Exception):
     """Raised if the version isn't parseable"""
 
-    pass
 
+def generate_semver(version):
+    """Convert a version to semver.
 
-def validate_version(version):
-    """Validate a version."""
-    if not (version and isinstance(version, str)):
-        return False
+    This converts to a semver that (ab)uses the prerelease section to denote the channel
+    and in doing that, sorts Firefox versions correctly.
 
-    version = version.split(".")
+    :param version: the version string
 
-    # Versions should have at least two parts: X.Y
-    if len(version) < 2:
-        return False
+    :returns: a semver.VersionInfo
 
-    # First part should consist of one or more ascii digits
-    if not (len(version[0]) > 0 and version[0].isdigit()):
-        return False
-
-    return True
-
-
-def generate_version_key(version):
-    """Serialize version into a string that can sort with other versions.
-
-    :arg str version: the version string; e.g. "62.0.3b15rc1"
-
-    :returns: a sortable version of the version string to be used as a key
-        for sorting
-
-    Example:
-
-    >>> generate_version_key('62.0.2b5rc1')
-    '062000002b005001'
+    :raises VersionParseError: if the version isn't parseable
 
     """
-    if not validate_version(version):
-        raise VersionParseError("Version %s does not validate" % version)
+    if not isinstance(version, str):
+        raise VersionParseError("version is not a str.")
+
+    try:
+        semver_version = semver.VersionInfo.parse(version)
+        if semver_version.prerelease is None:
+            semver_version = semver_version.replace(prerelease="release.rc.999")
+        return semver_version
+    except ValueError:
+        pass
 
     orig_version = version
+    prerelease = []
+
     try:
         if "rc" in version:
             version, rc = version.split("rc")
+            prerelease.insert(0, "rc.%s" % rc)
         else:
-            # We use 999 so that the release always sorts after the release
-            # candidates
-            rc = 999
+            prerelease.insert(0, "rc.999")
 
-        if "pre" in version:
-            # Treat "pre" like we do rc, but call it 1 if there's no number
-            version, rc = version.split("pre")
-            if not rc:
-                rc = 1
-
-        ending = []
         if "a" in version:
             version, num = version.split("a")
-            ending = ["a", 1, int(rc)]
+            prerelease.insert(0, "alpha.1")
+
         elif "b" in version:
             version, num = version.split("b")
             # Handle the 62.0b case which is a superset of betas
             if not num:
-                num = 999
-            ending = ["b", int(num), int(rc)]
+                prerelease.insert(0, "beta")
+            else:
+                prerelease.insert(0, "beta.%s" % num)
+
         elif "esr" in version:
             version = version.replace("esr", "")
-            ending = ["x", 0, int(rc)]
+            # NOTE(willkg): use xsr here because it sorts alphabetically
+            # like this: alpha, beta, release, xsr
+            prerelease.insert(0, "xsr")
+
         else:
-            ending = ["r", 0, int(rc)]
+            prerelease.insert(0, "release")
 
         version = [int(part) for part in version.split(".")]
-
         while len(version) < 3:
             version.append(0)
 
-        version.extend(ending)
-
-        # (x, y, z, channel, beta number, rc number)
-        return "%03d%03d%03d%s%03d%03d" % tuple(version)
+        return semver.VersionInfo(
+            **{
+                "major": version[0],
+                "minor": version[1],
+                "patch": version[2],
+                "prerelease": ".".join(prerelease),
+            }
+        )
 
     except (ValueError, IndexError, TypeError) as exc:
         raise VersionParseError(
