@@ -6,14 +6,15 @@ import semver
 
 
 class VersionParseError(Exception):
-    """Raised if the version isn't parseable"""
+    """Raised if the version isn't parseable."""
 
 
 def generate_semver(version):
     """Convert a version to semver.
 
-    This converts to a semver that (ab)uses the prerelease section to denote the channel
-    and in doing that, sorts Firefox versions correctly.
+    This converts the version string to a semver that (ab)uses the prerelease section to
+    denote the channel and in doing that, sorts Firefox, Fennec, and Fenix versions
+    correctly.
 
     :param version: the version string
 
@@ -25,13 +26,19 @@ def generate_semver(version):
     if not isinstance(version, str):
         raise VersionParseError("version is not a str.")
 
+    # Try to parse it as a semver. This covers versions that are valid semver already.
     try:
         semver_version = semver.VersionInfo.parse(version)
         if semver_version.prerelease is None:
+            # Need to add this so that 68.0.0 (release) sorts correctly with
+            # 68.0.0esr--ESR versions sort after release versions
             semver_version = semver_version.replace(prerelease="release.rc.999")
         return semver_version
     except ValueError:
         pass
+
+    # If it's not semver, then it's probably a Firefox/Fennec version number, so parse
+    # that and convert it to a semver VersionInfo
 
     orig_version = version
     prerelease = []
@@ -41,10 +48,13 @@ def generate_semver(version):
             version, rc = version.split("rc")
             prerelease.insert(0, "rc.%s" % rc)
         else:
+            # If it's not a release candidate, we add rc.999 so actual releases sort
+            # after release candidates
             prerelease.insert(0, "rc.999")
 
         if "a" in version:
             version, num = version.split("a")
+            # All "alphas" are nightly channel and get alpha.1 as a prerelease
             prerelease.insert(0, "alpha.1")
 
         elif "b" in version:
@@ -57,13 +67,16 @@ def generate_semver(version):
 
         elif "esr" in version:
             version = version.replace("esr", "")
-            # NOTE(willkg): use xsr here because it sorts alphabetically
-            # like this: alpha, beta, release, xsr
+            # Use xsr here because it sorts alphabetically like this: alpha, beta,
+            # release, xsr
             prerelease.insert(0, "xsr")
 
         else:
+            # Need to add "release" so that it sorts correctly with alpha, beta,
+            # and xsr
             prerelease.insert(0, "release")
 
+        # Do this so it's easier to build the VersionInfo instance
         version = [int(part) for part in version.split(".")]
         while len(version) < 3:
             version.append(0)
