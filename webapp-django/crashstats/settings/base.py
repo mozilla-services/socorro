@@ -255,30 +255,25 @@ BUG_PRODUCT_MAP = {"FennecAndroid": "Firefox for Android"}
 VCS_MAPPINGS = {
     "cvs": {
         "cvs.mozilla.org": (
-            "http://bonsai.mozilla.org/cvsblame.cgi?"
-            "file=%(file)s&rev=%(revision)s&"
-            "mark=%(line)s#%(line)s"
+            "http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s"  # noqa
         )
     },
     "hg": {
         "hg.mozilla.org": (
-            "https://hg.mozilla.org/%(repo)s"
-            "/annotate/%(revision)s/%(file)s#l%(line)s"
+            "https://hg.mozilla.org/%(repo)s/file/%(revision)s/%(file)s#l%(line)s"
         )
     },
     "git": {
         "git.mozilla.org": (
-            "http://git.mozilla.org/?p=%(repo)s;a=blob;"
-            "f=%(file)s;h=%(revision)s#l%(line)s"
+            "http://git.mozilla.org/?p=%(repo)s;a=blob;f=%(file)s;h=%(revision)s#l%(line)s"  # noqa
         ),
         "github.com": (
-            "https://github.com/%(repo)s/blob/%(revision)s/" "%(file)s#L%(line)s"
+            "https://github.com/%(repo)s/blob/%(revision)s/%(file)s#L%(line)s"
         ),
     },
     "s3": {
         "gecko-generated-sources": (
-            "/sources/highlight/?url=https://gecko-generated-so"
-            "urces.s3.amazonaws.com/%(file)s&line=%(line)s#L-%(line)s"
+            "/sources/highlight/?url=https://gecko-generated-sources.s3.amazonaws.com/%(file)s&line=%(line)s#L-%(line)s"  # noqa
         )
     },
 }

@@ -22,7 +22,7 @@ def test_enhance_frame():
     vcs_mappings = {
         "hg": {
             "hg.m.org": (
-                "http://hg.m.org/%(repo)s/annotate/%(revision)s/%(file)s#l%(line)s"
+                "http://hg.m.org/%(repo)s/file/%(revision)s/%(file)s#l%(line)s"
             )
         }
     }
@@ -41,7 +41,7 @@ def test_enhance_frame():
         "function": "Func(A* a, B b)",
         "short_signature": "Func",
         "line": 576,
-        "source_link": "http://hg.m.org/repo/name/annotate/rev/dname/fname#l576",
+        "source_link": "http://hg.m.org/repo/name/file/rev/dname/fname#l576",
         "file": "dname/fname",
         "frame": 0,
         "signature": "Func(A* a, B b)",
@@ -188,7 +188,7 @@ def test_enhance_json_dump():
     vcs_mappings = {
         "hg": {
             "hg.m.org": (
-                "http://hg.m.org/%(repo)s/annotate/%(revision)s/%(file)s#l%(line)s"
+                "http://hg.m.org/%(repo)s/file/%(revision)s/%(file)s#l%(line)s"
             )
         }
     }
@@ -245,7 +245,7 @@ def test_enhance_json_dump():
                         "short_signature": "Func",
                         "line": 576,
                         "source_link": (
-                            "http://hg.m.org/repo/name/annotate/rev/dname/fname#l576"
+                            "http://hg.m.org/repo/name/file/rev/dname/fname#l576"
                         ),
                         "file": "dname/fname",
                         "signature": "Func",
@@ -258,7 +258,7 @@ def test_enhance_json_dump():
                         "signature": "Func2",
                         "short_signature": "Func2",
                         "source_link": (
-                            "http://hg.m.org/repo/name/annotate/rev/dname/fname#l576"
+                            "http://hg.m.org/repo/name/file/rev/dname/fname#l576"
                         ),
                         "file": "dname/fname",
                         "line": 576,
@@ -274,7 +274,7 @@ def test_enhance_json_dump():
                         "short_signature": "Func",
                         "line": 576,
                         "source_link": (
-                            "http://hg.m.org/repo/name/annotate/rev/dname/fname#l576"
+                            "http://hg.m.org/repo/name/file/rev/dname/fname#l576"
                         ),
                         "file": "dname/fname",
                         "signature": "Func",
@@ -287,7 +287,7 @@ def test_enhance_json_dump():
                         "signature": "Func2",
                         "short_signature": "Func2",
                         "source_link": (
-                            "http://hg.m.org/repo/name/annotate/rev/dname/fname#l576"
+                            "http://hg.m.org/repo/name/file/rev/dname/fname#l576"
                         ),
                         "file": "dname/fname",
                         "line": 576,
