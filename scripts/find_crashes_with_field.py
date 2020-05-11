@@ -19,9 +19,9 @@ remove those, do:
 
 """
 
-import argparse
 import json
 
+import click
 from configman import ConfigurationManager
 from configman.environment import environment
 from elasticsearch_dsl import Search
@@ -40,15 +40,22 @@ def get_es_conn():
     return ConnectionContext(config)
 
 
-def cmd_list_crashids(field):
+@click.command()
+@click.argument("field")
+@click.pass_context
+def cmd_list_crashids(ctx, field):
+    """
+    List crash ids for crash reports that contain a specified field.
+    """
+
     es_conn = get_es_conn()
     indices = es_conn.get_indices()
 
-    print("# %s indexes." % len(indices))
-    print("# %r" % indices)
+    click.echo("# %s indexes." % len(indices))
+    click.echo("# %r" % indices)
     total = 0
     for index in indices:
-        print("# working on %s..." % index)
+        click.echo("# working on %s..." % index)
         with es_conn() as conn:
             search = Search(using=conn, index=index, doc_type=es_conn.get_doctype())
             search = search.filter("exists", field=field)
@@ -62,18 +69,8 @@ def cmd_list_crashids(field):
                 )
                 total += 1
 
-    print("# total found %d" % total)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="List crash ids for crash reports that contain a specified field."
-    )
-    parser.add_argument("field", help="Field to look for.")
-    args = parser.parse_args()
-
-    cmd_list_crashids(field=args.field)
+    click.echo("# total found %d" % total)
 
 
 if __name__ == "__main__":
-    main()
+    cmd_list_crashids()

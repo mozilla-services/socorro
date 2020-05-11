@@ -31,12 +31,11 @@ Usage:
 
 """
 
-import argparse
 import json
 import logging
 import os
-import sys
 
+import click
 from configman import ConfigurationManager
 from configman.environment import environment
 from elasticsearch_dsl import Search
@@ -80,7 +79,7 @@ def s3_delete_object(client, bucket, key):
     """
     try:
         client.delete_object(Bucket=bucket, Key=key)
-        print("s3: deleted %s" % key)
+        click.echo("s3: deleted %s" % key)
         return True
     except Exception:
         logger.exception("ERROR: s3: when deleting %s" % key)
@@ -99,7 +98,7 @@ def s3_fetch_object(client, bucket, key):
         resp = client.get_object(Bucket=bucket, Key=key)
         return resp["Body"].read()
     except client.exceptions.NoSuchKey:
-        print("s3: not found: %s" % key)
+        click.echo("s3: not found: %s" % key)
     except Exception:
         logger.exception("ERROR: s3: when fetching %s" % key)
 
@@ -188,7 +187,7 @@ def es_fetch_document(es_conn, crashid):
         except Exception:
             logger.exception("ERROR: es: when fetching %s %s" % (doc_type, crashid))
 
-    print("es: not found: %s %s" % (doc_type, crashid))
+    click.echo("es: not found: %s %s" % (doc_type, crashid))
 
 
 def es_delete_document(es_conn, index, doc_type, doc_id):
@@ -196,7 +195,7 @@ def es_delete_document(es_conn, index, doc_type, doc_id):
     with es_conn() as conn:
         try:
             conn.delete(index=index, doc_type=doc_type, id=doc_id)
-            print("es: deleted %s %s %s" % (index, doc_type, doc_id))
+            click.echo("es: deleted %s %s %s" % (index, doc_type, doc_id))
         except Exception:
             logger.exception(
                 "ERROR: es: when deleting %s %s %s" % (index, doc_type, doc_id)
@@ -212,29 +211,31 @@ def es_delete(crashid):
         es_delete_document(es_conn, resp["_index"], resp["_type"], resp["_id"])
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Permanently deletes crash report data from crash storage."
-    )
-    parser.add_argument(
-        "crashidsfile", nargs=1, help="Path to the file with crashids in it."
-    )
+@click.command()
+@click.argument("crashidsfile", nargs=1)
+@click.pass_context
+def cmd_permadelete(ctx, crashidsfile):
+    """
+    Permanently deletes crash report data from crash storage.
 
-    args = parser.parse_args()
-    crashidsfile = args.crashidsfile[0]
+    The crashidsfile should be a complete path to the file with
+    crashids in it--one per line. This will skip lines prefixed
+    with a # treating them like comments.
+
+    """
     if not os.path.exists(crashidsfile):
-        print("File %s does not exist." % crashidsfile)
+        click.echo("File %s does not exist." % crashidsfile)
         return 1
 
     crashids = crashid_generator(crashidsfile)
 
     for crashid in crashids:
-        print("Working on %s" % crashid)
+        click.echo("Working on %s" % crashid)
         s3_delete(crashid)
         es_delete(crashid)
 
-    print("Done!")
+    click.echo("Done!")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    cmd_permadelete()
