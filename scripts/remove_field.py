@@ -14,16 +14,15 @@ Usage:
 
 """
 
-import argparse
 import concurrent.futures
 from functools import partial
 import io
 import json
 import logging
 import os
-import sys
 
 from botocore.client import ClientError
+import click
 from configman import ConfigurationManager
 from configman.environment import environment
 from elasticsearch.exceptions import ConnectionError
@@ -110,9 +109,9 @@ def fix_data_in_s3(fields, bucket, s3_client, crash_data):
             Bucket=bucket,
             Key=path,
         )
-        print("# s3: fixed raw crash")
+        click.echo("# s3: fixed raw crash")
     else:
-        print("# s3: raw crash was fine")
+        click.echo("# s3: raw crash was fine")
 
 
 @retry(
@@ -143,9 +142,9 @@ def fix_data_in_es(fields, es_conn, crash_data):
 
         if should_save:
             conn.index(index=index, doc_type=doc_type, body=document, id=document_id)
-            print("# es: fixed document")
+            click.echo("# es: fixed document")
         else:
-            print("# es: document was fine")
+            click.echo("# es: document was fine")
 
 
 def fix_data(crashids, fields):
@@ -156,7 +155,7 @@ def fix_data(crashids, fields):
     es_conn = get_es_conn()
 
     for crashid in crashids:
-        print("# working on %s" % crashid)
+        click.echo("# working on %s" % crashid)
 
         # Fix the data in S3 and then Elasticsearch
         try:
@@ -169,48 +168,53 @@ def fix_data(crashids, fields):
             logger.exception("Exception thrown with %s" % crashid)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Remove a field from raw crash data on S3 and Elasticsearch."
-    )
-    parser.add_argument(
-        "--parallel", action="store_true", help="Whether to run in parallel."
-    )
-    parser.add_argument(
-        "--max-workers",
-        type=int,
-        dest="maxworkers",
-        default=20,
-        help="Number of processes to run in parallel.",
-    )
-    parser.add_argument(
-        "crashidsfile", nargs=1, help="Path to the file with crashids in it."
-    )
-    parser.add_argument("field", nargs="+", help="Fields to remove.")
+@click.command()
+@click.option(
+    "--parallel/--no-parallel",
+    default=False,
+    show_default=True,
+    help="Whether to run in parallel.",
+)
+@click.option(
+    "--max-workers",
+    type=int,
+    default=20,
+    show_default=True,
+    help="Number of processes to run in parallel.",
+)
+@click.argument("crashidsfile", nargs=1)
+@click.argument("fields", nargs=-1, required=True)
+@click.pass_context
+def cmd_remove_field(ctx, parallel, max_workers, crashidsfile, fields):
+    """
+    Remove a field from raw crash data on S3 and Elasticsearch.
 
-    args = parser.parse_args()
-    crashidsfile = args.crashidsfile[0]
+    The crashidsfile is a path to a file with crash ids in it--one per line.
+    Lines prefixed with # are treated as comments and are ignored.
+
+
+    """
     if not os.path.exists(crashidsfile):
-        print("File %s does not exist." % crashidsfile)
+        click.echo("File %s does not exist." % crashidsfile)
         return 1
 
     crashids = crashid_generator(crashidsfile)
     crashids_chunked = chunked(crashids, CHUNK_SIZE)
-    fix_data_with_fields = partial(fix_data, fields=args.field)
+    fix_data_with_fields = partial(fix_data, fields=fields)
 
-    print("# num workers: %s" % args.maxworkers)
-    if not args.parallel:
-        print("# Running single-process.")
+    click.echo("# num workers: %s" % max_workers)
+    if not parallel:
+        click.echo("# Running single-process.")
         list(map(fix_data_with_fields, crashids_chunked))
     else:
-        print("# Running multi-process.")
+        click.echo("# Running multi-process.")
         with concurrent.futures.ProcessPoolExecutor(
-            max_workers=args.maxworkers
+            max_workers=max_workers
         ) as executor:
             executor.map(fix_data_with_fields, crashids_chunked, timeout=WORKER_TIMEOUT)
 
-    print("# Done!")
+    click.echo("# Done!")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    cmd_remove_field()
