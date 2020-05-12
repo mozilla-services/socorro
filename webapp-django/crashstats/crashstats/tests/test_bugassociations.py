@@ -9,6 +9,7 @@ import pytest
 
 from django.conf import settings
 from django.core.management import call_command
+from django.test.utils import override_settings
 
 from crashstats.crashstats.models import BugAssociation
 from crashstats.crashstats.management.commands.bugassociations import find_signatures
@@ -84,6 +85,30 @@ class TestBugAssociationsCommand:
         assert len(bug_8_signatures) == 2
         assert "another::legitimate(sig)" in bug_8_signatures
         assert "legitimate(sig)" in bug_8_signatures
+
+    def test_bzapi_token(self, db):
+        with override_settings(BZAPI_TOKEN="this_token"):
+            api_url = settings.BZAPI_BASE_URL + "/bug"
+            with requests_mock.Mocker() as req_mock:
+                req_mock.get(api_url, json=SAMPLE_BUGZILLA_RESULTS)
+
+                out = io.StringIO()
+                call_command("bugassociations", stdout=out)
+
+                first_item = req_mock.request_history[0]
+                assert first_item.headers["X-BUGZILLA-API-KEY"] == "this_token"
+
+    def test_no_bzapi_token(self, db):
+        with override_settings(BZAPI_TOKEN=""):
+            api_url = settings.BZAPI_BASE_URL + "/bug"
+            with requests_mock.Mocker() as req_mock:
+                req_mock.get(api_url, json=SAMPLE_BUGZILLA_RESULTS)
+
+                out = io.StringIO()
+                call_command("bugassociations", stdout=out)
+
+                first_item = req_mock.request_history[0]
+                assert "X-BUGZILLA-API-KEY" not in first_item.headers
 
     def test_run_job_with_reports_with_existing_bugs_different(self, db):
         """Verify that an association to a signature that no longer is part

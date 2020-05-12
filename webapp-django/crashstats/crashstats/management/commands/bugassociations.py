@@ -142,7 +142,15 @@ class Command(BaseCommand):
 
         # Use a 30-second timeout because Bugzilla is slow sometimes
         session = session_with_retries(default_timeout=30.0)
-        r = session.get(settings.BZAPI_BASE_URL + "/bug", params=payload)
+        headers = {}
+        if settings.BZAPI_TOKEN:
+            headers["X-BUGZILLA-API-KEY"] = settings.BZAPI_TOKEN
+            self.stdout.write(
+                "using BZAPI_TOKEN (%s)" % (settings.BZAPI_TOKEN[:-8] + "xxxxxxxx")
+            )
+        r = session.get(
+            settings.BZAPI_BASE_URL + "/bug", headers=headers, params=payload
+        )
         if r.status_code < 200 or r.status_code >= 300:
             r.raise_for_status()
         results = r.json()
