@@ -331,8 +331,11 @@ CRASH_ID_PREFIX = "bp-"
 # If true, allow robots to spider the site
 ENGAGE_ROBOTS = False
 
-# Base URL for when we use the Bugzilla API
+# Base URL for Bugzilla API
 BZAPI_BASE_URL = config("BZAPI_BASE_URL", "https://bugzilla.mozilla.org/rest")
+
+# Bugzilla API token
+BZAPI_TOKEN = config("BZAPI_TOKEN", "")
 
 # Base URL for Buildhub
 BUILDHUB_BASE_URL = "https://buildhub.moz.tools/"
