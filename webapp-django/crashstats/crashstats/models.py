@@ -1004,6 +1004,8 @@ class BugzillaBugInfo(SocorroCommon):
         if missing:
             params = {"bugs": ",".join(missing), "fields": ",".join(fields)}
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
+            if settings.BZAPI_TOKEN:
+                headers["X-BUGZILLA-API-KEY"] = settings.BZAPI_TOKEN
             url = settings.BZAPI_BASE_URL + (
                 "/bug?id=%(bugs)s&include_fields=%(fields)s" % params
             )

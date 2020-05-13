@@ -14,6 +14,7 @@ signatures and bug ids.
 
 import datetime
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
@@ -25,13 +26,12 @@ from socorro.lib.requestslib import session_with_retries
 # Query all bugs that changed since a given date, and that either were created
 # or had their crash_signature field change. Only return the two fields that
 # interest us, the id and the crash_signature text.
-BUGZILLA_PARAMS = {
+BUG_QUERY_PARAMS = {
     "chfieldfrom": "%s",
     "chfieldto": "Now",
     "chfield": ["[Bug creation]", "cf_crash_signature"],
     "include_fields": ["id", "cf_crash_signature"],
 }
-BUGZILLA_BASE_URL = "https://bugzilla.mozilla.org/rest/bug"
 
 
 def find_signatures(content):
@@ -137,12 +137,20 @@ class Command(BaseCommand):
         self.stdout.write("Working on %s to now" % start_date)
         # Fetch all the bugs that have been created or had the crash_signature
         # field changed since start_date
-        payload = BUGZILLA_PARAMS.copy()
+        payload = BUG_QUERY_PARAMS.copy()
         payload["chfieldfrom"] = start_date
 
         # Use a 30-second timeout because Bugzilla is slow sometimes
         session = session_with_retries(default_timeout=30.0)
-        r = session.get(BUGZILLA_BASE_URL, params=payload)
+        headers = {}
+        if settings.BZAPI_TOKEN:
+            headers["X-BUGZILLA-API-KEY"] = settings.BZAPI_TOKEN
+            self.stdout.write(
+                "using BZAPI_TOKEN (%s)" % (settings.BZAPI_TOKEN[:-8] + "xxxxxxxx")
+            )
+        r = session.get(
+            settings.BZAPI_BASE_URL + "/bug", headers=headers, params=payload
+        )
         if r.status_code < 200 or r.status_code >= 300:
             r.raise_for_status()
         results = r.json()

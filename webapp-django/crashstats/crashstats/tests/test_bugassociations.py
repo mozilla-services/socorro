@@ -7,13 +7,12 @@ import io
 import requests_mock
 import pytest
 
+from django.conf import settings
 from django.core.management import call_command
+from django.test.utils import override_settings
 
 from crashstats.crashstats.models import BugAssociation
-from crashstats.crashstats.management.commands.bugassociations import (
-    BUGZILLA_BASE_URL,
-    find_signatures,
-)
+from crashstats.crashstats.management.commands.bugassociations import find_signatures
 
 
 SAMPLE_BUGZILLA_RESULTS = {
@@ -62,8 +61,9 @@ class TestBugAssociationsCommand:
         BugAssociation.objects.create(bug_id=bug_id, signature=signature)
 
     def test_basic_run_job(self, db):
+        api_url = settings.BZAPI_BASE_URL + "/bug"
         with requests_mock.Mocker() as req_mock:
-            req_mock.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+            req_mock.get(api_url, json=SAMPLE_BUGZILLA_RESULTS)
 
             out = io.StringIO()
             call_command("bugassociations", stdout=out)
@@ -86,13 +86,38 @@ class TestBugAssociationsCommand:
         assert "another::legitimate(sig)" in bug_8_signatures
         assert "legitimate(sig)" in bug_8_signatures
 
+    def test_bzapi_token(self, db):
+        with override_settings(BZAPI_TOKEN="this_token"):
+            api_url = settings.BZAPI_BASE_URL + "/bug"
+            with requests_mock.Mocker() as req_mock:
+                req_mock.get(api_url, json=SAMPLE_BUGZILLA_RESULTS)
+
+                out = io.StringIO()
+                call_command("bugassociations", stdout=out)
+
+                first_item = req_mock.request_history[0]
+                assert first_item.headers["X-BUGZILLA-API-KEY"] == "this_token"
+
+    def test_no_bzapi_token(self, db):
+        with override_settings(BZAPI_TOKEN=""):
+            api_url = settings.BZAPI_BASE_URL + "/bug"
+            with requests_mock.Mocker() as req_mock:
+                req_mock.get(api_url, json=SAMPLE_BUGZILLA_RESULTS)
+
+                out = io.StringIO()
+                call_command("bugassociations", stdout=out)
+
+                first_item = req_mock.request_history[0]
+                assert "X-BUGZILLA-API-KEY" not in first_item.headers
+
     def test_run_job_with_reports_with_existing_bugs_different(self, db):
         """Verify that an association to a signature that no longer is part
         of the crash signatures list gets removed.
         """
+        api_url = settings.BZAPI_BASE_URL + "/bug"
         self.insert_data(bug_id="8", signature="@different")
         with requests_mock.Mocker() as req_mock:
-            req_mock.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+            req_mock.get(api_url, json=SAMPLE_BUGZILLA_RESULTS)
 
             out = io.StringIO()
             call_command("bugassociations", stdout=out)
@@ -103,9 +128,10 @@ class TestBugAssociationsCommand:
         assert "@different" not in [item["signature"] for item in associations]
 
     def test_run_job_with_reports_with_existing_bugs_same(self, db):
+        api_url = settings.BZAPI_BASE_URL + "/bug"
         self.insert_data(bug_id="8", signature="legitimate(sig)")
         with requests_mock.Mocker() as req_mock:
-            req_mock.get(BUGZILLA_BASE_URL, json=SAMPLE_BUGZILLA_RESULTS)
+            req_mock.get(api_url, json=SAMPLE_BUGZILLA_RESULTS)
 
             out = io.StringIO()
             call_command("bugassociations", stdout=out)
