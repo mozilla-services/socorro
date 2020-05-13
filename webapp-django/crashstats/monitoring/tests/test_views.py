@@ -87,7 +87,7 @@ class TestCrontabberStatusViews(BaseTestViews):
         assert data["status"] == "Stale"
 
 
-class TestHealthcheckViews(BaseTestViews):
+class TestDockerflowHeartbeatViews(BaseTestViews):
     def test_dockerflow_lbheartbeat(self):
         # Verify __lbheartbeat__ works
         url = reverse("monitoring:dockerflow_lbheartbeat")
@@ -98,15 +98,9 @@ class TestHealthcheckViews(BaseTestViews):
         # Verify it doesn't run ay db queries
         self.assertNumQueries(0, self.client.get, url)
 
-        # Verify deprecated endpoint works
-        url = reverse("monitoring:healthcheck")
-        response = self.client.get(url, {"elb": "true"})
-        assert response.status_code == 200
-        assert json.loads(response.content)["ok"] is True
-
     @mock.patch("requests.get")
     @mock.patch("crashstats.monitoring.views.elasticsearch")
-    def test_healthcheck(self, mocked_elasticsearch, rget):
+    def test_heartbeat(self, mocked_elasticsearch, rget):
         searches = []
 
         def mocked_supersearch_get(**params):
@@ -135,14 +129,6 @@ class TestHealthcheckViews(BaseTestViews):
         assert json.loads(response.content)["ok"] is True
         assert len(searches) == 1
 
-        # Verify the deprecated healthcheck endpoint
-        searches = []
-        url = reverse("monitoring:healthcheck")
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert json.loads(response.content)["ok"] is True
-        assert len(searches) == 1
-
     def test_assert_supersearch_errors(self):
         searches = []
 
@@ -165,7 +151,7 @@ class TestHealthcheckViews(BaseTestViews):
         assert len(searches) == 1
 
 
-class TestDockerflow(object):
+class TestDockerflowVersionView:
     def test_version_no_file(self, client, settings, tmpdir):
         """Test with no version.json file"""
         # The tmpdir definitely doesn't have a version.json in it, so we use

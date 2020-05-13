@@ -109,14 +109,6 @@ def dockerflow_lbheartbeat(request):
     return {"ok": True}
 
 
-@utils.json_view
-def healthcheck(request):
-    """Deprecated healthcheck endpoint."""
-    if not request.GET.get("elb") in ("1", "true"):
-        return dockerflow_heartbeat(request)
-    return dockerflow_lbheartbeat(request)
-
-
 def assert_supersearch_no_errors():
     """Make sure an uncached SuperSearch query doesn't have any errors"""
     supersearch = SuperSearch()
