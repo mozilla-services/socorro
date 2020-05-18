@@ -16,7 +16,7 @@ from socorro.external.fs.crashstorage import FSPermanentStorage
 FS_ROOT = os.environ["resource.fs.fs_root"]
 
 
-class TestFSPermanentStorage(object):
+class TestFSPermanentStorage:
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
     CRASH_ID_3 = "0bba929f-8721-460c-dead-a43c20071027"

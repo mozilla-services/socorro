@@ -10,7 +10,7 @@ from configman.dotdict import DotDict
 from socorro.lib.threaded_task_manager import ThreadedTaskManager, default_task_func
 
 
-class TestThreadedTaskManager(object):
+class TestThreadedTaskManager:
     def test_constuctor1(self):
         config = DotDict()
         config.number_of_threads = 1

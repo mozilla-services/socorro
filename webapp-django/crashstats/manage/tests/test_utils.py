@@ -10,7 +10,7 @@ from crashstats.manage import utils
 SAMPLE_CSV_FILE_PCI_IDS = os.path.join(os.path.dirname(__file__), "sample-pci.ids")
 
 
-class TestUtils(object):
+class TestUtils:
     def test_string_hex_to_hex_string(self):
         func = utils.string_hex_to_hex_string
         assert func("919A") == "0x919a"

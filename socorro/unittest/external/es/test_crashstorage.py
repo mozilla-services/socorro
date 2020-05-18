@@ -135,7 +135,7 @@ class TestRawCrashRedactor(TestCaseWithConfig):
         assert crash == expected_crash
 
 
-class TestIsValidKey(object):
+class TestIsValidKey:
     @pytest.mark.parametrize(
         "key", ["a", "abc", "ABC", "AbcDef", "Abc_Def", "Abc-def" "Abc-123-def"]
     )
@@ -774,7 +774,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             mm.assert_histogram_once("processor.es.index", tags=["outcome:failed"])
 
 
-class Test_get_fields_by_analyzer(object):
+class Test_get_fields_by_analyzer:
     @pytest.mark.parametrize(
         "fields",
         [

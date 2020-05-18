@@ -6,7 +6,7 @@ import re
 import warnings
 
 
-class Cleaner(object):
+class Cleaner:
     """
     This class takes care of cleaning up a chunk of data that is some sort of
     mix of dicts and lists and stuff. The simplest case is::
@@ -88,7 +88,7 @@ class Cleaner(object):
             sequence[i] = data
 
 
-class SmartAllowlistMatcher(object):
+class SmartAllowlistMatcher:
     def __init__(self, allowlist):
         def format(item):
             return "^" + item.replace("*", r"[\w-]*") + "$"

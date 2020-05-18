@@ -10,7 +10,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 
 
-class TestLeftoverPipelineFinder(object):
+class TestLeftoverPipelineFinder:
     """Test our custom staticfiles finder class."""
 
     def test_missing_css_source_file(self, settings):

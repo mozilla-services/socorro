@@ -14,7 +14,7 @@ from django.forms import ValidationError
 from crashstats.supersearch import form_fields
 
 
-class TestFormFields(object):
+class TestFormFields:
     def test_integer_field(self):
         field = form_fields.IntegerField()
         cleaned_value = field.clean([">13"])

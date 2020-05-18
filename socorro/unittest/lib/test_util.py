@@ -10,7 +10,7 @@ import pytest
 from socorro.lib.util import dotdict_to_dict, retry, MaxAttemptsError
 
 
-class Testdotdict_to_dict(object):
+class Testdotdict_to_dict:
     def test_primitives(self):
         # Test all the primitives
         assert dotdict_to_dict(None) is None

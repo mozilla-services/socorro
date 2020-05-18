@@ -5,7 +5,7 @@
 from crashstats.crashstats import forms
 
 
-class TestForms(object):
+class TestForms:
     def setup_method(self):
         self.active_versions = {
             "WaterWolf": [

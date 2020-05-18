@@ -58,7 +58,7 @@ class MutatingProcessedCrashCrashStorage(CrashStorageBase):
         del processed_crash["foo"]
 
 
-class TestCrashStorageBase(object):
+class TestCrashStorageBase:
     def test_basic_crashstorage(self):
         required_config = Namespace()
 
@@ -300,7 +300,7 @@ class TestCrashStorageBase(object):
             assert processed_crash["bar"]["something"] == "else"
 
 
-class TestRedactor(object):
+class TestRedactor:
     def test_redact(self):
         d = DotDict()
         # these keys survive redaction
@@ -342,7 +342,7 @@ class TestRedactor(object):
         assert actual_surviving_keys == expected_surviving_keys
 
 
-class TestBench(object):
+class TestBench:
     def test_benchmarking_crashstore(self, caplogpp):
         caplogpp.set_level("DEBUG")
 
@@ -416,7 +416,7 @@ class TestBench(object):
             ]
 
 
-class TestDumpsMappings(object):
+class TestDumpsMappings:
     def test_simple(self):
         mdm = MemoryDumpsMapping(
             {"upload_file_minidump": b"binary_data", "moar_dump": b"more binary data"}
@@ -427,7 +427,7 @@ class TestDumpsMappings(object):
         assert fdm.as_memory_dumps_mapping() == mdm
 
 
-class TestMetricsCounter(object):
+class TestMetricsCounter:
     def test_count(self, metricsmock):
         config_manager = ConfigurationManager(
             [MetricsCounter.get_required_config()],
@@ -444,7 +444,7 @@ class TestMetricsCounter(object):
         mm.assert_incr_once("phil.run", value=1)
 
 
-class TestMetricsBenchmarkingWrapper(object):
+class TestMetricsBenchmarkingWrapper:
     def test_wrapper(self, metricsmock):
         fake_crash_store_class = mock.MagicMock()
         fake_crash_store_class.__name__ = "Phil"

@@ -6,7 +6,7 @@ from crashstats.supersearch import forms
 from socorro.external.es.super_search_fields import FIELDS
 
 
-class TestForms(object):
+class TestForms:
     def setup_method(self):
         self.products = ["WaterWolf", "NightTrain", "SeaMonkey", "Tinkerbell"]
         self.product_versions = ["20.0", "21.0a1", "20.0", "9.5"]
@@ -15,7 +15,7 @@ class TestForms(object):
 
     def test_search_form(self):
         def get_new_form(data):
-            class User(object):
+            class User:
                 def has_perm(self, permission):
                     return {
                         "crashstats.view_pii": False,
@@ -61,7 +61,7 @@ class TestForms(object):
 
     def test_search_form_with_admin_mode(self):
         def get_new_form(data):
-            class User(object):
+            class User:
                 def has_perm(self, permission):
                     return {
                         "crashstats.view_pii": True,
@@ -109,7 +109,7 @@ class TestForms(object):
 
     def test_get_fields_list(self):
         def get_new_form(data):
-            class User(object):
+            class User:
                 def has_perm(self, permission):
                     permissions = {
                         "crashstats.view_pii": False,

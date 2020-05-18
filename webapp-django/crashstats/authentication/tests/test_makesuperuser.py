@@ -14,7 +14,7 @@ from django.core.management.base import CommandError
 from crashstats.authentication.management.commands import makesuperuser
 
 
-class TestMakeSuperuserCommand(object):
+class TestMakeSuperuserCommand:
     def test_make_existing_user(self, db):
         bob = User.objects.create(username="bob", email="bob@mozilla.com")
         buffer = StringIO()

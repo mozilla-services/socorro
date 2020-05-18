@@ -17,7 +17,7 @@ from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.external.es.super_search_fields import FIELDS
 
 
-class Response(object):
+class Response:
     def __init__(self, content=None, status_code=200):
         self.raw = content
         if not isinstance(content, str):

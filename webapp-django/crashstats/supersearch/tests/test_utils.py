@@ -9,7 +9,7 @@ from django.utils.timezone import utc
 from crashstats.topcrashers.views import get_date_boundaries
 
 
-class TestDateBoundaries(object):
+class TestDateBoundaries:
     def test_get_date_boundaries(self):
         # Simple test.
         start, end = get_date_boundaries(

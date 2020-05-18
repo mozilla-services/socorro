@@ -30,7 +30,7 @@ MAX_PAGE = 1000
 
 
 @total_ordering
-class Infinity(object):
+class Infinity:
     """Infinity is greater than anything else except other Infinities
 
     NOTE(willkg): There are multiple infinities and not all infinities are equal, so what we're

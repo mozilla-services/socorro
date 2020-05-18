@@ -9,7 +9,7 @@ from configman.dotdict import DotDict
 from socorro.lib.task_manager import TaskManager, default_task_func
 
 
-class TestTaskManager(object):
+class TestTaskManager:
     def test_constuctor1(self):
         config = DotDict()
         config.quit_on_empty_queue = False
@@ -33,7 +33,7 @@ class TestTaskManager(object):
         tm = TaskManager(config, job_source_iterator=an_iter)
         assert list(tm._get_iterator()) == [0, 1, 2, 3, 4]
 
-        class X(object):
+        class X:
             def __init__(self, config):
                 self.config = config
 

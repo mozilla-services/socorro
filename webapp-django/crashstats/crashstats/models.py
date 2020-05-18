@@ -349,7 +349,7 @@ def measure_fetches(method):
     return inner
 
 
-class SocorroCommon(object):
+class SocorroCommon:
     # by default, we don't need username and password
     username = password = None
     # http_host

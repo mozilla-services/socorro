@@ -108,7 +108,7 @@ def add_doc_values(value):
             add_doc_values(field)
 
 
-class SuperSearchFieldsData(object):
+class SuperSearchFieldsData:
     """Data class for super search fields.
 
     This just holds the FIELDS and some accessors to get them.

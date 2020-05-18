@@ -11,7 +11,7 @@ import pytest
 from socorro.app.socorro_app import App
 
 
-class TestApp(object):
+class TestApp:
     def test_instantiation(self):
         config = DotDict()
         sa = App(config)

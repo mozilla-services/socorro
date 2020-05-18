@@ -98,7 +98,7 @@ class SearchBaseWithFields(SearchBase):
         return super().get_parameters(**kwargs)
 
 
-class TestSearchBase(object):
+class TestSearchBase:
     def test_get_parameters(self):
         search = SearchBaseWithFields()
 
@@ -284,7 +284,7 @@ class TestSearchBase(object):
                 assert param.value == ["1.9b2"]
 
 
-class TestSearchCommon(object):
+class TestSearchCommon:
     """Test functions of the search_common module. """
 
     def test_convert_to_type(self):

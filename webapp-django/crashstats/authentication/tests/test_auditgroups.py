@@ -13,7 +13,7 @@ from crashstats.authentication.models import PolicyException
 from crashstats.tokens.models import Token
 
 
-class TestAuditGroupsCommand(object):
+class TestAuditGroupsCommand:
     """Test auditgroups command."""
 
     def test_no_users(self, db):

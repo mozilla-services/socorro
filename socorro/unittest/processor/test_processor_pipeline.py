@@ -17,7 +17,7 @@ class BadRule(Rule):
         raise KeyError("pii")
 
 
-class TestProcessorPipeline(object):
+class TestProcessorPipeline:
     def get_config(self):
         cm = ConfigurationManager(
             definition_source=ProcessorPipeline.get_required_config(),

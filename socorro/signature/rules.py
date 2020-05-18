@@ -25,7 +25,7 @@ def join_ignore_empty(delimiter, list_of_strings):
     return delimiter.join(x for x in list_of_strings if x)
 
 
-class Rule(object):
+class Rule:
     """Base class for Signature generation rules"""
 
     def __init__(self):

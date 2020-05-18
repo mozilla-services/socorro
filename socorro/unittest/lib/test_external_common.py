@@ -11,7 +11,7 @@ import pytest
 from socorro.lib import BadArgumentError, external_common
 
 
-class TestExternalCommon(object):
+class TestExternalCommon:
     """Test functions of the external_common module. """
 
     def test_check_type(self):
@@ -146,7 +146,7 @@ class TestExternalCommon(object):
         assert params == params_exp
 
     def test_parse_arguments_with_class_validators(self):
-        class NumberConverter(object):
+        class NumberConverter:
             def clean(self, value):
                 conv = {"one": 1, "two": 2, "three": 3}
                 try:

@@ -19,7 +19,7 @@ def sequencer(*args):
     return foo
 
 
-class FakeCrashQueue(object):
+class FakeCrashQueue:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -29,7 +29,7 @@ class FakeCrashQueue(object):
         )()
 
 
-class TestProcessorApp(object):
+class TestProcessorApp:
     def get_standard_config(self):
         config = DotDict()
 
