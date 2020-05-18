@@ -24,7 +24,7 @@ def has_perm(all, codename, obj=None):
     return all.filter(codename=codename).count()
 
 
-class APIAuthenticationMiddleware(object):
+class APIAuthenticationMiddleware:
     def __init__(self, get_response=None):
         self.get_response = get_response
 

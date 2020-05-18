@@ -12,7 +12,7 @@ from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.task_manager import TaskManager
 
 
-class TestFetchTransformSaveApp(object):
+class TestFetchTransformSaveApp:
     def test_bogus_source_iter_and_worker(self):
         class TestFTSAppClass(FetchTransformSaveApp):
             def __init__(self, config):
@@ -65,7 +65,7 @@ class TestFetchTransformSaveApp(object):
                 for x in self.queue.new_crashes():
                     yield ((x,), {})
 
-        class FakeQueue(object):
+        class FakeQueue:
             def __init__(self, config, namespace=""):
                 pass
 
@@ -75,7 +75,7 @@ class TestFetchTransformSaveApp(object):
                 for crash_id in crash_ids:
                     yield crash_id
 
-        class FakeStorageSource(object):
+        class FakeStorageSource:
             def __init__(self, config, namespace=""):
                 self.store = DotDict(
                     {
@@ -108,7 +108,7 @@ class TestFetchTransformSaveApp(object):
             def close(self):
                 self.number_of_close_calls += 1
 
-        class FakeStorageDestination(object):
+        class FakeStorageDestination:
             def __init__(self, config, namespace=""):
                 self.store = DotDict()
                 self.dumps = DotDict()
@@ -156,7 +156,7 @@ class TestFetchTransformSaveApp(object):
     def test_queue_iterator(self):
         faked_finished_func = mock.Mock()
 
-        class FakeQueue(object):
+        class FakeQueue:
             def __init__(self):
                 self.first = True
 
@@ -176,7 +176,7 @@ class TestFetchTransformSaveApp(object):
                     for k in range(2):
                         yield None
 
-        class FakeStorageDestination(object):
+        class FakeStorageDestination:
             def __init__(self, config):
                 self.store = DotDict()
                 self.dumps = DotDict()
@@ -232,7 +232,7 @@ class TestFetchTransformSaveApp(object):
         assert faked_finished_func.call_count == (999 - no_finished_function_counter)
 
     def test_no_source(self):
-        class FakeStorageDestination(object):
+        class FakeStorageDestination:
             def __init__(self, config):
                 self.store = DotDict()
                 self.dumps = DotDict()
@@ -266,7 +266,7 @@ class TestFetchTransformSaveApp(object):
             fts_app.main()
 
     def test_no_destination(self):
-        class FakeStorageSource(object):
+        class FakeStorageSource:
             def __init__(self, config):
                 self.store = DotDict(
                     {

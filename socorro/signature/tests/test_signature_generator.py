@@ -27,7 +27,7 @@ class TestSignatureGenerator:
         ]
 
     def test_failing_rule(self):
-        class BadRule(object):
+        class BadRule:
             pass
 
         generator_obj = generator.SignatureGenerator(pipeline=[BadRule()])
@@ -41,7 +41,7 @@ class TestSignatureGenerator:
     def test_error_handler(self):
         exc_value = Exception("Cough")
 
-        class BadRule(object):
+        class BadRule:
             def predicate(self, crash_data, result):
                 raise exc_value
 

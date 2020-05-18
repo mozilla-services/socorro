@@ -10,7 +10,7 @@ from django.core.management import call_command
 from crashstats.crashstats.models import Signature
 
 
-class FakeModel(object):
+class FakeModel:
     def __init__(self):
         self._get_steps = []
 

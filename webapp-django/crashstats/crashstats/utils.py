@@ -65,7 +65,7 @@ def urlencode_obj(thing):
     return res.replace("+", "%20")
 
 
-class SignatureStats(object):
+class SignatureStats:
     def __init__(
         self,
         signature,

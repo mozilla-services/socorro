@@ -5,7 +5,7 @@
 from crashstats.api.templatetags.jinja_helpers import pluralize
 
 
-class TestPluralize(object):
+class TestPluralize:
     def test_basics(self):
         assert pluralize(0) == "s"
         assert pluralize(1) == ""

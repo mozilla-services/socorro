@@ -7,7 +7,7 @@ from unittest import mock
 from crashstats.api.cleaner import Cleaner, SmartAllowlistMatcher
 
 
-class TestCleaner(object):
+class TestCleaner:
     def test_simplest_case(self):
         allowlist = {"hits": ("foo", "bar")}
         data = {
@@ -103,7 +103,7 @@ class TestCleaner(object):
         assert data == expect
 
 
-class TestSmartAllowlistMatcher(object):
+class TestSmartAllowlistMatcher:
     def test_basic_in(self):
         allowlist = ["some", "thing*"]
         matcher = SmartAllowlistMatcher(allowlist)

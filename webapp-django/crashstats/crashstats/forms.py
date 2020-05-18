@@ -5,7 +5,7 @@
 from django import forms
 
 
-class _BaseForm(object):
+class _BaseForm:
     def clean(self):
         cleaned_data = super().clean()
         for field in cleaned_data:

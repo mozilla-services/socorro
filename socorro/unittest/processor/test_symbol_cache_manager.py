@@ -14,7 +14,7 @@ from socorro.processor.symbol_cache_manager import (
 
 
 @pytest.mark.skipif(os.uname()[0] != "Linux", reason="only run if on Linux")
-class TestEventHandler(object):
+class TestEventHandler:
     def test_init(self):
         mocked_monitor = mock.Mock()
 

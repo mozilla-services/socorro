@@ -26,7 +26,7 @@ from crashstats.crashstats.templatetags.jinja_helpers import (
 )
 
 
-class TestTimestampToDate(object):
+class TestTimestampToDate:
     def test_timestamp_to_date(self):
         timestamp = time.time()
         date = datetime.datetime.fromtimestamp(timestamp)
@@ -42,7 +42,7 @@ class TestTimestampToDate(object):
         assert output == ""
 
 
-class TestTimeTag(object):
+class TestTimeTag:
     def test_time_tag_with_datetime(self):
         date = datetime.datetime(2000, 1, 2, 3, 4, 5)
         output = time_tag(date)
@@ -85,7 +85,7 @@ class TestTimeTag(object):
         assert output == expected
 
 
-class TestBugzillaLink(object):
+class TestBugzillaLink:
     def test_show_bug_link_no_cache(self):
         output = show_bug_link(123)
         assert 'data-id="123"' in output
@@ -109,7 +109,7 @@ class TestBugzillaLink(object):
         assert 'data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output
 
 
-class TestBugzillaSubmitURL(object):
+class TestBugzillaSubmitURL:
     EMPTY_PARSED_DUMP = {}
     CRASHING_THREAD = 0
 
@@ -424,7 +424,7 @@ class TestBugzillaSubmitURL(object):
         assert quote_plus("frames of crashing thread:") not in url
 
 
-class TestReplaceBugzillaLinks(object):
+class TestReplaceBugzillaLinks:
     def test_simple(self):
         text = "a bug #1129515 b"
         res = replace_bugzilla_links(text)
@@ -439,7 +439,7 @@ class TestReplaceBugzillaLinks(object):
         assert "https://bugzilla.mozilla.org/show_bug.cgi?id=7845" in res
 
 
-class TesDigitGroupSeparator(object):
+class TesDigitGroupSeparator:
     def test_basics(self):
         assert digitgroupseparator(None) is None
         assert digitgroupseparator(1000) == "1,000"
@@ -447,7 +447,7 @@ class TesDigitGroupSeparator(object):
         assert digitgroupseparator(1000000) == "1,000,000"
 
 
-class TestHumanizers(object):
+class TestHumanizers:
     def test_show_duration(self):
         html = show_duration(59)
         assert isinstance(html, SafeText)
@@ -530,7 +530,7 @@ class TestHumanizers(object):
         assert html == "junk"
 
 
-class TestChangeURL(object):
+class TestChangeURL:
     def test_root_url_no_query_string(self):
         context = {}
         context["request"] = RequestFactory().get("/")
@@ -580,7 +580,7 @@ class TestChangeURL(object):
         assert result == "?foo=else"
 
 
-class TestURL(object):
+class TestURL:
     def test_basic(self):
         output = url("crashstats:login")
         assert output == reverse("crashstats:login")
@@ -609,7 +609,7 @@ class TestURL(object):
         assert output == reverse("crashstats:product_home", args=("Winterfoxnn",))
 
 
-class TestIsDangerousCPU(object):
+class TestIsDangerousCPU:
     def test_false(self):
         assert is_dangerous_cpu(None, None) is False
         assert is_dangerous_cpu(None, "family 20 model 1") is False

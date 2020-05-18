@@ -10,7 +10,7 @@ contents.
 from more_itertools import peekable
 
 
-class JavaException(object):
+class JavaException:
     def __init__(self, exception_class, exception_message, stack, additional):
         self.exception_class = exception_class
         self.exception_message = exception_message

@@ -63,7 +63,7 @@ class SuperSearchWithFields(SuperSearch):
         return super().get(**kwargs)
 
 
-class TestCaseWithConfig(object):
+class TestCaseWithConfig:
     """A simple TestCase class that can create configuration objects"""
 
     def setup_method(self, method):

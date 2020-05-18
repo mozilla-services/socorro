@@ -59,7 +59,7 @@ MAXIMUM_DATE_RANGE = 365
 HISTOGRAM_QUERY_TYPES = ("date", "number")
 
 
-class SearchParam(object):
+class SearchParam:
     def __init__(self, name, value, operator=None, data_type=None, operator_not=False):
         self.name = name
         self.value = value
@@ -68,14 +68,14 @@ class SearchParam(object):
         self.operator_not = operator_not
 
 
-class SearchFilter(object):
+class SearchFilter:
     def __init__(self, name, default=None, data_type="enum"):
         self.name = name
         self.default = default
         self.data_type = data_type
 
 
-class SearchBase(object):
+class SearchBase:
     meta_filters = (
         SearchFilter("_aggs.product.version"),
         SearchFilter("_aggs.product.version.platform"),  # convenient for tests

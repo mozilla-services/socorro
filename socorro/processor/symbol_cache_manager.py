@@ -19,7 +19,7 @@ if os.uname()[0] != "Linux":
         "have inotify in its kernel."
     )
 
-    class ProcessEvent(object):
+    class ProcessEvent:
         # Defining a class means we can't define the EventHandler class
         # without indenting the whole thing in an if-block.
         def __init__(self, *_, **__):

@@ -45,7 +45,7 @@ def split_on_operator(value):
     return (None, value)
 
 
-class PrefixedField(object):
+class PrefixedField:
     """Special field that accepts an operator as prefix in the value.
 
     Removes the prefix from the initial value before the validation process

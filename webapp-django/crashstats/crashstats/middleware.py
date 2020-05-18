@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.utils.encoding import smart_text
 
 
-class SetRemoteAddrFromRealIP(object):
+class SetRemoteAddrFromRealIP:
     """
     Middleware that sets REMOTE_ADDR based on HTTP_X_REAL_IP, if the
     latter is set. This is useful if you're sitting behind a reverse proxy that
@@ -34,7 +34,7 @@ class SetRemoteAddrFromRealIP(object):
             request.META["REMOTE_ADDR"] = real_ip
 
 
-class Pretty400Errors(object):
+class Pretty400Errors:
     def __init__(self, get_response):
         self.get_response = get_response
 

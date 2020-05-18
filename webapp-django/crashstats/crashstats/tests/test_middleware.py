@@ -5,7 +5,7 @@
 from crashstats.crashstats.middleware import SetRemoteAddrFromRealIP
 
 
-class TestSetRemoteAddrFromRealIP(object):
+class TestSetRemoteAddrFromRealIP:
     def test_no_headers(self, rf):
         """Should not break if there is no HTTP_X_REAL_IP"""
         middleware = SetRemoteAddrFromRealIP()

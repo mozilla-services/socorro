@@ -8,7 +8,7 @@ from django.utils.encoding import smart_text
 from crashstats.crashstats import decorators
 
 
-class TestCheckDays(object):
+class TestCheckDays:
     def test_basics(self, rf):
         @decorators.check_days_parameter([1, 2], 2)
         def view(request, days=None, **kwargs):
