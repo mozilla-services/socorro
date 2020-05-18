@@ -148,6 +148,8 @@ class Command(BaseCommand):
             self.stdout.write(
                 "using BZAPI_TOKEN (%s)" % (settings.BZAPI_TOKEN[:-8] + "xxxxxxxx")
             )
+        else:
+            self.stdout.write("Warning: No BZAPI_TOKEN specified!")
         r = session.get(
             settings.BZAPI_BASE_URL + "/bug", headers=headers, params=payload
         )
