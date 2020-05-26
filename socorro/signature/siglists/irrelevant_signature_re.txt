@@ -31,6 +31,7 @@ framework\.odex@0x
 __fixunsdfsi
 GetLCIDFromLangListNodeWithLICCheck
 gfxPlatform::GetPlatform
+gkrust_shared::oom_hook::hook
 google_breakpad::CrashGenerationClient::RequestDumpForException
 google_breakpad::ExceptionHandler::SignalHandler
 google_breakpad::ExceptionHandler::WriteMinidumpWithException
@@ -53,6 +54,7 @@ _mach_msg_trap
 mnt@asec@org\.mozilla\.f.*-\d@pkg\.apk@classes\.dex@0x
 MOZ_Assert
 MOZ_Crash
+mozalloc_handle_oom
 mozglue_static::panic_hook
 mozcrt19.dll@0x
 mozilla::CondVar::Wait
@@ -81,6 +83,7 @@ org\.mozilla\.f.*-\d\.apk@0x
 panic_abort::
 PR_WaitCondVar
 RaiseException
+rust_oom
 rtc::FatalMessage
 RtlpAdjustHeapLookasideDepth
 RtlSleepConditionVariableCS
@@ -95,6 +98,7 @@ SkyLight
 SleepConditionVariableCS
 SleepConditionVariableSRW
 std::_Atomic_fetch_add_4
+std::alloc::rust_oom
 std::panicking::
 std::__terminate
 std::terminate
