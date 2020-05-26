@@ -83,6 +83,7 @@ __GI_strlen
 gkrust_shared::oom_hook::hook
 gsignal
 HandleInvalidParameter
+hashbrown::raw::RawTable<T>::new_uninitialized<T>
 HeapFree
 huge_dalloc
 huge_palloc
