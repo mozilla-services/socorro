@@ -2,16 +2,16 @@
    See crashstats.templatetags.jinja_helpers.bugzilla_submit_url. #}
 This bug is for crash report bp-{{ uuid }}.
 
-```
 {% if java_stack_trace -%}
 Java stack trace:
-
+```
 {{ java_stack_trace }}
+```
 {% elif crashing_thread_frames -%}
 Top {{ crashing_thread_frames|length }} frames of crashing thread:
-
+```
 {% for frame in crashing_thread_frames -%}
 {{ frame.frame|safe}} {{ frame.module|safe }} {{ frame.signature|safe }} {{ frame.source|safe }}
-{% endfor %}
+{% endfor -%}
 ```
 {% endif %}
