@@ -17,7 +17,17 @@ urlpatterns = [
         name="supersearch_examples",
     ),
     url(r"^supersearch/api/$", views.supersearch_api, name="supersearch_api"),
-    url(r"^memory_dump_access/$", views.memory_dump_access, name="memory_dump_access"),
+    url(
+        r"^protected_data_access/$",
+        views.protected_data_access,
+        name="protected_data_access",
+    ),
+    # NOTE(willkg): Need to keep this redirect because it's linked to in a lot of
+    # places like agreements in Bugzilla.
+    url(
+        r"^memory_dump_access/$",
+        lambda request: redirect("documentation:protected_data_access"),
+    ),
     url(
         r"^products/$",
         lambda request: redirect(

@@ -32,10 +32,23 @@
   >
     <div class="page-heading">
       <h2>Signature report for <em>{{ signature }}</em></h2>
-      <p>
-        <a href="#" class="display-toggle-filters toggle-filters show" data-text-opposite="Hide Filters">Show Filters</a>
+      <div>
         Showing results from {{ query.start_date | time_tag }} to {{ query.end_date | time_tag }}.
-      </p>
+      </div>
+      <div>
+        <a href="#" class="display-toggle-filters toggle-filters show" data-text-opposite="Hide Filters">Show Filters</a>
+      </div>
+    </div>
+
+    <div class="protected-info">
+      {% if request.user.has_perm('crashstats.view_pii') %}
+        <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+        You are seeing public and protected data.
+      {% else %}
+        You are seeing public data only.
+        See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a> for more
+        information.
+      {% endif %}
     </div>
 
     <section id="search-form">

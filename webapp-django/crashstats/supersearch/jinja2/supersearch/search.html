@@ -19,7 +19,6 @@
   >
     <div class="page-heading">
       <h2>Super Search</h2>
-
       <nav>
         {% if request.user.has_perm('crashstats.run_custom_queries') %}
           <ul class="options">
@@ -34,6 +33,17 @@
           >A guide to searching crash reports</a>
         </div>
       </nav>
+    </div>
+
+    <div class="protected-info">
+      {% if request.user.has_perm('crashstats.view_pii') %}
+        <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+        You are seeing public and protected data.
+      {% else %}
+        You are seeing public data only.
+        See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a> for more
+        information.
+      {% endif %}
     </div>
 
     <section id="search-form">

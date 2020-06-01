@@ -426,7 +426,7 @@ class TestViews(BaseTestViews):
         assert _SAMPLE_META["Email"] not in content
         assert _SAMPLE_META["URL"] not in content
         assert (
-            "You need to be signed in to download raw crash data and minidump files."
+            "You need to be signed in and have access to protected data to see this."
             in content
         )
         # Should not be able to see sensitive key from stackwalker JSON
