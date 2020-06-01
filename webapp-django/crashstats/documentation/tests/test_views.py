@@ -28,3 +28,14 @@ class TestViews(BaseTestViews):
         assert "_results_number" in smart_text(response.content)
         assert "_aggs.*" in smart_text(response.content)
         assert "signature" in smart_text(response.content)
+
+    def test_memory_dump_access_redirect(self):
+        """Verify memory_dump_access url redirects
+
+        This is the old url to the data access policy. In order to keep those links
+        working, we need it to redirect to the new url.
+
+        """
+        response = self.client.get("/documentation/memory_dump_access/")
+        assert response.status_code == 302
+        assert response.url == reverse("documentation:protected_data_access")

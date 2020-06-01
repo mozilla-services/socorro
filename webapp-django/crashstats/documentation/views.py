@@ -33,10 +33,9 @@ def home(request, default_context=None):
 
 
 @pass_default_context
-def memory_dump_access(request, default_context=None):
+def protected_data_access(request, default_context=None):
     context = default_context or {}
-
-    return render(request, "documentation/memory_dump_access.html", context)
+    return render(request, "documentation/protected_data_access.html", context)
 
 
 @pass_default_context

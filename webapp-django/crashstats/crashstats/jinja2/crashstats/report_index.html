@@ -1,8 +1,9 @@
-{% macro sensitive_warning(your_crash) -%}
+{% macro protected_warning(your_crash) -%}
+  <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
   {% if your_crash %}
-    You can only see this because it is your crash!
+    Protected data: You can see it because it is your crash.
   {% else %}
-    This is super sensitive data! Be careful how you use it!
+    Protected data: Be careful how you use it.
   {% endif %}
 {%- endmacro %}
 
@@ -39,6 +40,19 @@
   >
     <div class="page-heading">
       <h2>{{ report.product }} {{ report.version }} Crash Report [@ {{ report.signature }} ]</h2>
+    </div>
+
+    <div class="protected-info">
+      {% if your_crash %}
+        You are seeing public and protected data for your crash.
+      {% elif request.user.has_perm('crashstats.view_pii') %}
+        <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+        You are seeing public and protected data.
+      {% else %}
+        You are seeing public data only.
+        See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a> for more
+        information.
+      {% endif %}
     </div>
 
     <div class="panel">
@@ -304,7 +318,7 @@
                   {% if report.moz_crash_reason_raw %}
                     <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
                       <th scope="row">MOZ_CRASH Reason (Raw)</th>
-                      <td>{{ report.moz_crash_reason_raw }} - {{ sensitive_warning(your_crash) }}</td>
+                      <td>{{ report.moz_crash_reason_raw }} - {{ protected_warning(your_crash) }}</td>
                     </tr>
                   {% elif raw.MozCrashReason %}
                     {# FIXME(willkg): This can get removed in April 2019 #}
@@ -359,7 +373,7 @@
                     <th scope="row">Exploitability</th>
                     <td>
                       {% if report.exploitability %}
-                        {{ report.exploitability }} - {{ sensitive_warning(your_crash) }}
+                        {{ report.exploitability }} - {{ protected_warning(your_crash) }}
                       {% endif %}
                     </td>
                   </tr>
@@ -372,7 +386,7 @@
                     <th scope="row">URL</th>
                     <td>
                       {% if raw.URL %}
-                        <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ sensitive_warning(your_crash) }}
+                        <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ protected_warning(your_crash) }}
                       {% endif %}
                     </td>
                   </tr>
@@ -380,7 +394,7 @@
                     <th scope="row">Email Address</th>
                     <td>
                       {% if raw.Email %}
-                        <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ sensitive_warning(your_crash) }}
+                        <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ protected_warning(your_crash) }}
                       {% endif %}
                     </td>
                   </tr>
@@ -388,7 +402,7 @@
                     <th scope="row">User Comments</th>
                     <td>
                       {% if report.user_comments %}
-                        {{ report.user_comments | linebreaks }} - {{ sensitive_warning(your_crash) }}
+                        {{ report.user_comments | linebreaks }} - {{ protected_warning(your_crash) }}
                       {% endif %}
                     </td>
                   </tr>
@@ -828,15 +842,27 @@
             <h3>Download Raw Crash Data and Minidumps</h3>
             {% if request.user.has_perm('crashstats.view_rawdump') %}
               <p>
-                {{ sensitive_warning(your_crash) }}
+                {{ protected_warning(your_crash) }}
               </p>
               {% for url in raw_dump_urls %}
                 <p><a href="{{ url }}">{{ url }}</a></p>
               {% endfor %}
               {% set unredacted_url = url('api:model_wrapper', model_name='UnredactedCrash') + '?' + make_query_string(crash_id=report.uuid) %}
               <p><a href="{{ unredacted_url }}" target="_blank">{{ unredacted_url }}</a></p>
+            {% elif request.user and request.user.is_active %}
+              <p>
+                You do not have access to protected data.
+                You need to be signed in and have access to protected data to see this.
+                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+                for more information.
+              </p>
             {% else %}
-            <p>You need to be signed in to download raw crash data and minidump files.</p>
+              <p>
+                You are not signed in.
+                You need to be signed in and have access to protected data to see this.
+                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+                for more information.
+              </p>
             {% endif %}
           </div>
           <!-- /rawdump -->

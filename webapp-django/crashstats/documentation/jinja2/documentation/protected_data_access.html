@@ -1,22 +1,25 @@
 {% extends "documentation/docs_base.html" %}
 
-{% block doc_title %}Memory Dump and Private User Data Access{% endblock %}
+{% block doc_title %}Protected Data Access{% endblock %}
 
 {% block doc_content %}
   <div class="body">
-    <h1 id="policy">Access to memory dumps and private user data</h1>
+    <h1 id="definition">Protected data on Crash Stats</h1>
     <p>
       Crash reports include memory dumps which contain sensitive information
       and is not publicly available on Crash Stats. Memory dumps are important
       for diagnosing and debugging issues. Further, crash reports may also
       contain private user data such as the user's email address and comments
-      if they provided any. As such, users can request access to memory dumps
-      and private user data information in order to debug issues.
+      if they provided any.
     </p>
     <p>
+      In order to view protected data, you must be signed in and have been
+      granted access to that data.
     </p>
+
+    <h1 id="policy">Access to protected data</h1>
     <p>
-      Anyone with access to memory dumps and private data agrees to the following:
+      Anyone with access to protected data agrees to the following:
     </p>
     <pre>* Crash dumps contain memory contents, and may contain private user data
 * Only access dumps as necessary
@@ -30,23 +33,23 @@
 * Access is conditional on employment and will be revoked upon departure from Mozilla
 * Access will be removed after a year of inactivity
 
-The most recent copy of this agreement is at: https://crash-stats.mozilla.org/documentation/memory_dump_access/</pre>
+The most recent copy of this agreement is at: https://crash-stats.mozilla.org/documentation/protected_data_access/</pre>
 
-    <h1 id="requestaccess">How to request access to memory dumps and private user data</h1>
+    <h1 id="requestaccess">How to request protected data access</h1>
     <p>
-      To request access to memory dumps and private user data, please:
+      To request access to protected data, please:
     </p>
     <ol>
       <li>Log into <a href="https://crash-stats.mozilla.org/">Crash Stats</a>
           using your LDAP account.
       </li>
       <li>Fill out a
-          <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General&short_desc=grant%20YOURNAME%20access%20to%20raw%20dumps">bug report</a>.
+          <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General&short_desc=grant%20YOURNAME%20access%20to%20protected%20data">bug report</a>.
       </li>
     </ol>
     <p>
-      A Crash Stats admin will field the request as soon as they are able.
-      If you need access immediately, please note that in the bug.
+      A Crash Stats admin will field the request as soon as they are able. If
+      you need access immediately, please note that in the bug.
     </p>
   </div>
 {% endblock %}
