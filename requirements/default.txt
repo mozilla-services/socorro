@@ -153,9 +153,9 @@ django-npm==1.0.0 \
 markus[datadog]==2.2.0 \
     --hash=sha256:ed9a275aa4cbfc02e5cf0f2abbd34bc3720c43e432c1448ac7cc36c507111103 \
     --hash=sha256:f088183e7fef11a4f563f496069ab600942e072dd82e5301b0b896e8fd8b6bcb
-awscli==1.18.69 \
-    --hash=sha256:7960c10f5157acb18998e2caa3bbc0db753ab2af0f82c0323843acdd3f0059cb \
-    --hash=sha256:b5dd4ac2256452f55f3dba8d6e33da1eafcc520ed97b41a04e2a9ab1b3aa2c60
+awscli==1.18.70 \
+    --hash=sha256:97f948ae78df0c624a5b71956409d84901760c24cd43573c7a329d0f8718bcad \
+    --hash=sha256:abe1779309711b2e00cd5bcdd678e94c51faa5cb9292d9bee37891be8c95f50f
 mozilla-django-oidc==1.2.3 \
     --hash=sha256:03e15ea449b66ba3be9f8321a66237fd0cc7b570d4feeb893de58a2d8696b70b \
     --hash=sha256:ba6171ebac91f0a9679bfd5fb73d0d41c90f0711f0c06f595f219537a0a6bae0
