@@ -1805,20 +1805,6 @@ FIELDS = {
         "query_type": "flag",
         "storage_mapping": {"None_value": 0, "type": "short"},
     },
-    "dump": {
-        "data_validation_type": "str",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "dump",
-        "is_exposed": False,
-        "is_returned": False,
-        "name": "dump",
-        "namespace": "processed_crash",
-        "permissions_needed": [],
-        "query_type": "string",
-        "storage_mapping": {"index": "not_analyzed", "type": "string"},
-    },
     "e10s_cohort": {
         "data_validation_type": "enum",
         "description": (
@@ -3721,7 +3707,7 @@ FIELDS = {
         "namespace": "processed_crash",
         "permissions_needed": [],
         "query_type": "enum",
-        "storage_mapping": {"index": "not_analyzed", "type": "string"},
+        "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "vendor": {
         "data_validation_type": "enum",
