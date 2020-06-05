@@ -43,21 +43,6 @@ class B(A):
     required_config.add_option("z", default=2)
 
 
-class NonMutatingProcessedCrashCrashStorage(CrashStorageBase):
-    def save_processed_crash(self, raw_crash, processed_crash):
-        # This is sort of a lie, but we lie so that we can verify the code went
-        # through the right path.
-        del processed_crash["foo"]
-
-
-class MutatingProcessedCrashCrashStorage(CrashStorageBase):
-    def is_mutator(self):
-        return True
-
-    def save_processed_crash(self, raw_crash, processed_crash):
-        del processed_crash["foo"]
-
-
 class TestCrashStorageBase:
     def test_basic_crashstorage(self):
         required_config = Namespace()
@@ -218,86 +203,6 @@ class TestCrashStorageBase:
 
             for v in poly_store.stores.values():
                 v.close.assert_called_with()
-
-    def test_poly_crash_storage_processed_crash_immutability(self):
-        n = Namespace()
-        n.add_option("storage", default=PolyCrashStorage)
-        n.add_option("logger", default=mock.Mock())
-        value = {
-            "storage_namespaces": "store1",
-            "store1.crashstorage_class": (
-                "socorro.unittest.external.test_crashstorage_base"
-                ".MutatingProcessedCrashCrashStorage"
-            ),
-        }
-        cm = ConfigurationManager(n, values_source_list=[value])
-        with cm.context() as config:
-            raw_crash = {"ooid": "12345"}
-            processed_crash = {"foo": "bar"}
-
-            poly_store = config.storage(config)
-            poly_store.save_processed_crash(raw_crash, processed_crash)
-
-            # It's important to be aware that the only thing
-            # MutatingProcessedCrashCrashStorage class does, in its
-            # save_processed_crash() is that it deletes a key called
-            # 'foo'.
-            # This test makes sure that the dict processed_crash here
-            # is NOT affected.
-            assert processed_crash["foo"] == "bar"
-
-    def test_polycrashstorage_processed_immutability_with_nonmutating(self):
-        """Verifies if a crash storage says it doesn't mutate the class that "
-        we don't do a deepcopy
-
-        """
-        n = Namespace()
-        n.add_option("storage", default=PolyCrashStorage)
-        n.add_option("logger", default=mock.Mock())
-        value = {
-            "storage_namespaces": "store1",
-            "store1.crashstorage_class": (
-                "socorro.unittest.external.test_crashstorage_base"
-                ".NonMutatingProcessedCrashCrashStorage"
-            ),
-        }
-        cm = ConfigurationManager(n, values_source_list=[value])
-        with cm.context() as config:
-            raw_crash = {"ooid": "12345"}
-            processed_crash = {"foo": "bar"}
-
-            poly_store = config.storage(config)
-
-            poly_store.save_processed_crash(raw_crash, processed_crash)
-            # We have a crashstorage that says it's not mutating, but deletes a
-            # key so that we can verify that the code went down the right path
-            # in the processor.
-            assert "foo" not in processed_crash
-
-    def test_poly_crash_storage_immutability_deeper(self):
-        n = Namespace()
-        n.add_option("storage", default=PolyCrashStorage)
-        n.add_option("logger", default=mock.Mock())
-        value = {
-            "storage_namespaces": "store1",
-            "store1.crashstorage_class": (
-                "socorro.unittest.external.test_crashstorage_base"
-                ".MutatingProcessedCrashCrashStorage"
-            ),
-        }
-        cm = ConfigurationManager(n, values_source_list=[value])
-        with cm.context() as config:
-            raw_crash = {"ooid": "12345"}
-            processed_crash = {
-                "foo": DotDict({"other": "thing"}),
-                "bar": DotDict({"something": "else"}),
-            }
-
-            poly_store = config.storage(config)
-
-            poly_store.save_processed_crash(raw_crash, processed_crash)
-            assert processed_crash["foo"]["other"] == "thing"
-            assert processed_crash["bar"]["something"] == "else"
 
 
 class TestRedactor:

@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import copy
 import json
 import re
 import time
@@ -115,29 +116,24 @@ def is_valid_key(key):
     return bool(VALID_KEY.match(key))
 
 
-def remove_bad_keys(data):
-    """Removes keys from the top-level of the dict that are bad
+def extract_indexable(fields, namespace, doc):
+    """Builds a doc of all the keys that should be indexed
 
-    Good keys satisfy the following properties:
-
-    * have one or more characters
-    * are composed of a-zA-Z0-9_-
-
-    Anything else is a bad key and needs to be removed.
-
-    Note: This modifies the data dict in-place and only looks at the top level.
-
-    :arg dict data: the data to remove bad keys from
+    This copies the data over, so the new doc is not tied to the original document at
+    all and can be mutated safely.
 
     """
-    if not data:
-        return
+    new_doc = {}
 
-    # Copy the list of things we're iterating over because we're mutating
-    # the dict in place.
-    for key in list(data.keys()):
-        if not is_valid_key(key):
-            del data[key]
+    for field in FIELDS.values():
+        if field["namespace"] != namespace:
+            continue
+
+        key = field["in_database_name"]
+        if key in doc:
+            new_doc[key] = copy.deepcopy(doc[key])
+
+    return new_doc
 
 
 def truncate_keyword_field_values(fields, data):
@@ -254,8 +250,9 @@ class ESCrashStorage(CrashStorageBase):
         self.metrics = markus.get_metrics(namespace)
 
     def get_index_for_crash(self, crash_date):
-        """Return the submission URL for a crash; based on the submission URL
+        """Return submission URL for a crash; based on the submission URL
         from config and the date of the crash.
+
         If the index name contains a datetime pattern (ex. %Y%m%d) then the
         crash_date will be parsed and appended to the index name.
 
@@ -270,15 +267,15 @@ class ESCrashStorage(CrashStorageBase):
 
         return index
 
-    def save_processed_crash(self, raw_crash, processed_crash):
-        """Save processed crash report to Elasticsearch"""
-        # Massage the crash such that the date_processed field is formatted
-        # in the fashion of our established mapping.
-        reconstitute_datetimes(processed_crash)
+    def prepare_processed_crash(self, raw_crash, processed_crash):
+        """Returns prepared data
 
-        # Remove bad keys from the raw crash--these keys are essentially
-        # user-provided and can contain junk data
-        remove_bad_keys(raw_crash)
+        This mutates the raw and processed crashes in place.
+
+        """
+        # Massage the crash such that the date_processed field is formatted in the
+        # fashion of our established mapping
+        reconstitute_datetimes(processed_crash)
 
         # Truncate values that are too long
         truncate_keyword_field_values(FIELDS, raw_crash)
@@ -289,6 +286,16 @@ class ESCrashStorage(CrashStorageBase):
         # Convert pseudo-boolean values to boolean values
         convert_booleans(FIELDS, raw_crash)
         convert_booleans(FIELDS, processed_crash)
+
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash report to Elasticsearch"""
+        # Generate indexable raw and processed crash data and leave everything not
+        # listed in FIELDS out
+        raw_crash = extract_indexable(FIELDS, "raw_crash", raw_crash)
+        processed_crash = extract_indexable(FIELDS, "processed_crash", processed_crash)
+
+        # Clean up and redact raw and processed crash data
+        self.prepare_processed_crash(raw_crash, processed_crash)
 
         # Capture crash data size metrics--do this only after we've cleaned up
         # the crash data
@@ -483,16 +490,11 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
             config.raw_crash_es_redactor
         )
 
-    def is_mutator(self):
-        # This crash storage mutates the crash, so we mark it as such.
-        return True
-
-    def save_processed_crash(self, raw_crash, processed_crash):
-        """This is the only write mechanism that is actually employed in normal usage"""
-        self.redactor.redact(processed_crash)
+    def prepare_processed_crash(self, raw_crash, processed_crash):
         self.raw_crash_redactor.redact(raw_crash)
+        self.redactor.redact(processed_crash)
 
-        super().save_processed_crash(raw_crash, processed_crash)
+        super().prepare_processed_crash(raw_crash, processed_crash)
 
 
 class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
@@ -532,13 +534,12 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         reference_value_from="resource.redactor",
     )
 
-    def save_processed_crash(self, raw_crash, processed_crash):
-        """This is the only write mechanism that is actually employed in normal usage"""
-        # Replace the `json_dump` with a subset.
+    def prepare_processed_crash(self, raw_crash, processed_crash):
+        # Replace the `json_dump` with an allowed subset.
         json_dump = processed_crash.get("json_dump", {})
         redacted_json_dump = {
             k: json_dump.get(k) for k in self.config.json_dump_allowlist_keys
         }
         processed_crash["json_dump"] = redacted_json_dump
 
-        super().save_processed_crash(raw_crash, processed_crash)
+        super().prepare_processed_crash(raw_crash, processed_crash)

@@ -47,7 +47,6 @@ a_processed_crash = {
     "cpu_arch": "arm",
     "crashedThread": 8,
     "date_processed": "2012-04-08 10:56:41.558922",
-    "dump": "...",
     "email": "bogus@bogus.com",
     "flash_version": "[blank]",
     "hangid": None,
@@ -98,24 +97,7 @@ a_processed_crash = {
     },
 }
 
-a_processed_crash_with_no_stackwalker = deepcopy(a_processed_crash)
-
-a_processed_crash_with_no_stackwalker.update(
-    {
-        "date_processed": string_to_datetime("2012-04-08 10:56:41.558922"),
-        "client_crash_date": string_to_datetime("2012-04-08 10:52:42.0"),
-        "completeddatetime": string_to_datetime("2012-04-08 10:56:50.902884"),
-        "started_datetime": string_to_datetime("2012-04-08 10:56:50.440752"),
-        "startedDateTime": string_to_datetime("2012-04-08 10:56:50.440752"),
-    }
-)
-
-del a_processed_crash_with_no_stackwalker["json_dump"]
-del a_processed_crash_with_no_stackwalker["upload_file_minidump_flash1"]["json_dump"]
-del a_processed_crash_with_no_stackwalker["upload_file_minidump_flash2"]["json_dump"]
-del a_processed_crash_with_no_stackwalker["upload_file_minidump_browser"]["json_dump"]
-
-a_raw_crash = {"foo": "alpha", "bar": 42}
+a_raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
 
 
 class TestRawCrashRedactor(TestCaseWithConfig):
@@ -177,30 +159,39 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         )
         es_storage.close()
 
-    def test_index_crash_with_bad_keys(self):
-        a_raw_crash_with_bad_keys = {
-            "foo": "alpha",
-            "": "bad key 1",
-            ".": "bad key 2",
-            "na\xefve": "bad key 3",
+    def test_index_crash_indexable_keys(self):
+        # Check super_search_fields.py for valid keys to update this
+        raw_crash = {
+            "InvalidKey": "alpha",
+            "BuildID": "20200506000000",
+        }
+        processed_crash = {
+            "AnotherInvalidKey": "alpha",
+            "date_processed": "2012-04-08 10:56:41.558922",
+            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
         }
 
         es_storage = ESCrashStorage(config=self.config)
 
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash_with_bad_keys),
-            processed_crash=deepcopy(a_processed_crash),
+            raw_crash=raw_crash, processed_crash=processed_crash,
         )
 
         # Ensure that the document was indexed by attempting to retreive it.
         doc = self.es_client.get(
             index=self.config.elasticsearch.elasticsearch_index,
-            id=a_processed_crash["uuid"],
+            id=processed_crash["uuid"],
         )
-        # Make sure the invalid keys aren't in the crash.
+
+        # Verify keys that aren't in super_search_fields aren't in the raw or processed
+        # crash parts
         raw_crash = doc["_source"]["raw_crash"]
-        assert raw_crash == {"foo": "alpha"}
-        es_storage.close()
+        assert raw_crash == {"BuildID": "20200506000000"}
+        processed_crash = doc["_source"]["processed_crash"]
+        assert processed_crash == {
+            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+            "date_processed": "2012-04-08T10:56:41.558922+00:00",
+        }
 
 
 class TestESCrashStorage(ElasticsearchTestCase):
@@ -265,17 +256,27 @@ class TestESCrashStorage(ElasticsearchTestCase):
     @mock.patch("socorro.external.es.connection_context.elasticsearch")
     def test_success(self, espy_mock):
         """Test a successful index of a crash report"""
+        raw_crash = {
+            "BuildID": "20200605000",
+            "ProductName": "Firefox",
+            "ReleaseChannel": "nightly",
+        }
+        processed_crash = {
+            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+            "json_dump": {},
+            "date_processed": "2012-04-08 10:56:41.558922",
+        }
+
         sub_mock = mock.MagicMock()
         espy_mock.Elasticsearch.return_value = sub_mock
 
-        crash_id = a_processed_crash["uuid"]
+        crash_id = processed_crash["uuid"]
 
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage = ESCrashStorage(config=self.config)
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash),
-            processed_crash=deepcopy(a_processed_crash),
+            raw_crash=raw_crash, processed_crash=processed_crash,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -285,66 +286,14 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # IndexCreator but is part of the crashstorage workflow).
         assert espy_mock.client.IndicesClient.called
 
-        expected_processed_crash = deepcopy(a_processed_crash)
+        expected_processed_crash = deepcopy(processed_crash)
         reconstitute_datetimes(expected_processed_crash)
 
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
             "processed_crash": expected_processed_crash,
-            "raw_crash": a_raw_crash,
-        }
-
-        additional = {
-            "doc_type": "crash_reports",
-            "id": crash_id,
-            "index": "socorro_integration_test_reports",
-        }
-
-        sub_mock.index.assert_called_with(body=document, **additional)
-
-    @mock.patch("socorro.external.es.connection_context.elasticsearch")
-    def test_success_with_no_stackwalker_class(self, espy_mock):
-        """Test a successful index of a crash report"""
-        modified_config = deepcopy(self.config)
-        modified_config.es_redactor = DotDict()
-        modified_config.es_redactor.redactor_class = Redactor
-        modified_config.es_redactor.forbidden_keys = (
-            "json_dump, "
-            "upload_file_minidump_flash1.json_dump, "
-            "upload_file_minidump_flash2.json_dump, "
-            "upload_file_minidump_browser.json_dump"
-        )
-        modified_config.raw_crash_es_redactor = DotDict()
-        modified_config.raw_crash_es_redactor.redactor_class = RawCrashRedactor
-        modified_config.raw_crash_es_redactor.forbidden_keys = "unsused"
-
-        sub_mock = mock.MagicMock()
-        espy_mock.Elasticsearch.return_value = sub_mock
-
-        es_storage = ESCrashStorageRedactedSave(config=modified_config)
-
-        crash_id = a_processed_crash["uuid"]
-
-        # Submit a crash like normal, except that the back-end ES object is
-        # mocked (see the decorator above).
-        es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash),
-            processed_crash=deepcopy(a_processed_crash),
-        )
-
-        # Ensure that the ES objects were instantiated by ConnectionContext.
-        assert espy_mock.Elasticsearch.called
-
-        # Ensure that the IndicesClient was also instantiated (this happens in
-        # IndexCreator but is part of the crashstorage workflow).
-        assert espy_mock.client.IndicesClient.called
-
-        # The actual call to index the document (crash).
-        document = {
-            "crash_id": crash_id,
-            "processed_crash": a_processed_crash_with_no_stackwalker,
-            "raw_crash": a_raw_crash,
+            "raw_crash": raw_crash,
         }
 
         additional = {
@@ -377,18 +326,34 @@ class TestESCrashStorage(ElasticsearchTestCase):
         modified_config.raw_crash_es_redactor.redactor_class = RawCrashRedactor
         modified_config.raw_crash_es_redactor.forbidden_keys = "unsused"
 
+        processed_crash = {
+            "build": "20120309050057",
+            "date_processed": "2012-04-08 10:56:41.558922",
+            "product": "FennecAndroid",
+            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+            "json_dump": {
+                # json dump allowed keys
+                "largest_free_vm_block": "0x2F42",
+                "system_info": {"cpu_count": 42, "os": "Linux"},
+                "tiny_block_size": 42,
+                "write_combine_size": 43,
+                # not allowed keys:
+                "badkey1": "foo",
+                "badkey2": {"badsubkey": "foo"},
+            },
+        }
+
         sub_mock = mock.MagicMock()
         espy_mock.Elasticsearch.return_value = sub_mock
 
         es_storage = ESCrashStorageRedactedJsonDump(config=modified_config)
 
-        crash_id = a_processed_crash["uuid"]
+        crash_id = processed_crash["uuid"]
 
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash),
-            processed_crash=deepcopy(a_processed_crash),
+            raw_crash=deepcopy(a_raw_crash), processed_crash=processed_crash,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -398,12 +363,12 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # IndexCreator but is part of the crashstorage workflow).
         assert espy_mock.client.IndicesClient.called
 
-        expected_processed_crash = deepcopy(a_processed_crash_with_no_stackwalker)
+        expected_processed_crash = deepcopy(processed_crash)
+        reconstitute_datetimes(expected_processed_crash)
         expected_processed_crash["json_dump"] = {
             k: a_processed_crash["json_dump"][k]
             for k in modified_config.json_dump_allowlist_keys
         }
-        del expected_processed_crash["memory_report"]
 
         # The actual call to index the document (crash).
         document = {
@@ -436,16 +401,23 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         es_storage = ESCrashStorageRedactedSave(config=modified_config)
 
-        crash_id = a_processed_crash["uuid"]
-
-        # Add a 'StackTraces' field to be redacted.
-        raw_crash = deepcopy(a_raw_crash)
-        raw_crash["StackTraces"] = "something"
+        raw_crash = {
+            "BuildID": "20200605000",
+            "ProductName": "Firefox",
+            "ReleaseChannel": "nightly",
+            # Add a 'StackTraces' field to be redacted.
+            "StackTraces": "something",
+        }
+        processed_crash = {
+            "date_processed": "2012-04-08 10:56:41.558922",
+            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+        }
+        crash_id = processed_crash["uuid"]
 
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(raw_crash), processed_crash=deepcopy(a_processed_crash),
+            raw_crash=raw_crash, processed_crash=processed_crash,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -455,14 +427,17 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # IndexCreator but is part of the crashstorage workflow).
         assert espy_mock.client.IndicesClient.called
 
-        expected_processed_crash = deepcopy(a_processed_crash)
+        expected_raw_crash = deepcopy(raw_crash)
+        del expected_raw_crash["StackTraces"]
+
+        expected_processed_crash = deepcopy(processed_crash)
         reconstitute_datetimes(expected_processed_crash)
 
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
             "processed_crash": expected_processed_crash,
-            "raw_crash": a_raw_crash,  # Note here we expect the original dict
+            "raw_crash": expected_raw_crash,
         }
 
         additional = {
@@ -504,26 +479,26 @@ class TestESCrashStorage(ElasticsearchTestCase):
         Expected behavior is to remove that field and retry indexing.
 
         """
-
         es_storage = ESCrashStorage(config=self.config)
 
         crash_id = a_processed_crash["uuid"]
         raw_crash = {}
         processed_crash = {
             "date_processed": "2012-04-08 10:56:41.558922",
-            "bogus-field": "some bogus value",
-            "foo": "bar",
+            # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
+            # rejected by our mock_index call--this is wildly contrived.
+            "version": "some bogus value",
             "uuid": crash_id,
         }
 
         def mock_index(*args, **kwargs):
-            if "bogus-field" in kwargs["body"]["processed_crash"]:
+            if "version" in kwargs["body"]["processed_crash"]:
                 raise elasticsearch.exceptions.TransportError(
                     400,
                     "RemoteTransportException[[i-5exxx97][inet[/172.3.9.12:"
                     "9300]][indices:data/write/index]]; nested: "
                     "IllegalArgumentException[Document contains at least one "
-                    'immense term in field="processed_crash.bogus-field.full" '
+                    'immense term in field="processed_crash.version.full" '
                     "(whose UTF8 encoding is longer than the max length 32766)"
                     ", all of which were skipped.  Please correct the analyzer"
                     " to not produce such terms.  The prefix of the first "
@@ -546,10 +521,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         expected_doc = {
             "crash_id": crash_id,
-            "removed_fields": "processed_crash.bogus-field",
+            "removed_fields": "processed_crash.version",
             "processed_crash": {
                 "date_processed": string_to_datetime("2012-04-08 10:56:41.558922"),
-                "foo": "bar",
                 "uuid": crash_id,
             },
             "raw_crash": {},
@@ -575,20 +549,21 @@ class TestESCrashStorage(ElasticsearchTestCase):
         raw_crash = {}
         processed_crash = {
             "date_processed": "2012-04-08 10:56:41.558922",
-            "bogus-field": 1234567890,
-            "foo": "bar",
+            # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
+            # rejected by our mock_index call--this is wildly contrived.
+            "version": 1234567890,
             "uuid": crash_id,
         }
 
         def mock_index(*args, **kwargs):
-            if "bogus-field" in kwargs["body"]["processed_crash"]:
+            if "version" in kwargs["body"]["processed_crash"]:
                 raise elasticsearch.exceptions.TransportError(
                     400,
                     (
                         "RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:"
                         "9300]][indices:data/write/index]]; nested: "
                         "MapperParsingException[failed to parse "
-                        "[processed_crash.bogus-field]]; nested: "
+                        "[processed_crash.version]]; nested: "
                         "NumberFormatException[For input string: "
                         '"18446744073709480735"]; '
                     ),
@@ -605,10 +580,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         expected_doc = {
             "crash_id": crash_id,
-            "removed_fields": "processed_crash.bogus-field",
+            "removed_fields": "processed_crash.version",
             "processed_crash": {
                 "date_processed": string_to_datetime("2012-04-08 10:56:41.558922"),
-                "foo": "bar",
                 "uuid": crash_id,
             },
             "raw_crash": {},
@@ -631,22 +605,26 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_storage = ESCrashStorage(config=self.config)
 
         crash_id = create_new_ooid()
-        raw_crash = {"uuid": crash_id}
+        raw_crash = {
+            "ProductName": "Firefox",
+        }
         processed_crash = {
             "date_processed": "2019-12-11 10:56:41.558922",
-            "bogus-field": {"key": {"nested_key": "val"}},
+            # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
+            # rejected by our mock_index call--this is wildly contrived.
+            "version": {"key": {"nested_key": "val"}},
             "uuid": crash_id,
         }
 
         def mock_index(*args, **kwargs):
-            if "bogus-field" in kwargs["body"]["processed_crash"]:
+            if "version" in kwargs["body"]["processed_crash"]:
                 raise elasticsearch.exceptions.TransportError(
                     400,
                     (
                         "RemoteTransportException[[Madam Slay]"
                         "[inet[/172.31.22.181:9300]][indices:data/write/index]]; "
                         "nested: MapperParsingException"
-                        "[failed to parse [processed_crash.bogus-field]]; "
+                        "[failed to parse [processed_crash.version]]; "
                         "nested: "
                         "ElasticsearchIllegalArgumentException[unknown property [key]]"
                     ),
@@ -663,12 +641,12 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         expected_doc = {
             "crash_id": crash_id,
-            "removed_fields": "processed_crash.bogus-field",
+            "removed_fields": "processed_crash.version",
             "processed_crash": {
                 "date_processed": string_to_datetime("2019-12-11 10:56:41.558922"),
                 "uuid": crash_id,
             },
-            "raw_crash": {"uuid": crash_id},
+            "raw_crash": raw_crash,
         }
         es_class_mock().index.assert_called_with(
             index=self.config.elasticsearch.elasticsearch_index,
@@ -728,22 +706,23 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
     def test_crash_size_capture(self):
         """Verify we capture raw/processed crash sizes in ES crashstorage"""
+        raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
+        processed_crash = {
+            "date_processed": "2012-04-08 10:56:41.558922",
+            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+        }
+
         with MetricsMock() as mm:
             es_storage = ESCrashStorage(config=self.config, namespace="processor.es")
 
             es_storage._submit_crash_to_elasticsearch = mock.Mock()
 
             es_storage.save_processed_crash(
-                raw_crash=deepcopy(a_raw_crash),
-                processed_crash=deepcopy(a_processed_crash),
+                raw_crash=raw_crash, processed_crash=processed_crash,
             )
 
-            # NOTE(willkg): The sizes of these json documents depend on what's
-            # in them. If we changed a_processed_crash and a_raw_crash, then
-            # these numbers will change.
-            mm.print_records()
-            mm.assert_histogram("processor.es.raw_crash_size", value=27)
-            mm.assert_histogram("processor.es.processed_crash_size", value=1721)
+            mm.assert_histogram("processor.es.raw_crash_size", value=55)
+            mm.assert_histogram("processor.es.processed_crash_size", value=96)
 
     def test_index_data_capture(self):
         """Verify we capture index data in ES crashstorage"""

@@ -6,7 +6,6 @@
 
 import datetime
 import collections
-import copy
 import logging
 import os
 import sys
@@ -178,14 +177,6 @@ class CrashStorageBase(RequiredConfig):
     def close(self):
         """Close resources used by this crashstorage."""
         pass
-
-    def is_mutator(self):
-        """Whether this storage class mutates the crash or not
-
-        By default, crash storage classes don't mutate the crash.
-
-        """
-        return False
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """Save raw crash data.
@@ -476,19 +467,14 @@ class PolyCrashStorage(CrashStorageBase):
         :param raw_crash: the raw crash data
         :param processed_crash: the processed crash data
 
+        NOTE(willkg): Crash storage systems that implement this should
+        not mutate the raw and processed crash structures!
+
         """
         storage_exception = PolyStorageError()
         for a_store in self.stores.values():
             try:
-                actual_store = getattr(a_store, "wrapped_object", a_store)
-                if hasattr(actual_store, "is_mutator") and actual_store.is_mutator():
-                    my_raw_crash = copy.deepcopy(raw_crash)
-                    my_processed_crash = copy.deepcopy(processed_crash)
-                else:
-                    my_raw_crash = raw_crash
-                    my_processed_crash = processed_crash
-
-                a_store.save_processed_crash(my_raw_crash, my_processed_crash)
+                a_store.save_processed_crash(raw_crash, processed_crash)
             except Exception:
                 store_class = getattr(a_store, "wrapped_object", a_store.__class__)
                 crash_id = processed_crash.get("uuid", "NONE")
