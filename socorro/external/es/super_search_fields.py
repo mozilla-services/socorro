@@ -3707,7 +3707,7 @@ FIELDS = {
         "namespace": "processed_crash",
         "permissions_needed": [],
         "query_type": "enum",
-        "storage_mapping": {"index": "not_analyzed", "type": "string"},
+        "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "vendor": {
         "data_validation_type": "enum",
