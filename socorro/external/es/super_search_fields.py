@@ -3364,7 +3364,9 @@ FIELDS = {
         "storage_mapping": {"type": "long"},
     },
     "telemetry_environment": {
-        "data_validation_type": "str",
+        # NOTE(willkg): This field used to be searchable, but when anyone did search it,
+        # it would DOS the site. So we stopped that in bug #1497353.
+        "data_validation_type": "enum",
         "description": (
             "A field containing the entire Telemetry Environment, as sent with crash pings to "
             "Telemetry."
@@ -3372,13 +3374,13 @@ FIELDS = {
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "TelemetryEnvironment",
-        "is_exposed": True,
+        "is_exposed": False,
         "is_returned": True,
         "name": "telemetry_environment",
         "namespace": "raw_crash",
         "permissions_needed": [],
         "query_type": "string",
-        "storage_mapping": {"index": "not_analyzed", "type": "string"},
+        "storage_mapping": None,
     },
     "theme": {
         "data_validation_type": "enum",
