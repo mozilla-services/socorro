@@ -116,6 +116,7 @@ __libc_android_abort
 __libc_message
 libc\.so(\.\d+)?@0x
 libc-\d+\.\d+(\.\d+)?\.so@0x
+libart\.so@0x
 libobjc.A.dylib@0x1568.
 (libxul\.so|xul\.dll|XUL)@0x
 LL_
