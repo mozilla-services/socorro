@@ -13,7 +13,7 @@ both.
 This requires Python 3 to run.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 92c8800fdb9fbd7e3b52c51a880260f3b456be39
+sha: 926e826140d55515360205b28b4dd524997893a6
 
 """
 
@@ -44,6 +44,8 @@ DEFAULT_CONFIG = {
     # GitHub user and project name
     "github_user": "",
     "github_project": "",
+    # The name of the main branch
+    "main_branch": "",
 }
 
 LINE = "=" * 80
@@ -90,8 +92,8 @@ def fetch(url, is_json=True):
     return data
 
 
-def fetch_history_from_github(owner, repo, from_rev):
-    url = f"{GITHUB_API}repos/{owner}/{repo}/compare/{from_rev}...master"
+def fetch_history_from_github(owner, repo, from_rev, main_branch):
+    url = f"{GITHUB_API}repos/{owner}/{repo}/compare/{from_rev}...{main_branch}"
     return fetch(url)
 
 
@@ -213,10 +215,21 @@ def run():
 
     args = parser.parse_args()
 
-    # Let's make sure we're up-to-date and on master branch
+    github_project = args.github_project
+    github_user = args.github_user
+    main_branch = args.main_branch
+
+    if not github_project or not github_user or not main_branch:
+        print("main_branch, github_project, and github_user are required.")
+        print("Either set them in setup.cfg or specify them as command line arguments.")
+        return 1
+
+    # Let's make sure we're up-to-date and on main branch
     current_branch = check_output("git rev-parse --abbrev-ref HEAD")
-    if current_branch != "master":
-        print(f"Must be on the master branch to do this (not {current_branch})")
+    if current_branch != main_branch:
+        print(
+            f"Must be on the {main_branch} branch to do this; currently on {current_branch}"
+        )
         return 1
 
     # The current branch can't be dirty
@@ -229,19 +242,12 @@ def run():
         )
         return 1
 
-    github_project = args.github_project
-    github_user = args.github_user
-
-    if not github_project or not github_user:
-        print(
-            "github_project and github_user are required. Either set them in "
-            "setup.cfg or specify them as command line arguments."
-        )
-        return 1
     remote_name = get_remote_name(github_user)
 
     # Get existing git tags from remote
-    check_output(f"git pull {remote_name} master --tags", stderr=subprocess.STDOUT)
+    check_output(
+        f"git pull {remote_name} {main_branch} --tags", stderr=subprocess.STDOUT
+    )
 
     # Figure out the most recent tag details
     last_tag = check_output(
@@ -255,7 +261,9 @@ def run():
         print(last_tag_message)
         print(LINE)
 
-        resp = fetch_history_from_github(github_user, github_project, last_tag)
+        resp = fetch_history_from_github(
+            github_user, github_project, last_tag, main_branch
+        )
         if resp["status"] != "ahead":
             print(f"Nothing to deploy! {resp['status']}")
             return
