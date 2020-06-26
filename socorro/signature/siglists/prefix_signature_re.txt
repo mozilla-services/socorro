@@ -64,6 +64,7 @@ fastzero_I
 __fdelt_chk
 __fdelt_warn
 _files_getaddrinfo
+FindElementCommon
 .*free
 __fortify_fail
 __fortify_fail_abort
