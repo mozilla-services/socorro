@@ -7,7 +7,7 @@ Code of Conduct
 
 This project and repository is governed by Mozilla's code of conduct and
 etiquette guidelines. For more details please see the `CODE_OF_CONDUCT.md file
-<https://github.com/mozilla-services/socorro/blob/master/CODE_OF_CONDUCT.md>`_.
+<https://github.com/mozilla-services/socorro/blob/main/CODE_OF_CONDUCT.md>`_.
 
 
 Bugs
@@ -110,7 +110,7 @@ Javascript code conventions
 
 2-space indentation.
 
-If in doubt, see https://github.com/mozilla-services/socorro/blob/master/.editorconfig
+If in doubt, see https://github.com/mozilla-services/socorro/blob/main/.editorconfig
 
 
 Git conventions

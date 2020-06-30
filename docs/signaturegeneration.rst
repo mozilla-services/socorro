@@ -17,12 +17,12 @@ is done, we have a Socorro crash signature.
 
 The signature generation code is here:
 
-https://github.com/mozilla-services/socorro/tree/master/socorro/signature
+https://github.com/mozilla-services/socorro/tree/main/socorro/signature
 
 
 The lists for configuring the C signature generation class are here:
 
-https://github.com/mozilla-services/socorro/tree/master/socorro/signature/siglists
+https://github.com/mozilla-services/socorro/tree/main/socorro/signature/siglists
 
 
 How to request a change to signature generation
@@ -53,7 +53,7 @@ If you've made changes to signature generation before or you're confident in
 the change you're making, you can make changes directly using the GitHub
 interface:
 
-https://github.com/mozilla-services/socorro/tree/master/socorro/signature/siglists
+https://github.com/mozilla-services/socorro/tree/main/socorro/signature/siglists
 
 If you want to test your changes or experiment with them, then you'll need to
 set up a local development environment and make the changes with a GitHub

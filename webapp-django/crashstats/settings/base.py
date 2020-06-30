@@ -192,7 +192,7 @@ host_id = socket.gethostname()
 
 # GitHub repo url base
 PRODUCT_DETAILS_BASE_URL = (
-    "https://raw.githubusercontent.com/mozilla-services/socorro/master/product_details"
+    "https://raw.githubusercontent.com/mozilla-services/socorro/main/product_details"
 )
 
 

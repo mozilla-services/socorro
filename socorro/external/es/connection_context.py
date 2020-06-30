@@ -122,7 +122,7 @@ class ConnectionContext(RequiredConfig):
         """Returns an instance of elasticsearch-py's Index client class as
         encapsulated by the Connection class above.
 
-        http://elasticsearch-py.readthedocs.org/en/master/api.html#indices
+        http://elasticsearch-py.readthedocs.org/en/latest/api.html#indices
 
         """
         return elasticsearch.client.IndicesClient(self.connection())
