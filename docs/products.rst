@@ -102,4 +102,4 @@ You can use this to manually set featured versions. This is helpful if Socorro
 isn't calculating them right because of bad data or extenuating circumstances.
 
 For more details, see the `product details README
-<https://github.com/mozilla-services/socorro/tree/master/product_details>`_.
+<https://github.com/mozilla-services/socorro/tree/main/product_details>`_.

@@ -53,7 +53,7 @@ Data is added to the table manually using the Crash Stats Django admin.
 The function for parsing that file is `pci_ids__parse_graphics_device_iterable`
 at:
 
-https://github.com/mozilla-services/socorro/blob/master/webapp-django/crashstats/manage/utils.py#L21
+https://github.com/mozilla-services/socorro/blob/main/webapp-django/crashstats/manage/utils.py#L21
 
 
 What uses this data

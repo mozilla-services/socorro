@@ -196,7 +196,7 @@ The crash reporter client may submit the crash report again.
 .. seealso::
 
    Code for throttler:
-      https://github.com/mozilla-services/antenna/blob/master/antenna/throttler.py
+      https://github.com/mozilla-services/antenna/blob/main/antenna/throttler.py
 
 
 Rejected because it's malformed
@@ -308,4 +308,4 @@ How to debug crash report submission
 If neither of those sets of questions are fruitful, please ask in one of our
 channels.
 
-https://github.com/mozilla-services/socorro/blob/master/README.rst
+https://github.com/mozilla-services/socorro/blob/main/README.rst

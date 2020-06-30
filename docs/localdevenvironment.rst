@@ -145,7 +145,7 @@ Updating the code
 -----------------
 
 Any time you want to update the code in the repostory, run something like this from
-the master branch::
+the main branch::
 
   $ git pull
 

@@ -47,7 +47,7 @@ How to update product details files
 To make a change to one of these files, edit it in the GitHub
 interface and then create a pull request.
 
-GitHub interface: https://github.com/mozilla-services/socorro/tree/master/product_details
+GitHub interface: https://github.com/mozilla-services/socorro/tree/main/product_details
 
 The pull request will be reviewed and merged by a developer.
 
