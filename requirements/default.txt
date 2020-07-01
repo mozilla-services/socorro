@@ -67,9 +67,9 @@ pyquery==1.4.1 \
 python-memcached==1.59 \
     --hash=sha256:4dac64916871bd3550263323fc2ce18e1e439080a2d5670c594cf3118d99b594 \
     --hash=sha256:a2e28637be13ee0bf1a8b6843e7490f9456fd3f2a4cb60471733c7b5d5557e4f
-django-ratelimit==2.0.0 \
-    --hash=sha256:40dd23dcdda413d2199bb88b4d9151bf66ea19586b2047ada313ddcf77e2959c \
-    --hash=sha256:ddb6bd68a7a25fab335a0441671681ce9993167e640a2301a2e0e07ce9dd46fb
+django-ratelimit==3.0.0 \
+    --hash=sha256:df976edf41ee2f8f388a0f5778988a2e91d0cee8299b0dcd71cd7acf28015375 \
+    --hash=sha256:ce35b746b2ccf0f288daa65fd33adf7ae4de57a4f6cd44e55cba818152e30b72
 django-waffle==0.20.0 \
     --hash=sha256:73ec03d28c60af0a6fd6327933e615e92dd936137d25b25d3ebaf64e9963c463 \
     --hash=sha256:744c3fe6cedbd175d2247cb93904e931f056b503f6e4a4836a0b9b66b43be625
