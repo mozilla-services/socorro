@@ -149,9 +149,9 @@ aws-xray-sdk==2.5.0 \
 Werkzeug==1.0.1 \
     --hash=sha256:2de2a5db0baeae7b2d2664949077c2ac63fbd16d98da0ff71837f7d1dea3fd43 \
     --hash=sha256:6c80b1e5ad3665290ea39320b91e1be1e0d5f60652b964a3070216de83d2e47c
-docker==4.2.0 \
-    --hash=sha256:1c2ddb7a047b2599d1faec00889561316c674f7099427b9c51e8cb804114b553 \
-    --hash=sha256:ddae66620ab5f4bce769f64bcd7934f880c8abe6aa50986298db56735d0f722e
+docker==4.2.2 \
+    --hash=sha256:03a46400c4080cb6f7aa997f881ddd84fef855499ece219d75fbdb53289c17ab \
+    --hash=sha256:26eebadce7e298f55b76a88c4f8802476c5eaddbdbe38dbc6cce8781c47c9b54
 xmltodict==0.12.0 \
     --hash=sha256:50d8c638ed7ecb88d90561beedbf720c9b4e851a9fa6c47ebd64e99d166d8a21 \
     --hash=sha256:8bbcb45cc982f48b2ca8fe7e7827c5d792f217ecf1792626f808bf41c3b86051
