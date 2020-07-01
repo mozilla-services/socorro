@@ -253,9 +253,9 @@ websocket_client==0.57.0 \
 sqlparse==0.3.1 \
     --hash=sha256:022fb9c87b524d1f7862b3037e541f68597a730a8843245c349fc93e1643dc4e \
     --hash=sha256:e162203737712307dfe78860cc56c8da8a852ab2ee33750e33aeadf38d12c548
-cfn-lint==0.32.1 \
-    --hash=sha256:da8adba55060cb95118b15142fefb49b760ff0b4e83c4cff10151408a90c9a21 \
-    --hash=sha256:96dedfaa72b84aed2c93c82f0ad68e0d0385cb986a3cc3fa8b7491cc5f565292
+cfn-lint==0.33.2 \
+    --hash=sha256:b29d172a0910f305162e354fd421594ab575ace6431b7b8884c245dfc5064859 \
+    --hash=sha256:ff9b566bda43a2e74fdd89b57cbf0f76e209e4e666cc4babe7c96cbd3fb56bfe
 aws-sam-translator==1.24.0 \
     --hash=sha256:9259944109f3a99c1bb6b2f0bbf486b31c0ce1618b67e4b29e17c16f3d2f0c71 \
     --hash=sha256:a8df6a828c3b27c4c81cfe66dc08e14333a7d06f7a82ae502a72892e1f32edac \
