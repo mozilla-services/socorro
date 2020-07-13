@@ -54,7 +54,7 @@ build: my.env  ## | Build docker images.
 
 .PHONY: build-docs
 build-docs: my.env
-	${DC} build docs
+	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} docs
 	touch .docker-build-docs
 
 .PHONY: setup

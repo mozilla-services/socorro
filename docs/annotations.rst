@@ -12,23 +12,18 @@ annotations:
 * **Version**: 77.0a1
 * **ReleaseChannel**: nightly
 
-
-Annotations are documented in `CrashAnnotations.yaml <https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
+Annotations are documented in
+`CrashAnnotations.yaml <https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
 
 
 Adding new crash annotations to a crash report
 ==============================================
 
-1. Check `CrashAnnotations.yaml <https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
+1. First, check
+   `CrashAnnotations.yaml <https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
 
-   Crash annotations you're adding shouldn't change the meaning of existing annotations.
-
-   New crash annotations should get documented in that file.
-
-   .. Note::
-
-      If the field will be available in crash pings sent to Telemetry, make
-      sure to add ``ping: true`` to CrashAnnotations.yaml.
+   Verify your annotation doesn't already exist with a different name. You can't
+   change the meaning of an existing annotation.
 
 2. New annotations need to undergo data collection review:
    https://wiki.mozilla.org/Firefox/Data_Collection
@@ -38,9 +33,42 @@ Adding new crash annotations to a crash report
       If the field will be available in crash pings sent to Telemetry, make
       sure that's mentioned in the data collection review request.
 
-3. Once a new annotation is added to a crash report, Socorro will accept it.
+3. Once a new annotation is approved, details about the annotation need to be
+   added to the ``CrashAnnotations.yaml`` file.
 
-4. (Optional) `File a bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=Generalform_name=enter_bug&op_sys=All&product=Socorro&rep_platform=All&short_desc=support%20XXX%20field>`_
+   If the field also needs to be available in crash pings sent to Telemetry,
+   you need to add ``ping: true`` to ``CrashAnnotations.yaml``
+
+   For example::
+
+      AsyncShutdownTimeout:
+        description: >
+          This annotation is present if a shutdown blocker was not released in time
+          and the browser was crashed instead of waiting for shutdown to finish. The
+          condition that caused the hang is contained in the annotation.
+        type: string
+        ping: true
+
+
+3. Add the code to put the annotation in the crash report. Once a new
+   annotation is added to a crash report, Socorro will save it with crash data.
+
+4. (Optional) If you want the field to show up in crash pings sent to Telemetry,
+   you have to update their schema, too.
+
+   1. From a mozilla-pipeline-schemas (https://github.com/mozilla-services/mozilla-pipeline-schemas/)
+      checkout, run::
+
+         scripts/extract_crash_annotation_fields /path/to/mozilla-unified/toolkit/crashreporter/CrashAnnotations.yaml
+
+      If any exist, you will get a list of crash annotations that are contained in the ping but are not yet in the schema.
+
+   3. Copy them into ``templates/telemetry/crash/crash.4.schema.json`` under the ``payload/metadata`` section.
+
+   4. File a bug to add them under ``Data Platform and Tools :: Datasets General``.
+      Then create a pull request against mozilla-pipeline-schemas referencing that bug.
+
+5. (Optional) `File a "support field" bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=Generalform_name=enter_bug&op_sys=All&product=Socorro&rep_platform=All&short_desc=support%20XXX%20field>`_
    to request support for your crash annotation in Crash Stats to:
 
    * make it public
@@ -48,6 +76,6 @@ Adding new crash annotations to a crash report
    * make it aggregatable in supersearch
    * add any additional processing in Socorro for the field
 
-5. (Optional) `File a bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=Generalform_name=enter_bug&op_sys=All&product=Socorro&rep_platform=All&short_desc=send%20XXX%20field%20to%20telemetry>`_
+6. (Optional) `File a "send field to telemetry" bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=Generalform_name=enter_bug&op_sys=All&product=Socorro&rep_platform=All&short_desc=send%20XXX%20field%20to%20telemetry>`_
    to make it available in ``telemetry.crash_reports`` and correlations on
-   Crash Stats
+   Crash Stats.
