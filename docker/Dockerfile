@@ -1,4 +1,4 @@
-FROM python:3.7.8-slim-stretch@sha256:2dae8c3a67400c05270bc7f6c7bba46b0fc13a702d4a3ab9856f7e3840908154 as socorro_image_base
+FROM python:3.8.5-slim@sha256:a3ddbd9dcadbf9173bf9466c527aef36c01515dad4e3da5147940268232bd420 as socorro_image_base
 
 # Set up user and group
 ARG groupid=10001
@@ -20,7 +20,7 @@ WORKDIR /mdsw/
 # Install breakpad requirements and some helpful debugging things
 RUN apt-get update && apt-get install -y \
     gdb \
-    libcurl3 \
+    libcurl4 \
     libcurl3-gnutls \
     libcurl4-gnutls-dev \
     pkg-config \

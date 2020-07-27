@@ -471,7 +471,7 @@ class SocorroMiddleware(SocorroCommon):
             kwargs[key] = kwargs.get(key) or value
 
         params = self.kwargs_to_params(kwargs)
-        for param in params:
+        for param in list(params):
             if aliases.get(param):
                 params[aliases.get(param)] = params[param]
                 del params[param]

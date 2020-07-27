@@ -466,7 +466,8 @@ class TestDatesAndTimesRule:
         )
         assert ret == "2012-05-08T23:26:33.454482+00:00"
         try:
-            42[:1]
+            val = 42
+            val[:1]
         except TypeError as err:
             type_error_value = str(err)
         expected = [
