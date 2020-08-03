@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
 from unittest import mock
 
 from configman.dotdict import DotDict
@@ -280,8 +281,14 @@ class TestProcessorApp:
         pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
         pa.source.get_raw_dumps_as_files.return_value = {}
 
-        first_exc_info = (NameError, NameError("waldo"), "fake tb 1")
-        second_exc_info = (AssertionError, AssertionError(False), "fake tb 2")
+        try:
+            raise NameError("waldo")
+        except NameError:
+            first_exc_info = sys.exc_info()
+        try:
+            raise AssertionError(False)
+        except AssertionError:
+            second_exc_info = sys.exc_info()
         expected_exception = PolyStorageError()
         expected_exception.exceptions.append(first_exc_info)
         expected_exception.exceptions.append(second_exc_info)
