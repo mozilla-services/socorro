@@ -11,7 +11,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 
-from crashstats.crashstats.models import Product
+from crashstats import productlib
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.external.es.super_search_fields import FIELDS
@@ -64,10 +64,18 @@ class ProductVersionsMixin:
         super().setUp()
         cache.clear()
 
-        # Create products
-        Product.objects.create(product_name="WaterWolf", sort=1, is_active=True)
-        Product.objects.create(product_name="NightTrain", sort=2, is_active=True)
-        Product.objects.create(product_name="SeaMonkey", sort=3, is_active=True)
+        # Hard-code products for testing
+        productlib._PRODUCTS = [
+            productlib.Product(
+                name="WaterWolf", home_page_sort=1, featured_versions=["auto"]
+            ),
+            productlib.Product(
+                name="NightTrain", home_page_sort=2, featured_versions=["auto"]
+            ),
+            productlib.Product(
+                name="SeaMonkey", home_page_sort=3, featured_versions=["auto"]
+            ),
+        ]
 
         # Create product versions
         self.mock_gvfp_patcher = mock.patch(
@@ -77,6 +85,7 @@ class ProductVersionsMixin:
         self.set_product_versions(["20.0", "19.1", "19.0", "18.0"])
 
     def tearDown(self):
+        productlib._PRODUCTS = []
         self.mock_gvfp_patcher.stop()
         super().tearDown()
 

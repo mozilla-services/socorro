@@ -4,14 +4,7 @@
 
 import copy
 import json
-import os
-import os.path
 
-import pytest
-import requests
-import requests_mock
-
-from django.conf import settings
 from django.http import HttpResponse
 from django.utils.encoding import smart_text
 
@@ -452,77 +445,3 @@ class TestUtils:
         assert signature_stats.is_startup_window_crash is True
         assert signature_stats.is_hang_crash is False
         assert signature_stats.is_plugin_crash is False
-
-
-def get_product_details_files():
-    product_details_path = os.path.join(settings.SOCORRO_ROOT, "product_details")
-    return [
-        os.path.join(product_details_path, fn)
-        for fn in os.listdir(product_details_path)
-        if fn.endswith(".json")
-    ]
-
-
-@pytest.mark.parametrize("fn", get_product_details_files())
-def test_product_details_files(fn):
-    """Validate product_details/ JSON files."""
-    fn_basename = os.path.basename(fn)
-
-    try:
-        with open(fn, "r") as fp:
-            data = json.load(fp)
-    except json.decoder.JSONDecoderError as exc:
-        raise Exception("%s: invalid JSON: %s" % (fn_basename, exc))
-
-    if "featured_versions" not in data:
-        raise Exception('%s: missing "featured_versions" key' % fn_basename)
-
-    if not isinstance(data["featured_versions"], list):
-        raise Exception(
-            '%s: "featured_versions" value is not a list of strings' % fn_basename
-        )
-
-    for item in data["featured_versions"]:
-        if not isinstance(item, str):
-            raise Exception("%s: value %r is not a str" % (fn_basename, item))
-
-
-class Test_get_manually_maintained_featured_versions:
-    # Note that these tests are mocked and contrived and if the url changes or
-    # something along those lines, these tests can pass, but it might not work
-    # in stage/prod.
-
-    def test_exists(self):
-        with requests_mock.Mocker() as req_mock:
-            url = "%s/Firefox.json" % settings.PRODUCT_DETAILS_BASE_URL
-            req_mock.get(url, json={"featured_versions": ["68.0a1", "67.0b", "66.0"]})
-
-            featured = utils.get_manually_maintained_featured_versions("Firefox")
-            assert featured == ["68.0a1", "67.0b", "66.0"]
-
-    def test_invalid_file(self):
-        """Not JSON or no featured_versions returns None."""
-        # Not JSON
-        with requests_mock.Mocker() as req_mock:
-            url = "%s/Firefox.json" % settings.PRODUCT_DETAILS_BASE_URL
-            req_mock.get(url, text="this is not json")
-
-            featured = utils.get_manually_maintained_featured_versions("Firefox")
-            assert featured is None
-
-        # No featured_versions
-        with requests_mock.Mocker() as req_mock:
-            url = "%s/Firefox.json" % settings.PRODUCT_DETAILS_BASE_URL
-            req_mock.get(url, json={})
-
-            featured = utils.get_manually_maintained_featured_versions("Firefox")
-            assert featured is None
-
-    def test_github_down(self):
-        """Connection error returns None."""
-        with requests_mock.Mocker() as req_mock:
-            url = "%s/Firefox.json" % settings.PRODUCT_DETAILS_BASE_URL
-            req_mock.get(url, exc=requests.exceptions.ConnectionError)
-
-            featured = utils.get_manually_maintained_featured_versions("Firefox")
-            assert featured is None

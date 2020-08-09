@@ -12,8 +12,6 @@ import random
 import re
 from urllib.parse import urlencode
 
-import requests
-
 from django import http
 from django.conf import settings
 from django.core.cache import cache
@@ -21,6 +19,7 @@ from django.template import engines
 from django.utils import timezone
 from django.utils.functional import cached_property
 
+from crashstats import productlib
 from crashstats.crashstats import models
 import crashstats.supersearch.models as supersearch_models
 from socorro.lib.versionutil import generate_semver, VersionParseError
@@ -342,7 +341,7 @@ def enhance_raw(raw_crash):
             raw_crash["AdapterDeviceName"] = result[1]
 
 
-def get_versions_for_product(product="Firefox", use_cache=True):
+def get_versions_for_product(product, use_cache=True):
     """Returns list of recent version strings for specified product
 
     This looks at the crash reports submitted for this product over
@@ -353,7 +352,7 @@ def get_versions_for_product(product="Firefox", use_cache=True):
     NOTE(willkg): This data is noisy if there are crash reports with junk
     versions.
 
-    :arg str product: the product to query for
+    :arg Product product: the product to query for
     :arg bool use_cache: whether or not to pull results from cache
 
     :returns: list of versions sorted in reverse order or ``[]``
@@ -361,7 +360,7 @@ def get_versions_for_product(product="Firefox", use_cache=True):
     """
 
     if use_cache:
-        key = "get_versions_for_product:%s" % product.lower().replace(" ", "")
+        key = "get_versions_for_product:%s" % product.name.lower().replace(" ", "")
         ret = cache.get(key)
         if ret is not None:
             return ret
@@ -374,7 +373,7 @@ def get_versions_for_product(product="Firefox", use_cache=True):
     # that have just been released that don't have many crash reports, yet
     window = settings.VERSIONS_WINDOW_DAYS
     params = {
-        "product": product,
+        "product": product.name,
         "_results_number": 0,
         "_facets": "version",
         "_facets_size": 1000,
@@ -428,33 +427,6 @@ def get_versions_for_product(product="Firefox", use_cache=True):
     return versions
 
 
-def get_manually_maintained_featured_versions(product):
-    """Returns manually maintained featured versions for a product
-
-    Some products have noisy crash data and so we maintain featured versions in
-    a file in the repository. If this file exists, use that set of featured
-    versions. Otherwise, we figure it out.
-
-    This looks at GitHub directly rather than look at the local files. This
-    allows us to land PRs that update the data and update the featured versions
-    on the production site without having to do a production deploy.
-
-    :returns: list of featured versions or None
-
-    """
-    url = "%s/%s.json" % (settings.PRODUCT_DETAILS_BASE_URL, product)
-    logger.debug("trying %s for featured versions", url)
-    try:
-        resp = requests.get(url)
-        if resp.status_code == 200:
-            data = resp.json()["featured_versions"]
-            logger.info("using %s for featured versions", url)
-            return data
-
-    except (requests.ConnectionError, json.decoder.JSONDecodeError, KeyError):
-        return None
-
-
 def get_version_context_for_product(product):
     """Returns version context for a specified product
 
@@ -466,28 +438,19 @@ def get_version_context_for_product(product):
     NOTE(willkg): This data can be noisy in cases where crash reports return
     junk versions. We might want to add a "minimum to matter" number.
 
-    :arg product: the product to query for
+    :arg product: the Product to query for
 
     :returns: list of version dicts sorted in reverse order or ``[]``
 
     """
-    key = "get_version_context_for_product:%s" % product.lower().replace(" ", "")
+    key = "get_version_context_for_product:%s" % product.name.lower().replace(" ", "")
     ret = cache.get(key)
     if ret is not None:
         return ret
 
     versions = get_versions_for_product(product, use_cache=False)
 
-    featured_versions = get_manually_maintained_featured_versions(product)
-    if featured_versions is not None:
-        # If this product has manually maintained featured versions, use that. Make
-        # sure featured versions are in the versions list and re-sort.
-        for featured_version in featured_versions:
-            if featured_version not in versions:
-                versions.insert(0, featured_version)
-        versions.sort(key=lambda v: generate_semver(v), reverse=True)
-
-    else:
+    if "auto" in product.featured_versions:
         # Map of major version (int) -> list of (key (str), versions (str)) so we can
         # get the most recent version of the last three major versions which we'll
         # assume are "featured versions".
@@ -513,6 +476,11 @@ def get_version_context_for_product(product):
         featured_versions.sort(key=lambda v: generate_semver(v), reverse=True)
         featured_versions = featured_versions[:3]
 
+    # Add any manually set featured versions
+    featured_versions.extend(
+        [ver for ver in product.featured_versions if ver != "auto"]
+    )
+
     # Generate the version data the context needs
     ret = [
         {
@@ -530,9 +498,9 @@ def get_version_context_for_product(product):
     return ret
 
 
-def build_default_context(product=None, versions=None):
+def build_default_context(product_name=None, versions=None):
     """
-    Given a product and a list of versions, generates navbar context.
+    Given a product name and a list of versions, generates navbar context.
 
     Adds ``products`` is a dict of product name -> product information
     for all active supported products.
@@ -547,21 +515,22 @@ def build_default_context(product=None, versions=None):
     context = {}
 
     # Build product information
-    context["products"] = list(
-        models.Product.objects.active_products().values_list("product_name", flat=True)
-    )
+    all_products = productlib.get_products()
+    context["products"] = [product.name for product in all_products]
 
-    if not product:
-        product = settings.DEFAULT_PRODUCT
+    if not product_name:
+        product_name = settings.DEFAULT_PRODUCT
 
-    if product not in context["products"]:
+    try:
+        product = productlib.get_product_by_name(product_name)
+    except productlib.ProductDoesNotExist:
         raise http.Http404("Not a recognized product")
 
-    context["product"] = product
+    context["product"] = product.name
 
     # Build product version information for all products
     active_versions = {
-        prod: get_version_context_for_product(prod) for prod in context["products"]
+        prod.name: get_version_context_for_product(prod) for prod in all_products
     }
     context["active_versions"] = active_versions
 

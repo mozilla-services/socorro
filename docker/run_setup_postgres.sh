@@ -34,4 +34,3 @@ python manage.py migrate
 # Add initial data from fixtures
 echo "Adding fixture data..."
 python manage.py loaddata platforms
-python manage.py loaddata products

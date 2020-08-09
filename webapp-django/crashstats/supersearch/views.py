@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 
 from ratelimit.decorators import ratelimit
 
+from crashstats import productlib
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.utils import render_exception, urlencode_obj
 from crashstats.crashstats.views import pass_default_context
@@ -56,9 +57,7 @@ def get_allowed_fields(user):
 
 def get_supersearch_form(request):
     platforms = list(models.Platform.objects.values_list("name", flat=True))
-    products = list(
-        models.Product.objects.active_products().values_list("product_name", flat=True)
-    )
+    products = [product.name for product in productlib.get_products()]
 
     # FIXME(willkg): this hardcodes always getting Firefox versions which
     # seems unhelpful
