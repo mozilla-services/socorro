@@ -277,10 +277,6 @@ PIPELINE_JS = {
         "source_filenames": ("js/error.js",),
         "output_filename": "js/error.min.js",
     },
-    "google_analytics": {
-        "source_filenames": ("crashstats/js/socorro/google_analytics.js",),
-        "output_filename": "js/google-analytics.min.js",
-    },
 }
 
 
