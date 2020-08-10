@@ -1781,7 +1781,7 @@ class TestProductHomeViews(BaseTestViews):
         # Check headings for link sections which are the active versions
         assert "WaterWolf 20.0" in smart_text(response.content)
         assert "WaterWolf 19.1" in smart_text(response.content)
-        assert "WaterWolf 18.0" in smart_text(response.content)
+        assert "WaterWolf 19.0" in smart_text(response.content)
 
-        # 19.1 is active, so 19.0 is not--it shouldn't be there
-        assert "WaterWolf 19.0" not in smart_text(response.content)
+        # Featured versions are based on MAJOR.MINOR, so 18.0 won't show up
+        assert "WaterWolf 18.0" not in smart_text(response.content)

@@ -457,10 +457,10 @@ def get_version_context_for_product(product):
     # Add automatically determined featured versions based on what crash reports have
     # been collected
     if "auto" in product.featured_versions:
-        # Map of major version (int) -> list of (key (str), versions (str)) so we can
-        # get the most recent version of the last three major versions which we'll
-        # assume are "featured versions".
-        major_to_versions = OrderedDict()
+        # Map of (major, minor) -> list of (key (str), versions (str)) so we can get the
+        # most recent version of the last three major versions which we'll assume are
+        # "featured versions".
+        major_minor_to_versions = OrderedDict()
         for version in versions:
             # In figuring for featured versions, we don't want to include the
             # catch-all-betas X.Yb faux version or ESR versions
@@ -468,8 +468,9 @@ def get_version_context_for_product(product):
                 continue
 
             try:
-                major = int(version.split(".", 1)[0])
-                major_to_versions.setdefault(major, []).append(version)
+                version_parts = version.split(".")
+                major_minor_key = (int(version_parts[0]), int(version_parts[1]))
+                major_minor_to_versions.setdefault(major_minor_key, []).append(version)
             except ValueError:
                 # If the first thing in the major version isn't an int, then skip
                 # it
@@ -478,7 +479,7 @@ def get_version_context_for_product(product):
         # The featured versions is the most recent 3 of the list of recent versions
         # for each major version. Since versions were sorted when we went through
         # them, the most recent one is in index 0.
-        featured_versions = [values[0] for values in major_to_versions.values()]
+        featured_versions = [values[0] for values in major_minor_to_versions.values()]
         featured_versions.sort(key=lambda v: generate_semver(v), reverse=True)
         featured_versions = featured_versions[:3]
 
