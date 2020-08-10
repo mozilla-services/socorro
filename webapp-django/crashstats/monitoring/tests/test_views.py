@@ -8,11 +8,11 @@ from unittest import mock
 
 import pytest
 
-from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import smart_text
 
+from crashstats import productlib
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
@@ -105,7 +105,7 @@ class TestDockerflowHeartbeatViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             searches.append(params)
-            assert params["product"] == [settings.DEFAULT_PRODUCT]
+            assert params["product"] == [productlib.get_default_product().name]
             assert params["_results_number"] == 1
             assert params["_columns"] == ["uuid"]
             return {
@@ -134,7 +134,7 @@ class TestDockerflowHeartbeatViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             searches.append(params)
-            assert params["product"] == [settings.DEFAULT_PRODUCT]
+            assert params["product"] == [productlib.get_default_product().name]
             assert params["_results_number"] == 1
             assert params["_columns"] == ["uuid"]
             return {

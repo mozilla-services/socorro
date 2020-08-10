@@ -5,8 +5,8 @@
 import datetime
 
 from django import http
-from django.conf import settings
 
+from crashstats import productlib
 from crashstats.tools import forms
 from crashstats.crashstats import models
 from crashstats.supersearch.models import SuperSearch
@@ -37,7 +37,7 @@ class NewSignatures(models.SocorroMiddleware):
         start_date = form.cleaned_data["start_date"]
         end_date = form.cleaned_data["end_date"]
         not_after = form.cleaned_data["not_after"]
-        product = form.cleaned_data["product"] or settings.DEFAULT_PRODUCT
+        product = form.cleaned_data["product"] or productlib.get_default_product().name
 
         # Make default values for all dates parameters.
         if not end_date:

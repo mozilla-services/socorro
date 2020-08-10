@@ -14,7 +14,6 @@ from crashstats.crashstats.models import (
     GraphicsDevice,
     MissingProcessedCrash,
     Platform,
-    Product,
     ProductVersion,
     Signature,
     # Middleware
@@ -103,11 +102,6 @@ class GraphicsDeviceAdmin(admin.ModelAdmin):
 @admin.register(Platform)
 class PlatformAdmin(admin.ModelAdmin):
     list_display = ["name", "short_name"]
-
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ["product_name", "sort", "is_active"]
 
 
 @admin.register(ProductVersion)

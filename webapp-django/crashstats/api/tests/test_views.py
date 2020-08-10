@@ -18,6 +18,7 @@ from markus.testing import MetricsMock
 import pyquery
 import pytest
 
+from crashstats import productlib
 from crashstats.api.views import (
     api_models_and_names,
     is_valid_model_class,
@@ -124,7 +125,9 @@ class TestViews(BaseTestViews):
     def test_cache_control(self):
         """Verifies Cache-Control header for models that cache results"""
         url = reverse("api:model_wrapper", args=("NoOp",))
-        response = self.client.get(url, {"product": settings.DEFAULT_PRODUCT})
+        response = self.client.get(
+            url, {"product": productlib.get_default_product().name}
+        )
         assert response.status_code == 200
         assert response["Cache-Control"]
         assert "private" in response["Cache-Control"]
@@ -455,7 +458,7 @@ class TestViews(BaseTestViews):
 
     def test_NewSignatures(self):
         def mocked_supersearch_get(**params):
-            assert params["product"] == [settings.DEFAULT_PRODUCT]
+            assert params["product"] == [productlib.get_default_product().name]
 
             if "version" in params:
                 assert params["version"] == ["1.0", "2.0"]

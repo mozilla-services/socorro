@@ -101,7 +101,6 @@ API_DONT_SERVE_LIST = (
     "Query",
     # because it's an internal thing only
     "PriorityJob",
-    "Products",
     "TelemetryCrash",
 )
 

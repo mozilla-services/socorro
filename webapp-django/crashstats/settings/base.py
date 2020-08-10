@@ -399,8 +399,6 @@ MANAGERS = ADMINS
 
 CACHE_IMPLEMENTATION_FETCHES = config("CACHE_IMPLEMENTATION_FETCHES", True, cast=bool)
 
-DEFAULT_PRODUCT = config("DEFAULT_PRODUCT", "Firefox")
-
 # can be changed from null to log to test something locally
 # or if using the debug toolbar, you might give toolbar a try
 STATSD_CLIENT = config("STATSD_CLIENT", "django_statsd.clients.null")
