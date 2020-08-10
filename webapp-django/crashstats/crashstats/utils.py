@@ -468,12 +468,11 @@ def get_version_context_for_product(product):
                 continue
 
             try:
-                version_parts = version.split(".")
-                major_minor_key = (int(version_parts[0]), int(version_parts[1]))
+                semver = generate_semver(version)
+                major_minor_key = (semver.major, semver.minor)
                 major_minor_to_versions.setdefault(major_minor_key, []).append(version)
-            except ValueError:
-                # If the first thing in the major version isn't an int, then skip
-                # it
+            except VersionParseError:
+                # If this doesn't parse, then skip it
                 continue
 
         # The featured versions is the most recent 3 of the list of recent versions
