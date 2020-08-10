@@ -352,12 +352,14 @@ def get_versions_for_product(product, use_cache=True):
     NOTE(willkg): This data is noisy if there are crash reports with junk
     versions.
 
-    :arg Product product: the product to query for
+    :arg product: either a product name or Product to query for
     :arg bool use_cache: whether or not to pull results from cache
 
     :returns: list of versions sorted in reverse order or ``[]``
 
     """
+    if isinstance(product, str):
+        product = productlib.get_product_by_name(product)
 
     if use_cache:
         key = "get_versions_for_product:%s" % product.name.lower().replace(" ", "")
@@ -450,6 +452,10 @@ def get_version_context_for_product(product):
 
     versions = get_versions_for_product(product, use_cache=False)
 
+    featured_versions = []
+
+    # Add automatically determined featured versions based on what crash reports have
+    # been collected
     if "auto" in product.featured_versions:
         # Map of major version (int) -> list of (key (str), versions (str)) so we can
         # get the most recent version of the last three major versions which we'll
@@ -476,15 +482,24 @@ def get_version_context_for_product(product):
         featured_versions.sort(key=lambda v: generate_semver(v), reverse=True)
         featured_versions = featured_versions[:3]
 
-    # Add any manually set featured versions
-    featured_versions.extend(
-        [ver for ver in product.featured_versions if ver != "auto"]
-    )
+    # Add manually added featured versions
+    for featured_version in reversed(product.featured_versions):
+        if featured_version == "auto":
+            continue
+
+        # Move the featured_version to the beginning of the versions list; this way
+        # featured versions are displayed in the order specified in the product details
+        # file
+        if featured_version in versions:
+            versions.remove(featured_version)
+        versions.insert(0, featured_version)
+
+        featured_versions.append(featured_version)
 
     # Generate the version data the context needs
     ret = [
         {
-            "product": product,
+            "product": product.name,
             "version": ver,
             "is_featured": ver in featured_versions,
             "has_builds": False,
