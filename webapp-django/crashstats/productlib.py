@@ -78,11 +78,35 @@ class ProductDoesNotExist(Exception):
 
 
 def get_product_by_name(name):
-    """Returns Product by name"""
+    """Returns Product by name
+
+    :param str name: the name of the product to get
+
+    :returns: Product
+
+    :raises ProductDoesNotExist: if there are no products
+
+    """
     try:
         return [prod for prod in get_products() if prod.name == name][0]
     except IndexError:
         raise ProductDoesNotExist("%s does not exist" % name)
+
+
+def get_default_product():
+    """Returns the default product
+
+    The default product is the first one in the sort list.
+
+    :returns: Product
+
+    :raises ProductDoesNotExist: if there are no products
+
+    """
+    try:
+        return get_products()[0]
+    except IndexError:
+        raise ProductDoesNotExist("there are no products")
 
 
 class ProductValidationError(Exception):
@@ -91,6 +115,9 @@ class ProductValidationError(Exception):
 
 def validate_product_file(fn):
     """Validate a product_file
+
+    This is used in the tests for a first-pass automated check that changes to product
+    files are correct. This doesn't eliminate the need to verify those changes.
 
     :param fn: the file name of the product file to verify
 

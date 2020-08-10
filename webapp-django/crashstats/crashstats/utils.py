@@ -518,11 +518,11 @@ def build_default_context(product_name=None, versions=None):
     all_products = productlib.get_products()
     context["products"] = [product.name for product in all_products]
 
-    if not product_name:
-        product_name = settings.DEFAULT_PRODUCT
-
     try:
-        product = productlib.get_product_by_name(product_name)
+        if not product_name:
+            product = productlib.get_default_product()
+        else:
+            product = productlib.get_product_by_name(product_name)
     except productlib.ProductDoesNotExist:
         raise http.Http404("Not a recognized product")
 
