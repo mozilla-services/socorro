@@ -14,12 +14,20 @@ Each product file in this directory is in JSON format. Here's an example:
 .. code-block:: json
 
    {
-       "featured_versions": ["69.0a1", "68.0b8", "67.0.2"]
+     "name": "Firefox",
+     "home_page_sort": 1,
+     "featured_versions": ["auto"]
    }
 
 Keys:
 
-``featured_versions``
+``name`` (string)
+    The name of the product. This dictates how it appears on the site.
+
+``home_page_sort`` (int)
+    Dictates the sort order of this product.
+
+``featured_versions`` (list of strings)
     List of one or more versions of this product that are currently featured.
 
     If you want an option for "all beta versions", end the version with ``b``
@@ -36,8 +44,8 @@ Keys:
     This affects the listed featured versions on the product home page and the
     "Current Versions" drop down navigation menu in the Crash Stats website.
 
-    If this is not set, Crash Stats calculates the featured versions based on
-    the crash reports that have been submitted.
+    Use ``"auto"`` if you want Crash Stats to calculate the featured versions
+    based on crash reports that have been submitted.
 
 
 How to update product details files
