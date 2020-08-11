@@ -550,8 +550,6 @@ if SENTRY_DSN:
             "propagate": False,
         }
 
-GOOGLE_ANALYTICS_ID = config("GOOGLE_ANALYTICS_ID", None)
-
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)
 
@@ -637,15 +635,10 @@ LAST_LOGIN_MAX = config("LAST_LOGIN_MAX", default=60 * 60 * 24, cast=int)
 
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_OBJECT_SRC = ("'none'",)
-CSP_SCRIPT_SRC = (
-    "'self'",
-    "https://apis.google.com",
-    "https://www.google-analytics.com",
-)
+CSP_SCRIPT_SRC = ("'self'",)
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_IMG_SRC = (
     "'self'",
-    "https://www.google-analytics.com",
     "https://secure.gravatar.com",
     "data:",  # what jquery.tablesorter.js's CSS uses
 )
