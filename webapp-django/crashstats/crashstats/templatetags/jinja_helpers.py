@@ -11,7 +11,6 @@ from django_jinja import library
 import humanfriendly
 import isodate
 import jinja2
-from libgravatar import Gravatar
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
@@ -471,8 +470,3 @@ def filter_featured_versions(product_versions):
 @library.global_function
 def filter_not_featured_versions(product_versions):
     return [pv for pv in product_versions if not pv["is_featured"]]
-
-
-@library.global_function
-def gravatar_url(email, **kwargs):
-    return Gravatar(email).get_image(use_ssl=True, **kwargs)

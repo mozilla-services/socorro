@@ -639,7 +639,6 @@ CSP_SCRIPT_SRC = ("'self'",)
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_IMG_SRC = (
     "'self'",
-    "https://secure.gravatar.com",
     "data:",  # what jquery.tablesorter.js's CSS uses
 )
 CSP_CONNECT_SRC = ("'self'",)

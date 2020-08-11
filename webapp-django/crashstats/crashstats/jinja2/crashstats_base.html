@@ -23,7 +23,6 @@
       <div class="user-info">
         {% if request.user and request.user.is_active %}
           <button class="user-info-button">
-            <img class="gravatar" src="{{ gravatar_url(request.user.email, size=64) }}">
             <span class="user-email">{{ request.user.email }}</span>
             <img class="menu-icon" src="{{ static('img/menu.svg') }}" >
           </button>
