@@ -183,6 +183,7 @@ mozilla::ipc::IToplevelProtocol::ShmemCreated
 mozilla::layers::CompositorD3D11::Failed
 mozilla::layers::CompositorD3D11::HandleError
 mozilla::SpinEventLoopUntil<T>
+mozilla::TaskController::GetRunnableForMTTask
 mozilla::WrapNotNull<
 mozilla.*FatalError
 moz_xmalloc
