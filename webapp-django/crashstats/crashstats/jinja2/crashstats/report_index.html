@@ -783,7 +783,7 @@
                   {% if bug_product in bug_product_map %}
                     {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
                   {% endif %}
-                  <a href="{{ bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product) }}" target="_blank">{{ bug_product }}</a>
+                  <a href="{{ bugzilla_submit_url(raw, report, parsed_dump, crashing_thread, bug_product) }}" target="_blank">{{ bug_product }}</a>
                 {% endfor %}
               </p>
 
