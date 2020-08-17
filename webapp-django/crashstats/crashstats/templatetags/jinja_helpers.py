@@ -143,7 +143,7 @@ def show_bug_link(bug_id):
 
 
 @library.global_function
-def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
+def bugzilla_submit_url(raw_crash, report, parsed_dump, crashing_thread, bug_product):
     url = "https://bugzilla.mozilla.org/enter_bug.cgi"
 
     # Some crashes has the `os_name` but it's null so we
@@ -187,7 +187,12 @@ def bugzilla_submit_url(report, parsed_dump, crashing_thread, bug_product):
         "comment": comment,
     }
 
-    # some special keys have to be truncated to make Bugzilla happy
+    # If this crash report has DOMFissionEnabled=1, then we prepend "[Fission]"
+    # to the summary. This is probably temporary. Bug #1659175.
+    if raw_crash.get("DOMFissionEnabled"):
+        kwargs["short_desc"] = "[Fission] " + kwargs["short_desc"]
+
+    # Some special keys have to be truncated to make Bugzilla happy
     if len(kwargs["short_desc"]) > 255:
         kwargs["short_desc"] = kwargs["short_desc"][: 255 - 3] + "..."
 
