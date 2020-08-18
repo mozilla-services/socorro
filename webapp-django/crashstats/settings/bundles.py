@@ -31,7 +31,7 @@ NPM_FILE_PATTERNS = {
         "select2x2.png",
     ],
     "metrics-graphics": ["dist/*"],
-    "font-awesome": ["css/*", "fonts/*"],
+    "@fortawesome/fontawesome-free": ["css/all.min.css", "webfonts/*"],
     "tablesorter": ["dist/css/theme.default.min.css", "dist/js/jquery.tablesorter.js"],
     "d3": ["dist/*"],
     "jssha": ["src/*.js"],
@@ -49,6 +49,10 @@ NPM_FILE_PATTERNS = {
 #
 
 PIPELINE_CSS = {
+    "fontawesome": {
+        "source_filenames": ("@fortawesome/fontawesome-free/css/all.min.css",),
+        "output_filename": "css/fontawesome.min.css",
+    },
     "search": {
         "source_filenames": ("supersearch/css/search.less",),
         "output_filename": "css/search.min.css",

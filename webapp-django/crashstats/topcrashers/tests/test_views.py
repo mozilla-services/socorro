@@ -81,6 +81,7 @@ class TestTopCrasherViews(BaseTestViews):
                                     "hang_type": [{"term": 1, "count": 50}],
                                     "process_type": [{"term": "plugin", "count": 50}],
                                     "startup_crash": [{"term": "T", "count": 100}],
+                                    "dom_fission_enabled": [{"term": 1, "count": 50}],
                                     "histogram_uptime": [{"term": 0, "count": 60}],
                                     "cardinality_install_time": {"value": 13},
                                 },
@@ -96,6 +97,7 @@ class TestTopCrasherViews(BaseTestViews):
                                     "hang_type": [{"term": 1, "count": 50}],
                                     "process_type": [{"term": "browser", "count": 50}],
                                     "startup_crash": [{"term": "T", "count": 50}],
+                                    "dom_fission_enabled": [{"term": 1, "count": 80}],
                                     "histogram_uptime": [{"term": 0, "count": 40}],
                                     "cardinality_install_time": {"value": 11},
                                 },
@@ -151,14 +153,16 @@ class TestTopCrasherViews(BaseTestViews):
         selected_count = doc('.tc-result-count a[class="selected"]')
         assert selected_count.text() == "100"
 
+        print(smart_text(response.content))
+
         # Check the startup crash icon is there.
         assert (
-            "Potential Startup Crash, 50 out of 80 crashes happened during startup"
+            "Potential Startup Crash, more than half of the crashes happened "
             in smart_text(response.content)
         )
-        assert "Startup Crash, all crashes happened during startup" in smart_text(
-            response.content
-        )
+
+        # Check the fission icon.
+        assert "Fission Crash" in smart_text(response.content)
 
     def test_product_sans_featured_version(self):
         def mocked_supersearch_get(**params):

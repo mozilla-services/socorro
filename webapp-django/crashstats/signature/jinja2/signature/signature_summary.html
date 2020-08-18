@@ -1,4 +1,6 @@
 {% from "macros/signature_startup_icons.html" import startup_crash_icon,
+                                                     fission_icon,
+                                                     potential_fission_icon,
                                                      potential_startup_crash_icon,
                                                      potential_startup_window_crash_icon,
                                                      hang_crash_icon, plugin_crash_icon,
@@ -6,16 +8,27 @@
 
 {% if signature_stats %}
   <div class="panel tab-inner-panel crash-type-indicators-panel {% if signature_stats.is_startup_related_crash %} startup-crash-warning {% endif %}">
+    {% if signature_stats.is_fission_crash %}
+      <div class="crash-type-indicator-container">
+        {{ fission_icon() }}
+        Fission Crash, all crashes have Fission enabled
+      </div>
+    {% elif signature_stats.is_potential_fission_crash %}
+      <div class="crash-type-indicator-container">
+        {{ potential_fission_icon() }}
+        Potential Fission Crash, {{signature_stats.num_fission_crashes}}
+        out of {{signature_stats.num_crashes}} crashes have Fission enabled
+      </div>
+    {% endif %}
+
     {% if signature_stats.is_startup_crash %}
       <div class="crash-type-indicator-container">
         {{ startup_crash_icon() }}
         Startup Crash, all crashes happened during startup
       </div>
-    {% endif %}
-
-    {% if signature_stats.is_potential_startup_crash %}
+    {% elif signature_stats.is_potential_startup_crash %}
       <div class="crash-type-indicator-container">
-        {{ potential_startup_crash_icon(num_startup_crashes=signature_stats.num_startup_crashes, num_crashes=signature_stats.num_crashes) }}
+        {{ potential_startup_crash_icon() }}
         Potential Startup Crash, {{ signature_stats.num_startup_crashes }}
         out of {{ signature_stats.num_crashes }} crashes happened during startup
       </div>
