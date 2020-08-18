@@ -169,8 +169,11 @@ class SignatureStats:
 
     @cached_property
     def is_potential_fission_crash(self):
+        # It's only a potential fission crash if > 50% are fission-enabled.  Otherwise
+        # it'll create too many false positives.
         return (
-            self.num_fission_crashes > 0 and self.num_fission_crashes < self.num_crashes
+            self.num_fission_crashes > (self.num_crashes / 2)
+            and self.num_fission_crashes < self.num_crashes
         )
 
     @cached_property
