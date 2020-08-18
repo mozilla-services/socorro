@@ -393,6 +393,7 @@ def signature_summary(request, params):
         "hang_type",
         "process_type",
         "startup_crash",
+        "dom_fission_enabled",
         "_histogram.uptime",
     ]
     params["_results_number"] = 0

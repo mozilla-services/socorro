@@ -1,17 +1,25 @@
+{% macro fission_icon() %}
+  <i class="status-icon fas fa-atom" title="Fission Crash"></i>
+{%- endmacro %}
+
+{% macro potential_fission_icon() %}
+  <i class="status-icon fas fa-atom" title="Potential Fission Crash"></i>
+{%- endmacro %}
+
 {% macro startup_crash_icon() %}
   <img src="{{ static('img/3rdparty/silk/flag_red.png') }}"
        alt="red flag"
-       title="Startup Crash, all crashes happened during startup"
+       title="Startup Crash"
        class="startup"
        height="16"
        width="16"
   />
 {%- endmacro %}
 
-{% macro potential_startup_crash_icon(num_startup_crashes, num_crashes) %}
+{% macro potential_startup_crash_icon() %}
   <img src="{{ static('img/3rdparty/silk/flag_yellow.png') }}"
        alt="yellow flag"
-       title="Potential Startup Crash, {{ num_startup_crashes }} out of {{ num_crashes }} crashes happened during startup"
+       title="Potential Startup Crash"
        class="startup"
        height="16"
        width="16"
