@@ -1,4 +1,4 @@
-{# This is a Jinja2 template for Bugzilla bugs filed from the Socorro interface.
+{# This is a Jinja2 template for bugs filed from the Socorro interface.
    See crashstats.templatetags.jinja_helpers.bugzilla_submit_url. #}
 This bug is for crash report bp-{{ uuid }}.
 

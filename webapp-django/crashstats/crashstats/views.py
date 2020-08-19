@@ -16,6 +16,7 @@ from django.utils.http import urlquote
 
 from csp.decorators import csp_update
 
+from crashstats import productlib
 from crashstats.crashstats import forms, models, utils
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
@@ -123,7 +124,10 @@ def report_index(request, crash_id, default_context=None):
         context["crashing_thread"] = 0
 
     context["parsed_dump"] = parsed_dump
-    context["bug_product_map"] = settings.BUG_PRODUCT_MAP
+
+    context["bug_links"] = productlib.get_product_by_name(
+        context["report"]["product"]
+    ).bug_links
 
     context["bug_associations"] = list(
         models.BugAssociation.objects.filter(signature=context["report"]["signature"])
@@ -196,8 +200,6 @@ def report_index(request, crash_id, default_context=None):
     context["make_raw_crash_key"] = make_raw_crash_key
     context["fields_desc"] = descriptions
     context["empty_desc"] = "No description for this field. Search: unknown"
-
-    context["BUG_PRODUCT_MAP"] = settings.BUG_PRODUCT_MAP
 
     # report.addons used to be a list of lists.
     # In https://bugzilla.mozilla.org/show_bug.cgi?id=1250132

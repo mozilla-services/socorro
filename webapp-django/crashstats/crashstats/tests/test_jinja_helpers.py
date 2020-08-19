@@ -6,13 +6,16 @@ import datetime
 import time
 from urllib.parse import quote_plus, parse_qs, urlparse
 
+import pytest
+
 from django.core.cache import cache
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django.utils.safestring import SafeText
 
+from crashstats import productlib
 from crashstats.crashstats.templatetags.jinja_helpers import (
-    bugzilla_submit_url,
+    generate_create_bug_url,
     change_query_string,
     digitgroupseparator,
     is_dangerous_cpu,
@@ -109,9 +112,20 @@ class TestBugzillaLink:
         assert 'data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output
 
 
-class TestBugzillaSubmitURL:
+class Test_generate_create_bug_url:
     EMPTY_PARSED_DUMP = {}
     CRASHING_THREAD = 0
+    TEMPLATE = (
+        "https://bugzilla.mozilla.org/enter_bug.cgi?"
+        + "bug_type=%(bug_type)s&"
+        + "product=Firefox&"
+        + "op_sys=%(op_sys)s&"
+        + "rep_platform=%(rep_platform)s&"
+        + "cf_crash_signature=%(signature)s&"
+        + "short_desc=%(title)s&"
+        + "comment=%(description)s&"
+        + "format=__default__"
+    )
 
     @staticmethod
     def _create_report(**overrides):
@@ -154,26 +168,32 @@ class TestBugzillaSubmitURL:
     def test_basic_url(self):
         raw_crash = {}
         report = self._create_report(os_name="Windows")
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Plugin"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
-        assert url.startswith("https://bugzilla.mozilla.org/enter_bug.cgi?")
         qs = self._extract_query_string(url)
         assert "00000000-0000-0000-0000-000000000000" in qs["comment"][0]
         assert qs["cf_crash_signature"] == ["[@ $&#;deadbeef]"]
         assert qs["format"] == ["__default__"]
-        assert qs["product"] == ["Plugin"]
+        assert qs["product"] == ["Firefox"]
         assert qs["rep_platform"] == ["x86"]
         assert qs["short_desc"] == ["Crash in [@ $&#;deadbeef]"]
-        assert qs["keywords"] == ["crash"]
         assert qs["op_sys"] == ["Windows"]
         assert qs["bug_type"] == ["defect"]
 
     def test_truncate_short_desc(self):
         raw_crash = {}
         report = self._create_report(os_name="Windows", signature="x" * 1000)
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         qs = self._extract_query_string(url)
         assert len(qs["short_desc"][0]) == 255
@@ -184,44 +204,64 @@ class TestBugzillaSubmitURL:
         report = self._create_report(
             os_name="Windoooosws", os_pretty_version="Windows 10"
         )
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         qs = self._extract_query_string(url)
         assert qs["op_sys"] == ["Windows 10"]
 
         # os_name if the os_pretty_version is there, but empty
         report = self._create_report(os_name="Windoooosws", os_pretty_version="")
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         qs = self._extract_query_string(url)
         assert qs["op_sys"] == ["Windoooosws"]
 
-        # 'OS X <Number>' becomes 'Mac OS X'
+        # "OS X <Number>" becomes "macOS"
         report = self._create_report(os_name="OS X", os_pretty_version="OS X 11.1")
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         qs = self._extract_query_string(url)
-        assert qs["op_sys"] == ["Mac OS X"]
+        assert qs["op_sys"] == ["macOS"]
 
-        # 'Windows 8.1' becomes 'Windows 8'
+        # "Windows 8.1" becomes "Windows 8"
         report = self._create_report(
             os_name="Windows NT", os_pretty_version="Windows 8.1"
         )
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         qs = self._extract_query_string(url)
         assert qs["op_sys"] == ["Windows 8"]
 
-        # 'Windows Unknown' becomes plain 'Windows'
+        # "Windows Unknown" becomes plain "Windows"
         report = self._create_report(
             os_name="Windows NT", os_pretty_version="Windows Unknown"
         )
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         qs = self._extract_query_string(url)
         assert qs["op_sys"] == ["Windows"]
@@ -235,14 +275,18 @@ class TestBugzillaSubmitURL:
         report = self._create_report(
             os_name=None, signature="java.lang.IllegalStateException"
         )
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         qs = self._extract_query_string(url)
         assert "op_sys" not in qs
 
     def test_with_unicode_signature(self):
-        """The jinja helper bugzilla_submit_url should work when
+        """The jinja helper generate_create_bug_url should work when
         the signature contains non-ascii characters.
 
         Based on an actual error in production:
@@ -252,8 +296,12 @@ class TestBugzillaSubmitURL:
         report = self._create_report(
             os_name=None, signature="YouTube\u2122 No Buffer (Stop Auto-playing)"
         )
-        url = bugzilla_submit_url(
-            raw_crash, report, self.EMPTY_PARSED_DUMP, self.CRASHING_THREAD, "Core"
+        url = generate_create_bug_url(
+            self.TEMPLATE,
+            raw_crash,
+            report,
+            self.EMPTY_PARSED_DUMP,
+            self.CRASHING_THREAD,
         )
         # Most important that it should work
         assert (
@@ -276,7 +324,7 @@ class TestBugzillaSubmitURL:
                 ),
             ]
         )
-        url = bugzilla_submit_url(raw_crash, report, parsed_dump, 1, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 1)
 
         assert quote_plus("bp-" + report["uuid"]) in url
         assert quote_plus("Top 3 frames of crashing thread:") in url
@@ -293,7 +341,7 @@ class TestBugzillaSubmitURL:
         """
         raw_crash = {}
         report = self._create_report()
-        url = bugzilla_submit_url(raw_crash, report, {}, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, {}, 0)
         assert quote_plus("frames of crashing thread:") not in url
 
     def test_comment_more_than_ten_frames(self):
@@ -311,7 +359,7 @@ class TestBugzillaSubmitURL:
                 )
             ]
         )
-        url = bugzilla_submit_url(raw_crash, report, parsed_dump, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
         assert quote_plus("do_not_include") not in url
 
     def test_comment_remove_arguments(self):
@@ -333,7 +381,7 @@ class TestBugzillaSubmitURL:
                 )
             ]
         )
-        url = bugzilla_submit_url(raw_crash, report, parsed_dump, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
         assert quote_plus("0 test_module foo::bar foo.cpp:7") in url
 
     def test_comment_missing_line(self):
@@ -355,7 +403,7 @@ class TestBugzillaSubmitURL:
                 )
             ]
         )
-        url = bugzilla_submit_url(raw_crash, report, parsed_dump, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
         assert quote_plus("0 test_module foo::bar foo.cpp\n") in url
 
     def test_comment_missing_file(self):
@@ -377,7 +425,7 @@ class TestBugzillaSubmitURL:
                 )
             ]
         )
-        url = bugzilla_submit_url(raw_crash, report, parsed_dump, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
         assert quote_plus("0 test_module foo::bar \n") in url
 
     def test_comment_missing_everything(self):
@@ -385,7 +433,7 @@ class TestBugzillaSubmitURL:
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(threads=[self._create_thread(frames=[{}])])
-        bugzilla_submit_url(raw_crash, report, parsed_dump, 0, "Core")
+        generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
 
     def test_comment_no_html_escaping(self):
         """If a frame contains <, >, &, or ", they should not be HTML
@@ -409,7 +457,7 @@ class TestBugzillaSubmitURL:
                 )
             ]
         )
-        url = bugzilla_submit_url(raw_crash, report, parsed_dump, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
         assert quote_plus('0 &test_module foo<char>::bar "foo".cpp:7') in url
 
     def test_comment_java_stack_trace(self):
@@ -429,7 +477,7 @@ class TestBugzillaSubmitURL:
                 ),
             ]
         )
-        url = bugzilla_submit_url(raw_crash, report, parsed_dump, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
         assert quote_plus("Java stack trace:") in url
         assert quote_plus("java.lang.NullPointerException: list == null") in url
 
@@ -440,8 +488,20 @@ class TestBugzillaSubmitURL:
         """DOMFissionEnabled causes [Fission] to be prepended."""
         raw_crash = {"DOMFissionEnabled": "1"}
         report = self._create_report()
-        url = bugzilla_submit_url(raw_crash, report, {}, 0, "Core")
+        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, {}, 0)
         assert "short_desc=" + quote_plus("[Fission] Crash in") in url
+
+    @pytest.mark.parametrize("fn", productlib.get_product_files())
+    def test_product_bug_links(self, fn):
+        """Verify bug links templates are well-formed."""
+        product = productlib.load_product_from_file(fn)
+
+        raw_crash = {"DOMFissionEnabled": "1"}
+        report = self._create_report()
+
+        for text, template in product.bug_links:
+            # If there's an error in the template, it'll raise an exception here
+            generate_create_bug_url(template, raw_crash, report, {}, 0)
 
 
 class TestReplaceBugzillaLinks:

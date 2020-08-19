@@ -30,6 +30,10 @@ class Product:
     # entries
     featured_versions: List[int]
 
+    # The list of [link name, link url] bug links for creating new bugs from the report
+    # view of a crash report
+    bug_links: List[List[str]]
+
 
 # In-memory cache of products files so we're not parsing them over-and-over
 _PRODUCTS = []
@@ -48,25 +52,25 @@ def get_product_files():
     return product_files
 
 
+def load_product_from_file(fn):
+    with open(fn, "r") as fp:
+        json_data = json.load(fp)
+
+        # Take out any fields that start with _ so people can add "comments" to
+        # the file
+        json_data = {
+            key: json_data[key] for key in json_data if not key.startswith("_")
+        }
+
+        return Product(**json_data)
+
+
 def get_products():
     """Return Product list sorted by home_page_sort value"""
     global _PRODUCTS
     if not _PRODUCTS:
         product_files = get_product_files()
-
-        products = []
-        for fn in product_files:
-            with open(fn, "r") as fp:
-                json_data = json.load(fp)
-
-                # Take out any fields that start with _ so people can add "comments" to
-                # the file
-                json_data = {
-                    key: json_data[key] for key in json_data if not key.startswith("_")
-                }
-
-                products.append(Product(**json_data))
-
+        products = [load_product_from_file(fn) for fn in product_files]
         products.sort(key=lambda prod: (prod.home_page_sort, prod.name))
         _PRODUCTS = products
 
@@ -133,6 +137,21 @@ def validate_product_file(fn):
             json_data = {
                 key: json_data[key] for key in json_data if not key.startswith("_")
             }
+
+            # Type validation doesn't verify the shape of bug_links, so we need to do
+            # that manually
+            for item in json_data["bug_links"]:
+                if len(item) != 2:
+                    raise ProductValidationError(
+                        "product file %s has invalid bug_links: %s" % (fn, repr(item))
+                    )
+                if not isinstance(item[0], str) or not isinstance(item[1], str):
+                    raise ProductValidationError(
+                        "product file %s has invalid bug_links: %s" % (fn, repr(item))
+                    )
+
+                # NOTE(willkg): This doesn't verify templates are well formed. That's
+                # handled in a test in the code that uses the template.
 
             # Try to build a Product out of it
             Product(**json_data)

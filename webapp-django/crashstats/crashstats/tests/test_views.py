@@ -1084,7 +1084,7 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "unredacted":
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
-                crash["product"] = "WinterSun"
+                crash["product"] = "WaterWolf"
                 return crash
 
             raise NotImplementedError
@@ -1097,19 +1097,17 @@ class TestViews(BaseTestViews):
             "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
         )
 
-        bug_product_map = {"WinterSun": "Winter Is Coming"}
-        with self.settings(BUG_PRODUCT_MAP=bug_product_map):
-            response = self.client.get(url)
-            assert response.status_code == 200
-            doc = pyquery.PyQuery(response.content)
+        response = self.client.get(url)
+        assert response.status_code == 200
+        doc = pyquery.PyQuery(response.content)
 
-            link = doc('#bugzilla a[target="_blank"]').eq(0)
-            assert link.text() == "Winter Is Coming"
-            assert "product=Winter+Is+Coming" in link.attr("href")
+        link = doc('#bugzilla a[target="_blank"]').eq(0)
+        assert link.text() == "WaterWolf"
+        assert "create-waterwolf-bug" in link.attr("href")
 
-            # also, the "More Reports" link should have WinterSun in it
-            link = doc("a.sig-overview").eq(0)
-            assert "product=WinterSun" in link.attr("href")
+        # also, the "More Reports" link should have WinterSun in it
+        link = doc("a.sig-overview").eq(0)
+        assert "product=WaterWolf" in link.attr("href")
 
     def test_report_index_odd_product_and_version(self):
         # If the processed JSON references an unfamiliar product and version it
@@ -1128,7 +1126,7 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "unredacted":
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
-                crash["product"] = "SummerWolf"
+                crash["product"] = "WaterWolf"
                 crash["version"] = "99.9"
                 return crash
 
@@ -1146,12 +1144,12 @@ class TestViews(BaseTestViews):
         # the title should have the "SummerWolf 99.9" in it
         doc = pyquery.PyQuery(response.content)
         title = doc("title").text()
-        assert "SummerWolf" in title
+        assert "WaterWolf" in title
         assert "99.9" in title
 
         # there shouldn't be any links to reports for the product mentioned in
         # the processed JSON
-        bad_url = reverse("crashstats:product_home", args=("SummerWolf",))
+        bad_url = reverse("crashstats:product_home", args=("WaterWolf",))
         assert bad_url not in smart_text(response.content)
 
     def test_report_index_no_dump(self):
