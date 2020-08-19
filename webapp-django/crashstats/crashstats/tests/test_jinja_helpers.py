@@ -6,11 +6,14 @@ import datetime
 import time
 from urllib.parse import quote_plus, parse_qs, urlparse
 
+import pytest
+
 from django.core.cache import cache
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django.utils.safestring import SafeText
 
+from crashstats import productlib
 from crashstats.crashstats.templatetags.jinja_helpers import (
     generate_create_bug_url,
     change_query_string,
@@ -109,7 +112,7 @@ class TestBugzillaLink:
         assert 'data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output
 
 
-class TestBugzillaSubmitURL:
+class Test_generate_create_bug_url:
     EMPTY_PARSED_DUMP = {}
     CRASHING_THREAD = 0
     TEMPLATE = (
@@ -487,6 +490,18 @@ class TestBugzillaSubmitURL:
         report = self._create_report()
         url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, {}, 0)
         assert "short_desc=" + quote_plus("[Fission] Crash in") in url
+
+    @pytest.mark.parametrize("fn", productlib.get_product_files())
+    def test_product_bug_links(self, fn):
+        """Verify bug links templates are well-formed."""
+        product = productlib.load_product_from_file(fn)
+
+        raw_crash = {"DOMFissionEnabled": "1"}
+        report = self._create_report()
+
+        for text, template in product.bug_links:
+            # If there's an error in the template, it'll raise an exception here
+            generate_create_bug_url(template, raw_crash, report, {}, 0)
 
 
 class TestReplaceBugzillaLinks:
