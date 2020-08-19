@@ -778,12 +778,10 @@
           <div id="bugzilla" class="ui-tabs-hide">
             <div class="bugreporter">
               <p>
-                <b>Bugzilla</b> - Report this bug in
-                {% for bug_product in [report.product, 'Core', 'External Software Affecting Firefox', 'Toolkit', 'GeckoView'] %}
-                  {% if bug_product in bug_product_map %}
-                    {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
-                  {% endif %}
-                  <a href="{{ bugzilla_submit_url(raw, report, parsed_dump, crashing_thread, bug_product) }}" target="_blank">{{ bug_product }}</a>
+                <b>Create a bug:</b>
+                {% for text, template in bug_links %}
+                  <a href="{{ generate_create_bug_url(template, raw, report, parsed_dump, crashing_thread) }}" target="_blank">{{ text }}</a>
+                  {% if not loop.last %}|{% endif %}
                 {% endfor %}
               </p>
 

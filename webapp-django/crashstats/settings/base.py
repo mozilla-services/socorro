@@ -248,9 +248,6 @@ else:
         "crashstats": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
     }
 
-# Some products have a different name in bugzilla and Socorro.
-BUG_PRODUCT_MAP = {"FennecAndroid": "Firefox for Android"}
-
 # Link to source if possible
 VCS_MAPPINGS = {
     "cvs": {

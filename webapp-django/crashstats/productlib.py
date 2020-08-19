@@ -30,6 +30,10 @@ class Product:
     # entries
     featured_versions: List[int]
 
+    # The list of [link name, link url] bug links for creating new bugs from the report
+    # view of a crash report
+    bug_links: List[List[str]]
+
 
 # In-memory cache of products files so we're not parsing them over-and-over
 _PRODUCTS = []

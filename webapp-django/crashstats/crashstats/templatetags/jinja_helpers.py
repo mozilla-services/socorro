@@ -5,7 +5,7 @@
 import datetime
 import json
 import re
-from urllib.parse import urlencode, parse_qs
+from urllib.parse import urlencode, parse_qs, quote_plus
 
 from django_jinja import library
 import humanfriendly
@@ -143,19 +143,17 @@ def show_bug_link(bug_id):
 
 
 @library.global_function
-def bugzilla_submit_url(raw_crash, report, parsed_dump, crashing_thread, bug_product):
-    url = "https://bugzilla.mozilla.org/enter_bug.cgi"
-
+def generate_create_bug_url(template, raw_crash, report, parsed_dump, crashing_thread):
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
     # `.startswith(...)` things we do don't raise an AttributeError.
     op_sys = report.get("os_pretty_version") or report["os_name"] or ""
 
-    # At the time of writing, these pretty versions of the OS name
-    # don't perfectly fit with the drop-down choices that Bugzilla
-    # has in its OS drop-down. So we have to make some adjustments.
+    # At the time of writing, these pretty versions of the OS name don't perfectly fit
+    # with the drop-down choices that Bugzilla has in its OS drop-down. So we have to
+    # make some adjustments.
     if op_sys.startswith("OS X "):
-        op_sys = "Mac OS X"
+        op_sys = "macOS"
     elif op_sys == "Windows 8.1":
         op_sys = "Windows 8"
     elif op_sys in ("Windows Unknown", "Windows 2000"):
@@ -168,7 +166,7 @@ def bugzilla_submit_url(raw_crash, report, parsed_dump, crashing_thread, bug_pro
         )
 
     comment = render_to_string(
-        "crashstats/bugzilla_comment.txt",
+        "crashstats/bug_comment.txt",
         {
             "uuid": report["uuid"],
             "java_stack_trace": report.get("java_stack_trace", None),
@@ -178,33 +176,25 @@ def bugzilla_submit_url(raw_crash, report, parsed_dump, crashing_thread, bug_pro
 
     kwargs = {
         "bug_type": "defect",
-        "keywords": "crash",
-        "product": bug_product,
         "op_sys": op_sys,
         "rep_platform": report["cpu_arch"],
-        "cf_crash_signature": "[@ {}]".format(smart_str(report["signature"])),
-        "short_desc": "Crash in [@ {}]".format(smart_str(report["signature"])),
-        "comment": comment,
+        "signature": "[@ {}]".format(smart_str(report["signature"])),
+        "title": "Crash in [@ {}]".format(smart_str(report["signature"])),
+        "description": comment,
     }
 
     # If this crash report has DOMFissionEnabled=1, then we prepend "[Fission]"
     # to the summary. This is probably temporary. Bug #1659175.
     if raw_crash.get("DOMFissionEnabled"):
-        kwargs["short_desc"] = "[Fission] " + kwargs["short_desc"]
+        kwargs["title"] = "[Fission] " + kwargs["title"]
 
-    # Some special keys have to be truncated to make Bugzilla happy
-    if len(kwargs["short_desc"]) > 255:
-        kwargs["short_desc"] = kwargs["short_desc"][: 255 - 3] + "..."
+    # Truncate the title
+    if len(kwargs["title"]) > 255:
+        kwargs["title"] = kwargs["title"][: 255 - 3] + "..."
 
-    # People who are new to bugzilla automatically get the more
-    # basic, "guided format". for entering bugs. This unfortunately
-    # means that all the parameters we pass along gets lost when
-    # the user makes it to the second page. Let's prevent that.
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1238212
-    kwargs["format"] = "__default__"
-
-    url += "?" + urlencode(kwargs, True)
-    return url
+    # urlencode the values so they work in the url template correctly
+    kwargs = {key: quote_plus(value) for key, value in kwargs.items()}
+    return template % kwargs
 
 
 def bugzilla_thread_frames(thread):

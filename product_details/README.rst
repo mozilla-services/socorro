@@ -16,7 +16,13 @@ Each product file in this directory is in JSON format. Here's an example:
    {
      "name": "Firefox",
      "home_page_sort": 1,
-     "featured_versions": ["auto"]
+     "featured_versions": ["auto"],
+     "bug_links": [
+       [
+         "Firefox",
+         "https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=%(bug_type)s&keywords=crash&product=Firefox&op_sys=%(op_sys)s&rep_platform=%(rep_platform)s&cf_crash_signature=%(signature)s&short_desc=%(title)s&comment=%(description)s&format=__default__"
+       ]
+     ]
    }
 
 Keys:
@@ -46,6 +52,27 @@ Keys:
 
     Use ``"auto"`` if you want Crash Stats to calculate the featured versions
     based on crash reports that have been submitted.
+
+``bug_links`` (list of [str, str])
+    List of "create a bug" links to show in the Bugzilla tab in the crash report.
+    The first string is the text for the link. The second string is the url
+    template. It's allowed to have the following keys in it:
+
+    * bug_type: set to "defect"
+    * op_sys: the operating system
+    * rep_platform: the architecture
+    * signature: the crash signature
+    * title: bug title
+    * description: the bug description in Markdown format
+
+    For example::
+
+       "bug_links": [
+         [
+           "Firefox",
+           "https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=%(bug_type)s&keywords=crash&product=Firefox&op_sys=%(op_sys)s&rep_platform=%(rep_platform)s&cf_crash_signature=%(signature)s&short_desc=%(title)s&comment=%(description)s&format=__default__"
+         ]
+       ]
 
 
 How to update product details files
