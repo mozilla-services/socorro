@@ -147,6 +147,7 @@ def main(argv=None):
         dest="signature",
         help="signature contains this string",
     )
+    parser.add_argument("--product", default="Firefox", help="Product to fetch for")
     parser.add_argument("--url", default="", help="Super Search url to base query on")
     parser.add_argument(
         "--num",
@@ -164,13 +165,14 @@ def main(argv=None):
 
     host = args.host.rstrip("/")
 
-    # Start with params from --url value or product=Firefox
+    # Start with params from --url value or empty dict
     if args.url:
         params = extract_params(args.url)
     else:
-        params = {"product": "Firefox"}
+        params = {}
 
     params["_columns"] = "uuid"
+    params["product"] = params.get("product", args.product)
 
     # Override with date if specified
     if "date" not in params or args.date:
