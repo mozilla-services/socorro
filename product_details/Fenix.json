@@ -7,23 +7,19 @@
   "bug_links": [
     [
       "Fenix",
-      "https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=%(bug_type)s&keywords=crash&product=Fenix&op_sys=%(op_sys)s&rep_platform=%(rep_platform)s&cf_crash_signature=%(signature)s&short_desc=%(title)s&comment=%(description)s&format=__default__"
-    ],
-    [
-      "Core",
-      "https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=%(bug_type)s&keywords=crash&product=Core&op_sys=%(op_sys)s&rep_platform=%(rep_platform)s&cf_crash_signature=%(signature)s&short_desc=%(title)s&comment=%(description)s&format=__default__"
-    ],
-    [
-      "External Software Affecting Firefox",
-      "https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=%(bug_type)s&keywords=crash&product=External+Software+Affecting+Firefox&op_sys=%(op_sys)s&rep_platform=%(rep_platform)s&cf_crash_signature=%(signature)s&short_desc=%(title)s&comment=%(description)s&format=__default__"
-    ],
-    [
-      "Toolkit",
-      "https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=%(bug_type)s&keywords=crash&product=Toolkit&op_sys=%(op_sys)s&rep_platform=%(rep_platform)s&cf_crash_signature=%(signature)s&short_desc=%(title)s&comment=%(description)s&format=__default__"
+      "https://github.com/mozilla-mobile/fenix/issues/new?title=%(title)s&body=%(description)s"
     ],
     [
       "GeckoView",
       "https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=%(bug_type)s&keywords=crash&product=GeckoView&op_sys=%(op_sys)s&rep_platform=%(rep_platform)s&cf_crash_signature=%(signature)s&short_desc=%(title)s&comment=%(description)s&format=__default__"
+    ],
+    [
+      "Android-Components",
+      "https://github.com/mozilla-mobile/android-components/issues/new?title=%(title)s&body=%(description)s"
+    ],
+    [
+      "Application-Services",
+      "https://github.com/mozilla/application-services/issues/new?title=%(title)s&body=%(description)s"
     ]
   ]
 }
