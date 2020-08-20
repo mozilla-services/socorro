@@ -1,6 +1,6 @@
 {# This is a Jinja2 template for bugs filed from the Socorro interface.
-   See crashstats.templatetags.jinja_helpers.bugzilla_submit_url. #}
-This bug is for crash report bp-{{ uuid }}.
+   See crashstats.templatetags.jinja_helpers.generate_bug_create_url. #}
+Crash report: {{ full_url(request, "crashstats:report_index", crash_id=uuid ) }}
 
 {% if java_stack_trace -%}
 Java stack trace:
