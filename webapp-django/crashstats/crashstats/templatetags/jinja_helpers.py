@@ -143,7 +143,9 @@ def show_bug_link(bug_id):
 
 
 @library.global_function
-def generate_create_bug_url(template, raw_crash, report, parsed_dump, crashing_thread):
+def generate_create_bug_url(
+    request, template, raw_crash, report, parsed_dump, crashing_thread
+):
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
     # `.startswith(...)` things we do don't raise an AttributeError.
@@ -168,6 +170,7 @@ def generate_create_bug_url(template, raw_crash, report, parsed_dump, crashing_t
     comment = render_to_string(
         "crashstats/bug_comment.txt",
         {
+            "request": request,
             "uuid": report["uuid"],
             "java_stack_trace": report.get("java_stack_trace", None),
             "crashing_thread_frames": crashing_thread_frames,

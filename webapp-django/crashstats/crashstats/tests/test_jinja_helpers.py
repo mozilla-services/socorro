@@ -166,9 +166,11 @@ class Test_generate_create_bug_url:
         return {"threads": threads or []}
 
     def test_basic_url(self):
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report(os_name="Windows")
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -186,9 +188,11 @@ class Test_generate_create_bug_url:
         assert qs["bug_type"] == ["defect"]
 
     def test_truncate_short_desc(self):
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report(os_name="Windows", signature="x" * 1000)
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -200,11 +204,13 @@ class Test_generate_create_bug_url:
         assert qs["short_desc"][0].endswith("...")
 
     def test_corrected_os_version_name(self):
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report(
             os_name="Windoooosws", os_pretty_version="Windows 10"
         )
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -217,6 +223,7 @@ class Test_generate_create_bug_url:
         # os_name if the os_pretty_version is there, but empty
         report = self._create_report(os_name="Windoooosws", os_pretty_version="")
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -229,6 +236,7 @@ class Test_generate_create_bug_url:
         # "OS X <Number>" becomes "macOS"
         report = self._create_report(os_name="OS X", os_pretty_version="OS X 11.1")
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -243,6 +251,7 @@ class Test_generate_create_bug_url:
             os_name="Windows NT", os_pretty_version="Windows 8.1"
         )
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -257,6 +266,7 @@ class Test_generate_create_bug_url:
             os_name="Windows NT", os_pretty_version="Windows Unknown"
         )
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -271,11 +281,13 @@ class Test_generate_create_bug_url:
 
         FennecAndroid crashes for example.
         """
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report(
             os_name=None, signature="java.lang.IllegalStateException"
         )
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -292,11 +304,13 @@ class Test_generate_create_bug_url:
         Based on an actual error in production:
         https://bugzilla.mozilla.org/show_bug.cgi?id=1383269
         """
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report(
             os_name=None, signature="YouTube\u2122 No Buffer (Stop Auto-playing)"
         )
         url = generate_create_bug_url(
+            req,
             self.TEMPLATE,
             raw_crash,
             report,
@@ -310,6 +324,7 @@ class Test_generate_create_bug_url:
         )
 
     def test_comment(self):
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(
@@ -324,9 +339,14 @@ class Test_generate_create_bug_url:
                 ),
             ]
         )
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 1)
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 1
+        )
 
-        assert quote_plus("bp-" + report["uuid"]) in url
+        # Assert that the crash id is in the comment
+        assert quote_plus(report["uuid"]) in url
+
+        # Assert that the top 3 frames are in the comment
         assert quote_plus("Top 3 frames of crashing thread:") in url
 
         frame1 = parsed_dump["threads"][1]["frames"][1]
@@ -335,20 +355,16 @@ class Test_generate_create_bug_url:
         )
 
     def test_comment_no_threads(self):
-        """If parsed_dump has no threads available, do not output any
-        frames.
-
-        """
+        """If parsed_dump has no threads available, do not output any frames."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, {}, 0)
+        url = generate_create_bug_url(req, self.TEMPLATE, raw_crash, report, {}, 0)
         assert quote_plus("frames of crashing thread:") not in url
 
     def test_comment_more_than_ten_frames(self):
-        """If the crashing thread has more than ten frames, only display
-        the top ten.
-
-        """
+        """If the crashing thread has more than ten frames, only display top ten."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(
@@ -359,11 +375,14 @@ class Test_generate_create_bug_url:
                 )
             ]
         )
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
         assert quote_plus("do_not_include") not in url
 
     def test_comment_remove_arguments(self):
         """If a frame signature includes function arguments, remove them."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(
@@ -381,11 +400,14 @@ class Test_generate_create_bug_url:
                 )
             ]
         )
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
         assert quote_plus("0 test_module foo::bar foo.cpp:7") in url
 
     def test_comment_missing_line(self):
         """If a frame is missing a line number, do not include it."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(
@@ -403,11 +425,14 @@ class Test_generate_create_bug_url:
                 )
             ]
         )
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
         assert quote_plus("0 test_module foo::bar foo.cpp\n") in url
 
     def test_comment_missing_file(self):
         """If a frame is missing file info, do not include it."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(
@@ -425,21 +450,25 @@ class Test_generate_create_bug_url:
                 )
             ]
         )
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
         assert quote_plus("0 test_module foo::bar \n") in url
 
     def test_comment_missing_everything(self):
         """If a frame is missing everything, do not throw an error."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(threads=[self._create_thread(frames=[{}])])
-        generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
+        generate_create_bug_url(req, self.TEMPLATE, raw_crash, report, parsed_dump, 0)
 
     def test_comment_no_html_escaping(self):
         """If a frame contains <, >, &, or ", they should not be HTML
         escaped in the comment body.
 
         """
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         parsed_dump = self._create_dump(
@@ -457,11 +486,14 @@ class Test_generate_create_bug_url:
                 )
             ]
         )
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
         assert quote_plus('0 &test_module foo<char>::bar "foo".cpp:7') in url
 
     def test_comment_java_stack_trace(self):
-        """If there's a java stack trace, use that instead"""
+        """If there's a java stack trace, use that instead."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report()
         report["java_stack_trace"] = "java.lang.NullPointerException: list == null"
@@ -477,7 +509,9 @@ class Test_generate_create_bug_url:
                 ),
             ]
         )
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, parsed_dump, 0)
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
         assert quote_plus("Java stack trace:") in url
         assert quote_plus("java.lang.NullPointerException: list == null") in url
 
@@ -486,9 +520,10 @@ class Test_generate_create_bug_url:
 
     def test_fission_enabled(self):
         """DOMFissionEnabled causes [Fission] to be prepended."""
+        req = RequestFactory().get("/report/index")
         raw_crash = {"DOMFissionEnabled": "1"}
         report = self._create_report()
-        url = generate_create_bug_url(self.TEMPLATE, raw_crash, report, {}, 0)
+        url = generate_create_bug_url(req, self.TEMPLATE, raw_crash, report, {}, 0)
         assert "short_desc=" + quote_plus("[Fission] Crash in") in url
 
     @pytest.mark.parametrize("fn", productlib.get_product_files())
@@ -496,12 +531,13 @@ class Test_generate_create_bug_url:
         """Verify bug links templates are well-formed."""
         product = productlib.load_product_from_file(fn)
 
+        req = RequestFactory().get("/report/index")
         raw_crash = {"DOMFissionEnabled": "1"}
         report = self._create_report()
 
         for text, template in product.bug_links:
             # If there's an error in the template, it'll raise an exception here
-            generate_create_bug_url(template, raw_crash, report, {}, 0)
+            generate_create_bug_url(req, template, raw_crash, report, {}, 0)
 
 
 class TestReplaceBugzillaLinks:
