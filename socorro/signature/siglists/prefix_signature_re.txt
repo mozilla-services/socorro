@@ -221,6 +221,7 @@ nsInterfaceHashtable<.*>::
 nsINode::Slots
 nsJSThingHashtable<.*>::
 nsObjCExceptionLogAbort
+NS_QuickSort
 nsRefPtr
 NSS
 nss
