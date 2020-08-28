@@ -519,12 +519,12 @@ class Test_generate_create_bug_url:
         assert quote_plus("frames of crashing thread:") not in url
 
     def test_fission_enabled(self):
-        """DOMFissionEnabled causes [Fission] to be prepended."""
+        """DOMFissionEnabled appends note to description."""
         req = RequestFactory().get("/report/index")
         raw_crash = {"DOMFissionEnabled": "1"}
         report = self._create_report()
         url = generate_create_bug_url(req, self.TEMPLATE, raw_crash, report, {}, 0)
-        assert "short_desc=" + quote_plus("[Fission] Crash in") in url
+        assert "comment=Maybe+Fission+related.+%28DOMFissionEnabled%3D1%29" in url
 
     @pytest.mark.parametrize("fn", productlib.get_product_files())
     def test_product_bug_links(self, fn):
