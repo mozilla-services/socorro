@@ -524,7 +524,7 @@ class Test_generate_create_bug_url:
         raw_crash = {"DOMFissionEnabled": "1"}
         report = self._create_report()
         url = generate_create_bug_url(req, self.TEMPLATE, raw_crash, report, {}, 0)
-        assert "comment=Maybe+Fission+related." in url
+        assert "comment=Maybe+Fission+related.+%28DOMFissionEnabled%3D1%29" in url
 
     @pytest.mark.parametrize("fn", productlib.get_product_files())
     def test_product_bug_links(self, fn):
