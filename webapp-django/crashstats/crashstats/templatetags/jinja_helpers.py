@@ -186,10 +186,10 @@ def generate_create_bug_url(
         "description": comment,
     }
 
-    # If this crash report has DOMFissionEnabled=1, then we prepend "[Fission]"
-    # to the summary. This is probably temporary. Bug #1659175.
+    # If this crash report has DOMFissionEnabled=1, then we prepend a note to the
+    # description. This is probably temporary. Bug #1659175, #1661573.
     if raw_crash.get("DOMFissionEnabled"):
-        kwargs["title"] = "[Fission] " + kwargs["title"]
+        kwargs["description"] = "Maybe Fission related.\n\n" + kwargs["description"]
 
     # Truncate the title
     if len(kwargs["title"]) > 255:
