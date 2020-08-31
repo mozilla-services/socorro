@@ -198,11 +198,11 @@
                     <td>{{ topcrashers_stats_item.num_crashes_per_platform.mac_count }}</td>
                     <td>{{ topcrashers_stats_item.num_crashes_per_platform.lin_count }}</td>
                   {% elif os_name == 'Windows' %}
-                    <td>{{ topcrashers_stats_item.win_count }}</td>
+                    <td>{{ topcrashers_stats_item.num_crashes_per_platform.win_count }}</td>
                   {% elif os_name == 'Linux' %}
-                    <td>{{ topcrashers_stats_item.lin_count }}</td>
+                    <td>{{ topcrashers_stats_item.num_crashes_per_platform.lin_count }}</td>
                   {% elif os_name == 'Mac OS X' %}
-                    <td>{{ topcrashers_stats_item.mac_count }}</td>
+                    <td>{{ topcrashers_stats_item.num_crashes_per_platform.mac_count }}</td>
                   {% endif %}
                   <td>{{ topcrashers_stats_item.num_installs }}</td>
                   <td>{{ topcrashers_stats_item.num_crashes_in_garbage_collection }}</td>
