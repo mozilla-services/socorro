@@ -130,7 +130,9 @@ def retry(
                     # The return value is "bad", so we log something and then
                     # do another iteration.
                     log_warning(
-                        "%s: bad return, retry attempt %s", fun.__qualname__, attempts,
+                        "%s: bad return, retry attempt %s",
+                        fun.__qualname__,
+                        attempts,
                     )
 
                     # If last attempt,

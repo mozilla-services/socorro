@@ -27,7 +27,7 @@ def default_iterator():
 
 
 def respond_to_SIGTERM(signal_number, frame, target=None):
-    """ these classes are instrumented to respond to a KeyboardInterrupt by
+    """these classes are instrumented to respond to a KeyboardInterrupt by
     cleanly shutting down.  This function, when given as a handler to for
     a SIGTERM event, will make the program respond to a SIGTERM as neatly
     as it responds to ^C.

@@ -92,7 +92,11 @@ def cmd_list_crashids(ctx, index):
     """List crashids for index."""
     es_conn = get_conn()
     with es_conn() as conn:
-        search = Search(using=conn, index=index, doc_type=es_conn.get_doctype(),)
+        search = Search(
+            using=conn,
+            index=index,
+            doc_type=es_conn.get_doctype(),
+        )
         search = search.fields("processed_crash.uuid")
         results = search.execute()
         click.echo("Crashids in %s:" % index)

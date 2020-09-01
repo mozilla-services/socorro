@@ -154,7 +154,7 @@ class SuperSearchFields(SuperSearchFieldsData):
 
         def parse_mapping(mapping, namespace):
             """Return a set of all fields in a mapping. Parse the mapping
-            recursively. """
+            recursively."""
             fields = set()
 
             for key in mapping:

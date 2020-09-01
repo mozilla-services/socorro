@@ -90,7 +90,8 @@ class TestBotoS3CrashStorage:
 
         # Verify dumps
         dump = boto_helper.download_fileobj(
-            bucket_name=bucket, key="v1/dump/0bba929f-8721-460c-dead-a43c20071027",
+            bucket_name=bucket,
+            key="v1/dump/0bba929f-8721-460c-dead-a43c20071027",
         )
         assert dump == b"fake dump"
 

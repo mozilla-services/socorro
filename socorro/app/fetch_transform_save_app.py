@@ -145,13 +145,16 @@ class FetchTransformSaveApp(App):
     def _setup_source_and_destination(self):
         """Instantiate queue, source, and destination classes."""
         self.queue = self.config.queue.crashqueue_class(
-            self.config.queue, namespace=self.app_instance_name,
+            self.config.queue,
+            namespace=self.app_instance_name,
         )
         self.source = self.config.source.crashstorage_class(
-            self.config.source, namespace=self.app_name,
+            self.config.source,
+            namespace=self.app_name,
         )
         self.destination = self.config.destination.crashstorage_class(
-            self.config.destination, namespace=self.app_name,
+            self.config.destination,
+            namespace=self.app_name,
         )
 
     def _setup_task_manager(self):

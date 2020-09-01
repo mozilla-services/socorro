@@ -74,7 +74,9 @@ def list_messages(ctx, queue):
     is_empty = True
     while True:
         resp = conn.receive_message(
-            QueueUrl=queue_url, WaitTimeSeconds=0, VisibilityTimeout=VISIBILITY_TIMEOUT,
+            QueueUrl=queue_url,
+            WaitTimeSeconds=0,
+            VisibilityTimeout=VISIBILITY_TIMEOUT,
         )
         msgs = resp.get("Messages", [])
         if not msgs:

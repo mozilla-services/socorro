@@ -733,9 +733,13 @@ class BetaVersionRule(Rule):
         # certain products
         product = processed_crash.get("product", "")
         release_channel = processed_crash.get("release_channel", "")
-        return product.lower() in self.SUPPORTED_PRODUCTS and release_channel.lower() in (
-            "beta",
-            "aurora",
+        return (
+            product.lower() in self.SUPPORTED_PRODUCTS
+            and release_channel.lower()
+            in (
+                "beta",
+                "aurora",
+            )
         )
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):

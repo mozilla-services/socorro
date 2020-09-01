@@ -142,7 +142,7 @@ class SymbolLRUCacheManager(RequiredConfig):
 
     def __init__(self, config):
         """constructor for a registration object that runs an LRU cache
-       cleaner"""
+        cleaner"""
         self.config = config
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 

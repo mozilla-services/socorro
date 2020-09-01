@@ -102,7 +102,9 @@ class SQSCrashQueue(CrashQueueBase):
 
     required_config = Namespace()
     required_config.add_option(
-        "access_key", doc="access key", reference_value_from="resource.boto",
+        "access_key",
+        doc="access key",
+        reference_value_from="resource.boto",
     )
     required_config.add_option(
         "secret_access_key",

@@ -159,7 +159,11 @@ class Command(BaseCommand):
                     # one of them fails, we start at the failure date rather than
                     # all the way back at the beginning.
                     self._log_run(
-                        cmd, seconds, job_spec.get("time"), run_time, now,
+                        cmd,
+                        seconds,
+                        job_spec.get("time"),
+                        run_time,
+                        now,
                     )
 
             except OngoingJobError:
