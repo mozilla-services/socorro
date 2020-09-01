@@ -160,9 +160,9 @@ markus[datadog]==2.2.0 \
 awscli==1.18.110 \
     --hash=sha256:3f0d1f1bccda17ba3b3aaff254acc4099f3d430964d4c621ecc33ecfc3a0b53e \
     --hash=sha256:09315c26c835eb5c02a36409575bdf1a92a153ca4c2d3347717081f56dc345bd
-mozilla-django-oidc==1.2.3 \
-    --hash=sha256:03e15ea449b66ba3be9f8321a66237fd0cc7b570d4feeb893de58a2d8696b70b \
-    --hash=sha256:ba6171ebac91f0a9679bfd5fb73d0d41c90f0711f0c06f595f219537a0a6bae0
+mozilla-django-oidc==1.2.4 \
+    --hash=sha256:a5130790bc71096b864d67486bbdabbbd4efc9bf1a755fb50d1f51891c11f423 \
+    --hash=sha256:6f1064ec35c0dc42a7f6487e8649c9b51db04df52c424f48ebad6fe35e7481c8
 glom==20.5.0 \
     --hash=sha256:953cf65080dbe01db03b4d4fa0743f9a10e6e35f5404807fdc59425ca7af19e6 \
     --hash=sha256:e753d2e8d16647ffcd9f0f99ac85d3db523ff0a1f097cf0a154a60702bca7e42
