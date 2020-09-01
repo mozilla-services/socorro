@@ -1,4 +1,6 @@
-FROM python:3.8.5-slim@sha256:9c84459051ee7e9d386b24ee5468352d52b6789a5d4a8cf6a649a8a1c6ad5636 as socorro_image_base
+FROM mozilla/socorro-minidump-stackwalk:2020.08.31@sha256:fa842d7a3fd84c01acceba9360562f57f0be8a59a21f90fa788689e2feab63ea as breakpad
+
+FROM python:3.8.5-slim@sha256:9c84459051ee7e9d386b24ee5468352d52b6789a5d4a8cf6a649a8a1c6ad5636
 
 # Set up user and group
 ARG groupid=10001
@@ -13,37 +15,8 @@ RUN groupadd --gid $groupid app && \
 COPY ./docker/set_up_ubuntu.sh /tmp/
 RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
 
-
-FROM socorro_image_base as socorro_breakpad
-WORKDIR /mdsw/
-
-# Install breakpad requirements and some helpful debugging things
-RUN apt-get update && apt-get install -y \
-    gdb \
-    libcurl4 \
-    libcurl3-gnutls \
-    libcurl4-gnutls-dev \
-    pkg-config \
-    rsync \
-    vim \
-    wget \
-&& rm -rf /var/lib/apt/lists/*
-
-# Build breakpad client and stackwalker binaries
-COPY ./scripts/build-breakpad.sh /mdsw/scripts/
-COPY ./scripts/build-stackwalker.sh /mdsw/scripts/
-COPY ./minidump-stackwalk/ /mdsw/minidump-stackwalk/
-RUN STACKWALKDIR=/stackwalk SRCDIR=/mdsw /mdsw/scripts/build-stackwalker.sh
-
-# Let app own /mdsw and /stackwalk so it's easier to debug later
-RUN chown -R app:app /mdsw /stackwalk
-
-
-FROM socorro_image_base
-WORKDIR /app/
-
-# Copy stackwalk bits
-COPY --from=socorro_breakpad /stackwalk/* /stackwalk/
+# Copy stackwalk bits from mozilla/socorro-minidump-stackwalk image
+COPY --from=breakpad /stackwalk/* /stackwalk/
 
 # Install frontend JS deps
 COPY ./webapp-django/package*.json /webapp-frontend-deps/

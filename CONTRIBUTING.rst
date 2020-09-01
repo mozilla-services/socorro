@@ -297,10 +297,6 @@ Here is what each of them contains:
 **docs/**
     Documentation of the Socorro project (you're reading it right now).
 
-**minidump-stackwalk/**
-    The minidump stackwalker program that the processor runs for pulling
-    out information from crash report dumps.
-
 **requirements/**
     Files that hold Python library requirements information.
 

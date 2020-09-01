@@ -86,8 +86,6 @@ clean:  ## | Remove all build, test, coverage, and Python artifacts.
 	-rm .docker-build*
 	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz depot_tools
 	-rm -rf .cache
-	-rm -rf mdsw_venv
-	cd minidump-stackwalk && make clean
 
 .PHONY: docs
 docs: my.env .docker-build-docs  ## | Generate Sphinx HTML documetation.
@@ -101,11 +99,6 @@ lint: my.env  ## | Lint code.
 lintfix: my.env  ## | Reformat code.
 	${DC} run --rm --no-deps app shell ./docker/run_lint.sh --fix
 
-
-.PHONY: mdswshell  ## | Open a debug/compile shell for minidump-stackwalk.
-mdswshell: my.env .docker-build
-	./docker/run_mdswshell.sh
-
 .PHONY: test
 test: my.env .docker-build  ## | Run unit tests.
 	./docker/run_tests_in_docker.sh ${ARGS}
@@ -113,4 +106,3 @@ test: my.env .docker-build  ## | Run unit tests.
 .PHONY: testshell
 testshell: my.env .docker-build  ## | Open a shell in the test environment.
 	./docker/run_tests_in_docker.sh --shell
-

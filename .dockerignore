@@ -1,13 +1,8 @@
 .git
 build/
-breakpad/
-breakpad.tar.gz
-depot_tools/
 **/*.swp
 **/*.pyc
 __pycache__
-.vagrant
-Vagrantfile
 .cache
 webapp-django/node_modules
 webapp-django/static
