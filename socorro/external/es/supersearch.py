@@ -64,7 +64,7 @@ class SuperSearch(RequiredConfig, SearchBase):
 
     def format_field_names(self, hit):
         """Return a hit with each field's database name replaced by its
-        exposed name. """
+        exposed name."""
         new_hit = {}
         for field_name in self.request_columns:
             field = self.all_fields[field_name]

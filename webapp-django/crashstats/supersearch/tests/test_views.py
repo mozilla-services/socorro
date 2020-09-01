@@ -295,8 +295,7 @@ class TestViews(BaseTestViews):
         assert "&lt;script&gt;" in smart_text(response.content)
 
     def test_search_results_admin_mode(self):
-        """Test that an admin can see more fields, and that a non-admin cannot.
-        """
+        """Test that an admin can see more fields, and that a non-admin cannot."""
 
         def mocked_supersearch_get(**params):
             assert "_columns" in params
@@ -451,8 +450,7 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
     def test_search_results_pagination(self):
-        """Test that the pagination of results works as expected.
-        """
+        """Test that the pagination of results works as expected."""
 
         def mocked_supersearch_get(**params):
             assert "_columns" in params

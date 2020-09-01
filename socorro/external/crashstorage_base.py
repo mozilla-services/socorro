@@ -422,7 +422,8 @@ class PolyCrashStorage(CrashStorageBase):
             self.stores[storage_namespace] = config[
                 storage_namespace
             ].crashstorage_class(
-                config[storage_namespace], namespace=absolute_namespace,
+                config[storage_namespace],
+                namespace=absolute_namespace,
             )
 
     def close(self):

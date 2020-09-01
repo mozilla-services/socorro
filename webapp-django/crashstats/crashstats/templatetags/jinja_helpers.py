@@ -252,8 +252,7 @@ def replace_bugzilla_links(text):
 
 @library.global_function
 def full_url(request, *args, **kwargs):
-    """Just like the `url` method of jinja, but with a scheme and host.
-    """
+    """Just like the `url` method of jinja, but with a scheme and host."""
     return "{}://{}{}".format(
         request.scheme, request.get_host(), reverse(*args, args=kwargs.values())
     )

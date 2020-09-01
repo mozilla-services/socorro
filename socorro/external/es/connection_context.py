@@ -133,8 +133,7 @@ class ConnectionContext(RequiredConfig):
         yield conn
 
     def get_socorro_index_settings(self, mappings):
-        """Return a dictionary containing settings for an Elasticsearch index.
-        """
+        """Return a dictionary containing settings for an Elasticsearch index."""
         return {
             "settings": {
                 "index": {

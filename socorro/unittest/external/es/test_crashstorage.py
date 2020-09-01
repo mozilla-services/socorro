@@ -174,7 +174,8 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         es_storage = ESCrashStorage(config=self.config)
 
         es_storage.save_processed_crash(
-            raw_crash=raw_crash, processed_crash=processed_crash,
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
         )
 
         # Ensure that the document was indexed by attempting to retreive it.
@@ -276,7 +277,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # mocked (see the decorator above).
         es_storage = ESCrashStorage(config=self.config)
         es_storage.save_processed_crash(
-            raw_crash=raw_crash, processed_crash=processed_crash,
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -353,7 +355,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash), processed_crash=processed_crash,
+            raw_crash=deepcopy(a_raw_crash),
+            processed_crash=processed_crash,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -417,7 +420,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage.save_processed_crash(
-            raw_crash=raw_crash, processed_crash=processed_crash,
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
         )
 
         # Ensure that the ES objects were instantiated by ConnectionContext.
@@ -516,7 +520,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # Submit a crash and ensure that it succeeds.
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(raw_crash), processed_crash=deepcopy(processed_crash),
+            raw_crash=deepcopy(raw_crash),
+            processed_crash=deepcopy(processed_crash),
         )
 
         expected_doc = {
@@ -575,7 +580,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # Submit a crash and ensure that it succeeds.
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(raw_crash), processed_crash=deepcopy(processed_crash),
+            raw_crash=deepcopy(raw_crash),
+            processed_crash=deepcopy(processed_crash),
         )
 
         expected_doc = {
@@ -636,7 +642,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # Submit crash and verify.
         es_storage.save_processed_crash(
-            raw_crash=raw_crash, processed_crash=processed_crash,
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
         )
 
         expected_doc = {
@@ -718,7 +725,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
             es_storage._submit_crash_to_elasticsearch = mock.Mock()
 
             es_storage.save_processed_crash(
-                raw_crash=raw_crash, processed_crash=processed_crash,
+                raw_crash=raw_crash,
+                processed_crash=processed_crash,
             )
 
             mm.assert_histogram("processor.es.raw_crash_size", value=55)

@@ -103,9 +103,7 @@ class MultipleValueField(forms.MultipleChoiceField):
 
 
 class MultiplePrefixedValueField(PrefixedField):
-    """Special field that uses SelectMultiple widget to deal with multiple values
-
-    """
+    """Special field that uses SelectMultiple widget to deal with multiple values"""
 
     def __init__(self, *args, **kwargs):
         kwargs["widget"] = forms.SelectMultiple

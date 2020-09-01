@@ -110,9 +110,7 @@ def fetch(endpoint, crash_id, api_token=None):
 
 
 def main(argv=None):
-    """Takes crash data via args and generates a Socorro signature
-
-    """
+    """Takes crash data via args and generates a Socorro signature"""
     parser = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
     parser.add_argument(
         "-v", "--verbose", help="increase output verbosity", action="store_true"

@@ -83,7 +83,9 @@ class SQSHelper:
         all_crashids = []
         while True:
             resp = self.client.receive_message(
-                QueueUrl=queue_url, WaitTimeSeconds=0, VisibilityTimeout=1,
+                QueueUrl=queue_url,
+                WaitTimeSeconds=0,
+                VisibilityTimeout=1,
             )
             msgs = resp.get("Messages", [])
             if not msgs:
