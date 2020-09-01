@@ -2,10 +2,6 @@
 *.py[co]
 *.sw[po]
 *.log
-breakpad/
-breakpad.tar.gz
-depot_tools/
-stackwalk/
 exploitable/
 *~
 coverage.xml
@@ -17,11 +13,6 @@ pip-log.txt
 build
 .DS_Store
 webapp-django/media/
-minidump-stackwalk/*.o
-minidump-stackwalk/stackwalker
-minidump-stackwalk/dumplookup
-minidump-stackwalk/get-minidump-instructions
-minidump-stackwalk/jit-crash-categorize
 socorro.egg-info/
 dist/
 webapp-django/.env
@@ -32,7 +23,6 @@ webapp-django/.env
 .cache/
 docker-compose.override.yml
 my.env
-mdsw_venv/
 
 # docs things
 docs/_build/

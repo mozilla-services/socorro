@@ -24,11 +24,10 @@ The ``BreakpadStackwalkerRule2015`` processor rule runs a breakpad minidump
 stackwalker on minidump files to extract information about the process. The
 stackwalker is run as a subprocess.
 
-Code for the stackwalker binaries is in ``minidump-stackwalk/``. The
-``README.rst`` file in that directory contains usage and build instructions.
+Code and documentation for the stackwalker binares is in
+`<https://github.com/mozilla-services/minidump-stackwalk/>`_.
 
-The stackwalker binaries are built as part of the ``socorro`` image and
-are located in ``/stackwalk``.
+The stackwalker binaries are added to the Docker image in ``/stackwalk``.
 
 The stackwalker downloads breakpad SYM files from specified symbols server urls
 to symbolicate stacks. Mozilla's crash ingestion pipeline points to the Mozilla
