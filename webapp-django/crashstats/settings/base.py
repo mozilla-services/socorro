@@ -11,6 +11,7 @@
 
 import logging
 import os
+import re
 import socket
 
 from decouple import config, Csv
@@ -610,12 +611,15 @@ OIDC_EXEMPT_URLS = [
     # Used by bugzilla.js
     "/buginfo/bug",
     # Used by signature report as an XHR
-    # TODO: Should include aggregations and graphs, but they include a parameter in the URL
     "signature:signature_summary",  # data-urls-summary
     "signature:signature_reports",  # data-urls-reports
     "signature:signature_bugzilla",  # data-urls-bugzilla
     "signature:signature_comments",  # data-urls-comments
     "signature:signature_correlations",  # data-urls-correlations
+    re.compile(r"^/signature/graphs/(?P<field>\w+)/$"),  # data-urls-graphs
+    re.compile(
+        r"^/signature/aggregation/(?P<aggregation>\w+)/$"
+    ),  # data-urls-aggregations
 ]
 LOGOUT_REDIRECT_URL = "/"
 

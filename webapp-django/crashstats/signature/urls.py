@@ -7,6 +7,7 @@ from django.conf.urls import url
 from crashstats.signature import views
 
 
+# NOTE(willkg): make sure to update settings.OIDC_EXEMPT_URLS with xhr urls
 app_name = "signature"
 urlpatterns = [
     url(r"^reports/$", views.signature_reports, name="signature_reports"),

@@ -16,8 +16,8 @@ from crashstats.crashstats.monkeypatches import patch
 
 patch()
 
-handler500 = "crashstats.crashstats.views.handler500"
 handler404 = "crashstats.crashstats.views.handler404"
+handler500 = "crashstats.crashstats.views.handler500"
 
 
 urlpatterns = [
@@ -36,9 +36,9 @@ urlpatterns = [
         },
     ),
     url(r"", include("crashstats.crashstats.urls", namespace="crashstats")),
-    url(r"", include("crashstats.supersearch.urls", namespace="supersearch")),
     url(r"", include("crashstats.exploitability.urls", namespace="exploitability")),
     url(r"", include("crashstats.monitoring.urls", namespace="monitoring")),
+    url(r"^search/", include("crashstats.supersearch.urls", namespace="supersearch")),
     url(r"^signature/", include("crashstats.signature.urls", namespace="signature")),
     url(
         r"^topcrashers/",

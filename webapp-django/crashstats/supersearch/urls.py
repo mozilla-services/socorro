@@ -7,11 +7,12 @@ from django.conf.urls import url
 from crashstats.supersearch import views
 
 
+# NOTE(willkg): make sure to update settings.OIDC_EXEMPT_URLS with xhr urls
 app_name = "supersearch"
 urlpatterns = [
-    url(r"^search/$", views.search, name="search"),
-    url(r"^search/custom/$", views.search_custom, name="search_custom"),
-    url(r"^search/results/$", views.search_results, name="search_results"),
-    url(r"^search/query/$", views.search_query, name="search_query"),
-    url(r"^search/fields/$", views.search_fields, name="search_fields"),
+    url(r"^$", views.search, name="search"),
+    url(r"^custom/$", views.search_custom, name="search_custom"),
+    url(r"^results/$", views.search_results, name="search_results"),
+    url(r"^query/$", views.search_query, name="search_query"),
+    url(r"^fields/$", views.search_fields, name="search_fields"),
 ]
