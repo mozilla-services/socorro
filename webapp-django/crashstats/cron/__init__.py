@@ -22,6 +22,12 @@ JOBS = [
         "time": "05:00",
     },
     {
+        # Expire old cronlog entries every week
+        "cmd": "cleanse_cronlog",
+        "frequency": "7d",
+        "time": "05:00",
+    },
+    {
         # Update BugAssociations every hour
         "cmd": "bugassociations",
         "frequency": "1h",
