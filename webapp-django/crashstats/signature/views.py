@@ -57,6 +57,10 @@ def pass_validated_params(view):
 
             if not params["signature"] or not params["signature"][0]:
                 raise ValidationError('"signature" parameter is mandatory')
+
+            if "\x00" in params["signature"][0]:
+                raise ValidationError('"signature" cannot contain nulls')
+
         except ValidationError as e:
             return http.HttpResponseBadRequest(str(e))
 
