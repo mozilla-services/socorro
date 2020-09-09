@@ -8,6 +8,7 @@ import json
 import re
 import time
 from urllib.parse import unquote_plus
+from zlib import error as ZlibError
 
 from configman.dotdict import DotDict
 from glom import glom
@@ -346,7 +347,7 @@ class OutOfMemoryBinaryRule(Rule):
                 return error_out(error_message)
 
             memory_info = json.loads(memory_info_as_string)
-        except (EOFError, IOError) as x:
+        except (EOFError, IOError, ZlibError) as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
         except ValueError as x:
