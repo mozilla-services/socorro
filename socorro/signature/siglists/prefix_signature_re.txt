@@ -142,8 +142,6 @@ __memmove_avx_unaligned_erms
 __memmove_avx_unaligned
 __memmove_ssse3_back
 __memmove_ssse3
-_platform_memmove\$VARIANT\$
-__platform_memmove\$VARIANT\$
 memset
 MessageLoop::PostTask_Helper
 MessageLoop::PostTask
