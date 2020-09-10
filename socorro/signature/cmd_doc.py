@@ -59,7 +59,10 @@ def dedent_docstring(text):
 
 
 def get_doc(cls):
-    return "Rule: %s\n\n%s" % (cls.__class__.__name__, dedent_docstring(cls.__doc__))
+    return "**Rule: %s**\n\n%s" % (
+        cls.__class__.__name__,
+        dedent_docstring(cls.__doc__),
+    )
 
 
 def main(argv=None):
