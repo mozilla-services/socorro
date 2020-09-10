@@ -8,7 +8,7 @@ Signature generation rules pipeline
 
 This is the signature generation pipeline defined at ``socorro.signature.generator.DEFAULT_PIPELINE``:
 
-1. Rule: SignatureGenerationRule
+1. **Rule: SignatureGenerationRule**
    
    Generates a signature based on stack frames.
    
@@ -36,39 +36,45 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
    This rule also generates the proto_signature which is the complete list
    of normalized frames.
 
-2. Rule: StackwalkerErrorSignatureRule
+2. **Rule: StackwalkerErrorSignatureRule**
    
    Appends minidump-stackwalker error to signature.
 
-3. Rule: OOMSignature
+3. **Rule: OOMSignature**
    
    Prepends ``OOM | <size>`` to signatures for OOM crashes.
    
    See bug #1007530.
 
-4. Rule: AbortSignature
+4. **Rule: AbortSignature**
    
    Prepends abort message to signature.
    
    See bug #803779.
 
-5. Rule: SignatureShutdownTimeout
+5. **Rule: SignatureShutdownTimeout**
    
    Replaces signature with async_shutdown_timeout message.
 
-6. Rule: SignatureRunWatchDog
+6. **Rule: SignatureRunWatchDog**
    
    Prepends "shutdownhang" to signature for shutdown hang crashes.
 
-7. Rule: SignatureIPCChannelError
+7. **Rule: SignatureIPCChannelError**
    
-   Prepends signature with IPCError-browser or IPCError-content and error message.
+   Either stomp on or prepend signature for IPCError
+   
+   If the IPCError is a ShutDownKill, then this prepends the signature with
+   "IPCError-browser | ShutDownKill".
+   
+   Otherwise it stomps on the signature with "IPCError-browser/content" and the error
+   message.
 
-8. Rule: SignatureIPCMessageName
+8. **Rule: SignatureIPCMessageName**
    
    Appends ipc_message_name to signature.
 
-9. Rule: SignatureParentIDNotEqualsChildID
+9. **Rule: SignatureParentIDNotEqualsChildID**
    
    Stomp on the signature if moz_crash_reason is ``parentBuildID != childBuildID``.
    
@@ -76,11 +82,11 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
    different. This causes a lot of strangeness particularly in symbolification, so the signatures
    end up as junk. Instead, we want to bucket all these together so we replace the signature.
 
-10. Rule: SignatureJitCategory
+10. **Rule: SignatureJitCategory**
     
     Replaces signature with JIT classification.
 
-11. Rule: SigFixWhitespace
+11. **Rule: SigFixWhitespace**
     
     Fix whitespace in signatures.
     
@@ -90,7 +96,7 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
     * converts all non-space whitespace characters to space
     * reduce consecutive spaces to a single space
 
-12. Rule: SigTruncate
+12. **Rule: SigTruncate**
     
     Truncates signatures down to SIGNATURE_MAX_LENGTH characters.
 

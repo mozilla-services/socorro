@@ -5,17 +5,30 @@ Signature Generation
 ====================
 
 .. contents::
+   :local:
 
 
-Introduction
-============
+Overview
+========
 
-During processing of a crash, Socorro creates a signature using the signature
-generation module. Signature generation typically starts with a string based
-on the stack of the crashing thread. Various rules are applied and after everything
-is done, we have a Socorro crash signature.
+When processing a crash report, Socorro generates a *crash signature*. The
+signature is a short string that lets us group crash reports that likely have a
+common cause together.
 
-The signature generation code is here:
+Signature generation typically starts with a string based on the stack of the
+crashing thread. Various rules are applied that adjust the signature and after
+everything is done, we have a Socorro crash signature.
+
+Signature generation is finicky. When it generates too coarse a signature, then
+crash reports that have nothing to do with one another end up grouped together.
+When it generates too fine a signature, then crash reports end up in very small
+groups which are unlikely to be looked at. Since technologies are constantly
+changing, we're constantly honing signature generation.
+
+Anyone can suggest changes to signature generation. It's the part of the crash
+ingestion pipeline that's maintained by non-Socorro developers.
+
+Signature generation code is here:
 
 https://github.com/mozilla-services/socorro/tree/main/socorro/signature
 
@@ -40,7 +53,7 @@ and please include the following:
 
 We need this to make sure we can help you make the right changes.
 
-Examples of bugs:
+Examples of signature generation change bugs:
 
 * https://bugzilla.mozilla.org/show_bug.cgi?id=1397926
 * https://bugzilla.mozilla.org/show_bug.cgi?id=1402037
@@ -98,6 +111,38 @@ page directly, or via the admin panel.
 
 Note that after a signature change has been pushed to production, you might want
 to `reprocess the affected signatures <https://github.com/adngdb/reprocess>`_.
+
+
+Philosophy on signature generation
+==================================
+
+Signatures should be such that they group like crash reports together. Signatures
+that are too coarse or too fine are unhelpful.
+
+We can make changes to signature generation and then reprocess affected crashes.
+We often do this to better analyze specific kinds of crashes--maybe to break
+up a signature into smaller groups.
+
+Sometimes we make changes to signature generation when focusing on a specific
+class of crashes and we tweak signatures so as to highlight interesting things.
+Using `siggen <https://github.com/willkg/socorro-siggen/>`_ can make
+experimenting easier to do.
+
+When you're adding a symbol to a list so that signature generation will
+continue past a certain frame and you're deciding between whether to add a
+symbol to the "prefix list" or the "irrelevant list", use the following to help
+guide you:
+
+1. If it's a symbol that has platform variants and the symbol isn't helpful
+   in summarizing the cause of the crash, then put it in the irrelevant list.
+
+2. If it's a symbol that's part of panic/error/crash handling code that kicks
+   off *after* the cause of the crash to handle the crash, then put it in the
+   irrelevant list.
+
+3. Otherwise, put it in the prefix list.
+
+If you have questions, please ask in the bug comments.
 
 
 .. include:: ../socorro/signature/README.rst
