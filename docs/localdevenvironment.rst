@@ -46,7 +46,7 @@ Setup Quickstart
    Instructions for cloning are `on the Socorro page in GitHub
    <https://github.com/mozilla-services/socorro>`_.
 
-3. (*Optional/Advanced*) Set UID and GID for Docker container user.
+3. (*Optional for Linux users*) Set UID and GID for Docker container user.
 
    If you're on Linux or you want to set the UID/GID of the app user that
    runs in the Docker containers, run::
@@ -82,34 +82,30 @@ Setup Quickstart
    integrity rules, types, and a bunch of other things. It also adds a bunch of
    static data to lookup tables.
 
-   For Elasticsearch, it sets up Supersearch fields and the index for raw and
+   For Elasticsearch, it sets up Supersearch fields and the index for
    processed crash data.
 
    For S3, this creates the required buckets.
 
    For Pub/Sub, this creates topics and subscriptions.
 
-   You can run ``make setup`` any time you want to re-initialize those
-   services and wipe any data.
-
 6. Populate data stores with required data.
 
-   Then you need to pull in product release and some other data that makes
-   Socorro go.
+   Then you need to fetch product build data and normalization data that
+   Socorro relies on that comes from external systems and changes day-to-day.
 
    To do that, run::
 
      $ make updatedata
 
-   This adds data that changes day-to-day. Things like product builds and
-   normalization data.
-
-   Depending on what you're working on, you might want to run this weekly or
-   maybe even daily.
-
 
 At this point, you should have a basic functional Socorro development
 environment that has no crash data in it.
+
+.. Note::
+
+   You can run ``make setup`` and ``make updatedata`` any time you want to
+   throw out all state and re-initialize services.
 
 .. Seealso::
 
@@ -150,8 +146,6 @@ the main branch::
   $ git pull
 
 
-It depends on what you're working on and the state of things.
-
 After you do that, you'll need to update other things.
 
 If there were changes to the requirements files or setup scripts, you'll need to
@@ -161,14 +155,10 @@ build new images::
 
 
 If there were changes to the database tables, stored procedures, types,
-migrations, or anything like that, you'll need to wipe the Postgres database and
-Elasticsearch::
+migrations, supersearch schema, or anything like that, you'll need to wipe
+state and re-initialize services::
 
   $ make setup
-
-
-After doing that, you'll definitely want to update data::
-
   $ make updatedata
 
 
@@ -179,6 +169,7 @@ Any time you want to wipe all the crash storage destinations, remove all the
 data, and reset the state of the system, run::
 
   $ make setup
+  $ make updatedata
 
 
 Updating release data
@@ -228,6 +219,8 @@ The following ENV files can be found in ``/app/docker/config/``:
 ``test.env``
     This holds configuration specific to running the tests. It has some
     configuration value overrides because the tests are "interesting".
+
+This ENV file is found in the repository root:
 
 ``my.env``
     This file lets you override any environment variables set in other ENV files
