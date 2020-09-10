@@ -1,3 +1,5 @@
+.. _crash-report-spec-chapter:
+
 ==========================================
 Specification: Crash report payload format
 ==========================================
