@@ -2,6 +2,7 @@
   "name": "Thunderbird",
   "home_page_sort": 80,
   "featured_versions": ["auto"],
+  "in_buildhub": true,
   "bug_links": [
     [
       "Thunderbird",

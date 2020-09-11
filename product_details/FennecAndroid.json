@@ -2,6 +2,7 @@
   "name": "FennecAndroid",
   "home_page_sort": 2,
   "featured_versions": ["68.11.0"],
+  "in_buildhub": true,
   "bug_links": [
     [
       "Firefox for Android",

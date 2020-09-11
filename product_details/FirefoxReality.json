@@ -2,6 +2,7 @@
   "name": "FirefoxReality",
   "home_page_sort": 4,
   "featured_versions": ["auto"],
+  "in_buildhub": false,
   "bug_links": [
     [
       "FirefoxReality",
