@@ -2,6 +2,7 @@
   "name": "GeckoView",
   "home_page_sort": 10,
   "featured_versions": ["auto"],
+  "in_buildhub": false,
   "bug_links": [
     [
       "GeckoView",

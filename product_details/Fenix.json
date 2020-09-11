@@ -4,6 +4,7 @@
 
   "_comment_featured_versions": "manually include 0.0a1, otherwise it sorts poorly",
   "featured_versions": ["0.0a1", "auto"],
+  "in_buildhub": false,
   "bug_links": [
     [
       "Fenix",

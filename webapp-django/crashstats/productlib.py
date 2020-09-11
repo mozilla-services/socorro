@@ -30,6 +30,9 @@ class Product:
     # entries
     featured_versions: List[int]
 
+    # Whether or not this product has data in Buildhub
+    in_buildhub: bool
+
     # The list of [link name, link url] bug links for creating new bugs from the report
     # view of a crash report
     bug_links: List[List[str]]

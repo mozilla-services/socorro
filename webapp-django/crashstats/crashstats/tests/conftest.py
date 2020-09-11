@@ -70,18 +70,21 @@ class ProductVersionsMixin:
                 name="WaterWolf",
                 home_page_sort=1,
                 featured_versions=["auto"],
+                in_buildhub=True,
                 bug_links=[["WaterWolf", "create-waterwolf-bug"]],
             ),
             productlib.Product(
                 name="NightTrain",
                 home_page_sort=2,
                 featured_versions=["auto"],
+                in_buildhub=False,
                 bug_links=[["NightTrain", "create-nighttrain-bug"]],
             ),
             productlib.Product(
                 name="SeaMonkey",
                 home_page_sort=3,
                 featured_versions=["auto"],
+                in_buildhub=False,
                 bug_links=[["SeaMonkey", "create-seamonkey-bug"]],
             ),
         ]

@@ -183,7 +183,9 @@
                   <td>
                     {{ report.build }}
                     <span class="humanized">({{ report.build | buildid_to_date }})</span>
-                    <a href="{{ settings.BUILDHUB_BASE_URL }}?{{ make_query_string(**{'q': report.build, 'channel[0]': report.release_channel}) }}" class="sig-overview" title="Buildhub data">Buildhub data</a>
+                    {% if product_details.in_buildhub %}
+                      <a href="{{ settings.BUILDHUB_BASE_URL }}?{{ make_query_string(**{'q': report.build, 'channel[0]': report.release_channel}) }}" class="sig-overview" title="Buildhub data">Buildhub data</a>
+                    {% endif %}
                   </td>
                 </tr>
 
@@ -779,7 +781,7 @@
             <div class="bugreporter">
               <p>
                 <b>Create a bug:</b>
-                {% for text, template in bug_links %}
+                {% for text, template in product_details.bug_links %}
                   <a href="{{ generate_create_bug_url(request, template, raw, report, parsed_dump, crashing_thread) }}" target="_blank">{{ text }}</a>
                   {% if not loop.last %}|{% endif %}
                 {% endfor %}

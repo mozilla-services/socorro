@@ -99,6 +99,10 @@ def report_index(request, crash_id, default_context=None):
             cache.set(cache_key, True, 60)
         return render(request, "crashstats/report_index_pending.html", context)
 
+    context["product_details"] = productlib.get_product_by_name(
+        context["report"]["product"]
+    )
+
     if "json_dump" in context["report"]:
         json_dump = context["report"]["json_dump"]
         if "sensitive" in json_dump and not request.user.has_perm(
@@ -124,10 +128,6 @@ def report_index(request, crash_id, default_context=None):
         context["crashing_thread"] = 0
 
     context["parsed_dump"] = parsed_dump
-
-    context["bug_links"] = productlib.get_product_by_name(
-        context["report"]["product"]
-    ).bug_links
 
     context["bug_associations"] = list(
         models.BugAssociation.objects.filter(signature=context["report"]["signature"])

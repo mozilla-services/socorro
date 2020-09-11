@@ -2,6 +2,7 @@
   "name": "Fennec",
   "home_page_sort": 100,
   "featured_versions": ["auto"],
+  "in_buildhub": true,
   "bug_links": [
     [
       "Firefox for Android",
