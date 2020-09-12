@@ -53,6 +53,10 @@ Keys:
     Use ``"auto"`` if you want Crash Stats to calculate the featured versions
     based on crash reports that have been submitted.
 
+``in_buildhub`` (bool)
+    Whether or not this product has release data in `Buildhub
+    <https://buildhub.moz.tools/>`_.
+
 ``bug_links`` (list of [str, str])
     List of "create a bug" links to show in the Bugzilla tab in the crash report.
     The first string is the text for the link. The second string is the url
