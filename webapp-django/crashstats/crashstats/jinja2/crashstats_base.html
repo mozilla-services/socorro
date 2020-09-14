@@ -64,8 +64,8 @@
           <li>
             <label for="products_select" class="visually-hidden">Select Product</label>
             <select id="products_select">
-              {% for product_name in products %}
-                <option value="{{ product_name }}" {% if product_name == product %}selected{% endif %}>{{ product_name }}</option>
+              {% for product in products %}
+                <option value="{{ product.name }}" {% if product.name == product %}selected{% endif %}>{{ product.name }}</option>
               {% endfor %}
             </select>
           </li>

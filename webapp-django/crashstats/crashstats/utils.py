@@ -550,7 +550,7 @@ def build_default_context(product_name=None, versions=None):
 
     # Build product information
     all_products = productlib.get_products()
-    context["products"] = [product.name for product in all_products]
+    context["products"] = all_products
 
     try:
         if not product_name:

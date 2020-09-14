@@ -1,5 +1,6 @@
 {
   "name": "Firefox",
+  "description": "Firefox desktop browser",
   "home_page_sort": 1,
   "featured_versions": ["auto"],
   "in_buildhub": true,

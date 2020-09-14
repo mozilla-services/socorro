@@ -30,6 +30,9 @@ Keys:
 ``name`` (string)
     The name of the product. This dictates how it appears on the site.
 
+``description`` (string)
+    One-line description of the product.
+
 ``home_page_sort`` (int)
     Dictates the sort order of this product.
 

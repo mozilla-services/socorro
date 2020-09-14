@@ -1,5 +1,6 @@
 {
   "name": "FirefoxReality",
+  "description": "Mozilla Mixed Reality browser",
   "home_page_sort": 4,
   "featured_versions": ["auto"],
   "in_buildhub": false,

@@ -204,17 +204,25 @@ body {
         background: #fff;
         border: 1px gray solid;
         border-radius: 5px;
-        color: @base-link-color;
-        flex: 1 0 210px;
-        font-size: 22px;
+        flex: 1 0 220px;
         height: 170px;
-        line-height: 170px;
         margin: 20px;
         text-align: center;
-        text-decoration: none;
-    }
 
-    a:hover {
-        text-decoration: underline;
+        .product-name {
+            margin-top: 55px;
+            a {
+                color: @base-link-color;
+                font-size: 22px;
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+        }
+
+        .product-description {
+            color: @dark-grey;
+        }
     }
 }

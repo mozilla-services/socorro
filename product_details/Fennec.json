@@ -1,5 +1,6 @@
 {
   "name": "Fennec",
+  "description": "Firefox for Android browser (deprecated)",
   "home_page_sort": 100,
   "featured_versions": ["auto"],
   "in_buildhub": true,

@@ -1,5 +1,6 @@
 {
   "name": "SeaMonkey",
+  "description": "Internet application suite",
   "home_page_sort": 90,
   "featured_versions": ["auto"],
   "in_buildhub": false,

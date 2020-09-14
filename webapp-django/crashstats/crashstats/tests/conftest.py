@@ -68,6 +68,7 @@ class ProductVersionsMixin:
         productlib._PRODUCTS = [
             productlib.Product(
                 name="WaterWolf",
+                description="Test browser",
                 home_page_sort=1,
                 featured_versions=["auto"],
                 in_buildhub=True,
@@ -75,6 +76,7 @@ class ProductVersionsMixin:
             ),
             productlib.Product(
                 name="NightTrain",
+                description="",
                 home_page_sort=2,
                 featured_versions=["auto"],
                 in_buildhub=False,
@@ -82,6 +84,7 @@ class ProductVersionsMixin:
             ),
             productlib.Product(
                 name="SeaMonkey",
+                description="",
                 home_page_sort=3,
                 featured_versions=["auto"],
                 in_buildhub=False,
