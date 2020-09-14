@@ -374,7 +374,7 @@ def signature_correlations(request, params):
         elif all("esr" in version for version in params["version"]):
             context["channel"] = "esr"
 
-    context["product"] = "Firefox"
+    context["product_name"] = "Firefox"
     if (
         "product" in params
         and "FennecAndroid" in params["product"]
@@ -382,7 +382,7 @@ def signature_correlations(request, params):
     ):
         # The SuperSearch query contains Fennec, but doesn't contain Firefox.
         # We can assume the user is looking for Fennec correlations.
-        context["product"] = "FennecAndroid"
+        context["product_name"] = "FennecAndroid"
 
     return render(request, "signature/signature_correlations.html", context)
 

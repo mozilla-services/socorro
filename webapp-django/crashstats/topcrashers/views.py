@@ -13,6 +13,7 @@ from django.utils.http import urlquote
 
 from session_csrf import anonymous_csrf
 
+from crashstats import productlib
 from crashstats.crashstats import models
 from crashstats.crashstats.decorators import check_days_parameter, pass_default_context
 from crashstats.crashstats.utils import get_comparison_signatures, SignatureStats
@@ -106,7 +107,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
-    product = form.cleaned_data["product"]
+    product_name = form.cleaned_data["product"]
     versions = form.cleaned_data["version"]
     crash_type = form.cleaned_data["process_type"]
     os_name = form.cleaned_data["platform"]
@@ -119,7 +120,9 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     if not tcbs_mode or tcbs_mode not in ("realtime", "byday"):
         tcbs_mode = "realtime"
 
-    if product not in [prod.name for prod in context["products"]]:
+    try:
+        product = productlib.get_product_by_name(product_name)
+    except productlib.ProductDoesNotExist:
         return http.HttpResponseBadRequest("Unrecognized product")
 
     context["product"] = product
@@ -128,18 +131,18 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         # :(
         # simulate what the nav.js does which is to take the latest version
         # for this product.
-        for pv in context["active_versions"][product]:
+        for pv in context["active_versions"][product.name]:
             if pv["is_featured"]:
                 url = "%s&version=%s" % (
                     request.build_absolute_uri(),
                     urlquote(pv["version"]),
                 )
                 return redirect(url)
-        if context["active_versions"][product]:
+        if context["active_versions"][product.name]:
             # Not a single version was featured, but there were active
             # versions. In this case, use the first available
             # *active* version.
-            for pv in context["active_versions"][product]:
+            for pv in context["active_versions"][product.name]:
                 url = "%s&version=%s" % (
                     request.build_absolute_uri(),
                     urlquote(pv["version"]),
@@ -182,7 +185,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     context["result_count"] = result_count
     context["query"] = {
-        "product": product,
+        "product": product.name,
         "versions": versions,
         "crash_type": crash_type,
         "os_name": os_name,
@@ -194,7 +197,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     }
 
     total_number_of_crashes, topcrashers_stats = get_topcrashers_stats(
-        product=product,
+        product=product.name,
         version=versions,
         platform=os_name,
         process_type=crash_type,

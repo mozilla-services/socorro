@@ -23,14 +23,14 @@
 {% endblock %}
 
 {% block page_title %}
-  Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
+  Top Crashers for {{ product.name }} {{ ', '.join(query.versions) }}
 {% endblock %}
 
 {% block content %}
   <div id="mainbody">
     <div class="page-heading">
       <h2>
-        Top Crashers for <span id="current-product">{{ product }}</span>
+        Top Crashers for <span id="current-product">{{ product.name }}</span>
         <span id="current-version">{{ ', '.join(query.versions) }}</span>
       </h2>
     </div>
@@ -152,7 +152,7 @@
                   <td class="signature-column">
                     <a class="signature"
                        href="{{ url('signature:signature_report') }}?{{ make_query_string(
-                                    product=product,
+                                    product=product.name,
                                     signature=topcrashers_stats_item.signature_term,
                                     version=version,
                                     date=['<' + query.end_date.isoformat(), '>=' + query.start_date.isoformat()],

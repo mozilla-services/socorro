@@ -303,9 +303,6 @@ def product_home(request, product, default_context=None):
     context = default_context or {}
 
     # Figure out versions
-    if product not in [prod.name for prod in context["products"]]:
-        raise http.Http404("Not a recognized product")
-
     if product in context["active_versions"]:
         context["versions"] = [
             x["version"]

@@ -10,12 +10,12 @@
 
     <h3>Goal</h3>
     <p>
-      Get the top 20 signatures for {{ product }} {{ active_versions[product][0].version }}.
+      Get the top 20 signatures for {{ product.name }} {{ active_versions[product.name][0].version }}.
     </p>
 
     <h3>Solution</h3>
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product, version=active_versions[product][0].version, _facets='signature', _facets_size=20) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product, version=active_versions[product][0].version, _facets='signature', _facets_size=20) }}</span></code></pre>
+      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product.name, version=active_versions[product.name][0].version, _facets='signature', _facets_size=20) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product.name, version=active_versions[product.name][0].version, _facets='signature', _facets_size=20) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -30,13 +30,13 @@
 
     <h3>Goal</h3>
     <p>
-      Get the first 100 crash reports for {{ product }} between
+      Get the first 100 crash reports for {{ product.name }} between
       {{ three_days_ago.strftime('%B %d, %Y') }} and {{ yesterday.strftime('%B %d, %Y') }}.
     </p>
 
     <h3>Solution</h3>
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product, date=['>=' + three_days_ago.isoformat(), '<' + yesterday.isoformat()]) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product, date=['>=' + three_days_ago.isoformat(), '<' + yesterday.isoformat()]) }}</span></code></pre>
+      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product.name, date=['>=' + three_days_ago.isoformat(), '<' + yesterday.isoformat()]) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product.name, date=['>=' + three_days_ago.isoformat(), '<' + yesterday.isoformat()]) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -59,14 +59,14 @@
     <h3>Goal</h3>
     <p>
       Get the first 600 crash reports for release channel
-      {{ active_versions[product][0].release }}.
+      {{ active_versions[product.name][0].release }}.
     </p>
 
     <h3>Solution</h3>
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=0) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=0) }}</span></code>
-<code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product][0].release, _results_number=200, _results_offset=200) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=200) }}</span></code>
-<code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product][0].release, _results_number=200, _results_offset=400) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=400) }}</span></code></pre>
+      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product.name][0].build_type, _results_number=200, _results_offset=0) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product.name][0].build_type, _results_number=200, _results_offset=0) }}</span></code>
+<code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product.name][0].release, _results_number=200, _results_offset=200) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product.name][0].build_type, _results_number=200, _results_offset=200) }}</span></code>
+<code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product.name][0].release, _results_number=200, _results_offset=400) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product.name][0].build_type, _results_number=200, _results_offset=400) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -96,7 +96,7 @@
 
     <h3>Solution</h3>
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'product': product, '_aggs.product.version': '_cardinality.install_time'}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'product': product, '_aggs.product.version': '_cardinality.install_time'}) }}</span></code></pre>
+      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'product': product, '_aggs.product.version': '_cardinality.install_time'}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'product': product.name, '_aggs.product.version': '_cardinality.install_time'}) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
