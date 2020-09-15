@@ -39,16 +39,33 @@ def protected_data_access(request, default_context=None):
     return render(request, "documentation/protected_data_access.html", context)
 
 
+def get_valid_version(active_versions, product_name):
+    """Return version data.
+
+    If this is a local dev environment, then there's no version data.  However, the data
+    structures involved are complex and there are a myriad of variations.
+
+    This returns a valid version.
+
+    :arg active_versions: map of product_name -> list of version dicts
+    :arg product_name: a product name
+
+    :returns: version as a string
+
+    """
+    default_version = {"product": product_name, "version": "80.0"}
+    active_versions = active_versions.get("active_versions", {})
+    versions = active_versions.get(product_name, []) or [default_version]
+    return versions[0]["version"]
+
+
 @pass_default_context
 def supersearch_home(request, default_context=None):
     context = default_context or {}
 
     product_name = productlib.get_default_product().name
     context["product_name"] = product_name
-    default_version = {"product": product_name, "version": "80.0"}
-    active_versions = context.get("active_versions", {})
-    version = active_versions.get(product_name, [default_version])[0]["version"]
-    context["version"] = version
+    context["version"] = get_valid_version(context["active_versions"], product_name)
 
     return render(request, "documentation/supersearch/home.html", context)
 
@@ -59,10 +76,7 @@ def supersearch_examples(request, default_context=None):
 
     product_name = productlib.get_default_product().name
     context["product_name"] = product_name
-    default_version = {"product": product_name, "version": "80.0"}
-    active_versions = context.get("active_versions", {})
-    version = active_versions.get(product_name, [default_version])[0]["version"]
-    context["version"] = version
+    context["version"] = get_valid_version(context["active_versions"], product_name)
     context["today"] = datetime.datetime.utcnow().date()
     context["yesterday"] = context["today"] - datetime.timedelta(days=1)
     context["three_days_ago"] = context["today"] - datetime.timedelta(days=3)
