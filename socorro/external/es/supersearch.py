@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
+import datetime
 import re
 
 from configman import class_converter, Namespace, RequiredConfig
@@ -11,6 +12,7 @@ from elasticsearch_dsl import A, F, Q, Search
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.lib import BadArgumentError, MissingArgumentError, datetimeutil
+from socorro.lib.datetimeutil import utc_now
 from socorro.lib.search_common import SearchBase
 
 
@@ -168,6 +170,15 @@ class SuperSearch(RequiredConfig, SearchBase):
 
         # Find the indices to use to optimize the elasticsearch query.
         indices = self.get_indices(params["date"])
+
+        if "%" in self.context.get_index_template():
+            # If the index template is date-centric, remove indices before the retention
+            # policy because they're not valid to search through and probably don't
+            # exist
+            policy = datetime.timedelta(weeks=self.context.get_retention_policy())
+            cutoff = (utc_now() - policy).replace(tzinfo=None)
+            cutoff = cutoff.strftime(self.context.get_index_template())
+            indices = [index for index in indices if index > cutoff]
 
         # Create and configure the search object.
         search = Search(
