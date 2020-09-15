@@ -22,6 +22,9 @@ class Product:
     # Product name displayed on site
     name: str
 
+    # One-line description of the product
+    description: str
+
     # The sort order for this product on the product home page
     home_page_sort: int
 

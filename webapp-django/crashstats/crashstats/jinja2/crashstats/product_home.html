@@ -6,13 +6,13 @@
 {% endblock %}
 
 {% block page_title %}
-  Crash Data for {{ product }}
+  Crash Data for {{ product.name }}
 {% endblock %}
 
 {% block content %}
   <div id="mainbody">
     <div class="page-heading">
-      <h2 id="homepage-heading">{{ product }} Crash Data</h2>
+      <h2 id="homepage-heading">{{ product.name }} Crash Data</h2>
     </div>
 
     <div class="panel">
@@ -25,19 +25,19 @@
           {% if versions %}
             {% for version in versions %}
               <div class="release_channel">
-                <h4>{{product}} {{version}}</h4>
+                <h4>{{ product.name }} {{ version }}</h4>
                 <ul>
                   <li>
-                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product, version=version) }}">Top Crashers</a>
+                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product.name, version=version) }}">Top Crashers</a>
                   </li>
                   <li>
-                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product, version=version, process_type='plugin') }}">Top Plugin Crashers</a>
+                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product.name, version=version, process_type='plugin') }}">Top Plugin Crashers</a>
                   </li>
                   <li>
-                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product, version=version, process_type='content') }}">Top Content Crashers</a>
+                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product.name, version=version, process_type='content') }}">Top Content Crashers</a>
                   </li>
                   <li>
-                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product, version=version, process_type='gpu') }}">Top GPU Crashers</a>
+                    <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(product=product.name, version=version, process_type='gpu') }}">Top GPU Crashers</a>
                   </li>
                 </ul>
               </div>

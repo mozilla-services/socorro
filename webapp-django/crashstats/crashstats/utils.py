@@ -550,7 +550,7 @@ def build_default_context(product_name=None, versions=None):
 
     # Build product information
     all_products = productlib.get_products()
-    context["products"] = [product.name for product in all_products]
+    context["products"] = all_products
 
     try:
         if not product_name:
@@ -560,7 +560,7 @@ def build_default_context(product_name=None, versions=None):
     except productlib.ProductDoesNotExist:
         raise http.Http404("Not a recognized product")
 
-    context["product"] = product.name
+    context["product"] = product
 
     # Build product version information for all products
     active_versions = {
@@ -577,7 +577,7 @@ def build_default_context(product_name=None, versions=None):
             assert isinstance(versions, list)
 
             # Check that the specified versions are all valid for this product
-            pv_versions = [x["version"] for x in active_versions[context["product"]]]
+            pv_versions = [x["version"] for x in active_versions[product.name]]
             for version in versions:
                 if version not in pv_versions:
                     raise http.Http404("Not a recognized version for that product")

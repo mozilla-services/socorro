@@ -78,19 +78,23 @@ def pass_default_context(view):
 
     @functools.wraps(view)
     def inner(request, *args, **kwargs):
-        product = kwargs.get("product", request.GET.get("product", None))
+        product_name = kwargs.get("product", request.GET.get("product", None))
         versions = kwargs.get("versions", request.GET.get("versions", None))
         try:
-            kwargs["default_context"] = utils.build_default_context(product, versions)
+            kwargs["default_context"] = utils.build_default_context(
+                product_name, versions
+            )
         except Http404 as e:
-            # A 404 will be raised if the product doesn't exist, or if the
-            # version does not exist for that product.
-            # In the latter case, we want to redirect the user to that
-            # product's home page. If the product is missing, superusers
-            # should be sent to the admin panel to add that product, while
-            # regular users will see a 404.
+            # A 404 will be raised if the product doesn't exist, or if the version does
+            # not exist for that product.
+            #
+            # In the latter case, we want to redirect the user to that product's home
+            # page. If the product is missing, superusers should be sent to the admin
+            # panel to add that product, while regular users will see a 404.
             if "version" in str(e):
-                return redirect(reverse("crashstats:product_home", args=(product,)))
+                return redirect(
+                    reverse("crashstats:product_home", args=(product_name,))
+                )
             raise
         return view(request, *args, **kwargs)
 

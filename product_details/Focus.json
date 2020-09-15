@@ -1,5 +1,6 @@
 {
   "name": "Focus",
+  "description": "Privacy-focused mobile browser",
   "home_page_sort": 3,
   "featured_versions": ["auto"],
   "in_buildhub": false,

@@ -106,14 +106,14 @@
         </tr>
       </thead>
       <tbody>
-        {% for product in query.facets.product %}
-          {% for version in product.facets.version %}
+        {% for product_facet in query.facets.product %}
+          {% for version_facet in product_facet.facets.version %}
             <tr>
-              <td>{{ product.term }}</td>
-              <td>{{ version.term }}</td>
-              <td>{{ version.count }}</td>
-              <td>{{ (100.0 * version.count / product_version_total) | round(1) }}%</td>
-              <td>{{ version.facets.cardinality_install_time.value }}</td>
+              <td>{{ product_facet.term }}</td>
+              <td>{{ version_facet.term }}</td>
+              <td>{{ version_facet.count }}</td>
+              <td>{{ (100.0 * version_facet.count / product_version_total) | round(1) }}%</td>
+              <td>{{ version_facet.facets.cardinality_install_time.value }}</td>
             </tr>
           {% endfor %}
         {% endfor %}

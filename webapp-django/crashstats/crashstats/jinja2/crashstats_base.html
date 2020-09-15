@@ -3,7 +3,7 @@
 <html lang="en-US" class="production">
   <head>
     <meta charset="UTF-8" />
-    <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
+    <title>{% block page_title %}Crash Data for {{ product.name }}{% endblock %}</title>
 
     {% block site_css %}
       {% stylesheet 'crashstats_base' %}
@@ -55,17 +55,17 @@
     <h1>Product Navigation</h1>
 
     <div class="version-nav">
-      <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
-      <input type="hidden" id="url_site" name="url_site" value="/" />
-
       {% block product_nav_filter %}
+        <input type="hidden" id="url_base" name="url_base" value="/products/{{ product.name }}" />
+        <input type="hidden" id="url_site" name="url_site" value="/" />
+
         <span class="quick-nav-title">Quick Navigation</span>
         <ul class="filter">
           <li>
             <label for="products_select" class="visually-hidden">Select Product</label>
             <select id="products_select">
-              {% for product_name in products %}
-                <option value="{{ product_name }}" {% if product_name == product %}selected{% endif %}>{{ product_name }}</option>
+              {% for p in products %}
+                <option value="{{ p.name }}" {% if p.name == product.name %}selected{% endif %}>{{ p.name }}</option>
               {% endfor %}
             </select>
           </li>
@@ -74,7 +74,7 @@
             <select id="product_version_select" >
               <optgroup label="Featured">
                 <option value="Current Versions">Current Versions</option>
-                {% set pvs = filter_featured_versions(active_versions[product]) %}
+                {% set pvs = filter_featured_versions(active_versions[product.name]) %}
                 {% if pvs %}
                   {% for pv in pvs %}
                     <option value="{{ pv.version }}" {% if pv.version == version %}selected{% endif %}>{{ pv.version }}</option>
@@ -82,7 +82,7 @@
                 {% endif %}
               </optgroup>
 
-              {% set pvs = filter_not_featured_versions(active_versions[product]) %}
+              {% set pvs = filter_not_featured_versions(active_versions[product.name]) %}
               {% if pvs %}
                 <optgroup label="All versions">
                   {% for pv in pvs %}
@@ -122,7 +122,7 @@
         |
         <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro">File a bug</a>
         |
-        <a href="{{ url('supersearch:search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">Super Search</a>
+        <a href="{{ url('supersearch:search') }}?product={% if product %}{{ product.name }}{% endif %}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">Super Search</a>
       </div>
     </div>
 

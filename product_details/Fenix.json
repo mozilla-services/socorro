@@ -1,5 +1,6 @@
 {
   "name": "Fenix",
+  "description": "Firefox for Android browser",
   "home_page_sort": 5,
 
   "_comment_featured_versions": "manually include 0.0a1, otherwise it sorts poorly",

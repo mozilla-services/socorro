@@ -7,8 +7,13 @@
 {% block content %}
   <div id="mainbody">
     <div class="panel product-grid">
-      {% for product_name in products %}
-        <a class="product" href="{{ url('crashstats:product_home', product=product_name) }}">{{ product_name }}</a>
+      {% for p in products %}
+        <div class="product">
+          <div class="product-name"><a href="{{ url('crashstats:product_home', product=p.name) }}">{{ p.name }}</a></div>
+          {% if p.description %}
+            <div class="product-description">{{ p.description }}</div>
+          {% endif %}
+        </div>
       {% endfor %}
     </div>
     <div class="tip">

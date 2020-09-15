@@ -1,5 +1,6 @@
 {
   "name": "Thunderbird",
+  "description": "Email client",
   "home_page_sort": 80,
   "featured_versions": ["auto"],
   "in_buildhub": true,
