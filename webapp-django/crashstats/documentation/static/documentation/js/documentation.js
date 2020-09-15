@@ -28,7 +28,7 @@ $(function() {
   // Add a command to all examples.
   $('.example pre code')
     .prepend('"')
-    .prepend($('<span>', { text: 'curl ' }).addClass('http-verb'))
+    .prepend($('<span>', { text: 'curl --user-agent "example/1.0" ' }).addClass('http-verb'))
     .append('"');
 
   // JSON results viewers.

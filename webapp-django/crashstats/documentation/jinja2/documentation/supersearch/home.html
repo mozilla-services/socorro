@@ -50,10 +50,15 @@
     </p>
 
     <h1 id="basic-usage">Basic Usage</h1>
-
     <div class="example">
       <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(product=product_name, _results_number=10) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(product=product_name, _results_number=10) }}</span></code></pre>
     </div>
+
+    <h1 id="useragent">User-Agent</h1>
+    <p>
+      Please set a User-Agent when using the API. This helps us know who to
+      talk to when we're making changes.
+    </p>
 
     <h1 id="response">Response</h1>
     <p>
@@ -487,7 +492,7 @@
 
     <p>
       Sometimes you just need to count the distinct values of a field. That can
-      be done using the cardinality feature. For example, let"s count the number
+      be done using the cardinality feature. For example, let's count the number
       of distinct builds of {{ product.name }}:
     </p>
 
@@ -521,7 +526,7 @@
     </div>
 
     <p>
-      Or, let"s count the number of distinct <code>build_id</code> per day for
+      Now let's count the number of distinct <code>build_id</code> per day for
       {{ product.name }}:
     </p>
 
@@ -529,7 +534,7 @@
       <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(**{"product": product_name, "_histogram.date": "_cardinality.build_id", "_histogram_interval.date": "1d"}) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(**{"product": product_name, "_histogram.date": "_cardinality.build_id", "_histogram_interval.date": "1d"}) }}</span></code></pre>
     </div>
 
-    <h1 id="what-s-next">What"s next?</h1>
+    <h1 id="what-s-next">What's next?</h1>
 
     <p>
       If you want to see more concrete examples of problems you can solve with

@@ -15,23 +15,20 @@
 {% block main_content %}
 <div class="panel">
   <div class="body">
-    <p class="tokens-callout">
-      You currently have
-      <a href="{{ url('tokens:home') }}">{{ count_tokens }} active API Token {{ count_tokens|pluralize }}</a>.
-    </p>
     <p>
       These API endpoints are publicly available. The parameters to some
       endpoints are non-trivial as some might require deeper understanding of
       the Soccoro backend.
     </p>
     <p>
-      <b>Note:</b> The API does depend on
-      <a href="{{ url('profile:profile') }}">your permissions</a> and if you
-      include an <a href="{{ url('tokens:home') }}">API Token</a> with your
-      requests.
-      <br>
-      Some endpoints' accessibility depend entirely on your permissions and
-      use of API Tokens.
+      Some API endpoints require an <a href="{{ url('tokens:home') }}">API Token</a>
+      and return different things depending on <a href="{{ url('profile:profile') }}">your access</a>.
+      You currently have
+      <a href="{{ url('tokens:home') }}">{{ count_tokens }} active API Token{{ count_tokens|pluralize }}</a>.
+    </p>
+    <p>
+      Please set a User-Agent when using APIs. This helps us know who to talk
+      with when planning API changes.
     </p>
   </div>
 </div>
