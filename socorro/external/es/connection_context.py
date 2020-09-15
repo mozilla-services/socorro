@@ -114,6 +114,10 @@ class ConnectionContext(RequiredConfig):
         """Return doctype."""
         return self.config.elasticsearch_doctype
 
+    def get_retention_policy(self):
+        """Return retention policy in weeks."""
+        return self.config.retention_policy
+
     def get_timeout_extended(self):
         """Return timeout_extended."""
         return self.config.elasticsearch_timeout_extended
@@ -196,15 +200,11 @@ class ConnectionContext(RequiredConfig):
         """
         policy = datetime.timedelta(weeks=self.config.retention_policy)
         cutoff = (utc_now() - policy).replace(tzinfo=None)
+        cutoff = cutoff.strftime(self.config.elasticsearch_index)
 
         was_deleted = []
         for index_name in self.get_indices():
-            # strptime ignores week numbers if a day isn't specified, so we append
-            # '-1' and '-%w' to specify Monday as the day.
-            index_date = datetime.datetime.strptime(
-                index_name + "-1", self.config.elasticsearch_index + "-%w"
-            )
-            if index_date >= cutoff:
+            if index_name > cutoff:
                 continue
 
             self.delete_index(index_name)

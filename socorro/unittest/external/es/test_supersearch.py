@@ -1435,11 +1435,19 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert "4.0b" in hit["version"]
 
     def test_get_against_nonexistent_index(self):
+        # Create start and end dates to look at indices in, but anchor them to monday so
+        # it's not moving around over week barriers
+        end = datetimeutil.utc_now()
+        while end.weekday() != 0:
+            end = end - datetime.timedelta(days=1)
+        start = end - datetime.timedelta(days=10)
+        end = end.strftime("%Y-%m-%dT%H:%M:%S")
+        start = start.strftime("%Y-%m-%dT%H:%M:%S")
         config = self.get_base_config(
             cls=SuperSearchWithFields, es_index="socorro_test_reports_%W"
         )
         api = SuperSearchWithFields(config=config)
-        params = {"date": [">2000-01-01T00:00:00", "<2000-01-10T00:00:00"]}
+        params = {"date": [">%s" % start, "<%s" % end]}
 
         res = api.get(**params)
         assert res["total"] == 0
