@@ -44,9 +44,9 @@ Checklist
     Before doing anything, verify the environment(s) that you're testing
     are running the version you expect.
 
-    * local dev: http://localhost:8000/api/Status
-    * -stage: https://crash-stats.allizom.org/api/Status
-    * -prod: https://crash-stats.mozilla.org/api/Status
+    * local dev: http://localhost:8000/__version__
+    * -stage: https://crash-stats.allizom.org/__version__
+    * -prod: https://crash-stats.mozilla.org/__version__
 
 
     Migrations
@@ -72,11 +72,11 @@ Checklist
 
     Is the collector handling incoming crashes?
 
-    * Check datadog Antenna dashboard for the appropriate environment.
+    * Check Grafana dashboard for the appropriate environment.
 
-      localdev: Check the logging in the console
-      stage: https://app.datadoghq.com/dash/272676/antenna--stage
-      prod: https://app.datadoghq.com/dash/274773/antenna--prod
+      * localdev: Check the logging in the console
+      * stage: https://earthangel-b40313e5.influxcloud.net/d/mTjlP_8Zz/socorro-stage-megamaster-remix?orgId=1
+      * prod: https://earthangel-b40313e5.influxcloud.net/d/LysVjx8Zk/socorro-prod-megamaster-remix?orgId=1
 
     * Log into Sentry and check for errors.
 
@@ -94,28 +94,21 @@ Checklist
 
       To check for errors grep for "ERRORS".
 
-    * Check Datadog "processor.save_processed_crash" for appropriate
+    * Check Grafana "processor.save_processed_crash" for appropriate
       environment.
 
-      localdev: Check the logging in the console
-      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
-      prod: https://app.datadoghq.com/dash/65215/socorro-prod
+      * localdev: Check the logging in the console
+      * stage: https://earthangel-b40313e5.influxcloud.net/d/mTjlP_8Zz/socorro-stage-megamaster-remix?orgId=1
+      * prod: https://earthangel-b40313e5.influxcloud.net/d/LysVjx8Zk/socorro-prod-megamaster-remix?orgId=1
 
     Is the processor saving to ES? S3?
 
-    * Check Datadog
+    * Check Grafana
       "processor.es.ESCrashStorageRedactedJsonDump.save_processed_crash.avg"
 
-      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
-      prod: https://app.datadoghq.com/dash/65215/socorro-prod
-
-    * Check Datadog
+    * Check Grafana
       "processor.s3.BotoS3CrashStorage.save_processed_crash" for
       appropriate environment.
-
-      stage: https://app.datadoghq.com/dash/187676/socorro-stage-perf
-      prod: https://app.datadoghq.com/dash/65215/socorro-prod
-
 
     Submit a crash or reprocess a crash. Wait a few minutes. Verify the crash was
     processed and made it to S3 and Elasticsearch.
