@@ -6,6 +6,7 @@ import datetime
 
 from django.shortcuts import render
 
+from crashstats import productlib
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
 
@@ -41,6 +42,14 @@ def protected_data_access(request, default_context=None):
 @pass_default_context
 def supersearch_home(request, default_context=None):
     context = default_context or {}
+
+    product_name = productlib.get_default_product().name
+    context["product_name"] = product_name
+    default_version = {"product": product_name, "version": "80.0"}
+    active_versions = context.get("active_versions", {})
+    version = active_versions.get(product_name, [default_version])[0]["version"]
+    context["version"] = version
+
     return render(request, "documentation/supersearch/home.html", context)
 
 
@@ -48,6 +57,12 @@ def supersearch_home(request, default_context=None):
 def supersearch_examples(request, default_context=None):
     context = default_context or {}
 
+    product_name = productlib.get_default_product().name
+    context["product_name"] = product_name
+    default_version = {"product": product_name, "version": "80.0"}
+    active_versions = context.get("active_versions", {})
+    version = active_versions.get(product_name, [default_version])[0]["version"]
+    context["version"] = version
     context["today"] = datetime.datetime.utcnow().date()
     context["yesterday"] = context["today"] - datetime.timedelta(days=1)
     context["three_days_ago"] = context["today"] - datetime.timedelta(days=3)

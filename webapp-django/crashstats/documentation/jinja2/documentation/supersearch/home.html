@@ -8,8 +8,8 @@
 
     <p>
       Super Search is an interface to crash reports data. There is a
-      <a href="{{ url('supersearch:search') }}">human-friendly interface</a> and a
-      <a href="{{ url('api:documentation') }}#SuperSearch">public API</a>. This
+      <a href="{{ url("supersearch:search") }}">human-friendly interface</a> and a
+      <a href="{{ url("api:documentation") }}#SuperSearch">public API</a>. This
       guide covers the API, but the interface can be used to easily query and
       visualize the data.
     </p>
@@ -28,10 +28,10 @@
 
     <h2 id="supersearch">SuperSearch</h2>
 
-    <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span></code></pre>
+    <pre><code><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span></code></pre>
 
     <p>
-      This is the public endpoint that you should mostly be using. It doesn't
+      This is the public endpoint that you should mostly be using. It doesn"t
       require any permissions, and gives you access to almost all of the data
       about crash reports. The only restrictions are fields potentially
       containing sensitive data (like PII, for Personally Identifiable
@@ -40,11 +40,11 @@
 
     <h2 id="supersearchunredacted">SuperSearchUnredacted</h2>
 
-    <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearchUnredacted') }}</span></code></pre>
+    <pre><code><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearchUnredacted") }}</span></code></pre>
 
     <p>
       This is a restricted endpoint, only accessible through the use of an
-      <a href="{{ url('tokens:home') }}">API Token</a> and your having the right
+      <a href="{{ url("tokens:home") }}">API Token</a> and your having the right
       set of permissions. It gives you an exhaustive access to our entire
       dataset, so please use this very carefully.
     </p>
@@ -52,7 +52,7 @@
     <h1 id="basic-usage">Basic Usage</h1>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product.name, _results_number=10) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product.name, _results_number=10) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(product=product_name, _results_number=10) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(product=product_name, _results_number=10) }}</span></code></pre>
     </div>
 
     <h1 id="response">Response</h1>
@@ -86,12 +86,12 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product.name, version=active_versions[product.name][0].version) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product.name, version=active_versions[product.name][0].version) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(product=product_name, version=version) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(product=product_name, version=version) }}</span></code></pre>
     </div>
 
     <p>
       There are lots of available filters, listed in the
-      <a href="{{url('documentation:supersearch_api') }}">API Reference</a>. That
+      <a href="{{url("documentation:supersearch_api") }}">API Reference</a>. That
       list is constantly changing as we add more data to our crash reports.
     </p>
 
@@ -113,12 +113,12 @@
     </ul>
 
     <p>
-      For example, <code>product={{ product.name }} &amp; version=1.0 &amp;
+      For example, <code>product={{ product_name }} &amp; version=1.0 &amp;
       version=2.0 &amp; date=&gt;2000-01-01 &amp; date=&lt;2001-01-01</code>
       will translate to:
     </p>
 
-    <pre>( product = {{ product.name }} ) <b>AND</b>
+    <pre>( product = {{ product_name }} ) <b>AND</b>
 ( version = 1.0 <b>OR</b> version = 2.0 ) <b>AND</b>
 ( date &gt; 2000-01-01 <b>AND</b> date &lt; 2001-01-01 )</pre>
 
@@ -185,7 +185,7 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(signature='~moz') }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(signature='~moz') }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(signature="~moz") }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(signature="~moz") }}</span></code></pre>
     </div>
 
     <p>
@@ -196,7 +196,7 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(address='!__null__') }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(address='!__null__') }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(address="!__null__") }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(address="!__null__") }}</span></code></pre>
     </div>
 
     <p>
@@ -204,7 +204,7 @@
       comparison operators (like <code>&lt;</code> or <code>&gt;</code>) are not
       usable with string data, but only with numbers and dates. Operators for
       each filter are listed on the
-      <a href="{{ url('documentation:supersearch_api') }}">API Reference</a> page.
+      <a href="{{ url("documentation:supersearch_api") }}">API Reference</a> page.
     </p>
     <p>
       Here is a list of all operators, and what data types they apply to:
@@ -308,7 +308,7 @@
       names start with an underscore, like <code>_results_number</code>. These
       parameters control various aspects of the results in the <code>hits</code>
       key. They are pretty straight forward and are well described in the
-      <a href="{{ url('documentation:supersearch_api') }}">API Reference</a>.
+      <a href="{{ url("documentation:supersearch_api") }}">API Reference</a>.
     </p>
     <p>
       <code>_results_number</code> and <code>_results_offset</code> allow you to
@@ -320,7 +320,7 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(_results_number=10, _results_offset=100) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(_results_number=10, _results_offset=100) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(_results_number=10, _results_offset=100) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(_results_number=10, _results_offset=100) }}</span></code></pre>
     </div>
 
     <p>
@@ -331,7 +331,7 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(_sort=['platform', '-build_id']) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(_sort=['platform', '-build_id']) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(_sort=["platform", "-build_id"]) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(_sort=["platform", "-build_id"]) }}</span></code></pre>
     </div>
 
     <p>
@@ -343,7 +343,7 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(_columns=['platform', 'build_id', 'uptime']) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(_columns=['platform', 'build_id', 'uptime']) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(_columns=["platform", "build_id", "uptime"]) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(_columns=["platform", "build_id", "uptime"]) }}</span></code></pre>
     </div>
 
     <h1 id="aggregations">Aggregations</h1>
@@ -403,13 +403,13 @@
     <p>
       Using the <code>_facets</code> parameter allows you to run simple
       aggregations. You can pass it a field name (see the
-      <a href="{{ url('documentation:supersearch_api') }}#section-list-of-fields">List of fields</a>),
+      <a href="{{ url("documentation:supersearch_api") }}#section-list-of-fields">List of fields</a>),
       and it will count the terms of that field in all the documents
       of the dataset. It will then return them sorted by descending count.
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(_facets='signature') }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(_facets='signature') }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(_facets="signature") }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(_facets="signature") }}</span></code></pre>
     </div>
 
     <p>
@@ -433,12 +433,12 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'_aggs.product': 'platform'}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'_aggs.product': 'platform'}) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(**{"_aggs.product": "platform"}) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(**{"_aggs.product": "platform"}) }}</span></code></pre>
     </div>
 
     <p>
       The list of all available nested aggregations is in the
-      <a href="{{ url('documentation:supersearch_api') }}#section-nested-aggregations-list">API Reference</a>.
+      <a href="{{ url("documentation:supersearch_api") }}#section-nested-aggregations-list">API Reference</a>.
     </p>
 
     <h2 id="histograms">Histograms</h2>
@@ -454,7 +454,7 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'_histogram.date': 'product', '_histogram_interval.date': '1d'}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'_histogram.date': 'product', '_histogram_interval.date': '1d'}) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(**{"_histogram.date": "product", "_histogram_interval.date": "1d"}) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(**{"_histogram.date": "product", "_histogram_interval.date": "1d"}) }}</span></code></pre>
     </div>
 
     <p>
@@ -480,19 +480,19 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'_histogram.uptime': 'product', '_histogram_interval.uptime': 60}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'_histogram.uptime': 'product', '_histogram_interval.uptime': 60}) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(**{"_histogram.uptime": "product", "_histogram_interval.uptime": 60}) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(**{"_histogram.uptime": "product", "_histogram_interval.uptime": 60}) }}</span></code></pre>
     </div>
 
     <h2 id="cardinality">Cardinality</h2>
 
     <p>
       Sometimes you just need to count the distinct values of a field. That can
-      be done using the cardinality feature. For example, let's count the number
+      be done using the cardinality feature. For example, let"s count the number
       of distinct builds of {{ product.name }}:
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product.name, _facets='_cardinality.build_id') }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product.name, _facets='_cardinality.build_id') }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(product=product.name, _facets="_cardinality.build_id") }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(product=product.name, _facets="_cardinality.build_id") }}</span></code></pre>
     </div>
 
     <p>
@@ -517,26 +517,26 @@
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'_aggs.product.version': '_cardinality.install_time'}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'_aggs.product.version': '_cardinality.install_time'}) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(**{"_aggs.product.version": "_cardinality.install_time"}) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(**{"_aggs.product.version": "_cardinality.install_time"}) }}</span></code></pre>
     </div>
 
     <p>
-      Or, let's count the number of distinct <code>build_id</code> per day for
+      Or, let"s count the number of distinct <code>build_id</code> per day for
       {{ product.name }}:
     </p>
 
     <div class="example">
-      <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'product': product.name, '_histogram.date': '_cardinality.build_id', '_histogram_interval.date': '1d'}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'product': product.name, '_histogram.date': '_cardinality.build_id', '_histogram_interval.date': '1d'}) }}</span></code></pre>
+      <pre><code data-url="{{ url("api:model_wrapper", model_name="SuperSearch") }}?{{ make_query_string(**{"product": product_name, "_histogram.date": "_cardinality.build_id", "_histogram_interval.date": "1d"}) }}"><span class="url-domain">{{ full_url(request, "api:model_wrapper", model_name="SuperSearch") }}</span><span class="query-string">?{{ make_query_string(**{"product": product_name, "_histogram.date": "_cardinality.build_id", "_histogram_interval.date": "1d"}) }}</span></code></pre>
     </div>
 
-    <h1 id="what-s-next">What's next?</h1>
+    <h1 id="what-s-next">What"s next?</h1>
 
     <p>
       If you want to see more concrete examples of problems you can solve with
       Super Search, head to the
-      <a href="{{ url('documentation:supersearch_examples') }}">Examples</a>
+      <a href="{{ url("documentation:supersearch_examples") }}">Examples</a>
       page. If you want an exhaustive list of parameters, check out the
-      <a href="{{ url('documentation:supersearch_api') }}">API Reference</a> page.
+      <a href="{{ url("documentation:supersearch_api") }}">API Reference</a> page.
     </p>
   </div>
 {% endblock %}
