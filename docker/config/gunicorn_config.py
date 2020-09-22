@@ -12,7 +12,6 @@ from decouple import config as CONFIG
 
 LOGGING_LEVEL = CONFIG("LOGGING_LEVEL", "INFO")
 LOCAL_DEV_ENV = CONFIG("LOCAL_DEV_ENV", False, cast=bool)
-
 HOST_ID = socket.gethostname()
 
 
@@ -46,17 +45,15 @@ logconfig_dict = {
             "logger_name": "socorro",
         },
     },
+    "loggers": {
+        "gunicorn": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
+        "gunicorn.error": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
+    },
+    "root": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
 }
 
 if LOCAL_DEV_ENV:
-    # In a local development environment, we don't want to see mozlog
-    # format at all, but we do want to see markus things and py.warnings.
-    # So set the logging up that way.
-    logconfig_dict["loggers"] = {
-        "gunicorn": {"handlers": ["console"], "level": LOGGING_LEVEL}
-    }
-else:
-    # In a server environment, we want to use mozlog format.
-    logconfig_dict["loggers"] = {
-        "gunicorn": {"handlers": ["mozlog"], "level": LOGGING_LEVEL}
-    }
+    # In a local development environment, we want to use console logger.
+    for logger, logger_config in logconfig_dict["loggers"].items():
+        logger_config["handlers"] = ["console"]
+    logconfig_dict["root"]["handlers"] = ["console"]
