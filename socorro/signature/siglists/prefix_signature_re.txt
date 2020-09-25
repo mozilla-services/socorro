@@ -304,6 +304,7 @@ SSL_
 __stack_chk_fail
 std::alloc::rust_oom
 std::_Allocate
+std::_Func_impl_no_alloc<T>::_Do_call
 std::_Hash<T>::
 std::list<.*>::
 std::collections::hash::map::
