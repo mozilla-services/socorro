@@ -172,6 +172,8 @@ def generate_create_bug_url(
         {
             "request": request,
             "uuid": report["uuid"],
+            # NOTE(willkg): this is the redacted stack trace--not the raw one that can
+            # have PII in it
             "java_stack_trace": report.get("java_stack_trace", None),
             "crashing_thread_frames": crashing_thread_frames,
         },
