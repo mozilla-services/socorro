@@ -146,6 +146,8 @@ def show_bug_link(bug_id):
 def generate_create_bug_url(
     request, template, raw_crash, report, parsed_dump, crashing_thread
 ):
+    parsed_dump = parsed_dump or {}
+
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
     # `.startswith(...)` things we do don't raise an AttributeError.
@@ -175,6 +177,10 @@ def generate_create_bug_url(
             # NOTE(willkg): this is the redacted stack trace--not the raw one that can
             # have PII in it
             "java_stack_trace": report.get("java_stack_trace", None),
+            # NOTE(willkg): this is the redacted mozcrashreason--not the raw one that
+            # can have PII in it
+            "moz_crash_reason": report.get("moz_crash_reason", None),
+            "reason": report.get("reason", None),
             "crashing_thread_frames": crashing_thread_frames,
         },
     )

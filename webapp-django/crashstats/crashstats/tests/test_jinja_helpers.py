@@ -497,9 +497,21 @@ class Test_generate_create_bug_url:
         raw_crash = {}
         report = self._create_report()
         report["java_stack_trace"] = "java.lang.NullPointerException: list == null"
+        url = generate_create_bug_url(req, self.TEMPLATE, raw_crash, report, None, 0)
+        assert quote_plus("Java stack trace:") in url
+        assert quote_plus("java.lang.NullPointerException: list == null") in url
+
+        # Make sure it didn't also add the crashing frames
+        assert quote_plus("frames of crashing thread:") not in url
+
+    def test_comment_reason(self):
+        """Verify Reason makes it into the comment."""
+        req = RequestFactory().get("/report/index")
+        raw_crash = {}
+        report = self._create_report()
+        report["reason"] = "SIGSEGV /0x00000080"
         parsed_dump = self._create_dump(
             threads=[
-                self._create_thread(),  # Empty thread 0
                 self._create_thread(
                     frames=[
                         self._create_frame(frame=0),
@@ -512,11 +524,31 @@ class Test_generate_create_bug_url:
         url = generate_create_bug_url(
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
-        assert quote_plus("Java stack trace:") in url
-        assert quote_plus("java.lang.NullPointerException: list == null") in url
+        assert quote_plus("Reason: SIGSEGV /0x00000080") in url
 
-        # Make sure it didn't also add the crashing frames
-        assert quote_plus("frames of crashing thread:") not in url
+    def test_comment_moz_crash_reason(self):
+        """Verify Reason makes it into the comment."""
+        req = RequestFactory().get("/report/index")
+        raw_crash = {}
+        report = self._create_report()
+        report["moz_crash_reason"] = "good_data"
+        report["moz_crash_reason_raw"] = "bad_data"
+        parsed_dump = self._create_dump(
+            threads=[
+                self._create_thread(
+                    frames=[
+                        self._create_frame(frame=0),
+                        self._create_frame(frame=1),
+                        self._create_frame(frame=2),
+                    ]
+                ),
+            ]
+        )
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
+        assert quote_plus("MOZ_CRASH Reason: good_data") in url
+        assert quote_plus("bad_data") not in url
 
     def test_fission_enabled(self):
         """DOMFissionEnabled appends note to description."""
