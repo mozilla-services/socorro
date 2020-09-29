@@ -85,9 +85,15 @@ PR_WaitCondVar
 RaiseException
 rust_oom
 rtc::FatalMessage
-RtlpAdjustHeapLookasideDepth
+RtlReportCriticalFailure
+RtlReportFatalFailure
 RtlSleepConditionVariableCS
 RtlSleepConditionVariableSRW
+RtlpAdjustHeapLookasideDepth
+RtlpAnalyzeHeapFailure
+RtlpHeapHandleError
+RtlpHpHeapHandleError
+RtlpLogHeapFailure
 RustMozCrash
 _sigtramp
 __sigtramp
