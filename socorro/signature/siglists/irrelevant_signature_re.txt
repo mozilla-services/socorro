@@ -125,5 +125,6 @@ ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
 WaitForSingleObjectExImplementation
 WaitForMultipleObjectsExImplementation
 _XError
+_XReply
 _ZdlPv
 zero
