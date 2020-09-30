@@ -29,13 +29,21 @@ exp2
 .*FNODOBFM
 framework\.odex@0x
 __fixunsdfsi
+gdk_x_error
+_gdk_x11_display_error_event
 GetLCIDFromLangListNodeWithLICCheck
 gfxPlatform::GetPlatform
 gkrust_shared::oom_hook::hook
+_g_log_abort
+g_log_structured_array
+g_log_structured_standard
+g_log_writer_default
 google_breakpad::CrashGenerationClient::RequestDumpForException
 google_breakpad::ExceptionHandler::SignalHandler
 google_breakpad::ExceptionHandler::WriteMinidumpWithException
 google_breakpad::ReceivePort::WaitForMessage
+# NOTE(willkg): we want to skip handle_error but not handle_errorf
+handle_error$
 KiFastSystemCallRet
 libandroid_runtime\.so@0x
 libbinder\.so@0x
@@ -83,6 +91,7 @@ org\.mozilla\.f.*-\d\.apk@0x
 panic_abort::
 PR_WaitCondVar
 RaiseException
+RealMsgWaitFor
 rust_oom
 rtc::FatalMessage
 RtlReportCriticalFailure
@@ -115,6 +124,6 @@ ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
 .*\$VARIANT\$
 WaitForSingleObjectExImplementation
 WaitForMultipleObjectsExImplementation
-RealMsgWaitFor
+_XError
 _ZdlPv
 zero

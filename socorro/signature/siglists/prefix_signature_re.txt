@@ -83,6 +83,8 @@ __GI_memcpy
 __GI_strlen
 gkrust_shared::oom_hook::hook
 gsignal
+handle_errorf
+handle_response
 HandleInvalidParameter
 hashbrown::raw::RawTable<T>::new_uninitialized<T>
 HeapFree
