@@ -101,8 +101,22 @@ lintfix: my.env  ## | Reformat code.
 
 .PHONY: test
 test: my.env .docker-build  ## | Run unit tests.
-	./docker/run_tests_in_docker.sh ${ARGS}
+	# Make sure services are started and start localstack before the others to
+	# give it a little more time to wake up
+	${DC} up -d localstack
+	${DC} up -d elasticsearch postgresql statsd
+	# Run tests
+	${DC} run --rm test shell ./docker/run_tests.sh
+
+.PHONY: test-ci
+test-ci: my.env .docker-build  ## | Run unit tests in CI.
+	# Make sure services are started and start localstack before the others to
+	# give it a little more time to wake up
+	${DC} up -d localstack
+	${DC} up -d elasticsearch postgresql statsd
+	# Run tests in test-ci which doesn't volume mount local directory
+	${DC} run --rm test-ci shell ./docker/run_tests.sh
 
 .PHONY: testshell
 testshell: my.env .docker-build  ## | Open a shell in the test environment.
-	./docker/run_tests_in_docker.sh --shell
+	${DC} run --rm test shell
