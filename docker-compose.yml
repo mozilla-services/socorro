@@ -18,6 +18,34 @@ services:
 
   # For development
 
+  # For running tests
+  test:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - docker/config/test.env
+    depends_on:
+      - statsd
+      - localstack
+      - postgresql
+      - elasticsearch
+    volumes:
+      - .:/app
+
+  # For running tests in CI
+  test-ci:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/never_on_a_server.env
+      - docker/config/test.env
+    depends_on:
+      - statsd
+      - localstack
+      - postgresql
+      - elasticsearch
+
   processor:
     image: local/socorro_app
     env_file:
