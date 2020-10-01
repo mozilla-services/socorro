@@ -187,9 +187,9 @@ black==20.8b1 \
 elasticsearch==1.9.0 \
     --hash=sha256:cbee23c29f9947b1b78be5c0f741c1f8b504d3c53163b1355ea08f69cbd0fc0c \
     --hash=sha256:eb0d4b5b20a4ccf9e49bd20498b6215d5e960d8a63a0eae44cd4431e3f303a24
-elasticsearch-dsl==0.0.11 \
-    --hash=sha256:663fb62ad39200c7d903e973aa0aa693578613264d83796455cbf4cd172bd878 \
-    --hash=sha256:59a76c4142478a1952bba6f9a9ca4fc7b029afb619e8ffcf0d135ce37ea692da
+elasticsearch-dsl==7.3.0 \
+    --hash=sha256:9390d8e5cf82ebad3505e7f656e407259cf703f5a4035f211cef454127672572 \
+    --hash=sha256:0ed75f6ff037e36b2397a8e92cae0ddde79b83adc70a154b8946064cb62f7301
 semver==2.10.2 \
     --hash=sha256:21e80ca738975ed513cba859db0a0d2faca2380aef1962f48272ebf9a8a44bd4 \
     --hash=sha256:c0a4a9d1e45557297a722ee9bac3de2ec2ea79016b6ffcaca609b0bc62cf4276
