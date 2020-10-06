@@ -524,7 +524,7 @@ class Test_generate_create_bug_url:
         url = generate_create_bug_url(
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
-        assert quote_plus("Reason: SIGSEGV /0x00000080") in url
+        assert quote_plus("Reason: ```SIGSEGV /0x00000080```") in url
 
     def test_comment_moz_crash_reason(self):
         """Verify Reason makes it into the comment."""
@@ -547,7 +547,7 @@ class Test_generate_create_bug_url:
         url = generate_create_bug_url(
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
-        assert quote_plus("MOZ_CRASH Reason: good_data") in url
+        assert quote_plus("MOZ_CRASH Reason: ```good_data```") in url
         assert quote_plus("bad_data") not in url
 
     def test_fission_enabled(self):

@@ -9,10 +9,12 @@ Java stack trace:
 {{ java_stack_trace }}
 ```
 {% elif crashing_thread_frames -%}
-{%- if reason %}Reason: {{ reason }}
-{% endif -%}
-{%- if moz_crash_reason %}MOZ_CRASH Reason: {{ moz_crash_reason }}
-{% endif %}
+{%- if moz_crash_reason -%}
+MOZ_CRASH Reason: ```{{ moz_crash_reason }}```
+{%- elif reason -%}
+Reason: ```{{ reason }}```
+{%- endif %}
+
 Top {{ crashing_thread_frames|length }} frames of crashing thread:
 ```
 {% for frame in crashing_thread_frames -%}
