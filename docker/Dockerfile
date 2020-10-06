@@ -23,9 +23,9 @@ COPY ./webapp-django/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
 # Install Socorro Python requirements
-COPY --chown=app:app ./requirements /app/requirements
+COPY --chown=app:app requirements.txt /app/
 RUN pip install -U 'pip>=8' && \
-    pip install --no-cache-dir -r requirements/default.txt -c requirements/constraints.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
     pip check --disable-pip-version-check
 
 ENV PYTHONUNBUFFERED=1 \
