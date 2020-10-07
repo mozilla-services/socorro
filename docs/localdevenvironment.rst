@@ -210,12 +210,6 @@ The following ENV files can be found in ``/app/docker/config/``:
     This should **NOT** be used for server environments, but you could base
     configuration for a server environment on this file.
 
-``never_on_a_server.env``
-    This holds a few environment variables that override secure defaults and are
-    explicitly for a local development environment.
-
-    **These should never show up in a server environment.**
-
 ``test.env``
     This holds configuration specific to running the tests. It has some
     configuration value overrides because the tests are "interesting".

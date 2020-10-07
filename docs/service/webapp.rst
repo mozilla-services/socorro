@@ -124,7 +124,7 @@ Production-style Assets
 
 When you run ``docker-compose up webapp`` in the local development environment,
 it starts the web app using Django's ``runserver`` command. ``DEBUG=True`` is
-set in the ``docker/config/never_on_a_server.env`` file, so static assets are
+set in the ``docker/config/local_dev.env`` file, so static assets are
 automatically served from within the individual Django apps rather than serving
 the minified and concatenated static assets you'd get in a production-like
 environment.

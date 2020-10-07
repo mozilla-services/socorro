@@ -11,7 +11,6 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
       - my.env
     volumes:
       - .:/app
@@ -23,7 +22,6 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
       - docker/config/test.env
     depends_on:
       - statsd
@@ -38,7 +36,6 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
       - docker/config/test.env
     depends_on:
       - statsd
@@ -50,7 +47,6 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
       - my.env
     depends_on:
       - statsd
@@ -64,7 +60,6 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
       - my.env
     depends_on:
       - statsd
@@ -78,7 +73,6 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
       - my.env
     depends_on:
       - statsd
@@ -127,7 +121,6 @@ services:
     image: mozilla/socorro_collector:latest
     env_file:
       - docker/config/local_dev.env
-      - docker/config/never_on_a_server.env
       - my.env
     depends_on:
       - localstack
