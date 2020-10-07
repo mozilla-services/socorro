@@ -50,7 +50,6 @@ ${DOCKER} run \
           --volume="$(pwd)":/app \
           --workdir=/app \
           --env-file=./docker/config/local_dev.env \
-          --env-file=./docker/config/never_on_a_server.env \
           --env-file=./my.env \
           --env=INDOCKER=1 \
           --tty \
