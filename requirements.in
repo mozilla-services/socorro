@@ -18,7 +18,7 @@ django_csp==3.7
 dockerflow==2020.6.0
 enforce-typing==1.0.0.post1
 flake8==3.8.3
-freezegun==0.3.15
+freezegun==1.0.0
 glom==20.8.0
 gunicorn==20.0.4
 humanfriendly==8.2
