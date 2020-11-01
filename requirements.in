@@ -43,7 +43,7 @@ python-decouple==3.3
 python-memcached==1.59
 requests-mock==1.8.0
 requests==2.24.0
-semver==2.10.2
+semver==2.13.0
 sentry-sdk==0.17.2
 statsd==3.3.0
 urlwait==1.0
