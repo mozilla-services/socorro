@@ -523,7 +523,7 @@ sentry-sdk==0.17.2 \
 six==1.15.0 \
     --hash=sha256:30639c035cdb23534cd4aa2dd52c3bf48f06e5f4a941509c8bafd8ce11080259 \
     --hash=sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced \
-    # via configman, configobj, cryptography, elasticsearch-dsl, freezegun, isodate, josepy, jsonschema, mozilla-django-oidc, oauth2client, packaging, pip-tools, pyopenssl, python-dateutil, python-memcached, requests-mock, sasl, thrift
+    # via configman, configobj, cryptography, elasticsearch-dsl, isodate, josepy, jsonschema, mozilla-django-oidc, oauth2client, packaging, pip-tools, pyopenssl, python-dateutil, python-memcached, requests-mock, sasl, thrift
 sqlparse==0.3.1 \
     --hash=sha256:022fb9c87b524d1f7862b3037e541f68597a730a8843245c349fc93e1643dc4e \
     --hash=sha256:e162203737712307dfe78860cc56c8da8a852ab2ee33750e33aeadf38d12c548 \
