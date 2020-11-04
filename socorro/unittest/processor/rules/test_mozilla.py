@@ -1504,7 +1504,7 @@ class TestOsPrettyName:
             # A valid version of Mac OS X
             ("Mac OS X", "10.18.324", "OS X 10.18"),
             # An invalid version of Mac OS X
-            ("Mac OS X", "12.1", "OS X Unknown"),
+            ("Mac OS X", "9.1", "OS X Unknown"),
             # Generic Linux
             ("Linux", "0.0.12.13", "Linux"),
         ],

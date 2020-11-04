@@ -843,7 +843,7 @@ class OSPrettyVersionRule(Rule):
             return
 
         elif os_name == "Mac OS X":
-            if major_version >= 10 and major_version < 11 and minor_version >= 0:
+            if major_version >= 10 and minor_version >= 0:
                 pretty_name = "OS X %s.%s" % (major_version, minor_version)
             else:
                 pretty_name = "OS X Unknown"
