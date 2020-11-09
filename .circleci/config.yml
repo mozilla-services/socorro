@@ -1,6 +1,7 @@
 ---
 # These environment variables must be set in CircleCI UI
 #
+# DOCKERHUB_REPO - docker hub repo, format: <username>/<repo>
 # DOCKER_USER    - login info for docker hub
 # DOCKER_PASS
 version: 2.1
@@ -107,20 +108,21 @@ jobs:
               set -e
             }
 
-            export DOCKER_TAG="${CIRCLE_SHA1}"
-            if [ -n "${CIRCLE_TAG}" ]; then
-              export DOCKER_TAG="${CIRCLE_TAG}"
-            fi
-            # push on main or git tag
-            if [ "${CIRCLE_BRANCH}" == "main" ] || [ -n "${CIRCLE_TAG}" ]; then
-              echo "${DOCKER_PASSWORD}" | docker login -u="${DOCKER_USERNAME}" --password-stdin
-              retry docker tag "local/socorro_app:latest" "mozilla/socorro_app:${DOCKER_TAG}"
-              retry docker push "mozilla/socorro_app:${DOCKER_TAG}"
+            if [ "${DOCKER_USER}" == "" ] || [ "${DOCKER_PASS}" == "" ]; then
+              echo "Skipping Login to Dockerhub, credentials not available."
+            else
+              echo "${DOCKER_PASS}" | docker login -u="${DOCKER_USER}" --password-stdin
 
-              # push `latest` on main only
               if [ "${CIRCLE_BRANCH}" == "main" ]; then
-                retry docker tag "local/socorro_app:latest" "mozilla/socorro_app:latest"
-                retry docker push "mozilla/socorro_app:latest"
+                # deploy main latest
+                docker tag "local/socorro_app:latest" "${DOCKERHUB_REPO}:latest"
+                retry docker push "${DOCKERHUB_REPO}:latest"
+              elif  [ ! -z "${CIRCLE_TAG}" ]; then
+                # deploy a release tag
+                echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+                docker tag app:build "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+                docker images
+                retry docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
               fi
             fi
 
