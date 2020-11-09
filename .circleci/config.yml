@@ -1,8 +1,16 @@
+---
+# These environment variables must be set in CircleCI UI
+#
+# DOCKER_USER    - login info for docker hub
+# DOCKER_PASS
 version: 2.1
 jobs:
   build:
     docker:
       - image: mozilla/cidockerbases:docker-latest
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
     working_directory: /
 
     steps:
@@ -36,6 +44,15 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 19.03.13
+
+      - run:
+          name: Login to Dockerhub
+          command: |
+            if [ "${DOCKER_USER}" == "" ] || [ "${DOCKER_PASS}" == "" ]; then
+              echo "Skipping Login to Dockerhub, credentials not available."
+            else
+              echo "${DOCKER_PASS}" | docker login -u="${DOCKER_USER}" --password-stdin
+            fi
 
       - run:
           name: Get info
