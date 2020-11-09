@@ -108,6 +108,8 @@ jobs:
               set -e
             }
 
+            export LOCAL_IMAGE="local/socorro_app:latest"
+
             if [ "${DOCKER_USER}" == "" ] || [ "${DOCKER_PASS}" == "" ]; then
               echo "Skipping Login to Dockerhub, credentials not available."
             else
@@ -115,12 +117,12 @@ jobs:
 
               if [ "${CIRCLE_BRANCH}" == "main" ]; then
                 # deploy main latest
-                docker tag "local/socorro_app:latest" "${DOCKERHUB_REPO}:latest"
+                docker tag "${LOCAL_IMAGE}" "${DOCKERHUB_REPO}:latest"
                 retry docker push "${DOCKERHUB_REPO}:latest"
               elif  [ ! -z "${CIRCLE_TAG}" ]; then
                 # deploy a release tag
                 echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-                docker tag app:build "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+                docker tag "${LOCAL_IMAGE}" "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
                 docker images
                 retry docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
               fi
