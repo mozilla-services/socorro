@@ -2,19 +2,19 @@
 
 var SignatureReport = {
   // Function to help with inheritance.
-  inherit: function(proto) {
-    var f = function() {};
+  inherit: function (proto) {
+    var f = function () {};
     f.prototype = proto;
     return new f();
   },
 };
 
-SignatureReport.getURL = function(name) {
+SignatureReport.getURL = function (name) {
   'use strict';
   return $('#mainbody').data('urls-' + name);
 };
 
-SignatureReport.init = function() {
+SignatureReport.init = function () {
   'use strict';
 
   // parameters
@@ -30,7 +30,7 @@ SignatureReport.init = function() {
   SignatureReport.pageNum = 1; // the page number as passed in the URL
 
   // Define the tab names.
-  var tabNames = $('a', panelsNavSection).map(function() {
+  var tabNames = $('a', panelsNavSection).map(function () {
     return $(this).data('tab-name');
   });
   var tabs = {};
@@ -50,7 +50,7 @@ SignatureReport.init = function() {
   var currentTab = hashString ? hashString : defaultTab;
 
   // Helper function for getting parameters.
-  SignatureReport.getParamsWithSignature = function() {
+  SignatureReport.getParamsWithSignature = function () {
     var params = form.dynamicForm('getParams');
     params.signature = SIGNATURE;
 
@@ -61,17 +61,17 @@ SignatureReport.init = function() {
   };
 
   // Helper function for capitalizing headings.
-  SignatureReport.capitalizeHeading = function(heading) {
+  SignatureReport.capitalizeHeading = function (heading) {
     return heading.charAt(0).toUpperCase() + heading.slice(1).replace(/_/g, ' ');
   };
 
   // Helper function for adding a loader.
-  SignatureReport.addLoaderToElement = function(elt) {
+  SignatureReport.addLoaderToElement = function (elt) {
     elt.empty();
     elt.append($('<div>', { class: 'loader' }));
   };
 
-  SignatureReport.handleError = function(contentElt, jqXHR, textStatus, errorThrown) {
+  SignatureReport.handleError = function (contentElt, jqXHR, textStatus, errorThrown) {
     var errorContent = $('<div>', { class: 'error' });
     var errorDetails;
     var errorTitle;
@@ -114,8 +114,6 @@ SignatureReport.init = function() {
     $('.selected', panelsNavSection).removeClass('selected');
     $('.' + tabName, panelsNavSection).addClass('selected');
 
-    Analytics.trackTabSwitch('signature_report', tabName);
-
     // Hide the loading panel if it is being displayed.
     $('#loading-panel', mainBodyElt).hide();
 
@@ -150,7 +148,7 @@ SignatureReport.init = function() {
       initialParams = {};
     }
 
-    form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset', function() {
+    form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset', function () {
       $('.loader', searchSection).remove();
       form.show();
       // When the form has finished loading, we get sanitized parameters
@@ -163,12 +161,12 @@ SignatureReport.init = function() {
   }
 
   function bindEvents() {
-    searchSection.on('click', '.new-line', function(e) {
+    searchSection.on('click', '.new-line', function (e) {
       e.preventDefault();
       form.dynamicForm('newLine');
     });
 
-    searchSection.on('click', 'button[type=submit]', function(e) {
+    searchSection.on('click', 'button[type=submit]', function (e) {
       e.preventDefault();
       var params = SignatureReport.getParamsWithSignature();
       var queryString = '?' + Qs.stringify(params, { indices: false });
@@ -176,7 +174,7 @@ SignatureReport.init = function() {
     });
 
     // Show or hide filters.
-    $('.toggle-filters').on('click', function(e) {
+    $('.toggle-filters').on('click', function (e) {
       e.preventDefault();
       searchSection.slideToggle(300);
 
@@ -189,13 +187,13 @@ SignatureReport.init = function() {
     });
 
     // Change tab using navigation links.
-    panelsNavSection.on('click', 'a', function() {
+    panelsNavSection.on('click', 'a', function () {
       showTab($(this).data('tab-name'));
     });
   }
 
   // Make the tabs.
-  $.each(tabNames, function(i, tabName) {
+  $.each(tabNames, function (i, tabName) {
     var TabClass = tabClasses[tabName];
     tabs[tabName] = new TabClass(tabName);
     mainBodyElt.append(tabs[tabName].$panelElement);

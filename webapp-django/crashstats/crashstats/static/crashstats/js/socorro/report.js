@@ -1,9 +1,9 @@
 /* global BugLinks */
 
-$(document).ready(function() {
+$(document).ready(function () {
   /* Idempotent function to display the TelemetryEnvironment with
-     * jQuery JSONView */
-  var displayTelemetryEnvironment = (function() {
+   * jQuery JSONView */
+  var displayTelemetryEnvironment = (function () {
     var once = false;
     return function inner() {
       if (once) {
@@ -37,7 +37,7 @@ $(document).ready(function() {
       if (tabId === 'telemetryenvironment') {
         displayTelemetryEnvironment();
       }
-      $('.ui-tabs li a').each(function(i, tab) {
+      $('.ui-tabs li a').each(function (i, tab) {
         if (tab.href.search('#' + tabId) > -1) {
           activeTab = i;
         }
@@ -46,17 +46,16 @@ $(document).ready(function() {
   }
   $('#report-index').tabs({
     active: activeTab,
-    activate: function(event, ui) {
+    activate: function (event, ui) {
       var tabId = ui.newPanel.attr('id');
       if (tabId === 'telemetryenvironment') {
         displayTelemetryEnvironment();
       }
       document.location.hash = 'tab-' + tabId;
-      Analytics.trackTabSwitch('report_index', tabId);
     },
   });
 
-  $('a[href="#allthreads"]').on('click', function() {
+  $('a[href="#allthreads"]').on('click', function () {
     var element = $(this);
     $('#allthreads').toggle(400);
     if (element.text() === element.data('show')) {
@@ -70,22 +69,20 @@ $(document).ready(function() {
   });
 
   var tbls = $('#frames').find('table');
-  var addExpand = function(sigColumn) {
+  var addExpand = function (sigColumn) {
     $(sigColumn).append(' <a class="expand" href="#">[Expand]</a>');
-    $('.expand').click(function(event) {
+    $('.expand').click(function (event) {
       event.preventDefault();
       // swap cell title into cell text for each cell in this column
-      $('td:nth-child(3)', $(this).parents('tbody')).each(function() {
-        $(this)
-          .text($(this).attr('title'))
-          .removeAttr('title');
+      $('td:nth-child(3)', $(this).parents('tbody')).each(function () {
+        $(this).text($(this).attr('title')).removeAttr('title');
       });
       $(this).remove();
     });
   };
 
   // collect all tables inside the div with id frames
-  tbls.each(function() {
+  tbls.each(function () {
     var isExpandAdded = false;
     var cells = $(this).find('tbody tr td:nth-child(3)');
 
@@ -95,13 +92,9 @@ $(document).ready(function() {
     // There is a second check to ensure that the expand link has not been added already.
     // This avoids adding multiple calls to addExpand which will add multiple links to the
     // same header.
-    cells.each(function() {
+    cells.each(function () {
       if ($(this).attr('title').length !== $(this).text().length && !isExpandAdded) {
-        addExpand(
-          $(this)
-            .parents('tbody')
-            .find('th.signature-column')
-        );
+        addExpand($(this).parents('tbody').find('th.signature-column'));
         isExpandAdded = true;
       }
     });
@@ -116,7 +109,7 @@ $(document).ready(function() {
   var channel = container.data('channel');
   var product = container.data('product');
 
-  window.correlations.getCorrelations(signature, channel, product).then(function(results) {
+  window.correlations.getCorrelations(signature, channel, product).then(function (results) {
     $('#correlation h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
 
     if (!Array.isArray(results)) {
@@ -126,9 +119,7 @@ $(document).ready(function() {
 
     var content = results.join('\n');
 
-    $('#correlation pre')
-      .empty()
-      .text(content);
+    $('#correlation pre').empty().text(content);
   });
 
   // Enhance bug links.

@@ -8,7 +8,7 @@
  * @extends {SignatureReport.Tab}
  * @inheritdoc
  */
-SignatureReport.AggregationsTab = function(tabName) {
+SignatureReport.AggregationsTab = function (tabName) {
   var config = {
     panels: true,
     defaultOptions: ['product', 'platform', 'build_id', 'install_time'],
@@ -22,7 +22,7 @@ SignatureReport.AggregationsTab = function(tabName) {
 SignatureReport.AggregationsTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
 // Extends loadControls to add a select and some options.
-SignatureReport.AggregationsTab.prototype.loadControls = function() {
+SignatureReport.AggregationsTab.prototype.loadControls = function () {
   // For accessing this inside functions.
   var that = this;
 
@@ -33,7 +33,7 @@ SignatureReport.AggregationsTab.prototype.loadControls = function() {
   var fields = $('#mainbody').data('fields');
 
   // Append an option element for each field.
-  $.each(fields, function(i, field) {
+  $.each(fields, function (i, field) {
     that.$selectElement.append(
       $('<option>', {
         value: field.id,
@@ -53,7 +53,7 @@ SignatureReport.AggregationsTab.prototype.loadControls = function() {
   });
 
   // On changing the selected option, load a new panel.
-  this.$selectElement.on('change', function(e) {
+  this.$selectElement.on('change', function (e) {
     that.$selectElement.select2('val', '');
     that.loadPanel(e.val);
   });

@@ -1,6 +1,6 @@
 /* global SignatureReport */
 
-SignatureReport.Panel = function(panelName, onDelete) {
+SignatureReport.Panel = function (panelName, onDelete) {
   // For accessing this from inside functions.
   var that = this;
 
@@ -18,7 +18,7 @@ SignatureReport.Panel = function(panelName, onDelete) {
   this.$contentElement = $('<div>', { class: 'content' });
 
   // Bind the delete function to the delet button.
-  $deleteButton.on('click', function(e) {
+  $deleteButton.on('click', function (e) {
     e.preventDefault();
     that.$panelElement.remove();
     // Check that onDelete is not undefined

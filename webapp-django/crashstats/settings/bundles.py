@@ -214,7 +214,6 @@ PIPELINE_JS = {
             "moment/moment.js",
             "crashstats/js/socorro/timeutils.js",
             "crashstats/js/socorro/nav.js",
-            "crashstats/js/socorro/analytics.js",
         ),
         "output_filename": "js/crashstats-base.min.js",
     },

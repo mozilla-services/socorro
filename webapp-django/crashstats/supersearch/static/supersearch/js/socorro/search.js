@@ -1,6 +1,6 @@
 /* global BugLinks, DateFilters, socorro */
 
-$(function() {
+$(function () {
   'use strict';
 
   var searchContainer = $('#search-form');
@@ -63,12 +63,12 @@ $(function() {
 
     contentElt.tabs({
       active: activeTab,
-      activate: function(event, ui) {
+      activate: function (event, ui) {
         // Make sure the hash is changed when switching tabs.
         var hash = '#' + ui.newPanel.attr('id');
         pushHistoryState(params, url, hash);
       },
-      create: function(event, ui) {
+      create: function (event, ui) {
         // Put the first tab's id in the hash of the URL.
         var hash = '#' + ui.panel.attr('id');
         pushHistoryState(params, url, hash, true);
@@ -90,7 +90,7 @@ $(function() {
     // do not activate server-side sorting, rely on the
     // default client-side sorting.
     if ($('.pagination a', contentElt).length) {
-      $('.sort-header', contentElt).click(function(e) {
+      $('.sort-header', contentElt).click(function (e) {
         e.preventDefault();
 
         var thisElt = $(this);
@@ -100,7 +100,7 @@ $(function() {
         var sortArr = sortInput.select2('val');
 
         // First remove all previous mentions of that field.
-        sortArr = sortArr.filter(function(item) {
+        sortArr = sortArr.filter(function (item) {
           return item !== fieldName && item !== '-' + fieldName;
         });
 
@@ -133,13 +133,10 @@ $(function() {
     }
     contentElt.empty().append($('<div>', { class: 'loader' }));
 
-    // If a tracker is available, track that AJAX call.
-    Analytics.trackPageview(url);
-
     $.ajax({
       url: url,
       success: showResults,
-      error: function(jqXHR) {
+      error: function (jqXHR) {
         var errorContent = $('<div>', { class: 'error' });
 
         if (jqXHR.status >= 400 && jqXHR.status < 500) {
@@ -170,20 +167,20 @@ $(function() {
    */
   function prepareResultsQueryString(params) {
     var sortArr = sortInput.select2('data');
-    params._sort = sortArr.map(function(x) {
+    params._sort = sortArr.map(function (x) {
       return x.id;
     });
 
     var facets = facetsInput.select2('data');
     if (facets) {
-      params._facets = facets.map(function(x) {
+      params._facets = facets.map(function (x) {
         return x.id;
       });
     }
 
     var columns = columnsInput.select2('data');
     if (columns) {
-      params._columns = columns.map(function(x) {
+      params._columns = columns.map(function (x) {
         return x.id;
       });
     }
@@ -221,7 +218,7 @@ $(function() {
     var params = form.dynamicForm('getParams');
 
     // Add Simple Search parameters.
-    $('input.simple-search-input', simpleSearchContainer).each(function(i, item) {
+    $('input.simple-search-input', simpleSearchContainer).each(function (i, item) {
       var name = item.name;
       var value = $(item).select2('val');
       if (value.length) {
@@ -239,7 +236,7 @@ $(function() {
     // Add facets
     var facets = facetsInput.select2('data');
     if (facets) {
-      params._facets = facets.map(function(x) {
+      params._facets = facets.map(function (x) {
         return x.id;
       });
     }
@@ -252,7 +249,7 @@ $(function() {
    */
   function hasOperator(value) {
     var operators = form.dynamicForm('getOperatorsList');
-    return operators.some(function(operator) {
+    return operators.some(function (operator) {
       if (operator === 'has') {
         return false; // we don't care about that one
       }
@@ -265,7 +262,7 @@ $(function() {
    */
   function setParams(params) {
     // Set Simple Search parameters.
-    $('input', simpleSearchContainer).each(function(i, item) {
+    $('input', simpleSearchContainer).each(function (i, item) {
       if (item.name in params) {
         var values = params[item.name];
         if (!Array.isArray(values)) {
@@ -275,7 +272,7 @@ $(function() {
         // will go into the simple search select tags, while others
         // will stay in `params` and end up in the advanced form.
         var simpleValues = [];
-        params[item.name] = values.map(function(value) {
+        params[item.name] = values.map(function (value) {
           if (!hasOperator(value)) {
             simpleValues.push(value);
           } else {
@@ -310,7 +307,7 @@ $(function() {
   /**
    * Handler for browser history state changes.
    */
-  window.onpopstate = function(e) {
+  window.onpopstate = function (e) {
     var queryString;
     var params = e.state;
 
@@ -358,7 +355,7 @@ $(function() {
     var queryString = window.location.search.substring(1);
     var initialParams = socorro.search.parseQueryString(queryString);
 
-    var formCallback = function() {
+    var formCallback = function () {
       showForm();
 
       // By default, we simply create a new line in the form.
@@ -382,7 +379,7 @@ $(function() {
       // a regular search, which will use the sane parameters from
       // the dynamicForm library. This will avoid strange behaviors
       // that can be caused by manually set parameters, for example.
-      formCallback = function() {
+      formCallback = function () {
         showForm();
 
         setParams(initialParams);
@@ -405,7 +402,7 @@ $(function() {
    * Initialize the simplified search form.
    */
   function initSimpleSearch() {
-    $('input[type=text]', simpleSearchContainer).each(function() {
+    $('input[type=text]', simpleSearchContainer).each(function () {
       var elt = $(this);
       elt.select2({
         width: '100%',
@@ -418,17 +415,17 @@ $(function() {
    * Bind the search buttons' events.
    */
   function initFormButtons() {
-    $('button[type=submit]', form).click(function(e) {
+    $('button[type=submit]', form).click(function (e) {
       e.preventDefault();
       search();
     });
 
-    $('.new-line', form).click(function(e) {
+    $('.new-line', form).click(function (e) {
       e.preventDefault();
       form.dynamicForm('newLine');
     });
 
-    $('.customize', form).click(function(e) {
+    $('.customize', form).click(function (e) {
       e.preventDefault();
       var params = getParams();
       var url = prepareResultsQueryString(params);
@@ -444,7 +441,7 @@ $(function() {
     var COLUMNS = $('#mainbody').data('columns');
     var FACETS = $('#mainbody').data('facets');
     var sortFields = [];
-    COLUMNS.forEach(function(item) {
+    COLUMNS.forEach(function (item) {
       sortFields.push(item);
       sortFields.push({
         id: '-' + item.id,
@@ -472,7 +469,7 @@ $(function() {
     });
 
     // Make the columns input sortable
-    columnsInput.on('change', function() {
+    columnsInput.on('change', function () {
       $('input[name=_columns]').val(columnsInput.val());
     });
 
@@ -481,17 +478,17 @@ $(function() {
       .find('ul.select2-choices')
       .sortable({
         containment: 'parent',
-        start: function() {
+        start: function () {
           columnsInput.select2('onSortStart');
         },
-        update: function() {
+        update: function () {
           columnsInput.select2('onSortEnd');
         },
       });
 
     // Show or hide advanced options.
     var optionsElt = $('fieldset.options', form);
-    $('h4', optionsElt).on('click', function() {
+    $('h4', optionsElt).on('click', function () {
       $('h4 + div', optionsElt).toggle();
       $('span', this).toggleClass('hide');
     });
@@ -503,7 +500,7 @@ $(function() {
    */
   function initContentBinding() {
     // Make every value a link that adds a new line to the form.
-    contentElt.on('click', '.term', function(e) {
+    contentElt.on('click', '.term', function (e) {
       e.preventDefault();
 
       addTerm($(this).data('field'), $(this).data('content'));

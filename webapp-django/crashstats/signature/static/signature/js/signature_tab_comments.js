@@ -8,7 +8,7 @@
  * @extends {SignatureReport.Tab}
  * @inheritdoc
  */
-SignatureReport.CommentsTab = function(tabName) {
+SignatureReport.CommentsTab = function (tabName) {
   var config = {
     panels: false,
     dataDisplayType: 'table',

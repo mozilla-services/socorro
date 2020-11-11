@@ -1,21 +1,21 @@
-$(function() {
-  var Checker = (function() {
+$(function () {
+  var Checker = (function () {
     var intervalTime = 5 * 1000;
     var checkInterval;
 
     return {
-      startChecking: function(crashID) {
-        checkInterval = setInterval(function() {
+      startChecking: function (crashID) {
+        checkInterval = setInterval(function () {
           $.get('/api/ProcessedCrash/', { crash_id: crashID })
-            .then(function() {
+            .then(function () {
               clearInterval(checkInterval);
               // If it exists, we can reload the page we're on.
               $('.pending .searching').hide();
-              $('.pending .found').fadeIn(300, function() {
+              $('.pending .found').fadeIn(300, function () {
                 document.location.reload();
               });
             })
-            .fail(function(err) {
+            .fail(function (err) {
               // Perfectly expected.
               // We kind of expect the processed crash to not
               // exist for a while. Once it's been processed,
