@@ -36,10 +36,10 @@ PACKAGES_TO_INSTALL=(
 # Install Ubuntu packages
 apt-get install -y "${PACKAGES_TO_INSTALL[@]}"
 
-# Install nodejs and npm from Nodesource's 8.x branch
+# Install nodejs and npm from Nodesource's 14.x branch
 curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-echo 'deb https://deb.nodesource.com/node_10.x jessie main' > /etc/apt/sources.list.d/nodesource.list
-echo 'deb-src https://deb.nodesource.com/node_10.x jessie main' >> /etc/apt/sources.list.d/nodesource.list
+echo 'deb https://deb.nodesource.com/node_14.x buster main' > /etc/apt/sources.list.d/nodesource.list
+echo 'deb-src https://deb.nodesource.com/node_14.x buster main' >> /etc/apt/sources.list.d/nodesource.list
 apt-get update
 apt-get install -y nodejs
 
