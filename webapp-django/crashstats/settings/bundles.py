@@ -180,7 +180,6 @@ PIPELINE_JS = {
     },
     "correlation": {
         "source_filenames": (
-            "crashstats/js/polyfill/fetch.js",
             "jssha/dist/sha1.js",
             "crashstats/js/socorro/correlation.js",
         ),
