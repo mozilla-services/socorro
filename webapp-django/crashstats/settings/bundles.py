@@ -34,7 +34,7 @@ NPM_FILE_PATTERNS = {
     "@fortawesome/fontawesome-free": ["css/all.min.css", "webfonts/*"],
     "tablesorter": ["dist/css/theme.default.min.css", "dist/js/jquery.tablesorter.js"],
     "d3": ["dist/*"],
-    "jssha": ["src/*.js"],
+    "jssha": ["dist/*.js"],
     "qs": ["dist/*"],
     "moment": ["moment.js"],
     "filesize": ["lib/*"],
@@ -181,7 +181,7 @@ PIPELINE_JS = {
     "correlation": {
         "source_filenames": (
             "crashstats/js/polyfill/fetch.js",
-            "jssha/src/sha1.js",
+            "jssha/dist/sha1.js",
             "crashstats/js/socorro/correlation.js",
         ),
         "output_filename": "js/correlation.min.js",
