@@ -15,7 +15,7 @@
  * @cfg {boolean} pagination
  *      Should be true if the tab is displaying tables with pages
  */
-SignatureReport.Tab = function(tabName, config) {
+SignatureReport.Tab = function (tabName, config) {
   // Set the name of the tab.
   this.tabName = tabName;
 
@@ -53,7 +53,7 @@ SignatureReport.Tab = function(tabName, config) {
  */
 
 // Shows the tab. Also loads it if it is not already loaded.
-SignatureReport.Tab.prototype.showTab = function() {
+SignatureReport.Tab.prototype.showTab = function () {
   // If tab hasn't been loaded, load it.
   if (!this.loaded) {
     // Load the controls.
@@ -81,7 +81,7 @@ SignatureReport.Tab.prototype.showTab = function() {
 };
 
 // Hides the tab.
-SignatureReport.Tab.prototype.hideTab = function() {
+SignatureReport.Tab.prototype.hideTab = function () {
   this.$panelElement.hide();
 };
 
@@ -90,12 +90,12 @@ SignatureReport.Tab.prototype.hideTab = function() {
  */
 
 // Extend this to load any controls.
-SignatureReport.Tab.prototype.loadControls = function() {
+SignatureReport.Tab.prototype.loadControls = function () {
   // If there are no controls, nothing will happen.
 };
 
 // Extend this if any extra parameters need to be added.
-SignatureReport.Tab.prototype.getParamsForUrl = function() {
+SignatureReport.Tab.prototype.getParamsForUrl = function () {
   var params = SignatureReport.getParamsWithSignature();
   if (this.pagination) {
     params.page = this.page || SignatureReport.pageNum;
@@ -104,13 +104,13 @@ SignatureReport.Tab.prototype.getParamsForUrl = function() {
 };
 
 // Extend this if anything different needs to be added to the URL.
-SignatureReport.Tab.prototype.buildUrl = function(params, option) {
+SignatureReport.Tab.prototype.buildUrl = function (params, option) {
   option = option ? option + '/' : '';
   return this.dataUrl + option + '?' + Qs.stringify(params, { indices: false });
 };
 
 // Extend this if anything different should be done with the returned data.
-SignatureReport.Tab.prototype.onAjaxSuccess = function(contentElement, data) {
+SignatureReport.Tab.prototype.onAjaxSuccess = function (contentElement, data) {
   contentElement.empty().append($(data));
   contentElement.addClass('loaded');
   if (this.dataDisplayType === 'table') {
@@ -123,11 +123,11 @@ SignatureReport.Tab.prototype.onAjaxSuccess = function(contentElement, data) {
 
 // This should not need to be extended.
 // NB if panels are present, the tab is assumed to have a select as its controls.
-SignatureReport.Tab.prototype.loadPanel = function(option) {
+SignatureReport.Tab.prototype.loadPanel = function (option) {
   // Initialize a new panel.
   var panel = new SignatureReport.Panel(
     option,
-    $.proxy(function() {
+    $.proxy(function () {
       $('option[value=' + option + ']', this.$selectElement).prop('disabled', false);
     }, this)
   );
@@ -144,7 +144,7 @@ SignatureReport.Tab.prototype.loadPanel = function(option) {
 };
 
 // This should not need to be extended.
-SignatureReport.Tab.prototype.loadContent = function(contentElement, option) {
+SignatureReport.Tab.prototype.loadContent = function (contentElement, option) {
   // Get the parameters for the URL to get the data.
   var params = this.getParamsForUrl();
 
@@ -166,7 +166,7 @@ SignatureReport.Tab.prototype.loadContent = function(contentElement, option) {
     $.ajax({
       url: url,
       success: $.proxy(this.onAjaxSuccess, this, contentElement),
-      error: function(jqXHR, textStatus, errorThrown) {
+      error: function (jqXHR, textStatus, errorThrown) {
         SignatureReport.handleError(contentElement, jqXHR, textStatus, errorThrown);
       },
       dataType: dataTypes[this.dataDisplayType],
@@ -175,11 +175,11 @@ SignatureReport.Tab.prototype.loadContent = function(contentElement, option) {
 };
 
 // This should not need to be extended.
-SignatureReport.Tab.prototype.bindPaginationLinks = function(contentElement) {
+SignatureReport.Tab.prototype.bindPaginationLinks = function (contentElement) {
   // For accessing this inside functions.
   var that = this;
 
-  $('.pagination a', contentElement).click(function(e) {
+  $('.pagination a', contentElement).click(function (e) {
     e.preventDefault();
 
     that.page = $(this).data('page');

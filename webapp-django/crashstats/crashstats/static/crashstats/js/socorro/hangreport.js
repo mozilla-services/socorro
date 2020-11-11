@@ -1,5 +1,5 @@
 /*jslint browser:true, regexp:false, plusplus:false */
-$(document).ready(function() {
+$(document).ready(function () {
   $('#signature-list').tablesorter({
     headers: {
       0: { sorter: 'text' },

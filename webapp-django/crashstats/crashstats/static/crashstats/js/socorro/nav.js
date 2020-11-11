@@ -1,7 +1,7 @@
-$(document).ready(function() {
-  var getReportsURLs = function() {
+$(document).ready(function () {
+  var getReportsURLs = function () {
     var urls = {};
-    $('#report_select option').each(function(i, elem) {
+    $('#report_select option').each(function (i, elem) {
       urls[elem.value] = {
         product: elem.dataset.urlProduct,
         version: elem.dataset.urlVersion,
@@ -11,7 +11,7 @@ $(document).ready(function() {
     return urls;
   };
 
-  var getURL = function() {
+  var getURL = function () {
     var report = $('#report_select').val();
     var product = $('#products_select').val();
     var version = $('#product_version_select').val();
@@ -30,17 +30,15 @@ $(document).ready(function() {
     return url;
   };
 
-  $('.version-nav').on('change', 'select', function() {
+  $('.version-nav').on('change', 'select', function () {
     window.location = getURL();
   });
 
-  $('.user-info-button').on('click', function() {
-    $(this)
-      .siblings('.user-info-menu')
-      .toggle();
+  $('.user-info-button').on('click', function () {
+    $(this).siblings('.user-info-menu').toggle();
   });
 
-  $(document).on('click', function(event) {
+  $(document).on('click', function (event) {
     var userInfo = $('.user-info');
     if (!userInfo.is(event.target) && !userInfo.has(event.target).length) {
       $('.user-info-menu').hide();

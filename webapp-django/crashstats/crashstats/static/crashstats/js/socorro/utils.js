@@ -1,4 +1,4 @@
-(function(window, undefined) {
+(function (window) {
   'use strict';
   var socorro = {
     ui: {
@@ -12,7 +12,7 @@
        * @param {boolean} inline [optional]  - Whether the loader should be set as an inlne or absolutely
        *                                       positioned element.
        */
-      setLoader: function(container, selector, inline) {
+      setLoader: function (container, selector, inline) {
         var classList = inline ? 'inline-loader' : 'loading';
         var isLoaderSet = false;
 
@@ -36,7 +36,7 @@
        * Removes an Ajax loader image.
        * @param {string} selector [optional] - A custom selector to use when removing a specific loader.
        */
-      removeLoader: function(selector) {
+      removeLoader: function (selector) {
         var loaderClass = selector ? selector : 'loading';
         var loader = document.querySelector('.' + loaderClass);
 
@@ -44,7 +44,7 @@
           loader.parentNode.removeChild(loader);
         }
       },
-      removeUserMsg: function(selector) {
+      removeUserMsg: function (selector) {
         var domParentNode = document.querySelector(selector);
         var errorMessage = domParentNode.querySelector('.error');
         var successMessage = domParentNode.querySelector('.success');
@@ -57,7 +57,7 @@
           domParentNode.removeChild(successMessage);
         }
       },
-      setUserMsg: function(selector, response, position) {
+      setUserMsg: function (selector, response, position) {
         // Remove any currently shown user messages in node.
         socorro.ui.removeUserMsg(selector);
 
@@ -72,7 +72,7 @@
     },
     date: {
       ONE_DAY: 1000 * 60 * 60 * 24,
-      now: function() {
+      now: function () {
         return new Date();
       },
       // This function takes a date string and converts it to an unformatted
@@ -82,7 +82,7 @@
       // is the ISO8601 standard which if of the format yyyymmdd
       // @param dateString The string to convert to a Date object
       // @param form The date format of the string
-      convertToDateObj: function(dateString, format) {
+      convertToDateObj: function (dateString, format) {
         if (format === 'ISO8601') {
           var origin = dateString,
             year = origin.substring(0, 4),
@@ -93,7 +93,7 @@
           return new Date(dateString);
         }
       },
-      isFutureDate: function(date) {
+      isFutureDate: function (date) {
         return this.convertToDateObj(date) > new Date();
       },
       /**
@@ -103,26 +103,26 @@
        * @param {string} bdate - A date string of the format yyyy/mm/dd
        * @param {string} inequality - Valid values are less (<) or greater (>)
        */
-      isValidDuration: function(adate, bdate, inequality) {
+      isValidDuration: function (adate, bdate, inequality) {
         adate = this.convertToDateObj(adate);
         bdate = this.convertToDateObj(bdate);
 
         return inequality === 'less' ? adate < bdate : adate > bdate;
       },
-      addLeadingZero: function(number) {
+      addLeadingZero: function (number) {
         return number > 9 ? number : '0' + number;
       },
       // add one day to the passed date
-      addDay: function(currentDate) {
+      addDay: function (currentDate) {
         return new Date(currentDate.getTime() + this.ONE_DAY);
       },
       /*
-             * Initial very limited date format support
-             * US_NUMERICAL = "dd/mm/yyyy"
-             * ISO = "yyyy/mm/dd"
-             * ISO_STANDARD = "yyyy-mm-dd"
-             */
-      formatDate: function(date, format) {
+       * Initial very limited date format support
+       * US_NUMERICAL = "dd/mm/yyyy"
+       * ISO = "yyyy/mm/dd"
+       * ISO_STANDARD = "yyyy-mm-dd"
+       */
+      formatDate: function (date, format) {
         var returnDate, day, month, full_year;
         day = this.addLeadingZero(date.getDate());
         //months are zero based so we need to add one
@@ -139,7 +139,7 @@
 
         return returnDate;
       },
-      getAllDatesInRange: function(from, to, returnFormat) {
+      getAllDatesInRange: function (from, to, returnFormat) {
         var fromDate = null,
           toDate = null,
           shouldFormat = returnFormat !== undefined,
@@ -180,7 +180,7 @@
       },
     },
     search: {
-      parseQueryString: function(queryString) {
+      parseQueryString: function (queryString) {
         var params = {};
         var queries;
         var temp;
@@ -212,7 +212,7 @@
 
         return params;
       },
-      getFilteredParams: function(params) {
+      getFilteredParams: function (params) {
         if ('page' in params) {
           delete params.page;
         }
@@ -226,9 +226,9 @@
 
         return params;
       },
-      sortResults: function(results, container, query) {
+      sortResults: function (results, container, query) {
         if (query.term) {
-          return results.sort(function(a, b) {
+          return results.sort(function (a, b) {
             if (a.text.length > b.text.length) {
               return 1;
             } else if (a.text.length < b.text.length) {
@@ -241,7 +241,7 @@
         return results;
       },
     },
-    dateSupported: function() {
+    dateSupported: function () {
       var inputElem = document.createElement('input');
       inputElem.setAttribute('type', 'date');
 

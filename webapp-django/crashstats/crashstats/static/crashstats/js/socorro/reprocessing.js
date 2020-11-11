@@ -1,7 +1,7 @@
-$(function() {
+$(function () {
   var parent = $('#reprocess');
 
-  $('form', parent).on('submit', function(event) {
+  $('form', parent).on('submit', function (event) {
     event.preventDefault();
     var crash_id = parent.data('crash-id');
 
@@ -16,15 +16,15 @@ $(function() {
     $('.waiting', parent).show();
 
     $.post('/api/Reprocessing/', { crash_ids: crash_id })
-      .done(function() {
+      .done(function () {
         $('.reprocessing-success', parent).show();
       })
-      .fail(function(jqXHR) {
+      .fail(function (jqXHR) {
         $('.reprocessing-error .status', parent).text(jqXHR.status);
         $('.reprocessing-error pre', parent).text(jqXHR.responseText);
         $('.reprocessing-error', parent).show();
       })
-      .always(function() {
+      .always(function () {
         $('.waiting', parent).hide();
         $('form button', parent).prop('disabled', false);
       });

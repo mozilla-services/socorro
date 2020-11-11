@@ -1,21 +1,16 @@
-$(function() {
+$(function () {
   'use strict';
 
-  $('.token p.code[data-key]').each(function() {
+  $('.token p.code[data-key]').each(function () {
     var p = $(this);
     p.prepend(
       $('<code>')
         .addClass('truncated')
         .text(p.data('key').substr(0, 12) + '…')
-    ).prepend(
-      $('<code>')
-        .addClass('whole')
-        .text(p.data('key'))
-        .hide()
-    );
+    ).prepend($('<code>').addClass('whole').text(p.data('key')).hide());
   });
 
-  $('.token').on('click', 'p.code button', function(event) {
+  $('.token').on('click', 'p.code button', function (event) {
     event.preventDefault();
     var $button = $(this);
     var prev_text = $button.text();
@@ -24,7 +19,7 @@ $(function() {
     $('code', $button.parents('p.code')).toggle();
   });
 
-  $('form.delete').submit(function() {
+  $('form.delete').submit(function () {
     if ($(this).data('expired')) {
       return true;
     } else {

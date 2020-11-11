@@ -8,7 +8,7 @@
  * @extends {SignatureReport.Tab}
  * @inheritdoc
  */
-SignatureReport.CorrelationsTab = function(tabName) {
+SignatureReport.CorrelationsTab = function (tabName) {
   var config = {
     panels: false,
     dataDisplayType: 'table',
@@ -20,20 +20,20 @@ SignatureReport.CorrelationsTab = function(tabName) {
 
 SignatureReport.CorrelationsTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
-SignatureReport.CorrelationsTab.prototype.loadControls = function() {
+SignatureReport.CorrelationsTab.prototype.loadControls = function () {
   var self = this;
 
   // Create a select box for the product.
   var correlationsProducts = $('#mainbody').data('correlations-products');
   this.productSelect = $('<select>', { class: 'products-list', id: 'correlations-products-list' });
-  correlationsProducts.forEach(function(product) {
+  correlationsProducts.forEach(function (product) {
     self.productSelect.append($('<option>', { value: product, text: product }));
   });
 
   // Create a select box for the channel.
   var channels = $('#mainbody').data('channels');
   this.channelSelect = $('<select>', { class: 'channels-list', id: 'correlations-channels-list' });
-  channels.forEach(function(channel) {
+  channels.forEach(function (channel) {
     self.channelSelect.append($('<option>', { value: channel, text: channel }));
   });
 
@@ -54,7 +54,7 @@ SignatureReport.CorrelationsTab.prototype.loadControls = function() {
   this.channelSelect.on('change', this.loadCorrelations.bind(this));
 };
 
-SignatureReport.CorrelationsTab.prototype.onAjaxSuccess = function() {
+SignatureReport.CorrelationsTab.prototype.onAjaxSuccess = function () {
   SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
   var defaultProduct = $('#correlations-wrapper').data('default-product');
@@ -67,7 +67,7 @@ SignatureReport.CorrelationsTab.prototype.onAjaxSuccess = function() {
   this.loadCorrelations();
 };
 
-SignatureReport.CorrelationsTab.prototype.loadCorrelations = function() {
+SignatureReport.CorrelationsTab.prototype.loadCorrelations = function () {
   var contentElt = $('#correlations-wrapper pre');
   contentElt.empty().append($('<div>', { class: 'loader' }));
 
@@ -78,7 +78,7 @@ SignatureReport.CorrelationsTab.prototype.loadCorrelations = function() {
     'Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1)
   );
 
-  window.correlations.getCorrelations(SignatureReport.signature, channel, product).then(function(results) {
+  window.correlations.getCorrelations(SignatureReport.signature, channel, product).then(function (results) {
     var content = results;
     if (Array.isArray(results)) {
       contentElt.empty();

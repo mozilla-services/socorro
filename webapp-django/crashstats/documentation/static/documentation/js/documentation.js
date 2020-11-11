@@ -1,11 +1,11 @@
-$(function() {
+$(function () {
   'use strict';
 
   // Create the table of content.
   var tableOfContent = $('<ol>');
   var currentContainer = tableOfContent;
 
-  $('h1[id], h2[id]', '.body').map(function(i, elem) {
+  $('h1[id], h2[id]', '.body').map(function (i, elem) {
     var listItem = $('<li>');
     listItem.append($('<a>', { href: '#' + elem.id, text: elem.innerText }));
     if (elem.localName == 'h1') {
@@ -17,9 +17,7 @@ $(function() {
     }
   });
 
-  $('#table-of-content')
-    .append(tableOfContent)
-    .show();
+  $('#table-of-content').append(tableOfContent).show();
 
   // If there are h1 with no h2 under them, then we end up with <ol></ol>.
   // Let's remove those so we don't end up with weird vertical spacing.
@@ -32,7 +30,7 @@ $(function() {
     .append('"');
 
   // JSON results viewers.
-  $('.example pre code').each(function() {
+  $('.example pre code').each(function () {
     var $code = $(this);
     var $example = $code.parent().parent();
     var url = $code.data('url');
@@ -42,7 +40,7 @@ $(function() {
     $code.append(
       $('<button>', { text: 'try it' })
         .addClass('try')
-        .click(function() {
+        .click(function () {
           // Remove any previous results.
           $('.results', $example).remove();
 
@@ -53,7 +51,7 @@ $(function() {
           // Add a title and a hide button.
           var hideBtn = $('<span>', { text: 'x' })
             .addClass('hide')
-            .click(function() {
+            .click(function () {
               $('.results', $example).remove();
             });
 
@@ -64,7 +62,7 @@ $(function() {
           resultsViewer.append(jsonContent);
 
           // Now load the data and we have it, show it nicely.
-          $.getJSON(url, function(data) {
+          $.getJSON(url, function (data) {
             jsonContent.JSONView(data);
           });
         })

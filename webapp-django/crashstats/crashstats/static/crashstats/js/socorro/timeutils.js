@@ -1,6 +1,6 @@
-$(function() {
+$(function () {
   function replaceTimeTag(inTheFuture) {
-    return function() {
+    return function () {
       var self = $(this);
       var date = self.attr('datetime') || self.data('date');
       self.attr('title', self.text()).text(moment(date).fromNow(inTheFuture));

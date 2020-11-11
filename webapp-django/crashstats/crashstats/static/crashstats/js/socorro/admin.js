@@ -14,7 +14,7 @@ function hideShow(hideId, showId) {
   $('#' + showId).show('fast');
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
   var dataSourcesTabs = $('#data_sources');
 
   /* Emails */
@@ -32,7 +32,7 @@ $(document).ready(function() {
     dateFormat: 'yy/mm/dd',
   });
 
-  $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function() {
+  $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function () {
     postData = {
       token: $('input[name=token]').val(),
       campaign_id: $('input[name=campaign_id]').val(),
@@ -40,7 +40,7 @@ $(document).ready(function() {
     };
     $.post('/admin/send_email', postData);
   });
-  $('input[name=submit][type=submit][value="STOP Sending Emails"]').click(function() {
+  $('input[name=submit][type=submit][value="STOP Sending Emails"]').click(function () {
     postData = {
       token: $('input[name=token]').val(),
       campaign_id: $('input[name=campaign_id]').val(),

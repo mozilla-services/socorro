@@ -8,7 +8,7 @@
  * @extends {SignatureReport.Tab}
  * @inheritdoc
  */
-SignatureReport.BugzillaTab = function(tabName) {
+SignatureReport.BugzillaTab = function (tabName) {
   var config = {
     panels: false,
     dataDisplayType: 'table',
@@ -20,7 +20,7 @@ SignatureReport.BugzillaTab = function(tabName) {
 
 SignatureReport.BugzillaTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
-SignatureReport.BugzillaTab.prototype.onAjaxSuccess = function() {
+SignatureReport.BugzillaTab.prototype.onAjaxSuccess = function () {
   SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
   // Enhance bug links.

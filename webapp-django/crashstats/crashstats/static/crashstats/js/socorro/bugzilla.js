@@ -4,7 +4,7 @@
 
 /* exported BugLinks */
 
-var BugLinks = (function() {
+var BugLinks = (function () {
   var NOT_DONE_STATUSES = ['UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED'];
   var URL = '/buginfo/bug'; // TODO move this outside
 
@@ -18,7 +18,7 @@ var BugLinks = (function() {
     '/': '&#x2F;',
   };
   function escapeHtml(string) {
-    return String(string).replace(/[&<>"'/]/g, function(s) {
+    return String(string).replace(/[&<>"'/]/g, function (s) {
       return entityMap[s];
     });
   }
@@ -27,13 +27,13 @@ var BugLinks = (function() {
     var deferred = $.Deferred();
     var data = { bug_ids: bug_ids.join(',') };
     var req = $.getJSON(URL, data);
-    req.done(function(response) {
+    req.done(function (response) {
       var table = {};
-      $.each(response.bugs, function(i, each) {
+      $.each(response.bugs, function (i, each) {
         table[each.id] = each;
       });
       var fetched_bug_ids = [];
-      $('.bug-link-without-data').each(function() {
+      $('.bug-link-without-data').each(function () {
         // we only fetched some bugs into `table` so
         // we might not have data on this one yet
         var $link = $(this);
@@ -48,7 +48,7 @@ var BugLinks = (function() {
       });
       deferred.resolve($.unique(fetched_bug_ids));
     });
-    req.fail(function() {
+    req.fail(function () {
       deferred.reject();
     });
     return deferred.promise();
@@ -72,7 +72,7 @@ var BugLinks = (function() {
   function transform_with_data() {
     // this function is potentially called repeated every time
     // fetch_without_data() has fetched more data for the links
-    $('.bug-link-with-data').each(function() {
+    $('.bug-link-with-data').each(function () {
       var $link = $(this);
       if ($link.data('transformed')) return; // already done
       var status = $link.data('status');
@@ -95,7 +95,7 @@ var BugLinks = (function() {
     // in batches, do a XHR to pull down more details about bugs
     // for those bug links that don't have data yet
     var unique_bug_ids = [];
-    $('.bug-link-without-data').each(function() {
+    $('.bug-link-without-data').each(function () {
       unique_bug_ids.push($(this).data('id'));
     });
     unique_bug_ids = $.unique(unique_bug_ids);
@@ -106,7 +106,7 @@ var BugLinks = (function() {
 
   return {
     /* Enhance bug links using metadata about the bug. */
-    enhance: function() {
+    enhance: function () {
       // apply to all bug links that already have the data
       // when the template was rendered
       transform_with_data();
@@ -114,10 +114,10 @@ var BugLinks = (function() {
       fetch_without_data();
     },
     /* Enhance bug links and expanded bug lists. */
-    enhanceExpanded: function() {
+    enhanceExpanded: function () {
       this.enhance();
 
-      $('.bug_ids_more').hover(function() {
+      $('.bug_ids_more').hover(function () {
         if (!$('.bug-link', this).length) return;
         var inset = 10;
         var $cell = $(this);

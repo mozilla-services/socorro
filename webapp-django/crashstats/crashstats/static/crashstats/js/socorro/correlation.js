@@ -1,6 +1,6 @@
 /* global Promise, jsSHA */
 
-window.correlations = (function() {
+window.correlations = (function () {
   /**
    * Handle any errors by logging them.
    */
@@ -21,7 +21,7 @@ window.correlations = (function() {
   }
 
   function loadChannelsData(product) {
-    return Promise.resolve().then(function() {
+    return Promise.resolve().then(function () {
       if (correlationData[product]) {
         return correlationData[product];
       }
@@ -33,10 +33,10 @@ window.correlations = (function() {
       }
 
       return fetch(dataURL + 'all.json.gz')
-        .then(function(response) {
+        .then(function (response) {
           return response.json();
         })
-        .then(function(totals) {
+        .then(function (totals) {
           correlationData[product] = {
             date: totals.date,
           };
@@ -49,7 +49,7 @@ window.correlations = (function() {
             throw new Error('No channel or channels dataset attribute set');
           }
 
-          channels.forEach(function(ch) {
+          channels.forEach(function (ch) {
             correlationData[product][ch] = {
               total: totals[ch],
               signatures: {},
@@ -62,7 +62,7 @@ window.correlations = (function() {
 
   function loadCorrelationData(signature, channel, product) {
     return loadChannelsData(product)
-      .then(function(channelsData) {
+      .then(function (channelsData) {
         if (!channelsData || !channelsData[channel] || signature in channelsData[channel].signatures) {
           return;
         }
@@ -72,22 +72,22 @@ window.correlations = (function() {
         var sha1signature = shaObj.getHash('HEX');
 
         return fetch(getDataURL(product) + channel + '/' + sha1signature + '.json.gz')
-          .then(function(response) {
+          .then(function (response) {
             return response.json();
           })
-          .then(function(data) {
+          .then(function (data) {
             correlationData[product][channel].signatures[signature] = data;
           });
       })
       .catch(handleError)
-      .then(function() {
+      .then(function () {
         return correlationData;
       });
   }
 
   function itemToLabel(item) {
     return Object.getOwnPropertyNames(item)
-      .map(function(key) {
+      .map(function (key) {
         return key + ' = ' + item[key];
       })
       .join(' ∧ ');
@@ -126,7 +126,7 @@ window.correlations = (function() {
   }
 
   function sortCorrelationData(correlationData, total_reference, total_group) {
-    return correlationData.sort(function(a, b) {
+    return correlationData.sort(function (a, b) {
       // Sort by the number of attributes first (results with a smaller number of attributes
       // are easier to read and are often the most interesting ones).
       var rule_a_len = Object.keys(a.item).length;
@@ -176,7 +176,7 @@ window.correlations = (function() {
 
   function getResults(signature, channel, product) {
     return loadCorrelationData(signature, channel, product)
-      .then(function(data) {
+      .then(function (data) {
         if (!data[product]) {
           return 'No correlation data was generated for the "' + product + '" product.';
         }
@@ -218,7 +218,7 @@ window.correlations = (function() {
         var total_reference = data[product][channel].total;
         var total_group = signatureData.total;
 
-        var results = sortCorrelationData(correlationData, total_reference, total_group).map(function(line) {
+        var results = sortCorrelationData(correlationData, total_reference, total_group).map(function (line) {
           var percentGroup = toPercentage(line.count_group / total_group);
           var percentRef = toPercentage(line.count_reference / total_reference);
 

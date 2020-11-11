@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
   /**
    * Interface to deal with the date filters in the Search form.
    *
@@ -8,7 +8,7 @@ $(function() {
    *  - setDates(dates = Array of strings) -> void
    *  - getDates() -> Array of strings
    */
-  window.DateFilters = (function() {
+  window.DateFilters = (function () {
     var filters = {
       fromDate: $('.date-filters > div.date-from > input[type="date"]'),
       fromTime: $('.date-filters > div.date-from > input[type="time"]'),
@@ -26,9 +26,7 @@ $(function() {
       // Take the date and time values and mush them together into a string for
       // easier conversion
       var d = filters[key + 'Date'].val() + 'T' + filters[key + 'Time'].val() + 'Z';
-      return moment(d)
-        .utc()
-        .toDate();
+      return moment(d).utc().toDate();
     }
 
     function removeSelectedShortcut() {
@@ -36,7 +34,7 @@ $(function() {
     }
 
     // Enable the date filters range shortcuts.
-    $('.date-shortcuts').on('click', 'a', function(e) {
+    $('.date-shortcuts').on('click', 'a', function (e) {
       e.preventDefault();
       var thisElt = $(this);
 
@@ -67,13 +65,8 @@ $(function() {
       // Start with "now" which is a Javascript Date object in the local
       // timezone, convert to utc, and then converts to a Date.
       var now = new Date();
-      toDate = moment(now)
-        .utc()
-        .toDate();
-      fromDate = moment(now)
-        .utc()
-        .subtract(value, unit)
-        .toDate();
+      toDate = moment(now).utc().toDate();
+      fromDate = moment(now).utc().subtract(value, unit).toDate();
 
       setDate('to', toDate);
       setDate('from', fromDate);
@@ -86,7 +79,7 @@ $(function() {
     return {
       set: setDate,
       get: getDate,
-      setDates: function(dates) {
+      setDates: function (dates) {
         // Remove any previously selected date shortcut because it
         // will most likely be wrong now.
         $('.date-shortcuts a').removeClass('selected');
@@ -96,7 +89,7 @@ $(function() {
         }
 
         // Set date filters values.
-        dates.forEach(function(value) {
+        dates.forEach(function (value) {
           var date;
           if (value.indexOf('>') === 0) {
             if (value.indexOf('>=') === 0) {
@@ -104,30 +97,18 @@ $(function() {
             } else {
               date = value.slice(1);
             }
-            setDate(
-              'from',
-              moment
-                .utc(date)
-                .utcOffset(date)
-                .toDate()
-            );
+            setDate('from', moment.utc(date).utcOffset(date).toDate());
           } else if (value.indexOf('<') === 0) {
             if (value.indexOf('<=') === 0) {
               date = value.slice(2);
             } else {
               date = value.slice(1);
             }
-            setDate(
-              'to',
-              moment
-                .utc(date)
-                .utcOffset(date)
-                .toDate()
-            );
+            setDate('to', moment.utc(date).utcOffset(date).toDate());
           }
         });
       },
-      getDates: function() {
+      getDates: function () {
         var dateFrom = getDate('from');
         var dateTo = getDate('to');
         var dates = [];

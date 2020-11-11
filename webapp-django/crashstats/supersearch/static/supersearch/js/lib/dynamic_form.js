@@ -1,4 +1,4 @@
-(function($) {
+(function ($) {
   'use strict';
 
   // String used to separate values in select2 fields.
@@ -101,7 +101,7 @@
       container = $(containerId, form);
     }
 
-    $.getJSON(fieldsURL, function(data) {
+    $.getJSON(fieldsURL, function (data) {
       fields = data;
       sortedFieldNames = Object.keys(fields).sort();
       if (initialParams) {
@@ -226,7 +226,7 @@
 
         if (Array.isArray(param)) {
           var valuesWithoutOperator = [];
-          param.forEach(function(value) {
+          param.forEach(function (value) {
             if (!value) {
               return;
             }
@@ -311,7 +311,7 @@
     /**
      * A line of the form. Handles DOM creation, events, and data.
      */
-    var FormLine = function(container) {
+    var FormLine = function (container) {
       this.id = lastFieldLineId++;
       this.container = container;
     };
@@ -319,7 +319,7 @@
     /**
      * Create the new line.
      */
-    FormLine.prototype.createLine = function(noField) {
+    FormLine.prototype.createLine = function (noField) {
       this.line = $('<fieldset>', { id: this.id });
       this.container.append(this.line);
 
@@ -329,7 +329,7 @@
         href: '#',
         text: 'x',
       }).click(
-        function(e) {
+        function (e) {
           e.preventDefault();
           this.remove();
         }.bind(this)
@@ -344,14 +344,14 @@
     /**
      * Create the field input.
      */
-    FormLine.prototype.createFieldInput = function(field) {
+    FormLine.prototype.createFieldInput = function (field) {
       this.fieldInput = $('<select>', {
         class: 'field',
         'data-placeholder': 'Choose a field',
       });
       this.fieldInput.append($('<option>'));
 
-      sortedFieldNames.forEach(function(f) {
+      sortedFieldNames.forEach(function (f) {
         this.fieldInput.append(
           $('<option>', {
             value: f,
@@ -378,7 +378,7 @@
     /**
      * Create the operator input.
      */
-    FormLine.prototype.createOperatorInput = function(event, operator) {
+    FormLine.prototype.createOperatorInput = function (event, operator) {
       this.remove(['operatorInput', 'valueInput']);
 
       this.operatorInput = $('<select>', {
@@ -404,7 +404,7 @@
       });
       this.operatorInput.on(
         'change',
-        function(e) {
+        function (e) {
           // We should create the value input only if there was no value
           // yet or the previous operator was a "no-value" one, and
           // the new operator accepts values.
@@ -433,7 +433,7 @@
     /**
      * Create the value input.
      */
-    FormLine.prototype.createValueInput = function(event, value) {
+    FormLine.prototype.createValueInput = function (event, value) {
       var field = fields[this.fieldInput.val()];
       var operator = this.operatorInput.val();
       var values = field.values || [];
@@ -494,7 +494,7 @@
       }
 
       // bind TAB key to create new line
-      $('.select2-search-field input').on('keypress', function(e) {
+      $('.select2-search-field input').on('keypress', function (e) {
         var TAB_KEY = 9;
         if (e.keyCode === TAB_KEY && !e.shiftKey && !e.ctrlKey && !e.altKey) {
           newLine();
@@ -505,7 +505,7 @@
     /**
      * Remove this line from the DOM, and delete its values.
      */
-    FormLine.prototype.remove = function(inputs) {
+    FormLine.prototype.remove = function (inputs) {
       // If no parameter is passed, default to the list of all inputs
       if (!inputs) {
         inputs = ['fieldInput', 'operatorInput', 'valueInput'];
@@ -528,7 +528,7 @@
     /**
      * Return the values of this line, if the line is complete.
      */
-    FormLine.prototype.get = function() {
+    FormLine.prototype.get = function () {
       if (this.fieldInput && this.operatorInput) {
         var field = this.fieldInput.val();
         var operator = this.operatorInput.val();

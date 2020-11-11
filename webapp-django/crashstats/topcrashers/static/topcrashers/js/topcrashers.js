@@ -4,7 +4,7 @@
 
 /* global BugLinks */
 
-$(document).ready(function() {
+$(document).ready(function () {
   var perosTbl = $('#peros-tbl');
 
   $('#signature-list').tablesorter({
@@ -32,7 +32,7 @@ $(document).ready(function() {
     },
   });
 
-  $('#signature-list tr, #peros-tbl tr').each(function() {
+  $('#signature-list tr, #peros-tbl tr').each(function () {
     $.data(this, 'graphable', true);
   });
 

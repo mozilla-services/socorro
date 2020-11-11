@@ -1,6 +1,6 @@
 /* global ArrayBuffer, Promise, Symbol */
 
-(function(self) {
+(function (self) {
   'use strict';
 
   if (self.fetch) {
@@ -13,7 +13,7 @@
     blob:
       'FileReader' in self &&
       'Blob' in self &&
-      (function() {
+      (function () {
         try {
           new Blob();
           return true;
@@ -45,14 +45,14 @@
   // Build a destructive iterator for the value list
   function iteratorFor(items) {
     var iterator = {
-      next: function() {
+      next: function () {
         var value = items.shift();
         return { done: value === undefined, value: value };
       },
     };
 
     if (support.iterable) {
-      iterator[Symbol.iterator] = function() {
+      iterator[Symbol.iterator] = function () {
         return iterator;
       };
     }
@@ -64,17 +64,17 @@
     this.map = {};
 
     if (headers instanceof Headers) {
-      headers.forEach(function(value, name) {
+      headers.forEach(function (value, name) {
         this.append(name, value);
       }, this);
     } else if (headers) {
-      Object.getOwnPropertyNames(headers).forEach(function(name) {
+      Object.getOwnPropertyNames(headers).forEach(function (name) {
         this.append(name, headers[name]);
       }, this);
     }
   }
 
-  Headers.prototype.append = function(name, value) {
+  Headers.prototype.append = function (name, value) {
     name = normalizeName(name);
     value = normalizeValue(value);
     var list = this.map[name];
@@ -85,54 +85,54 @@
     list.push(value);
   };
 
-  Headers.prototype['delete'] = function(name) {
+  Headers.prototype['delete'] = function (name) {
     delete this.map[normalizeName(name)];
   };
 
-  Headers.prototype.get = function(name) {
+  Headers.prototype.get = function (name) {
     var values = this.map[normalizeName(name)];
     return values ? values[0] : null;
   };
 
-  Headers.prototype.getAll = function(name) {
+  Headers.prototype.getAll = function (name) {
     return this.map[normalizeName(name)] || [];
   };
 
-  Headers.prototype.has = function(name) {
-    return this.map.hasOwnProperty(normalizeName(name));
+  Headers.prototype.has = function (name) {
+    return Object.prototype.hasOwnProperty.call(this.map, normalizeName(name));
   };
 
-  Headers.prototype.set = function(name, value) {
+  Headers.prototype.set = function (name, value) {
     this.map[normalizeName(name)] = [normalizeValue(value)];
   };
 
-  Headers.prototype.forEach = function(callback, thisArg) {
-    Object.getOwnPropertyNames(this.map).forEach(function(name) {
-      this.map[name].forEach(function(value) {
+  Headers.prototype.forEach = function (callback, thisArg) {
+    Object.getOwnPropertyNames(this.map).forEach(function (name) {
+      this.map[name].forEach(function (value) {
         callback.call(thisArg, value, name, this);
       }, this);
     }, this);
   };
 
-  Headers.prototype.keys = function() {
+  Headers.prototype.keys = function () {
     var items = [];
-    this.forEach(function(value, name) {
+    this.forEach(function (value, name) {
       items.push(name);
     });
     return iteratorFor(items);
   };
 
-  Headers.prototype.values = function() {
+  Headers.prototype.values = function () {
     var items = [];
-    this.forEach(function(value) {
+    this.forEach(function (value) {
       items.push(value);
     });
     return iteratorFor(items);
   };
 
-  Headers.prototype.entries = function() {
+  Headers.prototype.entries = function () {
     var items = [];
-    this.forEach(function(value, name) {
+    this.forEach(function (value, name) {
       items.push([name, value]);
     });
     return iteratorFor(items);
@@ -150,11 +150,11 @@
   }
 
   function fileReaderReady(reader) {
-    return new Promise(function(resolve, reject) {
-      reader.onload = function() {
+    return new Promise(function (resolve, reject) {
+      reader.onload = function () {
         resolve(reader.result);
       };
-      reader.onerror = function() {
+      reader.onerror = function () {
         reject(reader.error);
       };
     });
@@ -175,19 +175,19 @@
   function Body() {
     this.bodyUsed = false;
 
-    this._initBody = function(body) {
+    this._initBody = function (body) {
       this._bodyInit = body;
       if (typeof body === 'string') {
         this._bodyText = body;
-      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+      } else if (support.blob && Object.prototype.isPrototypeOf.call(Blob, body)) {
         this._bodyBlob = body;
-      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+      } else if (support.formData && Object.prototype.isPrototypeOf.call(FormData, body)) {
         this._bodyFormData = body;
-      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+      } else if (support.searchParams && Object.prototype.isPrototypeOf.call(URLSearchParams, body)) {
         this._bodyText = body.toString();
       } else if (!body) {
         this._bodyText = '';
-      } else if (support.arrayBuffer && ArrayBuffer.prototype.isPrototypeOf(body)) {
+      } else if (support.arrayBuffer && Object.prototype.isPrototypeOf.call(ArrayBuffer, body)) {
         // Only support ArrayBuffers for POST method.
         // Receiving ArrayBuffers happens via Blobs, instead.
       } else {
@@ -199,14 +199,14 @@
           this.headers.set('content-type', 'text/plain;charset=UTF-8');
         } else if (this._bodyBlob && this._bodyBlob.type) {
           this.headers.set('content-type', this._bodyBlob.type);
-        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+        } else if (support.searchParams && Object.prototype.isPrototypeOf.call(URLSearchParams, body)) {
           this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
         }
       }
     };
 
     if (support.blob) {
-      this.blob = function() {
+      this.blob = function () {
         var rejected = consumed(this);
         if (rejected) {
           return rejected;
@@ -221,11 +221,11 @@
         }
       };
 
-      this.arrayBuffer = function() {
+      this.arrayBuffer = function () {
         return this.blob().then(readBlobAsArrayBuffer);
       };
 
-      this.text = function() {
+      this.text = function () {
         var rejected = consumed(this);
         if (rejected) {
           return rejected;
@@ -240,19 +240,19 @@
         }
       };
     } else {
-      this.text = function() {
+      this.text = function () {
         var rejected = consumed(this);
         return rejected ? rejected : Promise.resolve(this._bodyText);
       };
     }
 
     if (support.formData) {
-      this.formData = function() {
+      this.formData = function () {
         return this.text().then(decode);
       };
     }
 
-    this.json = function() {
+    this.json = function () {
       return this.text().then(JSON.parse);
     };
 
@@ -270,7 +270,7 @@
   function Request(input, options) {
     options = options || {};
     var body = options.body;
-    if (Request.prototype.isPrototypeOf(input)) {
+    if (Object.prototype.isPrototypeOf.call(Request, input)) {
       if (input.bodyUsed) {
         throw new TypeError('Already read');
       }
@@ -303,7 +303,7 @@
     this._initBody(body);
   }
 
-  Request.prototype.clone = function() {
+  Request.prototype.clone = function () {
     return new Request(this);
   };
 
@@ -312,7 +312,7 @@
     body
       .trim()
       .split('&')
-      .forEach(function(bytes) {
+      .forEach(function (bytes) {
         if (bytes) {
           var split = bytes.split('=');
           var name = split.shift().replace(/\+/g, ' ');
@@ -326,7 +326,7 @@
   function headers(xhr) {
     var head = new Headers();
     var pairs = (xhr.getAllResponseHeaders() || '').trim().split('\n');
-    pairs.forEach(function(header) {
+    pairs.forEach(function (header) {
       var split = header.trim().split(':');
       var key = split.shift().trim();
       var value = split.join(':').trim();
@@ -353,7 +353,7 @@
 
   Body.call(Response.prototype);
 
-  Response.prototype.clone = function() {
+  Response.prototype.clone = function () {
     return new Response(this._bodyInit, {
       status: this.status,
       statusText: this.statusText,
@@ -362,7 +362,7 @@
     });
   };
 
-  Response.error = function() {
+  Response.error = function () {
     var response = new Response(null, { status: 0, statusText: '' });
     response.type = 'error';
     return response;
@@ -370,7 +370,7 @@
 
   var redirectStatuses = [301, 302, 303, 307, 308];
 
-  Response.redirect = function(url, status) {
+  Response.redirect = function (url, status) {
     if (redirectStatuses.indexOf(status) === -1) {
       throw new RangeError('Invalid status code');
     }
@@ -382,10 +382,10 @@
   self.Request = Request;
   self.Response = Response;
 
-  self.fetch = function(input, init) {
-    return new Promise(function(resolve, reject) {
+  self.fetch = function (input, init) {
+    return new Promise(function (resolve, reject) {
       var request;
-      if (Request.prototype.isPrototypeOf(input) && !init) {
+      if (Object.prototype.isPrototypeOf.call(Request, input) && !init) {
         request = input;
       } else {
         request = new Request(input, init);
@@ -406,7 +406,7 @@
         return;
       }
 
-      xhr.onload = function() {
+      xhr.onload = function () {
         var options = {
           status: xhr.status,
           statusText: xhr.statusText,
@@ -417,11 +417,11 @@
         resolve(new Response(body, options));
       };
 
-      xhr.onerror = function() {
+      xhr.onerror = function () {
         reject(new TypeError('Network request failed'));
       };
 
-      xhr.ontimeout = function() {
+      xhr.ontimeout = function () {
         reject(new TypeError('Network request failed'));
       };
 
@@ -435,7 +435,7 @@
         xhr.responseType = 'blob';
       }
 
-      request.headers.forEach(function(value, name) {
+      request.headers.forEach(function (value, name) {
         xhr.setRequestHeader(name, value);
       });
 

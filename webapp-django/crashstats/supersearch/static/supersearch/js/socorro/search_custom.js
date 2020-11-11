@@ -1,6 +1,6 @@
 /* global ace */
 
-$(function() {
+$(function () {
   'use strict';
 
   // parameters
@@ -32,7 +32,7 @@ $(function() {
   }
   $.ajaxSetup({
     crossDomain: false, // obviates need for sameOrigin test
-    beforeSend: function(xhr, settings) {
+    beforeSend: function (xhr, settings) {
       if (!csrfSafeMethod(settings.type)) {
         xhr.setRequestHeader('X-CSRFToken', csrftoken);
       }
@@ -48,13 +48,13 @@ $(function() {
       data: { query: query, indices: indices },
       type: 'POST',
       traditional: true,
-      success: function(data) {
+      success: function (data) {
         // Render that JSON beautiful.
         data = beautifulJSON(data);
         textareaElt.empty().val(data);
         contentElt.empty().append(textareaElt);
       },
-      error: function(jqXHR) {
+      error: function (jqXHR) {
         var errorTitle = 'Oops, an error occured';
         var errorMsg = 'Please fix the following issues: ';
 
@@ -68,7 +68,7 @@ $(function() {
     });
   }
 
-  submitButton.click(function(e) {
+  submitButton.click(function (e) {
     e.preventDefault();
 
     var query = editor.getValue();
@@ -82,7 +82,7 @@ $(function() {
     showResults(query, indices);
   });
 
-  window.onpopstate = function(e) {
+  window.onpopstate = function (e) {
     if (e.state) {
       // If there is a query, run the search and show results
       var query = e.state.query;
