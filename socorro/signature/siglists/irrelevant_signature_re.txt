@@ -114,6 +114,7 @@ SleepConditionVariableCS
 SleepConditionVariableSRW
 std::_Atomic_fetch_add_4
 std::alloc::rust_oom
+std::io::stdio::_eprint
 std::panicking::
 std::__terminate
 std::terminate
