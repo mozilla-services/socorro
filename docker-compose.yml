@@ -1,3 +1,4 @@
+---
 # docker-compose for Socorro development.
 #
 # Note: Requires docker-comopse 1.10+.
@@ -173,15 +174,14 @@ services:
   # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake AWS S3 and SQS
   localstack:
-    image: localstack/localstack:0.10.8
+    image: localstack/localstack:0.12.2
     environment:
-      - SERVICES=s3:4572,sqs:4576
+      - SERVICES=s3,sqs
       - DEFAULT_REGION=us-east-1
       - HOSTNAME=localstack
       - HOSTNAME_EXTERNAL=localstack
     ports:
-      - "4572:4572"
-      - "4576:4576"
+      - "4566:4566"
 
   # https://hub.docker.com/_/memcached/
   memcached:
