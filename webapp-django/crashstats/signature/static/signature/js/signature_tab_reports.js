@@ -136,6 +136,7 @@ SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, d
   // field name -> header override
   var fieldOverride = {
     adapter_driver_version: { sorter: 'text' },
+    address: { sorter: 'hexdigit' },
   };
 
   contentElement.empty().append($(data));
