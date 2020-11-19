@@ -37,8 +37,8 @@ PYTHON="$(which python)"
 echo ">>> wait for services to be ready"
 urlwait "${DATABASE_URL}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
-python ./scripts/waitfor.py --timeout=20 "${S3_ENDPOINT_URL}"
-python ./scripts/waitfor.py --timeout=20 --codes=200,400 "${SQS_ENDPOINT_URL}"
+python ./scripts/waitfor.py --verbose --timeout=20 "${S3_ENDPOINT_URL}health"
+python ./scripts/waitfor.py --verbose --timeout=20 "${SQS_ENDPOINT_URL}health"
 
 echo ">>> build sqs things and db things"
 # Clear SQS for tests
