@@ -194,7 +194,10 @@ PIPELINE_JS = {
         "output_filename": "js/select2.min.js",
     },
     "tablesorter": {
-        "source_filenames": ("tablesorter/dist/js/jquery.tablesorter.js",),
+        "source_filenames": (
+            "tablesorter/dist/js/jquery.tablesorter.js",
+            "crashstats/js/socorro/tablesorter_utils.js",
+        ),
         "output_filename": "js/jquery-tablesorter.min.js",
     },
     "socorro_utils": {
