@@ -31,7 +31,7 @@ markus[datadog]==2.2.0
 more-itertools==8.5.0
 mozilla-django-oidc==1.2.4
 oauth2client==4.1.3
-pip-tools==5.3.1
+pip-tools==5.4.0
 psycopg2==2.8.6
 pyhs2==0.6.0
 pyinotify==0.9.6
