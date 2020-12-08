@@ -3,7 +3,7 @@
   {% if your_crash %}
     Protected data: You can see it because it is your crash.
   {% else %}
-    Protected data: Be careful how you use it.
+    Protected data: <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
   {% endif %}
 {%- endmacro %}
 
