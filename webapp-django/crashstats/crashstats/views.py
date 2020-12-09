@@ -148,8 +148,11 @@ def report_index(request, crash_id, default_context=None):
 
     if request.user.has_perm("crashstats.view_rawdump"):
         context["raw_dump_urls"] = [
-            reverse("crashstats:raw_data", args=(crash_id, "dmp")),
-            reverse("crashstats:raw_data", args=(crash_id, "json")),
+            ("dump", reverse("crashstats:raw_data", args=(crash_id, "dmp"))),
+            (
+                "minidump-stackwalk output",
+                reverse("crashstats:raw_data", args=(crash_id, "json")),
+            ),
         ]
         if context["raw"].get("additional_minidumps"):
             suffixes = [
@@ -160,7 +163,12 @@ def report_index(request, crash_id, default_context=None):
             for suffix in suffixes:
                 name = "upload_file_minidump_%s" % (suffix,)
                 context["raw_dump_urls"].append(
-                    reverse("crashstats:raw_data_named", args=(crash_id, name, "dmp"))
+                    (
+                        name,
+                        reverse(
+                            "crashstats:raw_data_named", args=(crash_id, name, "dmp")
+                        ),
+                    )
                 )
         if (
             context["raw"].get("ContainsMemoryReport")
@@ -168,9 +176,12 @@ def report_index(request, crash_id, default_context=None):
             and not context["report"].get("memory_report_error")
         ):
             context["raw_dump_urls"].append(
-                reverse(
-                    "crashstats:raw_data_named",
-                    args=(crash_id, "memory_report", "json.gz"),
+                (
+                    "memory_report",
+                    reverse(
+                        "crashstats:raw_data_named",
+                        args=(crash_id, "memory_report", "json.gz"),
+                    ),
                 )
             )
 
