@@ -843,12 +843,18 @@
             {% if request.user.has_perm('crashstats.view_rawdump') %}
               <p>
                 {{ protected_warning(your_crash) }}
+                {% if not your_crash %}
+                  Please don't share minidumps with third-parties.
+                  See <a href="{{ url('documentation:protected_data_access') }}">Protected data policy</a> for details.
+                {% endif %}
               </p>
-              {% for url in raw_dump_urls %}
-                <p><a href="{{ url }}">{{ url }}</a></p>
-              {% endfor %}
-              {% set unredacted_url = url('api:model_wrapper', model_name='UnredactedCrash') + '?' + make_query_string(crash_id=report.uuid) %}
-              <p><a href="{{ unredacted_url }}" target="_blank">{{ unredacted_url }}</a></p>
+              <ul>
+                {% for name, url in raw_dump_urls %}
+                  <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
+                {% endfor %}
+                {% set unredacted_url = url('api:model_wrapper', model_name='UnredactedCrash') + '?' + make_query_string(crash_id=report.uuid) %}
+                <li>processed crash: <a href="{{ unredacted_url }}" target="_blank">{{ unredacted_url }}</a>
+              </ul>
             {% elif request.user and request.user.is_active %}
               <p>
                 You do not have access to protected data.
