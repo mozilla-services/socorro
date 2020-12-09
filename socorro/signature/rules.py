@@ -151,11 +151,16 @@ class CSignatureTool(SignatureTool):
             if function.endswith(ref):
                 function = function[: -len(ref)].strip()
 
+        # Convert `anonymous namespace' to (anonymous namespace)
+
         # Drop the prefix and return type if there is any if it's not operator
         # overloading--operator overloading syntax doesn't have the things
         # we're dropping here and can look curious, so don't try
         if "::operator" not in function:
             function = drop_prefix_and_return_type(function)
+
+        # Normalize `anonymous namespace' to (anonymous namespace). bug #1672847
+        function = function.replace("`anonymous namespace'", "(anonymous namespace)")
 
         # Collapse types
         function = collapse(
