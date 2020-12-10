@@ -22,4 +22,9 @@ urlpatterns = [
         admin.supersearch_fields_missing,
         name="supersearch_fields_missing",
     ),
+    url(
+        "^protected-data-users/$",
+        admin.protected_data_users,
+        name="protected_data_users",
+    ),
 ]

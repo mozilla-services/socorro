@@ -1,0 +1,29 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n admin_urls static admin_list %}
+
+{% if not is_popup %}
+  {% block breadcrumbs %}
+    <div class="breadcrumbs">
+      <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+      &rsaquo; Management pages
+      &rsaquo; Protected Data Users
+    </div>
+  {% endblock %}
+{% endif %}
+
+{% block content %}
+  <div id="content-main">
+    <div>
+      <h2>Protected Data Users</h2>
+      <p>
+        These are the email addresses for all users who have access to
+        protected data:
+      </p>
+      <p>
+        {% for address in addresses %}
+          {{ address }},<br>
+        {% endfor %}
+      </p>
+    </div>
+  </div>
+{% endblock %}
