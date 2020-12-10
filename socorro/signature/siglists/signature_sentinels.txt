@@ -18,3 +18,6 @@ core::panicking::panic_fmt
 std::panicking::begin_panic
 std::panicking::begin_panic<T>
 std::panicking::begin_panic_fmt
+
+# These mark the top-most interesting frame of a Linux assertion.
+__GI___assert_fail

@@ -29,6 +29,7 @@ exp2
 .*FNODOBFM
 framework\.odex@0x
 __fixunsdfsi
+__GI___assert_fail
 gdk_x_error
 _gdk_x11_display_error_event
 GetLCIDFromLangListNodeWithLICCheck
