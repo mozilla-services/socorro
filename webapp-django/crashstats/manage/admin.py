@@ -134,15 +134,25 @@ def graphics_devices(request):
 
 @superuser_required
 def protected_data_users(request):
-    # Get all users in the "Hackers" group
+    email_addresses = []
+
     try:
         hackers_group = Group.objects.get(name="Hackers")
     except Group.DoesNotExist:
         hackers_group = []
 
-    email_addresses = [
-        user.email for user in hackers_group.user_set.all() if user.is_active
-    ]
+    email_addresses.extend(
+        [user.email for user in hackers_group.user_set.all() if user.is_active]
+    )
 
-    context = {"addresses": email_addresses}
+    try:
+        hackers_plus_group = Group.objects.get(name="Hackers Plus")
+    except Group.DoesNotExist:
+        hackers_plus_group = []
+
+    email_addresses.extend(
+        [user.email for user in hackers_plus_group.user_set.all() if user.is_active]
+    )
+
+    context = {"addresses": set(email_addresses)}
     return render(request, "admin/protected_data_users.html", context)
