@@ -9,6 +9,7 @@ import requests
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.models import Group
 from django.core.cache import cache
 from django.db import connection
 from django.shortcuts import redirect, render
@@ -129,3 +130,19 @@ def graphics_devices(request):
     context["title"] = "Graphics devices"
     context["upload_form"] = upload_form
     return render(request, "admin/graphics_devices.html", context)
+
+
+@superuser_required
+def protected_data_users(request):
+    # Get all users in the "Hackers" group
+    try:
+        hackers_group = Group.objects.get(name="Hackers")
+    except Group.DoesNotExist:
+        hackers_group = []
+
+    email_addresses = [
+        user.email for user in hackers_group.user_set.all() if user.is_active
+    ]
+
+    context = {"addresses": email_addresses}
+    return render(request, "admin/protected_data_users.html", context)
