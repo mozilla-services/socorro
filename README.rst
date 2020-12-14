@@ -2,8 +2,8 @@
 Socorro
 =======
 
-Socorro is a Mozilla-centric set of services for collecting, processing, and
-displaying crash reports from clients using the `Breakpad libraries
+Socorro is a Mozilla-centric ingestion pipeline and analysis tools for
+crash reports using the `Breakpad libraries
 <http://code.google.com/p/google-breakpad/>`_.
 
 
