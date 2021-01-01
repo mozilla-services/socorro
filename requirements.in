@@ -13,7 +13,7 @@ django-npm==1.0.0
 django-pipeline==2.0.5
 django-ratelimit==3.0.1
 django-session-csrf==0.7.1
-django-waffle==1.0.0
+django-waffle==2.0.0
 django_csp==3.7
 dockerflow==2020.6.0
 enforce-typing==1.0.0.post1

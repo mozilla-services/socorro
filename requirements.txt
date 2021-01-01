@@ -156,9 +156,9 @@ django-session-csrf==0.7.1 \
     --hash=sha256:e17177e6e2e6518ec7ce6693ad10a5c747f8571d09f4cfa9082599334421605d \
     --hash=sha256:ff8c10e30d312c77fc6a6db7710e22b9383e28c03b7fe958876ca96f39aa6cf2 \
     # via -r requirements.in
-django-waffle==1.0.0 \
-    --hash=sha256:690aca397fa601215a5cba9849dbbf834f0eb82b348e9d7bcd0df9c1f1807153 \
-    --hash=sha256:6ee3b08851b846540e9affbc16b87e1f23d5018f70d99d6b5e1086cf14e5653c \
+django-waffle==2.0.0 \
+    --hash=sha256:1973801b2bfdebb2d4ac3a7e5871a51f4d4b91ef712bdf46cc65d89b9dc3c988 \
+    --hash=sha256:e079cb530d3c8d62e204cfc08c7494a71cb08626630c09cd00e844bed1df0044 \
     # via -r requirements.in
 django==2.2.16 \
     --hash=sha256:62cf45e5ee425c52e411c0742e641a6588b7e8af0d2c274a27940931b2786594 \
