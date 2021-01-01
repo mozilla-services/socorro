@@ -17,7 +17,7 @@ django-waffle==1.0.0
 django_csp==3.7
 dockerflow==2020.6.0
 enforce-typing==1.0.0.post1
-flake8==3.8.3
+flake8==3.8.4
 freezegun==1.0.0
 glom==20.11.0
 gunicorn==20.0.4
