@@ -329,9 +329,9 @@ mccabe==0.6.1 \
     --hash=sha256:ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42 \
     --hash=sha256:dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f \
     # via flake8
-more-itertools==8.5.0 \
-    --hash=sha256:6f83822ae94818eae2612063a5101a7311e68ae8002005b5e05f03fd74a86a20 \
-    --hash=sha256:9b30f12df9393f0d28af9210ff8efe48d10c94f73e5daf886f10c4b0b0b4f03c \
+more-itertools==8.6.0 \
+    --hash=sha256:8e1a2a43b2f2727425f2b5839587ae37093f19153dc26c0927d1048ff6557330 \
+    --hash=sha256:b3a9005928e5bed54076e6e549c792b306fddfe72b2d1d22dd63d42d5d3899cf \
     # via -r requirements.in
 mozilla-django-oidc==1.2.4 \
     --hash=sha256:6f1064ec35c0dc42a7f6487e8649c9b51db04df52c424f48ebad6fe35e7481c8 \
