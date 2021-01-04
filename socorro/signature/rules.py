@@ -538,7 +538,10 @@ class SignatureGenerationRule(Rule):
         return frame_signatures_list
 
     def _get_crashing_thread(self, crash_data):
-        return crash_data.get("crashing_thread", 0)
+        try:
+            return int(crash_data.get("crashing_thread", 0))
+        except (TypeError, ValueError):
+            return 0
 
     def action(self, crash_data, result):
         # If this is a Java crash, then generate a Java signature
