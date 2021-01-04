@@ -1452,7 +1452,9 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         res = api.get(**params)
         assert res["total"] == 0
         assert len(res["hits"]) == 0
-        assert len(res["errors"]) == 3  # 3 weeks are missing
+        # NOTE(willkg): There are at least two missing indexes--we don't really care
+        # about how many there are as long as it detected there are missing indexes
+        assert len(res["errors"]) >= 2
 
     def test_get_too_large_date_range(self):
         # this is a whole year apart
