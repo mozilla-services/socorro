@@ -136,8 +136,8 @@ passed week.
 Super Search fields
 -------------------
 
-Super Search, and thus all the features based on it, is powered by a master list
-of fields that tells it what data to expose and how to expose it. That list
+Super Search, and thus all the features based on it, is powered by a list of
+fields that tells it what data to expose and how to expose it. That list
 contains data about each field from Elasticsearch that can be manipulated.
 
 The list is managed in code in ``socorro/external/es/super_search_fields.py``
