@@ -34,7 +34,7 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWit
 # logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
 
-# A dummy crash report that is used for testing.
+# A sample crash report that is used for testing.
 a_processed_crash = {
     "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]],
     "addons_checked": None,
