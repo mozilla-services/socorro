@@ -699,6 +699,7 @@ class RawCrash(SocorroMiddleware):
         "AdapterRendererIDs",
         "AdapterSubsysID",
         "AdapterVendorID",
+        "ApplicationBuildID",
         "additional_minidumps",
         "Add-ons",
         "Android_Board",

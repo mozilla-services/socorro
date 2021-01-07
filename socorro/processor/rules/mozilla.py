@@ -78,6 +78,8 @@ class SubmittedFromInfobarFixRule(Rule):
 
 
 class ProductRule(Rule):
+    """Copy product data from raw crash to processed crash."""
+
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash["product"] = raw_crash.get("ProductName", "")
         processed_crash["version"] = raw_crash.get("Version", "")
@@ -86,6 +88,12 @@ class ProductRule(Rule):
         # redundant, but I want to exactly match old processors.
         processed_crash["ReleaseChannel"] = raw_crash.get("ReleaseChannel", "")
         processed_crash["build"] = raw_crash.get("BuildID", "")
+
+        # NOTE(willkg): ApplicationBuildID is for Fenix which sends the gecko view build
+        # id in BuildID.
+        processed_crash["application_build_id"] = raw_crash.get(
+            "ApplicationBuildID", ""
+        )
 
 
 class UserDataRule(Rule):

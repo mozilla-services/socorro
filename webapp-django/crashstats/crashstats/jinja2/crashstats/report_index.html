@@ -188,6 +188,14 @@
                     {% endif %}
                   </td>
                 </tr>
+                {% if report.product == "Fenix" %}
+                  <tr title="{{ fields_desc['processed_crash.application_build_id'] }}">
+                    <th scope="row">Application Build ID</th>
+                    <td>
+                      {{ report.application_build_id }}
+                    </td>
+                  </tr>
+                {% endif %}
 
                 {# OS #}
 
