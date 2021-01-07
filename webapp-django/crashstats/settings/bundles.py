@@ -285,13 +285,13 @@ PIPELINE_JS = {
 }
 
 
-# This is sanity checks, primarily for developers. It checks that
-# you haven't haven't accidentally make a string a tuple with an
-# excess comma, no underscores in the bundle name and that the
-# bundle file extension is either .js or .css.
-# We also check, but only warn, if a file is re-used in a different bundle.
-# That's because you might want to consider not including that file in the
-# bundle and instead break it out so it can be re-used on its own.
+# These are quality checks--primarily for developers. It checks that you haven't haven't
+# accidentally make a string a tuple with an excess comma, no underscores in the bundle
+# name and that the bundle file extension is either .js or .css.
+#
+# We also check, but only warn, if a file is re-used in a different bundle.  That's
+# because you might want to consider not including that file in the bundle and instead
+# break it out so it can be re-used on its own.
 _used = {}
 for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
     _trouble = set()
