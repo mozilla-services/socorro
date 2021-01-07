@@ -57,7 +57,7 @@
       } else if (element.hasClass('required') && element.hasClass('validate-int') && !is_int(value)) {
         valid = false;
       } else {
-        // we can do more validation but let's not go too crazy yet
+        // we could do more validation
       }
       if (!valid) {
         all_valid = false;

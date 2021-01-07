@@ -635,7 +635,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             self.api.get(_facets=["unknownfield"])
 
     def test_get_with_too_many_facets(self):
-        # Some crazy big number
+        # Some very big number
         with pytest.raises(BadArgumentError):
             self.api.get(_facets=["signature"], _facets_size=999999)
 
