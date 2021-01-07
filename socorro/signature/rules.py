@@ -163,12 +163,15 @@ class CSignatureTool(SignatureTool):
         function = function.replace("`anonymous namespace'", "(anonymous namespace)")
 
         # Collapse types
+        #
+        # NOTE(willkg): The " in " is for handling "<unknown in foobar.dll>". bug
+        # #1685178
         function = collapse(
             function,
             open_string="<",
             close_string=">",
             replacement="<T>",
-            exceptions=("name omitted", "IPC::ParamTraits"),
+            exceptions=("name omitted", "IPC::ParamTraits", " in "),
         )
 
         # Collapse arguments
@@ -546,7 +549,7 @@ class SignatureGenerationRule(Rule):
     def action(self, crash_data, result):
         # If this is a Java crash, then generate a Java signature
         if crash_data.get("java_stack_trace"):
-            result.debug(self.name, "Using JavaSignatureTool")
+            result.debug(self.name, "using JavaSignatureTool")
             signature, notes, debug_notes = self.java_signature_tool.generate(
                 crash_data["java_stack_trace"], delimiter=": "
             )
@@ -557,7 +560,7 @@ class SignatureGenerationRule(Rule):
             result.set_signature(self.name, signature)
             return True
 
-        result.debug(self.name, "Using CSignatureTool")
+        result.debug(self.name, "using CSignatureTool")
         try:
             # First, we need to figure out which thread to look at. If it's a
             # chrome hang (1), then use thread 0. Otherwise, use the crashing
