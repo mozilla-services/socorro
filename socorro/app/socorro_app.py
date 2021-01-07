@@ -37,7 +37,8 @@ from configman.converters import (
 )
 import markus
 import sentry_sdk
-from socorro.lib.revision_data import get_revision_data, get_version
+
+from socorro.lib.revision_data import get_version, get_version_name
 
 
 def cls_to_pypath(cls):
@@ -205,17 +206,17 @@ class App(RequiredConfig):
             setup_metrics(config)
 
             # Log revision information
-            revision_data = get_revision_data()
-            revision_items = sorted(revision_data.items())
+            version_data = get_version() or {}
+            version_items = sorted(version_data.items())
             mylogger.info(
                 "version.json: {%s}",
-                ", ".join(["%r: %r" % (key, val) for key, val in revision_items]),
+                ", ".join(["%r: %r" % (key, val) for key, val in version_items]),
             )
 
             config_manager.log_config(mylogger)
 
             # Add version to crash reports
-            version = get_version(revision_data)
+            version = get_version_name()
             setup_crash_reporting(config, version)
 
             # we finally know what app to actually run, instantiate it

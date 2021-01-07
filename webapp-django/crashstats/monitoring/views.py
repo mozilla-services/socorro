@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import os
+import json
 
 import elasticsearch
 
@@ -19,6 +19,7 @@ from crashstats.crashstats import utils
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch
+from socorro.lib.revision_data import get_version
 
 
 def index(request):
@@ -64,12 +65,7 @@ def dockerflow_version(requst):
     Returns contents of /app/version.json or {}.
 
     """
-    path = os.path.join(settings.SOCORRO_ROOT, "version.json")
-    if os.path.exists(path):
-        with open(path, "r") as fp:
-            data = fp.read()
-    else:
-        data = "{}"
+    data = json.dumps(get_version() or {})
     return http.HttpResponse(data, content_type="application/json")
 
 

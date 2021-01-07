@@ -18,6 +18,7 @@ from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.monitoring.views import assert_supersearch_no_errors
 from crashstats.supersearch.models import SuperSearch
+from socorro.lib import revision_data
 
 
 class TestViews(BaseTestViews):
@@ -152,26 +153,26 @@ class TestDockerflowHeartbeatViews(BaseTestViews):
 
 
 class TestDockerflowVersionView:
-    def test_version_no_file(self, client, settings, tmpdir):
+    def test_version_no_file(self, client, settings, tmpdir, monkeypatch):
         """Test with no version.json file"""
         # The tmpdir definitely doesn't have a version.json in it, so we use
         # that
-        settings.SOCORRO_ROOT = str(tmpdir)
+        monkeypatch.setattr(revision_data, "VERSION_DATA_PATH", str(tmpdir))
 
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json"
         assert smart_text(resp.content) == "{}"
 
-    def test_version_with_file(self, client, settings, tmpdir):
+    def test_version_with_file(self, client, settings, tmpdir, monkeypatch):
         """Test with a version.json file"""
         text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
 
         # Create the version.json file in the tmpdir
-        version_json = tmpdir.join("version.json")
+        version_json = tmpdir / "version.json"
         version_json.write(text)
 
-        settings.SOCORRO_ROOT = str(tmpdir)
+        monkeypatch.setattr(revision_data, "VERSION_DATA_PATH", str(tmpdir))
 
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
