@@ -267,6 +267,8 @@ class DatesAndTimesRule(Rule):
 
 
 class JavaProcessRule(Rule):
+    """Move Java-crash-related bits over."""
+
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         return bool(raw_crash.get("JavaStackTrace", None))
 
@@ -286,6 +288,67 @@ class JavaProcessRule(Rule):
             java_stack_trace = "malformed"
 
         processed_crash["java_stack_trace"] = java_stack_trace
+
+
+class MalformedBreadcrumbs(Exception):
+    pass
+
+
+def validate_breadcrumbs(data):
+    """Validates a Breadcrumbs data structure
+
+    :arg list data: list of breadcrumbs dicts
+
+    :raises: MalformedBreadcrumbs if it's malformed in some way
+
+    """
+    # NOTE(willkg): Sentry doesn't _require_ timestamp in their Breadcrumbs event, but
+    # it's highly recommended. We try to match their spec since that seemed helpful.
+    # The other top level fields are optional. If we want to require other fields, we
+    # can add them here.
+    required_keys = {"timestamp"}
+
+    if not isinstance(data, list):
+        raise MalformedBreadcrumbs("not a list")
+
+    for i, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise MalformedBreadcrumbs(f"item {i} not a dict")
+
+        # missing_keys is the required_keys minus the intersection of required_keys and
+        # the item's keys
+        missing_keys = required_keys - (required_keys & set(item.keys()))
+        if missing_keys:
+            missing_keys = ", ".join(sorted(missing_keys))
+            raise MalformedBreadcrumbs(f"item {i} missing keys: {missing_keys}")
+
+
+class BreadcrumbsRule(Rule):
+    """Validate and move over breadcrumbs."""
+
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return bool(raw_crash.get("Breadcrumbs", None))
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        breadcrumbs = raw_crash["Breadcrumbs"]
+
+        try:
+            breadcrumbs_data = json.loads(breadcrumbs)
+
+            # NOTE(willkg): Sentry specifies breadcrumbs with an intermediary "values"
+            # dict. This check lets us handle how android-components crash reporter is
+            # sending breadcrumbs as well as what a Sentry client would send.
+            if isinstance(breadcrumbs_data, dict) and "values" in breadcrumbs_data:
+                breadcrumbs_data = breadcrumbs_data["values"]
+
+            validate_breadcrumbs(breadcrumbs_data)
+            processed_crash["breadcrumbs"] = breadcrumbs_data
+        except json.JSONDecodeError:
+            processor_meta["processor_notes"].append(
+                "Breadcrumbs: malformed: not valid json"
+            )
+        except MalformedBreadcrumbs as exc:
+            processor_meta["processor_notes"].append(f"Breadcrumbs: malformed: {exc}")
 
 
 class MozCrashReasonRule(Rule):

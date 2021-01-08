@@ -679,6 +679,47 @@
               </tbody>
             </table>
 
+            {% if (request.user.has_perm('crashstats.view_pii') or your_crash) and report.breadcrumbs %}
+              <div id="breadcrumbs">
+                <h2>Breadcrumbs</h2>
+                <p>
+                  {{ protected_warning(your_crash) }} -
+                  {% if report.breadcrumbs|length > 10 %}
+                    Latest 10 breadcrumbs (out of {{ report.breadcrumbs|length }})
+                  {% else %}
+                    All {{ report.breadcrumbs|length }} breadcrumbs
+                  {% endif %}
+                </p>
+                <table class="data-table breadcrumbs-table">
+                  <thead>
+                    <tr>
+                      <th class="small-col" scope="col">Level</th>
+                      <th class="small-col" scope="col">Type</th>
+                      <th class="small-col" scope="col">Category</th>
+                      <th scope="col">Data</th>
+                      <th class="small-col" scope="col">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in report.breadcrumbs[-10:] %}
+                      <tr>
+                        <td>{{ item.level }}</td>
+                        <td>{{ item.type }}</td>
+                        <td>{{ item.category }}</td>
+                        <td>
+                          {% if item.message %}<b>message:</b> {{ item.message }}<br>{% endif %}
+                          {% for key, val in item.data.items()|sort %}
+                            <b>{{ key }}:</b> {{ val }}<br>
+                          {% endfor %}
+                        </td>
+                        <td>{{ item.timestamp }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+
             {% if parsed_dump.threads %}
               <div id="frames">
                 {% if crashing_thread is not none %}

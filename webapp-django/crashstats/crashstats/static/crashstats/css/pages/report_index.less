@@ -10,6 +10,19 @@
     white-space: nowrap;
 }
 
+#breadcrumbs {
+    thead {
+        tr {
+            th.small-col {
+                width: 1%;
+            }
+        }
+    }
+    th, td {
+        vertical-align: top;
+    }
+}
+
 .humanized {
     padding-left: 3px;
     color: rgb(111, 111, 111);
@@ -30,7 +43,6 @@
     .rounded-corners(6px);
 }
 
-
 #report-index {
     clear: right;
 
@@ -39,6 +51,7 @@
         margin: 10px 0;
     }
 }
+
 #allthreads.hidden {
     display: none;
 }
@@ -53,6 +66,7 @@
     width: 39em;
     z-index: 1;
 }
+
 .record {
     line-height: 1.5em;
     th {
@@ -62,6 +76,7 @@
         white-space: pre-wrap;
     }
 }
+
 .sig-overview,
 .sig-search {
     background: transparent url("@{image-path}/icons/external.png") left top no-repeat;
