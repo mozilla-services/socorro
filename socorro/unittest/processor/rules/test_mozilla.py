@@ -14,6 +14,7 @@ from socorro.lib.datetimeutil import datetime_from_isodate_string
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
+    BreadcrumbsRule,
     ConvertModuleSignatureInfoRule,
     DatesAndTimesRule,
     ESRVersionRewrite,
@@ -22,6 +23,7 @@ from socorro.processor.rules.mozilla import (
     FenixVersionRewriteRule,
     FlashVersionRule,
     JavaProcessRule,
+    MalformedBreadcrumbs,
     ModulesInStackRule,
     MozCrashReasonRule,
     OSPrettyVersionRule,
@@ -37,6 +39,7 @@ from socorro.processor.rules.mozilla import (
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
+    validate_breadcrumbs,
 )
 from socorro.signature.generator import SignatureGenerator
 from socorro.unittest.processor import get_basic_processor_meta
@@ -672,6 +675,84 @@ class TestDatesAndTimesRule:
         assert processor_meta["processor_notes"] == [
             'non-integer value of "SecondsSinceLastCrash"'
         ]
+
+
+VALID = True
+
+
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        # Empty list is valid
+        ([], VALID),
+        ([{"timestamp": ""}], VALID),
+        # Breadcrumb item is not a dict
+        ([{"timestamp": ""}, []], "item 1 not a dict"),
+        # Breadcrumb item missing required keys is invalid
+        ([{}], "item 0 missing keys: timestamp"),
+    ],
+)
+def test_validate_breadcrumbs(data, expected):
+    if expected is VALID:
+        validate_breadcrumbs(data)
+
+    else:
+        with pytest.raises(MalformedBreadcrumbs, match=expected):
+            validate_breadcrumbs(data)
+
+
+class TestBreadcrumbRule:
+    def test_basic(self):
+        raw_crash = {"Breadcrumbs": json.dumps([{"timestamp": "2021-01-07T16:09:31"}])}
+
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = BreadcrumbsRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash["breadcrumbs"] == [{"timestamp": "2021-01-07T16:09:31"}]
+
+    def test_sentry_style(self):
+        raw_crash = {
+            "Breadcrumbs": json.dumps(
+                {"values": [{"timestamp": "2021-01-07T16:09:31"}]}
+            )
+        }
+
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = BreadcrumbsRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash["breadcrumbs"] == [{"timestamp": "2021-01-07T16:09:31"}]
+
+    def test_missing(self):
+        raw_crash = {}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule = BreadcrumbsRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        assert processed_crash == {}
+
+    def test_malformed(self):
+        raw_crash = {"Breadcrumbs": "{}"}
+
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = BreadcrumbsRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash == {}
+        assert processor_meta == {
+            "processor_notes": ["Breadcrumbs: malformed: not a list"]
+        }
 
 
 class TestJavaProcessRule:

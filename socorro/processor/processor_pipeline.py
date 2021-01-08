@@ -34,6 +34,7 @@ from socorro.processor.rules.memory_report_extraction import MemoryReportExtract
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
+    BreadcrumbsRule,
     ConvertModuleSignatureInfoRule,
     DatesAndTimesRule,
     EnvironmentRule,
@@ -204,6 +205,7 @@ class ProcessorPipeline(RequiredConfig):
             DatesAndTimesRule(),
             OutOfMemoryBinaryRule(),
             PHCRule(),
+            BreadcrumbsRule(),
             JavaProcessRule(),
             MozCrashReasonRule(),
             # post processing of the processed crash

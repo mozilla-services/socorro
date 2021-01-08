@@ -63,54 +63,6 @@ table {
         }
     }
 
-    &.captioned-data-table {
-        margin: 1rem;
-        width: 98%;
-        caption {
-            position: relative;
-            background-color: @tan;
-            padding: 1em 1rem .5rem;
-            .rounded-corners(6px, 6px);
-            h3 {
-                display: block;
-                margin: 0 0 .3em;
-                font-weight: bold;
-                font-style: normal;
-                font-size: 1.4rem;
-            }
-            a {
-                &:link,
-                &:visited {
-                    color: @dark-grey;
-                }
-                &:focus {
-                    text-decoration: none;
-                }
-            }
-        }
-        th {
-            background-color: @grey;
-            color: @white;
-        }
-        th,
-        td {
-            padding: .5em;
-        }
-
-        &.initially-hidden {
-            caption {
-                background-image: none;
-                .rounded-corners(6px);
-            }
-            thead {
-                .accessibly-hidden();
-            }
-            tbody {
-                .accessibly-hidden();
-            }
-        }
-    }
-
     &.vertical {
         th {
             border: 1px solid @black;
