@@ -22,6 +22,31 @@ ELASTICSEARCH_PARSE_EXCEPTION_REGEX = re.compile(
 )
 
 
+def prune_invalid_indices(indices, policy, template):
+    """Prunes given indices by ones that were prior to the cutoff
+
+    :arg list indices: list of indices to prune
+    :arg int policy: number of days to retain indices--prior to this is the cutoff
+    :arg str template: index template
+
+    :returns: list of valid indices
+
+    """
+    now = utc_now()
+    marker = now - policy
+
+    # Generate the set of valid indexes between the cutoff and now.
+    valid_indices = set()
+    while marker <= now:
+        valid_indices.add(marker.strftime(template))
+        # NOTE(willkg): have to increment by 1 so we pick up week numbers for weeks
+        # that span a new year
+        marker = marker + datetime.timedelta(days=1)
+
+    # Remove all indices that aren't in the valid_indices set
+    return list(set(indices) & set(valid_indices))
+
+
 class SuperSearch(RequiredConfig, SearchBase):
     required_config = Namespace()
     required_config.add_option(
@@ -176,9 +201,8 @@ class SuperSearch(RequiredConfig, SearchBase):
             # policy because they're not valid to search through and probably don't
             # exist
             policy = datetime.timedelta(weeks=self.context.get_retention_policy())
-            cutoff = (utc_now() - policy).replace(tzinfo=None)
-            cutoff = cutoff.strftime(self.context.get_index_template())
-            indices = [index for index in indices if index > cutoff]
+            template = self.context.get_index_template()
+            indices = prune_invalid_indices(indices, policy, template)
 
         # Create and configure the search object.
         search = Search(
