@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
-import datetime
+from datetime import timedelta
 
 import pytest
 
@@ -28,8 +28,8 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
     """Test SuperSearchFields with an elasticsearch database containing fake data"""
 
-    def setup_method(self, method):
-        super().setup_method(method)
+    def setup_method(self):
+        super().setup_method()
 
         config = self.get_base_config(cls=SuperSearchFieldsModel)
         self.api = SuperSearchFieldsModel(config=config)
@@ -40,93 +40,89 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         assert results == FIELDS
 
     def test_get_missing_fields(self):
-        config = self.get_base_config(
-            cls=SuperSearchFieldsModel, es_index="socorro_integration_test_%W"
-        )
+        config = self.get_base_config(cls=SuperSearchFieldsModel)
         api = SuperSearchFieldsModel(config=config)
 
-        fake_mappings = [
-            # First mapping
-            {
-                config.elasticsearch_doctype: {
-                    "properties": {
-                        # Add a bunch of unknown fields.
-                        "field_z": {"type": "string"},
-                        "namespace1": {
-                            "type": "object",
-                            "properties": {
-                                "field_a": {"type": "string"},
-                                "field_b": {"type": "long"},
-                            },
+        fake_mapping_1 = {
+            config.elasticsearch_doctype: {
+                "properties": {
+                    # Add a bunch of unknown fields.
+                    "field_z": {"type": "string"},
+                    "namespace1": {
+                        "type": "object",
+                        "properties": {
+                            "field_a": {"type": "string"},
+                            "field_b": {"type": "long"},
                         },
-                        "namespace2": {
-                            "type": "object",
-                            "properties": {
-                                "subspace1": {
-                                    "type": "object",
-                                    "properties": {"field_b": {"type": "long"}},
-                                }
-                            },
+                    },
+                    "namespace2": {
+                        "type": "object",
+                        "properties": {
+                            "subspace1": {
+                                "type": "object",
+                                "properties": {"field_b": {"type": "long"}},
+                            }
                         },
-                        # Add a few known fields that should not appear.
-                        "processed_crash": {
-                            "type": "object",
-                            "properties": {
-                                "signature": {"type": "string"},
-                                "product": {"type": "string"},
-                            },
+                    },
+                    # Add a few known fields that should not appear.
+                    "processed_crash": {
+                        "type": "object",
+                        "properties": {
+                            "signature": {"type": "string"},
+                            "product": {"type": "string"},
+                        },
+                    },
+                }
+            }
+        }
+
+        fake_mapping_2 = {
+            config.elasticsearch_doctype: {
+                "properties": {
+                    "namespace1": {
+                        "type": "object",
+                        "properties": {
+                            "subspace1": {
+                                "type": "object",
+                                "properties": {"field_d": {"type": "long"}},
+                            }
                         },
                     }
                 }
-            },
-            # Second mapping to compare to the first
-            {
-                config.elasticsearch_doctype: {
-                    "properties": {
-                        "namespace1": {
-                            "type": "object",
-                            "properties": {
-                                "subspace1": {
-                                    "type": "object",
-                                    "properties": {"field_d": {"type": "long"}},
-                                }
-                            },
-                        }
-                    }
-                }
-            },
-        ]
+            }
+        }
+
+        # Refresh and then delete existing indices so we can rebuild the mappings
+        # in order to diff them
+        self.es_context.refresh()
+        for index_name in self.es_context.get_indices():
+            self.es_context.delete_index(index_name)
 
         now = datetimeutil.utc_now()
-        indices = []
+        template = api.context.get_index_template()
 
-        try:
-            # Using "2" here means that an index will be missing, hence testing
-            # that it swallows the subsequent error.
-            for i in range(2):
-                date = now - datetime.timedelta(weeks=i)
-                index = date.strftime(api.context.get_index_template())
-                mapping = fake_mappings[i % len(fake_mappings)]
+        # Create an index for now
+        index_name = now.strftime(template)
+        mapping = fake_mapping_1
+        api.context.create_index(index_name, mappings=mapping)
 
-                api.context.create_index(index, mappings=mapping)
-                indices.append(index)
+        # Create an index for 7 days ago
+        index_name = (now - timedelta(days=7)).strftime(template)
+        mapping = fake_mapping_2
+        api.context.create_index(index_name, mappings=mapping)
 
-            api = SuperSearchFieldsModel(config=config)
-            missing_fields = api.get_missing_fields()
-            expected = [
-                "field_z",
-                "namespace1.field_a",
-                "namespace1.field_b",
-                "namespace1.subspace1.field_d",
-                "namespace2.subspace1.field_b",
-            ]
+        api = SuperSearchFieldsModel(config=config)
+        missing_fields = api.get_missing_fields()
+        expected = [
+            "field_z",
+            "namespace1.field_a",
+            "namespace1.field_b",
+            "namespace1.subspace1.field_d",
+            "namespace2.subspace1.field_b",
+        ]
 
-            assert missing_fields["hits"] == expected
-            assert missing_fields["total"] == 5
-
-        finally:
-            for index in indices:
-                self.index_client.delete(index=index)
+        assert missing_fields["hits"] == expected
+        assert missing_fields["total"] == 5
 
     def test_get_mapping(self):
         mapping = self.api.get_mapping()
