@@ -2,23 +2,23 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
+from datetime import timedelta
 from distutils.version import LooseVersion
 from functools import wraps
 import random
 import uuid
 
 from configman import ConfigurationManager, environment
-from elasticsearch.helpers import bulk
 import pytest
 
 from socorro.external.es.connection_context import ConnectionContext
-from socorro.external.es.supersearch import SuperSearch
-from socorro.external.es.super_search_fields import FIELDS
+from socorro.external.es.crashstorage import ESCrashStorage
+from socorro.lib.datetimeutil import utc_now
 
 
 DEFAULT_VALUES = {
-    "resource.elasticsearch.elasticsearch_index": ("socorro_integration_test_reports"),
+    "resource.elasticsearch.elasticsearch_index": "testsocorro_%W",
+    "resource.elasticsearch.elasticsearch_index_regex": "^testsocorro.*$",
     "resource.elasticsearch.elasticsearch_timeout": 10,
 }
 
@@ -39,7 +39,7 @@ def minimum_es_version(minimum_version):
         @wraps(test)
         def test_with_version(self):
             """Only run the test if ES version is not less than specified"""
-            actual_version = self.connection.info()["version"]["number"]
+            actual_version = self.conn.info()["version"]["number"]
             if LooseVersion(actual_version) >= LooseVersion(minimum_version):
                 test(self)
             else:
@@ -50,26 +50,13 @@ def minimum_es_version(minimum_version):
     return decorated
 
 
-class SuperSearchWithFields(SuperSearch):
-    """Convenience class for SuperSearch to pass all fields
-
-    SuperSearch's get method requires to be passed the list of all fields. This
-    class does that automatically so we can just use ``get()``.
-
-    """
-
-    def get(self, **kwargs):
-        kwargs["_fields"] = copy.deepcopy(FIELDS)
-        return super().get(**kwargs)
-
-
 class TestCaseWithConfig:
     """A simple TestCase class that can create configuration objects"""
 
-    def setup_method(self, method):
+    def setup_method(self):
         pass
 
-    def teardown_method(self, method):
+    def teardown_method(self):
         pass
 
     def get_tuned_config(self, sources, extra_values=None):
@@ -100,25 +87,36 @@ class TestCaseWithConfig:
 class ElasticsearchTestCase(TestCaseWithConfig):
     """Base class for Elastic Search related unit tests"""
 
-    def setup_method(self, method):
-        super().setup_method(method)
+    def setup_method(self):
+        super().setup_method()
         self.config = self.get_base_config()
         self.es_context = ConnectionContext(self.config)
+        self.crashstorage = ESCrashStorage(config=self.get_tuned_config(ESCrashStorage))
 
         self.index_client = self.es_context.indices_client()
+        self.conn = self.es_context.connection()
 
-        with self.es_context() as conn:
-            self.connection = conn
+        # Delete everything there first
+        for index_name in self.es_context.get_indices():
+            print(f"setup: delete test index: {index_name}")
+            self.es_context.delete_index(index_name)
 
-        self.es_context.create_index(self.es_context.get_index_template())
+        to_create = [
+            self.es_context.get_index_for_date(utc_now()),
+            self.es_context.get_index_for_date(utc_now() - timedelta(days=7)),
+        ]
+        for index_name in to_create:
+            print(f"setup: creating index: {index_name}")
+            self.es_context.create_index(index_name)
 
-    def teardown_method(self, method):
-        # Clear the test indices.
-        self.index_client.delete(self.es_context.get_index_template())
-        super().teardown_method(method)
+    def teardown_method(self):
+        for index_name in self.es_context.get_indices():
+            print(f"teardown: delete test index: {index_name}")
+            self.es_context.delete_index(index_name)
+        super().teardown_method()
 
     def health_check(self):
-        self.connection.cluster.health(wait_for_status="yellow", request_timeout=5)
+        self.conn.cluster.health(wait_for_status="yellow", request_timeout=5)
 
     def get_url(self):
         """Returns the first url in the elasticsearch_urls list"""
@@ -138,55 +136,46 @@ class ElasticsearchTestCase(TestCaseWithConfig):
 
         return self.get_tuned_config(cls, extra_values=extra_values)
 
-    def index_crash(self, processed_crash=None, raw_crash=None, crash_id=None):
+    def index_crash(
+        self, processed_crash=None, raw_crash=None, crash_id=None, refresh=True
+    ):
+        """Index a single crash and refresh"""
         if crash_id is None:
             crash_id = str(uuid.UUID(int=random.getrandbits(128)))
 
         raw_crash = raw_crash or {}
         processed_crash = processed_crash or {}
+        raw_crash["uuid"] = crash_id
+        processed_crash["crash_id"] = crash_id
+        processed_crash["uuid"] = crash_id
 
-        doc = {
-            "crash_id": crash_id,
-            "processed_crash": processed_crash,
-            "raw_crash": raw_crash,
-        }
-        index_name = self.es_context.get_index_template()
-        res = self.connection.index(
-            index=index_name,
-            doc_type=self.es_context.get_doctype(),
-            id=crash_id,
-            body=doc,
-        )
-        return res["_id"]
+        self.crashstorage.save_processed_crash(raw_crash, processed_crash)
+
+        if refresh:
+            self.es_context.refresh()
+
+        return crash_id
 
     def index_many_crashes(
         self, number, processed_crash=None, raw_crash=None, loop_field=None
     ):
+        """Index multiple crashes and refresh at the end"""
         processed_crash = processed_crash or {}
         raw_crash = raw_crash or {}
 
-        actions = []
+        crash_ids = []
         for i in range(number):
-            crash_id = str(uuid.UUID(int=random.getrandbits(128)))
-
             if loop_field is not None:
                 processed_copy = processed_crash.copy()
                 processed_copy[loop_field] = processed_crash[loop_field] % i
             else:
                 processed_copy = processed_crash
 
-            doc = {
-                "crash_id": crash_id,
-                "processed_crash": processed_copy,
-                "raw_crash": raw_crash,
-            }
-            action = {
-                "_index": self.es_context.get_index_template(),
-                "_type": self.es_context.get_doctype(),
-                "_id": crash_id,
-                "_source": doc,
-            }
-            actions.append(action)
+            crash_ids.append(
+                self.index_crash(
+                    raw_crash=raw_crash, processed_crash=processed_copy, refresh=False
+                )
+            )
 
-        bulk(client=self.connection, actions=actions)
         self.es_context.refresh()
+        return crash_ids

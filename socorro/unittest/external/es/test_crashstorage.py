@@ -10,6 +10,7 @@ import elasticsearch
 from markus.testing import MetricsMock
 import pytest
 
+from socorro.lib.datetimeutil import date_to_string, utc_now
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
     convert_booleans,
@@ -35,7 +36,7 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWit
 
 
 # A sample crash report that is used for testing.
-a_processed_crash = {
+SAMPLE_PROCESSED_CRASH = {
     "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]],
     "addons_checked": None,
     "address": "0x1c",
@@ -97,7 +98,7 @@ a_processed_crash = {
     },
 }
 
-a_raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
+SAMPLE_RAW_CRASH = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
 
 
 class TestRawCrashRedactor(TestCaseWithConfig):
@@ -132,30 +133,27 @@ class TestIsValidKey:
 class TestIntegrationESCrashStorage(ElasticsearchTestCase):
     """These tests interact with Elasticsearch (or some other external resource)."""
 
-    def setup_method(self, method):
-        super().setup_method(method)
+    def setup_method(self):
+        super().setup_method()
         self.config = self.get_tuned_config(ESCrashStorage)
-
-        # Helpers for interacting with ES outside of the context of a
-        # specific test.
-        self.es_client = elasticsearch.Elasticsearch(
-            hosts=self.config.elasticsearch.elasticsearch_urls
-        )
-        self.index_client = elasticsearch.client.IndicesClient(self.es_client)
 
     def test_index_crash(self):
         """Test indexing a crash document."""
         es_storage = ESCrashStorage(config=self.config)
 
+        raw_crash = deepcopy(SAMPLE_RAW_CRASH)
+        processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
+        processed_crash["date_processed"] = date_to_string(utc_now())
+
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash),
-            processed_crash=deepcopy(a_processed_crash),
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
         )
 
         # Ensure that the document was indexed by attempting to retreive it.
-        assert self.es_client.get(
-            index=es_storage.es_context.get_index_template(),
-            id=a_processed_crash["uuid"],
+        assert self.conn.get(
+            index=self.es_context.get_index_for_date(utc_now()),
+            id=SAMPLE_PROCESSED_CRASH["uuid"],
         )
         es_storage.close()
 
@@ -167,7 +165,7 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         }
         processed_crash = {
             "AnotherInvalidKey": "alpha",
-            "date_processed": "2012-04-08 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
         }
 
@@ -179,64 +177,26 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         )
 
         # Ensure that the document was indexed by attempting to retreive it.
-        doc = self.es_client.get(
-            index=self.config.elasticsearch.elasticsearch_index,
+        doc = self.conn.get(
+            index=self.es_context.get_index_for_date(utc_now()),
             id=processed_crash["uuid"],
         )
 
         # Verify keys that aren't in super_search_fields aren't in the raw or processed
         # crash parts
         raw_crash = doc["_source"]["raw_crash"]
-        assert raw_crash == {"BuildID": "20200506000000"}
+        assert list(sorted(raw_crash.keys())) == ["BuildID"]
+
         processed_crash = doc["_source"]["processed_crash"]
-        assert processed_crash == {
-            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "date_processed": "2012-04-08T10:56:41.558922+00:00",
-        }
+        assert list(sorted(processed_crash.keys())) == ["date_processed", "uuid"]
 
 
 class TestESCrashStorage(ElasticsearchTestCase):
     """These tests are self-contained and use Mock where necessary"""
 
-    def setup_method(self, method):
-        super().setup_method(method)
+    def setup_method(self):
+        super().setup_method()
         self.config = self.get_tuned_config(ESCrashStorage)
-
-    def test_get_index_for_crash_static_name(self):
-        """Test a static index name """
-        es_storage = ESCrashStorage(config=self.config)
-
-        # The actual date isn't important since the index name won't use it.
-        index = es_storage.get_index_for_crash("some_date")
-
-        # The index name is obtained from the test base class.
-        assert type(index) is str
-        assert index == "socorro_integration_test_reports"
-
-    def test_get_index_for_crash_dynamic_name(self):
-        """Test a dynamic (date-based) index name """
-
-        # The crashstorage class looks for '%' in the index name; if that
-        # symbol is present, it will attempt to generate a new date-based
-        # index name. Since the test base config doesn't use this pattern,
-        # we need to specify it now.
-        modified_config = self.get_tuned_config(
-            ESCrashStorage,
-            {
-                "resource.elasticsearch.elasticsearch_index": "socorro_integration_test_reports%Y%m%d"
-            },
-        )
-        es_storage = ESCrashStorage(config=modified_config)
-
-        # The date is used to generate the name of the index; it must be a
-        # datetime object.
-        date = string_to_datetime(a_processed_crash["client_crash_date"])
-        index = es_storage.get_index_for_crash(date)
-
-        # The base index name is obtained from the test base class and the
-        # date is appended to it according to pattern specified above.
-        assert type(index) is str
-        assert index == "socorro_integration_test_reports20120408"
 
     def test_index_crash(self):
         """Mock test the entire crash submission mechanism"""
@@ -247,8 +207,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_storage._submit_crash_to_elasticsearch = mock.Mock()
 
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash),
-            processed_crash=deepcopy(a_processed_crash),
+            raw_crash=deepcopy(SAMPLE_RAW_CRASH),
+            processed_crash=deepcopy(SAMPLE_PROCESSED_CRASH),
         )
 
         # Ensure that the indexing function is only called once.
@@ -265,7 +225,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         processed_crash = {
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "json_dump": {},
-            "date_processed": "2012-04-08 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
         }
 
         sub_mock = mock.MagicMock()
@@ -301,7 +261,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         additional = {
             "doc_type": "crash_reports",
             "id": crash_id,
-            "index": "socorro_integration_test_reports",
+            "index": self.es_context.get_index_for_date(utc_now()),
         }
 
         sub_mock.index.assert_called_with(body=document, **additional)
@@ -330,7 +290,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         processed_crash = {
             "build": "20120309050057",
-            "date_processed": "2012-04-08 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
             "product": "FennecAndroid",
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "json_dump": {
@@ -355,7 +315,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(a_raw_crash),
+            raw_crash=deepcopy(SAMPLE_RAW_CRASH),
             processed_crash=processed_crash,
         )
 
@@ -369,7 +329,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         expected_processed_crash = deepcopy(processed_crash)
         reconstitute_datetimes(expected_processed_crash)
         expected_processed_crash["json_dump"] = {
-            k: a_processed_crash["json_dump"][k]
+            k: SAMPLE_PROCESSED_CRASH["json_dump"][k]
             for k in modified_config.json_dump_allowlist_keys
         }
 
@@ -377,13 +337,13 @@ class TestESCrashStorage(ElasticsearchTestCase):
         document = {
             "crash_id": crash_id,
             "processed_crash": expected_processed_crash,
-            "raw_crash": a_raw_crash,
+            "raw_crash": SAMPLE_RAW_CRASH,
         }
 
         additional = {
             "doc_type": "crash_reports",
             "id": crash_id,
-            "index": "socorro_integration_test_reports",
+            "index": self.es_context.get_index_for_date(utc_now()),
         }
 
         sub_mock.index.assert_called_with(body=document, **additional)
@@ -412,7 +372,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "StackTraces": "something",
         }
         processed_crash = {
-            "date_processed": "2012-04-08 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
         }
         crash_id = processed_crash["uuid"]
@@ -447,7 +407,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         additional = {
             "doc_type": "crash_reports",
             "id": crash_id,
-            "index": "socorro_integration_test_reports",
+            "index": self.es_context.get_index_for_date(utc_now()),
         }
 
         sub_mock.index.assert_called_with(body=document, **additional)
@@ -460,7 +420,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         es_storage = ESCrashStorage(config=self.config)
 
-        crash_id = a_processed_crash["uuid"]
+        crash_id = SAMPLE_PROCESSED_CRASH["uuid"]
 
         # Oh the humanity!
         failure_exception = Exception("horrors")
@@ -469,9 +429,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # Submit a crash and ensure that it failed.
         with pytest.raises(Exception):
             es_storage.save_processed_crash(
-                raw_crash=deepcopy(a_raw_crash),
+                raw_crash=deepcopy(SAMPLE_RAW_CRASH),
                 dumps=None,
-                processed_crsah=deepcopy(a_processed_crash),
+                processed_crsah=deepcopy(SAMPLE_PROCESSED_CRASH),
                 crash_id=crash_id,
             )
 
@@ -485,10 +445,10 @@ class TestESCrashStorage(ElasticsearchTestCase):
         """
         es_storage = ESCrashStorage(config=self.config)
 
-        crash_id = a_processed_crash["uuid"]
+        crash_id = SAMPLE_PROCESSED_CRASH["uuid"]
         raw_crash = {}
         processed_crash = {
-            "date_processed": "2012-04-08 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
             # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
             # rejected by our mock_index call--this is wildly contrived.
             "version": "some bogus value",
@@ -528,13 +488,13 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "crash_id": crash_id,
             "removed_fields": "processed_crash.version",
             "processed_crash": {
-                "date_processed": string_to_datetime("2012-04-08 10:56:41.558922"),
+                "date_processed": string_to_datetime(processed_crash["date_processed"]),
                 "uuid": crash_id,
             },
             "raw_crash": {},
         }
         es_class_mock().index.assert_called_with(
-            index=self.config.elasticsearch.elasticsearch_index,
+            index=self.es_context.get_index_for_date(utc_now()),
             doc_type=self.config.elasticsearch.elasticsearch_doctype,
             body=expected_doc,
             id=crash_id,
@@ -550,10 +510,10 @@ class TestESCrashStorage(ElasticsearchTestCase):
         """
         es_storage = ESCrashStorage(config=self.config)
 
-        crash_id = a_processed_crash["uuid"]
+        crash_id = SAMPLE_PROCESSED_CRASH["uuid"]
         raw_crash = {}
         processed_crash = {
-            "date_processed": "2012-04-08 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
             # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
             # rejected by our mock_index call--this is wildly contrived.
             "version": 1234567890,
@@ -588,13 +548,13 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "crash_id": crash_id,
             "removed_fields": "processed_crash.version",
             "processed_crash": {
-                "date_processed": string_to_datetime("2012-04-08 10:56:41.558922"),
+                "date_processed": string_to_datetime(processed_crash["date_processed"]),
                 "uuid": crash_id,
             },
             "raw_crash": {},
         }
         es_class_mock().index.assert_called_with(
-            index=self.config.elasticsearch.elasticsearch_index,
+            index=self.es_context.get_index_for_date(utc_now()),
             doc_type=self.config.elasticsearch.elasticsearch_doctype,
             body=expected_doc,
             id=crash_id,
@@ -615,7 +575,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "ProductName": "Firefox",
         }
         processed_crash = {
-            "date_processed": "2019-12-11 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
             # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
             # rejected by our mock_index call--this is wildly contrived.
             "version": {"key": {"nested_key": "val"}},
@@ -650,13 +610,13 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "crash_id": crash_id,
             "removed_fields": "processed_crash.version",
             "processed_crash": {
-                "date_processed": string_to_datetime("2019-12-11 10:56:41.558922"),
+                "date_processed": string_to_datetime(processed_crash["date_processed"]),
                 "uuid": crash_id,
             },
             "raw_crash": raw_crash,
         }
         es_class_mock().index.assert_called_with(
-            index=self.config.elasticsearch.elasticsearch_index,
+            index=self.es_context.get_index_for_date(utc_now()),
             doc_type=self.config.elasticsearch.elasticsearch_doctype,
             body=expected_doc,
             id=crash_id,
@@ -675,7 +635,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         raw_crash = {}
         processed_crash = {
             "uuid": "9d8e7127-9d98-4d92-8ab1-065982200317",
-            "date_processed": "2012-04-08 10:56:41.558922",
+            "date_processed": date_to_string(utc_now()),
         }
 
         # Test with an error from which a field name cannot be extracted.

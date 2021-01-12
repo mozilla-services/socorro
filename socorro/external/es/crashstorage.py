@@ -249,24 +249,6 @@ class ESCrashStorage(CrashStorageBase):
         )
         self.metrics = markus.get_metrics(namespace)
 
-    def get_index_for_crash(self, crash_date):
-        """Return submission URL for a crash; based on the submission URL
-        from config and the date of the crash.
-
-        If the index name contains a datetime pattern (ex. %Y%m%d) then the
-        crash_date will be parsed and appended to the index name.
-
-        """
-        index = self.config.elasticsearch.elasticsearch_index
-
-        if not index:
-            return None
-        elif "%" in index:
-            # Note that crash_date must be a datetime object!
-            index = crash_date.strftime(index)
-
-        return index
-
     def prepare_processed_crash(self, raw_crash, processed_crash):
         """Returns prepared data
 
@@ -350,7 +332,7 @@ class ESCrashStorage(CrashStorageBase):
 
     def _submit_crash_to_elasticsearch(self, crash_document):
         """Submit a crash report to elasticsearch"""
-        index_name = self.get_index_for_crash(
+        index_name = self.es_context.get_index_for_date(
             crash_document["processed_crash"]["date_processed"]
         )
         es_doctype = self.config.elasticsearch.elasticsearch_doctype

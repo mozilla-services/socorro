@@ -8,11 +8,10 @@ import json
 import requests_mock
 import pytest
 
+from socorro.external.es.supersearch import SuperSearch
+from socorro.external.es.super_search_fields import FIELDS
 from socorro.lib import BadArgumentError, datetimeutil, search_common
-from socorro.unittest.external.es.base import (
-    ElasticsearchTestCase,
-    SuperSearchWithFields,
-)
+from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
@@ -21,11 +20,20 @@ from socorro.unittest.external.es.base import (
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
+class SuperSearchWithFields(SuperSearch):
+    """Adds FIELDS to all .get() calls"""
+
+    def get(self, **kwargs):
+        if "_fields" not in kwargs:
+            kwargs["_fields"] = FIELDS
+        return super().get(**kwargs)
+
+
 class TestIntegrationSuperSearch(ElasticsearchTestCase):
     """Test SuperSearch with an elasticsearch database containing fake data."""
 
-    def setup_method(self, method):
-        super().setup_method(method)
+    def setup_method(self):
+        super().setup_method()
 
         config = self.get_base_config(cls=SuperSearchWithFields)
         self.api = SuperSearchWithFields(config=config)
@@ -45,10 +53,10 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         ]
 
         res = self.api.get_indices(dates)
-        assert res == ["socorro_integration_test_reports"]
+        assert res == ["testsocorro_52", "testsocorro_01"]
 
         config = self.get_base_config(
-            cls=SuperSearchWithFields, es_index="socorro_%Y%W"
+            cls=SuperSearchWithFields, es_index="testsocorro_%Y%W"
         )
         api = SuperSearchWithFields(config=config)
 
@@ -58,7 +66,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         ]
 
         res = api.get_indices(dates)
-        assert res == ["socorro_200052", "socorro_200101"]
+        assert res == ["testsocorro_200052", "testsocorro_200101"]
 
         dates = [
             search_common.SearchParam("date", now, "<"),
@@ -67,11 +75,11 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         res = api.get_indices(dates)
         expected = [
-            "socorro_200049",
-            "socorro_200050",
-            "socorro_200051",
-            "socorro_200052",
-            "socorro_200101",
+            "testsocorro_200049",
+            "testsocorro_200050",
+            "testsocorro_200051",
+            "testsocorro_200052",
+            "testsocorro_200101",
         ]
         assert res == expected
 
@@ -1479,7 +1487,16 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             self.api.get(_results_number=1001)
 
     def test_get_with_failing_shards(self):
-        with requests_mock.Mocker(real_http=True) as mock_requests:
+        # NOTE(willkg): We're asserting on a url which includes the indexes being
+        # searched. If the index template includes a date, then the indexes could be in
+        # any order, so we don't include date bits and then we're guaranteed for that
+        # part of the url to be stable for mocking.
+        index_name = "testsocorro_nodate"
+
+        config = self.get_base_config(cls=SuperSearchWithFields, es_index=index_name)
+        api = SuperSearchWithFields(config=config)
+
+        with requests_mock.Mocker(real_http=False) as mock_requests:
             # Test with one failing shard.
             es_results = {
                 "hits": {"hits": [], "total": 0, "max_score": None},
@@ -1502,13 +1519,13 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
             mock_requests.get(
                 "{url}/{index}/crash_reports/_search".format(
-                    url=self.get_url(), index=self.es_context.get_index_template()
+                    url=self.get_url(),
+                    index=index_name,
                 ),
                 text=json.dumps(es_results),
             )
 
-            res = self.api.get()
-            assert "errors" in res
+            res = api.get()
 
             errors_exp = [{"type": "shards", "index": "fake_index", "shards_count": 1}]
             assert res["errors"] == errors_exp
@@ -1547,12 +1564,13 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
             mock_requests.get(
                 "{url}/{index}/crash_reports/_search".format(
-                    url=self.get_url(), index=self.es_context.get_index_template()
+                    url=self.get_url(),
+                    index=index_name,
                 ),
                 text=json.dumps(es_results),
             )
 
-            res = self.api.get()
+            res = api.get()
             assert "errors" in res
 
             errors_exp = [

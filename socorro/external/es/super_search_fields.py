@@ -20,6 +20,34 @@ logger = logging.getLogger(__name__)
 MAPPING_TEST_CRASH_NUMBER = 100
 
 
+def parse_mapping(mapping, namespace):
+    """Return set of fields in a mapping
+
+    This parses the mapping recursively.
+
+    :arg dict mapping: the mapping yielded by Elasticsearch
+    :arg str namespace: the namespace being parsed or None for the root
+
+    :returns: set of fields
+
+    """
+    fields = set()
+
+    for key in mapping:
+        field = mapping[key]
+        if namespace:
+            field_full_name = ".".join((namespace, key))
+        else:
+            field_full_name = key
+
+        if "properties" in field:
+            fields.update(parse_mapping(field["properties"], field_full_name))
+        else:
+            fields.add(field_full_name)
+
+    return fields
+
+
 def add_field_to_properties(properties, namespaces, field):
     """Add a field to a mapping properties
 
@@ -151,25 +179,6 @@ class SuperSearchFields(SuperSearchFieldsData):
         es_connection = self.get_connection()
         index_client = elasticsearch.client.IndicesClient(es_connection)
         doctype = self.context.get_doctype()
-
-        def parse_mapping(mapping, namespace):
-            """Return a set of all fields in a mapping. Parse the mapping
-            recursively."""
-            fields = set()
-
-            for key in mapping:
-                field = mapping[key]
-                if namespace:
-                    field_full_name = ".".join((namespace, key))
-                else:
-                    field_full_name = key
-
-                if "properties" in field:
-                    fields.update(parse_mapping(field["properties"], field_full_name))
-                else:
-                    fields.add(field_full_name)
-
-            return fields
 
         all_existing_fields = set()
         for index in indices:

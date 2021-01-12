@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from socorro.lib import datetimeutil
-from socorro.unittest.external.es.base import (
-    ElasticsearchTestCase,
-    SuperSearchWithFields,
-)
+from socorro.external.es.super_search_fields import FIELDS
+from socorro.external.es.supersearch import SuperSearch
+from socorro.unittest.external.es.base import ElasticsearchTestCase
+
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
@@ -18,11 +18,11 @@ from socorro.unittest.external.es.base import (
 class TestIntegrationAnalyzers(ElasticsearchTestCase):
     """Test the custom analyzers we create in our indices"""
 
-    def setup_method(self, method):
-        super().setup_method(method)
+    def setup_method(self):
+        super().setup_method()
 
-        config = self.get_base_config(cls=SuperSearchWithFields)
-        self.api = SuperSearchWithFields(config=config)
+        config = self.get_base_config(cls=SuperSearch)
+        self.api = SuperSearch(config=config)
         self.now = datetimeutil.utc_now()
 
     def test_semicolon_keywords(self):
@@ -42,7 +42,9 @@ class TestIntegrationAnalyzers(ElasticsearchTestCase):
         )
         self.es_context.refresh()
 
-        res = self.api.get(app_init_dlls="/path/to/dll", _facets=["app_init_dlls"])
+        res = self.api.get(
+            app_init_dlls="/path/to/dll", _facets=["app_init_dlls"], _fields=FIELDS
+        )
         assert res["total"] == 2
         assert "app_init_dlls" in res["facets"]
         facet_terms = [x["term"] for x in res["facets"]["app_init_dlls"]]

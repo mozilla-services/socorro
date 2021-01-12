@@ -6,7 +6,7 @@ import datetime
 
 
 def generate_list_of_indexes(from_date, to_date, index_format):
-    """Return the list of indexes for crash reports processed between from_date and to_date
+    """Return list of indexes for crash reports processed between from_date and to_date
 
     The naming pattern for indexes in elasticsearch is configurable, it is
     possible to have an index per day, per week, per month...
