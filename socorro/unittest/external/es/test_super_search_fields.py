@@ -98,6 +98,9 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         for index_name in self.es_context.get_indices():
             self.es_context.delete_index(index_name)
 
+        # Refresh ES to wait for indices to delete
+        self.es_context.refresh()
+
         now = datetimeutil.utc_now()
         template = api.context.get_index_template()
 
@@ -110,6 +113,9 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         index_name = (now - timedelta(days=7)).strftime(template)
         mapping = fake_mapping_2
         api.context.create_index(index_name, mappings=mapping)
+
+        # Refresh ES to wait for indices to be created
+        self.es_context.refresh()
 
         api = SuperSearchFieldsModel(config=config)
         missing_fields = api.get_missing_fields()
