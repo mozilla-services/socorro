@@ -95,11 +95,13 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         # Refresh and then delete existing indices so we can rebuild the mappings
         # in order to diff them
         self.es_context.refresh()
+        self.es_context.health_check()
         for index_name in self.es_context.get_indices():
             self.es_context.delete_index(index_name)
 
         # Refresh ES to wait for indices to delete
         self.es_context.refresh()
+        self.es_context.health_check()
 
         now = datetimeutil.utc_now()
         template = api.context.get_index_template()
@@ -116,6 +118,7 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
 
         # Refresh ES to wait for indices to be created
         self.es_context.refresh()
+        self.es_context.health_check()
 
         api = SuperSearchFieldsModel(config=config)
         missing_fields = api.get_missing_fields()
