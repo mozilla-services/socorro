@@ -4,6 +4,7 @@
 
 import contextlib
 import datetime
+from functools import cache
 import re
 
 from configman import Namespace, RequiredConfig
@@ -162,6 +163,30 @@ class ConnectionContext(RequiredConfig):
             },
             "mappings": mappings,
         }
+
+    @cache
+    def get_mapping(self, index_name, es_doctype, reraise=False):
+        """Retrieves the mapping for a given index and doctype
+
+        NOTE(willkg): Mappings are cached on the ConnectionContext instance. If you
+        change the indices (like in tests), you should get a new ConnectionContext
+        instance.
+
+        :arg str index_name: the index to retrieve the mapping for
+        :arg str es_doctype: the doctype to retrieve the mapping for
+        :arg bool reraise: True if you want this to reraise a NotFoundError; False
+            otherwise
+
+        :returns: mapping as a dict or None
+
+        """
+        try:
+            resp = self.indices_client().get_mapping(index=index_name)
+            return resp[index_name]["mappings"][es_doctype]["properties"]
+        except elasticsearch.exceptions.NotFoundError:
+            if reraise:
+                raise
+        return None
 
     def create_index(self, index_name, mappings=None):
         """Create an index that will receive crash reports.

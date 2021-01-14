@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
+from functools import cache
 import json
 import re
 import time
@@ -10,10 +11,11 @@ import time
 from configman import Namespace
 from configman.converters import class_converter, list_converter
 import elasticsearch
+from elasticsearch.exceptions import NotFoundError
 import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
-from socorro.external.es.super_search_fields import FIELDS
+from socorro.external.es.super_search_fields import FIELDS, parse_mapping
 from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
 
 
@@ -114,26 +116,6 @@ def is_valid_key(key):
 
     """
     return bool(VALID_KEY.match(key))
-
-
-def extract_indexable(fields, namespace, doc):
-    """Builds a doc of all the keys that should be indexed
-
-    This copies the data over, so the new doc is not tied to the original document at
-    all and can be mutated safely.
-
-    """
-    new_doc = {}
-
-    for field in FIELDS.values():
-        if field["namespace"] != namespace:
-            continue
-
-        key = field["in_database_name"]
-        if key in doc:
-            new_doc[key] = copy.deepcopy(doc[key])
-
-    return new_doc
 
 
 def truncate_keyword_field_values(fields, data):
@@ -249,6 +231,39 @@ class ESCrashStorage(CrashStorageBase):
         )
         self.metrics = markus.get_metrics(namespace)
 
+    @cache
+    def get_keys_for_fields(self):
+        """Return keys for FIELDS in "namespace.key" format
+
+        NOTE(willkg): Answer is cached on the ESCrashStorage instance. If you change
+        FIELDS (like in tests), you should get a new ESCrashStorage instance.
+
+        :returns: set of "namespace.key" strings
+
+        """
+        return {
+            "%s.%s" % (field["namespace"], field["in_database_name"])
+            for field in FIELDS.values()
+        }
+
+    @cache
+    def get_keys_for_mapping(self, index_name, es_doctype):
+        """Get the keys in "namespace.key" format for a given mapping
+
+        NOTE(willkg): If the index exists, the keys for the mapping are cached on
+        the ESCrashStorage instance.
+
+        :arg str index_name: the name of the index
+        :arg str es_doctype: the doctype for the index
+
+        :returns: set of "namespace.key" fields
+
+        :raise elasticsearch.exceptions.NotFoundError: if the index doesn't exist
+
+        """
+        mapping = self.es_context.get_mapping(index_name, es_doctype, reraise=True)
+        return parse_mapping(mapping, None)
+
     def prepare_processed_crash(self, raw_crash, processed_crash):
         """Returns prepared data
 
@@ -271,10 +286,36 @@ class ESCrashStorage(CrashStorageBase):
 
     def save_processed_crash(self, raw_crash, processed_crash):
         """Save processed crash report to Elasticsearch"""
-        # Generate indexable raw and processed crash data and leave everything not
-        # listed in FIELDS out
-        raw_crash = extract_indexable(FIELDS, "raw_crash", raw_crash)
-        processed_crash = extract_indexable(FIELDS, "processed_crash", processed_crash)
+        index_name = self.es_context.get_index_for_date(
+            string_to_datetime(processed_crash["date_processed"])
+        )
+        es_doctype = self.config.elasticsearch.elasticsearch_doctype
+        crash_id = processed_crash["uuid"]
+
+        supersearch_fields_keys = self.get_keys_for_fields()
+        try:
+            mapping_keys = self.get_keys_for_mapping(index_name, es_doctype)
+        except NotFoundError:
+            mapping_keys = None
+        all_valid_keys = supersearch_fields_keys
+        if mapping_keys:
+            # If there are mapping_keys, then the index exists already and we
+            # should make sure we're not indexing anything that's not in that
+            # mapping
+            all_valid_keys = all_valid_keys & mapping_keys
+
+        # Copy the crash structures so we can mutate them later and remove everything
+        # that's not a valid key for the index
+        raw_crash = {
+            key: value
+            for key, value in copy.deepcopy(raw_crash).items()
+            if "raw_crash.%s" % key in all_valid_keys
+        }
+        processed_crash = {
+            key: value
+            for key, value in copy.deepcopy(processed_crash).items()
+            if "processed_crash.%s" % key in all_valid_keys
+        }
 
         # Clean up and redact raw and processed crash data
         self.prepare_processed_crash(raw_crash, processed_crash)
@@ -289,7 +330,12 @@ class ESCrashStorage(CrashStorageBase):
             "raw_crash": raw_crash,
         }
 
-        self._submit_crash_to_elasticsearch(crash_document)
+        self._submit_crash_to_elasticsearch(
+            crash_id=crash_id,
+            es_doctype=es_doctype,
+            index_name=index_name,
+            crash_document=crash_document,
+        )
 
     def capture_crash_metrics(self, raw_crash, processed_crash):
         """Capture metrics about crash data being saved to Elasticsearch"""
@@ -330,14 +376,10 @@ class ESCrashStorage(CrashStorageBase):
                 "index", value=elapsed_time * 1000.0, tags=["outcome:" + index_outcome]
             )
 
-    def _submit_crash_to_elasticsearch(self, crash_document):
+    def _submit_crash_to_elasticsearch(
+        self, crash_id, es_doctype, index_name, crash_document
+    ):
         """Submit a crash report to elasticsearch"""
-        index_name = self.es_context.get_index_for_date(
-            crash_document["processed_crash"]["date_processed"]
-        )
-        es_doctype = self.config.elasticsearch.elasticsearch_doctype
-        crash_id = crash_document["crash_id"]
-
         # Attempt to create the index; it's OK if it already exists.
         self.es_context.create_index(index_name)
 

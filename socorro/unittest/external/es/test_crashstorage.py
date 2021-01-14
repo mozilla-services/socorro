@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from copy import deepcopy
+from datetime import timedelta
 from unittest import mock
 
 from configman.dotdict import DotDict
@@ -26,6 +27,7 @@ from socorro.external.es.crashstorage import (
 )
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.lib.ooid import create_new_ooid
+from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWithConfig
 
 
@@ -189,6 +191,84 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
 
         processed_crash = doc["_source"]["processed_crash"]
         assert list(sorted(processed_crash.keys())) == ["date_processed", "uuid"]
+
+    def test_index_crash_mapping_keys(self):
+        """Test indexing a crash that has keys not in the mapping
+
+        Indexing a crash that has keys that aren't in the mapping for the index
+        should cause those keys to be removed from the crash.
+
+        """
+        # The test harness creates an index for this week and last week. So let's create
+        # one for 4 weeks ago.
+        now = utc_now()
+        four_weeks_ago = now - timedelta(days=28)
+
+        field = "user_comments"
+
+        # We're going to use a mapping that's what SuperSearchFields gives us, but
+        # remove the user_comments field.
+        mappings = SuperSearchFields(context=self.es_context).get_mapping()
+        doctype = self.es_context.get_doctype()
+        del mappings[doctype]["properties"]["processed_crash"]["properties"][field]
+
+        # Create the index for 4 weeks ago
+        self.es_context.create_index(
+            index_name=self.es_context.get_index_for_date(four_weeks_ago),
+            mappings=mappings,
+        )
+
+        es_storage = ESCrashStorage(config=self.config)
+
+        # Create a crash for this week and save it
+        now_uuid = "00000000-0000-0000-0000-000000120408"
+        raw_crash = {
+            "BuildID": "20200506000000",
+        }
+        processed_crash = {
+            field: "this week",
+            "date_processed": date_to_string(now),
+            "uuid": now_uuid,
+        }
+
+        es_storage.save_processed_crash(
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
+        )
+
+        # Create a crash for four weeks ago with the bum mapping and save it
+        old_uuid = "11111111-1111-1111-1111-111111120408"
+        raw_crash = {
+            "BuildID": "20200506000000",
+        }
+        processed_crash = {
+            field: "this week",
+            "date_processed": date_to_string(now - timedelta(days=28)),
+            "uuid": old_uuid,
+        }
+
+        es_storage.save_processed_crash(
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
+        )
+
+        self.es_context.refresh()
+
+        # Retrieve the document from this week and verify it has the user_comments
+        # field
+        doc = self.conn.get(
+            index=self.es_context.get_index_for_date(now),
+            id=now_uuid,
+        )
+        assert field in doc["_source"]["processed_crash"]
+
+        # Retrieve the document from four weeks ago and verify it doesn't have the
+        # user_comments field
+        doc = self.conn.get(
+            index=self.es_context.get_index_for_date(four_weeks_ago),
+            id=old_uuid,
+        )
+        assert field not in doc["_source"]["processed_crash"]
 
 
 class TestESCrashStorage(ElasticsearchTestCase):
