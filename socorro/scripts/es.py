@@ -8,11 +8,13 @@ indices.
 """
 
 import datetime
+from pprint import pprint
 
 import click
 from configman import ConfigurationManager
 from configman.environment import environment
 from elasticsearch_dsl import Search
+from elasticsearch.client import IndicesClient
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.connection_context import ConnectionContext
@@ -102,6 +104,37 @@ def cmd_list_crashids(ctx, index):
         click.echo("Crashids in %s:" % index)
         for hit in results:
             click.echo(hit["processed_crash.uuid"][0])
+
+
+@es_group.command("print_mapping")
+@click.argument("index", nargs=1)
+@click.pass_context
+def cmd_print_mapping(ctx, index):
+    context = get_conn()
+    doctype = context.get_doctype()
+    conn = context.connection()
+    indices_client = IndicesClient(conn)
+    resp = indices_client.get_mapping(index=index)
+    mapping = resp[index]["mappings"][doctype]["properties"]
+    pprint(mapping)
+
+
+@es_group.command("print_document")
+@click.argument("index", nargs=1)
+@click.argument("crashid", nargs=1)
+@click.pass_context
+def cmd_print_document(ctx, index, crashid):
+    context = get_conn()
+    conn = context.connection()
+    search = Search(
+        using=conn,
+        index=index,
+        doc_type=context.get_doctype(),
+    )
+    search = search.query("match", crash_id=crashid)
+    results = search.execute()
+    for item in results:
+        pprint(item.to_dict())
 
 
 @es_group.command("delete")
