@@ -4,7 +4,7 @@
 
 from click.testing import CliRunner
 
-from socorro.schemas.validate_and_test import validate_and_test
+from socorro.schemas.validate_telemetry_socorro_crash import validate_and_test
 
 
 def test_it_runs():

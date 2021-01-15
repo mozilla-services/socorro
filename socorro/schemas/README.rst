@@ -82,8 +82,9 @@ Then you have to increment the ``$target_version`` number by 1.
 Testing Schema Changes
 ======================
 
-If you desire to edit the ``crash_report.json`` file, it's recommended that you
-test that it still validates. For example, if you add a change like this:
+If you desire to edit the ``telemetry_socorro_crash.json`` file, it's
+recommended that you test that it still validates. For example, if you add a
+change like this:
 
 .. code-block:: diff
 
@@ -99,23 +100,23 @@ of ``socorro`` run:
 
 .. code-block:: shell
 
-   $ python socorro/schemas/validate_and_test.py
+   $ python socorro/schemas/validate_telemetry_socorro_crash.py
 
 
 That will download 100 crashes, run the JSON Schema validator against
-those crashes with your local ``crash_report.json`` file.
+those crashes with your local ``telemetry_socorro_crash.json`` file.
 
 .. Note::
 
-   The ``validate_and_test.py``, by default, does a Super Search query for
-   basically ``product=Firefox`` and takes the 100 most recent crash IDs. This
-   might miss out on some more "rare" crashes whose additional values might
-   better test your JSON Schema changes. To remedy that, go to Super Search in
-   your browser, make a search that you know includes good crash IDs to test and
-   paste that URL like this:
+   The ``validate_telemetry_socorro_crash.py``, by default, does a Super Search
+   query for basically ``product=Firefox`` and takes the 100 most recent crash
+   IDs. This might miss out on some more "rare" crashes whose additional values
+   might better test your JSON Schema changes. To remedy that, go to Super
+   Search in your browser, make a search that you know includes good crash IDs
+   to test and paste that URL like this:
 
    .. code-block:: shell
 
-      $ python socorro/schemas/validate_and_test.py \
+      $ python socorro/schemas/validate_telemetry_socorro_crash.py \
             "https://crash-stats.mozilla.org/search/?dom_ipc_enabled=%21__null__&memory_images=%3E10&version=54.0a1" \
             "https://crash-stats.mozilla.org/api/SuperSearch/?memory_private=%3E100&product=Firefox&date=%3E%3D2017-02-24T16%3A14%3A00.000Z&date=%3C2017-03-03T16%3A14%3A00.000Z"
