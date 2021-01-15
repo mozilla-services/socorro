@@ -8,7 +8,7 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.socorro_app import App
-from socorro.schemas import CRASH_REPORT_JSON_SCHEMA_AS_STRING
+from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA_AS_STRING
 
 
 class UploadTelemetrySchema(App):
@@ -16,15 +16,14 @@ class UploadTelemetrySchema(App):
 
     We always send a copy of the crash (mainly processed crash) to a S3 bucket
     meant for Telemetry to ingest. When they ingest, they need a copy of our
-    crash_report.json JSON Schema file.
+    telemetry_socorro_crash.json JSON Schema file.
 
     They use that not to understand the JSON we store but the underlying
     structure (types, nesting etc.) necessary for storing it in .parquet files
     in S3.
 
-    To get a copy of the crash_report.json they can take it from the git
-    repository but that's fragile since it depends on github.com always being
-    available.
+    To get a copy of the telemetry_socorro_crash.json they can take it from the git
+    repository but that's fragile since it depends on github.com always being available.
 
     By uploading it to S3 not only do we bet on S3 being more read-reliable
     that github.com's server but by being in S3 AND unavailable that means the
@@ -48,14 +47,14 @@ class UploadTelemetrySchema(App):
     )
     required_config.telemetry.add_option(
         "json_filename",
-        default="crash_report.json",
+        default="telemetry_socorro_crash.json",
         doc="Name of the file/key we're going to upload to",
     )
 
     def main(self):
         path = self.config.telemetry.json_filename
         conn = self.config.telemetry.resource_class(self.config.telemetry)
-        conn.save_file(path, CRASH_REPORT_JSON_SCHEMA_AS_STRING)
+        conn.save_file(path, TELEMETRY_SOCORRO_CRASH_SCHEMA_AS_STRING)
         self.logger.info("Success: Schema uploaded!")
         return 0
 

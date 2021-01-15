@@ -19,7 +19,7 @@ from socorro.external.crashstorage_base import (
 from socorro.external.es.super_search_fields import SuperSearchFieldsData
 from socorro.lib.ooid import date_from_ooid
 from socorro.lib.util import dotdict_to_dict
-from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
+from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
 LOGGER = logging.getLogger(__name__)
@@ -302,9 +302,9 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         crash_report = {}
 
         # TODO Opportunity of optimization: We could inspect
-        # CRASH_REPORT_JSON_SCHEMA and get a list of all (recursive) keys that
-        # are in there and use that to limit the two following loops to not
-        # bother filling up `crash_report` with keys that will never be needed.
+        # TELEMETRY_SOCORRO_CRASH_SCHEMA and get a list of all (recursive) keys that are
+        # in there and use that to limit the two following loops to not bother filling
+        # up `crash_report` with keys that will never be needed.
 
         # Rename fields in raw_crash
         raw_fields_map = dict(
@@ -326,7 +326,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
         # Validate crash_report
         crash_report = json_schema_reducer.make_reduced_dict(
-            CRASH_REPORT_JSON_SCHEMA, crash_report
+            TELEMETRY_SOCORRO_CRASH_SCHEMA, crash_report
         )
 
         crash_id = crash_report["uuid"]
