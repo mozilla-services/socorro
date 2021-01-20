@@ -135,16 +135,20 @@ def report_index(request, crash_id, default_context=None):
         .order_by("-bug_id")
     )
 
-    context["raw_keys"] = []
+    context["public_raw_keys"] = [
+        x for x in context["raw"] if x in models.RawCrash.API_ALLOWLIST()
+    ]
     if request.user.has_perm("crashstats.view_pii"):
         # hold nothing back
-        context["raw_keys"] = context["raw"].keys()
-    else:
-        context["raw_keys"] = [
-            x for x in context["raw"] if x in models.RawCrash.API_ALLOWLIST()
+        context["protected_raw_keys"] = [
+            x for x in context["raw"] if x not in models.RawCrash.API_ALLOWLIST()
         ]
+    else:
+        context["protected_raw_keys"] = []
+
     # Sort keys case-insensitively
-    context["raw_keys"] = sorted(context["raw_keys"], key=lambda s: s.lower())
+    context["public_raw_keys"].sort(key=lambda s: s.lower())
+    context["protected_raw_keys"].sort(key=lambda s: s.lower())
 
     if request.user.has_perm("crashstats.view_rawdump"):
         context["raw_dump_urls"] = [
