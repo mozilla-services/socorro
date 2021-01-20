@@ -706,7 +706,7 @@ class TestBreadcrumbRule:
 
 
 class TestJavaProcessRule:
-    def test_everything_we_hoped_for(self):
+    def test_javastacktrace(self):
         raw_crash = {
             "JavaStackTrace": (
                 "Exception: some messge\n"
@@ -732,7 +732,7 @@ class TestJavaProcessRule:
             == "Exception\n\tat org.File.function(File.java:100)"
         )
 
-    def test_malformed(self):
+    def test_malformed_javastacktrace(self):
         raw_crash = {"JavaStackTrace": "junk\n\tat org.File.function\njunk"}
 
         raw_dumps = {}
@@ -749,7 +749,49 @@ class TestJavaProcessRule:
         assert processed_crash["java_stack_trace"] == "malformed"
 
         # Make sure there's a note in the notes about it
-        assert "malformed java stack trace" in processor_meta["processor_notes"][0]
+        assert "malformed JavaStackTrace" in processor_meta["processor_notes"][0]
+
+    def test_javaexception(self):
+        java_exception = {
+            "exception": {"values": [{"stacktrace": {"frames": [], "type": "text",
+                "module": "text", "value": "PII"}}]}
+        }
+
+        raw_crash = {
+            "JavaException": json.dumps(java_exception)
+        }
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = JavaProcessRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        # The entire JavaException structure
+        assert processed_crash["java_exception_raw"] == java_exception
+
+        # The sanitized JavaException structure has no PII in it
+        sanitized_je = copy.deepcopy(java_exception)
+        sanitized_je["exception"]["values"][0]["stacktrace"]["value"] = "REDACTED"
+        assert processed_crash["java_exception"] == sanitized_je
+        assert "PII" not in json.dumps(processed_crash["java_exception"])
+
+    def test_malformed_javaexception(self):
+        java_exception = {"exception": {}}
+
+        raw_crash = {"JavaException": json.dumps(java_exception)}
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = JavaProcessRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        # The JavaException value is malformed, so we get a processor note and
+        # that's it
+        assert "java_exception_raw" not in processed_crash
+        assert "java_exception" not in processed_crash
+        assert "malformed JavaException" in processor_meta["processor_notes"][0]
 
 
 class TestMozCrashReasonRule:

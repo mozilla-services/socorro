@@ -19,3 +19,5 @@ TELEMETRY_SOCORRO_CRASH_SCHEMA = _get_file_content("telemetry_socorro_crash.json
 TELEMETRY_SOCORRO_CRASH_SCHEMA_AS_STRING = _get_file_content(
     "telemetry_socorro_crash.json", parsed=False
 )
+
+JAVA_EXCEPTION_SCHEMA = _get_file_content("java_exception.json")
