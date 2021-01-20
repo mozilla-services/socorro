@@ -2258,8 +2258,8 @@ FIELDS = {
     "java_stack_trace": {
         "data_validation_type": "str",
         "description": (
-            "When Java code crashes due to an unhandled exception, this is the Java Stack Trace. "
-            "It is usually more useful than the system stack trace given for the crashing thread."
+            "The unstructured JavaStackTrace crash annotation without the exception "
+            "value which is protected data."
         ),
         "form_field_choices": [],
         "has_full_version": True,
@@ -2278,7 +2278,10 @@ FIELDS = {
     },
     "java_stack_trace_raw": {
         "data_validation_type": "str",
-        "description": "Raw JavaStackTrace value.",
+        "description": (
+            "The raw unstructured JavaStackTrace crash annotation value. This is "
+            "protected data."
+        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "java_stack_trace_raw",

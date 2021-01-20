@@ -77,7 +77,7 @@
               <a href="#details" class="ui-tabs-anchor"><span>Details</span></a>
             </li>
             <li class="ui-state-default ui-corner-top">
-              <a href="#metadata" class="ui-tabs-anchor"><span>Metadata</span></a>
+              <a href="#annotations" class="ui-tabs-anchor"><span>Crash Annotations</span></a>
             </li>
             <li class="ui-state-default ui-corner-top">
               <a href="#bugzilla" class="ui-tabs-anchor"><span>Bugzilla</span></a>
@@ -108,7 +108,7 @@
             <table class="record data-table vertical hardwrapped">
               <tbody>
 
-                {# Crash report metadata #}
+                {# Crash Annotations #}
 
                 <tr title="{{ fields_desc['processed_crash.signature'] }}">
                   <th scope="row">Signature</th>
@@ -301,6 +301,7 @@
                       {{ report.process_type }}
                       {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
                         ({{ raw.RemoteType and raw.RemoteType or 'web' }})
+                        - {{ protected_warning(your_crash) }}
                       {% endif %}
                       {% if report.PluginName %}
                         <b class="name">{{ report.PluginName }}</b>
@@ -365,6 +366,9 @@
                       <th scope="row">Java Stack Trace (Raw)</th>
                       <td>
                         <pre>{{ report.java_stack_trace_raw }}</pre>
+                        <div>
+                          {{ protected_warning(your_crash) }}
+                        </div>
                       </td>
                     </tr>
                   {% endif %}
@@ -396,24 +400,27 @@
                     <th scope="row">URL</th>
                     <td>
                       {% if raw.URL %}
-                        <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ protected_warning(your_crash) }}
+                        <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a>
                       {% endif %}
+                      - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.email'] }}">
                     <th scope="row">Email Address</th>
                     <td>
                       {% if raw.Email %}
-                        <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ protected_warning(your_crash) }}
+                        <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a>
                       {% endif %}
+                      - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
                     <th scope="row">User Comments</th>
                     <td>
                       {% if report.user_comments %}
-                        {{ report.user_comments | linebreaks }} - {{ protected_warning(your_crash) }}
+                        {{ report.user_comments | linebreaks }}
                       {% endif %}
+                      - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
                 {% endif %}
@@ -474,30 +481,35 @@
                     <th scope="row">PHC Kind</th>
                     <td>
                       {{ report.phc_kind }}
+                        - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_usable_size'] }}">
                     <th scope="row">PHC Usable Size</th>
                     <td>
                       {{ report.phc_usable_size }}
+                        - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_base_address'] }}">
                     <th scope="row">PHC Base Address</th>
                     <td>
                       {{ report.phc_base_address }}
+                        - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_alloc_stack'] }}">
                     <th scope="row">PHC Alloc Stack</th>
                     <td>
                       {{ report.phc_alloc_stack }}
+                        - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_free_stack'] }}">
                     <th scope="row">PHC Free Stack</th>
                     <td>
                       {{ report.phc_free_stack }}
+                        - {{ protected_warning(your_crash) }}
                     </td>
                   </tr>
 		            {% endif %}
@@ -806,10 +818,21 @@
           </div>
           <!-- /details -->
 
-          <div id="metadata" class="ui-tabs-hide">
+          <div id="annotations" class="ui-tabs-hide">
+            <div>
+              These are the crash annotations from the submitted crash report. You
+              can see the annotations and descriptions at <a href="https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml">https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml</a>.
+            </div>
+            <div>
+              <h2>Public data</h2>
+            </div>
+            <div>
+              These are the crash annotations from the submitted crash report
+              that do not contain protected data.
+            </div>
             <table class="record data-table vertical hardwrapped">
               <tbody>
-                {% for key in raw_keys %}
+                {% for key in public_raw_keys %}
                   <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
                     <th scope="row">
                       {% if key %}
@@ -823,8 +846,42 @@
                 {% endfor %}
               </tbody>
             </table>
+            <div>
+              <h2>Protected data</h2>
+            </div>
+            <div>
+              These are the crash annotations from the submitted crash report
+              that contain protected data.
+            </div>
+            {% if request.user.has_perm('crashstats.view_pii') %}
+              <div>
+                {{ protected_warning(your_crash) }}
+              </div>
+              <table class="record data-table vertical hardwrapped">
+                <tbody>
+                  {% for key in protected_raw_keys %}
+                    <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
+                      <th scope="row">
+                        {% if key %}
+                          {{ key }}
+                        {% else %}
+                          <i>empty key</i>
+                        {% endif %}
+                      </th>
+                      <td><pre>{{ raw[key] }}</pre></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div>
+                You do not have access to protected data for this crash report.
+                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a> for more
+                information.
+              </div>
+            {% endif %}
           </div>
-          <!-- /#rawdetails -->
+          <!-- /#annotations -->
 
           <div id="bugzilla" class="ui-tabs-hide">
             <div class="bugreporter">
