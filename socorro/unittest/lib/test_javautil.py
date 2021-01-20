@@ -174,3 +174,266 @@ def test_parenthesized_msg():
 def test_malformed(text):
     with pytest.raises(javautil.MalformedJavaStackTrace):
         javautil.parse_java_stack_trace(text)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {"exception": {"values": []}},
+        {
+            "exception": {
+                "values": [{"stacktrace": {"frames": [], "type": "", "module": ""}}]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [],
+                            "type": "",
+                            "module": "",
+                            "value": "",
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "java.lang.AbstractStringBuilder",
+                                    "function": "append0",
+                                    "in_app": True,
+                                    "lineno": 163,
+                                    "filename": "AbstractStringBuilder.java",
+                                },
+                                {
+                                    "module": "java.lang.StringBuilder",
+                                    "function": "append",
+                                    "in_app": True,
+                                    "lineno": 311,
+                                    "filename": "StringBuilder.java",
+                                },
+                            ],
+                            "type": "OutOfMemoryError",
+                            "module": "java.lang",
+                            "value": "Failed to allocate a 34516 byte allocation with 13138 free bytes and 12KB until OOM",
+                        }
+                    }
+                ]
+            }
+        },
+    ],
+)
+def test_valid_java_exception(data):
+    assert javautil.validate_java_exception(data) is True
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        # Missing required things
+        {},
+        {"exception": {}},
+        {"exception": {"values": [{"stacktrace": {}}]}},
+        {"exception": {"values": [{"stacktrace": {"frames": [], "type": ""}}]}},
+        {"exception": {"values": [{"stacktrace": {"frames": [], "module": ""}}]}},
+        {"exception": {"values": [{"stacktrace": {"type": "", "module": ""}}]}},
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [{"function": "", "in_app": True, "lineno": 1}],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [{"module": "", "in_app": True, "lineno": 1}],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [{"module": "", "function": "", "lineno": 1}],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [{"module": "", "function": "", "in_app": True}],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+        # Wrong types for things
+        {"exception": []},
+        {"exception": {"values": {}}},
+        {"exception": {"values": [{"stacktrace": []}]}},
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "",
+                                    "function": "",
+                                    "in_app": True,
+                                    "lineno": "",
+                                }
+                            ],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "",
+                                    "function": "",
+                                    "in_app": "",
+                                    "lineno": 1,
+                                }
+                            ],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+    ],
+)
+def test_invalid_java_exception(data):
+    with pytest.raises(javautil.MalformedJavaException):
+        javautil.validate_java_exception(data)
+
+
+@pytest.mark.parametrize("data, expected", [
+    (
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "",
+                                    "function": "",
+                                    "in_app": "",
+                                    "lineno": 1,
+                                }
+                            ],
+                            "type": "",
+                            "module": "",
+                            "value": "PII",
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "",
+                                    "function": "",
+                                    "in_app": "",
+                                    "lineno": 1,
+                                }
+                            ],
+                            "type": "",
+                            "module": "",
+                            "value": "REDACTED",
+                        }
+                    }
+                ]
+            }
+        },
+    ),
+    (
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "",
+                                    "function": "",
+                                    "in_app": "",
+                                    "lineno": 1,
+                                }
+                            ],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "",
+                                    "function": "",
+                                    "in_app": "",
+                                    "lineno": 1,
+                                }
+                            ],
+                            "type": "",
+                            "module": "",
+                        }
+                    }
+                ]
+            }
+        },
+    ),
+])
+def test_sanitize_java_exception(data, expected):
+    assert javautil.sanitize_java_exception(data) == expected

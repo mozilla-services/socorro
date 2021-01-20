@@ -7,10 +7,15 @@ Utility functions for parsing and manipulating JavaStackTrace field
 contents.
 """
 
+import copy
+
+import jsonschema
 from more_itertools import peekable
 
+from socorro.schemas import JAVA_EXCEPTION_SCHEMA
 
-class JavaException:
+
+class JavaStackTrace:
     def __init__(self, exception_class, exception_message, stack, additional):
         self.exception_class = exception_class
         self.exception_message = exception_message
@@ -42,11 +47,11 @@ CLASS_MESSAGE, STACK, ADDITIONAL = range(3)
 
 
 def parse_java_stack_trace(text):
-    """Parses a JavaStackTrace text blob into a JavaException instance
+    """Parses a ``JavaStackTrace`` text blob value into a JavaStackTrace instance
 
-    :arg str text: the JavaStackTrace blob
+    :arg str text: the ``JavaStackTrace`` blob value
 
-    :returns: a JavaException instance
+    :returns: a JavaStackTrace instance
 
     :raises MalformedJavaStackTrace: if there's a parsing error
 
@@ -57,7 +62,7 @@ def parse_java_stack_trace(text):
     stage = CLASS_MESSAGE
     lines = peekable(text.splitlines())
 
-    new_exc = JavaException(
+    new_exc = JavaStackTrace(
         exception_class="", exception_message="", stack=[], additional=[]
     )
 
@@ -102,3 +107,38 @@ def parse_java_stack_trace(text):
             new_exc.additional.append(line)
 
     return new_exc
+
+
+class MalformedJavaException(Exception):
+    pass
+
+
+def validate_java_exception(data):
+    """Validates a JavaException value
+
+    :arg dict data: the JavaException value
+
+    :raises MalformedJavaException: if the structure is malformed in some way
+
+    """
+    try:
+        jsonschema.validate(data, JAVA_EXCEPTION_SCHEMA)
+        return True
+    except jsonschema.ValidationError as exc:
+        raise MalformedJavaException(exc)
+
+
+def sanitize_java_exception(data):
+    """Removes PII from a JavaException value
+
+    :arg dict data: the JavaException value
+
+    :returns: a deep-copied copy of the data with PII redacted
+
+    """
+    data = copy.deepcopy(data)
+    for item in data["exception"]["values"]:
+        stacktrace = item["stacktrace"]
+        if "value" in stacktrace:
+            stacktrace["value"] = "REDACTED"
+    return data

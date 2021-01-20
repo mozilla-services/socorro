@@ -268,24 +268,49 @@ class JavaProcessRule(Rule):
     """Move Java-crash-related bits over."""
 
     def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return bool(raw_crash.get("JavaStackTrace", None))
+        return bool(raw_crash.get("JavaStackTrace", None)) or bool(
+            raw_crash.get("JavaException", None)
+        )
 
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        # This can contain PII in the exception message
-        processed_crash["java_stack_trace_raw"] = raw_crash["JavaStackTrace"]
+        if "JavaStackTrace" in raw_crash:
+            # The java_stack_trace_raw version can contain PII in the exception message
+            # and should be treated as protected data
+            processed_crash["java_stack_trace_raw"] = raw_crash["JavaStackTrace"]
 
-        try:
-            java_exception = javautil.parse_java_stack_trace(
-                raw_crash["JavaStackTrace"]
-            )
-            java_stack_trace = java_exception.to_public_string()
-        except javautil.MalformedJavaStackTrace:
-            processor_meta["processor_notes"].append(
-                "JavaProcessRule: malformed java stack trace"
-            )
-            java_stack_trace = "malformed"
+            # The java_stack_trace is a sanitizzed version of java_stack_trace_raw
+            try:
+                parsed_java_stack_trace = javautil.parse_java_stack_trace(
+                    raw_crash["JavaStackTrace"]
+                )
+                java_stack_trace = parsed_java_stack_trace.to_public_string()
+            except javautil.MalformedJavaStackTrace:
+                processor_meta["processor_notes"].append(
+                    "JavaProcessRule: malformed JavaStackTrace"
+                )
+                java_stack_trace = "malformed"
 
-        processed_crash["java_stack_trace"] = java_stack_trace
+            processed_crash["java_stack_trace"] = java_stack_trace
+
+        if "JavaException" in raw_crash:
+            try:
+                # The java_exception is a structured form of the stack trace
+                java_exception = json.loads(raw_crash["JavaException"])
+                javautil.validate_java_exception(java_exception)
+
+                # The java_exception_raw value can have PII and should be treated
+                # as protected data
+                processed_crash["java_exception_raw"] = java_exception
+
+                # The java_exception is a sanitized version
+                processed_crash["java_exception"] = (
+                    javautil.sanitize_java_exception(java_exception)
+                )
+
+            except (javautil.MalformedJavaException, json.JSONDecodeError):
+                processor_meta["processor_notes"].append(
+                    "JavaProcessRule: malformed JavaException"
+                )
 
 
 class MalformedBreadcrumbs(Exception):
@@ -297,7 +322,7 @@ def validate_breadcrumbs(data):
 
     :arg list data: list of breadcrumbs dicts
 
-    :raises: MalformedBreadcrumbs if it's malformed in some way
+    :raises MalformedBreadcrumbs: if it's malformed in some way
 
     """
     # NOTE(willkg): Sentry doesn't _require_ timestamp in their Breadcrumbs event, but
@@ -627,15 +652,15 @@ class FlashVersionRule(Rule):
 
 class TopMostFilesRule(Rule):
     """Origninating from Bug 519703, the topmost_filenames was specified as
-    singular, there would be only one.  The original programmer, in the
+    singular, there would be only one. The original programmer, in the
     source code stated "Lets build in some flex" and allowed the field to
-    have more than one in a list.  However, in all the years that this existed
-    it was never expanded to use more than just one.  Meanwhile, the code
+    have more than one in a list. However, in all the years that this existed
+    it was never expanded to use more than just one. Meanwhile, the code
     ambiguously would sometimes give this as as single value and other times
     return it as a list of one item.
 
     This rule does not try to reproduce that imbiguity and avoids the list
-    entirely, just giving one single value.  The fact that the destination
+    entirely, just giving one single value. The fact that the destination
     varible in the processed_crash is plural rather than singular is
     unfortunate.
 
