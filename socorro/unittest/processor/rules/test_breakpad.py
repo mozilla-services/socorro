@@ -31,7 +31,6 @@ canonical_standard_raw_crash = {
     "Email": "noreply@mozilla.com",
     "Vendor": "Mozilla",
     "EMCheckCompatibility": "true",
-    "Throttleable": "1",
     "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
     "buildid": "20120420145725",
     "AvailablePageFile": "10641510400",
@@ -40,7 +39,6 @@ canonical_standard_raw_crash = {
     "ReleaseChannel": "release",
     "submitted_timestamp": "2012-05-08T23:26:33.454482+00:00",
     "URL": "http://www.mozilla.com",
-    "timestamp": 1336519593.454627,
     "Notes": (
         "AdapterVendorID: 0x1002, AdapterDeviceID: 0x7280, "
         "AdapterSubsysID: 01821043, "
@@ -89,7 +87,6 @@ canonical_standard_raw_crash = {
     "BuildID": "20120420145725",
     "SecondsSinceLastCrash": "86985",
     "ProductName": "Firefox",
-    "legacy_processing": 0,
     "AvailableVirtualMemory": "3812708352",
     "SystemMemoryUsePercentage": "48",
     "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",

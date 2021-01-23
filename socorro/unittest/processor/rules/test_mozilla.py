@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
+import datetime
 from io import BytesIO
 import json
 from unittest import mock
@@ -10,7 +11,7 @@ from unittest import mock
 import requests_mock
 import pytest
 
-from socorro.lib.datetimeutil import datetime_from_isodate_string
+from socorro.lib.datetimeutil import datetime_from_isodate_string, UTC
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
@@ -56,7 +57,6 @@ canonical_standard_raw_crash = {
     "Email": "noreply@mozilla.com",
     "Vendor": "Mozilla",
     "EMCheckCompatibility": "true",
-    "Throttleable": "1",
     "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
     "buildid": "20120420145725",
     "AvailablePageFile": "10641510400",
@@ -65,7 +65,6 @@ canonical_standard_raw_crash = {
     "ReleaseChannel": "release",
     "submitted_timestamp": "2012-05-08T23:26:33.454482+00:00",
     "URL": "http://www.mozilla.com",
-    "timestamp": 1336519593.454627,
     "Notes": (
         "AdapterVendorID: 0x1002, AdapterDeviceID: 0x7280, "
         "AdapterSubsysID: 01821043, "
@@ -114,7 +113,6 @@ canonical_standard_raw_crash = {
     "BuildID": "20120420145725",
     "SecondsSinceLastCrash": "86985",
     "ProductName": "Firefox",
-    "legacy_processing": 0,
     "AvailableVirtualMemory": "3812708352",
     "SystemMemoryUsePercentage": "48",
     "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
@@ -500,32 +498,8 @@ class TestDatesAndTimesRule:
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] == 86985
 
-    def test_bad_timestamp(self):
+    def test_no_crash_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["timestamp"] = "hi there"
-        raw_dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        rule = DatesAndTimesRule()
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
-        assert (
-            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
-        )
-        assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
-        assert processed_crash["install_age"] == 1079662
-        assert processed_crash["uptime"] == 20116
-        assert processed_crash["last_crash"] == 86985
-        assert processor_meta["processor_notes"] == ['non-integer value of "timestamp"']
-
-    def test_bad_timestamp_and_no_crash_time(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["timestamp"] = "hi there"
         del raw_crash["CrashTime"]
         raw_dumps = {}
         processed_crash = {}
@@ -534,48 +508,24 @@ class TestDatesAndTimesRule:
         rule = DatesAndTimesRule()
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        expected = datetime.datetime.fromisoformat(raw_crash["submitted_timestamp"])
+        expected_timestamp = int(expected.timestamp())
         assert processed_crash["submitted_timestamp"] == expected
         assert (
             processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
         )
-        assert processed_crash["crash_time"] == 0
-        expected = datetime_from_isodate_string("1970-01-01 00:00:00+00:00")
-        assert processed_crash["client_crash_date"] == expected
-        assert processed_crash["install_age"] == -1335439892
-        assert processed_crash["uptime"] == 0
+        assert processed_crash["crash_time"] == expected_timestamp
+        assert processed_crash["client_crash_date"] == (
+            datetime.datetime.fromtimestamp(expected_timestamp, UTC)
+        )
+        assert processed_crash["install_age"] == 1079701
+        assert processed_crash["uptime"] == 20155
         assert processed_crash["last_crash"] == 86985
 
         expected = [
-            'non-integer value of "timestamp"',
             "WARNING: raw_crash missing CrashTime",
+            "client_crash_date is unknown",
         ]
-        assert processor_meta["processor_notes"] == expected
-
-    def test_no_startup_time_bad_timestamp(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["timestamp"] = "hi there"
-        del raw_crash["StartupTime"]
-        raw_dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        rule = DatesAndTimesRule()
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
-        assert (
-            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
-        )
-        assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
-        assert processed_crash["install_age"] == 1079662
-        assert processed_crash["uptime"] == 0
-        assert processed_crash["last_crash"] == 86985
-
-        expected = ['non-integer value of "timestamp"']
         assert processor_meta["processor_notes"] == expected
 
     def test_no_startup_time(self):

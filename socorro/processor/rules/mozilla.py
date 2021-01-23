@@ -6,7 +6,6 @@ import datetime
 import gzip
 import json
 import re
-import time
 from urllib.parse import unquote_plus
 from zlib import error as ZlibError
 
@@ -18,8 +17,7 @@ from socorro.lib import javautil
 from socorro.lib import sentry_client
 from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
-from socorro.lib.datetimeutil import UTC, datetime_from_isodate_string
-from socorro.lib.ooid import date_from_ooid
+from socorro.lib.datetimeutil import UTC
 from socorro.lib.requestslib import session_with_retries
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
@@ -201,58 +199,58 @@ class DatesAndTimesRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processor_notes = processor_meta["processor_notes"]
 
-        processed_crash["submitted_timestamp"] = raw_crash.get(
-            "submitted_timestamp", date_from_ooid(raw_crash["uuid"])
+        # NOTE(willkg): The submitted_timestamp comes from the collector when the crash
+        # report is accepted. It should always be there and should always be
+        # an isoformat string.
+        processed_crash["submitted_timestamp"] = datetime.datetime.fromisoformat(
+            raw_crash["submitted_timestamp"]
         )
-        if isinstance(processed_crash["submitted_timestamp"], str):
-            processed_crash["submitted_timestamp"] = datetime_from_isodate_string(
-                processed_crash["submitted_timestamp"]
-            )
+
+        # NOTE(willkg): This means that the date_processed is the same as
+        # submitted_timestamp which is the datetime when the crash report was collected
         processed_crash["date_processed"] = processed_crash["submitted_timestamp"]
-        # defaultCrashTime: must have crashed before date processed
-        submitted_timestamp_as_epoch = int(
-            time.mktime(processed_crash["submitted_timestamp"].timetuple())
+
+        # We want the seconds since epoch as an int--not a float
+        submitted_timestamp_epoch = int(
+            processed_crash["submitted_timestamp"].timestamp()
         )
-        try:
-            # the old name for crash time
-            timestampTime = int(
-                raw_crash.get("timestamp", submitted_timestamp_as_epoch)
-            )
-        except ValueError:
-            timestampTime = 0
-            processor_notes.append('non-integer value of "timestamp"')
         try:
             crash_time = int(
                 self._get_truncate_or_warn(
-                    raw_crash, "CrashTime", processor_notes, timestampTime, 10
+                    raw_crash,
+                    "CrashTime",
+                    processor_notes,
+                    submitted_timestamp_epoch,
+                    10,
                 )
             )
         except ValueError:
             crash_time = 0
-            processor_notes.append(
-                'non-integer value of "CrashTime" (%s)' % raw_crash["CrashTime"]
-            )
+            processor_notes.append('non-integer value of "CrashTime"')
 
         processed_crash["crash_time"] = crash_time
-        if crash_time == submitted_timestamp_as_epoch:
+        if crash_time == submitted_timestamp_epoch:
             processor_notes.append("client_crash_date is unknown")
+
         # StartupTime: must have started up some time before crash
         try:
-            startupTime = int(raw_crash.get("StartupTime", crash_time))
+            startup_time = int(raw_crash.get("StartupTime", crash_time))
         except ValueError:
-            startupTime = 0
+            startup_time = 0
             processor_notes.append('non-integer value of "StartupTime"')
+
         # InstallTime: must have installed some time before startup
         try:
-            installTime = int(raw_crash.get("InstallTime", startupTime))
+            install_time = int(raw_crash.get("InstallTime", startup_time))
         except ValueError:
-            installTime = 0
+            install_time = 0
             processor_notes.append('non-integer value of "InstallTime"')
+
         processed_crash["client_crash_date"] = datetime.datetime.fromtimestamp(
             crash_time, UTC
         )
-        processed_crash["install_age"] = crash_time - installTime
-        processed_crash["uptime"] = max(0, crash_time - startupTime)
+        processed_crash["install_age"] = crash_time - install_time
+        processed_crash["uptime"] = max(0, crash_time - startup_time)
         try:
             last_crash = int(raw_crash["SecondsSinceLastCrash"])
         except (KeyError, TypeError, ValueError):

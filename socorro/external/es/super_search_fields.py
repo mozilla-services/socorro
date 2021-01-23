@@ -2370,22 +2370,6 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
-    "legacy_processing": {
-        "data_validation_type": "enum",
-        "description": (
-            "Whether the crash was accepted (0) or deferred (1) by the Socorro collector."
-        ),
-        "form_field_choices": None,
-        "has_full_version": False,
-        "in_database_name": "legacy_processing",
-        "is_exposed": False,
-        "is_returned": False,
-        "name": "legacy_processing",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "boolean"},
-    },
     "main_module": {
         "data_validation_type": "int",
         "description": "Index into modules.",
@@ -3450,20 +3434,6 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": None,
     },
-    "throttle_rate": {
-        "data_validation_type": "int",
-        "description": "The throttle rate for the triggered rule in the Socorro collector.",
-        "form_field_choices": None,
-        "has_full_version": False,
-        "in_database_name": "throttle_rate",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "throttle_rate",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "number",
-        "storage_mapping": {"type": "long"},
-    },
     "throttleable": {
         "data_validation_type": "bool",
         "description": "Whether the crash report was throttleable when submitted.",
@@ -3477,22 +3447,6 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
-    },
-    "timestamp": {
-        "data_validation_type": "enum",
-        "description": (
-            "Seconds since unix epoch when the crash was submitted to the Socorro collector."
-        ),
-        "form_field_choices": None,
-        "has_full_version": False,
-        "in_database_name": "timestamp",
-        "is_exposed": False,
-        "is_returned": False,
-        "name": "timestamp",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "double"},
     },
     "tiny_block_size": {
         "data_validation_type": "int",
