@@ -137,6 +137,9 @@ def sanitize_java_exception(data):
 
     """
     data = copy.deepcopy(data)
+
+    # NOTE(willkg): If we ever change this code, then we should think about reprocessing
+    # all the Java crashes.
     for item in data["exception"]["values"]:
         stacktrace = item["stacktrace"]
         if "value" in stacktrace:
