@@ -303,8 +303,8 @@ class JavaProcessRule(Rule):
                 processed_crash["java_exception_raw"] = java_exception
 
                 # The java_exception is a sanitized version
-                processed_crash["java_exception"] = (
-                    javautil.sanitize_java_exception(java_exception)
+                processed_crash["java_exception"] = javautil.sanitize_java_exception(
+                    java_exception
                 )
 
             except (javautil.MalformedJavaException, json.JSONDecodeError):
