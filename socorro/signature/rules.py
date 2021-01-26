@@ -109,6 +109,7 @@ class CSignatureTool(SignatureTool):
         self.fixup_space = re.compile(r" (?=[\*&,])")
         self.fixup_comma = re.compile(r",(?! )")
         self.fixup_hash = re.compile(r"::h[0-9a-fA-F]+$")
+        self.fixup_lambda_numbers = re.compile(r"::\$_\d+::")
 
     def normalize_rust_function(self, function, line):
         """Normalizes a single Rust frame with a function."""
@@ -161,6 +162,9 @@ class CSignatureTool(SignatureTool):
 
         # Normalize `anonymous namespace' to (anonymous namespace). bug #1672847
         function = function.replace("`anonymous namespace'", "(anonymous namespace)")
+
+        # Remove lambda number from frames. bug #1688249
+        function = self.fixup_lambda_numbers.sub("::$::", function)
 
         # Collapse types
         #
