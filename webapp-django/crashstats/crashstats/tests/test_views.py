@@ -983,6 +983,124 @@ class TestViews(BaseTestViews):
         assert "context" in smart_text(response.content)
         assert "frame_pointer" in smart_text(response.content)
 
+    def test_java_exception_table_not_logged_in(self):
+        java_exception = {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "modulename",
+                                    "filename": "filename.kt",
+                                    "lineno": 5,
+                                    "in_app": True,
+                                    "function": "foo()",
+                                }
+                            ],
+                            "type": "BadException",
+                            "module": "org.foo.Bar",
+                            "value": "REDACTED",
+                        }
+                    }
+                ]
+            }
+        }
+        java_exception_raw = copy.deepcopy(java_exception)
+        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "PII"
+
+        def mocked_raw_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "meta":
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            if params["datatype"] == "unredacted":
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash["java_exception_raw"] = java_exception_raw
+                crash["java_exception"] = java_exception
+                return crash
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # Make sure it printed some java_exception data
+        assert "BadException" in smart_text(response.content)
+
+        # Make sure "PII" is not in the crash report
+        assert "PII" not in smart_text(response.content)
+        assert "REDACTED" in smart_text(response.content)
+
+    def test_java_exception_table_logged_in(self):
+        java_exception = {
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "module": "modulename",
+                                    "filename": "filename.kt",
+                                    "lineno": 5,
+                                    "in_app": True,
+                                    "function": "foo()",
+                                }
+                            ],
+                            "type": "BadException",
+                            "module": "org.foo.Bar",
+                            "value": "REDACTED",
+                        }
+                    }
+                ]
+            }
+        }
+        java_exception_raw = copy.deepcopy(java_exception)
+        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "PII"
+
+        def mocked_raw_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "meta":
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            if params["datatype"] == "unredacted":
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash["java_exception_raw"] = java_exception_raw
+                crash["java_exception"] = java_exception
+                return crash
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        user = self._login()
+        group = self._create_group_with_permission("view_pii")
+        user.groups.add(group)
+
+        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # Make sure it printed some java_exception data
+        assert "BadException" in smart_text(response.content)
+
+        # Make sure "PII" is in the crash report
+        assert "PII" in smart_text(response.content)
+        assert "REDACTED" not in smart_text(response.content)
+
     def test_report_index_unpaired_surrogate(self):
         """An unpaired surrogate like \udf03 can't be encoded in UTF-8, so it is escaped."""
         json_dump = {

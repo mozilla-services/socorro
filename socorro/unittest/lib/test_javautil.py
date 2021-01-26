@@ -347,93 +347,96 @@ def test_invalid_java_exception(data):
         javautil.validate_java_exception(data)
 
 
-@pytest.mark.parametrize("data, expected", [
-    (
-        {
-            "exception": {
-                "values": [
-                    {
-                        "stacktrace": {
-                            "frames": [
-                                {
-                                    "module": "",
-                                    "function": "",
-                                    "in_app": "",
-                                    "lineno": 1,
-                                }
-                            ],
-                            "type": "",
-                            "module": "",
-                            "value": "PII",
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        (
+            {
+                "exception": {
+                    "values": [
+                        {
+                            "stacktrace": {
+                                "frames": [
+                                    {
+                                        "module": "",
+                                        "function": "",
+                                        "in_app": "",
+                                        "lineno": 1,
+                                    }
+                                ],
+                                "type": "",
+                                "module": "",
+                                "value": "PII",
+                            }
                         }
-                    }
-                ]
-            }
-        },
-        {
-            "exception": {
-                "values": [
-                    {
-                        "stacktrace": {
-                            "frames": [
-                                {
-                                    "module": "",
-                                    "function": "",
-                                    "in_app": "",
-                                    "lineno": 1,
-                                }
-                            ],
-                            "type": "",
-                            "module": "",
-                            "value": "REDACTED",
+                    ]
+                }
+            },
+            {
+                "exception": {
+                    "values": [
+                        {
+                            "stacktrace": {
+                                "frames": [
+                                    {
+                                        "module": "",
+                                        "function": "",
+                                        "in_app": "",
+                                        "lineno": 1,
+                                    }
+                                ],
+                                "type": "",
+                                "module": "",
+                                "value": "REDACTED",
+                            }
                         }
-                    }
-                ]
-            }
-        },
-    ),
-    (
-        {
-            "exception": {
-                "values": [
-                    {
-                        "stacktrace": {
-                            "frames": [
-                                {
-                                    "module": "",
-                                    "function": "",
-                                    "in_app": "",
-                                    "lineno": 1,
-                                }
-                            ],
-                            "type": "",
-                            "module": "",
+                    ]
+                }
+            },
+        ),
+        (
+            {
+                "exception": {
+                    "values": [
+                        {
+                            "stacktrace": {
+                                "frames": [
+                                    {
+                                        "module": "",
+                                        "function": "",
+                                        "in_app": "",
+                                        "lineno": 1,
+                                    }
+                                ],
+                                "type": "",
+                                "module": "",
+                            }
                         }
-                    }
-                ]
-            }
-        },
-        {
-            "exception": {
-                "values": [
-                    {
-                        "stacktrace": {
-                            "frames": [
-                                {
-                                    "module": "",
-                                    "function": "",
-                                    "in_app": "",
-                                    "lineno": 1,
-                                }
-                            ],
-                            "type": "",
-                            "module": "",
+                    ]
+                }
+            },
+            {
+                "exception": {
+                    "values": [
+                        {
+                            "stacktrace": {
+                                "frames": [
+                                    {
+                                        "module": "",
+                                        "function": "",
+                                        "in_app": "",
+                                        "lineno": 1,
+                                    }
+                                ],
+                                "type": "",
+                                "module": "",
+                            }
                         }
-                    }
-                ]
-            }
-        },
-    ),
-])
+                    ]
+                }
+            },
+        ),
+    ],
+)
 def test_sanitize_java_exception(data, expected):
     assert javautil.sanitize_java_exception(data) == expected

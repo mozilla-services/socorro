@@ -610,6 +610,7 @@ class ProcessedCrash(SocorroMiddleware):
         "hang_type",
         "id",
         "install_age",
+        "java_exception",
         "java_stack_trace",
         "json_dump",
         "last_crash",

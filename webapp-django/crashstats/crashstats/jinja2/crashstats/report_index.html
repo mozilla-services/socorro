@@ -691,44 +691,46 @@
               </tbody>
             </table>
 
-            {% if (request.user.has_perm('crashstats.view_pii') or your_crash) and report.breadcrumbs %}
-              <div id="breadcrumbs">
-                <h2>Breadcrumbs</h2>
-                <p>
-                  {{ protected_warning(your_crash) }} -
-                  {% if report.breadcrumbs|length > 10 %}
-                    Latest 10 breadcrumbs (out of {{ report.breadcrumbs|length }})
-                  {% else %}
-                    All {{ report.breadcrumbs|length }} breadcrumbs
+            {% if java_exception_stacks %}
+              <div id="frames">
+                {% for stacktrace in java_exception_stacks %}
+                  {% set stacktrace = stacktrace.stacktrace %}
+                  <h2>Exception: {{ stacktrace.module }}.{{ stacktrace.type }}</h2>
+
+                  {% if stacktrace.value %}
+                    <h3>
+                      Message: {{ stacktrace.value }}
+                    </h3>
+                    <p>
+                      <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+                      Note: Unredacted exception messages are protected data.
+                      <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
+                    </p>
                   {% endif %}
-                </p>
-                <table class="data-table breadcrumbs-table">
-                  <thead>
-                    <tr>
-                      <th class="small-col" scope="col">Level</th>
-                      <th class="small-col" scope="col">Type</th>
-                      <th class="small-col" scope="col">Category</th>
-                      <th scope="col">Data</th>
-                      <th class="small-col" scope="col">Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in report.breadcrumbs[-10:] %}
+
+                  <table class="data-table">
+                    <thead>
                       <tr>
-                        <td>{{ item.level }}</td>
-                        <td>{{ item.type }}</td>
-                        <td>{{ item.category }}</td>
-                        <td>
-                          {% if item.message %}<b>message:</b> {{ item.message }}<br>{% endif %}
-                          {% for key, val in item.data.items()|sort %}
-                            <b>{{ key }}:</b> {{ val }}<br>
-                          {% endfor %}
-                        </td>
-                        <td>{{ item.timestamp }}</td>
+                        <th scope="col">Frame</th>
+                        <th scope="col">Module</th>
+                        <th scope="col">Function</th>
+                        <th scope="col">Source</th>
+                        <th scope="col">In app?</th>
                       </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {% for frame in stacktrace.frames %}
+                        <tr>
+                          <td>{{ loop.index0 }}</td>
+                          <td>{{ frame.module }}</td>
+                          <td>{{ frame.function }}</td>
+                          <td>{{ frame.filename }}:{{ frame.lineno }}</td>
+                          <td>{{ frame.in_app }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                {% endfor %}
               </div>
             {% endif %}
 
@@ -815,6 +817,48 @@
               </div>
               <!-- /frames -->
             {% endif %}
+
+            {% if (request.user.has_perm('crashstats.view_pii') or your_crash) and report.breadcrumbs %}
+              <div id="breadcrumbs">
+                <h2>Breadcrumbs</h2>
+                <p>
+                  {{ protected_warning(your_crash) }} -
+                  {% if report.breadcrumbs|length > 10 %}
+                    Latest 10 breadcrumbs (out of {{ report.breadcrumbs|length }})
+                  {% else %}
+                    All {{ report.breadcrumbs|length }} breadcrumbs
+                  {% endif %}
+                </p>
+                <table class="data-table breadcrumbs-table">
+                  <thead>
+                    <tr>
+                      <th class="small-col" scope="col">Level</th>
+                      <th class="small-col" scope="col">Type</th>
+                      <th class="small-col" scope="col">Category</th>
+                      <th scope="col">Data</th>
+                      <th class="small-col" scope="col">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in report.breadcrumbs[-10:] %}
+                      <tr>
+                        <td>{{ item.level }}</td>
+                        <td>{{ item.type }}</td>
+                        <td>{{ item.category }}</td>
+                        <td>
+                          {% if item.message %}<b>message:</b> {{ item.message }}<br>{% endif %}
+                          {% for key, val in item.data.items()|sort %}
+                            <b>{{ key }}:</b> {{ val }}<br>
+                          {% endfor %}
+                        </td>
+                        <td>{{ item.timestamp }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+
           </div>
           <!-- /details -->
 

@@ -753,13 +753,21 @@ class TestJavaProcessRule:
 
     def test_javaexception(self):
         java_exception = {
-            "exception": {"values": [{"stacktrace": {"frames": [], "type": "text",
-                "module": "text", "value": "PII"}}]}
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [],
+                            "type": "text",
+                            "module": "text",
+                            "value": "PII",
+                        }
+                    }
+                ]
+            }
         }
 
-        raw_crash = {
-            "JavaException": json.dumps(java_exception)
-        }
+        raw_crash = {"JavaException": json.dumps(java_exception)}
         raw_dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
