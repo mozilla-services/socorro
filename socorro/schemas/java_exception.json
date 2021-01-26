@@ -39,7 +39,8 @@
                           "description": "Function in the module"
                         },
                         "in_app": {
-                          "type": "boolean"
+                          "type": "boolean",
+                          "description": "true if the method containing the execution point represented by this stack trace element is a native method"
                         },
                         "lineno": {
                           "type": "integer",
