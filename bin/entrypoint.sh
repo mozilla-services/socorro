@@ -4,7 +4,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-set -e
+# Usage: bin/entrypoint.sh SERVICE
+#
+# Entrypoint script for the Docker image.
+#
+# Note: This should be called from inside a container.
+
+set -euo pipefail
 
 # Entrypoint for Socorro image
 

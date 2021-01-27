@@ -24,10 +24,9 @@ Notes:
 1. This **deletes** crash data permanently. Once deleted, this data can't be undeleted.
 2. This doesn't delete any data from cache. Caches will expire data eventually.
 
+Usage::
 
-Usage:
-
-    python scripts/permadelete_crash_data.py CRASHIDSFILE
+    python bin/permadelete_crash_data.py CRASHIDSFILE
 
 """
 

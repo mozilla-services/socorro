@@ -4,12 +4,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-set -e
-
+# Usage: bin/setup_postgres.sh
+#
 # Sets up postgres tables.
 
-# NOTE: This should only be run if you want to drop an existing database and
-# create a new one from scratch for a development environment.
+# Note: This deletes existing tables and all their data and recreates the
+# database.
+#
+# Note: This should be called from inside a container.
+
+set -euo pipefail
 
 cd /app
 

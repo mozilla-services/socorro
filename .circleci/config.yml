@@ -72,7 +72,7 @@ jobs:
           name: Verify requirements.txt file
           working_directory: /socorro
           command: |
-            docker run --rm local/socorro_app shell ./scripts/run_verify_reqs.sh
+            docker run --rm local/socorro_app shell ./bin/run_verify_reqs.sh
 
       - run:
           name: Lint

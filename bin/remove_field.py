@@ -8,9 +8,9 @@
 Given a set of crash report ids via a file and a list of fields to remove, removes the
 fields from the raw crash file in S3 and the document in Elasticsearch.
 
-Usage:
+Usage::
 
-    python scripts/remove_field.py CRASHIDSFILE FIELD [FIELD...]
+    python bin/remove_field.py CRASHIDSFILE FIELD [FIELD...]
 
 """
 

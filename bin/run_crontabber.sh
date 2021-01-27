@@ -4,9 +4,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# Usage: bin/run_crontabber.sh
+#
 # Runs cronrun (used to be called crontabber).
+#
+# Note: This should be called from inside a container.
 
-set -e
+set -euo pipefail
 
 # Number of seconds to let cronrun run before determining it's hung.
 KILL_TIMEOUT=3600

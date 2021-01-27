@@ -4,18 +4,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# This inserts version/build data that's missing from archive.mozilla.org into
-# the crashstats_productversion table. This data was in Socorro's
-# product_versions/product_version_builds data, extracted, adjusted manually,
-# and then put into this fine script.
-#
-# Generated: November 19th, 2018
-# Generator: Will
-#
-# To use this, run:
-#
-#     scripts/insert_missing_versions.py
-#
+"""
+Usage: bin/insert_missing_versions.py
+
+This inserts version/build data that's missing from archive.mozilla.org into the
+crashstats_productversion table. This data was in Socorro's
+product_versions/product_version_builds data, extracted, adjusted manually, and then put
+into this fine script.
+
+Generated: November 19th, 2018
+Generator: Will
+"""
 
 import os
 import sys
