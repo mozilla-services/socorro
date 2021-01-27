@@ -84,12 +84,11 @@ shell: my.env .docker-build  ## | Open a shell in the app container.
 .PHONY: clean
 clean:  ## | Remove all build, test, coverage, and Python artifacts.
 	-rm .docker-build*
-	-rm -rf build breakpad stackwalk google-breakpad breakpad.tar.gz depot_tools
 	-rm -rf .cache
 
 .PHONY: docs
 docs: my.env .docker-build-docs  ## | Generate Sphinx HTML documetation.
-	${DC} run --rm --user ${SOCORRO_UID} docs ./bin/build_docs.sh
+	${DC} run --rm --user ${SOCORRO_UID} docs make -C docs/ html
 
 .PHONY: lint
 lint: my.env  ## | Lint code.

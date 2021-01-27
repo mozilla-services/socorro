@@ -4,27 +4,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-set -e
-
 # Wrapper for aws script that pulls connection bits from the environment.
 #
 # Usage:
 #
 # make bucket
 #
-#     scripts/socorro_aws_s3.sh mb s3://dev-bucket/
+#     bin/socorro_aws_s3.sh mb s3://dev-bucket/
 #
 # list bucket
 #
-#     scripts/socorro_aws_s3.sh ls s3://dev-bucket/
+#     bin/socorro_aws_s3.sh ls s3://dev-bucket/
 #
 # copy files into s3 container
 #
-#     scripts/socorro_aws_s3.sh cp --recursive ./my_s3_root/ s3://dev-bucket/
+#     bin/socorro_aws_s3.sh cp --recursive ./my_s3_root/ s3://dev-bucket/
 #
 # sync local directory and s3 container
 #
-#     scripts/socorro_aws_s3.sh sync ./my_s3_root/ s3://dev-bucket/
+#     bin/socorro_aws_s3.sh sync ./my_s3_root/ s3://dev-bucket/
+#
+# Note: This should be called from inside a container.
+
+set -euo pipefail
 
 # First convert configman environment vars which have bad identifiers to ones
 # that don't

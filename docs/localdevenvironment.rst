@@ -305,10 +305,10 @@ The API token is used by the download scripts (run inside ``$ make shell``),
 but not directly by the processor.
 
 
-scripts/process_crashes.sh
---------------------------
+bin/process_crashes.sh
+----------------------
 
-You can use the ``scripts/process_crashes.sh`` script which will fetch crash
+You can use the ``bin/process_crashes.sh`` script which will fetch crash
 data, sync it with the S3 bucket, and publish the crash ids to AWS SQS queue
 for processing. If you have access to memory dumps and use a valid
 `API token`_, then memory dumps will be fetched for processing as well.
@@ -319,15 +319,15 @@ For example:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/process_crashes.sh ed35821d-3af5-4fe9-bfa3-dc4dc0181128
+   app@socorro:/app$ bin/process_crashes.sh ed35821d-3af5-4fe9-bfa3-dc4dc0181128
 
 You can also use it with ``fetch_crashids``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | scripts/process_crashes.sh
+   app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | bin/process_crashes.sh
 
-After running ``scripts/process_crashes.sh``, you will need to run the
+After running ``bin/process_crashes.sh``, you will need to run the
 processor which will do the actual processing.
 
 If you find this doesn't meet your needs, you can write a shell script using
@@ -405,8 +405,8 @@ You can get command help:
    app@socorro:/app$ socorro-cmd fetch_crash_data --help
 
 
-scripts/socorro_aws_s3.sh
--------------------------
+bin/socorro_aws_s3.sh
+---------------------
 
 This script is a convenience wrapper around the aws cli s3 subcommand that uses
 Socorro environment variables to set the credentials and endpoint.
@@ -415,28 +415,28 @@ For example, this creates an S3 bucket named ``dev-bucket``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev-bucket/
+   app@socorro:/app$ bin/socorro_aws_s3.sh mb s3://dev-bucket/
 
 
 This copies the contents of ``./testdata`` into the ``dev-bucket``:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./testdata s3://dev-bucket/
+   app@socorro:/app$ bin/socorro_aws_s3.sh sync ./testdata s3://dev-bucket/
 
 
 This lists the contents of the bucket:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/socorro_aws_s3.sh ls s3://dev-bucket/
+   app@socorro:/app$ bin/socorro_aws_s3.sh ls s3://dev-bucket/
 
 
 Since this is just a wrapper, you can get help:
 
 .. code-block:: shell
 
-   app@socorro:/app$ scripts/socorro_aws_s3.sh help
+   app@socorro:/app$ bin/socorro_aws_s3.sh help
 
 
 socorro-cmd sqs
@@ -487,10 +487,10 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
 
   # Create a dev-bucket in localstack s3
-  app@socorro:/app$ scripts/socorro_aws_s3.sh mb s3://dev-bucket/
+  app@socorro:/app$ bin/socorro_aws_s3.sh mb s3://dev-bucket/
 
   # Copy that data from the host into the localstack s3 container
-  app@socorro:/app$ scripts/socorro_aws_s3.sh sync ./crashdata s3://dev-bucket/
+  app@socorro:/app$ bin/socorro_aws_s3.sh sync ./crashdata s3://dev-bucket/
 
   # Add all the crash ids to the queue
   app@socorro:/app$ cat crashids.txt | socorro-cmd sqs publish local-dev-standard

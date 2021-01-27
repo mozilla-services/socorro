@@ -7,17 +7,17 @@
 # Pulls down crash data for specified crash ids, syncs to the S3 bucket, and
 # sends the crash ids to the Pub/Sub queue.
 #
-# Usage:
+# Usage: ./bin/process_crashes.sh
 #
-#    app@socorro:/app$ ./scripts/process_crashes.sh
+# You can use it with fetch_crashids. For example:
 #
-# You can use it with fetch_crashids:
-#
-#    app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | ./scripts/process_crashes.sh
+#     socorro-cmd fetch_crashids --num=1 | ./bin/process_crashes.sh
 #
 # Make sure to run the processor to do the actual processing.
+#
+# Note: This should be called from inside a container.
 
-set -e
+set -euo pipefail
 
 DATADIR=./crashdata_tryit_tmp
 
@@ -46,9 +46,9 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 ./socorro-cmd fetch_crash_data "${DATADIR}" $@
 
 # Make the bucket and sync contents
-./scripts/socorro_aws_s3.sh mb s3://dev-bucket/
-./scripts/socorro_aws_s3.sh cp --recursive "${DATADIR}" s3://dev-bucket/
-./scripts/socorro_aws_s3.sh ls --recursive s3://dev-bucket/
+./bin/socorro_aws_s3.sh mb s3://dev-bucket/
+./bin/socorro_aws_s3.sh cp --recursive "${DATADIR}" s3://dev-bucket/
+./bin/socorro_aws_s3.sh ls --recursive s3://dev-bucket/
 
 # Add crash ids to queue
 ./socorro-cmd sqs publish local-dev-standard $@

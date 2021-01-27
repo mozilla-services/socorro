@@ -11,8 +11,7 @@ import sys
 
 
 DESCRIPTION = """
-Updates socorro-siggen extracted library with files from Socorro's
-signature generation.
+Updates socorro-siggen extracted library with files from Socorro's signature generation.
 """
 
 

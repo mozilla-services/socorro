@@ -8,7 +8,7 @@ import sys
 from click.testing import CliRunner
 
 # Have to include the scripts/ directory so it imports
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "bin"))
 
 from permadelete_crash_data import cmd_permadelete  # noqa
 

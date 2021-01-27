@@ -3,15 +3,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Usage: ./bin/run_mdsw.sh [CRASHID]
 #
 # This runs minidump-stackwalk just like it runs in the processor. This
 # will help debug minidump-stackwalk problems.
 #
-# Usage:
-#
-#    app@socorro:/app$ ./scripts/run_mdsw.sh [CRASHID]
+# Note: This should be called from inside a container.
 
-set -e
+set -euo pipefail
 
 # First convert configman environment vars which have bad identifiers to ones
 # that don't

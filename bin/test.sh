@@ -4,17 +4,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# Usage: bin/test.sh
+#
 # Runs tests.
 #
-# This should be called from inside a container and after the dependent
-# services have been launched. It depends on:
-#
-# * elasticsearch
-# * localstack
-# * postgresql
+# Note: This should be called from inside a container.
 
-# Failures should cause setup to fail
-set -v -e -x
+set -euxo pipefail
 
 echo ">>> set up environment"
 # Set up environment variables
@@ -37,8 +33,8 @@ PYTHON="$(which python)"
 echo ">>> wait for services to be ready"
 urlwait "${DATABASE_URL}" 10
 urlwait "${ELASTICSEARCH_URL}" 10
-python ./scripts/waitfor.py --verbose --timeout=20 "${S3_ENDPOINT_URL}health"
-python ./scripts/waitfor.py --verbose --timeout=20 "${SQS_ENDPOINT_URL}health"
+python ./bin/waitfor.py --verbose --timeout=20 "${S3_ENDPOINT_URL}health"
+python ./bin/waitfor.py --verbose --timeout=20 "${SQS_ENDPOINT_URL}health"
 
 echo ">>> build sqs things and db things"
 # Clear SQS for tests

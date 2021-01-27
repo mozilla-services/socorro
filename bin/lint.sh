@@ -8,13 +8,13 @@
 #
 # Runs linting and code fixing.
 #
-# This should be called from inside a container.
+# Note: This should be called from inside a container.
 
-set -e
+set -euo pipefail
 
-BLACKARGS=("--line-length=88" "--target-version=py36" docker socorro webapp-django scripts)
+BLACKARGS=("--line-length=88" "--target-version=py36" docker socorro webapp-django bin)
 
-if [[ $1 == "--fix" ]]; then
+if [[ "${1:-}" == "--fix" ]]; then
     echo ">>> black fix"
     black "${BLACKARGS[@]}"
 

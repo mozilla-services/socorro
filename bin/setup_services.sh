@@ -4,10 +4,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Run scripts for setting up data sources for the local development environment.
-# This assumes that it is running in the webapp docker container.
+# Usage: bin/setup_services.sh
+#
+# Deletes all service state data and rebuilds database tables, S3 buckets,
+# and other service state.
+#
+# Note: This should be called from inside a container.
 
-set -e
+set -euo pipefail
 
 # Drop and re-create the breakpad database with tables, stored procedures,
 # types, indexes, and keys; also bulk-loads static data for some lookup tables

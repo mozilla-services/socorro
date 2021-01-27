@@ -7,14 +7,14 @@
 """
 Spits out crash ids for all crash reports in Elasticsearch that have a specified field.
 
-Usage:
+Usage::
 
-    python scripts/find_crashes_with_field.py FIELD > crashids.txt
+    python bin/find_crashes_with_field.py FIELD > crashids.txt
 
 It prints some lines with a "#" to make it easier to see what it did. To
-remove those, do:
+remove those, do::
 
-    python scripts/find_crashes_with_field.py TelemetryClientId \
+    python bin/find_crashes_with_field.py TelemetryClientId \
         | grep -v "#" > crashids.txt
 
 """

@@ -4,10 +4,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+# Usage: docker/set_up_ubuntu.sh
+#
 # Installs packages and other things in an Ubuntu Docker image.
 
-# Failures should cause setup to fail
-set -v -e -x
+set -euo pipefail
 
 # Update the operating system and install OS-level dependencies
 apt-get update
