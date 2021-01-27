@@ -47,7 +47,7 @@ To run the processor in the local dev environment, do::
   $ docker-compose up processor
 
 That will bring up all the services the processor requires to run and start the
-processor using the ``/app/docker/run_processor.sh`` script and the processor
+processor using the ``/app/bin/run_processor.sh`` script and the processor
 configuration.
 
 To use tools and also ease debugging in the container, you can run a shell::
@@ -69,4 +69,4 @@ Run the docker image using the ``processor`` command. Something like this::
         --volume /data:/data \
         mozilla/socorro_app processor
 
-This runs the ``/app/docker/run_processor.sh`` script.
+This runs the ``/app/bin/run_processor.sh`` script.

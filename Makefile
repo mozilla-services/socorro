@@ -59,11 +59,11 @@ build-docs: my.env
 
 .PHONY: setup
 setup: my.env .docker-build  ## | Set up Postgres, Elasticsearch, local SQS, and local S3 services.
-	${DC} run --rm app shell /app/docker/run_setup.sh
+	${DC} run --rm app shell /app/bin/setup_services.sh
 
 .PHONY: updatedata
 updatedata: my.env  ## | Add/update necessary database data.
-	${DC} run --rm app shell /app/docker/run_update_data.sh
+	${DC} run --rm app shell /app/bin/update_data.sh
 
 .PHONY: run
 run: my.env  ## | Run processor and webapp and all required services.
@@ -89,15 +89,15 @@ clean:  ## | Remove all build, test, coverage, and Python artifacts.
 
 .PHONY: docs
 docs: my.env .docker-build-docs  ## | Generate Sphinx HTML documetation.
-	${DC} run --rm --user ${SOCORRO_UID} docs ./docker/run_build_docs.sh
+	${DC} run --rm --user ${SOCORRO_UID} docs ./bin/build_docs.sh
 
 .PHONY: lint
 lint: my.env  ## | Lint code.
-	${DC} run --rm --no-deps app shell ./docker/run_lint.sh
+	${DC} run --rm --no-deps app shell ./bin/lint.sh
 
 .PHONY: lintfix
 lintfix: my.env  ## | Reformat code.
-	${DC} run --rm --no-deps app shell ./docker/run_lint.sh --fix
+	${DC} run --rm --no-deps app shell ./bin/lint.sh --fix
 
 .PHONY: test
 test: my.env .docker-build  ## | Run unit tests.
@@ -106,7 +106,7 @@ test: my.env .docker-build  ## | Run unit tests.
 	${DC} up -d localstack
 	${DC} up -d elasticsearch postgresql statsd
 	# Run tests
-	${DC} run --rm test shell ./docker/run_tests.sh
+	${DC} run --rm test shell ./bin/test.sh
 
 .PHONY: test-ci
 test-ci: my.env .docker-build  ## | Run unit tests in CI.
@@ -115,7 +115,7 @@ test-ci: my.env .docker-build  ## | Run unit tests in CI.
 	${DC} up -d localstack
 	${DC} up -d elasticsearch postgresql statsd
 	# Run tests in test-ci which doesn't volume mount local directory
-	${DC} run --rm test-ci shell ./docker/run_tests.sh
+	${DC} run --rm test-ci shell ./bin/test.sh
 
 .PHONY: testshell
 testshell: my.env .docker-build  ## | Open a shell in the test environment.
