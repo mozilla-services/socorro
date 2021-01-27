@@ -11,10 +11,10 @@ set -e
 
 # Drop and re-create the breakpad database with tables, stored procedures,
 # types, indexes, and keys; also bulk-loads static data for some lookup tables
-/app/docker/run_setup_postgres.sh
+/app/bin/setup_postgres.sh
 
 # Delete and create local S3 buckets
-/app/docker/run_recreate_s3_buckets.sh
+/app/bin/recreate_s3_buckets.sh
 
 # Delete and create Elasticsearch indices
 /app/socorro-cmd es delete

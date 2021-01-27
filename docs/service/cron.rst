@@ -11,7 +11,7 @@ Job configuration is in ``webapp-django/crashstats/cron/__init__.py``.
 
 Code is in ``webapp-django/crashstats/cron/``.
 
-Run script is ``/app/docker/run_crontabber.sh``. This is an infinite loop that
+Run script is ``/app/bin/run_crontabber.sh``. This is an infinite loop that
 runs the ``manage.py cronrun`` command every 5 minutes.
 
 

@@ -9,10 +9,10 @@ set -e
 # Entrypoint for Socorro image
 
 if [ -z "$*" ]; then
-    echo "usage: socorro_entrypoint.sh SERVICE"
+    echo "usage: entrypoint.sh SERVICE"
     echo ""
     echo "Services:"
-    grep -E '^[a-zA-Z0-9_-]+).*?## .*$$' docker/socorro_entrypoint.sh \
+    grep -E '^[a-zA-Z0-9_-]+).*?## .*$$' bin/entrypoint.sh \
         | grep -v grep \
         | sed -n 's/^\(.*\)) \(.*\)##\(.*\)/* \1:\3/p'
     exit 1
@@ -23,13 +23,13 @@ shift
 
 case ${SERVICE} in
 processor)  ## Run processor service
-    /app/docker/run_processor.sh "$@"
+    /app/bin/run_processor.sh "$@"
     ;;
 crontabber)  ## Run crontabber service
-    /app/docker/run_crontabber.sh "$@"
+    /app/bin/run_crontabber.sh "$@"
     ;;
 webapp)  ## Run webapp service
-    /app/docker/run_webapp.sh "$@"
+    /app/bin/run_webapp.sh "$@"
     ;;
 shell)  ## Open a shell or run something else
     if [ -z "$*" ]; then

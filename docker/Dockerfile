@@ -52,4 +52,4 @@ RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
 
 # Set entrypoint for this image. The entrypoint script takes a service
 # to run as the first argument. See the script for available arguments.
-ENTRYPOINT ["/app/docker/socorro_entrypoint.sh"]
+ENTRYPOINT ["/app/bin/entrypoint.sh"]

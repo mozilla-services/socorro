@@ -6,7 +6,7 @@ Crash Stats Webapp
 
 Code is in ``webapp-django/``.
 
-Run script is ``/app/docker/run_webapp.sh``.
+Run script is ``/app/bin/run_webapp.sh``.
 
 
 Configuration
@@ -144,7 +144,7 @@ Then compile the static assets::
 
 Now run the webapp with ``gunicorn`` and ``DEBUG=False``::
 
-  app@socorro:/app$ DEBUG=False bash docker/run_webapp.sh
+  app@socorro:/app$ DEBUG=False bash bin/run_webapp.sh
 
 You will now be able to open ``http://localhost:8000`` on the host and if you
 view the source you see that the minified and concatenated static assets are
