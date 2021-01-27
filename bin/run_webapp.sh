@@ -21,7 +21,7 @@ GUNICORN_MAX_REQUESTS_JITTER=${GUNICORN_MAX_REQUESTS_JITTER:-"1000"}
 CMDPREFIX="${CMDPREFIX:-}"
 
 
-if [ "$1" == "--dev" ]; then
+if [ "${1:-}" == "--dev" ]; then
     echo "******************************************************************"
     echo "Running webapp in local dev environment."
     echo "Connect with your browser using: http://localhost:8000/ "
