@@ -94,6 +94,7 @@ panic_abort::
 PR_WaitCondVar
 RaiseException
 RealMsgWaitFor
+_rust_alloc_error_handler
 __rust_alloc_error_handler
 rust_oom
 rtc::FatalMessage
