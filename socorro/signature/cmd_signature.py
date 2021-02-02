@@ -158,7 +158,13 @@ def main(argv=None):
 
     with outputter() as out:
         for crash_id in crashids_iterable:
-            crash_id = parse_crashid(crash_id.strip())
+            crash_id = crash_id.strip()
+            parsed_crash_id = parse_crashid(crash_id)
+            if not parsed_crash_id:
+                out.warning("Error: %r is not a valid crash id" % crash_id)
+                continue
+
+            crash_id = parsed_crash_id
 
             resp = fetch("/RawCrash/", crash_id, api_token)
             if resp.status_code == 404:
@@ -177,8 +183,8 @@ def main(argv=None):
 
             # If there's an error in the raw crash, then something is wrong--probably with the API
             # token. So print that out and exit.
-            if "error" in raw_crash:
-                out.warning("Error fetching raw crash: %s" % raw_crash["error"])
+            if "errors" in raw_crash:
+                out.warning("Error fetching raw crash: %s" % raw_crash["errors"])
                 return 1
 
             resp = fetch("/ProcessedCrash/", crash_id, api_token)
@@ -198,9 +204,9 @@ def main(argv=None):
 
             # If there's an error in the processed crash, then something is wrong--probably with the
             # API token. So print that out and exit.
-            if "error" in processed_crash:
+            if "errors" in processed_crash:
                 out.warning(
-                    "Error fetching processed crash: %s" % processed_crash["error"]
+                    "Error fetching processed crash: %s" % processed_crash["errors"]
                 )
                 return 1
 
