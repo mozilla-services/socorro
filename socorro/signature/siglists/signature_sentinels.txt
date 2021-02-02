@@ -22,7 +22,11 @@ std::panicking::begin_panic_fmt
 # These mark the top-most interesting frame in a lock situation. Anything
 # before this is platform-specific stuff which prevents signatures from
 # grouping.
+mozilla::detail::MutexImpl::lock
 mozilla::detail::MutexImpl::mutexLock
+mozilla::detail::MutexImpl::mutexTryLock
+mozilla::detail::MutexImpl::tryLock
+mozilla::detail::MutexImpl::unlock
 
 # These mark the top-most interesting frame of a Linux assertion.
 __GI___assert_fail
