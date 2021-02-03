@@ -72,7 +72,7 @@ class TestMakeSuperuserCommand:
         buffer = StringIO()
         email = "neverheardof@mozilla.com"
         call_command("makesuperuser", email, stdout=buffer)
-        assert "{} is now a superuser/staff".format(email) in buffer.getvalue()
+        assert f"{email} is now a superuser/staff" in buffer.getvalue()
 
         neverheardof = User.objects.get(email=email)
         assert neverheardof.is_superuser

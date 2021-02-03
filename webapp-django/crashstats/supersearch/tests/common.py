@@ -17,8 +17,8 @@ class SuperSearchResponse(Response):
 
         assert "hits" in content
         for i, hit in enumerate(content["hits"]):
-            content["hits"][i] = dict(
-                (key, val) for key, val in hit.items() if key in columns
-            )
+            content["hits"][i] = {
+                key: val for key, val in hit.items() if key in columns
+            }
 
         super().__init__(content, status_code)

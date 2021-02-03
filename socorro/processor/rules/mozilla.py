@@ -427,7 +427,7 @@ class OutOfMemoryBinaryRule(Rule):
 
         try:
             fd = gzip.open(dump_pathname, "rb")
-        except IOError as x:
+        except OSError as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
 
@@ -441,7 +441,7 @@ class OutOfMemoryBinaryRule(Rule):
                 return error_out(error_message)
 
             memory_info = json.loads(memory_info_as_string)
-        except (EOFError, IOError, ZlibError) as x:
+        except (EOFError, OSError, ZlibError) as x:
             error_message = "error in gzip for %s: %r" % (dump_pathname, x)
             return error_out(error_message)
         except ValueError as x:

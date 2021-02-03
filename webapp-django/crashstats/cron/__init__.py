@@ -67,7 +67,7 @@ JOBS = [
 ]
 
 # Map of cmd -> job_spec
-JOBS_MAP = dict([(job_spec["cmd"], job_spec) for job_spec in JOBS])
+JOBS_MAP = {job_spec["cmd"]: job_spec for job_spec in JOBS}
 
 
 # The maximum time we let a job go for before we declare it a zombie (in seconds)

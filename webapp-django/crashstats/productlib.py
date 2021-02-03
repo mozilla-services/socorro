@@ -59,7 +59,7 @@ def get_product_files():
 
 
 def load_product_from_file(fn):
-    with open(fn, "r") as fp:
+    with open(fn) as fp:
         json_data = json.load(fp)
 
         # Take out any fields that start with _ so people can add "comments" to
@@ -136,7 +136,7 @@ def validate_product_file(fn):
 
     """
     try:
-        with open(fn, "r") as fp:
+        with open(fn) as fp:
             json_data = json.load(fp)
 
             # Remove comments

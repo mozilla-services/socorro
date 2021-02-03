@@ -66,7 +66,7 @@ def get_es_conn():
 
 def crashid_generator(fn):
     """Lazily yield crash ids."""
-    with open(fn, "r") as fp:
+    with open(fn) as fp:
         for line in fp:
             line = line.strip()
             if line.startswith("#"):
@@ -76,8 +76,7 @@ def crashid_generator(fn):
 
 def wait_times_access():
     """Return generator for wait times between failed load/save attempts."""
-    for i in [5, 5, 5, 5, 5]:
-        yield i
+    yield from [5, 5, 5, 5, 5]
 
 
 @retry(

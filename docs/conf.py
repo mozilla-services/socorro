@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Socorro documentation build configuration file, created by
 # sphinx-quickstart on Wed Sep 21 14:59:08 2011.

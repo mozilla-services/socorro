@@ -159,4 +159,4 @@ class BaseTestViews(ProductVersionsMixin, SuperSearchFieldsMock, DjangoTestCase)
     @staticmethod
     def only_certain_columns(hits, columns):
         """Return new list where dicts only have specified keys"""
-        return [dict((k, x[k]) for k in x if k in columns) for x in hits]
+        return [{k: x[k] for k in x if k in columns} for x in hits]

@@ -201,7 +201,7 @@ class FSPermanentStorage(CrashStorageBase):
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
         with open(
-            os.sep.join([parent_dir, crash_id + self.config.json_file_suffix]), "r"
+            os.sep.join([parent_dir, crash_id + self.config.json_file_suffix])
         ) as f:
             return json.load(f, object_hook=DotDict)
 

@@ -27,8 +27,7 @@ class TestTaskManager:
         assert list(tm._get_iterator()) == [0]
 
         def an_iter(self):
-            for i in range(5):
-                yield i
+            yield from range(5)
 
         tm = TaskManager(config, job_source_iterator=an_iter)
         assert list(tm._get_iterator()) == [0, 1, 2, 3, 4]
@@ -38,8 +37,7 @@ class TestTaskManager:
                 self.config = config
 
             def __iter__(self):
-                for key in self.config:
-                    yield key
+                yield from self.config
 
         tm = TaskManager(config, job_source_iterator=X(config))
         assert list(tm._get_iterator()) == list(config.keys())

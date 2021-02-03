@@ -122,12 +122,12 @@ class SuperSearch(ESSocorroMiddleware):
 
         # Initialize the list of allowed fields with all the fields we know
         # that are returned and do not require any permission.
-        allowed_fields = set(
+        allowed_fields = {
             x
             for x in self.all_fields
             if self.all_fields[x]["is_returned"]
             and not self.all_fields[x]["permissions_needed"]
-        )
+        }
 
         # Extend that list with the special fields, like `_histogram.*`.
         # Those are accepted values for fields listing other fields.

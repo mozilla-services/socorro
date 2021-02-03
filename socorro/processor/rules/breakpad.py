@@ -310,7 +310,7 @@ class JitCrashCategorizeRule(Rule):
     def _interpret_output(self, fp, processor_meta, command_pathname):
         try:
             result = fp.read()
-        except IOError as x:
+        except OSError as x:
             processor_meta["processor_notes"].append(
                 "%s unable to read external command output: %s" % (command_pathname, x)
             )

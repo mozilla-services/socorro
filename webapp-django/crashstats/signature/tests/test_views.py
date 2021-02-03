@@ -665,10 +665,10 @@ class TestViews(BaseTestViews):
             assert "signature" in params
             assert params["signature"] == ["=" + DUMB_SIGNATURE]
 
-            adapters = [{"term": "0x{0:0>4}".format(i), "count": 1} for i in range(50)]
+            adapters = [{"term": f"0x{i:0>4}", "count": 1} for i in range(50)]
             vendors = [
                 {
-                    "term": "0x{0:0>4}".format(i),
+                    "term": f"0x{i:0>4}",
                     "count": 50,
                     "facets": {"adapter_device_id": adapters},
                 }

@@ -383,7 +383,7 @@ def url(viewname, *args, **kwargs):
         return s
 
     args = [clean_argument(x) for x in args]
-    kwargs = dict((x, clean_argument(y)) for x, y in kwargs.items())
+    kwargs = {x: clean_argument(y) for x, y in kwargs.items()}
 
     return reverse(viewname, args=args, kwargs=kwargs)
 

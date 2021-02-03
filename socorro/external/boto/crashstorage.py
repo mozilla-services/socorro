@@ -26,8 +26,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def wait_time_generator():
-    for i in [1, 1, 1, 1, 1]:
-        yield i
+    yield from [1, 1, 1, 1, 1]
 
 
 class CrashIDMissingDatestamp(Exception):
@@ -103,7 +102,7 @@ class JSONISOEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.date):
             return obj.isoformat()
-        raise NotImplementedError("Don't know about {0!r}".format(obj))
+        raise NotImplementedError(f"Don't know about {obj!r}")
 
 
 def dict_to_str(a_mapping):
@@ -307,20 +306,20 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         # up `crash_report` with keys that will never be needed.
 
         # Rename fields in raw_crash
-        raw_fields_map = dict(
-            (x["in_database_name"], x["name"])
+        raw_fields_map = {
+            x["in_database_name"]: x["name"]
             for x in self._all_fields.values()
             if x["namespace"] == "raw_crash"
-        )
+        }
         for key, val in raw_crash.items():
             crash_report[raw_fields_map.get(key, key)] = val
 
         # Rename fields in processed_crash
-        processed_fields_map = dict(
-            (x["in_database_name"], x["name"])
+        processed_fields_map = {
+            x["in_database_name"]: x["name"]
             for x in self._all_fields.values()
             if x["namespace"] == "processed_crash"
-        )
+        }
         for key, val in processed_crash.items():
             crash_report[processed_fields_map.get(key, key)] = val
 

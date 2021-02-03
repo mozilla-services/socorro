@@ -955,7 +955,7 @@ class BugzillaBugInfo(SocorroCommon):
     def make_cache_key(bug_id):
         # This is the same cache key that we use in show_bug_link()
         # the jinja helper function.
-        return "buginfo:{}".format(bug_id)
+        return f"buginfo:{bug_id}"
 
     def get(self, bugs):
         if isinstance(bugs, str):

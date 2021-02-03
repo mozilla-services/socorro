@@ -194,10 +194,10 @@ class SuperSearchFields(SuperSearchFieldsData):
                     str(e),
                 )
 
-        all_known_fields = set(
+        all_known_fields = {
             ".".join((x["namespace"], x["in_database_name"]))
             for x in self.get_fields().values()
-        )
+        }
 
         missing_fields = sorted(all_existing_fields - all_known_fields)
 

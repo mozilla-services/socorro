@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -504,7 +502,7 @@ class TestViews(BaseTestViews):
         # The response is a byte string so look for 'Pr\xc3\xa9nom' in the
         # the client output.
         # NOTE(willkg): the right side should be binary format
-        assert "Prénom".encode("utf-8") in response.content
+        assert "Prénom".encode() in response.content
 
     def test_report_index_with_refreshed_cache(self):
         raw_crash_calls = []

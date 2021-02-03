@@ -42,23 +42,21 @@ class Command(BaseCommand):
 
             # Set superuser and staff flags on user
             if user.is_superuser and user.is_staff:
-                self.stdout.write("{} was already a superuser/staff".format(user.email))
+                self.stdout.write(f"{user.email} was already a superuser/staff")
             else:
                 user.is_superuser = True
                 user.is_staff = True
-                self.stdout.write("{} is now a superuser/staff".format(user.email))
+                self.stdout.write(f"{user.email} is now a superuser/staff")
                 user.save()
 
             # Add user to Hackers group
             try:
                 hackers_group = Group.objects.get(name="Hackers")
                 if user in hackers_group.user_set.all():
-                    self.stdout.write(
-                        "{} is already in Hackers group.".format(user.email)
-                    )
+                    self.stdout.write(f"{user.email} is already in Hackers group.")
                 else:
                     hackers_group.user_set.add(user)
-                    self.stdout.write("{} added to Hackers group.".format(user.email))
+                    self.stdout.write(f"{user.email} added to Hackers group.")
                     user.save()
             except Group.DoesNotExist:
                 self.stdout.write('"Hackers" group does not exist.')

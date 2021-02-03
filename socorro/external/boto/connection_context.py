@@ -34,8 +34,7 @@ def wait_times_connect():
 
 def wait_times_access():
     """Return generator for wait times between failed load/save attempts."""
-    for i in [1, 1, 1, 1, 1]:
-        yield i
+    yield from [1, 1, 1, 1, 1]
 
 
 class KeyNotFound(Exception):

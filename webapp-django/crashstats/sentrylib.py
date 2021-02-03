@@ -69,7 +69,7 @@ class SentrySanitizer:
         self.sanitizers = sanitizers or []
 
     def __repr__(self):
-        return "{}(sanitizers={!r})".format(self.__class__.__name__, self.sanitizers)
+        return f"{self.__class__.__name__}(sanitizers={self.sanitizers!r})"
 
     def __call__(self, event, hint):
         """Sanitize a Sentry event.
@@ -118,7 +118,7 @@ class SanitizeBreadcrumbs:
         self.crumb_sanitizers = crumb_sanitizers
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.crumb_sanitizers)
+        return f"{self.__class__.__name__}({self.crumb_sanitizers!r})"
 
     def __call__(self, event, hint):
         """Filter each breadcrumb in an event."""
@@ -155,7 +155,7 @@ class SanitizeSQLQueryCrumb:
                 )
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.keywords)
+        return f"{self.__class__.__name__}({self.keywords!r})"
 
     def __call__(self, crumb, hint):
         """Sanitize SQL queries containing a keyword."""
@@ -189,7 +189,7 @@ class SanitizeSectionByKeyName:
         self.names = names
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.names)
+        return f"{self.__class__.__name__}({self.names!r})"
 
     def is_sensitive_key(self, key):
         """Return True if the key is a sensitive key."""
@@ -285,7 +285,7 @@ class SanitizeQueryString:
         self.names = names
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.names)
+        return f"{self.__class__.__name__}({self.names!r})"
 
     def __call__(self, event, hint):
         """Sanitize the querystring."""

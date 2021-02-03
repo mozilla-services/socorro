@@ -14,8 +14,7 @@ from socorro.processor.processor_app import ProcessorApp
 
 def sequencer(*args):
     def foo(*fargs, **fkwargs):
-        for x in args:
-            yield x
+        yield from args
 
     return foo
 

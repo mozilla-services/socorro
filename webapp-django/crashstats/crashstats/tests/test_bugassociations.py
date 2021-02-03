@@ -72,7 +72,7 @@ class TestBugAssociationsCommand:
 
         # Verify we have the expected number of associations
         assert len(associations) == 8
-        bug_ids = set([x["bug_id"] for x in associations])
+        bug_ids = {x["bug_id"] for x in associations}
 
         # Verify bugs with no crash signatures are missing
         assert 6 not in bug_ids
@@ -150,18 +150,18 @@ class TestBugAssociationsCommand:
     "content, expected",
     [
         # Simple signature
-        ("[@ moz::signature]", set(["moz::signature"])),
+        ("[@ moz::signature]", {"moz::signature"}),
         # Using unicode.
-        ("[@ moz::signature]", set(["moz::signature"])),
+        ("[@ moz::signature]", {"moz::signature"}),
         # 2 signatures and some junk
         (
             "@@3*&^!~[@ moz::signature][@   ns::old     ]",
-            set(["moz::signature", "ns::old"]),
+            {"moz::signature", "ns::old"},
         ),
         # A signature containing square brackets.
         (
             "[@ moz::signature] [@ sig_with[brackets]]",
-            set(["moz::signature", "sig_with[brackets]"]),
+            {"moz::signature", "sig_with[brackets]"},
         ),
         # A malformed signature.
         ("[@ note there is no trailing bracket", set()),

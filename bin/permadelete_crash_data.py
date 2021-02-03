@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 def crashid_generator(fn):
     """Lazily yield crash ids."""
-    with open(fn, "r") as fp:
+    with open(fn) as fp:
         for line in fp:
             line = line.strip()
             if line.startswith("#"):

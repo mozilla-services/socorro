@@ -92,7 +92,7 @@ def report_index(request, crash_id, default_context=None):
         context["report"] = api.get(crash_id=crash_id, refresh_cache=refresh_cache)
     except CrashIDNotFound:
         # ...if we haven't already done so.
-        cache_key = "priority_job:{}".format(crash_id)
+        cache_key = f"priority_job:{crash_id}"
         if not cache.get(cache_key):
             priority_api = models.PriorityJob()
             priority_api.post(crash_ids=[crash_id])
@@ -222,7 +222,7 @@ def report_index(request, crash_id, default_context=None):
         The trick is that the lookup key has to be a unicode object or
         else you get UnicodeEncodeErrors in the template rendering.
         """
-        return "raw_crash.{}".format(key)
+        return f"raw_crash.{key}"
 
     context["make_raw_crash_key"] = make_raw_crash_key
     context["fields_desc"] = descriptions

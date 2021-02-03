@@ -106,7 +106,7 @@ class TestViews(BaseTestViews):
         )
         assert response.status_code == 302
         (token,) = models.Token.objects.active().filter(user=user)
-        assert set(token.permissions.all()) == set([p1, p3])
+        assert set(token.permissions.all()) == {p1, p3}
 
         # this should be listed on the home page now
         response = self.client.get(url)
