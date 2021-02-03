@@ -18,8 +18,7 @@ BUCKET_NAME = os.environ.get("resource.boto.bucket_name")
 
 def get_small_entropy(self):
     """Returns small entropy so we're not spending ages cycling through things."""
-    for item in ["000", "111", "222"]:
-        yield item
+    yield from ["000", "111", "222"]
 
 
 class TestVerifyProcessed:

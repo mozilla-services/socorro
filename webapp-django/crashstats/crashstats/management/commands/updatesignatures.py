@@ -93,8 +93,8 @@ class Command(BaseCommand):
 
         params = {
             "date": [
-                ">={}".format(start_datetime.isoformat()),
-                "<{}".format(end_datetime.isoformat()),
+                f">={start_datetime.isoformat()}",
+                f"<{end_datetime.isoformat()}",
             ],
             "_columns": ["signature", "build_id", "date"],
             "_facets_size": 0,

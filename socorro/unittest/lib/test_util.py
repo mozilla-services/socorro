@@ -158,8 +158,7 @@ class Test_retry:
 
     def test_wait_time_generator(self):
         def waits():
-            for i in [1, 1, 2, 2, 1, 1]:
-                yield i
+            yield from [1, 1, 2, 2, 1, 1]
 
         fake_sleep = make_fake_sleep()
 

@@ -148,8 +148,7 @@ class ProcessorApp(FetchTransformSaveApp):
 
     def _basic_iterator(self):
         try:
-            for crashid in super()._basic_iterator():
-                yield crashid
+            yield from super()._basic_iterator()
         except Exception:
             self._capture_error(sys.exc_info())
             self.logger.warning("error in crashid iterator", exc_info=True)

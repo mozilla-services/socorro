@@ -72,8 +72,7 @@ class TestFetchTransformSaveApp:
             def new_crashes(self):
                 # NOTE(willkg): these are keys in the FakeStorageSource
                 crash_ids = ["1234", "1235", "1236", "1237"]
-                for crash_id in crash_ids:
-                    yield crash_id
+                yield from crash_ids
 
         class FakeStorageSource:
             def __init__(self, config, namespace=""):
@@ -102,8 +101,7 @@ class TestFetchTransformSaveApp:
                 return {"upload_file_minidump": "this is a fake dump"}
 
             def new_crashes(self):
-                for k in self.store.keys():
-                    yield k
+                yield from self.store.keys()
 
             def close(self):
                 self.number_of_close_calls += 1
@@ -292,8 +290,7 @@ class TestFetchTransformSaveApp:
                 return "this is a fake dump"
 
             def new_ooids(self):
-                for k in self.store.keys():
-                    yield k
+                yield from self.store.keys()
 
         config = DotDict(
             {

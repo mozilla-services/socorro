@@ -91,7 +91,7 @@ class CSignatureTool(SignatureTool):
     hang_prefixes = {-1: "hang", 1: "chromehang"}
 
     def __init__(self):
-        super(CSignatureTool, self).__init__()
+        super().__init__()
 
         self.irrelevant_signature_re = re.compile(
             "|".join(siglists_utils.IRRELEVANT_SIGNATURE_RE)
@@ -132,7 +132,7 @@ class CSignatureTool(SignatureTool):
             )
 
         if self.signatures_with_line_numbers_re.match(function):
-            function = "{}:{}".format(function, line)
+            function = f"{function}:{line}"
 
         # Remove spaces before all stars, ampersands, and commas
         function = self.fixup_space.sub("", function)
@@ -195,7 +195,7 @@ class CSignatureTool(SignatureTool):
             )
 
         if self.signatures_with_line_numbers_re.match(function):
-            function = "{}:{}".format(function, line)
+            function = f"{function}:{line}"
 
         # Remove spaces before all stars, ampersands, and commas
         function = self.fixup_space.sub("", function)
@@ -251,11 +251,11 @@ class CSignatureTool(SignatureTool):
                 file = filename.rsplit("\\")[-1]
             else:
                 file = filename.rsplit("/")[-1]
-            return "{}#{}".format(file, line)
+            return f"{file}#{line}"
 
         # If there's an offset and no module/module_offset, use that
         if not module and not module_offset and offset:
-            return "@{}".format(offset)
+            return f"@{offset}"
 
         # Return module/module_offset
         return "{}@{}".format(module or "", module_offset)
@@ -305,7 +305,7 @@ class CSignatureTool(SignatureTool):
         for a_signature in source_list:
             # If the signature matches the irrelevant signatures regex, skip to the next frame.
             if self.irrelevant_signature_re.match(a_signature):
-                debug_notes.append('irrelevant; ignoring: "{}"'.format(a_signature))
+                debug_notes.append(f'irrelevant; ignoring: "{a_signature}"')
                 continue
 
             # If the frame signature is a dll, remove the @xxxxx part.
@@ -321,10 +321,10 @@ class CSignatureTool(SignatureTool):
             # If the signature does not match the prefix signatures regex, then it is the last
             # one we add to the list.
             if not self.prefix_signature_re.match(a_signature):
-                debug_notes.append('not a prefix; stop: "{}"'.format(a_signature))
+                debug_notes.append(f'not a prefix; stop: "{a_signature}"')
                 break
 
-            debug_notes.append('prefix; continue iterating: "{}"'.format(a_signature))
+            debug_notes.append(f'prefix; continue iterating: "{a_signature}"')
 
         # Add a special marker for hang crash reports.
         if hang_type:
@@ -521,7 +521,7 @@ class SignatureGenerationRule(Rule):
     """
 
     def __init__(self):
-        super(SignatureGenerationRule, self).__init__()
+        super().__init__()
         self.java_signature_tool = JavaSignatureTool()
         self.c_signature_tool = CSignatureTool()
 
@@ -640,15 +640,13 @@ class OOMSignature(Rule):
         try:
             size = int(crash_data.get("oom_allocation_size"))
         except (TypeError, AttributeError, KeyError):
-            result.set_signature(
-                self.name, "OOM | unknown | {}".format(result.signature)
-            )
+            result.set_signature(self.name, f"OOM | unknown | {result.signature}")
             return True
 
         if size <= 262144:  # 256K
             result.set_signature(self.name, "OOM | small")
         else:
-            result.set_signature(self.name, "OOM | large | {}".format(result.signature))
+            result.set_signature(self.name, f"OOM | large | {result.signature}")
         return True
 
 
@@ -669,7 +667,7 @@ class AbortSignature(Rule):
             # This is an abort message that contains no interesting
             # information. We just want to put the "Abort" marker in the
             # signature.
-            result.set_signature(self.name, "Abort | {}".format(result.signature))
+            result.set_signature(self.name, f"Abort | {result.signature}")
             return True
 
         if "###!!! ABORT:" in abort_message:
@@ -700,9 +698,7 @@ class AbortSignature(Rule):
         if len(abort_message) > 80:
             abort_message = abort_message[:77] + "..."
 
-        result.set_signature(
-            self.name, "Abort | {} | {}".format(abort_message, result.signature)
-        )
+        result.set_signature(self.name, f"Abort | {abort_message} | {result.signature}")
         return True
 
 
@@ -784,8 +780,8 @@ class SignatureRunWatchDog(SignatureGenerationRule):
         # artificially when thread 0 gets stuck. So whatever the crashing
         # thread is, we don't care about it and only want to know what was
         # happening in thread 0 when it got stuck.
-        ret = super(SignatureRunWatchDog, self).action(crash_data, result)
-        result.set_signature(self.name, "shutdownhang | {}".format(result.signature))
+        ret = super().action(crash_data, result)
+        result.set_signature(self.name, f"shutdownhang | {result.signature}")
         return ret
 
 
@@ -867,7 +863,7 @@ class SignatureIPCChannelError(Rule):
         if crash_data["ipc_channel_error"] == "ShutDownKill":
             # If it's a ShutDownKill, append the rest of the signature
             result.info(self.name, "IPC Channel Error prepended")
-            new_sig = "{} | {}".format(new_sig, result.signature)
+            new_sig = f"{new_sig} | {result.signature}"
         else:
             result.info(self.name, "IPC Channel Error stomped on signature")
 

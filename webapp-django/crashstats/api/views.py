@@ -270,7 +270,7 @@ def model_wrapper(request, model_name):
         # We say 'private' because the content can depend on the user
         # and we don't want the response to be collected in HTTP proxies
         # by mistake.
-        headers["Cache-Control"] = "private, max-age={}".format(model.cache_seconds)
+        headers["Cache-Control"] = f"private, max-age={model.cache_seconds}"
 
     return result, headers
 

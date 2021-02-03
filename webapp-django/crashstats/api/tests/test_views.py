@@ -132,7 +132,7 @@ class TestViews(BaseTestViews):
         assert response["Cache-Control"]
         assert "private" in response["Cache-Control"]
         cache_seconds = NoOpMiddleware.cache_seconds
-        assert "max-age={}".format(cache_seconds) in response["Cache-Control"]
+        assert f"max-age={cache_seconds}" in response["Cache-Control"]
 
     def test_metrics_gathering(self):
         url = reverse("api:model_wrapper", args=("NoOp",))

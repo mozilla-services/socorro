@@ -113,7 +113,7 @@ def validate_and_test(ctx, crashes_per_url, url):
     def log_all_keys(crash, prefix=""):
         for key, value in crash.items():
             if isinstance(value, dict):
-                log_all_keys(value, prefix=prefix + "{}.".format(key))
+                log_all_keys(value, prefix=f"{prefix}{key}.")
             else:
                 all_keys.add(prefix + key)
 
@@ -122,7 +122,7 @@ def validate_and_test(ctx, crashes_per_url, url):
     def log_all_schema_keys(schema, prefix=""):
         for key, value in schema["properties"].items():
             if isinstance(value, dict) and "properties" in value:
-                log_all_schema_keys(value, prefix=prefix + "{}.".format(key))
+                log_all_schema_keys(value, prefix=f"{prefix}{key}.")
             else:
                 all_schema_types[prefix + key] = value["type"]
 

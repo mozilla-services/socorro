@@ -42,7 +42,7 @@ def main(argv=None):
     # Get git sha of destination
     dest_sha_file = os.path.join(dest_dir, SOCORRO_SHA_FILE)
     if os.path.exists(dest_sha_file):
-        dest_sha = open(dest_sha_file, "r").read().strip()
+        dest_sha = open(dest_sha_file).read().strip()
     else:
         dest_sha = ""
 

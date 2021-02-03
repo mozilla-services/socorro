@@ -41,8 +41,7 @@ class MaxAttemptsError(Exception):
 
 def wait_time_generator():
     """Return generator for wait times."""
-    for amt in [2, 2, 2, 2, 2]:
-        yield amt
+    yield from [2, 2, 2, 2, 2]
 
 
 def retry(

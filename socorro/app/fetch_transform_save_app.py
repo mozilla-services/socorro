@@ -95,8 +95,7 @@ class FetchTransformSaveApp(App):
     def source_iterator(self):
         """Iterate infinitely yielding crash ids."""
         while True:
-            for crash_id in self._basic_iterator():
-                yield crash_id
+            yield from self._basic_iterator()
 
     def transform(self, crash_id, finished_func=(lambda: None)):
         try:

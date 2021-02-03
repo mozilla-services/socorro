@@ -43,9 +43,7 @@ class MemoryReportExtraction(Rule):
         try:
             measures = self._get_memory_measures(memory_report, pid)
         except ValueError as e:
-            self.logger.info(
-                "Unable to extract measurements from memory report: {}".format(e)
-            )
+            self.logger.info(f"Unable to extract measurements from memory report: {e}")
             return
         except KeyError as e:
             self.logger.info(
@@ -60,7 +58,7 @@ class MemoryReportExtraction(Rule):
         explicit_heap = 0
         explicit_nonheap = 0
         pid_found = False
-        pid_str = "(pid {})".format(pid)
+        pid_str = f"(pid {pid})"
 
         # These ones are in the memory report.
         # Note: theses keys use dashes instead of underscores because that's
@@ -141,7 +139,7 @@ class MemoryReportExtraction(Rule):
                 all_metrics[path] += amount
 
         if not pid_found:
-            raise ValueError("no measurements found for pid {}".format(pid))
+            raise ValueError(f"no measurements found for pid {pid}")
 
         # Nb: sometimes heap-unclassified is negative due to bogus measurements
         # of some kind. We just show the negative value anyway.
@@ -150,8 +148,8 @@ class MemoryReportExtraction(Rule):
 
         # Replace all dashes in keys with underscores to fit our crash
         # documents' naming conventions.
-        memory_measures = dict(
-            (key.replace("-", "_"), val) for key, val in all_metrics.items()
-        )
+        memory_measures = {
+            key.replace("-", "_"): val for key, val in all_metrics.items()
+        }
 
         return memory_measures

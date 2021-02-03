@@ -494,7 +494,7 @@ def _transform_uptime_summary(facets):
             15: "15-60 min",
             60: "> 1 hour",
         }
-        uptimes_count = dict((x, 0) for x in labels)
+        uptimes_count = {x: 0 for x in labels}
 
         for uptime in facets["histogram_uptime"]:
             for uptime_minutes in sorted(uptimes_count.keys(), reverse=True):

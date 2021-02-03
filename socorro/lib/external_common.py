@@ -143,7 +143,7 @@ def check_type(param, datatype):
         try:
             param = str(param)
         except ValueError:
-            param = str()
+            param = ""
 
     elif datatype is int and not isinstance(param, int):
         try:
