@@ -239,11 +239,15 @@ class TestContributeJson:
     def test_view(self, client):
         response = client.get("/contribute.json")
         assert response.status_code == 200
-        # Should be valid JSON, but it's a streaming content because
-        # it comes from django.views.static.serve
-        data = "".join([smart_text(part) for part in response.streaming_content])
-        assert json.loads(data)
+        assert json.loads(response.content)
         assert response["Content-Type"] == "application/json"
+
+
+class TestFaviconIco:
+    def test_view(self, client):
+        response = client.get("/favicon.ico")
+        assert response.status_code == 200
+        assert response["Content-Type"] == "image/vnd.microsoft.icon"
 
 
 class TestViews(BaseTestViews):

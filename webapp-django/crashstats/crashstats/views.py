@@ -2,7 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from functools import cache as memoized
 import json
+from pathlib import Path
 
 from django import http
 from django.conf import settings
@@ -47,6 +49,30 @@ def robots_txt(request):
         "User-agent: *\n" "%s: /" % ("Allow" if settings.ENGAGE_ROBOTS else "Disallow"),
         content_type="text/plain",
     )
+
+
+@memoized
+def _load_contribute_json():
+    index_path = Path(settings.SOCORRO_ROOT) / "contribute.json"
+    return json.loads(index_path.read_bytes())
+
+
+def contribute_json(request):
+    """Serve contribute.json file"""
+    data = _load_contribute_json()
+    return http.JsonResponse(data, json_dumps_params={"indent": 2})
+
+
+@memoized
+def _load_favicon():
+    index_path = Path(settings.ROOT) / "crashstats/crashstats/static/img/favicon.ico"
+    return index_path.read_bytes()
+
+
+def favicon_ico(request):
+    """Serve the favicon.ico file"""
+    data = _load_favicon()
+    return HttpResponse(data, content_type="image/vnd.microsoft.icon")
 
 
 def build_id_to_date(build_id):
