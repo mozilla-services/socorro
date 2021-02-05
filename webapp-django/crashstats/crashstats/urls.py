@@ -18,6 +18,8 @@ perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 app_name = "crashstats"
 urlpatterns = [
+    url(r"^contribute\.json$", views.contribute_json, name="contribute_json"),
+    url(r"^favicon\.ico$", views.favicon_ico, name="favicon_ico"),
     url(r"^robots\.txt$", views.robots_txt, name="robots_txt"),
     url(
         r"^report/index/(?P<crash_id>[\w-]+)$", views.report_index, name="report_index"

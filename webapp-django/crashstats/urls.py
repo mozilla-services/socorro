@@ -2,13 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
-
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import RedirectView
-from django.views.static import serve
 
 from crashstats.manage import admin_site
 from crashstats.crashstats.monkeypatches import patch
@@ -21,20 +18,6 @@ handler500 = "crashstats.crashstats.views.handler500"
 
 
 urlpatterns = [
-    url(
-        r"^(?P<path>contribute\.json)$",
-        serve,
-        {"document_root": os.path.join(settings.ROOT, "..")},
-    ),
-    url(
-        r"^(?P<path>favicon\.ico)$",
-        serve,
-        {
-            "document_root": os.path.join(
-                settings.ROOT, "crashstats", "crashstats", "static", "img"
-            )
-        },
-    ),
     url(r"", include("crashstats.crashstats.urls", namespace="crashstats")),
     url(r"", include("crashstats.exploitability.urls", namespace="exploitability")),
     url(r"", include("crashstats.monitoring.urls", namespace="monitoring")),
