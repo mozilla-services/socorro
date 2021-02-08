@@ -948,9 +948,6 @@ class BugzillaBugInfo(SocorroCommon):
     # This is for how long we cache the metadata of each individual bug.
     BUG_CACHE_SECONDS = 60 * 60
 
-    # How patient we are with the Bugzilla REST API
-    BUGZILLA_REST_TIMEOUT = 5  # seconds
-
     @staticmethod
     def make_cache_key(bug_id):
         # This is the same cache key that we use in show_bug_link()
@@ -979,15 +976,13 @@ class BugzillaBugInfo(SocorroCommon):
                 "/bug?id=%(bugs)s&include_fields=%(fields)s" % params
             )
             session = session_with_retries(
-                # BZAPI isn't super reliable, so be extra patient
                 total_retries=5,
                 # 502 = Bad Gateway
+                # 503 = Service Unavailable
                 # 504 = Gateway Time-out
-                status_forcelist=(500, 502, 504),
+                status_forcelist=(500, 502, 503, 504),
             )
-            response = session.get(
-                url, headers=headers, timeout=self.BUGZILLA_REST_TIMEOUT
-            )
+            response = session.get(url, headers=headers)
             if response.status_code != 200:
                 raise BugzillaRestHTTPUnexpectedError(response.status_code)
 

@@ -98,7 +98,7 @@ class Test_retry:
 
         with pytest.raises(MaxAttemptsError):
             some_thing()
-        assert fake_sleep.sleeps == [2, 2, 2, 2, 2]
+        assert fake_sleep.sleeps == [1, 1, 1, 1, 1]
 
     def test_retryable_return(self):
         # Will keep retrying until max_attempts and then raise an error that includes
@@ -132,7 +132,7 @@ class Test_retry:
 
         some_thing = make_some_thing(fake_sleep)
         some_thing()
-        assert fake_sleep.sleeps == [2, 2]
+        assert fake_sleep.sleeps == [1, 1]
 
         # Will succeed and not retry because the return value is fine
         fake_sleep = make_fake_sleep()
@@ -154,7 +154,7 @@ class Test_retry:
         with pytest.raises(Exception):
             some_thing()
 
-        assert fake_sleep.sleeps == [2, 2, 2, 2, 2]
+        assert fake_sleep.sleeps == [1, 1, 1, 1, 1]
 
     def test_wait_time_generator(self):
         def waits():

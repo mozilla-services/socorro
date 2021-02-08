@@ -35,18 +35,27 @@ class HTTPAdapterWithTimeout(HTTPAdapter):
 
 def session_with_retries(
     total_retries=5,
-    backoff_factor=0.2,
+    backoff_factor=0.1,
     status_forcelist=(429, 500),
-    default_timeout=5.0,
+    default_timeout=3.0,
 ):
     """Returns session that retries on HTTP 429 and 500 with default timeout
 
     :arg int total_retries: total number of times to retry
 
-    :arg float backoff_factor: number of seconds to increment by between
-        attempts
+    :arg float backoff_factor: number of seconds to apply between attempts
 
-        For example, 0.1 will back off 0.1s, then 0.2s, then 0.3s, ...
+        The sleep amount is calculated like this::
+
+            sleep = backoff_factor * (2 ** (num_retries - 1))
+
+        For example, backoff_factor 0.1 will back off :
+
+        * 0.1
+        * 0.2
+        * 0.4
+        * 0.8
+        * 1.6 ...
 
     :arg tuple of HTTP codes status_forcelist: tuple of HTTP codes to
         retry on
