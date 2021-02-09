@@ -5,6 +5,17 @@
     <meta charset="UTF-8" />
     <title>{% block page_title %}Crash Data for {{ product.name }}{% endblock %}</title>
 
+    {% block summary_tags %}
+      <meta property="og:type" content="website">
+      <meta property="og:site_name" content="Mozilla Crash Stats">
+
+      {% block summary_page_tags %}
+        <meta property="og:title" content="Mozilla Crash Stats">
+        <meta property="og:description" content="Mozilla Crash Stats site for viewing and searching crash reports.">
+        <meta name="description" content="Mozilla Crash Stats site for viewing and searching crash reports.">
+      {% endblock %}
+    {% endblock %}
+
     {% block site_css %}
       {% stylesheet 'crashstats_base' %}
       {% stylesheet 'fontawesome' %}
