@@ -15,6 +15,12 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         assert "What is Super Search?" in smart_text(response.content)
 
+    def test_whatsnew(self):
+        url = reverse("documentation:whatsnew")
+        response = self.client.get(url)
+        assert response.status_code == 200
+        assert "What's New in Crash Stats" in smart_text(response.content)
+
     def test_supersearch_examples(self):
         url = reverse("documentation:supersearch_examples")
         response = self.client.get(url)

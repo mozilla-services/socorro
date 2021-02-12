@@ -36,13 +36,14 @@
       <div class="body">
         <nav>
           <ul class="options">
-            {{ navlink(url('documentation:home'), 'Home') }}
-            {{ navlink(url('documentation:protected_data_access'), 'Protected Data Access') }}
-            {{ navlink(url('api:documentation'), 'API Reference') }}
-            {{ navlink(url('documentation:supersearch_home'), 'Super Search') }}
-            {{ navlink(url('documentation:supersearch_examples'), 'Super Search Examples') }}
-            {{ navlink(url('documentation:supersearch_api'), 'Super Search API') }}
-            {{ external_navlink('https://socorro.readthedocs.io/', 'More docs') }}
+            {{ navlink(url("documentation:home"), "Home") }}
+            {{ navlink(url("documentation:whatsnew"), "What's New") }}
+            {{ navlink(url("documentation:protected_data_access"), "Protected Data Access") }}
+            {{ navlink(url("api:documentation"), "API Reference") }}
+            {{ navlink(url("documentation:supersearch_home"), "Super Search") }}
+            {{ navlink(url("documentation:supersearch_examples"), "Super Search Examples") }}
+            {{ navlink(url("documentation:supersearch_api"), "Super Search API") }}
+            {{ external_navlink("https://socorro.readthedocs.io/", "More docs") }}
           </ul>
         </nav>
       </div>

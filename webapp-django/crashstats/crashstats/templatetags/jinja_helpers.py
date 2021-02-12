@@ -79,7 +79,7 @@ def timestamp_to_date(timestamp, fmt="%Y-%m-%d %H:%M:%S"):
 
 
 @library.filter
-def time_tag(dt, format="%a, %b %d %H:%M %Z", future=False):
+def time_tag(dt, format="%a, %b %d, %Y at %H:%M %Z", future=False):
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         try:
             dt = parse_isodate(dt)

@@ -34,5 +34,6 @@ urlpatterns = [
             "https://socorro.readthedocs.io/en/latest/products.html"
         ),
     ),
+    url(r"^whatsnew/$", views.whatsnew, name="whatsnew"),
     url(r"^$", views.home, name="home"),
 ]

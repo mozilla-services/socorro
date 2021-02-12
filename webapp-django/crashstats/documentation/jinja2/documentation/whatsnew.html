@@ -1,0 +1,11 @@
+{% extends "documentation/docs_base.html" %}
+
+{% block doc_title %}What's New in Crash Stats{% endblock %}
+
+{% block doc_content %}
+  <div class="body">
+    <div class="rst">
+      {{ whatsnew | safe }}
+    </div>
+  </div>
+{% endblock %}

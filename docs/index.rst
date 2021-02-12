@@ -36,6 +36,7 @@ analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
    :maxdepth: 1
 
    overview
+   whatsnew
    signaturegeneration
    reprocessing
    products
