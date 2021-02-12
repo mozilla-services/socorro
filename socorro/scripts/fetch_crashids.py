@@ -147,7 +147,11 @@ def main(argv=None):
         dest="signature",
         help="signature contains this string",
     )
-    parser.add_argument("--product", default="Firefox", help="Product to fetch for")
+    parser.add_argument(
+        "--product",
+        default="Firefox",
+        help='Product to fetch for or "all" for all; defaults to "Firefox"',
+    )
     parser.add_argument("--url", default="", help="Super Search url to base query on")
     parser.add_argument(
         "--num",
@@ -173,6 +177,10 @@ def main(argv=None):
 
     params["_columns"] = "uuid"
     params["product"] = params.get("product", args.product)
+    if params["product"] == "all":
+        # If the user specified "all", then we don't want to pass a product filter
+        # in
+        del params["product"]
 
     # Override with date if specified
     if "date" not in params or args.date:
