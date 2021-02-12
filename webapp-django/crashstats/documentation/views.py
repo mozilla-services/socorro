@@ -3,7 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from functools import cache
+from pathlib import Path
 
+import docutils.core
+
+from django.conf import settings
 from django.shortcuts import render
 
 from crashstats import productlib
@@ -31,6 +36,29 @@ def home(request, default_context=None):
     context = default_context or {}
 
     return render(request, "documentation/home.html", context)
+
+
+@cache
+def read_whatsnew():
+    """Reads the WHATSNEW.rst file, parses it, and returns the HTML
+
+    :returns: HTML document as string
+
+    """
+    path = Path(settings.SOCORRO_ROOT) / "WHATSNEW.rst"
+
+    with open(path, "r") as fp:
+        data = fp.read()
+        parts = docutils.core.publish_parts(data, writer_name="html")
+
+    return parts["html_body"]
+
+
+@pass_default_context
+def whatsnew(request, default_context=None):
+    context = default_context or {}
+    context["whatsnew"] = read_whatsnew()
+    return render(request, "documentation/whatsnew.html", context)
 
 
 @pass_default_context

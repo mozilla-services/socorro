@@ -51,7 +51,7 @@ class TestTimeTag:
         output = time_tag(date)
 
         expected = '<time datetime="{}" class="ago">{}</time>'.format(
-            date.isoformat(), date.strftime("%a, %b %d %H:%M %Z")
+            date.isoformat(), date.strftime("%a, %b %d, %Y at %H:%M %Z")
         )
         assert output == expected
 
@@ -60,7 +60,7 @@ class TestTimeTag:
         output = time_tag(date)
 
         expected = '<time datetime="{}" class="ago">{}</time>'.format(
-            date.isoformat(), date.strftime("%a, %b %d %H:%M %Z")
+            date.isoformat(), date.strftime("%a, %b %d, %Y at %H:%M %Z")
         )
         assert output == expected
 
@@ -69,7 +69,7 @@ class TestTimeTag:
         output = time_tag(date, future=True)
 
         expected = '<time datetime="{}" class="in">{}</time>'.format(
-            date.isoformat(), date.strftime("%a, %b %d %H:%M %Z")
+            date.isoformat(), date.strftime("%a, %b %d, %Y at %H:%M %Z")
         )
         assert output == expected
 
@@ -83,7 +83,7 @@ class TestTimeTag:
         output = time_tag(date)
 
         expected = '<time datetime="{}" class="ago">{}</time>'.format(
-            "2016-09-07T00:38:42.630775+00:00", "Wed, Sep 07 00:38 +00:00"
+            "2016-09-07T00:38:42.630775+00:00", "Wed, Sep 07, 2016 at 00:38 +00:00"
         )
         assert output == expected
 
