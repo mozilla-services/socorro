@@ -1,0 +1,26 @@
+.note {
+    &.float-right {
+        float: right;
+        min-width: 300px;
+        width: 30%;
+    }
+
+    background-color: @off-white;
+    border: 1px solid @primary;
+    border-radius: 4px;
+    margin: 0 0 10px 10px;
+
+    p {
+        padding: 10px 10px;
+        margin: 0;
+    }
+
+    &::before {
+        content: url('../../img/3rdparty/silk/information.png') ' Note';
+        display: block;
+        background-color: @primary;
+        color: @white;
+        font-weight: bold;
+        padding: 4px 10px;
+    }
+}
