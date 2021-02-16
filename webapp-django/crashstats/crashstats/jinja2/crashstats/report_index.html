@@ -63,6 +63,15 @@
 
     <div class="panel">
       <div class="body">
+        {% if your_crash %}
+          <div class="note">
+            <p>
+              As of February 11th, 2021, we no longer store Email address data in
+              crash reports. Crash reports sent on or after that date will not
+              show up as your crash.
+            </p>
+          </div>
+        {% endif %}
 
         {# Header #}
 
