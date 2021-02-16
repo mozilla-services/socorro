@@ -428,7 +428,7 @@ class TestViews(BaseTestViews):
         assert _SAMPLE_META["Email"] not in content
         assert _SAMPLE_META["URL"] not in content
         assert (
-            "You need to be signed in and have access to protected data to see this."
+            "You need to be logged in and have access to protected data to see this."
             in content
         )
         # Should not be able to see sensitive key from stackwalker JSON
@@ -492,7 +492,7 @@ class TestViews(BaseTestViews):
             mocked_processed_crash_get
         )
 
-        # Be signed in with view_pii to avoid allowlisting
+        # Be logged in with view_pii to avoid allowlisting
         user = self._login()
         group = self._create_group_with_permission("view_pii")
         user.groups.add(group)
@@ -1529,7 +1529,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert "Exploitability</th>" not in smart_text(response.content)
 
-        # you must be signed in to see exploitability
+        # you must be logged in to see exploitability
         user = self._login()
         group = self._create_group_with_permission("view_exploitability")
         user.groups.add(group)
@@ -1573,7 +1573,7 @@ class TestViews(BaseTestViews):
         assert "peterbe@example.com" not in smart_text(response.content)
         assert "https://embarrassing.example.com" not in smart_text(response.content)
 
-        # you must be signed in to see exploitability
+        # you must be logged in to see exploitability
         self._login(email="peterbe@example.com")
         response = self.client.get(url)
         assert "Exploitability</th>" in smart_text(response.content)
@@ -1611,7 +1611,7 @@ class TestViews(BaseTestViews):
 
         url = reverse("crashstats:report_index", args=[crash_id])
 
-        # You sign in, but a different email address from that in the
+        # You log in, but a different email address from that in the
         # raw crash. Make sure that doesn't show the sensitive data
         self._login(email="someone@example.com")
         response = self.client.get(url)

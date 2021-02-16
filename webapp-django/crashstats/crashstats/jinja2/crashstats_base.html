@@ -40,7 +40,7 @@
           </button>
           <ul class="user-info-menu">
             <li>
-              <a href="{{ url('profile:profile') }}" title="You are signed in as {{ request.user.email }}">Your Profile</a>
+              <a href="{{ url('profile:profile') }}" title="You are logged in as {{ request.user.email }}">Your Profile</a>
             </li>
             <li>
               <a href="{{ url('tokens:home') }}">API Tokens</a>
@@ -53,12 +53,12 @@
             <li>
               <form class="logout-form" action="{{ url('oidc_logout') }}" method="POST">
                 {% csrf_token %}
-                <button class="sign-out-button" type="submit">Sign out</button>
+                <button class="logout-button" type="submit">Log out</button>
               </form>
             </li>
           </ul>
         {% else %}
-          <a class="sign-in-link" href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Sign in</a>
+          <a class="login-link" href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Log in</a>
         {% endif %}
       </div>
     </div>

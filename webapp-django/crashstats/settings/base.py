@@ -623,9 +623,8 @@ OIDC_EXEMPT_URLS = [
 ]
 LOGOUT_REDIRECT_URL = "/"
 
-# Max number of seconds you are allowed to be signed in with OAuth2.
-# When the user has been signed in >= this number, the user is automatically
-# signed out.
+# Max number of seconds you are allowed to be logged in with OAuth2.  When the user has
+# been logged in >= this number, the user is automatically logged out.
 LAST_LOGIN_MAX = config("LAST_LOGIN_MAX", default=60 * 60 * 24, cast=int)
 
 

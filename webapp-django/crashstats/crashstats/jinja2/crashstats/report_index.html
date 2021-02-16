@@ -1014,14 +1014,14 @@
             {% elif request.user and request.user.is_active %}
               <p>
                 You do not have access to protected data.
-                You need to be signed in and have access to protected data to see this.
+                You need to be logged in and have access to protected data to see this.
                 See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
                 for more information.
               </p>
             {% else %}
               <p>
-                You are not signed in.
-                You need to be signed in and have access to protected data to see this.
+                You are not logged in.
+                You need to be logged in and have access to protected data to see this.
                 See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
                 for more information.
               </p>
