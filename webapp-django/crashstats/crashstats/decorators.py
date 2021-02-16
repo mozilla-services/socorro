@@ -26,7 +26,7 @@ def login_required(
     being logged in AND being active is required.
 
     The usefulness of this is that super users can revoke a user being
-    active and halt the user's access even after the user has signed in.
+    active and halt the user's access even after the user has logged in.
     """
     actual_decorator = user_passes_test(
         lambda u: u.is_active,

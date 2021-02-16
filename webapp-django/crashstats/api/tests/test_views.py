@@ -190,7 +190,7 @@ class TestViews(BaseTestViews):
                 response = self.client.get(url, {"product": "good"})
             assert response.status_code == 200
 
-            # But even being signed in has a limit.
+            # But even being logged in has a limit.
             authenticated_limit = 6  # see above mentioned settings override
             assert authenticated_limit > current_limit
             for i in range(authenticated_limit * 2):

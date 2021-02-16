@@ -45,7 +45,7 @@ class TestViews(BaseTestViews):
 
         url = reverse("profile:profile")
 
-        # Test that the user must be signed in.
+        # Test that the user must be logged in.
         response = self.client.get(url, follow=False)
         assert response.status_code == 302
         assert response.url == reverse("crashstats:login") + "?next=%s" % url
@@ -108,7 +108,7 @@ class TestViews(BaseTestViews):
         profile_url = reverse("profile:profile")
         assert profile_url not in smart_text(response.content)
 
-        # Render again when signed in
+        # Render again when logged in
         user = self._login()
         response = self.client.get(url)
         assert response.status_code == 200
