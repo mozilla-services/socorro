@@ -36,6 +36,7 @@ urlpatterns = [
         views.raw_data,
         name="raw_data",
     ),
+    url(r"^signup/$", views.signup, name="signup"),
     url(r"^login/$", views.login, name="login"),
     url(r"^about/throttling/$", views.about_throttling, name="about_throttling"),
     url(r"^home/product/(?P<product>\w+)$", views.product_home, name="product_home"),

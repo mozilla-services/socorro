@@ -1,0 +1,42 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}Sign up{% endblock %}
+
+{% block content %}
+  <div id="mainbody">
+    <div class="page-heading">
+      <h2>Sign up</h2>
+    </div>
+
+    <div class="panel">
+      <div class="body">
+        <h3>Accounts on Crash Stats</h3>
+        <p>
+          Sign up if you require one of the following:
+        </p>
+        <ul>
+          <li>
+            <b>Protected data access.</b> See
+            <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+            for details
+          </li>
+          <li>
+            <b>API tokens.</b>
+          </li>
+        </ul>
+        <p>
+          If you don't need one of those things, then signing up doesn't help you.
+        </p>
+
+        <h3>Creating an account</h3>
+        <p>
+          Crash Stats accounts are created the first time you log in. You can log in using
+          the "Log in" link in the upper right hand corner.
+        </p>
+        <p>
+          If you are a Mozilla Corporation employee, please log in using your LDAP account.
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
