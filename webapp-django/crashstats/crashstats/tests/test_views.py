@@ -1886,6 +1886,13 @@ class TestLogin(BaseTestViews):
         assert "Insufficient Privileges" in smart_text(response.content)
 
 
+class TestSignup(BaseTestViews):
+    def test_signup_renders(self):
+        url = reverse("crashstats:signup")
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+
 class TestProductHomeViews(BaseTestViews):
     def test_product_home(self):
         self.set_product_versions(["20.0", "19.1", "19.0", "18.0"])

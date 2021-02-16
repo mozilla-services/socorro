@@ -274,6 +274,12 @@ def report_index(request, crash_id, default_context=None):
 
 
 @pass_default_context
+def signup(request, default_context=None):
+    context = default_context or {}
+    return render(request, "crashstats/signup.html", context)
+
+
+@pass_default_context
 def login(request, default_context=None):
     context = default_context or {}
     return render(request, "crashstats/login.html", context)
