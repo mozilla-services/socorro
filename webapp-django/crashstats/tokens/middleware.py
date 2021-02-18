@@ -69,3 +69,7 @@ class APIAuthenticationMiddleware:
         # by logging the user in.
         request.user = user
         auth.login(request, user)
+
+        # For an API request, we don't want mere logging in to trigger saving of a
+        # session.
+        request.session.modified = False
