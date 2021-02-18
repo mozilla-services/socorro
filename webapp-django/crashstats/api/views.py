@@ -7,6 +7,9 @@ import inspect
 import json
 import re
 
+from ratelimit.decorators import ratelimit
+from session_csrf import anonymous_csrf_exempt
+
 from django import http
 from django import forms
 from django.conf import settings
@@ -16,8 +19,6 @@ from django.core.validators import ProhibitNullCharactersValidator
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-
-from ratelimit.decorators import ratelimit
 
 from crashstats.api.cleaner import Cleaner
 from crashstats.crashstats import models
@@ -114,6 +115,7 @@ def is_valid_model_class(model):
     )
 
 
+@anonymous_csrf_exempt
 @csrf_exempt
 @ratelimit(
     key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
@@ -390,6 +392,7 @@ def dedent_left(text, spaces):
     return "\n".join(lines)
 
 
+@anonymous_csrf_exempt
 @csrf_exempt
 @ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
 @utils.add_CORS_header

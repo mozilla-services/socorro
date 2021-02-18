@@ -32,7 +32,27 @@ class APIAuthenticationMiddleware:
         response = self.process_request(request)
         if not response:
             response = self.get_response(request)
+        self.delete_unused_sessions(request, response)
         return response
+
+    def delete_unused_sessions(self, request, response):
+        """Delete unused sessions
+
+        The Auth-Token login creates a Django session. If the view doesn't save
+        anything to the session, we clear it because this is an API and we don't
+        need to maintain empty sessions between requests.
+
+        """
+        session_keys = [
+            key for key in request.session.keys() if not key.startswith("_auth_user")
+        ]
+        if not session_keys:
+            request.session.clear()
+            request.session.flush()
+            # Delete the anoncsrf token so that doesn't set a cookie; this is
+            # set by django-session-csrf
+            if hasattr(request, "_anon_csrf_key"):
+                delattr(request, "_anon_csrf_key")
 
     def process_request(self, request):
         # AuthenticationMiddleware is required so that request.user exists.
@@ -69,3 +89,7 @@ class APIAuthenticationMiddleware:
         # by logging the user in.
         request.user = user
         auth.login(request, user)
+
+        # For an API request, we don't want mere logging in to trigger saving of a
+        # session.
+        request.session.modified = False
