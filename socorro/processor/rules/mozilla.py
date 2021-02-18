@@ -696,8 +696,8 @@ class ModulesInStackRule(Rule):
     all the modules that show up in the stack of the crashing thread.
     """
 
-    # Filenames should contain A-Za-z0-9_. and that's it.
-    BAD_FILENAME_CHARACTERS = re.compile(r"[^a-z0-9_\.]", re.IGNORECASE)
+    # Filenames should contain A-Za-z0-9_.- and that's it.
+    BAD_FILENAME_CHARACTERS = re.compile(r"[^a-zA-Z0-9_\.-]", re.IGNORECASE)
 
     # Debug ids are hex strings
     BAD_DEBUGID_CHARACTERS = re.compile(r"[^a-f0-9]", re.IGNORECASE)
