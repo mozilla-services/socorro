@@ -124,11 +124,12 @@ def clear_empty_session(fun):
         # Run the function
         ret = fun(request, *args, **kwargs)
 
-        # Clear the session if nothing was saved to it
+        # Clear the session if nothing was saved to it and it was generated using a
+        # token login
         session_keys = [
             key for key in request.session.keys() if not key.startswith("_auth_user")
         ]
-        if not session_keys:
+        if not session_keys and getattr(request.user, "token_login", False):
             request.session.clear()
             request.session.flush()
         return ret
@@ -151,9 +152,13 @@ def no_csrf_i_mean_it(fun):
     @wraps(fun)
     def _no_csrf(request, *args, **kwargs):
         ret = fun(request, *args, **kwargs)
+
         # Remove any csrf bits from Django or django-session-csrf so they don't persist
         if hasattr(request, "_anon_csrf_key"):
             del request._anon_csrf_key
+
+        if "csrf_token" in request.session:
+            del request.session["csrf_token"]
         return ret
 
     return _no_csrf
@@ -161,8 +166,8 @@ def no_csrf_i_mean_it(fun):
 
 @anonymous_csrf_exempt
 @csrf_exempt
-@no_csrf_i_mean_it
 @clear_empty_session
+@no_csrf_i_mean_it
 @ratelimit(
     key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
 )

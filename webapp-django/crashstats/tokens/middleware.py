@@ -65,6 +65,7 @@ class APIAuthenticationMiddleware:
         # we use as long as it's something
         user.backend = "django.contrib.auth.backends.ModelBackend"
         user.has_perm = partial(has_perm, token.permissions.all())
+        user.token_login = True
         # User is valid. Set request.user and persist user in the session
         # by logging the user in.
         request.user = user
