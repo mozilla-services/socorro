@@ -3,9 +3,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+from functools import wraps
 import inspect
 import json
 import re
+
+from ratelimit.decorators import ratelimit
+from session_csrf import anonymous_csrf_exempt
 
 from django import http
 from django import forms
@@ -16,8 +20,6 @@ from django.core.validators import ProhibitNullCharactersValidator
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-
-from ratelimit.decorators import ratelimit
 
 from crashstats.api.cleaner import Cleaner
 from crashstats.crashstats import models
@@ -114,7 +116,53 @@ def is_valid_model_class(model):
     )
 
 
+def clear_empty_session(fun):
+    """Clears empty sessions so they don't persist"""
+
+    @wraps(fun)
+    def _clear_empty_session(request, *args, **kwargs):
+        # Run the function
+        ret = fun(request, *args, **kwargs)
+
+        # Clear the session if nothing was saved to it
+        session_keys = [
+            key for key in request.session.keys() if not key.startswith("_auth_user")
+        ]
+        if not session_keys:
+            request.session.clear()
+            request.session.flush()
+        return ret
+
+    return _clear_empty_session
+
+
+def no_csrf_i_mean_it(fun):
+    """Removes any csrf bits from request
+
+    This removes any csrf bookkeeping by middleware from the request so that it doesn't
+    get persisted in cookies and elsewhere.
+
+    Note: If we ever change ANON_ALWAYS setting for django-session-csrf, then we can nix
+    this. Otherwise django-session-csrf *always* creates an anoncsrf cookie regardless
+    of the existence of the anonymous_csrf_exempt decorator.
+
+    """
+
+    @wraps(fun)
+    def _no_csrf(request, *args, **kwargs):
+        ret = fun(request, *args, **kwargs)
+        # Remove any csrf bits from Django or django-session-csrf so they don't persist
+        if hasattr(request, "_anon_csrf_key"):
+            del request._anon_csrf_key
+        return ret
+
+    return _no_csrf
+
+
+@anonymous_csrf_exempt
 @csrf_exempt
+@no_csrf_i_mean_it
+@clear_empty_session
 @ratelimit(
     key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
 )
@@ -390,6 +438,7 @@ def dedent_left(text, spaces):
     return "\n".join(lines)
 
 
+@anonymous_csrf_exempt
 @csrf_exempt
 @ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
 @utils.add_CORS_header

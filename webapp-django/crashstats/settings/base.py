@@ -106,6 +106,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "crashstats.tokens.middleware.APIAuthenticationMiddleware",
     "session_csrf.CsrfMiddleware",
     "mozilla_django_oidc.middleware.SessionRefresh",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -122,7 +123,6 @@ MIDDLEWARE = [
     "csp.middleware.CSPMiddleware",
     "waffle.middleware.WaffleMiddleware",
     "ratelimit.middleware.RatelimitMiddleware",
-    "crashstats.tokens.middleware.APIAuthenticationMiddleware",
     "crashstats.crashstats.middleware.Pretty400Errors",
 ]
 
