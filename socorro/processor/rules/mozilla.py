@@ -937,7 +937,12 @@ class OSPrettyVersionRule(Rule):
             return
 
         elif os_name == "Mac OS X":
-            if major_version >= 10 and minor_version >= 0:
+            # https://en.wikipedia.org/wiki/MacOS#Release_history
+            if major_version >= 11:
+                # NOTE(willkg): this assumes Apple versions macOS with just the major
+                # version going forward.
+                pretty_name = "macOS %s" % major_version
+            elif major_version >= 10 and minor_version >= 0:
                 pretty_name = "OS X %s.%s" % (major_version, minor_version)
             else:
                 pretty_name = "OS X Unknown"
