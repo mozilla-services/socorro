@@ -31,6 +31,10 @@ exp2
 framework\.odex@0x
 __fixunsdfsi
 __GI___assert_fail
+g_assertion_message
+g_assertion_message.cold
+g_assertion_message_error
+g_assertion_message_expr
 gdk_x_error
 _gdk_x11_display_error_event
 GetLCIDFromLangListNodeWithLICCheck
