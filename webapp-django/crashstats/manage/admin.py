@@ -8,15 +8,11 @@ from urllib.parse import urlparse
 import requests
 
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.core.cache import cache
 from django.db import connection
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 
-from crashstats.crashstats.models import GraphicsDevice
-from crashstats.manage import forms
-from crashstats.manage import utils
 from crashstats.manage.decorators import superuser_required
 from crashstats.supersearch.models import SuperSearchMissingFields
 
@@ -102,34 +98,6 @@ def supersearch_fields_missing(request):
     context["title"] = "Super search missing fields"
 
     return render(request, "admin/supersearch_fields_missing.html", context)
-
-
-@superuser_required
-def graphics_devices(request):
-    context = {}
-    upload_form = forms.GraphicsDeviceUploadForm()
-
-    if request.method == "POST" and "file" in request.FILES:
-        upload_form = forms.GraphicsDeviceUploadForm(request.POST, request.FILES)
-        if upload_form.is_valid():
-            devices = utils.pci_ids__parse_graphics_devices_iterable(
-                upload_form.cleaned_data["file"]
-            )
-
-            for item in devices:
-                obj, _ = GraphicsDevice.objects.get_or_create(
-                    vendor_hex=item["vendor_hex"], adapter_hex=item["adapter_hex"]
-                )
-                obj.vendor_name = item["vendor_name"]
-                obj.adapter_name = item["adapter_name"]
-                obj.save()
-
-            messages.success(request, "Graphics device CSV upload successfully saved.")
-            return redirect("siteadmin:graphics_devices")
-
-    context["title"] = "Graphics devices"
-    context["upload_form"] = upload_form
-    return render(request, "admin/graphics_devices.html", context)
 
 
 @superuser_required

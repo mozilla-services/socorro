@@ -4,6 +4,7 @@
 
 import copy
 import json
+import os
 
 from django.http import HttpResponse
 from django.utils.encoding import smart_text
@@ -445,3 +446,61 @@ class TestUtils:
         assert signature_stats.is_startup_window_crash is True
         assert signature_stats.is_hang_crash is False
         assert signature_stats.is_plugin_crash is False
+
+
+SAMPLE_FILE_PCI_IDS = os.path.join(os.path.dirname(__file__), "sample_pci.ids")
+
+
+def test_string_hex_to_hex_string():
+    func = utils.string_hex_to_hex_string
+    assert func("919A") == "0x919a"
+    assert func("0x919A") == "0x919a"
+
+    assert func("221") == "0x0221"
+    assert func("0221") == "0x0221"
+    assert func("0x0221") == "0x0221"
+
+
+def test_parse_graphics_devices_iterable__pci_ids():
+    with open(SAMPLE_FILE_PCI_IDS) as fp:
+        lines = fp.readlines()
+        devices = list(utils.pci_ids__parse_graphics_devices_iterable(lines))
+
+        assert devices == [
+            {
+                "adapter_hex": "0x8139",
+                "adapter_name": "AT-2500TX V3 Ethernet",
+                "vendor_hex": "0x0010",
+                "vendor_name": "Allied Telesis, Inc",
+            },
+            {
+                "adapter_hex": "0x0001",
+                "adapter_name": "PCAN-PCI CAN-Bus controller",
+                "vendor_hex": "0x001c",
+                "vendor_name": "PEAK-System Technik GmbH",
+            },
+            {
+                "adapter_hex": "0x0004",
+                "adapter_name": "2 Channel CAN Bus SJC1000",
+                "vendor_hex": "0x001c",
+                "vendor_name": "PEAK-System Technik GmbH",
+            },
+            {
+                "adapter_hex": "0x0005",
+                "adapter_name": "2 Channel CAN Bus SJC1000 (Optically Isolated)",
+                "vendor_hex": "0x001c",
+                "vendor_name": "PEAK-System Technik GmbH",
+            },
+            {
+                "adapter_hex": "0x7801",
+                "adapter_name": "WinTV HVR-1800 MCE",
+                "vendor_hex": "0x0070",
+                "vendor_name": "Hauppauge computer works Inc.",
+            },
+            {
+                "adapter_hex": "0x0680",
+                "adapter_name": "Ultra ATA/133 IDE RAID CONTROLLER CARD",
+                "vendor_hex": "0x0095",
+                "vendor_name": "Silicon Image, Inc. (Wrong ID)",
+            },
+        ]

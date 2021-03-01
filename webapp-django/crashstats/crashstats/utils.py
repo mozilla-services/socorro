@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.template import engines
 from django.utils import timezone
+from django.utils.encoding import smart_text
 from django.utils.functional import cached_property
 
 from crashstats import productlib
@@ -633,3 +634,93 @@ def ratelimit_rate(group, request):
         else:
             return settings.RATELIMIT_SUPERSEARCH
     raise NotImplementedError(group)
+
+
+def string_hex_to_hex_string(hexcode):
+    """Convert text like 919A to 0x919a
+
+    The PCIDatabase.com uses shortened hex strings (e.g. '919A') whereas in Socorro we
+    use the full represenation, but still as a string (e.g. '0x919a').
+
+    When converting the snippet to a 16 base int, we can potentially lose the leading
+    zeros, but we want to make sure we always return a 4 character string preceeded by
+    0x.
+
+    :arg hexcode: original hex code from pci ids file
+
+    :returns: hexcode in `0xNNNN` format
+
+    """
+    return "0x" + format(int(hexcode, 16), "04x")
+
+
+VENDOR_RE = re.compile(r"^([0-9a-f]{4})  (.+)$")
+DEVICE_RE = re.compile(r"^\t([0-9a-f]{4})  (.+)$")
+SUBDEVICE_RE = re.compile(r"^\t\t([0-9a-f]{4}) ([0-9a-f]{4})  (.+)$")
+
+
+def pci_ids__parse_graphics_devices_iterable(iterable, debug=False):
+    """
+    This function is for parsing the CSVish files from https://pci-ids.ucw.cz/
+
+    :arg iterable: iterable of lines of text
+    :arg bool debug: whether or not to print debugging output
+
+    yield dicts that contain the following keys:
+
+    * vendor_hex
+    * vendor_name
+    * adapter_hex
+    * adapter_name
+
+    Rows that start with a `#` are considered comments.
+
+    From the pci.ids file::
+
+        # Syntax:
+        # vendor  vendor_name
+        #     device  device_name                       <-- single tab indent
+        #         subvendor subdevice  subsystem_name   <-- two tab indent
+
+    """
+    vendor_hex = vendor_name = None
+
+    for line in iterable:
+        line = smart_text(line)
+
+        if not line:
+            continue
+
+        if line.startswith("#"):
+            if "List of known device classes" in line:
+                # There's a section at the bottom of the files which
+                # we don't need to parse.
+                break
+            continue
+
+        match = VENDOR_RE.match(line)
+        if match:
+            vendor_hex, vendor_name = match.group(1, 2)
+            continue
+
+        device_hex = device_name = None
+
+        match = DEVICE_RE.match(line)
+        if match:
+            device_hex, device_name = match.group(1, 2)
+        else:
+            match = SUBDEVICE_RE.match(line)
+            if match:
+                device_hex, device_name = match.group(2, 3)
+
+        if device_hex and device_name:
+            vendor_hex = string_hex_to_hex_string(vendor_hex)
+            device_hex = string_hex_to_hex_string(device_hex)
+            yield {
+                "vendor_hex": vendor_hex,
+                "vendor_name": vendor_name,
+                "adapter_hex": device_hex,
+                "adapter_name": device_name,
+            }
+        elif debug:
+            print(f"Doesn't match: {line!r}")

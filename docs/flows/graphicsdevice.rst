@@ -5,12 +5,13 @@ Graphics devices
 Summary
 =======
 
-Crash reports come in with a Vendor Hex and an Adapter Hex. The webapp stores
-a lookup table to convert these codes into friendly names.
+Crash reports come in with a ``AdapterVendorID`` and ``AdapterDeviceID`` crash
+annotations. These are hex codes in the form of ``0xNNNN``. The webapp has a
+lookup table to convert the hex codes into friendly names.
 
-This data is hierarchical. Vendor Hex codes are unique. Each vendor has many
-adapters each with its own Adapter Hex code. Adapter Hex codes aren't unique
-across multiple vendors.
+This data is hierarchical. Vendor hex codes are unique. Each vendor has many
+devices each with a device hex code. Device hex codes aren't unique across
+multiple vendors.
 
 .. graphviz::
 
@@ -43,17 +44,13 @@ The data is stored in the ``crashstats.GraphicsDevice`` Django model. This is th
 Where the data comes from
 =========================
 
-Data is added to the table manually using the Crash Stats Django admin.
-
-1. Log into Crash Stats.
-2. Go to the admin.
-3. Click on Management Pages -> Graphics Devices
-4. Upload a new file from `PCI ID repository <https://pci-ids.ucw.cz/>`_.
+Data is added to the table automatically using the ``update_graphics_pci`` cron
+job. This job runs once a week to pick up new device ids.
 
 The function for parsing that file is `pci_ids__parse_graphics_device_iterable`
-at:
+in ``webapp-django/crashstats/crashstats/utils.py``.
 
-https://github.com/mozilla-services/socorro/blob/main/webapp-django/crashstats/manage/utils.py#L21
+If you need to, you can edit the table data directly using the Django admin.
 
 
 What uses this data
