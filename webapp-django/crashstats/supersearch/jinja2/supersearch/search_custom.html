@@ -17,9 +17,7 @@
     </div>
 
     <section id="search-form">
-      <form method="post" action=""
-            data-results-url="{{ url('supersearch:search_query') }}"
-      >
+      <form method="post" data-results-url="{{ url('supersearch:search_query') }}">
         {% csrf_token %}
         <div class="form-controls">
           <button type="submit" id="search-button">Search</button>
