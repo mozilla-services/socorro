@@ -22,6 +22,12 @@ JOBS = [
         "time": "05:00",
     },
     {
+        # Update graphicsdevice table with data from PCI ids every week
+        "cmd": "update_graphics_pci",
+        "frequency": "7d",
+        "time": "04:00",
+    },
+    {
         # Expire old cronlog entries every week
         "cmd": "cleanse_cronlog",
         "frequency": "7d",

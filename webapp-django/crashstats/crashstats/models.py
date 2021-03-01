@@ -100,6 +100,14 @@ class GraphicsDevice(models.Model):
     class Meta:
         unique_together = ("vendor_hex", "adapter_hex")
 
+    def __str__(self):
+        return "%s %s %s %s" % (
+            self.vendor_hex,
+            self.vendor_name,
+            self.adapter_hex,
+            self.adapter_name,
+        )
+
 
 class Platform(models.Model):
     """Lookup table for platforms"""
