@@ -24,7 +24,7 @@
 {% block content %}
   <div class="content-main">
     <h2>Graphics device file upload</h2>
-    <form class="upload" method="post" enctype="multipart/form-data">
+    <form class="upload" action="{% url 'siteadmin:graphics_devices' %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <table>
         {{ upload_form }}
