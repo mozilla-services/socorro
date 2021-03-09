@@ -142,7 +142,7 @@ def report_index(request, crash_id, default_context=None):
         utils.enhance_json_dump(json_dump, settings.VCS_MAPPINGS)
         parsed_dump = json_dump
     else:
-        context["raw_stackwalker_output"] = "No dump available"
+        context["raw_stackwalker_output"] = ""
         parsed_dump = {}
 
     context["crashing_thread"] = parsed_dump.get("crash_info", {}).get(
@@ -188,44 +188,52 @@ def report_index(request, crash_id, default_context=None):
     context["public_raw_keys"].sort(key=lambda s: s.lower())
     context["protected_raw_keys"].sort(key=lambda s: s.lower())
 
-    if request.user.has_perm("crashstats.view_rawdump"):
-        context["raw_dump_urls"] = [
-            ("dump", reverse("crashstats:raw_data", args=(crash_id, "dmp"))),
+    data_urls = []
+    if request.user.has_perm("crashstats.view_pii") or your_crash:
+        # Add Raw Crash link
+        data_urls.append(
             (
-                "minidump-stackwalk output",
-                reverse("crashstats:raw_data", args=(crash_id, "json")),
-            ),
-        ]
-        if context["raw"].get("additional_minidumps"):
-            suffixes = [
-                x.strip()
-                for x in context["raw"]["additional_minidumps"].split(",")
-                if x.strip()
-            ]
-            for suffix in suffixes:
-                name = "upload_file_minidump_%s" % (suffix,)
-                context["raw_dump_urls"].append(
-                    (
-                        name,
-                        reverse(
-                            "crashstats:raw_data_named", args=(crash_id, name, "dmp")
-                        ),
-                    )
-                )
-        if (
-            context["raw"].get("ContainsMemoryReport")
-            and context["report"].get("memory_report")
-            and not context["report"].get("memory_report_error")
-        ):
-            context["raw_dump_urls"].append(
-                (
-                    "memory_report",
+                "raw crash",
+                "%s?crash_id=%s"
+                % (
+                    reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
+                    crash_id,
+                ),
+            )
+        )
+
+        # Add Processed Crash link
+        data_urls.append(
+            (
+                "processed crash",
+                "%s?crash_id=%s"
+                % (
                     reverse(
-                        "crashstats:raw_data_named",
-                        args=(crash_id, "memory_report", "json.gz"),
+                        "api:model_wrapper", kwargs={"model_name": "UnredactedCrash"}
+                    ),
+                    crash_id,
+                ),
+            )
+        )
+    context["raw_data_urls"] = data_urls
+
+    dump_urls = []
+    if request.user.has_perm("crashstats.view_rawdump"):
+        # Add link for minidumps and memory report
+        dumps = sorted(context["raw"].get("dump_checksums", {}).keys())
+        for dump_name in dumps:
+            dump_urls.append(
+                (
+                    dump_name,
+                    "%s?crash_id=%s&format=raw&name=%s"
+                    % (
+                        reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
+                        crash_id,
+                        dump_name,
                     ),
                 )
             )
+    context["raw_dump_urls"] = dump_urls
 
     # Add descriptions to all fields.
     all_fields = SuperSearchFields().get()

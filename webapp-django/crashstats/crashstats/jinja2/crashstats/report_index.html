@@ -1002,9 +1002,36 @@
           <!-- /modules -->
 
           <div id="rawdump" class="ui-tabs-hide">
-            <div class="code">{{ raw_stackwalker_output }}</div>
+            <h3>Download raw and processed crash data</h3>
+            {% if request.user.has_perm('crashstats.view_pii') %}
+              <p>
+                {{ protected_warning(your_crash) }}
+                {% if not your_crash %}
+                  Raw and processed crash reports contain protected data.
+                {% endif %}
+              </p>
+              <ul class="list-inside list-disc">
+                {% for name, url in raw_data_urls %}
+                  <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
+                {% endfor %}
+              </ul>
+            {% elif request.user and request.user.is_active %}
+              <p>
+                You do not have access to protected data.
+                You need to be logged in and have access to protected data to see links to crash report data.
+                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+                for more information.
+              </p>
+            {% else %}
+              <p>
+                You are not logged in.
+                You need to be logged in and have access to protected data to see links to crash report data.
+                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+                for more information.
+              </p>
+            {% endif %}
 
-            <h3>Download Raw Crash Data and Minidumps</h3>
+            <h3>Download dumps and memory report</h3>
             {% if request.user.has_perm('crashstats.view_rawdump') %}
               <p>
                 {{ protected_warning(your_crash) }}
@@ -1013,28 +1040,52 @@
                   See <a href="{{ url('documentation:protected_data_access') }}">Protected data policy</a> for details.
                 {% endif %}
               </p>
-              <ul>
-                {% for name, url in raw_dump_urls %}
-                  <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
-                {% endfor %}
-                {% set unredacted_url = url('api:model_wrapper', model_name='UnredactedCrash') + '?' + make_query_string(crash_id=report.uuid) %}
-                <li>processed crash: <a href="{{ unredacted_url }}" target="_blank">{{ unredacted_url }}</a>
-              </ul>
+              {% if raw_dump_urls %}
+                <ul class="list-inside list-disc">
+                  {% for name, url in raw_dump_urls %}
+                    <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p>
+                  There are no dumps or memory report to download.
+                </p>
+              {% endif %}
             {% elif request.user and request.user.is_active %}
               <p>
                 You do not have access to protected data.
-                You need to be logged in and have access to protected data to see this.
+                You need to be logged in and have access to protected data to see links to crash report data.
                 See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
                 for more information.
               </p>
             {% else %}
               <p>
                 You are not logged in.
-                You need to be logged in and have access to protected data to see this.
+                You need to be logged in and have access to protected data to see links to crash report data.
                 See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
                 for more information.
               </p>
             {% endif %}
+
+            <h3>minidump-stackwalk output</h3>
+            <div>
+              {% if request.user.has_perm('crashstats.view_rawdump') %}
+                {{ protected_warning(your_crash) }}
+                {% if not your_crash %}
+                  minidump-stackwalk output contains sensitive and exploitability information.
+                {% endif %}
+              {% else %}
+                You do not have access to protected data so the minidump-stackwalk output is redacted.
+                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+                for more information.
+              {% endif %}
+            </div>
+            {% if raw_stackwalker_output %}
+              <div id="minidump-stackwalk-json" data-minidumpstackwalk="{{ raw_stackwalker_output }}"></div>
+            {% else %}
+              <p>No dump available.</p>
+            {% endif %}
+
           </div>
           <!-- /rawdump -->
 

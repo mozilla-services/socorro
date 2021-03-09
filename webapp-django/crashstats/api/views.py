@@ -307,9 +307,9 @@ def model_wrapper(request, model_name):
         return {"errors": dict(form.errors)}, 400
 
     if binary_response:
-        assert model.API_BINARY_FILENAME, "No API_BINARY_FILENAME set on model"
+        filename = model.get_binary_filename(form.cleaned_data)
+        assert filename is not None, "No API_BINARY_FILENAME set on model"
         response = http.HttpResponse(result, content_type="application/octet-stream")
-        filename = model.API_BINARY_FILENAME % form.cleaned_data
         response["Content-Disposition"] = 'attachment; filename="%s"' % filename
         return response
 

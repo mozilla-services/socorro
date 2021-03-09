@@ -51,9 +51,13 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             raise MissingArgumentError("datatype")
 
         datatype_method_mapping = {
+            # Minidumps
             "raw": "get_raw_dump",
+            # Raw Crash
             "meta": "get_raw_crash",
+            # Redacted processed crash
             "processed": "get_processed",
+            # Unredacted processed crash
             "unredacted": "get_unredacted_processed",
         }
         if params.datatype not in datatype_method_mapping:

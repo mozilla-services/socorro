@@ -428,9 +428,9 @@ class TestViews(BaseTestViews):
         assert _SAMPLE_META["Email"] not in content
         assert _SAMPLE_META["URL"] not in content
         assert (
-            "You need to be logged in and have access to protected data to see this."
-            in content
-        )
+            "You need to be logged in and have access to protected data to see "
+            "links to crash report data."
+        ) in content
         # Should not be able to see sensitive key from stackwalker JSON
         assert "&#34;sensitive&#34;" not in content
         assert "&#34;exploitability&#34;" not in content
@@ -629,7 +629,11 @@ class TestViews(BaseTestViews):
                     "Email": "secret@email.com",
                     "Vendor": "Mozilla",
                     "URL": "farmville.com",
-                    "additional_minidumps": "foo, bar,",
+                    "dump_checksums": {
+                        "upload_file_minidump": "xxx",
+                        "upload_file_minidump_foo": "xxx",
+                        "upload_file_minidump_bar": "xxx",
+                    },
                 }
 
             raise NotImplementedError
@@ -642,38 +646,50 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
         # first of all, expect these basic URLs
-        raw_json_url = reverse("crashstats:raw_data", args=(crash_id, "json"))
-        raw_dmp_url = reverse("crashstats:raw_data", args=(crash_id, "dmp"))
+        raw_crash_url = "%s?crash_id=%s" % (
+            reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
+            crash_id,
+        )
+        dump_url = "%s?crash_id=%s&amp;format=raw&amp;name=upload_file_minidump" % (
+            reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
+            crash_id,
+        )
         # not quite yet
-        assert raw_json_url not in smart_text(response.content)
-        assert raw_dmp_url not in smart_text(response.content)
+        assert raw_crash_url not in smart_text(response.content)
+        assert dump_url not in smart_text(response.content)
 
         user = self._login()
         response = self.client.get(url)
         assert response.status_code == 200
         # still they don't appear
-        assert raw_json_url not in smart_text(response.content)
-        assert raw_dmp_url not in smart_text(response.content)
+        assert raw_crash_url not in smart_text(response.content)
+        assert dump_url not in smart_text(response.content)
 
-        group = self._create_group_with_permission("view_rawdump")
+        group = self._create_group_with_permission(["view_pii", "view_rawdump"])
         user.groups.add(group)
         response = self.client.get(url)
         assert response.status_code == 200
         # finally they appear
-        assert raw_json_url in smart_text(response.content)
-        assert raw_dmp_url in smart_text(response.content)
+        assert raw_crash_url in smart_text(response.content)
+        assert dump_url in smart_text(response.content)
 
         # also, check that the other links are there
-        foo_dmp_url = reverse(
-            "crashstats:raw_data_named",
-            args=(crash_id, "upload_file_minidump_foo", "dmp"),
+        foo_dump_url = (
+            "%s?crash_id=%s&amp;format=raw&amp;name=upload_file_minidump_foo"
+            % (
+                reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
+                crash_id,
+            )
         )
-        assert foo_dmp_url in smart_text(response.content)
-        bar_dmp_url = reverse(
-            "crashstats:raw_data_named",
-            args=(crash_id, "upload_file_minidump_bar", "dmp"),
+        assert foo_dump_url in smart_text(response.content)
+        bar_dump_url = (
+            "%s?crash_id=%s&amp;format=raw&amp;name=upload_file_minidump_bar"
+            % (
+                reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
+                crash_id,
+            )
         )
-        assert bar_dmp_url in smart_text(response.content)
+        assert bar_dump_url in smart_text(response.content)
 
     def test_report_index_with_symbol_url_in_modules(self):
         json_dump = {
