@@ -418,11 +418,13 @@ class SocorroMiddleware(SocorroCommon):
 
     # By default, no binary response
     API_BINARY_RESPONSE = {}
-    # and thus no needed binary filename
-    API_BINARY_FILENAME = None
 
     # By default no special permissions are needed for binary response
     API_BINARY_PERMISSIONS = ()
+
+    @classmethod
+    def get_binary_filename(cls, params):
+        return None
 
     def get(self, expect_json=True, **kwargs):
         return self._get(expect_json=expect_json, **kwargs)
@@ -783,9 +785,20 @@ class RawCrash(SocorroMiddleware):
     # If this is matched in the query string parameters, then
     # we will return the response in binary format in the API
     API_BINARY_RESPONSE = {"format": "raw"}
-    API_BINARY_FILENAME = "%(crash_id)s.dmp"
     # permissions needed to download it as a binary response
     API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
+
+    @classmethod
+    def get_binary_filename(cls, params):
+        name = params["name"]
+        crash_id = params["crash_id"]
+
+        if name == "memory_report":
+            return "memory_report.json.gz"
+        elif name:
+            return f"{crash_id}-{name}.dmp"
+        else:
+            return f"{crash_id}.dmp"
 
     def get(self, **kwargs):
         format_ = kwargs.get("format", "meta")

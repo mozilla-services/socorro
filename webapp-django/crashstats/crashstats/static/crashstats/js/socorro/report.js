@@ -25,6 +25,29 @@ $(document).ready(function () {
     };
   })();
 
+  /* Idempotent function to display the json dump with jQuery JSONView */
+  var displayMinidumpStackwalkJson = (function () {
+    var once = false;
+    return function inner() {
+      if (once) {
+        // idempotent function
+        return;
+      }
+      once = true;
+      var container = $('#minidump-stackwalk-json');
+      if (container.length) {
+        var jsonData = container.data('minidumpstackwalk');
+        try {
+          $('#minidump-stackwalk-json').JSONView(jsonData);
+        } catch (ex) {
+          console.warn('The data in the #minidump-stackwalk-json dataset is not valid JSON');
+          container.append($('<p>Error when parsing JSON. Showing raw value:</p>'));
+          container.append(document.createTextNode(jsonData));
+        }
+      }
+    };
+  })();
+
   // If the page is loaded with a location.hash like '#tab-...'
   // then find out which index that is so when we set up $.tabs()
   // we can set the right active one.
@@ -36,6 +59,8 @@ $(document).ready(function () {
     if (tab.length) {
       if (tabId === 'telemetryenvironment') {
         displayTelemetryEnvironment();
+      } else if (tabId === 'rawdump') {
+        displayMinidumpStackwalkJson();
       }
       $('.ui-tabs li a').each(function (i, tab) {
         if (tab.href.search('#' + tabId) > -1) {
@@ -50,6 +75,8 @@ $(document).ready(function () {
       var tabId = ui.newPanel.attr('id');
       if (tabId === 'telemetryenvironment') {
         displayTelemetryEnvironment();
+      } else if (tabId === 'rawdump') {
+        displayMinidumpStackwalkJson();
       }
       document.location.hash = 'tab-' + tabId;
     },

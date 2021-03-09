@@ -146,14 +146,19 @@ class BaseTestViews(ProductVersionsMixin, SuperSearchFieldsMock, DjangoTestCase)
         group = self._create_group_with_permission(codename)
         user.groups.add(group)
 
-    def _create_group_with_permission(self, codename, group_name="Group"):
+    def _create_group_with_permission(self, permissions, group_name="Group"):
+        if not isinstance(permissions, list):
+            permissions = [permissions]
+        permissions
         appname = "crashstats"
-        ct, __ = ContentType.objects.get_or_create(model="", app_label=appname)
-        permission, __ = Permission.objects.get_or_create(
-            codename=codename, name=PERMISSIONS[codename], content_type=ct
-        )
-        group, __ = Group.objects.get_or_create(name=group_name)
-        group.permissions.add(permission)
+        ct, _ = ContentType.objects.get_or_create(model="", app_label=appname)
+        group, _ = Group.objects.get_or_create(name=group_name)
+
+        for permission in permissions:
+            obj, _ = Permission.objects.get_or_create(
+                codename=permission, name=PERMISSIONS[permission], content_type=ct
+            )
+            group.permissions.add(obj)
         return group
 
     @staticmethod
