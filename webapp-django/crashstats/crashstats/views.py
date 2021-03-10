@@ -8,7 +8,6 @@ from pathlib import Path
 
 from django import http
 from django.conf import settings
-from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
@@ -321,35 +320,6 @@ def buginfo(request, signatures=None):
     bzapi = models.BugzillaBugInfo()
     result = bzapi.get(bug_ids)
     return result
-
-
-@permission_required("crashstats.view_rawdump")
-def raw_data(request, crash_id, extension, name=None):
-    api = models.RawCrash()
-    if extension == "json":
-        format = "meta"
-        content_type = "application/json"
-    elif extension == "dmp":
-        format = "raw"
-        content_type = "application/octet-stream"
-    elif extension == "json.gz" and name == "memory_report":
-        # Note, if the name is 'memory_report' it will fetch a raw
-        # crash with name and the files in the memory_report bucket
-        # are already gzipped.
-        # This is important because it means we don't need to gzip
-        # the HttpResponse below.
-        format = "raw"
-        content_type = "application/octet-stream"
-    else:
-        raise NotImplementedError(extension)
-
-    data = api.get(crash_id=crash_id, format=format, name=name)
-    response = http.HttpResponse(content_type=content_type)
-    if extension == "json":
-        response.write(json.dumps(data))
-    else:
-        response.write(data)
-    return response
 
 
 @pass_default_context
