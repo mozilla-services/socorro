@@ -26,6 +26,8 @@ dalvik-jit-code-cache
 dalvik-LinearAlloc
 dalvik-mark-stack
 data@app@org\.mozilla\.f.*-\d\.apk@classes\.dex@0x
+<env_logger::Logger as log::Log>::log::{{closure}}
+<env_logger::Logger as log::Log>::log
 exp2
 .*FNODOBFM
 framework\.odex@0x
@@ -61,6 +63,7 @@ libMali\.so@0x
 libutils\.so@0x
 libz\.so@0x
 linux-gate\.so@0x
+log::__private_api_log
 mach_msg
 _mach_msg
 mach_msg_trap
