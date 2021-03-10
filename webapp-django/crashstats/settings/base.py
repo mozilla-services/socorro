@@ -92,7 +92,6 @@ INSTALLED_APPS = (
     "crashstats.status",
     "crashstats.supersearch",
     "crashstats.tokens",
-    "crashstats.tools",
     "crashstats.topcrashers",
     "crashstats.sources",
     "django.contrib.messages",

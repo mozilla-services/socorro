@@ -27,14 +27,13 @@ from crashstats.crashstats import utils
 from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
 from crashstats.supersearch import models as supersearch_models
 from crashstats.tokens import models as tokens_models
-from crashstats.tools import models as tools_models
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import is_crash_id_valid
 
 
 # List of all modules that contain models we want to expose.
-MODELS_MODULES = (models, tools_models, supersearch_models)
+MODELS_MODULES = (models, supersearch_models)
 
 
 BAD_REQUEST_EXCEPTIONS = (

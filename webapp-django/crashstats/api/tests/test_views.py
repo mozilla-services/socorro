@@ -453,58 +453,6 @@ class TestViews(BaseTestViews):
             "total": 1,
         }
 
-    def test_NewSignatures(self):
-        def mocked_supersearch_get(**params):
-            assert params["product"] == [productlib.get_default_product().name]
-
-            if "version" in params:
-                assert params["version"] == ["1.0", "2.0"]
-
-            if "signature" not in params:
-                # Return a list of signatures.
-                signatures = [
-                    {"term": "ba", "count": 21},
-                    {"term": "zin", "count": 19},
-                    {"term": "ga", "count": 1},
-                ]
-            else:
-                # Return only some of the above signatures. The missing ones
-                # are "new" signatures.
-                signatures = [{"term": "ga", "count": 21}]
-
-            return {"hits": [], "facets": {"signature": signatures}, "total": 43829}
-
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
-
-        url = reverse("api:model_wrapper", args=("NewSignatures",))
-
-        # Test we get expected results.
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        res_expected = ["ba", "zin"]
-        res = json.loads(response.content)
-        assert res["hits"] == res_expected
-
-        # Test with versions.
-        response = self.client.get(url, {"version": ["1.0", "2.0"]})
-        assert response.status_code == 200
-
-        # Test with incorrect arguments.
-        response = self.client.get(
-            url,
-            {
-                "start_date": "not a date",
-                "end_date": "not a date",
-                "not_after": "not a date",
-            },
-        )
-        assert response.status_code == 400
-        assert response["Content-Type"] == "application/json; charset=UTF-8"
-        res = json.loads(response.content)
-        assert "errors" in res
-        assert len(res["errors"]) == 3
-
     def test_Field(self):
         url = reverse("api:model_wrapper", args=("Field",))
         response = self.client.get(url)
@@ -844,7 +792,6 @@ class TestMultipleStringField:
 
 API_MODEL_NAMES = [
     "Bugs",
-    "NewSignatures",
     "NoOp",
     "ProcessedCrash",
     "RawCrash",
