@@ -67,9 +67,7 @@
         <pre class="deprecation-warning">{{ endpoint.deprecation_warning }}</pre>
       {% endif %}
 
-      {% if endpoint.help_text %}
-        <p class="helptext">{{ endpoint.help_text }}</p>
-      {% endif %}
+      <pre class="helptext">{{ endpoint.help_text }}</pre>
 
       {% if endpoint.parameters %}
         <table class="data-table vertical">
