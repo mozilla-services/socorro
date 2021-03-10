@@ -14,8 +14,27 @@ from crashstats.supersearch.models import SuperSearch
 
 class NewSignatures(models.SocorroMiddleware):
     HELP_TEXT = """
-    API for retrieving new signatures for a given product and version in
-    the specified time range.
+    API for retrieving signatures for a given product and version that are in
+    RANGE1 but not in RANGE2.
+
+    RANGE1 is defined as start_date to end_date.
+
+    RANGE2 is before RANGE1 and defined as not_after date to start_date.
+
+    Params:
+
+    * end_date: (optional) end date in YYYY-MM-DD format; defaults to now
+
+    * start_date: (optional) start date in YYYY-MM-DD format; defaults to 8 days before
+      end_date
+
+    * not_after: (optional) date in YYYY-MM-DD format before the start_date defining the
+      previous period to compare with; defaults to 14 days before start_date
+
+    * product: (optional) list of products; defaults to default product (Firefox)
+
+    * version: (optional) list of versions
+
     """
 
     API_ALLOWLIST = None
@@ -78,9 +97,9 @@ class NewSignatures(models.SocorroMiddleware):
 
         data = api.get(**params)
 
-        # If any of those signatures is in the results, it's that it did not
-        # appear during the period of time we are interested in. Let's
-        # remove it from the list of new signatures.
+        # If any of those signatures is in the results, it's that it did not appear
+        # during the period of time we are interested in. Let's remove it from the list
+        # of new signatures.
         for signature in data["facets"]["signature"]:
             if signature["term"] in signatures:
                 signatures.remove(signature["term"])

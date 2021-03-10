@@ -399,9 +399,8 @@ def _describe_model(model_name, model):
     elif model.post:
         methods.append("POST")
 
-    help_text = model.HELP_TEXT
-    if help_text:
-        help_text = dedent_left(help_text.rstrip(), 4)
+    help_text = model.HELP_TEXT or "No description available."
+    help_text = dedent_left(help_text.rstrip(), 4)
 
     required_permissions = []
     if model_inst.API_REQUIRED_PERMISSIONS:
