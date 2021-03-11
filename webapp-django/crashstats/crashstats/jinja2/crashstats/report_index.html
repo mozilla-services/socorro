@@ -1002,51 +1002,27 @@
           <!-- /modules -->
 
           <div id="rawdump" class="ui-tabs-hide">
-            <h3>Download raw and processed crash data</h3>
-            {% if request.user.has_perm('crashstats.view_pii') %}
+            <h3>Download raw crash, processed crash, minidump, and memory report data</h3>
+            {% if request.user.has_perm('crashstats.view_pii') or request.user.has_perm('crashstats.view_rawdump') %}
               <p>
                 {{ protected_warning(your_crash) }}
-                {% if not your_crash %}
-                  Raw and processed crash reports contain protected data.
-                {% endif %}
+                Raw and processed crash reports contain protected data.
+                Please don't share minidumps with third-parties.
+                See <a href="{{ url('documentation:protected_data_access') }}">Protected data policy</a> for details.
               </p>
               <ul class="list-inside list-disc">
-                {% for name, url in raw_data_urls %}
-                  <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
-                {% endfor %}
-              </ul>
-            {% elif request.user and request.user.is_active %}
-              <p>
-                You do not have access to protected data.
-                You need to be logged in and have access to protected data to see links to crash report data.
-                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
-                for more information.
-              </p>
-            {% else %}
-              <p>
-                You are not logged in.
-                You need to be logged in and have access to protected data to see links to crash report data.
-                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
-                for more information.
-              </p>
-            {% endif %}
-
-            <h3>Download dumps and memory report</h3>
-            {% if request.user.has_perm('crashstats.view_rawdump') %}
-              <p>
-                {{ protected_warning(your_crash) }}
-                {% if not your_crash %}
-                  Please don't share minidumps with third-parties.
-                  See <a href="{{ url('documentation:protected_data_access') }}">Protected data policy</a> for details.
+                {% if request.user.has_perm('crashstats.view_pii') %}
+                  {% for name, url in raw_data_urls %}
+                    <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
+                  {% endfor %}
                 {% endif %}
-              </p>
-              {% if raw_dump_urls %}
-                <ul class="list-inside list-disc">
+                {% if request.user.has_perm('crashstats.view_rawdump') %}
                   {% for name, url in raw_dump_urls %}
                     <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
                   {% endfor %}
-                </ul>
-              {% else %}
+                {% endif %}
+              </ul>
+              {% if request.user.has_perm('crashstats.view_rawdump') and not raw_dump_urls %}
                 <p>
                   There are no dumps or memory report to download.
                 </p>
