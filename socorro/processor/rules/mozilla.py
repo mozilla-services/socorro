@@ -1066,3 +1066,36 @@ class PHCRule(Rule):
         # Add PHCFreeStack which is a comma-separated list of integers
         if "PHCFreeStack" in raw_crash:
             processed_crash["phc_free_stack"] = raw_crash["PHCFreeStack"]
+
+
+class ModuleURLRewriteRule(Rule):
+    """Rewrites module urls using symbols.mozilla.org redirector
+
+    minidump-stackwalk caches SYM files on disk. When it's tossing in the url for a SYM
+    file cached on disk, it uses the first item in the symbols_urls list. If it's a try
+    symbol, then it's wrong.
+
+    This stomps on those urls using the redirector url from symbols.mozilla.org which
+    will return the right url regardless of whether it's a try symbol or not.
+
+    Bug #1672406.
+
+    """
+
+    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return bool(glom(processed_crash, "json_dump.modules", default=None))
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        modules = processed_crash["json_dump"]["modules"]
+        for module in modules:
+            if "symbol_url" not in module:
+                continue
+
+            url = module["symbol_url"]
+            # FIXME(willkg): errors will bubble up and get to sentry and we can fix
+            # issue as we discover them
+            debug_filename, debug_id, symbol_file = url.split("/")[-3:]
+            # NOTE(willkg): adding the /try/ bit here causes this to check the normal
+            # bucket and then the try bucket.
+            new_url = f"https://symbols.mozilla.org/try/{debug_filename}/{debug_id}/{symbol_file}"
+            module["symbol_url"] = new_url

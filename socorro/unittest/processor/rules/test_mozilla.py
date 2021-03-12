@@ -26,6 +26,7 @@ from socorro.processor.rules.mozilla import (
     JavaProcessRule,
     MalformedBreadcrumbs,
     ModulesInStackRule,
+    ModuleURLRewriteRule,
     MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
@@ -800,6 +801,88 @@ class TestJavaProcessRule:
         assert "java_exception_raw" not in processed_crash
         assert "java_exception" not in processed_crash
         assert "malformed JavaException" in processor_meta["processor_notes"][0]
+
+
+class TestModuleURLRewriteRule:
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            # No json_dump.mosules
+            ({}, False),
+            ({"json_dump": {}}, False),
+            # modules is empty
+            ({"json_dump": {"modules": []}}, False),
+            # modules is non-empty, so the rule can do stuff
+            ({"json_dump": {"modules": [{}]}}, True),
+        ],
+    )
+    def test_predicate(self, processed, expected):
+        processor_meta = get_basic_processor_meta()
+        rule = ModuleURLRewriteRule()
+        assert rule.predicate({}, {}, processed, processor_meta) == expected
+
+    def test_action_no_modules(self):
+        processed = {"json_dump": {"modules": []}}
+        # The rule shouldn't change the processed crash at all
+        expected = copy.deepcopy(processed)
+        processor_meta = get_basic_processor_meta()
+        rule = ModuleURLRewriteRule()
+        rule.act({}, {}, processed, processor_meta)
+        assert processed == expected
+
+    def test_rewrite_no_url(self):
+        processed = {
+            "json_dump": {
+                "modules": [
+                    {
+                        "base_addr": "0x7ff766020000",
+                        "code_id": "604BABCD107000",
+                        "debug_file": "firefox.pdb",
+                        "debug_id": "3C81DFD6564358244C4C44205044422E1",
+                        "end_addr": "0x7ff766127000",
+                        "filename": "firefox.exe",
+                        "loaded_symbols": True,
+                        "symbol_disk_cache_hit": False,
+                        "symbol_fetch_time": 52.86800003051758,
+                        "version": "88.0.0.7741",
+                    },
+                ]
+            }
+        }
+        # The rule shouldn't change the processed crash at all
+        expected = copy.deepcopy(processed)
+        processor_meta = get_basic_processor_meta()
+        rule = ModuleURLRewriteRule()
+        rule.act({}, {}, processed, processor_meta)
+        assert processed == expected
+
+    def test_rewrite(self):
+        processed = {
+            "json_dump": {
+                "modules": [
+                    {
+                        "base_addr": "0x7ff766020000",
+                        "code_id": "604BABCD107000",
+                        "debug_file": "firefox.pdb",
+                        "debug_id": "3C81DFD6564358244C4C44205044422E1",
+                        "end_addr": "0x7ff766127000",
+                        "filename": "firefox.exe",
+                        "loaded_symbols": True,
+                        "symbol_disk_cache_hit": False,
+                        "symbol_fetch_time": 52.86800003051758,
+                        "symbol_url": "https://host/bucket/try/v1/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym",
+                        "version": "88.0.0.7741",
+                    },
+                ]
+            }
+        }
+        processor_meta = get_basic_processor_meta()
+        rule = ModuleURLRewriteRule()
+        rule.act({}, {}, processed, processor_meta)
+        assert (
+            processed["json_dump"]["modules"][0]["symbol_url"]
+            == "https://symbols.mozilla.org/try/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym"
+        )
 
 
 class TestMozCrashReasonRule:
