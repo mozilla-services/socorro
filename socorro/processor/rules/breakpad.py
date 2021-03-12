@@ -53,7 +53,7 @@ class MinidumpSha256Rule(Rule):
 def execute_external_process(
     command_pathname, command_line, processor_meta, interpret_output
 ):
-    """Executes an external process, interprets output, and returns output and return_code.
+    """Executes external process, interprets output, and returns output and return_code.
 
     :arg str command_pathname: the path to the command to run
     :arg str command_line: the complete command line to run
@@ -84,7 +84,7 @@ def execute_external_process(
 
 
 class BreakpadStackwalkerRule2015(Rule):
-    """Executes the minidump stackwalker external process and puts output in processed crash."""
+    """Executes minidump-stackwalker and puts output in processed crash."""
 
     def __init__(
         self,
