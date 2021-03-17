@@ -17,10 +17,6 @@ Rough directory structure::
     devedition/      DevEdition (aka Firefox aurora)
       candidates/    beta builds for Firefox b1 and b2
 
-    mobile/          Fennec builds
-      candidates/    beta, rc, and release builds
-      nightly/       nightly builds
-
 
 This job only looks for build information for the en-US locale for the first
 platform in a build directory that has build information. Once it's found some
@@ -366,7 +362,7 @@ class Downloader:
             major_version_minus_4 = major_version - 4
             stdout.write(
                 "skipping anything before %s and not esr (%s)"
-                % (product_name, major_version_minus_4)
+                % (major_version_minus_4, product_name)
             )
             version_links = [
                 link
@@ -520,15 +516,6 @@ class Command(BaseCommand):
             verbose=verbose,
             product_name="DevEdition",
             archive_directory="devedition",
-        )
-
-        # Capture Fennec beta and release builds
-        self.scrape_and_insert_build_info(
-            base_url=base_url,
-            num_workers=num_workers,
-            verbose=verbose,
-            product_name="Fennec",
-            archive_directory="mobile",
         )
 
         self.stdout.write("Done!")

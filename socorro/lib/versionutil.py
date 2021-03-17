@@ -13,8 +13,7 @@ def generate_semver(version):
     """Convert a version to semver.
 
     This converts the version string to a semver that (ab)uses the prerelease section to
-    denote the channel and in doing that, sorts Firefox, Fennec, and Fenix versions
-    correctly.
+    denote the channel and in doing that, sorts Firefox and Fenix versions correctly.
 
     :param version: the version string
 
@@ -37,8 +36,8 @@ def generate_semver(version):
     except ValueError:
         pass
 
-    # If it's not semver, then it's probably a Firefox/Fennec version number, so parse
-    # that and convert it to a semver VersionInfo
+    # If it's not semver, then it's probably a Firefox version number, so parse that and
+    # convert it to a semver VersionInfo
 
     orig_version = version
     prerelease = []

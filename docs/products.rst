@@ -56,7 +56,7 @@ Version
 -------
 
 The ``Version`` annotation specifies the version of the application that crashed.
-Firefox and Fennec use versions in the following formats:
+Firefox use versions in the following formats:
 
 1. X.Y.Z -- release and beta version
 2. X.Ya1 -- nightly versions

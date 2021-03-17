@@ -1206,45 +1206,6 @@ class TestViews(BaseTestViews):
         # is there.
         assert 'id="telemetryenvironment-json"' in smart_text(response.content)
 
-    def test_report_index_fennecandroid_report(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
-                crash["product"] = "WaterWolf"
-                return crash
-
-            raise NotImplementedError
-
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-
-        response = self.client.get(url)
-        assert response.status_code == 200
-        doc = pyquery.PyQuery(response.content)
-
-        link = doc('#bugzilla a[target="_blank"]').eq(0)
-        assert link.text() == "WaterWolf"
-        assert "create-waterwolf-bug" in link.attr("href")
-
-        # also, the "More Reports" link should have WinterSun in it
-        link = doc("a.sig-overview").eq(0)
-        assert "product=WaterWolf" in link.attr("href")
-
     def test_report_index_odd_product_and_version(self):
         # If the processed JSON references an unfamiliar product and version it
         # should not use that to make links in the nav to reports for that

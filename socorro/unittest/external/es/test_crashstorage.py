@@ -68,7 +68,7 @@ SAMPLE_PROCESSED_CRASH = {
     "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ",
     "processor_notes": "SignatureTool: signature truncated due to length",
     "process_type": "plugin",
-    "product": "FennecAndroid",
+    "product": "Firefox",
     "PluginFilename": "dwight.txt",
     "PluginName": "wilma",
     "PluginVersion": "69",
@@ -371,7 +371,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         processed_crash = {
             "build": "20120309050057",
             "date_processed": date_to_string(utc_now()),
-            "product": "FennecAndroid",
+            "product": "Firefox",
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "json_dump": {
                 # json dump allowed keys

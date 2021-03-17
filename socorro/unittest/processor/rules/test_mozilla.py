@@ -34,7 +34,6 @@ from socorro.processor.rules.mozilla import (
     PluginContentURL,
     PluginRule,
     PluginUserComment,
-    ProductRewrite,
     ProductRule,
     SignatureGeneratorRule,
     SubmittedFromInfobarFixRule,
@@ -1076,27 +1075,6 @@ class TestOutOfMemoryBinaryRule:
         assert "memory_report" not in processed_crash
 
 
-class TestProductRewriteRule:
-    def test_product_map_rewrite(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["ProductName"] = "Fennec"
-        raw_crash["ProductID"] = "{aa3c5121-dab2-40e2-81ca-7ea25febc110}"
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        rule = ProductRewrite()
-        rule.act(raw_crash, {}, processed_crash, processor_meta)
-
-        assert raw_crash["ProductName"] == "FennecAndroid"
-        assert raw_crash["OriginalProductName"] == "Fennec"
-
-        # processed_crash should be unchanged
-        assert processed_crash == {}
-        assert processor_meta["processor_notes"] == [
-            "Rewriting ProductName from 'Fennec' to 'FennecAndroid'"
-        ]
-
-
 class TestFenixVersionRewriteRule:
     @pytest.mark.parametrize(
         "product, version, expected",
@@ -1496,8 +1474,6 @@ class TestBetaVersionRule:
         "product, channel, expected",
         [
             ("Firefox", "beta", True),
-            ("Fennec", "beta", True),
-            ("FennecAndroid", "beta", True),
             # Unsupported products and channels yield false
             ("Firefox", "nightly", False),
             ("Fenix", "beta", False),

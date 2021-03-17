@@ -277,10 +277,7 @@ class Test_generate_create_bug_url:
         assert qs["op_sys"] == ["Windows"]
 
     def test_with_os_name_is_null(self):
-        """Some processed crashes haev a os_name but it's null.
-
-        FennecAndroid crashes for example.
-        """
+        """Some processed crashes have a os_name but it's null."""
         req = RequestFactory().get("/report/index")
         raw_crash = {}
         report = self._create_report(

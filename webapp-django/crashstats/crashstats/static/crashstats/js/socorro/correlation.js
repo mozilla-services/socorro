@@ -13,8 +13,6 @@ window.correlations = (function () {
   function getDataURL(product) {
     if (product === 'Firefox') {
       return 'https://analysis-output.telemetry.mozilla.org/top-signatures-correlations/data/';
-    } else if (product === 'FennecAndroid') {
-      return 'https://analysis-output.telemetry.mozilla.org/top-fennec-signatures-correlations/data/';
     } else {
       return null;
     }
