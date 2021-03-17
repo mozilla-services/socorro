@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import uuid
 
 import elasticsearch
 
@@ -81,9 +82,9 @@ def dockerflow_heartbeat(request):
     assert Permission.objects.all().count() > 0
 
     # We should also be able to set and get a cache value
-    cache_key = "__healthcheck__"
+    cache_key = "__healthcheck__" + str(uuid.uuid4())
     cache.set(cache_key, 1, 10)
-    assert cache.get(cache_key)
+    assert cache.get(cache_key), f"cache_key {cache_key} not available"
     cache.delete(cache_key)
 
     # Do a really basic Elasticsearch query
