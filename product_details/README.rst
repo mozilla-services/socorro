@@ -43,9 +43,9 @@ Keys:
     and omit the beta number. For example, ``68.0b8`` covers just ``b8``
     whereas ``68.0b`` covers all betas for ``68``.
 
-    For Firefox and Fennec, version strings should match the ``Version``
-    annotation in the crash report or the adjusted version string determined
-    by the Socorro processor's BetaVersionRule.
+    For Firefox, version strings should match the ``Version`` annotation in the
+    crash report or the adjusted version string determined by the Socorro
+    processor's BetaVersionRule.
 
     For all other products, version strings should match the ``Version``
     annotation in the crash report.

@@ -41,7 +41,7 @@ DEFAULT_SORT = ("-date",)
 #
 # NOTE(willkg): To add support for another product, you have to add a url
 # to crashstats/static/crashstats/js/socorro/correlations.js getDataURL.
-CORRELATIONS_PRODUCTS = ["Firefox", "FennecAndroid"]
+CORRELATIONS_PRODUCTS = ["Firefox"]
 
 
 def pass_validated_params(view):
@@ -375,14 +375,6 @@ def signature_correlations(request, params):
             context["channel"] = "esr"
 
     context["product_name"] = "Firefox"
-    if (
-        "product" in params
-        and "FennecAndroid" in params["product"]
-        and "Firefox" not in params["product"]
-    ):
-        # The SuperSearch query contains Fennec, but doesn't contain Firefox.
-        # We can assume the user is looking for Fennec correlations.
-        context["product_name"] = "FennecAndroid"
 
     return render(request, "signature/signature_correlations.html", context)
 

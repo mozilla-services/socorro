@@ -5,7 +5,7 @@ Versions/Builds
 Summary
 =======
 
-The webapp maintains version/build information for Firefox and Fennec.
+The webapp maintains version/build information for Firefox.
 
 .. graphviz::
 
@@ -44,10 +44,10 @@ Data can get in the table in two ways:
 What uses this data
 ===================
 
-Incoming crash reports for Firefox and Fennec have a ``Version`` field.
-There are some cases where the value is "a lie". In these cases, the
-processor's ``BetaVersionRule`` will look up the (product, channel, build id)
-in the ``crashstats_productversion`` table to find the actual version.
+Incoming crash reports for Firefox have a ``Version`` field. There are some
+cases where the value is "a lie". In these cases, the processor's
+``BetaVersionRule`` will look up the (product, channel, build id) in the
+``crashstats_productversion`` table to find the actual version.
 
 
 About archive.mozilla.org
@@ -67,10 +67,6 @@ Rough directory structure::
 
     devedition/      DevEdition (aka Firefox aurora)
       candidates/    beta builds for Firefox b1 and b2
-
-    mobile/          Fennec builds
-      candidates/    beta, rc, and release builds
-      nightly/       nightly builds
 
 
 In the ``candidates/`` subdirectories are build directories like ``build1/``.

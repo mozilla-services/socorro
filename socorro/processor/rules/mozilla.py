@@ -466,30 +466,6 @@ class OutOfMemoryBinaryRule(Rule):
                 processed_crash["memory_report"] = memory_report
 
 
-class ProductRewrite(Rule):
-    """Fix ProductName in raw crash for certain situations."""
-
-    PRODUCT_MAP = {"{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "FennecAndroid"}
-
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        product_name = raw_crash.get("ProductName", "")
-        original_product_name = product_name
-
-        # Rewrite from PRODUCT_MAP fixes.
-        if raw_crash.get("ProductID", "") in self.PRODUCT_MAP:
-            product_name = self.PRODUCT_MAP[raw_crash["ProductID"]]
-
-        # If we made any product name changes, persist them and keep the
-        # original one so we can look at things later
-        if product_name != original_product_name:
-            processor_meta["processor_notes"].append(
-                "Rewriting ProductName from %r to %r"
-                % (original_product_name, product_name)
-            )
-            raw_crash["ProductName"] = product_name
-            raw_crash["OriginalProductName"] = original_product_name
-
-
 class FenixVersionRewriteRule(Rule):
     """Fix 'Nightly YYMMDD HH:MM' version values to '0.0a1'
 
@@ -755,7 +731,7 @@ class BetaVersionRule(Rule):
     LONG_CACHE_TTL = 60 * 60 * 24
 
     #: List of products to do lookups for
-    SUPPORTED_PRODUCTS = ["firefox", "fennec", "fennecandroid"]
+    SUPPORTED_PRODUCTS = ["firefox"]
 
     def __init__(self, version_string_api):
         super().__init__()
@@ -786,8 +762,6 @@ class BetaVersionRule(Rule):
             product = "DevEdition"
         elif product == "firefox":
             product = "Firefox"
-        elif product in ("fennec", "fennecandroid"):
-            product = "Fennec"
 
         key = "%s:%s:%s" % (product, channel, build_id)
         if key in self.cache:

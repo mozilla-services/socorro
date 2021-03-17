@@ -52,7 +52,6 @@ from socorro.processor.rules.mozilla import (
     PluginContentURL,
     PluginRule,
     PluginUserComment,
-    ProductRewrite,
     ProductRule,
     SignatureGeneratorRule,
     SubmittedFromInfobarFixRule,
@@ -180,7 +179,6 @@ class ProcessorPipeline(RequiredConfig):
             # fix SubmittedFromInfobar value
             SubmittedFromInfobarFixRule(),
             # rules to change the internals of the raw crash
-            ProductRewrite(),
             FenixVersionRewriteRule(),
             ESRVersionRewrite(),
             PluginContentURL(),
