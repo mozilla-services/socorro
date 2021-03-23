@@ -103,3 +103,20 @@ isn't calculating them right because of bad data or extenuating circumstances.
 
 For more details, see the `product details README
 <https://github.com/mozilla-services/socorro/tree/main/product_details>`_.
+
+
+How to remove support for a product
+===================================
+
+There are two ways to do this:
+
+1. Remove the ``product_details`` file AND delete all the crash report data
+   in AWS S3 and Elasticsearch for that product, OR
+2. Change the ``product_details`` file description to reflect that support has
+   ended, wait for the data to expire, and then delete the ``product_details``
+   file
+
+If you remove the ``product_details`` file without deleting the data, then
+people will get HTTP 500 errors when trying to visit crash reports that are
+still in the system for the unsupported product. Links will continue to be in
+signature reports and elsewhere.
