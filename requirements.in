@@ -1,5 +1,5 @@
 Jinja2==2.11.3
-Pygments==2.6.1
+Pygments==2.7.4
 awscli==1.18.129
 black==20.8b1
 boto3==1.14.52
