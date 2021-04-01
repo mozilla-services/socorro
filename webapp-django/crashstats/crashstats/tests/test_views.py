@@ -1119,6 +1119,46 @@ class TestViews(BaseTestViews):
         assert "PII" in smart_text(response.content)
         assert "REDACTED" not in smart_text(response.content)
 
+    def test_last_error_value(self):
+        def mocked_raw_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "meta":
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        json_dump = {
+            "crash_info": {
+                "crashing_thread": 0,
+            },
+            "threads": [
+                {
+                    "last_error_value": "0x5af",
+                    "frames": [],
+                }
+            ],
+        }
+
+        def mocked_processed_crash_get(**params):
+            if params["datatype"] == "unredacted":
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                # Create a minimal json_dump with the last_error_value
+                crash["json_dump"] = json_dump
+                return crash
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # Assert it's not in the content
+        assert "Last Error Value" in smart_text(response.content)
+
     def test_report_index_unpaired_surrogate(self):
         """An unpaired surrogate like \udf03 can't be encoded in UTF-8, so it is escaped."""
         json_dump = {
@@ -1135,6 +1175,7 @@ class TestViews(BaseTestViews):
                     "version": "",
                 }
             ],
+            "threads": [{"frames": []}],
         }
 
         def mocked_raw_crash_get(**params):
