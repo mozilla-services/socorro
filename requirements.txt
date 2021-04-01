@@ -135,9 +135,9 @@ django-jinja==2.6.0 \
 django-npm==1.0.0 \
     --hash=sha256:2e6bba65e728fa18b9db3c8dc0d4490b70cb7f43bacf60eb3654d7dcb6424272 \
     # via -r requirements.in
-django-pipeline==2.0.5 \
-    --hash=sha256:6c7bd5c2a922ddb7e989a1c5a6852f3a8bffcf6e14d9f228261c8ba04b5b79a7 \
-    --hash=sha256:7bf3d304c655ca20f77d66a4f4f3511a7b2f317768110967828aa5088806d4ce \
+django-pipeline==2.0.6 \
+    --hash=sha256:3ec726e2bf9f61f213f41ee4513f4191a02ab2f5df86c9e3751a9a607c814031 \
+    --hash=sha256:443c560000b3202dafa873cf9b9a49018ded4b2090979dec8e8858b8b1f867c0 \
     # via -r requirements.in
 django-ratelimit==3.0.1 \
     --hash=sha256:73223d860abd5c5d7b9a807fabb39a6220068129b514be8d78044b52607ab154 \

@@ -10,7 +10,7 @@ datadog==0.40.1
 dj-database-url==0.5.0
 django-jinja==2.6.0
 django-npm==1.0.0
-django-pipeline==2.0.5
+django-pipeline==2.0.6
 django-ratelimit==3.0.1
 django-session-csrf==0.7.1
 django-waffle==2.1.0
