@@ -346,26 +346,12 @@
                       <th scope="row">MOZ_CRASH Reason (Raw)</th>
                       <td>{{ report.moz_crash_reason_raw }} - {{ protected_warning(your_crash) }}</td>
                     </tr>
-                  {% elif raw.MozCrashReason %}
-                    {# FIXME(willkg): This can get removed in April 2019 #}
-                    <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
-                      <th scope="row">MOZ_CRASH Reason</th>
-                      <td>{{ raw.MozCrashReason }}</td>
-                    </tr>
                   {% endif %}
-                {% else %}
-                  {% if report.moz_crash_reason %}
-                    <tr title="{{ fields_desc['processed_crash.moz_crash_reason'] }}">
-                      <th scope="row">MOZ_CRASH Reason (Sanitized)</th>
-                      <td><pre>{{ report.moz_crash_reason }}</pre></td>
-                    </tr>
-                  {% elif raw.MozCrashReason %}
-                    {# FIXME(willkg): This can get removed in April 2019 #}
-                    <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
-                      <th scope="row">MOZ_CRASH Reason</th>
-                      <td>{{ raw.MozCrashReason }}</td>
-                    </tr>
-                  {% endif %}
+                {% elif report.moz_crash_reason %}
+                  <tr title="{{ fields_desc['processed_crash.moz_crash_reason'] }}">
+                    <th scope="row">MOZ_CRASH Reason (Sanitized)</th>
+                    <td><pre>{{ report.moz_crash_reason }}</pre></td>
+                  </tr>
                 {% endif %}
                 <tr title="{{ fields_desc['processed_crash.reason'] }}">
                   <th scope="row">Crash Reason</th>
@@ -375,6 +361,12 @@
                   <th scope="row">Crash Address</th>
                   <td>{{ report.address }}</td>
                 </tr>
+                {% if crashing_thread is not none and parsed_dump.threads[crashing_thread].last_error_value %}
+                  <tr title="Last error value">
+                    <th scope="row">Last Error Value</th>
+                    <td>{{ parsed_dump.threads[crashing_thread].last_error_value }}</td>
+                  </tr>
+                {% endif %}
                 {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
                   {% if report.java_stack_trace_raw %}
                     <tr title="{{ fields_desc['processed_crash.java_stack_trace_raw'] }}">
