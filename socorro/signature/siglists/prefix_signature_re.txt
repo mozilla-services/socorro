@@ -311,6 +311,7 @@ std::_Func_impl_no_alloc<T>::_Do_call
 std::_Hash<T>::
 std::list<.*>::
 std::collections::hash::map::
+std::vector<T>::_Emplace_reallocate<T>
 stdext::hash_map<T>::
 strcat
 strncmp
