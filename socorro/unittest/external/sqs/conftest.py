@@ -7,7 +7,7 @@ import pytest
 from socorro.unittest.external.sqs import get_sqs_config, SQSHelper
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def sqs_helper():
     config = get_sqs_config()
     with SQSHelper(config) as sqs:
