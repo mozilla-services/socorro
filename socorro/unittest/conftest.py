@@ -50,7 +50,7 @@ def metricsmock():
     return MetricsMock()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def caplogpp(caplog):
     """Fix logger propagation values, return caplog fixture, and unfix when done."""
     changed_loggers = []
@@ -134,7 +134,7 @@ class BotoHelper:
         return [obj["Key"] for obj in resp["Contents"]]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def boto_helper():
     """Returns a BotoHelper for automating repetitive tasks in S3 setup.
 
