@@ -290,6 +290,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 # If tuple, the second option is human readable label.
 PROCESS_TYPES = (
     "any",
+    "parent",
     "browser",
     "plugin",
     "content",

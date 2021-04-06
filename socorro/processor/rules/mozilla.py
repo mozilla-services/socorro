@@ -106,7 +106,16 @@ class EnvironmentRule(Rule):
         processed_crash["app_notes"] = raw_crash.get("Notes", "")
 
 
-class PluginRule(Rule):  # Hangs are here
+class ProcessTypeRule(Rule):
+    """Set process_type to ProcessType value or "parent"."""
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash["process_type"] = raw_crash.get("ProcessType", "parent")
+
+
+class PluginRule(Rule):
+    """Handle plugin-related things and hang_type."""
+
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             plugin_hang_as_int = int(raw_crash.get("PluginHang", False))
@@ -118,9 +127,10 @@ class PluginRule(Rule):  # Hangs are here
             processed_crash["hangid"] = raw_crash.get("HangID", None)
 
         # the processed_crash["hang_type"] has the following meaning:
-        #    hang_type == -1 is a plugin hang
-        #    hang_type ==  1 is a browser hang
-        #    hang_type ==  0 is not a hang at all, but a normal crash
+        #
+        # * hang_type == -1 is a plugin hang
+        # * hang_type ==  1 is a browser hang
+        # * hang_type ==  0 is not a hang at all, but a normal crash
 
         try:
             hang_as_int = int(raw_crash.get("Hang", False))
@@ -135,14 +145,11 @@ class PluginRule(Rule):  # Hangs are here
         else:
             processed_crash["hang_type"] = 0
 
-        processed_crash["process_type"] = raw_crash.get("ProcessType", None)
+        process_type = raw_crash.get("ProcessType", None)
 
-        if not processed_crash["process_type"]:
-            return
-
-        if processed_crash["process_type"] == "plugin":
-            # Bug#543776 We actually will are relaxing the non-null policy...
-            # a null filename, name, and version is OK. We'll use empty strings
+        if process_type == "plugin":
+            # Bug#543776 We actually will are relaxing the non-null policy...  a null
+            # filename, name, and version is OK. We'll use empty strings
             processed_crash["PluginFilename"] = raw_crash.get("PluginFilename", "")
             processed_crash["PluginName"] = raw_crash.get("PluginName", "")
             processed_crash["PluginVersion"] = raw_crash.get("PluginVersion", "")
