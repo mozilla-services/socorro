@@ -35,6 +35,7 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     PluginUserComment,
     ProductRule,
+    ProcessTypeRule,
     SignatureGeneratorRule,
     SubmittedFromInfobarFixRule,
     ThemePrettyNameRule,
@@ -333,6 +334,31 @@ class TestEnvironmentRule:
         assert processed_crash["app_notes"] == ""
 
 
+class TestProcessTypeRule:
+    def test_process_type(self):
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_crash["ProcessType"] = "gpu"
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = ProcessTypeRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash["process_type"] == "gpu"
+
+    def test_no_process_type_is_parent(self):
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = ProcessTypeRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash["process_type"] == "parent"
+
+
 class TestPluginRule:
     def test_plugin_hang(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
@@ -351,7 +377,6 @@ class TestPluginRule:
 
         assert processed_crash["hangid"] == "fake-00000000-0000-0000-0000-000002140504"
         assert processed_crash["hang_type"] == -1
-        assert processed_crash["process_type"] == "plugin"
         assert processed_crash["PluginFilename"] == "x.exe"
         assert processed_crash["PluginName"] == "X"
         assert processed_crash["PluginVersion"] == "0.0"
@@ -369,7 +394,6 @@ class TestPluginRule:
 
         assert processed_crash["hangid"] is None
         assert processed_crash["hang_type"] == 1
-        assert processed_crash["process_type"] == "browser"
         assert "PluginFilename" not in processed_crash
         assert "PluginName" not in processed_crash
         assert "PluginVersion" not in processed_crash

@@ -3007,7 +3007,15 @@ FIELDS = {
             "not be present. But when a plugin or content process crashes, this will be "
             "'plugin' or 'content'."
         ),
-        "form_field_choices": ["any", "browser", "plugin", "content", "gpu", "all"],
+        "form_field_choices": [
+            "any",
+            "parent",
+            "browser",
+            "plugin",
+            "content",
+            "gpu",
+            "all",
+        ],
         "has_full_version": False,
         "in_database_name": "process_type",
         "is_exposed": True,
