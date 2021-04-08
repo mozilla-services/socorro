@@ -3003,9 +3003,8 @@ FIELDS = {
     "process_type": {
         "data_validation_type": "str",
         "description": (
-            "What type of process the crash happened in. When the main process crashes, this will "
-            "not be present. But when a plugin or content process crashes, this will be "
-            "'plugin' or 'content'."
+            'Type of the process that crashed. This will be "parent" if the crash '
+            "report had no ProcessType annotation."
         ),
         "form_field_choices": [
             "any",
