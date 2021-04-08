@@ -309,29 +309,18 @@
                     </td>
                   </tr>
                 {% endif %}
-                {% if report.process_type %}
-                  <tr title="{{ fields_desc['processed_crash.process_type'] }}">
-                    <th scope="row">Process Type</th>
-                    <td>
-                      {{ report.process_type }}
-                      {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
-                        ({{ raw.RemoteType and raw.RemoteType or 'web' }})
-                        - {{ protected_warning(your_crash) }}
-                      {% endif %}
-                      {% if report.PluginName %}
-                        <b class="name">{{ report.PluginName }}</b>
-                      {% endif %}
-                      {% if report.PluginVersion %}
-                        <span>Version:</span>
-                        <span class="version">{{ report.PluginVersion }}</span>
-                      {% endif %}
-                      {% if report.PluginFilename %}
-                        <span>Filename:</span>
-                        <span class="filename">{{ report.PluginFilename }}</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endif %}
+                <tr title="{{ fields_desc['processed_crash.process_type'] }}">
+                  <th scope="row">Process Type</th>
+                  <td>
+                    {{ report.process_type or "browser" }}
+                    {% if report.process_type == "content" and request.user.has_perm("crashstats.view_pii") -%}
+                      ({{ raw.RemoteType or 'web' }}) - {{ protected_warning(your_crash) }}
+                    {%- endif %}
+                    {% if report.process_type == "plugin" -%}
+                      ({{ report.PluginName or "No name" }}, ver: {{ report.PluginVersion or "Unknown" }}, filename: {{ report.PluginFilename or "" }})
+                    {%- endif %}
+                  </td>
+                </tr>
                 {% if raw.FlashProcessDump %}
                   <tr title="{{ fields_desc['raw_crash.FlashProcessDump'] }}">
                     <th scope="row">Flash Process Dump</th>

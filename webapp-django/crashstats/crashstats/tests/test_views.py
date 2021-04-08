@@ -558,6 +558,7 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "meta":
                 raw = copy.deepcopy(_SAMPLE_META)
+                raw["ProcessType"] = "content"
                 raw["RemoteType"] = "java-applet"
                 return raw
             raise NotImplementedError
@@ -568,7 +569,7 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "unredacted":
                 processed = copy.deepcopy(_SAMPLE_UNREDACTED)
-                processed["process_type"] = "contentish"
+                processed["process_type"] = "content"
                 return processed
 
             raise NotImplementedError(params)
@@ -588,9 +589,11 @@ class TestViews(BaseTestViews):
         )
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "Process Type" in smart_text(response.content)
-        # Expect that it displays '{process_type}\s+({raw_crash.RemoteType})'
-        assert re.findall(r"contentish\s+\(java-applet\)", smart_text(response.content))
+
+        # Assert that it displays '{process_type}\s+({raw_crash.RemoteType})'
+        assert re.findall(
+            r"content[\s\n]+\(java-applet\)", smart_text(response.content), re.MULTILINE
+        )
 
     def test_report_index_with_additional_raw_dump_links(self):
         json_dump = {
