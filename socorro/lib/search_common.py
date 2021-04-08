@@ -6,7 +6,9 @@
 Common functions for search-related external modules.
 """
 
+from dataclasses import dataclass
 import datetime
+from typing import Any, Optional
 
 from socorro.lib import BadArgumentError, datetimeutil
 import socorro.lib.external_common as extern
@@ -59,20 +61,20 @@ MAXIMUM_DATE_RANGE = 365
 HISTOGRAM_QUERY_TYPES = ("date", "number")
 
 
+@dataclass
 class SearchParam:
-    def __init__(self, name, value, operator=None, data_type=None, operator_not=False):
-        self.name = name
-        self.value = value
-        self.operator = operator
-        self.data_type = data_type
-        self.operator_not = operator_not
+    name: str
+    value: str
+    operator: Optional[str] = None
+    data_type: Optional[str] = None
+    operator_not: bool = False
 
 
+@dataclass
 class SearchFilter:
-    def __init__(self, name, default=None, data_type="enum"):
-        self.name = name
-        self.default = default
-        self.data_type = data_type
+    name: str
+    default: Optional[Any] = None
+    data_type: str = "enum"
 
 
 class SearchBase:
@@ -292,24 +294,37 @@ class SearchBase:
     def fix_process_type_parameter(parameters):
         """Correct the process_type parameter.
 
-        If process_type is 'browser', replace it with a 'does not exist'
-        parameter. Do nothing in all other cases.
+        Previously, crash reports that didn't have a ProcessType annotation
+        were parent process crashes. We used "browser" to refer to these and whenever
+        "browser" was specified in supersearch, we converted it to "process_type doesn't
+        exist".
+
+        On April 7th, 2021, we changed how that works. Now all crash reports have
+        a process_type. If there was no ProcessType annotation, the process_type
+        will be "parent". Because we're not reprocessing all the crash reports we
+        have (there are too many), we now have two different ways to identify
+        a parent process crash report: process_type = "parent" and "has no
+        process_type".
+
+        So this static method fixes incoming searches to do the right thing.
+
+        * "parent" -> gets an additional "or process_type does not exist"
+        * "browser" -> gets an additional "parent" and "or process_type does not exist"
+
         """
         if not parameters.get("process_type"):
             return
 
         new_params = []
-        marked_for_deletion = []
         for index, process_type in enumerate(parameters["process_type"]):
-            if "browser" in process_type.value:
-                # `process_type.value` can be a string or a list of strings.
-                try:
+            # `Note that process_type.value` can be a string or a list of strings
+            if "parent" in process_type.value or "browser" in process_type.value:
+                # Replace "browser" with "parent"
+                if process_type.value == "browser":
+                    process_type.value = "parent"
+                elif "browser" in process_type.value:
                     process_type.value.remove("browser")
-                except AttributeError:
-                    process_type.value = ""
-
-                if not process_type.value:
-                    marked_for_deletion.append(process_type)
+                    process_type.value.append("parent")
 
                 new_params.append(
                     SearchParam(
@@ -320,9 +335,6 @@ class SearchBase:
                         operator_not=process_type.operator_not,
                     )
                 )
-
-        for param in marked_for_deletion:
-            parameters["process_type"].remove(param)
 
         parameters["process_type"].extend(new_params)
 

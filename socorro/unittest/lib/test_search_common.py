@@ -220,24 +220,47 @@ class TestSearchBase:
         with pytest.raises(BadArgumentError):
             search.get_parameters(date=">1999-01-01")
 
-    def test_process_type_parameter_correction(self):
+    def test_process_type_parameter_correction_parent(self):
+        search = SearchBaseWithFields()
+
+        args = {"process_type": "parent"}
+        params = search.get_parameters(**args)
+        assert "process_type" in params
+        assert len(params["process_type"]) == 2
+        assert params["process_type"][0].value == ["parent"]
+        assert params["process_type"][1].value == [""]
+        assert params["process_type"][1].operator == "__null__"
+        assert params["process_type"][1].operator_not is False
+
+        args = {"process_type": "=parent"}
+        params = search.get_parameters(**args)
+        assert "process_type" in params
+        assert len(params["process_type"]) == 2
+        assert params["process_type"][0].value == "parent"
+        assert params["process_type"][1].value == [""]
+        assert params["process_type"][1].operator == "__null__"
+        assert params["process_type"][1].operator_not is False
+
+    def test_process_type_parameter_correction_browser(self):
         search = SearchBaseWithFields()
 
         args = {"process_type": "browser"}
         params = search.get_parameters(**args)
         assert "process_type" in params
-        assert len(params["process_type"]) == 1
-        assert params["process_type"][0].value == [""]
-        assert params["process_type"][0].operator == "__null__"
-        assert params["process_type"][0].operator_not is False
+        assert len(params["process_type"]) == 2
+        assert params["process_type"][0].value == ["parent"]
+        assert params["process_type"][1].value == [""]
+        assert params["process_type"][1].operator == "__null__"
+        assert params["process_type"][1].operator_not is False
 
         args = {"process_type": "=browser"}
         params = search.get_parameters(**args)
         assert "process_type" in params
-        assert len(params["process_type"]) == 1
-        assert params["process_type"][0].value == [""]
-        assert params["process_type"][0].operator == "__null__"
-        assert params["process_type"][0].operator_not is False
+        assert len(params["process_type"]) == 2
+        assert params["process_type"][0].value == "parent"
+        assert params["process_type"][1].value == [""]
+        assert params["process_type"][1].operator == "__null__"
+        assert params["process_type"][1].operator_not is False
 
     def test_hang_type_parameter_correction(self):
         search = SearchBaseWithFields()
