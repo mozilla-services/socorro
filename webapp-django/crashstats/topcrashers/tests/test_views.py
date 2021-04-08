@@ -95,7 +95,7 @@ class TestTopCrasherViews(BaseTestViews):
                                         {"term": "t", "count": 50}
                                     ],
                                     "hang_type": [{"term": 1, "count": 50}],
-                                    "process_type": [{"term": "browser", "count": 50}],
+                                    "process_type": [{"term": "parent", "count": 50}],
                                     "startup_crash": [{"term": "T", "count": 50}],
                                     "dom_fission_enabled": [{"term": 1, "count": 80}],
                                     "histogram_uptime": [{"term": 0, "count": 40}],

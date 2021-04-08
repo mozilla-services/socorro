@@ -165,8 +165,9 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
             process_types.append(option[0])
         else:
             process_types.append(option)
+
     if crash_type not in process_types:
-        crash_type = "browser"
+        crash_type = "parent"
 
     context["crash_type"] = crash_type
 
