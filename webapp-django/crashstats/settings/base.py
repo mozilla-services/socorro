@@ -291,7 +291,6 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 PROCESS_TYPES = (
     "any",
     "parent",
-    "browser",
     "plugin",
     "content",
     ("gpu", "GPU"),
